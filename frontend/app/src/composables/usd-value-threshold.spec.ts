@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ToRefs, computed, ref } from 'vue';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useUsdValueThreshold } from './usd-value-threshold';
 import type { useBalancePricesStore } from '@/store/balances/prices';
 import type { BigNumber } from '@rotki/common';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { BalanceSource } from '@/types/settings/frontend-settings';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed, ref, type ToRefs } from 'vue';
+import { useUsdValueThreshold } from './usd-value-threshold';
 
 type MockedStore<T extends (...args: any[]) => any> = ToRefs<Partial<ReturnType<T>>>;
 

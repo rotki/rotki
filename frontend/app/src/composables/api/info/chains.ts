@@ -1,7 +1,7 @@
+import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 import { EvmChainEntries, SupportedChains } from '@/types/api/chains';
-import type { ActionResult } from '@rotki/common';
 
 interface UseSupportedChainsApiReturn {
   fetchSupportedChains: () => Promise<SupportedChains>;

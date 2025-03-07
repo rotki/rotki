@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HashLink from '@/components/helper/HashLink.vue';
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnderlyingToken } from '@rotki/common';
+import type { DataTableColumn } from '@rotki/ui-library';
+import HashLink from '@/components/helper/HashLink.vue';
 
 defineProps<{ tokens: UnderlyingToken[] }>();
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useStatisticsStore } from '@/store/statistics';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useCoreScroll } from '@/composables/use-core-scroll';
-import { initGraph } from '@/composables/graphs';
-import { useInterop } from '@/composables/electron-interop';
-import AppSidebars from '@/components/app/AppSidebars.vue';
-import AppIndicators from '@/components/app/AppIndicators.vue';
 import AppDrawer from '@/components/app/AppDrawer.vue';
+import AppIndicators from '@/components/app/AppIndicators.vue';
+import AppSidebars from '@/components/app/AppSidebars.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
+import { useInterop } from '@/composables/electron-interop';
+import { initGraph } from '@/composables/graphs';
+import { useCoreScroll } from '@/composables/use-core-scroll';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useStatisticsStore } from '@/store/statistics';
 
 const visibilityStore = useAreaVisibilityStore();
 const { isMini, showDrawer, showPinned } = storeToRefs(visibilityStore);

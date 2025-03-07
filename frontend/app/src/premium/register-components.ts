@@ -1,4 +1,33 @@
 /* eslint-disable import/max-dependencies */
+import type { App } from 'vue';
+import AssetLink from '@/components/assets/AssetLink.vue';
+import PaginatedCards from '@/components/common/PaginatedCards.vue';
+import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import RangeSelector from '@/components/helper/date/RangeSelector.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import AssetBalanceStatisticSourceSetting from '@/components/settings/AssetBalanceStatisticSourceSetting.vue';
+import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import { logger } from '@/utils/logging';
 import {
   RuiAccordion,
   RuiAccordions,
@@ -18,35 +47,6 @@ import {
   RuiTextField,
   RuiTooltip,
 } from '@rotki/ui-library';
-import AssetLink from '@/components/assets/AssetLink.vue';
-import PaginatedCards from '@/components/common/PaginatedCards.vue';
-import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import RangeSelector from '@/components/helper/date/RangeSelector.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import HashLink from '@/components/helper/HashLink.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import { logger } from '@/utils/logging';
-import AssetBalanceStatisticSourceSetting from '@/components/settings/AssetBalanceStatisticSourceSetting.vue';
-import type { App } from 'vue';
 
 function ruiRegister(app: App): void {
   app.component('RuiAlert', RuiAlert);

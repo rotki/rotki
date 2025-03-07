@@ -1,3 +1,17 @@
+import type { TaskMeta } from '@/types/task';
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef, Ref } from 'vue';
+import { useEth2Api } from '@/composables/api/staking/eth2';
+import { usePremium } from '@/composables/premium';
+import { useStatusUpdater } from '@/composables/status';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
+import { logger } from '@/utils/logging';
 import {
   Blockchain,
   type EthStakingPayload,
@@ -5,20 +19,6 @@ import {
   type EthStakingPerformanceResponse,
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
-import { isTaskCancelled } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useTaskStore } from '@/store/tasks';
-import { useEth2Api } from '@/composables/api/staking/eth2';
-import { useStatusUpdater } from '@/composables/status';
-import { usePremium } from '@/composables/premium';
-import type { MaybeRef } from '@vueuse/core';
-import type { TaskMeta } from '@/types/task';
-import type { ComputedRef, Ref } from 'vue';
 
 interface UseEthStakingReturn {
   performance: ComputedRef<EthStakingPerformance>;

@@ -1,16 +1,16 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HistoryEventEntryType } from '@rotki/common';
-import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
-import { setupDayjs } from '@/utils/date';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
+import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { setupDayjs } from '@/utils/date';
+import { HistoryEventEntryType } from '@rotki/common';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',

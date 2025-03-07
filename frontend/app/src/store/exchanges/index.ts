@@ -1,9 +1,9 @@
-import { startPromise } from '@shared/utils';
+import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useMessageStore } from '@/store/message';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
+import { startPromise } from '@shared/utils';
 
 export const useExchangesStore = defineStore('exchanges', () => {
   const exchangeBalancesStore = useExchangeBalancesStore();

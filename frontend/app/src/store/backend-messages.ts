@@ -1,12 +1,12 @@
-import { BackendCode } from '@shared/ipc';
-import { checkIfDevelopment, startPromise } from '@shared/utils';
-import { logger } from '@/utils/logging';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useBackendManagement } from '@/composables/backend';
+import { useInterop } from '@/composables/electron-interop';
 import { useMainStore } from '@/store/main';
 import { useMonitorStore } from '@/store/monitor';
-import { useInterop } from '@/composables/electron-interop';
-import { useBackendManagement } from '@/composables/backend';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { logger } from '@/utils/logging';
+import { BackendCode } from '@shared/ipc';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');

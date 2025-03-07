@@ -1,11 +1,11 @@
-import { groupBy } from 'es-toolkit';
+import type { AssetBalances } from '@/types/balances';
+import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
+import type { ComputedRef } from 'vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
-import type { AssetBalances } from '@/types/balances';
-import type { ComputedRef } from 'vue';
+import { groupBy } from 'es-toolkit';
 
 interface UseBalanceSortingReturn {
   toSortedAssetBalanceArray: (

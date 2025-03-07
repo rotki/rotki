@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
-import { useLocations } from '@/composables/locations';
+import type { BigNumber } from '@rotki/common';
+import ListItem from '@/components/common/ListItem.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import ListItem from '@/components/common/ListItem.vue';
-import type { BigNumber } from '@rotki/common';
+import { useLocations } from '@/composables/locations';
+import { Routes } from '@/router/routes';
 
 interface ExchangeBoxProps {
   location: string;

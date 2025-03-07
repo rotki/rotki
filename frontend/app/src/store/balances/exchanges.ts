@@ -1,27 +1,4 @@
-import { AssetBalances } from '@/types/balances';
-import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { uniqueStrings } from '@/utils/data';
-import { mapCollectionResponse } from '@/utils/collection';
-import { updateBalancesPrices } from '@/utils/prices';
-import { isTaskCancelled } from '@/utils';
-import { appendAssetBalance, mergeAssociatedAssets, sumAssetBalances } from '@/utils/balances';
-import { sortDesc } from '@/utils/bignumbers';
-import { assetSum } from '@/utils/calculation';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
-import { useStatusUpdater } from '@/composables/status';
-import { useBalanceSorting } from '@/composables/balances/sorting';
-import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
+import type { AssetBreakdown, ExchangeBalancePayload } from '@/types/blockchain/accounts';
 import type {
   ExchangeData,
   ExchangeInfo,
@@ -31,7 +8,30 @@ import type {
 } from '@/types/exchanges';
 import type { AssetPrices } from '@/types/prices';
 import type { ExchangeMeta, TaskMeta } from '@/types/task';
-import type { AssetBreakdown, ExchangeBalancePayload } from '@/types/blockchain/accounts';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useStatusUpdater } from '@/composables/status';
+import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useNotificationsStore } from '@/store/notifications';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useTaskStore } from '@/store/tasks';
+import { AssetBalances } from '@/types/balances';
+import { BalanceSource } from '@/types/settings/frontend-settings';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { appendAssetBalance, mergeAssociatedAssets, sumAssetBalances } from '@/utils/balances';
+import { sortDesc } from '@/utils/bignumbers';
+import { assetSum } from '@/utils/calculation';
+import { mapCollectionResponse } from '@/utils/collection';
+import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
+import { updateBalancesPrices } from '@/utils/prices';
 
 export const useExchangeBalancesStore = defineStore('balances/exchanges', () => {
   const exchangeBalances = ref<ExchangeData>({});

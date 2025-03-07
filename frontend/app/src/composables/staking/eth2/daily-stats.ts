@@ -1,18 +1,18 @@
-import { omit } from 'es-toolkit';
-import { TaskType } from '@/types/task-type';
-import { Section, Status } from '@/types/status';
-import { isTaskCancelled } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useTaskStore } from '@/store/tasks';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useEth2Api } from '@/composables/api/staking/eth2';
-import { useStatusUpdater } from '@/composables/status';
-import { usePremium } from '@/composables/premium';
-import type { MaybeRef } from '@vueuse/core';
-import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
+import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
+import { useEth2Api } from '@/composables/api/staking/eth2';
+import { usePremium } from '@/composables/premium';
+import { useStatusUpdater } from '@/composables/status';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { omit } from 'es-toolkit';
 
 interface UseEthStakingDailyStatsReturn {
   pagination: Ref<Eth2DailyStatsPayload>;

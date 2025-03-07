@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
-import { TaskType } from '@/types/task-type';
-import { NoteLocation } from '@/types/notes';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import BinanceSavingDetail from '@/components/exchanges/BinanceSavingDetail.vue';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { uniqueStrings } from '@/utils/data';
+import { useRefresh } from '@/composables/balances/refresh';
+import { Routes } from '@/router/routes';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useExchangesStore } from '@/store/exchanges';
 import { useTaskStore } from '@/store/tasks';
-import { useRefresh } from '@/composables/balances/refresh';
-import InternalLink from '@/components/helper/InternalLink.vue';
-import BinanceSavingDetail from '@/components/exchanges/BinanceSavingDetail.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import { NoteLocation } from '@/types/notes';
+import { BalanceSource } from '@/types/settings/frontend-settings';
+import { TaskType } from '@/types/task-type';
+import { uniqueStrings } from '@/utils/data';
 
 definePage({
   meta: {

@@ -1,20 +1,4 @@
-import { Blockchain, type Message } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { CURRENCY_USD } from '@/types/currencies';
-import { TaskType } from '@/types/task-type';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { jsonTransformer } from '@/services/axios-transformers';
-import { getEthAddressesFromText } from '@/utils/history';
-import { isTaskCancelled } from '@/utils';
-import { isTransactionEvent } from '@/utils/report';
-import { logger } from '@/utils/logging';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTaskStore } from '@/store/tasks';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useReportsApi } from '@/composables/api/reports';
-import { useHistoryApi } from '@/composables/api/history';
+import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,
@@ -24,7 +8,23 @@ import type {
   SelectedReport,
 } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
+import { useHistoryApi } from '@/composables/api/history';
+import { useReportsApi } from '@/composables/api/reports';
+import { jsonTransformer } from '@/services/axios-transformers';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { CURRENCY_USD } from '@/types/currencies';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { getEthAddressesFromText } from '@/utils/history';
+import { logger } from '@/utils/logging';
+import { isTransactionEvent } from '@/utils/report';
+import { Blockchain, type Message } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 
 function notify(info: { title: string; message: (value: { message: string }) => string; error?: any }): void {
   logger.error(info.error);

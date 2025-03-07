@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import EtherscanApiKey from '@/components/settings/api-keys/external/EtherscanApiKey.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import EtherscanApiKey from '@/components/settings/api-keys/external/EtherscanApiKey.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);

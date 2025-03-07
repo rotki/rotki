@@ -1,11 +1,4 @@
-import { TaskType } from '@/types/task-type';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { logger } from '@/utils/logging';
-import { isTaskCancelled } from '@/utils';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useInterop } from '@/composables/electron-interop';
-import { useAssetsApi } from '@/composables/api/assets';
+import type { ActionStatus } from '@/types/action';
 import type {
   ApplyUpdateResult,
   AssetDBVersion,
@@ -15,7 +8,14 @@ import type {
   AssetUpdateResult,
 } from '@/types/asset';
 import type { TaskMeta } from '@/types/task';
-import type { ActionStatus } from '@/types/action';
+import { useAssetsApi } from '@/composables/api/assets';
+import { useInterop } from '@/composables/electron-interop';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { logger } from '@/utils/logging';
 
 interface UseAssetsReturn {
   checkForUpdate: () => Promise<AssetUpdateCheckResult>;

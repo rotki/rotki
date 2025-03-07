@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { camelCase } from 'es-toolkit';
+import type { Blockchain } from '@rotki/common';
+import SimpleTable from '@/components/common/SimpleTable.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import EvmRpcNodeFormDialog from '@/components/settings/general/rpc/EvmRpcNodeFormDialog.vue';
+import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { usePeriodicStore } from '@/store/session/periodic';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
   type EvmRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
-import { useConfirmStore } from '@/store/confirm';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
-import { useSupportedChains } from '@/composables/info/chains';
-import EvmRpcNodeFormDialog from '@/components/settings/general/rpc/EvmRpcNodeFormDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import SimpleTable from '@/components/common/SimpleTable.vue';
-import type { Blockchain } from '@rotki/common';
+import { camelCase } from 'es-toolkit';
 
 const props = defineProps<{
   chain: Blockchain;

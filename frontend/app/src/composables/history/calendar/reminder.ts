@@ -1,5 +1,7 @@
-import { api } from '@/services/rotkehlchen-api';
+import type { AddCalendarEventResponse } from '@/types/history/calendar';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 import {
   type CalendarReminderAddResponse,
@@ -8,8 +10,6 @@ import {
   type CalendarReminderRequestPayload,
   type CalenderReminderPayload,
 } from '@/types/history/calendar/reminder';
-import type { AddCalendarEventResponse } from '@/types/history/calendar';
-import type { ActionResult } from '@rotki/common';
 
 interface UseCalendarReminderApi {
   fetchCalendarReminders: (filter: CalendarReminderRequestPayload) => Promise<CalendarReminderEntry[]>;

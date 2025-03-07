@@ -1,5 +1,7 @@
 /* eslint-disable max-lines */
+import type { App } from 'vue';
 import {
+  createRui,
   LuAlarmClock,
   LuArrowDown,
   LuArrowDownAZ,
@@ -207,10 +209,8 @@ import {
   RiSunLine,
   type RuiOptions,
   ThemeMode,
-  createRui,
 } from '@rotki/ui-library';
 import '@rotki/ui-library/style.css';
-import type { App } from 'vue';
 
 interface RuiPlugin {
   install: (app: App) => void;

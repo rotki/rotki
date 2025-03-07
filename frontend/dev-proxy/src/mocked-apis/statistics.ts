@@ -1,7 +1,7 @@
+import type { Application } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import consola from 'consola';
-import type { Application } from 'express';
 
 export function statistics(server: Application, componentsDir: string): void {
   server.get('/api/1/statistics/renderer', (_, res) => {

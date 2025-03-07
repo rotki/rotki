@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import NavigationMenu from '@/components/NavigationMenu.vue';
 import { Routes } from '@/router/routes';
 import { useMainStore } from '@/store/main';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import NavigationMenu from '@/components/NavigationMenu.vue';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
 
 const demoMode = import.meta.env.VITE_DEMO_MODE;
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());

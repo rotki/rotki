@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { useSessionSettingsStore } from '@/store/settings/session';
+import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
+import type { AssetBalance } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import type { AssetBalance } from '@rotki/common';
-import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const props = withDefaults(defineProps<{
   assets: AssetBalance[];

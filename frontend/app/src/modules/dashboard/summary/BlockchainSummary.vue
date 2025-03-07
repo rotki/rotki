@@ -1,12 +1,12 @@
 <script lang="ts" setup>
-import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import { useBlockchainStore } from '@/store/blockchain';
-import { TaskType } from '@/types/task-type';
 import { useRefresh } from '@/composables/balances/refresh';
-import { useTaskStore } from '@/store/tasks';
+import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import { Routes } from '@/router/routes';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
 import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
 

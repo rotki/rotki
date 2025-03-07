@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
-import { CURRENCY_USD } from '@/types/currencies';
-import { calculatePercentage } from '@/utils/calculation';
-import { groupAssetBreakdown } from '@/utils/balances';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
-import { useSupportedChains } from '@/composables/info/chains';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
+import { groupAssetBreakdown } from '@/utils/balances';
+import { calculatePercentage } from '@/utils/calculation';
+import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

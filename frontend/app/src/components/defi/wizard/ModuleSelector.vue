@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
-import { Section } from '@/types/status';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { useSettingsStore } from '@/store/settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useStatusUpdater } from '@/composables/status';
-import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import AppImage from '@/components/common/AppImage.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import type { CamelCase } from '@/types/common';
 import type { DataTableColumn } from '@rotki/ui-library';
+import AppImage from '@/components/common/AppImage.vue';
+import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import { useStatusUpdater } from '@/composables/status';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
+import { Section } from '@/types/status';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 

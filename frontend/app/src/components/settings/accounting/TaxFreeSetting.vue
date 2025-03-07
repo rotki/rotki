@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, requiredIf } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);

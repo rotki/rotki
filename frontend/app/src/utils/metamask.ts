@@ -1,5 +1,5 @@
-import { uniqueObjects } from '@/utils/data';
 import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from '@/types';
+import { uniqueObjects } from '@/utils/data';
 
 export async function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDetail[]> {
   return new Promise((resolve) => {

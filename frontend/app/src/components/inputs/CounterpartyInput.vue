@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 
 defineOptions({
   inheritAttrs: false,

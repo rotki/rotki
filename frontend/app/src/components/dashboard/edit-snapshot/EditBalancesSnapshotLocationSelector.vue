@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import type { BigNumber } from '@rotki/common';
 
 const model = defineModel<string>({ default: '', required: true });
 

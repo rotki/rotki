@@ -1,11 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useAssetsApi } from '@/composables/api/assets';
-import { useInterop } from '@/composables/electron-interop';
-import { useAssets } from '@/composables/assets';
-import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
+import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
+import { useAssetsApi } from '@/composables/api/assets';
+import { useAssets } from '@/composables/assets';
+import { useInterop } from '@/composables/electron-interop';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({

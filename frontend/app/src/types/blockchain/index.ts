@@ -1,7 +1,7 @@
+import type { ActionDataEntry } from '@/types/action';
+import type { BigNumber } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { L2_LOOPRING, type SupportedSubBlockchainProtocol } from '@/types/protocols';
-import type { BigNumber } from '@rotki/common';
-import type { ActionDataEntry } from '@/types/action';
 
 export const samePriceAssets: Record<string, string[]> = {
   ETH: ['ETH2'],

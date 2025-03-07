@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useLocations } from '@/composables/locations';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import type { RouteLocationRaw } from 'vue-router';
+import NavigatorLink from '@/components/helper/NavigatorLink.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import { useLocations } from '@/composables/locations';
 
 const props = withDefaults(
   defineProps<{

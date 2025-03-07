@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { CustomAsset } from '@/types/asset';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
-import { toMessages } from '@/utils/validation';
-import { refOptional, useRefPropVModel } from '@/utils/model';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import type { CustomAsset } from '@/types/asset';
-import type { ValidationErrors } from '@/types/api/errors';
+import { refOptional, useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<CustomAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { getDateInputISOFormat } from '@/utils/date';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
 import type {
   MatchedKeyword,
   SearchMatcher,
 
 } from '@/types/filtering';
 import type { EthStakingCombinedFilter } from '@rotki/common';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import { getDateInputISOFormat } from '@/utils/date';
 
 const props = withDefaults(
   defineProps<{

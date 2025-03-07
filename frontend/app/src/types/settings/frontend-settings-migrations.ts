@@ -1,13 +1,13 @@
-import { isEmpty } from 'es-toolkit/compat';
 import {
   type BalanceSource,
   BalanceUsdValueThresholdV0,
   BalanceUsdValueThresholdV1,
+  deserializeFrontendSettings,
   FRONTEND_SETTINGS_SCHEMA_VERSION,
   type FrontendSettings,
-  deserializeFrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
+import { isEmpty } from 'es-toolkit/compat';
 
 export function migrateSettingsIfNeeded(settings?: string): string | undefined {
   if (settings === undefined || settings === '') {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
 import NftsInNetValueSetting from '@/components/settings/general/nft/NftsInNetValueSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { externalLinks } from '@shared/external-links';
 
 const { t } = useI18n();
 </script>

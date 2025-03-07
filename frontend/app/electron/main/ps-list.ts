@@ -2,11 +2,11 @@
  * https://raw.githubusercontent.com/sindresorhus/ps-list/refs/heads/main/index.js
  */
 
-import process from 'node:process';
-import { promisify } from 'node:util';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import childProcess from 'node:child_process';
+import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 

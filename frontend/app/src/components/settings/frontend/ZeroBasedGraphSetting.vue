@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const zeroBased = ref<boolean>(false);
 const { graphZeroBased: enabled } = storeToRefs(useFrontendSettingsStore());

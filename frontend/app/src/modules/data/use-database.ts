@@ -1,6 +1,6 @@
-import Dexie, { type EntityTable } from 'dexie';
-import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import type { MissingMapping } from '@/modules/data/schemas';
+import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import Dexie, { type EntityTable } from 'dexie';
 
 interface DexieDB extends Dexie {
   missingMappings: EntityTable<MissingMapping, 'id'>;

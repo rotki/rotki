@@ -1,7 +1,7 @@
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
-import type { PremiumCredentialsPayload } from '@/types/session';
 import type { ActionStatus } from '@/types/action';
+import type { PremiumCredentialsPayload } from '@/types/session';
+import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref(false);

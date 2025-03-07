@@ -1,12 +1,12 @@
-import { HttpResponse, http } from 'msw';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
+import { useTaskStore } from '@/store/tasks';
 import { BackendCancelledTaskError, type TaskMeta, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
+import { http, HttpResponse } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { server } from '../../../setup-files/server';
 import { createCustomPinia } from '../../../utils/create-pinia';
-import type { ActionResult } from '@rotki/common';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

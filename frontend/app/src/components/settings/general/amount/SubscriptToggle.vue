@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { RuiIcon } from '@rotki/ui-library';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { RuiIcon } from '@rotki/ui-library';
 import SettingsOption from '../../controls/SettingsOption.vue';
 
 const { t } = useI18n();

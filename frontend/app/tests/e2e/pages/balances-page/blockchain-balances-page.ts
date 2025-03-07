@@ -1,5 +1,5 @@
-import { RotkiApp } from '../rotki-app';
 import { parseBigNumber } from '../../utils/amounts';
+import { RotkiApp } from '../rotki-app';
 
 export class BlockchainBalancesPage {
   visit() {

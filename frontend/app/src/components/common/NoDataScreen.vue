@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 
 withDefaults(defineProps<{ full?: boolean }>(), { full: false });
 

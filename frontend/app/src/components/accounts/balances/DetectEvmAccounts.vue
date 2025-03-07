@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
 import { useBlockchains } from '@/composables/blockchain';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 const { isTaskRunning } = useTaskStore();
 const isEvmAccountsDetecting = isTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);

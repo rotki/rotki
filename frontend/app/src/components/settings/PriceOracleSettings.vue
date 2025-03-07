@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import PrioritizedList from '@/components/helper/PrioritizedList.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
   ALCHEMY_PRIO_LIST_ITEM,
@@ -10,12 +16,6 @@ import {
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import PrioritizedList from '@/components/helper/PrioritizedList.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);

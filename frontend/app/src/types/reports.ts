@@ -1,7 +1,7 @@
+import type { Quarter } from '@/types/settings/frontend-settings';
+import { BaseAccountingSettings } from '@/types/user';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { BaseAccountingSettings } from '@/types/user';
-import type { Quarter } from '@/types/settings/frontend-settings';
 
 export const ProfitLossOverviewItem = z.object({
   free: NumericString,

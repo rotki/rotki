@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import ListItem from '@/components/common/ListItem.vue';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DateFormat } from '@/types/date-format';
-import ListItem from '@/components/common/ListItem.vue';
 
 defineOptions({
   inheritAttrs: false,

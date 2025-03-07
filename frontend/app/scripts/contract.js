@@ -2,9 +2,9 @@
 
 import path from 'node:path';
 import process from 'node:process';
-import { startAndTest } from 'start-server-and-test';
 import { ArgumentParser } from 'argparse';
 import { config } from 'dotenv';
+import { startAndTest } from 'start-server-and-test';
 
 function info(msg) {
   console.info(`\n\u001B[32m${msg}\u001B[0m\n`);

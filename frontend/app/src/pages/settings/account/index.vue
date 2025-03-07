@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes';
+import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 import ChangePassword from '@/components/settings/data-security/ChangePassword.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
+import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

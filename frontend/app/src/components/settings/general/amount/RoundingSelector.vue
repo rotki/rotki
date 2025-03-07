@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import ListItem from '@/components/common/ListItem.vue';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
+import ListItem from '@/components/common/ListItem.vue';
+import { BigNumber } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

@@ -1,14 +1,14 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HistoryEventEntryType } from '@rotki/common';
-import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
-import { setupDayjs } from '@/utils/date';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';
+import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { setupDayjs } from '@/utils/date';
+import { HistoryEventEntryType } from '@rotki/common';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({

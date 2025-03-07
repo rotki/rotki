@@ -1,15 +1,5 @@
-import { TaskType } from '@/types/task-type';
-import { jsonTransformer } from '@/services/axios-transformers';
-import { downloadFileByTextContent } from '@/utils/download';
-import { isTaskCancelled } from '@/utils';
-import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
-import { logger } from '@/utils/logging';
-import { useMessageStore } from '@/store/message';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useAccountingApi } from '@/composables/api/settings/accounting-api';
-import { useInterop } from '@/composables/electron-interop';
-import type { MaybeRef } from '@vueuse/core';
+import type { ActionStatus } from '@/types/action';
+import type { Collection } from '@/types/collection';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
@@ -17,10 +7,20 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
-import type { Collection } from '@/types/collection';
-import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
 import type { Message } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import { useAccountingApi } from '@/composables/api/settings/accounting-api';
+import { useInterop } from '@/composables/electron-interop';
+import { jsonTransformer } from '@/services/axios-transformers';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
+import { downloadFileByTextContent } from '@/utils/download';
+import { logger } from '@/utils/logging';
 
 interface UseAccountingSettingReturn {
   getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => Promise<AccountingRuleEntry | undefined>;

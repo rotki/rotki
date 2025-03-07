@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useAssetManagementApi } from '@/composables/api/assets/management';
-import { useFormStateWatcher } from '@/composables/form';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import TagInput from '@/components/inputs/TagInput.vue';
+import RuiForm from '@/components/helper/RuiForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
-import RuiForm from '@/components/helper/RuiForm.vue';
-import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
+import TagInput from '@/components/inputs/TagInput.vue';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useFormStateWatcher } from '@/composables/form';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { useLocationStore } from '@/store/locations';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

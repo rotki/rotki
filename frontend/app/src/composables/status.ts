@@ -1,5 +1,5 @@
-import { type Section, Status } from '@/types/status';
 import { useStatusStore } from '@/store/status';
+import { type Section, Status } from '@/types/status';
 
 interface Opts {
   section?: Section;

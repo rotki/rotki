@@ -1,17 +1,17 @@
 <script setup lang="ts">
+import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events';
+import type { Blockchain } from '@rotki/common';
+import HashLink from '@/components/helper/HashLink.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import {
   isAssetMovementEvent,
   isEthDepositEventRef,
   isEvmEventRef,
   isOnlineHistoryEvent,
 } from '@/utils/history/events';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import HashLink from '@/components/helper/HashLink.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
-import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events';
-import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;

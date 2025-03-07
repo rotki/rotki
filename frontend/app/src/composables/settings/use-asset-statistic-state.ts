@@ -1,8 +1,8 @@
-import { type ComputedRef, type Ref, type WritableComputedRef, computed } from 'vue';
-import { omit } from 'es-toolkit';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { logger } from '@/utils/logging';
+import { omit } from 'es-toolkit';
+import { computed, type ComputedRef, type Ref, type WritableComputedRef } from 'vue';
 
 const Source = {
   EVENTS: 'events',

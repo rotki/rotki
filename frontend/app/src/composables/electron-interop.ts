@@ -1,7 +1,7 @@
-import { externalLinks } from '@shared/external-links';
-import { getBackendUrl } from '@/utils/account-management';
-import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { WebVersion } from '@/types';
+import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
+import { getBackendUrl } from '@/utils/account-management';
+import { externalLinks } from '@shared/external-links';
 
 interface UseInteropReturn {
   readonly isPackaged: boolean;

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { CURRENCY_USD } from '@/types/currencies';
-import { useConfirmStore } from '@/store/confirm';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/snapshots';
+import type { BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import EditLocationDataSnapshotForm from '@/components/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/snapshots';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { BigNumber } from '@rotki/common';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
 
 const props = defineProps<{
   modelValue: LocationDataSnapshot[];

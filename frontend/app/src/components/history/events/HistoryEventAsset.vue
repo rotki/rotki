@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { CURRENCY_USD } from '@/types/currencies';
-import { useAssetPageNavigation } from '@/composables/assets/navigation';
-import { useRefMap } from '@/composables/utils/useRefMap';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import type { HistoryEventEntry } from '@/types/history/events';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import type { HistoryEventEntry } from '@/types/history/events';
+import { useAssetPageNavigation } from '@/composables/assets/navigation';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { CURRENCY_USD } from '@/types/currencies';
 
 const props = defineProps<{
   event: HistoryEventEntry;

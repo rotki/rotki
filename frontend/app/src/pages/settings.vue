@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Routes, useAppRoutes } from '@/router/routes';
-import TabNavigation from '@/components/helper/TabNavigation.vue';
 import type { TabContent } from '@/types/tabs';
+import TabNavigation from '@/components/helper/TabNavigation.vue';
+import { Routes, useAppRoutes } from '@/router/routes';
 
 definePage({
   redirect: Routes.SETTINGS_ACCOUNT,

@@ -1,4 +1,6 @@
+import type { FixtureBlockchainAccount } from '../../support/types';
 import { Blockchain } from '@rotki/common';
+import { BlockchainAccountsPage } from '../../pages/accounts-page/blockchain-accounts-page';
 import {
   BlockchainBalancesPage,
 } from '../../pages/balances-page/blockchain-balances-page';
@@ -6,8 +8,6 @@ import { DashboardPage } from '../../pages/dashboard-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { TagManager } from '../../pages/tag-manager';
 import { createUser } from '../../utils/user';
-import { BlockchainAccountsPage } from '../../pages/accounts-page/blockchain-accounts-page';
-import type { FixtureBlockchainAccount } from '../../support/types';
 
 const PRECISION = 0.1;
 

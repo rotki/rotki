@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AppImage from '@/components/common/AppImage.vue';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { Component } from 'vue';
+import AppImage from '@/components/common/AppImage.vue';
 
 withDefaults(
   defineProps<{

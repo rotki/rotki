@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { Section } from '@/types/status';
-import { Routes } from '@/router/routes';
-import { useExchangesStore } from '@/store/exchanges';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { useStatusStore } from '@/store/status';
-import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import InternalLink from '@/components/helper/InternalLink.vue';
+import type { KrakenStakingDateFilter } from '@/types/staking';
+import type { RouteLocationRaw } from 'vue-router';
 import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
 import { useBalances } from '@/composables/balances';
+import { Routes } from '@/router/routes';
+import { useExchangesStore } from '@/store/exchanges';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import type { RouteLocationRaw } from 'vue-router';
-import type { KrakenStakingDateFilter } from '@/types/staking';
+import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
 
 const filters = ref<KrakenStakingDateFilter>({});
 

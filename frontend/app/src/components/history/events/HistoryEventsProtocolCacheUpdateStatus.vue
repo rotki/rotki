@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useHistoryStore } from '@/store/history';
-import { useDefiMetadata } from '@/composables/defi/metadata';
-import DefiIcon from '@/components/defi/DefiIcon.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { ProtocolCacheUpdatesData } from '@/types/websocket-messages';
+import type { DataTableColumn } from '@rotki/ui-library';
+import DefiIcon from '@/components/defi/DefiIcon.vue';
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { useDefiMetadata } from '@/composables/defi/metadata';
+import { useHistoryStore } from '@/store/history';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 type Data = ProtocolCacheUpdatesData & {
   key: string;

@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { RuiIcons, contextColors } from '@rotki/ui-library';
 import { HistoryEventEntryType } from '@rotki/common';
+import { contextColors, RuiIcons } from '@rotki/ui-library';
+import { z } from 'zod';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 

@@ -1,18 +1,18 @@
 <script setup lang="ts">
+import type { RoundingMode } from '@/types/settings/frontend-settings';
+import CopyTooltip from '@/components/helper/CopyTooltip.vue';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useCopy } from '@/composables/copy';
+import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
+import { displayAmountFormatter } from '@/data/amount-formatter';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { BigNumber } from '@rotki/common';
 import { or } from '@vueuse/math';
-import { displayAmountFormatter } from '@/data/amount-formatter';
-import { CURRENCY_USD, type Currency, type ShownCurrency, useCurrencies } from '@/types/currencies';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
-import { useCopy } from '@/composables/copy';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import CopyTooltip from '@/components/helper/CopyTooltip.vue';
-import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{

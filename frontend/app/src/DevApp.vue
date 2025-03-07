@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { uniqueStrings } from '@/utils/data';
-import { useLocationStore } from '@/store/locations';
 import { useSupportedChains } from '@/composables/info/chains';
+import { Routes } from '@/router/routes';
+import { useLocationStore } from '@/store/locations';
+import { uniqueStrings } from '@/utils/data';
 
 function reset() {
   sessionStorage.removeItem('vuex');

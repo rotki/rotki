@@ -1,6 +1,6 @@
-import { fetchExternalAsync } from '@/services/utils';
-import { api } from '@/services/rotkehlchen-api';
 import type { PendingTask } from '@/types/task';
+import { api } from '@/services/rotkehlchen-api';
+import { fetchExternalAsync } from '@/services/utils';
 
 interface UseLiquityApiReturn {
   fetchLiquityBalances: () => Promise<PendingTask>;

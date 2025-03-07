@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
-import { getDateInputISOFormat } from '@/utils/date';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import type { KrakenStakingDateFilter } from '@/types/staking';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import { getDateInputISOFormat } from '@/utils/date';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 

@@ -1,17 +1,4 @@
-import { Blockchain } from '@rotki/common';
-import { TaskType } from '@/types/task-type';
-import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
-import { defaultCollectionState } from '@/utils/collection';
-import { isTaskCancelled } from '@/utils';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
-import { useItemCache } from '@/composables/item-cache';
-import { useSupportedChains } from '@/composables/info/chains';
-import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
 import type {
   AddressBookEntries,
   AddressBookEntry,
@@ -22,7 +9,20 @@ import type {
   EthNames,
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
-import type { Collection } from '@/types/collection';
+import type { MaybeRef } from '@vueuse/core';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useItemCache } from '@/composables/item-cache';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { defaultCollectionState } from '@/utils/collection';
+import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
+import { Blockchain } from '@rotki/common';
 
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());

@@ -1,8 +1,8 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({

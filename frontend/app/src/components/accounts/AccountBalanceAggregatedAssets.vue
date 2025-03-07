@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { balanceSum } from '@/utils/calculation';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBalanceSorting } from '@/composables/balances/sorting';
-import AssetBalances from '@/components/AssetBalances.vue';
 import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
+import AssetBalances from '@/components/AssetBalances.vue';
+import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { balanceSum } from '@/utils/calculation';
 
 const props = defineProps<{
   groupId: string;

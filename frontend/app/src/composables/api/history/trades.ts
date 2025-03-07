@@ -1,3 +1,7 @@
+import type { CollectionResponse } from '@/types/collection';
+import type { EntryWithMeta } from '@/types/history/meta';
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -7,10 +11,6 @@ import {
   validWithParamsSessionAndExternalService,
 } from '@/services/utils';
 import { type NewTrade, type Trade, TradeCollectionResponse, type TradeRequestPayload } from '@/types/history/trade';
-import type { CollectionResponse } from '@/types/collection';
-import type { EntryWithMeta } from '@/types/history/meta';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
 
 interface UseTradesApiReturn {
   getTradesTask: (payload: TradeRequestPayload) => Promise<PendingTask>;

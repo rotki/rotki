@@ -1,7 +1,7 @@
+import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
+import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
-import type { ActionResult } from '@rotki/common';
-import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 
 interface UseQueriedAddressApiReturn {
   queriedAddresses: () => Promise<QueriedAddresses>;

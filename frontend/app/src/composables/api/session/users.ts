@@ -1,9 +1,9 @@
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { setupTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validAccountOperationStatus, validAuthorizedStatus, validStatus } from '@/services/utils';
 import { AccountSession, type CreateAccountPayload, type LoginCredentials } from '@/types/login';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
 
 interface UseUserApiReturn {
   createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;

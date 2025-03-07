@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { Routes } from '@/router/routes';
-import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
-import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useRefresh } from '@/composables/balances/refresh';
-import { TaskType } from '@/types/task-type';
+import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
+import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
+import { Routes } from '@/router/routes';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 import ExchangeBox from './ExchangeBox.vue';
 
 const { exchanges } = storeToRefs(useExchangeBalancesStore());

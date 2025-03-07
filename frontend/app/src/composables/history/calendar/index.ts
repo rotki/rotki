@@ -1,3 +1,9 @@
+import type { Collection } from '@/types/collection';
+import type { ActionResult } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse } from '@/services/utils';
 import {
   type AddCalendarEventResponse,
   type CalendarEvent,
@@ -5,13 +11,7 @@ import {
   type CalendarEventPayload,
   type CalendarEventRequestPayload,
 } from '@/types/history/calendar';
-import { api } from '@/services/rotkehlchen-api';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { handleResponse } from '@/services/utils';
 import { mapCollectionResponse } from '@/utils/collection';
-import type { Collection } from '@/types/collection';
-import type { MaybeRef } from '@vueuse/core';
-import type { ActionResult } from '@rotki/common';
 
 interface UseCalendarApiReturn {
   fetchCalendarEvents: (filter: MaybeRef<CalendarEventRequestPayload>) => Promise<Collection<CalendarEvent>>;

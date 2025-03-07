@@ -1,9 +1,9 @@
+import type { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
-import { checkIfDevelopment } from '@shared/utils';
 import { assert } from '@rotki/common';
-import type { Buffer } from 'node:buffer';
+import { checkIfDevelopment } from '@shared/utils';
 
 type Callback = (addresses: string[]) => void;
 

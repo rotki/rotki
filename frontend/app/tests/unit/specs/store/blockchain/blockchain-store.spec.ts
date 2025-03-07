@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { Blockchain } from '@rotki/common';
-import { useBlockchainStore } from '@/store/blockchain';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { Blockchain } from '@rotki/common';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('useBlockchainStore', () => {
   let store: ReturnType<typeof useBlockchainStore>;

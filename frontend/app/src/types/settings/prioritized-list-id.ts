@@ -1,6 +1,6 @@
+import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 
 export const EmptyListId = 'empty_list_id';
 

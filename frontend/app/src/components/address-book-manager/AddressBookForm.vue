@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { each } from 'es-toolkit/compat';
-import { Blockchain } from '@rotki/common';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { nullDefined, useRefPropVModel } from '@/utils/model';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useBlockie } from '@/composables/accounts/blockie';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { SelectOptions } from '@/types/common';
+import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import AppImage from '@/components/common/AppImage.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import { useBlockie } from '@/composables/accounts/blockie';
 import { useFormStateWatcher } from '@/composables/form';
-import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
-import type { SelectOptions } from '@/types/common';
-import type { ValidationErrors } from '@/types/api/errors';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { nullDefined, useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import { Blockchain } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { each } from 'es-toolkit/compat';
 
 const modelValue = defineModel<AddressBookPayload>({ required: true });
 const forAllChains = defineModel<boolean>('forAllChains', { required: true });

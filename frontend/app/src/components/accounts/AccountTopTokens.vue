@@ -1,14 +1,14 @@
 <script lang="ts" setup>
-import { sortDesc } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import type { AssetBalance } from '@rotki/common';
+import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useBlockchainStore } from '@/store/blockchain';
+import { sortDesc } from '@/utils/bignumbers';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { balanceSum } from '@/utils/calculation';
 
 const props = defineProps<{
   chains: string[];

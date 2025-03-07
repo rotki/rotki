@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { ArgumentParser } from 'argparse';
-import { build } from 'vite';
-import { config } from 'dotenv';
 import consola from 'consola';
+import { config } from 'dotenv';
 import { isEmpty } from 'es-toolkit/compat';
+import { build } from 'vite';
 import { type BuildOutput, sharedConfig } from './setup';
 
 process.env.NODE_ENV = 'production';

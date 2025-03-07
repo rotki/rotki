@@ -1,5 +1,4 @@
-import { camelCase } from 'es-toolkit';
-import { includes } from '@/utils/blockchain/accounts/common';
+import type { Collection } from '@/types/collection';
 import type {
   ManualBalance,
   ManualBalanceRequestPayload,
@@ -7,7 +6,8 @@ import type {
   ManualBalanceWithValue,
 } from '@/types/manual-balances';
 import type BigNumber from 'bignumber.js';
-import type { Collection } from '@/types/collection';
+import { includes } from '@/utils/blockchain/accounts/common';
+import { camelCase } from 'es-toolkit';
 
 interface Filters {
   readonly tags?: string[];

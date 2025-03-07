@@ -1,5 +1,5 @@
-import { useRefMap } from '@/composables/utils/useRefMap';
 import type { ComputedRef, Ref } from 'vue';
+import { useRefMap } from '@/composables/utils/useRefMap';
 
 interface UseQueryStatusReturn<T extends { period?: [number, number] }> {
   sortedQueryStatus: Ref<T[]>;

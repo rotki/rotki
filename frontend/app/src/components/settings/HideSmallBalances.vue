@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { omit } from 'es-toolkit';
-import useVuelidate from '@vuelidate/core';
-import { minValue, required } from '@vuelidate/validators';
-import { BalanceSource, type BalanceUsdValueThreshold } from '@/types/settings/frontend-settings';
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { useTaskStore } from '@/store/tasks';
+import { BalanceSource, type BalanceUsdValueThreshold } from '@/types/settings/frontend-settings';
+import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { minValue, required } from '@vuelidate/validators';
+import { omit } from 'es-toolkit';
 
 const props = defineProps<{
   source: BalanceSource;

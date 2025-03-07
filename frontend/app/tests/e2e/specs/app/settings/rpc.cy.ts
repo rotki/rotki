@@ -1,6 +1,6 @@
 import { RotkiApp } from '../../../pages/rotki-app';
-import { createUser } from '../../../utils/user';
 import { RpcSettingsPage } from '../../../pages/rpc-settings-page';
+import { createUser } from '../../../utils/user';
 
 describe('settings::rpc', () => {
   let username: string;

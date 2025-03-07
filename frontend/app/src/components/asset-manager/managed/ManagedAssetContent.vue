@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { isEqual, keyBy } from 'es-toolkit';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useAssetManagementApi } from '@/composables/api/assets/management';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
-import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
+import type { Nullable, SupportedAsset } from '@rotki/common';
 import ManagedAssetFormDialog from '@/components/asset-manager/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/components/asset-manager/managed/ManagedAssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/types/asset';
-import type { Nullable, SupportedAsset } from '@rotki/common';
+import { isEqual, keyBy } from 'es-toolkit';
 
 const props = withDefaults(
   defineProps<{

@@ -1,14 +1,14 @@
-import { Blockchain } from '@rotki/common';
-import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { arrayify } from '@/utils/array';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import { useTokenDetection } from '@/composables/balances/token-detection';
-import { useSupportedChains } from '@/composables/info/chains';
 import type { MaybeRef } from '@vueuse/core';
+import { useTokenDetection } from '@/composables/balances/token-detection';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
+import { arrayify } from '@/utils/array';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { Blockchain } from '@rotki/common';
 
 export const useRefresh = createSharedComposable(() => {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();

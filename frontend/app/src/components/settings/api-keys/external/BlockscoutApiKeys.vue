@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import BlockscoutApiKey from '@/components/settings/api-keys/external/BlockscoutApiKey.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import BlockscoutApiKey from '@/components/settings/api-keys/external/BlockscoutApiKey.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 
 const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);

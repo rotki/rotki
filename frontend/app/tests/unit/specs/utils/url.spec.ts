@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { getDomain } from '@/utils/url';
+import { describe, expect, it } from 'vitest';
 
 describe('utils/url', () => {
   it('default', () => {

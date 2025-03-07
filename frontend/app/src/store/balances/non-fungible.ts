@@ -1,16 +1,3 @@
-import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
-import { logger } from '@/utils/logging';
-import { mapCollectionResponse } from '@/utils/collection';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useNftBalancesApi } from '@/composables/api/balances/nft';
-import { useStatusUpdater } from '@/composables/status';
-import type { BigNumber } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {
   NonFungibleBalance,
@@ -18,6 +5,19 @@ import type {
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
 import type { TaskMeta } from '@/types/task';
+import type { BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import { useNftBalancesApi } from '@/composables/api/balances/nft';
+import { useStatusUpdater } from '@/composables/status';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
+import { Module } from '@/types/modules';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { mapCollectionResponse } from '@/utils/collection';
+import { logger } from '@/utils/logging';
 
 export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', () => {
   const nonFungibleTotalValue = ref<BigNumber>(Zero);

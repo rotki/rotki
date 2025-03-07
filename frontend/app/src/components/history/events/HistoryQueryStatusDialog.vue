@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
-import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
-import EvmTransactionQueryStatus from '@/components/history/events/tx/query-status/EvmTransactionQueryStatus.vue';
-import HistoryEventsQueryStatus from '@/components/history/events/query-status/HistoryEventsQueryStatus.vue';
-import type { Blockchain } from '@rotki/common';
 import type {
   EvmTransactionQueryData,
   EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
+import type { Blockchain } from '@rotki/common';
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
+import HistoryEventsQueryStatus from '@/components/history/events/query-status/HistoryEventsQueryStatus.vue';
+import EvmTransactionQueryStatus from '@/components/history/events/tx/query-status/EvmTransactionQueryStatus.vue';
 
 interface HistoryQueryStatusDialogProps {
   onlyChains?: Blockchain[];

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common';
-import { useTemplateRef } from 'vue';
-import { kebabCase } from 'es-toolkit';
-import { isOfEventType } from '@/utils/history/events';
+import type { HistoryEvent } from '@/types/history/events';
 import AssetMovementEventForm from '@/components/history/events/forms/AssetMovementEventForm.vue';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
-import type { HistoryEvent } from '@/types/history/events';
+import { isOfEventType } from '@/utils/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
+import { kebabCase } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 
 interface FormComponent {
   save: () => Promise<boolean>;

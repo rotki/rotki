@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/types/filtering';
+import FilterEntry from '@/components/table-filter/FilterEntry.vue';
+import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { compareTextByKeyword } from '@/utils/assets';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
-import FilterEntry from '@/components/table-filter/FilterEntry.vue';
-import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
-import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
   matches: MatchedKeywordWithBehaviour<any>;

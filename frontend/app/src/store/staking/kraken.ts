@@ -1,14 +1,3 @@
-import { omit } from 'es-toolkit';
-import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { balanceSum } from '@/utils/calculation';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useStatusUpdater } from '@/composables/status';
-import { useKrakenApi } from '@/composables/api/staking/kraken';
 import type {
   KrakenStakingDateFilter,
   KrakenStakingEvents,
@@ -16,6 +5,17 @@ import type {
 } from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
 import type { AssetBalance } from '@rotki/common';
+import { useKrakenApi } from '@/composables/api/staking/kraken';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useStatusUpdater } from '@/composables/status';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { balanceSum } from '@/utils/calculation';
+import { logger } from '@/utils/logging';
+import { omit } from 'es-toolkit';
 
 function defaultPagination(): KrakenStakingPagination {
   return {

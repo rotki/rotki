@@ -1,9 +1,9 @@
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
-import { KrakenStakingEvents, type KrakenStakingPagination, emptyPagination } from '@/types/staking';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
+import { emptyPagination, KrakenStakingEvents, type KrakenStakingPagination } from '@/types/staking';
 
 interface UseKrakenApiReturn {
   refreshKrakenStaking: () => Promise<PendingTask>;

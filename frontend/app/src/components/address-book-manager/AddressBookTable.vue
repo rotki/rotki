@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useNotificationsStore } from '@/store/notifications';
-import { useConfirmStore } from '@/store/confirm';
-import RowActions from '@/components/helper/RowActions.vue';
+import type { Collection } from '@/types/collection';
+import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
-import type { Collection } from '@/types/collection';
+import RowActions from '@/components/helper/RowActions.vue';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useConfirmStore } from '@/store/confirm';
+import { useNotificationsStore } from '@/store/notifications';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 

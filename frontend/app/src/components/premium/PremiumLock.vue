@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useLinks } from '@/composables/links';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useLinks } from '@/composables/links';
 
 defineOptions({
   inheritAttrs: false,

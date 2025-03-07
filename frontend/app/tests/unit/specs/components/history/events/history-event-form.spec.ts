@@ -1,11 +1,11 @@
-import { type VueWrapper, mount } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
-import { HistoryEventEntryType } from '@rotki/common';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import flushPromises from 'flush-promises';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import { setupDayjs } from '@/utils/date';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { setupDayjs } from '@/utils/date';
+import { HistoryEventEntryType } from '@rotki/common';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { createPinia, setActivePinia } from 'pinia';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({

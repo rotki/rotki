@@ -1,17 +1,5 @@
-import dayjs from 'dayjs';
-import { displayDateFormatter } from '@/data/date-formatter';
-import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
-import {
-  assetsApi,
-  balancesApi,
-  statisticsApi,
-  userSettings,
-  utilsApi,
-} from '@/premium/premium-apis';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGraph } from '@/composables/graphs';
+import type { DateFormat } from '@/types/date-format';
+import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type {
   DataUtilities,
   DateUtilities,
@@ -21,8 +9,20 @@ import type {
   Themes,
   TimeUnit,
 } from '@rotki/common';
-import type { DateFormat } from '@/types/date-format';
-import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
+import { useGraph } from '@/composables/graphs';
+import { displayDateFormatter } from '@/data/date-formatter';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import {
+  assetsApi,
+  balancesApi,
+  statisticsApi,
+  userSettings,
+  utilsApi,
+} from '@/premium/premium-apis';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import dayjs from 'dayjs';
 
 const date: DateUtilities = {
   convertToTimestamp(date: string, dateFormat?: string): number {

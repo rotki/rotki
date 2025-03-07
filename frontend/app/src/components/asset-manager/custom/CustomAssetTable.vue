@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { some } from 'es-toolkit/compat';
-import CopyButton from '@/components/helper/CopyButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import type { Filters, Matcher } from '@/composables/filters/custom-assets';
 import type { CustomAsset } from '@/types/asset';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { some } from 'es-toolkit/compat';
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 

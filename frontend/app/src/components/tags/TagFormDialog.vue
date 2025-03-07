@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useTagStore } from '@/store/session/tags';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import TagForm from '@/components/tags/TagForm.vue';
 import type { Tag } from '@/types/tags';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import TagForm from '@/components/tags/TagForm.vue';
+import { useTagStore } from '@/store/session/tags';
 
 const modelValue = defineModel<Tag | undefined>({ required: true });
 

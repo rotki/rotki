@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { ValidationErrors } from '@/types/api/errors';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import SimpleRpcNodeManagerForm from '@/components/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { SettingLocation, useSettings } from '@/composables/settings';
 import RowActions from '@/components/helper/RowActions.vue';
+import SimpleRpcNodeManagerForm from '@/components/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
+import { SettingLocation, useSettings } from '@/composables/settings';
 import { useConfirmStore } from '@/store/confirm';
-import type { ValidationErrors } from '@/types/api/errors';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = defineProps<{
   setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint';

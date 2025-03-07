@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { CanceledError } from 'axios';
-import { uniqueObjects } from '@/utils/data';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
+import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { uniqueObjects } from '@/utils/data';
+import { CanceledError } from 'axios';
 
 defineOptions({
   inheritAttrs: false,

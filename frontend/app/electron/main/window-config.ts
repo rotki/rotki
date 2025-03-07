@@ -1,6 +1,6 @@
+import type { State } from 'electron-window-state';
 import path from 'node:path';
 import { screen } from 'electron';
-import type { State } from 'electron-window-state';
 
 interface ScreenDimensions {
   width: number;

@@ -1,19 +1,5 @@
-import { camelCase, omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
-import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
-import { aggregateTotals, getAccountBalance, hasAccountAddress, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
-import { mergeAssociatedAssets, sum } from '@/utils/balances';
-import { updateBlockchainAssetBalances } from '@/utils/prices';
-import { removeTags } from '@/utils/tags';
-import { sortDesc } from '@/utils/bignumbers';
-import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
-import { assetSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
-import type { MaybeRef } from '@vueuse/core';
+import type { AssetBalances } from '@/types/balances';
+import type { BlockchainTotal } from '@/types/blockchain';
 import type {
   AccountPayload,
   Accounts,
@@ -25,12 +11,26 @@ import type {
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
-import type { BlockchainTotal } from '@/types/blockchain';
 import type { BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
+import type { Collection } from '@/types/collection';
 import type { AssetPrices } from '@/types/prices';
+import type { MaybeRef } from '@vueuse/core';
 import type { Ref } from 'vue';
-import type { AssetBalances } from '@/types/balances';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { mergeAssociatedAssets, sum } from '@/utils/balances';
+import { sortDesc } from '@/utils/bignumbers';
+import { aggregateTotals, getAccountBalance, hasAccountAddress, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
+import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
+import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
+import { assetSum } from '@/utils/calculation';
+import { uniqueStrings } from '@/utils/data';
+import { updateBlockchainAssetBalances } from '@/utils/prices';
+import { removeTags } from '@/utils/tags';
+import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
+import { camelCase, omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});

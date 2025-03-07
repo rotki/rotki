@@ -1,3 +1,15 @@
+import type { ActionStatus } from '@/types/action';
+import type { FetchPricePayload } from '@/types/blockchain/accounts';
+import type { Balances } from '@/types/blockchain/balances';
+import type { TaskMeta } from '@/types/task';
+import type { BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import { usePriceApi } from '@/composables/api/balances/price';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useStatusUpdater } from '@/composables/status';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import {
   AssetPriceResponse,
@@ -9,22 +21,10 @@ import {
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
-import { convertFromTimestamp } from '@/utils/date';
-import { logger } from '@/utils/logging';
 import { isTaskCancelled } from '@/utils';
 import { chunkArray } from '@/utils/data';
-import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
-import { usePriceApi } from '@/composables/api/balances/price';
-import { useStatusUpdater } from '@/composables/status';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import type { TaskMeta } from '@/types/task';
-import type { Balances } from '@/types/blockchain/balances';
-import type { MaybeRef } from '@vueuse/core';
-import type { BigNumber } from '@rotki/common';
-import type { ActionStatus } from '@/types/action';
-import type { FetchPricePayload } from '@/types/blockchain/accounts';
+import { convertFromTimestamp } from '@/utils/date';
+import { logger } from '@/utils/logging';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});

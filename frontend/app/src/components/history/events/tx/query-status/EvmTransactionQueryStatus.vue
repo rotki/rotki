@@ -1,9 +1,9 @@
 <script lang="ts" setup>
+import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+import type { Blockchain } from '@rotki/common';
 import TransactionQueryStatusCurrent from './TransactionQueryStatusCurrent.vue';
 import TransactionQueryStatusDetails from './TransactionQueryStatusDetails.vue';
 import TransactionQueryStatusSteps from './TransactionQueryStatusSteps.vue';
-import type { EvmTransactionQueryData } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common';
 
 const props = withDefaults(defineProps<{
   onlyChains?: Blockchain[];

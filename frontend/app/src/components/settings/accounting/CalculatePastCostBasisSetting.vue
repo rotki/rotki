@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const calculatePastCostBasis = ref(false);
 const { calculatePastCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());

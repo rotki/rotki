@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { omit, uniqBy } from 'es-toolkit';
-import { type Account, Blockchain } from '@rotki/common';
-import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
-import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
-import { createAccount } from '@/utils/blockchain/accounts/create';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import AccountDisplay from '@/components/display/AccountDisplay.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
-import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
+import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import { createAccount } from '@/utils/blockchain/accounts/create';
+import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
+import { type Account, Blockchain } from '@rotki/common';
+import { omit, uniqBy } from 'es-toolkit';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
 

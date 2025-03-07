@@ -1,9 +1,9 @@
-import { AxiosError, type AxiosResponse } from 'axios';
-import { checkIfDevelopment } from '@shared/utils';
+import { camelCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/types/dynamic-messages';
-import { camelCaseTransformer } from '@/services/axios-transformers';
 import { logger } from '@/utils/logging';
+import { checkIfDevelopment } from '@shared/utils';
+import { AxiosError, type AxiosResponse } from 'axios';
 
 export const serializer = {
   read: (v: any): any => (v ? JSON.parse(v) : null),

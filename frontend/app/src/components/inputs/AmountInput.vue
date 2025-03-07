@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import IMask, { type InputMask } from 'imask';
-import { RuiTextField } from '@rotki/ui-library';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { logger } from '@/utils/logging';
+import { RuiTextField } from '@rotki/ui-library';
+import IMask, { type InputMask } from 'imask';
 
 interface AmountInputProps {
   integer?: boolean;

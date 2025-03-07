@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ThemeSwitch } from '@/premium/premium';
-import { usePremium } from '@/composables/premium';
 import ThemeSwitchLock from '@/components/premium/ThemeSwitchLock.vue';
+import { usePremium } from '@/composables/premium';
+import { ThemeSwitch } from '@/premium/premium';
 
 withDefaults(
   defineProps<{

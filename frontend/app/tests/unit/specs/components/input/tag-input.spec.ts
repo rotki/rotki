@@ -1,9 +1,9 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
+import TagInput from '@/components/inputs/TagInput.vue';
+import TagForm from '@/components/tags/TagForm.vue';
+import { useTagStore } from '@/store/session/tags';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import TagInput from '@/components/inputs/TagInput.vue';
-import { useTagStore } from '@/store/session/tags';
-import TagForm from '@/components/tags/TagForm.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/tags', () => ({

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { CurrencyLocation } from '@/types/currency-location';
+import { DateFormat } from '@/types/date-format';
 import {
   BlockchainRefreshButtonBehaviour,
   DashboardTableType,
@@ -9,9 +9,9 @@ import {
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { DateFormat } from '@/types/date-format';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { OtherSettings } from '@/types/user';
+import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
+import { describe, expect, it } from 'vitest';
 
 describe('types/user', () => {
   it('otherSettings parsed correctly', () => {

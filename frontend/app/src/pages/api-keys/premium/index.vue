@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { usePremiumStore } from '@/store/session/premium';
-import { useConfirmStore } from '@/store/confirm';
-import { useSettingsStore } from '@/store/settings';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useInterop } from '@/composables/electron-interop';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useInterop } from '@/composables/electron-interop';
+import { useConfirmStore } from '@/store/confirm';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { usePremiumStore } from '@/store/session/premium';
+import { useSettingsStore } from '@/store/settings';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

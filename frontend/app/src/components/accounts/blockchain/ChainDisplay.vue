@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useSupportedChains } from '@/composables/info/chains';
-import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import ListItem from '@/components/common/ListItem.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import { useSupportedChains } from '@/composables/info/chains';
 
 const props = withDefaults(
   defineProps<{

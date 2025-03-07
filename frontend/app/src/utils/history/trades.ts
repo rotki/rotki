@@ -1,5 +1,5 @@
-import dayjs from 'dayjs';
 import { type Trade, TradeType } from '@/types/history/trade';
+import dayjs from 'dayjs';
 
 export function createNewTrade(): Trade {
   return {

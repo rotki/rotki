@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { CURRENCY_USD } from '@/types/currencies';
-import { Section } from '@/types/status';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useStatusStore } from '@/store/status';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import DateDisplay from '@/components/display/DateDisplay.vue';
+import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
+import type { AssetBalance } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
-import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { AssetBalance } from '@rotki/common';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { CURRENCY_USD } from '@/types/currencies';
+import { Section } from '@/types/status';
 
 const props = defineProps<{
   exchange: 'binance' | 'binanceus';

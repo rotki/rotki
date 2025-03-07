@@ -1,7 +1,7 @@
 <script lang="ts" setup>
+import type { LoginCredentials } from '@/types/login';
 import CreateAccountCredentialsForm
   from '@/components/account-management/create-account/credentials/CreateAccountCredentialsForm.vue';
-import type { LoginCredentials } from '@/types/login';
 
 withDefaults(
   defineProps<{

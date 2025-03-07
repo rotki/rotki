@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useSupportedChains } from '@/composables/info/chains';
-import LocationIcon from '@/components/history/LocationIcon.vue';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 const { t } = useI18n();
 

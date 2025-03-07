@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
+import type { ComponentExposed } from 'vue-component-type-helpers';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
+import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import { useNotificationsStore } from '@/store/notifications';
-import type { ComponentExposed } from 'vue-component-type-helpers';
+import { externalLinks } from '@shared/external-links';
 
 const emit = defineEmits<{
   (e: 'refresh'): void;

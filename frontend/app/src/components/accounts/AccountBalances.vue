@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { SavedFilterLocation } from '@/types/filtering';
-import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
-import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
-import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
-import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
-import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
-import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchains } from '@/composables/blockchain';
-import { useRefresh } from '@/composables/balances/refresh';
-import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
-import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalanceAggregatedAssets.vue';
-import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import TagFilter from '@/components/inputs/TagFilter.vue';
-import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
-import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
-import type { LocationQuery } from '@/types/route';
-import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
 } from '@/types/blockchain/accounts';
-import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import type { LocationQuery } from '@/types/route';
+import type { ComponentExposed } from 'vue-component-type-helpers';
+import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalanceAggregatedAssets.vue';
+import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
+import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
+import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
+import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
+import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useRefresh } from '@/composables/balances/refresh';
+import { useBlockchains } from '@/composables/blockchain';
+import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useBlockchainStore } from '@/store/blockchain';
+import { SavedFilterLocation } from '@/types/filtering';
+import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
+import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
 
 const props = defineProps<{
   category: string;

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type Currency, useCurrencies } from '@/types/currencies';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSettingsStore } from '@/store/settings';
 import ListItem from '@/components/common/ListItem.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useCurrencyUpdate } from '@/composables/use-currency-update';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { type Currency, useCurrencies } from '@/types/currencies';
 
 const { update } = useSettingsStore();
 const { currency } = storeToRefs(useGeneralSettingsStore());

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const enableAliasNames = ref<boolean>(true);
 const { enableAliasNames: enabled } = storeToRefs(useFrontendSettingsStore());

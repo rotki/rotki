@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { CURRENCY_USD } from '@/types/currencies';
-import { isNft } from '@/utils/nft';
-import { BalanceType } from '@/types/balances';
-import { bigNumberSum } from '@/utils/calculation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
+import type { BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector
   from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ConfirmSnapshotConflictReplacementDialog
   from '@/components/snapshots/ConfirmSnapshotConflictReplacementDialog.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
-import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { BigNumber } from '@rotki/common';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { BalanceType } from '@/types/balances';
+import { CURRENCY_USD } from '@/types/currencies';
+import { bigNumberSum } from '@/utils/calculation';
+import { isNft } from '@/utils/nft';
 
 const props = defineProps<{
   modelValue: Snapshot;

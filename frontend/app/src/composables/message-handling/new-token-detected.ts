@@ -1,7 +1,7 @@
-import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { Routes } from '@/router/routes';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import type { NewDetectedToken } from '@/types/websocket-messages';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
+import { Routes } from '@/router/routes';
+import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
 
 interface UseNewTokenDetectedHandler {
   handle: (data: NewDetectedToken, notifications: Notification[]) => Notification | null;

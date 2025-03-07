@@ -1,8 +1,8 @@
-import { camelCase } from 'es-toolkit';
-import { sum } from '@/utils/balances';
-import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
+import { sum } from '@/utils/balances';
+import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
+import { camelCase } from 'es-toolkit';
 
 function filterValidator(
   validator: EthereumValidator,

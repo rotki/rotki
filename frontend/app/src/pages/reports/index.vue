@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { type Message, Priority, Severity } from '@rotki/common';
-import { TaskType } from '@/types/task-type';
-import { displayDateFormatter } from '@/data/date-formatter';
+import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
+import type { TaskMeta } from '@/types/task';
+import ErrorScreen from '@/components/error/ErrorScreen.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
-import { NoteLocation } from '@/types/notes';
+import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
+import ReportsTable from '@/components/profitloss/ReportsTable.vue';
+import { useReportsApi } from '@/composables/api/reports';
+import { useInterop } from '@/composables/electron-interop';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { Routes } from '@/router/routes';
-import { downloadFileByTextContent } from '@/utils/download';
-import { isTaskCancelled } from '@/utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useReportsStore } from '@/store/reports';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
-import { useInterop } from '@/composables/electron-interop';
-import { useReportsApi } from '@/composables/api/reports';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
-import type { TaskMeta } from '@/types/task';
-import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
+import { NoteLocation } from '@/types/notes';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { downloadFileByTextContent } from '@/utils/download';
+import { type Message, Priority, Severity } from '@rotki/common';
 
 definePage({
   meta: {

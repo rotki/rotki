@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';
+import { z } from 'zod';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 

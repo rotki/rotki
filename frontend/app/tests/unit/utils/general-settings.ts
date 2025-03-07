@@ -1,8 +1,8 @@
-import { useCurrencies } from '@/types/currencies';
-import { defaultGeneralSettings } from '@/data/factories';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Module } from '@/types/modules';
 import type { GeneralSettings } from '@/types/user';
+import { defaultGeneralSettings } from '@/data/factories';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useCurrencies } from '@/types/currencies';
 
 export function updateGeneralSettings(settings: Partial<GeneralSettings>) {
   const settingsStore = useGeneralSettingsStore();

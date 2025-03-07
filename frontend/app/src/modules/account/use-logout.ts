@@ -1,11 +1,11 @@
-import { promiseTimeout } from '@vueuse/core';
-import { useAppNavigation } from '@/composables/navigation';
-import { logger } from '@/utils/logging';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useInterop } from '@/composables/electron-interop';
-import { useMessageStore } from '@/store/message';
-import { useUsersApi } from '@/composables/api/session/users';
 import type { ActionStatus } from '@/types/action';
+import { useUsersApi } from '@/composables/api/session/users';
+import { useInterop } from '@/composables/electron-interop';
+import { useAppNavigation } from '@/composables/navigation';
+import { useMessageStore } from '@/store/message';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { logger } from '@/utils/logging';
+import { promiseTimeout } from '@vueuse/core';
 
 interface UseLogoutReturn {
   logout: (navigate?: boolean) => Promise<void>;

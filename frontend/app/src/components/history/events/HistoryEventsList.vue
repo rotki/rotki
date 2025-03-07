@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
 import type { HistoryEventEntry } from '@/types/history/events';
+import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
 
 const props = withDefaults(
   defineProps<{

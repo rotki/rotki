@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import { supportedLanguages } from '@/data/supported-language';
-import { SupportedLanguage } from '@/types/settings/frontend-settings';
-import { useLocale } from '@/composables/session/use-locale';
-import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
+import { useLocale } from '@/composables/session/use-locale';
+import { supportedLanguages } from '@/data/supported-language';
+import { SupportedLanguage } from '@/types/settings/frontend-settings';
+import { externalLinks } from '@shared/external-links';
 
 defineOptions({
   inheritAttrs: false,

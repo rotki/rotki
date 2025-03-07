@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
-import { toMessages } from '@/utils/validation';
-import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
-import { useRefPropVModel } from '@/utils/model';
-import { useExchangesStore } from '@/store/exchanges';
-import { useLocationStore } from '@/store/locations';
-import { useLocations } from '@/composables/locations';
-import { useFormStateWatcher } from '@/composables/form';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
+import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useLocations } from '@/composables/locations';
+import { useExchangesStore } from '@/store/exchanges';
+import { useLocationStore } from '@/store/locations';
+import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
+import { useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 
@@ -110,11 +110,11 @@ useFormStateWatcher({
   passphrase,
 }, stateUpdated);
 
-const suggestedName = function (exchange: string): string {
+function suggestedName(exchange: string): string {
   const location = getLocationData(exchange);
   const nonce = get(getExchangeNonce(exchange));
   return location ? `${location.name} ${nonce}` : '';
-};
+}
 
 function toggleEdit() {
   set(editKeys, !get(editKeys));

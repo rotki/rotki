@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import { useRefPropVModel } from '@/utils/model';
-import { useConfirmStore } from '@/store/confirm';
-import { useHistoricPrices } from '@/composables/price-manager/historic';
-import RowActions from '@/components/helper/RowActions.vue';
+import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
+import RowActions from '@/components/helper/RowActions.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HistoricPriceFormDialog from '@/components/price-manager/historic/HistoricPriceFormDialog.vue';
-import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { useHistoricPrices } from '@/composables/price-manager/historic';
+import { useConfirmStore } from '@/store/confirm';
+import { useRefPropVModel } from '@/utils/model';
+import dayjs from 'dayjs';
 
 const { t } = useI18n();
 

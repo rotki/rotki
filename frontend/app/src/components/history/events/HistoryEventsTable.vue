@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { groupBy } from 'es-toolkit';
-import { IgnoreActionType } from '@/types/history/ignored';
-import { Section } from '@/types/status';
-import { isTaskCancelled } from '@/utils';
-import { useConfirmStore } from '@/store/confirm';
-import { useStatusStore } from '@/store/status';
-import { useNotificationsStore } from '@/store/notifications';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useIgnore } from '@/composables/history';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import HistoryEventsList from '@/components/history/events/HistoryEventsList.vue';
-import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import IgnoredInAcountingIcon from '@/components/history/IgnoredInAcountingIcon.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import { isAssetMovementEvent } from '@/utils/history/events';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type {
   EvmChainAndTxHash,
   HistoryEventEntry,
   PullEvmTransactionPayload,
   ShowEventHistoryForm,
 } from '@/types/history/events';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
+import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
+import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
+import HistoryEventsList from '@/components/history/events/HistoryEventsList.vue';
+import IgnoredInAcountingIcon from '@/components/history/IgnoredInAcountingIcon.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useIgnore } from '@/composables/history';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useConfirmStore } from '@/store/confirm';
+import { useNotificationsStore } from '@/store/notifications';
+import { useStatusStore } from '@/store/status';
+import { IgnoreActionType } from '@/types/history/ignored';
+import { Section } from '@/types/status';
+import { isTaskCancelled } from '@/utils';
+import { isAssetMovementEvent } from '@/utils/history/events';
+import { groupBy } from 'es-toolkit';
 
 interface DeleteOrIgnoreEvent {
   readonly event: HistoryEventEntry;

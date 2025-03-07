@@ -1,9 +1,9 @@
-import { z } from 'zod';
-import { arrayify } from '@/utils/array';
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { arrayify } from '@/utils/array';
+import { z } from 'zod';
 
 enum AccountingRuleFilterKeys {
   EVENT_TYPE = 'event_type',

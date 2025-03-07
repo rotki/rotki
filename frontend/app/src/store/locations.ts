@@ -1,6 +1,6 @@
-import { useHistoryApi } from '@/composables/api/history';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AllLocation } from '@/types/location';
+import { useHistoryApi } from '@/composables/api/history';
 
 export const useLocationStore = defineStore('locations', () => {
   const allLocations = ref<AllLocation>({});

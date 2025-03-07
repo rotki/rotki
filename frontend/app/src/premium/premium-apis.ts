@@ -1,20 +1,3 @@
-import { isNft } from '@/utils/nft';
-import { truncateAddress } from '@/utils/truncate';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useStatisticsStore } from '@/store/statistics';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
-import { useAssetManagementApi } from '@/composables/api/assets/management';
-import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { usePriceApi } from '@/composables/api/balances/price';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import type {
   AssetsApi,
   BalancesApi,
@@ -29,6 +12,23 @@ import type {
   UtilsApi,
 } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { usePriceApi } from '@/composables/api/balances/price';
+import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useStatisticsStore } from '@/store/statistics';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { isNft } from '@/utils/nft';
+import { truncateAddress } from '@/utils/truncate';
 
 export function assetsApi(): AssetsApi {
   const { assetInfo, assetName, assetSymbol, tokenAddress } = useAssetInfoRetrieval();

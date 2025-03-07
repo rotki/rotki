@@ -1,6 +1,6 @@
-import { useSupportedChains } from '@/composables/info/chains';
-import type { ComputedRef } from 'vue';
 import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
+import { useSupportedChains } from '@/composables/info/chains';
 
 interface UseBlockchainAccountLoadingReturn {
   isEvm: ComputedRef<boolean>;

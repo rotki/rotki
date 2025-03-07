@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/store/confirm';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCustomPinia } from '../../utils/create-pinia';
 
 describe('store:confirm', () => {

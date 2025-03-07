@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { isEqual } from 'es-toolkit';
-import { uniqueStrings } from '@/utils/data';
-import { getDomain } from '@/utils/url';
-import { useConfirmStore } from '@/store/confirm';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useConfirmStore } from '@/store/confirm';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { uniqueStrings } from '@/utils/data';
+import { getDomain } from '@/utils/url';
+import { isEqual } from 'es-toolkit';
 
 const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
 

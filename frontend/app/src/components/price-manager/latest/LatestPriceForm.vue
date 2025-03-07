@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { useRefPropVModel } from '@/utils/model';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { ManualPriceFormPayload } from '@/types/prices';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
-import type { ManualPriceFormPayload } from '@/types/prices';
-import type { ValidationErrors } from '@/types/api/errors';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<ManualPriceFormPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

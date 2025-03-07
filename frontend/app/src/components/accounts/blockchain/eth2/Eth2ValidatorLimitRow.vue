@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 
 defineProps<{
   colspan: number;

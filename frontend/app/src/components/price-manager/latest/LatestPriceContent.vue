@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { omit } from 'es-toolkit';
-import { isNft } from '@/utils/nft';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useLatestPrices } from '@/composables/price-manager/latest';
-import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
+import RowActions from '@/components/helper/RowActions.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useCommonTableProps } from '@/composables/use-common-table-props';
-import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { isNft } from '@/utils/nft';
+import { omit } from 'es-toolkit';
 
 const { t } = useI18n();
 

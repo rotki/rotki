@@ -1,12 +1,12 @@
-import { Blockchain } from '@rotki/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import flushPromises from 'flush-promises';
-import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
-import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
+import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';
+import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
+import { Blockchain } from '@rotki/common';
+import flushPromises from 'flush-promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/blockchain/addresses-names', async () => {
   const { defaultCollectionState } = await import('@/utils/collection');

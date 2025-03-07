@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import UserNotesList from '@/components/notes/UserNotesList.vue';
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
-import UserNotesList from '@/components/notes/UserNotesList.vue';
 
 const display = defineModel<boolean>({ required: true });
 

@@ -1,6 +1,6 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement } from '@/composables/user/account';
 import { useLogin } from '@/modules/account/use-login';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),

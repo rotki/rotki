@@ -1,8 +1,8 @@
+import type { AllLocationResponse } from '@/types/location';
+import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { ReportProgress } from '@/types/reports';
-import type { ActionResult } from '@rotki/common';
-import type { AllLocationResponse } from '@/types/location';
 
 interface UseHistoryApiReturn {
   getProgress: () => Promise<ReportProgress>;

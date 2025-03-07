@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { isEqual } from 'es-toolkit';
-import { useMessageStore } from '@/store/message';
-import { useSavedFilter } from '@/composables/filters/saved';
-import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
+import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
+import { useSavedFilter } from '@/composables/filters/saved';
+import { useMessageStore } from '@/store/message';
+import { isEqual } from 'es-toolkit';
 
 const props = defineProps<{
   matchers: SearchMatcher<any>[];

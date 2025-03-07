@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common';
-import dayjs from 'dayjs';
-import { helpers, required } from '@vuelidate/validators';
-import { isEmpty } from 'es-toolkit/compat';
-import useVuelidate from '@vuelidate/core';
-import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { toMessages } from '@/utils/validation';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
+import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { DateFormat } from '@/types/date-format';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { toMessages } from '@/utils/validation';
+import { HistoryEventEntryType } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import dayjs from 'dayjs';
+import { isEmpty } from 'es-toolkit/compat';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 

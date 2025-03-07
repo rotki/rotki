@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import AppImage from '@/components/common/AppImage.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import FileUpload from '@/components/import/FileUpload.vue';
+import { useAssetIconApi } from '@/composables/api/assets/icon';
+import { useInterop } from '@/composables/electron-interop';
 import { useAssetIconStore } from '@/store/assets/icon';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
-import { useInterop } from '@/composables/electron-interop';
-import { useAssetIconApi } from '@/composables/api/assets/icon';
-import FileUpload from '@/components/import/FileUpload.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import AppImage from '@/components/common/AppImage.vue';
 
 const props = withDefaults(
   defineProps<{

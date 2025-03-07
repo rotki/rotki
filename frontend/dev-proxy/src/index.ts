@@ -1,14 +1,14 @@
-import fs from 'node:fs';
-import * as querystring from 'node:querystring';
-import process from 'node:process';
+import type * as http from 'node:http';
 import { Buffer } from 'node:buffer';
+import fs from 'node:fs';
+import process from 'node:process';
+import * as querystring from 'node:querystring';
 import bodyParser from 'body-parser';
+import consola, { LogLevels } from 'consola';
 import express, { type Request, type Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import consola, { LogLevels } from 'consola';
 import { statistics } from './mocked-apis/statistics';
 import { enableCors } from './setup';
-import type * as http from 'node:http';
 
 consola.level = LogLevels.debug;
 

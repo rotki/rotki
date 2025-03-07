@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
+import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { BigNumber } from '@rotki/common';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { useTaskStore } from '@/store/tasks';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import type { HistoricalPriceFormPayload } from '@/types/prices';
-import type { BigNumber } from '@rotki/common';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const amount = defineModel<string>('amount', { required: true });
 

@@ -1,28 +1,28 @@
 <script setup lang="ts">
+import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import type { BigNumber } from '@rotki/common';
+import type { DataTableColumn } from '@rotki/ui-library';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { Routes } from '@/router/routes';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
+import { useStatusStore } from '@/store/status';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
-import { getCollectionData } from '@/utils/collection';
 import { calculatePercentage } from '@/utils/calculation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { useStatisticsStore } from '@/store/statistics';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
-import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
-import type { DataTableColumn } from '@rotki/ui-library';
-import type { BigNumber } from '@rotki/common';
+import { getCollectionData } from '@/utils/collection';
 
 const ignoredAssetsHandling: IgnoredAssetsHandlingType = 'exclude';
 

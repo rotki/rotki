@@ -1,6 +1,7 @@
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
+import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import {
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,
@@ -13,7 +14,6 @@ import {
   NftPriceArray,
 } from '@/types/prices';
 import { nonEmptyProperties } from '@/utils/data';
-import type { ActionResult } from '@rotki/common';
 
 interface UseAssetPriceApiReturn {
   fetchHistoricalPrices: (payload?: Partial<ManualPricePayload>) => Promise<HistoricalPrice[]>;

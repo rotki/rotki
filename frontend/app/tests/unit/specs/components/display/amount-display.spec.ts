@@ -1,18 +1,18 @@
-import { BigNumber } from '@rotki/common';
-import { type VueWrapper, mount } from '@vue/test-utils';
-import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Pinia } from 'pinia';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { BigNumber } from '@rotki/common';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';
-import type { Pinia } from 'pinia';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),

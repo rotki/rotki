@@ -1,11 +1,11 @@
-import { isEmpty } from 'es-toolkit/compat';
-import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
-import { handleResponse, validTaskStatus } from '@/services/utils';
-import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
-import { api } from '@/services/rotkehlchen-api';
-import { ApiValidationError } from '@/types/api/errors';
-import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
 import type { ActionResult } from '@rotki/common';
+import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse, validTaskStatus } from '@/services/utils';
+import { ApiValidationError } from '@/types/api/errors';
+import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
+import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
+import { isEmpty } from 'es-toolkit/compat';
 
 interface UseTaskApiReturn {
   queryTasks: () => Promise<TaskStatus>;

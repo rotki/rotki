@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useValidation } from '@/composables/validation';
+import { useMonitorStore } from '@/store/monitor';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useMonitorStore } from '@/store/monitor';
-import { useValidation } from '@/composables/validation';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const props = withDefaults(defineProps<{
   setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';

@@ -1,11 +1,11 @@
-import { logger } from '@/utils/logging';
-import { useConfirmStore } from '@/store/confirm';
-import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
-import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
+import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
+import { useConfirmStore } from '@/store/confirm';
+import { logger } from '@/utils/logging';
 
 function getName(name: ExternalServiceName, chain?: string): string {
   if (name === 'etherscan' || name === 'blockscout') {

@@ -1,8 +1,8 @@
-import { Severity } from '@rotki/common';
-import { useNotificationsStore } from '@/store/notifications';
-import { useSupportedChains } from '@/composables/info/chains';
 import type { EvmAccountsResult } from '@/types/api/accounts';
 import type { AccountPayload } from '@/types/blockchain/accounts';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useNotificationsStore } from '@/store/notifications';
+import { Severity } from '@rotki/common';
 
 interface NotificationParams { account: AccountPayload; isAll: boolean; chains: string[] }
 

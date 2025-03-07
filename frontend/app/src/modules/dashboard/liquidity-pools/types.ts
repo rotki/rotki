@@ -1,5 +1,5 @@
-import z from 'zod';
 import { Balance, type BigNumber, NumericString } from '@rotki/common';
+import z from 'zod';
 
 const PoolAsset = z.object({
   asset: z.string(),

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import RefreshCache from '@/components/settings/data-security/data-management/RefreshCache.vue';
-import PurgeImagesCache from '@/components/settings/data-security/data-management/PurgeImagesCache.vue';
 import PurgeData from '@/components/settings/data-security/data-management/PurgeData.vue';
+import PurgeImagesCache from '@/components/settings/data-security/data-management/PurgeImagesCache.vue';
+import RefreshCache from '@/components/settings/data-security/data-management/RefreshCache.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
 const { t } = useI18n();

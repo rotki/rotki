@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
-import { uniqueStrings } from '@/utils/data';
-import { arrayify } from '@/utils/array';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useSpamAsset } from '@/composables/assets/spam';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
-import HashLink from '@/components/helper/HashLink.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { NewDetectedToken } from '@/types/websocket-messages';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
+import { useSpamAsset } from '@/composables/assets/spam';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { arrayify } from '@/utils/array';
+import { uniqueStrings } from '@/utils/data';
+import { Blockchain } from '@rotki/common';
 
 interface Token extends NewDetectedToken {
   address: string;

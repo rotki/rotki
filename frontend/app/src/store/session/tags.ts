@@ -1,9 +1,9 @@
-import { logger } from '@/utils/logging';
-import { useMessageStore } from '@/store/message';
+import type { ActionStatus } from '@/types/action';
+import type { Tag, Tags } from '@/types/tags';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import type { Tag, Tags } from '@/types/tags';
-import type { ActionStatus } from '@/types/action';
+import { useMessageStore } from '@/store/message';
+import { logger } from '@/utils/logging';
 
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});

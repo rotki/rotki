@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSettingsStore } from '@/store/settings';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
-import AppImage from '@/components/common/AppImage.vue';
 import type { Nullable } from '@rotki/common';
+import AppImage from '@/components/common/AppImage.vue';
+import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
+import { useConfirmStore } from '@/store/confirm';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
 interface ModuleWithStatus {
   readonly identifier: Module;

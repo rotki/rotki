@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { isEqual } from 'es-toolkit';
-import { useAccountLoading } from '@/composables/accounts/loading';
-import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AccountForm from '@/components/accounts/management/AccountForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
+import { useAccountLoading } from '@/composables/accounts/loading';
+import { isEqual } from 'es-toolkit';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 

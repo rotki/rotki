@@ -1,6 +1,6 @@
-import { kebabCase } from 'es-toolkit';
 import type BigNumber from 'bignumber.js';
 import type { Ref, WritableComputedRef } from 'vue';
+import { kebabCase } from 'es-toolkit';
 
 export function useBigNumberModel(model: WritableComputedRef<BigNumber | null | undefined>): WritableComputedRef<string> {
   return computed<string>({

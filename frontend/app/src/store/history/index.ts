@@ -1,11 +1,11 @@
-import { TaskType } from '@/types/task-type';
-import { logger } from '@/utils/logging';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
+import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import { useHistoryApi } from '@/composables/api/history';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import { TransactionChainType } from '@/types/history/events';
-import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
+import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
 
 export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = ref<string[]>([]);

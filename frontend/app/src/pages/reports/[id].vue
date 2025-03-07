@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes';
-import { useReportsStore } from '@/store/reports';
+import type { SelectedReport } from '@/types/reports';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ProgressScreen from '@/components/helper/ProgressScreen.vue';
+import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
+import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
-import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
-import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import type { SelectedReport } from '@/types/reports';
+import { useReportsStore } from '@/store/reports';
+import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

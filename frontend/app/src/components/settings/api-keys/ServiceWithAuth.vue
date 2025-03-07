@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useRefMap } from '@/composables/utils/useRefMap';
 import type { Auth, ExternalServicePayloadWithAuth } from '@/types/user';
+import { useRefMap } from '@/composables/utils/useRefMap';
 
 const props = withDefaults(
   defineProps<{

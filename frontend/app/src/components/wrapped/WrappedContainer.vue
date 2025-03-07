@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import { Routes } from '@/router/routes';
-import { sortDesc } from '@/utils/bignumbers';
-import AppImage from '@/components/common/AppImage.vue';
+import type { BigNumber } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import HashLink from '@/components/helper/HashLink.vue';
+import AppImage from '@/components/common/AppImage.vue';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import WrappedCard from '@/components/wrapped/WrappedCard.vue';
+import { useWrapStatisticsApi, type WrapStatisticsResult } from '@/composables/api/statistics/wrap';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useStatusUpdater } from '@/composables/status';
+import { Routes } from '@/router/routes';
 import { useTaskStore } from '@/store/tasks';
 import { useCurrencies } from '@/types/currencies';
-import { type WrapStatisticsResult, useWrapStatisticsApi } from '@/composables/api/statistics/wrap';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
+import { sortDesc } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
-import { useHistoryEvents } from '@/composables/history/events';
-import type { BigNumber } from '@rotki/common';
+import dayjs from 'dayjs';
 
 const props = defineProps<{
   highlightedYear?: number;

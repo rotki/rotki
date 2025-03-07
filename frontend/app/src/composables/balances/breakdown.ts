@@ -1,16 +1,16 @@
-import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import { groupAssetBreakdown, mergeAssetBalances } from '@/utils/balances';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
-import { useBalanceSorting } from '@/composables/balances/sorting';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { ComputedRef } from 'vue';
+import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
+import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { groupAssetBreakdown, mergeAssetBalances } from '@/utils/balances';
 
 interface UseBalancesBreakdownReturn {
   assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HashLink from '@/components/helper/HashLink.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
 import type { UnderlyingToken } from '@rotki/common';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import HashLink from '@/components/helper/HashLink.vue';
 
 const props = defineProps<{
   field: string;

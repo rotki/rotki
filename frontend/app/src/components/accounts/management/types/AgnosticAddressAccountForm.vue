@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
-import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import type { AccountAgnosticManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
+import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
+import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 
 const modelValue = defineModel<AccountAgnosticManage>({ required: true });
 

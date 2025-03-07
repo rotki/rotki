@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import RoundingSettings from '@/components/settings/general/amount/RoundingSettings.vue';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';
-import AbbreviateNumberSetting from '@/components/settings/general/amount/AbbreviateNumberSetting.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import NumericSeparatorsSettings from '@/components/settings/general/amount/NumericSeparatorsSettings.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import AbbreviateNumberSetting from '@/components/settings/general/amount/AbbreviateNumberSetting.vue';
 import FloatingPrecisionSetting from '@/components/settings/general/amount/FloatingPrecisionSetting.vue';
 import MainCurrencySetting from '@/components/settings/general/amount/MainCurrencySetting.vue';
+import NumericSeparatorsSettings from '@/components/settings/general/amount/NumericSeparatorsSettings.vue';
+import RoundingSettings from '@/components/settings/general/amount/RoundingSettings.vue';
+import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 

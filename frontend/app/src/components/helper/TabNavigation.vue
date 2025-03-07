@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { type TabContent, getClass } from '@/types/tabs';
 import type { RouteLocationRaw } from 'vue-router';
+import { getClass, type TabContent } from '@/types/tabs';
 
 withDefaults(
   defineProps<{

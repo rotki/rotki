@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { CollectionCommonFields } from '@/types/collection';
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
+import { CollectionCommonFields } from '@/types/collection';
+import { z } from 'zod';
 
 export enum AccountingTreatment {
   SWAP = 'swap',

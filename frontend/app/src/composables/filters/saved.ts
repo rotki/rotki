@@ -1,8 +1,8 @@
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import type { MaybeRef } from '@vueuse/core';
-import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
 import type { ActionStatus } from '@/types/action';
+import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
+import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const LIMIT_PER_LOCATION = 10;
 

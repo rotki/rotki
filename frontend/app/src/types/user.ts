@@ -1,13 +1,13 @@
-import { NumericString } from '@rotki/common';
-import { z } from 'zod';
+import type { ToSnakeCase } from '@/types/common';
 import { Constraints } from '@/data/constraints';
-import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
-import { parseFrontendSettings } from '@/types/settings/frontend-settings';
 import { ModuleEnum } from '@/types/modules';
+import { AddressNamePriorityEnum } from '@/types/settings/address-name-priorities';
+import { parseFrontendSettings } from '@/types/settings/frontend-settings';
 import { PriceOracleEnum } from '@/types/settings/price-oracle';
-import type { ToSnakeCase } from '@/types/common';
+import { NumericString } from '@rotki/common';
+import { z } from 'zod';
 
 export const OtherSettings = z.object({
   frontendSettings: z.string().transform(parseFrontendSettings),

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
+import type { OutputPlugin } from 'rollup';
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import process from 'node:process';
 import { ArgumentParser } from 'argparse';
-import electron from 'electron';
-import { type ViteDevServer, build, createLogger, createServer } from 'vite';
 import consola from 'consola';
+import electron from 'electron';
+import { build, createLogger, createServer, type ViteDevServer } from 'vite';
 import { type BuildOutput, LOG_LEVEL, sharedConfig } from './setup';
-import type { OutputPlugin } from 'rollup';
 
 const parser = new ArgumentParser({
   description: 'Rotki frontend build',

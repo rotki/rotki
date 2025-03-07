@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { useRefPropVModel } from '@/utils/model';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import { useFormStateWatcher } from '@/composables/form';
 import type { LocationDataSnapshotPayload } from '@/types/snapshots';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<LocationDataSnapshotPayload>({ required: true });

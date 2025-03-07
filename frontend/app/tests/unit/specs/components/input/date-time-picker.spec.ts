@@ -1,11 +1,11 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import flushPromises from 'flush-promises';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { DateFormat } from '@/types/date-format';
 import { setupDayjs } from '@/utils/date';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({

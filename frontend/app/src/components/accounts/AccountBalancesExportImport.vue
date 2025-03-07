@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import FileUpload from '@/components/import/FileUpload.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import FileUpload from '@/components/import/FileUpload.vue';
+import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
+import { externalLinks } from '@shared/external-links';
 
 const importFileUploader = useTemplateRef<ComponentExposed<typeof FileUpload>>('uploader');
 const importFile = ref<File>();

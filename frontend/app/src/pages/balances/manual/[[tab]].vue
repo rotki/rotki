@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
+import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import ManualBalancesDialog from '@/components/accounts/manual-balances/ManualBalancesDialog.vue';
+import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useHistoryStore } from '@/store/history';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useHistoryStore } from '@/store/history';
-import ManualBalancesDialog from '@/components/accounts/manual-balances/ManualBalancesDialog.vue';
-import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
-import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import { startPromise } from '@shared/utils';
 
 definePage({
   meta: {

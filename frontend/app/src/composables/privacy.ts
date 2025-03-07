@@ -1,7 +1,7 @@
-import { useSessionSettingsStore } from '@/store/settings/session';
-import type { RuiIcons } from '@rotki/ui-library';
 import type { PrivacyMode } from '@/types/session';
+import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 interface UsePrivacyModeReturn {
   privacyMode: ComputedRef<PrivacyMode>;

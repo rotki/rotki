@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { getAddressesFromWallet, getAllBrowserWalletProviders } from '@/utils/metamask';
-import { useClearableMessages } from '@/composables/settings';
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
+import { useClearableMessages } from '@/composables/settings';
+import { getAddressesFromWallet, getAllBrowserWalletProviders } from '@/utils/metamask';
 
 const emit = defineEmits<{
   'import-addresses': [addresses: string[]];

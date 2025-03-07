@@ -1,7 +1,7 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import type { ApiUrls, Credentials, Interop, Listeners, TrayUpdate } from '@shared/ipc';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
-import type { ApiUrls, Credentials, Interop, Listeners, TrayUpdate } from '@shared/ipc';
+import { contextBridge, ipcRenderer } from 'electron';
 
 const isDevelopment = checkIfDevelopment();
 

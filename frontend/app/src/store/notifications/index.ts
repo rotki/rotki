@@ -1,4 +1,6 @@
+import { createNotification } from '@/utils/notifications';
 import {
+  assert,
   NotificationCategory,
   type NotificationData,
   NotificationGroup,
@@ -6,11 +8,9 @@ import {
   Priority,
   type SemiPartial,
   Severity,
-  assert,
 } from '@rotki/common';
 import { useSessionStorage } from '@vueuse/core';
 import { orderBy } from 'es-toolkit';
-import { createNotification } from '@/utils/notifications';
 
 const DESERIALIZATION_ERROR_PREFIX = 'Could not deserialize';
 const NOTIFICATION_COOLDOWN_MS = 60_000;

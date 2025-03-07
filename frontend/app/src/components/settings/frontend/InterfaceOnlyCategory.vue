@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import Explorers from '@/components/settings/explorers/Explorers.vue';
+import AnimationsEnabledSetting from '@/components/settings/frontend/AnimationsEnabledSetting.vue';
+import ScrambleDataSetting from '@/components/settings/frontend/ScrambleDataSetting.vue';
+import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting.vue';
 import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
-import ScrambleDataSetting from '@/components/settings/frontend/ScrambleDataSetting.vue';
-import AnimationsEnabledSetting from '@/components/settings/frontend/AnimationsEnabledSetting.vue';
-import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
 const { t } = useI18n();

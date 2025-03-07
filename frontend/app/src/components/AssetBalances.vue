@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { some } from 'es-toolkit/compat';
-import { isEvmNativeToken } from '@/types/asset';
-import { TableColumn } from '@/types/table-column';
-import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
-import { sortAssetBalances } from '@/utils/balances';
-import { assetFilterByKeyword } from '@/utils/assets';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import { isEvmNativeToken } from '@/types/asset';
+import { TableColumn } from '@/types/table-column';
+import { assetFilterByKeyword } from '@/utils/assets';
+import { sortAssetBalances } from '@/utils/balances';
+import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
+import { some } from 'es-toolkit/compat';
 
 defineOptions({
   name: 'AssetBalances',

@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import SimpleTable from '@/components/common/SimpleTable.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import { evmTokenKindsData } from '@/types/blockchain/chains';
+import { toMessages } from '@/utils/validation';
 import { EvmTokenKind, type UnderlyingToken } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
-import { evmTokenKindsData } from '@/types/blockchain/chains';
-import { toMessages } from '@/utils/validation';
-import RowActions from '@/components/helper/RowActions.vue';
-import SimpleTable from '@/components/common/SimpleTable.vue';
 
 const modelValue = defineModel<UnderlyingToken[]>({ required: true });
 

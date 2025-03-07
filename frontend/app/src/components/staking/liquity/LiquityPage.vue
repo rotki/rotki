@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useStatusStore } from '@/store/status';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useModules } from '@/composables/session/modules';
-import { usePremium } from '@/composables/premium';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
-import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
+import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session/modules';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useStatusStore } from '@/store/status';
+import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
 
 const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();

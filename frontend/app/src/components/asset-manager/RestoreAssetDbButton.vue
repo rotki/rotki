@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common';
-import { DialogType } from '@/types/dialogs';
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
+import ListItem from '@/components/common/ListItem.vue';
+import { useAssets } from '@/composables/assets';
+import { useBackendManagement } from '@/composables/backend';
+import { useLogout } from '@/modules/account/use-logout';
 import { useConfirmStore } from '@/store/confirm';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
-import { useAssets } from '@/composables/assets';
-import { useBackendManagement } from '@/composables/backend';
-import ListItem from '@/components/common/ListItem.vue';
-import { useLogout } from '@/modules/account/use-logout';
+import { useTaskStore } from '@/store/tasks';
+import { DialogType } from '@/types/dialogs';
+import { TaskType } from '@/types/task-type';
+import { Severity } from '@rotki/common';
 
 withDefaults(
   defineProps<{

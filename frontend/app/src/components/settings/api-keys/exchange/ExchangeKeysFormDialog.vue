@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useExchangesStore } from '@/store/exchanges';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import type { ExchangeFormData } from '@/types/exchanges';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
+import { useExchangesStore } from '@/store/exchanges';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 

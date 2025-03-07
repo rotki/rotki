@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { between, helpers, required } from '@vuelidate/validators';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
-import { toMessages } from '@/utils/validation';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useValidation } from '@/composables/validation';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { between, helpers, required } from '@vuelidate/validators';
 
 const DEFAULT_FREQUENCY = Defaults.BALANCE_SAVE_FREQUENCY;
 

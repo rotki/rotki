@@ -1,8 +1,8 @@
+import type { FixtureBlockchainAccount } from '../../support/types';
 import { BigNumber, Blockchain } from '@rotki/common';
-import { RotkiApp } from '../rotki-app';
 import { waitForAsyncQuery } from '../../support/utils';
 import { updateLocationBalance } from '../../utils/amounts';
-import type { FixtureBlockchainAccount } from '../../support/types';
+import { RotkiApp } from '../rotki-app';
 
 export class BlockchainAccountsPage {
   visit(category: string = 'evm') {

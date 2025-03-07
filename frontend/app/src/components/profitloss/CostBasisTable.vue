@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/types/reports';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 
 type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
 

@@ -1,13 +1,13 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HistoryEventEntryType } from '@rotki/common';
-import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
-import { setupDayjs } from '@/utils/date';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
 import type { AssetMap } from '@/types/asset';
 import type { EthDepositEvent } from '@/types/history/events';
+import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { setupDayjs } from '@/utils/date';
+import { HistoryEventEntryType } from '@rotki/common';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',

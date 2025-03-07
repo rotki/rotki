@@ -1,11 +1,11 @@
+import { useBackendManagement } from '@/composables/backend';
+import { useInterop } from '@/composables/electron-interop';
+import { useMainStore } from '@/store/main';
+import { getBackendUrl } from '@/utils/account-management';
+import { createTestingPinia } from '@pinia/testing';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { createTestingPinia } from '@pinia/testing';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getBackendUrl } from '@/utils/account-management';
-import { useMainStore } from '@/store/main';
-import { useInterop } from '@/composables/electron-interop';
-import { useBackendManagement } from '@/composables/backend';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({

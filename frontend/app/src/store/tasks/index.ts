@@ -1,8 +1,5 @@
-import dayjs from 'dayjs';
-import { find, toArray } from 'es-toolkit/compat';
-import { AxiosError } from 'axios';
-import { checkIfDevelopment } from '@shared/utils';
-import { TaskType } from '@/types/task-type';
+import type { ActionResult } from '@rotki/common';
+import { useTaskApi } from '@/composables/api/task';
 import {
   BackendCancelledTaskError,
   type Task,
@@ -11,11 +8,14 @@ import {
   TaskNotFoundError,
   UserCancelledTaskError,
 } from '@/types/task';
+import { TaskType } from '@/types/task-type';
+import { arrayify } from '@/utils/array';
 import { removeKey } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { useTaskApi } from '@/composables/api/task';
-import { arrayify } from '@/utils/array';
-import type { ActionResult } from '@rotki/common';
+import { checkIfDevelopment } from '@shared/utils';
+import { AxiosError } from 'axios';
+import dayjs from 'dayjs';
+import { find, toArray } from 'es-toolkit/compat';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 const TIMEOUT_THRESHOLD = 3;

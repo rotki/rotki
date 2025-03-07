@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common';
-import { pick } from 'es-toolkit';
+import type { HistoryEventEntry } from '@/types/history/events';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
+import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
+import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
+import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { useSupportedChains } from '@/composables/info/chains';
 import {
   isAssetMovementEvent,
   isEventAccountingRuleProcessed,
   isEventMissingAccountingRule,
   isEvmEvent,
 } from '@/utils/history/events';
-import { useSupportedChains } from '@/composables/info/chains';
-import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
-import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
-import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
-import type { HistoryEventEntry } from '@/types/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
+import { pick } from 'es-toolkit';
 
 interface DeleteEvent {
   canDelete: boolean;

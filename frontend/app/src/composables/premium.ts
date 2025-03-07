@@ -1,6 +1,6 @@
-import { usePremiumStore } from '@/store/session/premium';
-import { useInterop } from '@/composables/electron-interop';
 import type { Ref } from 'vue';
+import { useInterop } from '@/composables/electron-interop';
+import { usePremiumStore } from '@/store/session/premium';
 
 export function usePremium(): Ref<boolean> {
   const { premium } = storeToRefs(usePremiumStore());

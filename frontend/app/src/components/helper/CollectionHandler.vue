@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends object">
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { Collection } from '@/types/collection';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 const props = defineProps<{
   collection: Collection<T>;

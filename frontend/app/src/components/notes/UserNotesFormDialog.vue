@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import UserNotesForm from '@/components/notes/UserNotesForm.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { logger } from '@/utils/logging';
-import { useUserNotesApi } from '@/composables/api/session/user-notes';
 import type { UserNote } from '@/types/notes';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import UserNotesForm from '@/components/notes/UserNotesForm.vue';
+import { useUserNotesApi } from '@/composables/api/session/user-notes';
+import { logger } from '@/utils/logging';
+import { useTemplateRef } from 'vue';
 
 const open = defineModel<boolean>('open', { required: true });
 const model = defineModel<Partial<UserNote>>({ required: true });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
+import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 
 const props = withDefaults(
   defineProps<{

@@ -1,17 +1,17 @@
+import type { AppConfig } from '@electron/main/app-config';
+import type { LogService } from '@electron/main/log-service';
+import http from 'node:http';
 import * as os from 'node:os';
 import process from 'node:process';
 import { URL } from 'node:url';
-import http from 'node:http';
-import { app } from 'electron';
-import { psList } from '@electron/main/ps-list';
-import { getPortAndUrl } from '@electron/main/port-utils';
-import { BackendCode, type BackendOptions } from '@shared/ipc';
-import { ProcessManager } from '@electron/main/process-manager';
 import { ColibriConfig } from '@electron/main/colibri-args';
 import { RotkiCoreConfig } from '@electron/main/core-args';
+import { getPortAndUrl } from '@electron/main/port-utils';
+import { ProcessManager } from '@electron/main/process-manager';
+import { psList } from '@electron/main/ps-list';
+import { BackendCode, type BackendOptions } from '@shared/ipc';
 import { wait } from '@shared/utils';
-import type { LogService } from '@electron/main/log-service';
-import type { AppConfig } from '@electron/main/app-config';
+import { app } from 'electron';
 
 interface SubprocessHandlerErrorListener {
   onProcessError: (message: string | Error, code: BackendCode) => void;

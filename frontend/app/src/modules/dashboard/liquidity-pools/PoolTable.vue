@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { TableColumn } from '@/types/table-column';
-import { calculatePercentage } from '@/utils/calculation';
-import { useStatisticsStore } from '@/store/statistics';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
-import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
-import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
-import { usePoolBalances } from './use-pool-balances';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset, PoolLiquidityBalance } from './types';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
+import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
+import { DashboardTableType } from '@/types/settings/frontend-settings';
+import { TableColumn } from '@/types/table-column';
+import { calculatePercentage } from '@/utils/calculation';
+import { usePoolBalances } from './use-pool-balances';
 
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;
 

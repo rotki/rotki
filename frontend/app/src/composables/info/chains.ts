@@ -1,9 +1,3 @@
-import { Blockchain, getTextToken } from '@rotki/common';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { useMainStore } from '@/store/main';
-import { useSupportedChainsApi } from '@/composables/api/info/chains';
-import { useArrayInclude } from '@/composables/array';
-import type { MaybeRef } from '@vueuse/core';
 import type {
   ChainInfo,
   EvmChainEntries,
@@ -12,6 +6,12 @@ import type {
   SubstrateChainInfo,
   SupportedChains,
 } from '@/types/api/chains';
+import type { MaybeRef } from '@vueuse/core';
+import { useSupportedChainsApi } from '@/composables/api/info/chains';
+import { useArrayInclude } from '@/composables/array';
+import { useMainStore } from '@/store/main';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { Blockchain, getTextToken } from '@rotki/common';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === 'evm';

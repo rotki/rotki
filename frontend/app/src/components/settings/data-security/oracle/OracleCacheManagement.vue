@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common';
-import { PriceOracle } from '@/types/settings/price-oracle';
-import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
-import { TaskType } from '@/types/task-type';
-import { useNotificationsStore } from '@/store/notifications';
-import { useConfirmStore } from '@/store/confirm';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useTaskStore } from '@/store/tasks';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type { OracleCacheMeta } from '@/types/prices';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useConfirmStore } from '@/store/confirm';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { PriceOracle } from '@/types/settings/price-oracle';
+import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
+import { TaskType } from '@/types/task-type';
+import { Severity } from '@rotki/common';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 

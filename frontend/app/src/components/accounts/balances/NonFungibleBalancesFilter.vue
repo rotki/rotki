@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 
 const props = defineProps<{
   selected: string[];

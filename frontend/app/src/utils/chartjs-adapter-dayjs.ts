@@ -1,4 +1,4 @@
-import { type TimeUnit, _adapters } from 'chart.js';
+import { _adapters, type TimeUnit } from 'chart.js';
 import dayjs, { type QUnitType } from 'dayjs';
 import AdvancedFormat from 'dayjs/plugin/advancedFormat';
 import CustomParseFormat from 'dayjs/plugin/customParseFormat';

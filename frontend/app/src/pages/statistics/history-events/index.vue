@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes';
-import { usePremium } from '@/composables/premium';
 import WrappedContainer from '@/components/wrapped/WrappedContainer.vue';
 import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPlaceholder.vue';
+import { usePremium } from '@/composables/premium';
+import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

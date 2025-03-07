@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
 import type { Message } from '@rotki/common';
+import type { RuiIcons } from '@rotki/ui-library';
 
 const props = defineProps<{
   message: Message;

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import { omit } from 'es-toolkit';
+import type { CustomAsset } from '@/types/asset';
 import CustomAssetForm from '@/components/asset-manager/custom/CustomAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useMessageStore } from '@/store/message';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
-import type { CustomAsset } from '@/types/asset';
+import { useMessageStore } from '@/store/message';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 
 const open = defineModel<boolean>('open', { required: true });
 const savedAssetId = defineModel<string>('savedAssetId', { required: false });

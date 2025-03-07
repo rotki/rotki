@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { type BigNumber, NumericString } from '../../numbers';
-import { Balance, Percentage } from '../../balances';
 import type { Account } from '../../account';
+import { z } from 'zod';
+import { Balance, Percentage } from '../../balances';
+import { type BigNumber, NumericString } from '../../numbers';
 
 const Eth2DailyStat = z.object({
   pnl: Balance,

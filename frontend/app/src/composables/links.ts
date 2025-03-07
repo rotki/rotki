@@ -1,7 +1,7 @@
-import { externalLinks } from '@shared/external-links';
-import { useInterop } from '@/composables/electron-interop';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import { useInterop } from '@/composables/electron-interop';
+import { externalLinks } from '@shared/external-links';
 
 interface UseLinksReturn {
   href: ComputedRef<string | undefined>;

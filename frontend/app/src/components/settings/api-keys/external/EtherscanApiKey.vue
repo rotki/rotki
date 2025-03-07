@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { camelCase } from 'es-toolkit';
-import { etherscanLinks } from '@shared/external-links';
-import { isEtherscanKey } from '@/types/external';
-import { useNotificationsStore } from '@/store/notifications';
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useNotificationsStore } from '@/store/notifications';
+import { isEtherscanKey } from '@/types/external';
+import { etherscanLinks } from '@shared/external-links';
+import { camelCase } from 'es-toolkit';
 
 const props = withDefaults(
   defineProps<{

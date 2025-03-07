@@ -1,18 +1,18 @@
 <script lang="ts" setup>
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useSupportedChains } from '@/composables/info/chains';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import { useRefPropVModel } from '@/utils/model';
-import { useBlockchainStore } from '@/store/blockchain';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { useFormStateWatcher } from '@/composables/form';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddTransactionHashPayload } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AddTransactionHashPayload } from '@/types/history/events';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainStore } from '@/store/blockchain';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { hasAccountAddress } from '@/utils/blockchain/accounts';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<AddTransactionHashPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

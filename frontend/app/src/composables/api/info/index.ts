@@ -1,9 +1,9 @@
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { handleResponse } from '@/services/utils';
-import { api } from '@/services/rotkehlchen-api';
-import { BackendInfo } from '@/types/backend';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse } from '@/services/utils';
+import { BackendInfo } from '@/types/backend';
 
 interface UseInfoApiReturn {
   info: (checkForUpdates?: boolean) => Promise<BackendInfo>;

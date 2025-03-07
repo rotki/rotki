@@ -1,7 +1,11 @@
-import { groupBy } from 'es-toolkit';
-import { TaskType } from '@/types/task-type';
+import type { TaskMeta } from '@/types/task';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useStatusUpdater } from '@/composables/status';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { Section } from '@/types/status';
+import { useHistoryStore } from '@/store/history';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import {
   type ChainAndTxHash,
   type EvmChainAndTxHash,
@@ -9,17 +13,13 @@ import {
   type PullTransactionPayload,
   TransactionChainType,
 } from '@/types/history/events';
+import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
 import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
-import { useTaskStore } from '@/store/tasks';
-import { useHistoryStore } from '@/store/history';
-import { useNotificationsStore } from '@/store/notifications';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import type { TaskMeta } from '@/types/task';
+import { groupBy } from 'es-toolkit';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n();

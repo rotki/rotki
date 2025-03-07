@@ -1,13 +1,13 @@
-import process from 'node:process';
-import { NavigationHandler } from '@electron/main/navigation-handler';
-import { ContextMenuHandler } from '@electron/main/context-menu-handler';
-import windowStateKeeper from 'electron-window-state';
-import { BrowserWindow, ipcMain } from 'electron';
-import { createProtocol } from '@electron/main/create-protocol';
-import { assert } from '@rotki/common';
-import { WindowConfig } from '@electron/main/window-config';
-import type { BackendCode } from '@shared/ipc';
 import type { LogService } from '@electron/main/log-service';
+import type { BackendCode } from '@shared/ipc';
+import process from 'node:process';
+import { ContextMenuHandler } from '@electron/main/context-menu-handler';
+import { createProtocol } from '@electron/main/create-protocol';
+import { NavigationHandler } from '@electron/main/navigation-handler';
+import { WindowConfig } from '@electron/main/window-config';
+import { assert } from '@rotki/common';
+import { BrowserWindow, ipcMain } from 'electron';
+import windowStateKeeper from 'electron-window-state';
 
 interface WindowManagerListener {
   onWindowVisibilityChanged: (isVisible: boolean) => void;

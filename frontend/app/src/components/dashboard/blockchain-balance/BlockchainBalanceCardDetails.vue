@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AppImage from '@/components/common/AppImage.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import ListItem from '@/components/common/ListItem.vue';
 import type { ActionDataEntry } from '@/types/action';
 import type { SubBlockchainTotal } from '@/types/blockchain';
+import AppImage from '@/components/common/AppImage.vue';
+import ListItem from '@/components/common/ListItem.vue';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 
-withDefaults(
-  defineProps<{
-    child: SubBlockchainTotal;
-    details: ActionDataEntry | null;
-  }>(),
-  {
-    details: null,
-  },
-);
+defineProps<{
+  child: SubBlockchainTotal;
+  details: ActionDataEntry | null;
+}>();
 </script>
 
 <template>

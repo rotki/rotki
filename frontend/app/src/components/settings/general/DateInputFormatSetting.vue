@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import DateInputFormatSelector from '@/components/settings/general/DateInputFormatSelector.vue';
+import { useValidation } from '@/composables/validation';
+import { displayDateFormatter } from '@/data/date-formatter';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { displayDateFormatter } from '@/data/date-formatter';
-import { toMessages } from '@/utils/validation';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useValidation } from '@/composables/validation';
-import DateInputFormatSelector from '@/components/settings/general/DateInputFormatSelector.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(useFrontendSettingsStore());

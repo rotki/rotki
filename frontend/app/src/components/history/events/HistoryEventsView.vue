@@ -1,42 +1,4 @@
 <script setup lang="ts">
-import { isEqual } from 'es-toolkit';
-import { not } from '@vueuse/math';
-import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { RouterAccountsSchema } from '@/types/route';
-import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
-import { toEvmChainAndTxHash } from '@/utils/history';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useStatusStore } from '@/store/status';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useHistoryStore } from '@/store/history';
-import { useConfirmStore } from '@/store/confirm';
-import { useTaskStore } from '@/store/tasks';
-import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
-import { useHistoryEvents } from '@/composables/history/events';
-import HistoryEventsProtocolCacheUpdateStatus
-  from '@/components/history/events/HistoryEventsProtocolCacheUpdateStatus.vue';
-import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
-import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
-import TransactionFormDialog from '@/components/history/events/tx/TransactionFormDialog.vue';
-import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
-import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
-import HistoryEventsTable from '@/components/history/events/HistoryEventsTable.vue';
-import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
@@ -46,6 +8,44 @@ import type {
   PullEvmTransactionPayload,
   ShowEventHistoryForm,
 } from '@/types/history/events';
+import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
+import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
+import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
+import HistoryEventsProtocolCacheUpdateStatus
+  from '@/components/history/events/HistoryEventsProtocolCacheUpdateStatus.vue';
+import HistoryEventsTable from '@/components/history/events/HistoryEventsTable.vue';
+import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
+import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
+import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
+import TransactionFormDialog from '@/components/history/events/tx/TransactionFormDialog.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useConfirmStore } from '@/store/confirm';
+import { useHistoryStore } from '@/store/history';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useStatusStore } from '@/store/status';
+import { useTaskStore } from '@/store/tasks';
+import { RouterAccountsSchema } from '@/types/route';
+import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { toEvmChainAndTxHash } from '@/utils/history';
+import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
+import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { not } from '@vueuse/math';
+import { isEqual } from 'es-toolkit';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 

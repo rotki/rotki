@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { CexMapping } from '@/types/asset';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
-import type { CexMapping } from '@/types/asset';
-import type { ValidationErrors } from '@/types/api/errors';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 
 const modelValue = defineModel<CexMapping>({ required: true });
 const forAllExchanges = defineModel<boolean>('forAllExchanges', { required: true });

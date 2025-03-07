@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
+import type { Exchange } from '@/types/exchanges';
+import type { TradeLocationData } from '@/types/history/trade/location';
+import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { RuiIcons } from '@rotki/ui-library';
+import type { RouteLocationRaw } from 'vue-router';
+import AppImage from '@/components/common/AppImage.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useInterop } from '@/composables/electron-interop';
+import { useLocations } from '@/composables/locations';
 import { useAppRoutes } from '@/router/routes';
 import { useExchangesStore } from '@/store/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useInterop } from '@/composables/electron-interop';
-import { useLocations } from '@/composables/locations';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AppImage from '@/components/common/AppImage.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import type { RuiIcons } from '@rotki/ui-library';
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { Exchange } from '@/types/exchanges';
-import type { TradeLocationData } from '@/types/history/trade/location';
-import type { RouteLocationRaw } from 'vue-router';
+import { startPromise } from '@shared/utils';
 
 interface SearchItem {
   value: number;

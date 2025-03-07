@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useAppRoutes } from '@/router/routes';
+import type { TabContent } from '@/types/tabs';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { TabContent } from '@/types/tabs';
+import { useAppRoutes } from '@/router/routes';
 
 definePage({
   name: 'asset-manager-more',

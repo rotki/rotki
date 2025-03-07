@@ -1,12 +1,12 @@
+import { app } from '@/main';
 import * as VueUse from '@vueuse/core';
 import * as VueUseShared from '@vueuse/shared';
 import * as BigNumber from 'bignumber.js';
 import * as Chart from 'chart.js';
 import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import * as Vue from 'vue';
-import * as zod from 'zod';
 import * as VueRouter from 'vue-router';
-import { app } from '@/main';
+import * as zod from 'zod';
 
 export async function setupPremium(): Promise<void> {
   /**

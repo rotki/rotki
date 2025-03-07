@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
-import { InputMode } from '@/types/input-mode';
-import {
-  type AccountManageState,
-  type StakingValidatorManage,
-  type XpubManage,
-  createNewBlockchainAccount,
-} from '@/composables/accounts/blockchain/use-account-manage';
-import { isBtcChain } from '@/types/blockchain/chains';
-import { XpubKeyType } from '@/types/blockchain/accounts';
-import { useRefPropVModel } from '@/utils/model';
-import { logger } from '@/utils/logging';
+import type { ValidationErrors } from '@/types/api/errors';
+import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
+import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
 import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';
 import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
+import {
+  type AccountManageState,
+  createNewBlockchainAccount,
+  type StakingValidatorManage,
+  type XpubManage,
+} from '@/composables/accounts/blockchain/use-account-manage';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
-import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import type { ValidationErrors } from '@/types/api/errors';
+import { XpubKeyType } from '@/types/blockchain/accounts';
+import { isBtcChain } from '@/types/blockchain/chains';
+import { InputMode } from '@/types/input-mode';
+import { logger } from '@/utils/logging';
+import { useRefPropVModel } from '@/utils/model';
+import { Blockchain } from '@rotki/common';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
 

@@ -1,15 +1,15 @@
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
-import { Section } from '@/types/status';
-import { CURRENCY_USD } from '@/types/currencies';
-import { isNft } from '@/utils/nft';
-import { useNotificationsStore } from '@/store/notifications';
-import { useMessageStore } from '@/store/message';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useBalances } from '@/composables/balances';
-import { useStatusUpdater } from '@/composables/status';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { ComputedRef, Ref } from 'vue';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useBalances } from '@/composables/balances';
+import { useStatusUpdater } from '@/composables/status';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { CURRENCY_USD } from '@/types/currencies';
+import { Section } from '@/types/status';
+import { isNft } from '@/utils/nft';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;

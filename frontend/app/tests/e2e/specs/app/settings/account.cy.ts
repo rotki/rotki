@@ -1,5 +1,5 @@
-import { RotkiApp } from '../../../pages/rotki-app';
 import { AccountSettingsPage } from '../../../pages/account-settings-page';
+import { RotkiApp } from '../../../pages/rotki-app';
 import { createUser } from '../../../utils/user';
 
 describe('settings::data & security', () => {

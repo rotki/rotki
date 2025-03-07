@@ -1,10 +1,10 @@
-import { logger } from '@/utils/logging';
-import { useMessageStore } from '@/store/message';
+import type { ActionStatus } from '@/types/action';
+import type { ChangePasswordPayload } from '@/types/session';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
+import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
-import type { ChangePasswordPayload } from '@/types/session';
-import type { ActionStatus } from '@/types/action';
+import { logger } from '@/utils/logging';
 
 interface UseChangePasswordReturn {
   changePassword: (payload: ChangePasswordPayload) => Promise<ActionStatus>;

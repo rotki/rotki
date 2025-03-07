@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
+import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import type { Writeable } from '@rotki/common';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
-import { useMessageStore } from '@/store/message';
-import { useStatisticsStore } from '@/store/statistics';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useInterop } from '@/composables/electron-interop';
-import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
-import { useBalances } from '@/composables/balances';
-import { usePremium } from '@/composables/premium';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
+import { useBalances } from '@/composables/balances';
+import { useInterop } from '@/composables/electron-interop';
+import { usePremium } from '@/composables/premium';
 import { useLogout } from '@/modules/account/use-logout';
-import type { Writeable } from '@rotki/common';
-import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import { useMessageStore } from '@/store/message';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useStatisticsStore } from '@/store/statistics';
+import { startPromise } from '@shared/utils';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);

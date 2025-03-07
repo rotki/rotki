@@ -1,15 +1,15 @@
-import process from 'node:process';
-import { LogService } from '@electron/main/log-service';
-import { app, protocol } from 'electron';
-import { checkIfDevelopment, startPromise } from '@shared/utils';
-import { SubprocessHandler } from '@electron/main/subprocess-handler';
-import { WindowManager } from '@electron/main/window-manager';
-import { MenuManager } from '@electron/main/menu';
-import { TrayManager } from '@electron/main/tray-manager';
-import { IpcManager } from '@electron/main/ipc-setup';
-import { SettingsManager } from '@electron/main/settings-manager';
-import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
 import type { AppConfig } from '@electron/main/app-config';
+import process from 'node:process';
+import { IpcManager } from '@electron/main/ipc-setup';
+import { LogService } from '@electron/main/log-service';
+import { MenuManager } from '@electron/main/menu';
+import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
+import { SettingsManager } from '@electron/main/settings-manager';
+import { SubprocessHandler } from '@electron/main/subprocess-handler';
+import { TrayManager } from '@electron/main/tray-manager';
+import { WindowManager } from '@electron/main/window-manager';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
+import { app, protocol } from 'electron';
 
 export class Application {
   private readonly window: WindowManager;

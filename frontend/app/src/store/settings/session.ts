@@ -1,9 +1,9 @@
-import { TimeFramePeriod } from '@rotki/common';
-import { PrivacyMode, type SessionSettings } from '@/types/session';
-import { generateRandomScrambleMultiplier } from '@/utils/session';
-import { useComputedRef } from '@/composables/utils/useComputedRef';
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
+import { useComputedRef } from '@/composables/utils/useComputedRef';
+import { PrivacyMode, type SessionSettings } from '@/types/session';
+import { generateRandomScrambleMultiplier } from '@/utils/session';
+import { TimeFramePeriod } from '@rotki/common';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enabled', true);

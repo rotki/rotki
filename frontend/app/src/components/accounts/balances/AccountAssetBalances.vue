@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { getSortItems } from '@/utils/assets';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import { CURRENCY_USD } from '@/types/currencies';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import { sum } from '@/utils/balances';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
+import { getSortItems } from '@/utils/assets';
+import { sum } from '@/utils/balances';
 
 interface AssetWithPrice extends AssetBalance {
   price: BigNumber;

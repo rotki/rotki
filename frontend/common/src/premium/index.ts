@@ -1,3 +1,10 @@
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef, Ref } from 'vue';
+import type { AssetBalanceWithPrice } from '../balances';
+import type { AssetInfo } from '../data';
+import type { BigNumber } from '../numbers';
+import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
+import type { Theme, Themes } from '../settings/themes';
 import type {
   CommonQueryStatusData,
   HistoricalAssetPricePayload,
@@ -9,13 +16,6 @@ import type {
   TimedAssetHistoricalBalances,
   TimedBalances,
 } from '../statistics';
-import type { Theme, Themes } from '../settings/themes';
-import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
-import type { AssetInfo } from '../data';
-import type { BigNumber } from '../numbers';
-import type { AssetBalanceWithPrice } from '../balances';
 
 export type ExclusionSource = 'exchange' | 'manual' | 'blockchain';
 

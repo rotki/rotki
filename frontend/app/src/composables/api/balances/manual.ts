@@ -1,3 +1,5 @@
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -7,8 +9,6 @@ import {
 } from '@/services/utils';
 import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/types/manual-balances';
 import { nonEmptyProperties } from '@/utils/data';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
 
 interface UseManualBalancesApiReturn {
   addManualBalances: (balances: RawManualBalance[]) => Promise<PendingTask>;

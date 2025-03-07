@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { Blockchain } from '@rotki/common';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useBlockie } from '@/composables/accounts/blockie';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { Blockchain } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

@@ -1,9 +1,9 @@
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
-import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 import { BackendConfiguration } from '@/types/backend';
-import type { ActionResult } from '@rotki/common';
+import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 
 interface UseSettingApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;

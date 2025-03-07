@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { Blockchain, CommonQueryStatusData, type MaybePromise, type Notification } from '@rotki/common';
-import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { CalendarEventPayload } from '@/types/history/calendar';
+import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
+import { Blockchain, CommonQueryStatusData, type MaybePromise, type Notification } from '@rotki/common';
+import { z } from 'zod';
 
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';

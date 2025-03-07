@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 describe('store::balances/manual', () => {

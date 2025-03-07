@@ -1,18 +1,18 @@
-import { balanceSum, bigNumberSum } from '@/utils/calculation';
-import { sortDesc, zeroBalance } from '@/utils/bignumbers';
-import { getSortItems } from '@/utils/assets';
+import type { AssetInfoReturn } from '@/composables/assets/retrieval';
+import type { AssetBalances } from '@/types/balances';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type {
   AssetBalance,
   AssetBalanceWithPrice,
   BigNumber,
   Writeable,
 } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
-import type { AssetBalances } from '@/types/balances';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { ComputedRef } from 'vue';
 import type { DataTableSortData } from '@rotki/ui-library';
-import type { AssetInfoReturn } from '@/composables/assets/retrieval';
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
+import { getSortItems } from '@/utils/assets';
+import { sortDesc, zeroBalance } from '@/utils/bignumbers';
+import { balanceSum, bigNumberSum } from '@/utils/calculation';
 
 export function mergeAssociatedAssets(
   totals: MaybeRef<AssetBalances>,

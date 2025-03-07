@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useLocations } from '@/composables/locations';
+import type { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import type { BigNumber } from '@rotki/common';
+import { useLocations } from '@/composables/locations';
 
 const props = defineProps<{
   balance: BigNumber;

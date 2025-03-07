@@ -1,7 +1,7 @@
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import type { NewDetectedToken } from '@/types/websocket-messages';
+import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const MAX_SIZE = 500;
 const NEWLY_DETECTED_TOKENS_PREFIX = 'rotki.newly_detected_tokens.';

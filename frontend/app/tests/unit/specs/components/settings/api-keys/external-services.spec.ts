@@ -1,19 +1,19 @@
-import { type VueWrapper, mount } from '@vue/test-utils';
-import flushPromises from 'flush-promises';
-import { type Pinia, setActivePinia } from 'pinia';
-import { computed } from 'vue';
-import { Blockchain } from '@rotki/common';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCustomPinia } from '@test/utils/create-pinia';
-import ExternalServices from '@/pages/api-keys/external/index.vue';
+import type { EvmChainInfo } from '@/types/api/chains';
+import type { ExternalServiceKeys } from '@/types/user';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { useConfirmStore } from '@/store/confirm';
-import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
-import type { ExternalServiceKeys } from '@/types/user';
-import type { EvmChainInfo } from '@/types/api/chains';
+import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
+import ExternalServices from '@/pages/api-keys/external/index.vue';
+import { useConfirmStore } from '@/store/confirm';
+import { Blockchain } from '@rotki/common';
+import { createCustomPinia } from '@test/utils/create-pinia';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 
 vi.mock('@/composables/info/chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({

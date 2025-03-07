@@ -1,8 +1,8 @@
+import type { ActionStatus } from '@/types/action';
+import type { MaybeRef } from '@vueuse/core';
+import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNotificationsStore } from '@/store/notifications';
-import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
-import type { MaybeRef } from '@vueuse/core';
-import type { ActionStatus } from '@/types/action';
 
 export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () => {
   const whitelistedAssets = ref<string[]>([]);

@@ -1,15 +1,15 @@
-import { wait } from '@shared/utils';
-import { setLastLogin } from '@/utils/account-management';
+import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
+import type { Ref } from 'vue';
+import { useBackendManagement } from '@/composables/backend';
+import { useAppNavigation } from '@/composables/navigation';
+import { usePremiumReminder } from '@/composables/premium';
+import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useLogin } from '@/modules/account/use-login';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useWebsocketStore } from '@/store/websocket';
-import { useBackendManagement } from '@/composables/backend';
-import { usePremiumReminder } from '@/composables/premium';
-import { useAppNavigation } from '@/composables/navigation';
-import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
-import { useLogin } from '@/modules/account/use-login';
-import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
-import type { Ref } from 'vue';
+import { setLastLogin } from '@/utils/account-management';
+import { wait } from '@shared/utils';
 
 interface UseAccountManagementReturn {
   loading: Ref<boolean>;

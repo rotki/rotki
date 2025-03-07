@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, url as urlValidator } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation';
 
 defineOptions({
   inheritAttrs: false,

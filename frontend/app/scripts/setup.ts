@@ -1,7 +1,7 @@
+import type { RollupOutput, RollupWatcher } from 'rollup';
+import type { InlineConfig, LogLevel } from 'vite';
 import path from 'node:path';
 import process from 'node:process';
-import type { InlineConfig, LogLevel } from 'vite';
-import type { RollupOutput, RollupWatcher } from 'rollup';
 
 export type BuildOutput = RollupOutput | RollupOutput[] | RollupWatcher;
 

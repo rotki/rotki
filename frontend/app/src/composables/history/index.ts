@@ -1,3 +1,8 @@
+import type { ActionStatus } from '@/types/action';
+import type { EntryMeta } from '@/types/history/meta';
+import type { Ref } from 'vue';
+import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
+import { useMessageStore } from '@/store/message';
 import {
   type CommonIgnorePayload,
   type EvmTransaction,
@@ -5,11 +10,6 @@ import {
   IgnoreActionType,
   type IgnorePayload,
 } from '@/types/history/ignored';
-import { useMessageStore } from '@/store/message';
-import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
-import type { EntryMeta } from '@/types/history/meta';
-import type { ActionStatus } from '@/types/action';
-import type { Ref } from 'vue';
 
 interface EvmTxIgnoreAction<T extends EntryMeta> {
   actionType: IgnoreActionType.EVM_TRANSACTIONS;

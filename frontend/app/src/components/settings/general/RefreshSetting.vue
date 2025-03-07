@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useValidation } from '@/composables/validation';
+import { Constraints } from '@/data/constraints';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
-import { Constraints } from '@/data/constraints';
-import { toMessages } from '@/utils/validation';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useValidation } from '@/composables/validation';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const refreshPeriod = ref<string>('');
 const refreshEnabled = ref<boolean>(false);

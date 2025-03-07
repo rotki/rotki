@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { generateRandomScrambleMultiplier } from '@/utils/session';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(useSessionSettingsStore());
 

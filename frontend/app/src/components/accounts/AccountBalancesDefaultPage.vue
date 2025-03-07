@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
-import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
-import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import type { AccountManageAdd, AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import AccountBalances from '@/components/accounts/AccountBalances.vue';
+import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
+import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
+import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
+import { useTemplateRef } from 'vue';
 
 const props = defineProps<{
   category: string;

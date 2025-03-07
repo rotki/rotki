@@ -1,12 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { BalanceType } from '@/types/balances';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useTaskStore } from '@/store/tasks';
-import { useManualBalancesApi } from '@/composables/api/balances/manual';
-import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
+import { useManualBalancesApi } from '@/composables/api/balances/manual';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useTaskStore } from '@/store/tasks';
+import { BalanceType } from '@/types/balances';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({

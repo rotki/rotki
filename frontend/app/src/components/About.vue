@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useMainStore } from '@/store/main';
-import { usePremium } from '@/composables/premium';
-import { useInterop } from '@/composables/electron-interop';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
-import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import type { WebVersion } from '@/types';
 import type { SystemVersion } from '@shared/ipc';
+import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
+import { useInterop } from '@/composables/electron-interop';
+import { usePremium } from '@/composables/premium';
+import { useMainStore } from '@/store/main';
 
 const store = useMainStore();
 const { isPackaged, openPath, version: getVersion } = useInterop();

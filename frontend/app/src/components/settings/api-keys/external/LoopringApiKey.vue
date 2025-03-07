@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Module } from '@/types/modules';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
-import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import { Module } from '@/types/modules';
 
 const name = 'loopring';
 

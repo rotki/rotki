@@ -1,6 +1,6 @@
+import type { ExternalTrade } from '../../support/types';
 import { selectAsset } from '../../support/utils';
 import { HistoryPage } from './index';
-import type { ExternalTrade } from '../../support/types';
 
 export class TradeHistoryPage {
   page = new HistoryPage();

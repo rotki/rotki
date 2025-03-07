@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
+import { externalLinks } from '@shared/external-links';
 
 const { t } = useI18n();
 

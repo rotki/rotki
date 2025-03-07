@@ -1,14 +1,14 @@
-import { appendAssetBalance, mergeAssociatedAssets } from '@/utils/balances';
-import { bigNumberSum } from '@/utils/calculation';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import type { AssetBalances } from '@/types/balances';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { AssetBalances } from '@/types/balances';
-import type { ComputedRef } from 'vue';
-import type { MaybeRef } from '@vueuse/core';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { appendAssetBalance, mergeAssociatedAssets } from '@/utils/balances';
+import { bigNumberSum } from '@/utils/calculation';
 
 interface UseBlockchainAggregatedBalancesReturn {
   blockchainTotal: ComputedRef<BigNumber>;
