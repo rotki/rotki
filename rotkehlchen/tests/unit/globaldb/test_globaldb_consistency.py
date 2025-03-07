@@ -121,7 +121,7 @@ def test_asset_updates_consistency_with_packaged_db(
         # - Global DB v9->v10 includes breaking schema changes
         # - Before such changes, we pull all compatible asset updates up to v32 (max compatible)
         assert old_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '32'  # noqa: E501
-        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '35'  # noqa: E501
+        assert packaged_db_cursor.execute("SELECT value FROM settings WHERE name='assets_version'").fetchone()[0] == '36'  # noqa: E501
 
     assets_updater = AssetsUpdater(
         globaldb=globaldb,
