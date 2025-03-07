@@ -1,18 +1,18 @@
 <script setup lang="ts">
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import DefiModuleSelector from '@/components/defi/DefiModuleSelector.vue';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useCacheClear } from '@/composables/session/cache-clear';
+import { useSessionPurge } from '@/composables/session/purge';
+import { useLocationStore } from '@/store/locations';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
-import { useLocationStore } from '@/store/locations';
-import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useCacheClear } from '@/composables/session/cache-clear';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import { useSessionPurge } from '@/composables/session/purge';
-import { useSupportedChains } from '@/composables/info/chains';
-import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import DefiModuleSelector from '@/components/defi/DefiModuleSelector.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

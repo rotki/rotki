@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
+import type { HistoryEventRequestPayload } from '@/types/history/events';
+import type { TaskMeta } from '@/types/task';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useInterop } from '@/composables/electron-interop';
+import { useConfirmStore } from '@/store/confirm';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useConfirmStore } from '@/store/confirm';
-import { useTaskStore } from '@/store/tasks';
-import { useInterop } from '@/composables/electron-interop';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import type { TaskMeta } from '@/types/task';
-import type { HistoryEventRequestPayload } from '@/types/history/events';
+import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 
 const props = defineProps<{
   filters: HistoryEventRequestPayload;

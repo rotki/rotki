@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { AssetBalance, BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { sum } from '@/utils/balances';
-import type { AssetBalance, BigNumber } from '@rotki/common';
 
 const props = defineProps<{
   loading: boolean;

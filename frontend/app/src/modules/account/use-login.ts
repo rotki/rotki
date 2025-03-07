@@ -1,4 +1,14 @@
+import type { ActionStatus } from '@/types/action';
+import type { Exchange } from '@/types/exchanges';
+import type { TaskMeta } from '@/types/task';
+import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { useUsersApi } from '@/composables/api/session/users';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { useSessionSettings } from '@/composables/session/settings';
 import { api } from '@/services/rotkehlchen-api';
+import { useMonitorStore } from '@/store/monitor';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useTaskStore } from '@/store/tasks';
 import {
   type CreateAccountPayload,
   IncompleteUpgradeError,
@@ -6,21 +16,11 @@ import {
   SyncConflictError,
   type UnlockPayload,
 } from '@/types/login';
-import { logger } from '@/utils/logging';
+import { migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
 import { TaskType } from '@/types/task-type';
 import { type SettingsUpdate, UserAccount, type UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
-import { migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useSessionSettings } from '@/composables/session/settings';
-import { useUsersApi } from '@/composables/api/session/users';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
-import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useTaskStore } from '@/store/tasks';
-import { useMonitorStore } from '@/store/monitor';
-import type { ActionStatus } from '@/types/action';
-import type { Exchange } from '@/types/exchanges';
-import type { TaskMeta } from '@/types/task';
+import { logger } from '@/utils/logging';
 
 interface UseLoginReturn {
   login: (credentials: LoginCredentials) => Promise<ActionStatus>;

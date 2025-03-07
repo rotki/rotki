@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import TransactionQueryStatusLine from '@/components/history/events/tx/query-status/TransactionQueryStatusLine.vue';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import TransactionQueryStatusLine from '@/components/history/events/tx/query-status/TransactionQueryStatusLine.vue';
 
 defineProps<{ item: EvmTransactionQueryData }>();
 </script>

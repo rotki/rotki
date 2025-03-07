@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import type { CamelCase } from '@/types/common';
+import AppImage from '@/components/common/AppImage.vue';
+import { useAccountLoading } from '@/composables/accounts/loading';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useAccountLoading } from '@/composables/accounts/loading';
-import AppImage from '@/components/common/AppImage.vue';
-import type { CamelCase } from '@/types/common';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
 const emit = defineEmits(['update:selection']);
 

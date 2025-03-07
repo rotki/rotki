@@ -1,15 +1,15 @@
-import { Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { Section, Status } from '@/types/status';
-import { logger } from '@/utils/logging';
-import { useStatisticsStore } from '@/store/statistics';
-import { useLocationStore } from '@/store/locations';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useTagStore } from '@/store/session/tags';
-import { useSessionAuthStore } from '@/store/session/auth';
 import { useBalances } from '@/composables/balances';
 import { useStatusUpdater } from '@/composables/status';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { useLocationStore } from '@/store/locations';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useTagStore } from '@/store/session/tags';
+import { useStatisticsStore } from '@/store/statistics';
+import { Section, Status } from '@/types/status';
+import { logger } from '@/utils/logging';
+import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 
 interface UseDataLoaderReturn { load: () => void }
 

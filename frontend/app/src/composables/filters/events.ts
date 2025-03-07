@@ -1,24 +1,24 @@
-import { z } from 'zod';
-import { HistoryEventEntryType } from '@rotki/common';
-import { isEqual } from 'es-toolkit';
-import { uniqueStrings } from '@/utils/data';
-import { arrayify } from '@/utils/array';
-import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
-import { getDateInputISOFormat } from '@/utils/date';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useHistoryStore } from '@/store/history';
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type {
   MatchedKeywordWithBehaviour,
   SearchMatcher,
 
 } from '@/types/filtering';
 import type { MaybeRef } from '@vueuse/core';
-import type { FilterSchema } from '@/composables/use-pagination-filter/types';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useHistoryStore } from '@/store/history';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { arrayify } from '@/utils/array';
+import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import { uniqueStrings } from '@/utils/data';
+import { getDateInputISOFormat } from '@/utils/date';
+import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
+import { z } from 'zod';
 
 enum HistoryEventFilterKeys {
   START = 'start',

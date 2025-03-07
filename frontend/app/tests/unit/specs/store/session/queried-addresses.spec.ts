@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Module } from '@/types/modules';
+import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
+import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import { useMessageStore } from '@/store/message';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
-import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
+import { Module } from '@/types/modules';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('session:queried addresses store', () => {
   setActivePinia(createPinia());

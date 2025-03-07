@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 
 const name = 'beaconchain';
 

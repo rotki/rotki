@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import flushPromises from 'flush-promises';
-import { createMockCSV } from '@test/mocks/file';
 import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
+import { createMockCSV } from '@test/mocks/file';
+import flushPromises from 'flush-promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks
 vi.mock('@/store/notifications', () => ({

@@ -1,3 +1,13 @@
+import type { OnError } from '@/types/fetch';
+import type { TaskMeta } from '@/types/task';
+import { useLiquityApi } from '@/composables/api/defi/liquity';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session/modules';
+import { useStatusUpdater } from '@/composables/status';
+import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { fetchDataAsync } from '@/utils/fetch-async';
 import {
   type CommonQueryStatusData,
   LiquityBalancesWithCollateralInfo,
@@ -5,16 +15,6 @@ import {
   LiquityStakingDetails,
   LiquityStatistics,
 } from '@rotki/common';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { fetchDataAsync } from '@/utils/fetch-async';
-import { useLiquityApi } from '@/composables/api/defi/liquity';
-import { useStatusUpdater } from '@/composables/status';
-import { useModules } from '@/composables/session/modules';
-import { usePremium } from '@/composables/premium';
-import type { TaskMeta } from '@/types/task';
-import type { OnError } from '@/types/fetch';
 
 const defaultBalances = (): LiquityBalancesWithCollateralInfo => ({ balances: {}, totalCollateralRatio: null });
 

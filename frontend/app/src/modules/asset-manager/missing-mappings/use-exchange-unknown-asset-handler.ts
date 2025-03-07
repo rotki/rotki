@@ -1,8 +1,8 @@
-import { type Notification, Severity } from '@rotki/common';
-import { pick } from 'es-toolkit';
+import type { CommonMessageHandler, ExchangeUnknownAssetData } from '@/types/websocket-messages';
 import { useMissingMappingsDB } from '@/modules/asset-manager/missing-mappings/use-missing-mappings-db';
 import { Routes } from '@/router/routes';
-import type { CommonMessageHandler, ExchangeUnknownAssetData } from '@/types/websocket-messages';
+import { type Notification, Severity } from '@rotki/common';
+import { pick } from 'es-toolkit';
 
 export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<ExchangeUnknownAssetData> {
   const router = useRouter();

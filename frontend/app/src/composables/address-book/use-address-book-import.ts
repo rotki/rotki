@@ -1,9 +1,9 @@
-import { z } from 'zod';
-import { groupBy, omit } from 'es-toolkit';
-import { logger } from '@/utils/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
-import { useNotificationsStore } from '@/store/notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useNotificationsStore } from '@/store/notifications';
+import { logger } from '@/utils/logging';
+import { groupBy, omit } from 'es-toolkit';
+import { z } from 'zod';
 
 const CSVRow = z.object({
   address: z.string().min(1),

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { CURRENCY_USD } from '@/types/currencies';
-import { toMessages } from '@/utils/validation';
-import { bigNumberSum } from '@/utils/calculation';
-import { isNft } from '@/utils/nft';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
 import type { BigNumber } from '@rotki/common';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD } from '@/types/currencies';
+import { bigNumberSum } from '@/utils/calculation';
+import { isNft } from '@/utils/nft';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const props = defineProps<{
   modelValue: LocationDataSnapshot[];

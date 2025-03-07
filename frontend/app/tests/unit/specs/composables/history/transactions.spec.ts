@@ -1,16 +1,16 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { isOfEventType } from '@/utils/history/events';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
-import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useHistoryEvents } from '@/composables/history/events';
+import type { EvmChainInfo } from '@/types/api/chains';
 import type {
   EditEvmHistoryEventPayload,
   EvmHistoryEvent,
   HistoryEventEntry,
 } from '@/types/history/events';
-import type { EvmChainInfo } from '@/types/api/chains';
 import type { Blockchain } from '@rotki/common';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoryEvents } from '@/composables/history/events';
+import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { isOfEventType } from '@/utils/history/events';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/tasks', async () => {
   const { ref } = await import('vue');

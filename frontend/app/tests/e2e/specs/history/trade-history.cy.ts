@@ -1,7 +1,7 @@
+import type { ExternalTrade } from '../../support/types';
 import { TradeHistoryPage } from '../../pages/history-page/trade-history-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { createUser } from '../../utils/user';
-import type { ExternalTrade } from '../../support/types';
 
 describe('trade history', () => {
   let username: string;

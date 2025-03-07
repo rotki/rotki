@@ -1,18 +1,19 @@
+import App from '@/App.vue';
+import { useItemsPerPage } from '@/composables/session/use-items-per-page';
+import { i18n } from '@/i18n';
+import { registerDevtools } from '@/plugins/devtools';
+import { createRuiPlugin } from '@/plugins/rui';
+import { usePremiumApi } from '@/premium/setup-interface';
+import { router } from '@/router';
+import { StoreStatePersistsPlugin } from '@/store/debug';
+import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
+import { attemptPolyfillResizeObserver } from '@/utils/cypress';
+import { setupDayjs } from '@/utils/date';
+import { setupFormatter } from '@/utils/setup-formatter';
+import { checkIfDevelopment } from '@shared/utils';
+
 /* istanbul ignore file */
 import { createPinia } from 'pinia';
-import { checkIfDevelopment } from '@shared/utils';
-import { setupFormatter } from '@/utils/setup-formatter';
-import { setupDayjs } from '@/utils/date';
-import { usePremiumApi } from '@/premium/setup-interface';
-import App from '@/App.vue';
-import { attemptPolyfillResizeObserver } from '@/utils/cypress';
-import { registerDevtools } from '@/plugins/devtools';
-import { i18n } from '@/i18n';
-import { router } from '@/router';
-import { createRuiPlugin } from '@/plugins/rui';
-import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
-import { StoreStatePersistsPlugin } from '@/store/debug';
-import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import './main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';

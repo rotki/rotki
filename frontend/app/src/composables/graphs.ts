@@ -1,8 +1,8 @@
-import { Chart, type TooltipModel, registerables } from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
-import { useDarkMode } from '@/composables/dark-mode';
 import type { BigNumber, GraphApi, TooltipDisplayOption } from '@rotki/common';
 import type { Ref } from 'vue';
+import { useDarkMode } from '@/composables/dark-mode';
+import { Chart, registerables, type TooltipModel } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 
 export function initGraph(): void {
   Chart.defaults.font.family = 'Roboto';

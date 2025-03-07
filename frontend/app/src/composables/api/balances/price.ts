@@ -1,17 +1,17 @@
+import type { SupportedCurrency } from '@/types/currencies';
+import type { PriceOracle } from '@/types/settings/price-oracle';
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   paramsSerializer,
   validStatus,
-  validWithSessionAndExternalService,
   validWithoutSessionStatus,
+  validWithSessionAndExternalService,
 } from '@/services/utils';
 import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
-import type { ActionResult } from '@rotki/common';
-import type { SupportedCurrency } from '@/types/currencies';
-import type { PriceOracle } from '@/types/settings/price-oracle';
-import type { PendingTask } from '@/types/task';
 
 interface UsePriceApiReturn {
   queryPrices: (assets: string[], targetAsset: string, ignoreCache: boolean) => Promise<PendingTask>;

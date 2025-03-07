@@ -1,4 +1,4 @@
-import { type ConsolaInstance, LogLevels, createConsola } from 'consola';
+import { type ConsolaInstance, createConsola, LogLevels } from 'consola';
 
 const ROWLIMIT = 50000;
 

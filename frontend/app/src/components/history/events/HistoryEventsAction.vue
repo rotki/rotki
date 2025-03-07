@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { toEvmChainAndTxHash } from '@/utils/history';
-import { TaskType } from '@/types/task-type';
-import { isAssetMovementEvent, isEvmEventRef } from '@/utils/history/events';
-import { useTaskStore } from '@/store/tasks';
-import { useSupportedChains } from '@/composables/info/chains';
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { toEvmChainAndTxHash } from '@/utils/history';
+import { isAssetMovementEvent, isEvmEventRef } from '@/utils/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;

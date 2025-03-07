@@ -1,6 +1,6 @@
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { createBlockie } from '@/utils/blockie';
 import { logger } from '@/utils/logging';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const CACHE_SIZE = 100;
 

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { logger } from '@/utils/logging';
-import { size } from '@/utils/data';
-import { useNotificationsStore } from '@/store/notifications';
-import { useBackupApi } from '@/composables/api/backup';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
 import type { DatabaseInfo } from '@/types/backup';
+import CopyButton from '@/components/helper/CopyButton.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { useBackupApi } from '@/composables/api/backup';
+import { useNotificationsStore } from '@/store/notifications';
+import { size } from '@/utils/data';
+import { logger } from '@/utils/logging';
 
 interface UserDbInfo {
   version: string;

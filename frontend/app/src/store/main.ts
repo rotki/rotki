@@ -1,12 +1,12 @@
-import { checkIfDevelopment, startPromise } from '@shared/utils';
-import { api } from '@/services/rotkehlchen-api';
-import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
-import { useInfoApi } from '@/composables/api/info';
-import { apiUrls, defaultApiUrls } from '@/services/api-urls';
-import type { Nullable } from '@rotki/common';
-import type { LogLevel } from '@shared/log-level';
 import type { Version } from '@/types/action';
 import type { DefaultBackendArguments } from '@/types/backend';
+import type { Nullable } from '@rotki/common';
+import type { LogLevel } from '@shared/log-level';
+import { useInfoApi } from '@/composables/api/info';
+import { apiUrls, defaultApiUrls } from '@/services/api-urls';
+import { api } from '@/services/rotkehlchen-api';
+import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 
 let intervalId: any = null;
 

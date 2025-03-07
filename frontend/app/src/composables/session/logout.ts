@@ -1,7 +1,7 @@
-import { resetState } from '@/store/plugins';
-import { useMonitorStore } from '@/store/monitor';
-import { useSessionAuthStore } from '@/store/session/auth';
 import { useSync } from '@/composables/session/sync';
+import { useMonitorStore } from '@/store/monitor';
+import { resetState } from '@/store/plugins';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 export function useSessionStateCleaner(): void {
   const { logged } = storeToRefs(useSessionAuthStore());

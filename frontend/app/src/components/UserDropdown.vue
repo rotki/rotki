@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePrivacyMode } from '@/composables/privacy';
+import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import ThemeControl from '@/components/premium/ThemeControl.vue';
 import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/composables/electron-interop';
-import ThemeControl from '@/components/premium/ThemeControl.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { usePrivacyMode } from '@/composables/privacy';
 import { useLogout } from '@/modules/account/use-logout';
+import { useConfirmStore } from '@/store/confirm';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t } = useI18n();
 

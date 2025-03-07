@@ -1,11 +1,11 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
-import '../../../i18n';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
-import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
+import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import '../../../i18n';
 
 describe('prioritizedList.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof PrioritizedList>>;

@@ -1,11 +1,11 @@
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { handleResponse, validFileOperationStatus, validStatus, validWithoutSessionStatus } from '@/services/utils';
-import { api } from '@/services/rotkehlchen-api';
-import { downloadFileByBlobResponse } from '@/utils/download';
-import type { ActionResult } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
 import type { ConflictResolution } from '@/types/asset';
 import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse, validFileOperationStatus, validStatus, validWithoutSessionStatus } from '@/services/utils';
+import { downloadFileByBlobResponse } from '@/utils/download';
 
 interface UseAssetApiReturn {
   checkForAssetUpdate: () => Promise<PendingTask>;

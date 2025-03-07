@@ -1,13 +1,13 @@
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validStatus,
-  validWithSessionAndExternalService,
   validWithoutSessionStatus,
+  validWithSessionAndExternalService,
 } from '@/services/utils';
 import { Snapshot, type SnapshotPayload } from '@/types/snapshots';
-import type { ActionResult } from '@rotki/common';
 
 interface UseSnapshotApiReturn {
   getSnapshotData: (timestamp: number) => Promise<Snapshot>;

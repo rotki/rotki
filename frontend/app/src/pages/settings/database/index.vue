@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes';
-import AssetDatabaseCategory from '@/components/settings/database/AssetDatabaseCategory.vue';
-import ImportExportCategory from '@/components/settings/database/ImportExportCategory.vue';
 import HistoryEventsSkippedExternalEvents from '@/components/history/events/HistoryEventsSkippedExternalEvents.vue';
-import DataManagement from '@/components/settings/data-security/data-management/DataManagement.vue';
-import BackupManager from '@/components/settings/data-security/backups/BackupManager.vue';
-import DatabaseInformationCategory from '@/components/settings/database/DatabaseInformationCategory.vue';
 import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
+import BackupManager from '@/components/settings/data-security/backups/BackupManager.vue';
+import DataManagement from '@/components/settings/data-security/data-management/DataManagement.vue';
+import AssetDatabaseCategory from '@/components/settings/database/AssetDatabaseCategory.vue';
+import DatabaseInformationCategory from '@/components/settings/database/DatabaseInformationCategory.vue';
+import ImportExportCategory from '@/components/settings/database/ImportExportCategory.vue';
+import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

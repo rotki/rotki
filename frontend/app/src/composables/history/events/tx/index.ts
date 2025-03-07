@@ -1,6 +1,19 @@
-import { groupBy, omit } from 'es-toolkit';
-import { startPromise } from '@shared/utils';
-import { Section, Status } from '@/types/status';
+import type { ActionStatus } from '@/types/action';
+import type { Exchange } from '@/types/exchanges';
+import type { Blockchain } from '@rotki/common';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useModules } from '@/composables/session/modules';
+import { useStatusUpdater } from '@/composables/status';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useExchangesStore } from '@/store/exchanges/index';
+import { useHistoryStore } from '@/store/history';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useNotificationsStore } from '@/store/notifications';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import {
   type AddTransactionHashPayload,
   type EvmChainAddress,
@@ -8,29 +21,16 @@ import {
   TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
-import { TaskType } from '@/types/task-type';
-import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { Module } from '@/types/modules';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { Section, Status } from '@/types/status';
+import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
+import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { logger } from '@/utils/logging';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useHistoryStore } from '@/store/history';
-import { useTaskStore } from '@/store/tasks';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useNotificationsStore } from '@/store/notifications';
-import { useModules } from '@/composables/session/modules';
-import { useStatusUpdater } from '@/composables/status';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { useExchangesStore } from '@/store/exchanges/index';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import type { ActionStatus } from '@/types/action';
-import type { Blockchain } from '@rotki/common';
-import type { Exchange } from '@/types/exchanges';
+import { logger } from '@/utils/logging';
+import { startPromise } from '@shared/utils';
+import { groupBy, omit } from 'es-toolkit';
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();

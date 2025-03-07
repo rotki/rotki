@@ -1,5 +1,5 @@
-import { isEqual } from 'es-toolkit';
 import { Routes } from '@/router/routes';
+import { isEqual } from 'es-toolkit';
 
 interface UseAppNavigationReturn {
   navigateToDashboard: () => Promise<void>;

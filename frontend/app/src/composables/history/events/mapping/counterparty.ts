@@ -1,9 +1,9 @@
-import { startPromise } from '@shared/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useScramble } from '@/composables/scramble';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
 import type { ActionDataEntry } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useScramble } from '@/composables/scramble';
+import { useNotificationsStore } from '@/store/notifications';
+import { startPromise } from '@shared/utils';
 
 export const useHistoryEventCounterpartyMappings = createSharedComposable(() => {
   const { getHistoryEventCounterpartiesData } = useHistoryEventsApi();

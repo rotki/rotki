@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
+import { useManualBalancesStore } from '@/store/balances/manual';
 import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import ManualBalanceCardList from './ManualBalanceCardList.vue';
 import SummaryCard from './SummaryCard.vue';
 import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
-import ManualBalanceCardList from './ManualBalanceCardList.vue';
 
 const manualBalancesStore = useManualBalancesStore();
 const { fetchManualBalances } = manualBalancesStore;

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { usePremium } from '@/composables/premium';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
+import { usePremium } from '@/composables/premium';
 
 withDefaults(
   defineProps<{

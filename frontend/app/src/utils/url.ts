@@ -1,9 +1,9 @@
-import { camelCase } from 'es-toolkit';
-import { etherscanLinks, externalLinks } from '@shared/external-links';
+import type { RouteLocationRaw } from 'vue-router';
 import { pslSuffixes } from '@/data/psl';
 import { isEtherscanKey } from '@/types/external';
 import { logger } from '@/utils/logging';
-import type { RouteLocationRaw } from 'vue-router';
+import { etherscanLinks, externalLinks } from '@shared/external-links';
+import { camelCase } from 'es-toolkit';
 
 export function getDomain(str: string): string {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;

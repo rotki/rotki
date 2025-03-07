@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import { downloadFileByBlobResponse } from '@/utils/download';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { useStatisticsStore } from '@/store/statistics';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
-import { useInterop } from '@/composables/electron-interop';
+import type { BigNumber, Message } from '@rotki/common';
 import EditSnapshotDialog from '@/components/dashboard/edit-snapshot/EditSnapshotDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import type { BigNumber, Message } from '@rotki/common';
+import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
+import { useInterop } from '@/composables/electron-interop';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { downloadFileByBlobResponse } from '@/utils/download';
+import dayjs from 'dayjs';
 
 const display = defineModel<boolean>({ default: false, required: true });
 

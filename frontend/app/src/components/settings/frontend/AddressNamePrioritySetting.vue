@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import PrioritizedList from '@/components/helper/PrioritizedList.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
   BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
@@ -6,15 +12,9 @@ import {
   ETHEREUM_TOKENS_PRIO_LIST_ITEM,
   GLOBAL_ADDRESSBOOK_PRIO_LIST_ITEM,
   HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
-  PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
   type PrioritizedListId,
+  PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import PrioritizedList from '@/components/helper/PrioritizedList.vue';
-import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());

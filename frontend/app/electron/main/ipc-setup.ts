@@ -1,18 +1,18 @@
-import process from 'node:process';
-import { dialog, ipcMain, nativeTheme, shell } from 'electron';
-import { autoUpdater } from 'electron-updater';
-import { loadConfig } from '@electron/main/config';
-import { startHttp, stopHttp } from '@electron/main/http';
-import { selectPort } from '@electron/main/port-utils';
-import { startPromise } from '@shared/utils';
-import { IpcCommands } from '@electron/ipc-commands';
-import { PasswordManager } from '@electron/main/password-manager';
-import { type DebugSettings, assert } from '@rotki/common';
-import type { BackendOptions, Credentials, SystemVersion, TrayUpdate } from '@shared/ipc';
-import type { ProgressInfo } from 'electron-builder';
+import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
-import type { AppConfig } from '@electron/main/app-config';
+import type { BackendOptions, Credentials, SystemVersion, TrayUpdate } from '@shared/ipc';
+import type { ProgressInfo } from 'electron-builder';
+import process from 'node:process';
+import { IpcCommands } from '@electron/ipc-commands';
+import { loadConfig } from '@electron/main/config';
+import { startHttp, stopHttp } from '@electron/main/http';
+import { PasswordManager } from '@electron/main/password-manager';
+import { selectPort } from '@electron/main/port-utils';
+import { assert, type DebugSettings } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { dialog, ipcMain, nativeTheme, shell } from 'electron';
+import { autoUpdater } from 'electron-updater';
 
 interface Callbacks {
   quit: () => Promise<void>;

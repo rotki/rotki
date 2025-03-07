@@ -1,8 +1,8 @@
-import { ApiValidationError } from '@/types/api/errors';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
+import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import type { AxiosInstance, AxiosResponse, ParamsSerializerOptions } from 'axios';
-import type { PendingTask } from '@/types/task';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { ApiValidationError } from '@/types/api/errors';
 
 type Parser<T> = (response: AxiosResponse<ActionResult<T>>) => ActionResult<T>;
 

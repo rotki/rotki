@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { type BigNumber, Blockchain } from '@rotki/common';
-import { CURRENCY_USD } from '@/types/currencies';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useStatusStore } from '@/store/status';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import TagFilter from '@/components/inputs/TagFilter.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TagFilter from '@/components/inputs/TagFilter.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { CURRENCY_USD } from '@/types/currencies';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { type BigNumber, Blockchain } from '@rotki/common';
 
 type AssetLocations = AssetLocation[];
 

@@ -1,16 +1,16 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import BigNumber from 'bignumber.js';
-import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import { RuiAutoComplete } from '@rotki/ui-library';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
-import { setupDayjs } from '@/utils/date';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { type Trade, TradeType } from '@/types/history/trade';
-import { createNewTrade } from '@/utils/history/trades';
-import type { AssetMap } from '@/types/asset';
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
+import type { AssetMap } from '@/types/asset';
+import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { type Trade, TradeType } from '@/types/history/trade';
+import { setupDayjs } from '@/utils/date';
+import { createNewTrade } from '@/utils/history/trades';
+import { RuiAutoComplete } from '@rotki/ui-library';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import BigNumber from 'bignumber.js';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({

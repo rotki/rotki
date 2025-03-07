@@ -1,23 +1,23 @@
-import { Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { isBtcChain } from '@/types/blockchain/chains';
-import { getKeyType, guessPrefix } from '@/utils/xpub';
-import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
-import { logger } from '@/utils/logging';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useMessageStore } from '@/store/message';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import { useBlockchains } from '@/composables/blockchain';
-import type { Module } from '@/types/modules';
+import type { Eth2Validator } from '@/types/balances';
 import type {
   AccountPayload,
   BlockchainAccountBalance,
   XpubAccountPayload,
 } from '@/types/blockchain/accounts';
-import type { Eth2Validator } from '@/types/balances';
+import type { Module } from '@/types/modules';
 import type { Ref } from 'vue';
+import { useBlockchains } from '@/composables/blockchain';
+import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useMessageStore } from '@/store/message';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { isBtcChain } from '@/types/blockchain/chains';
+import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
+import { logger } from '@/utils/logging';
+import { getKeyType, guessPrefix } from '@/utils/xpub';
+import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 
 interface AccountManageMode {
   readonly mode: 'edit' | 'add';

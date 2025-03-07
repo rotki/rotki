@@ -1,17 +1,17 @@
-import { Blockchain } from '@rotki/common';
-import flushPromises from 'flush-promises';
-import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
-import { useMainStore } from '@/store/main';
-import { FilterBehaviour } from '@/types/filtering';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
-import { useHistoryEvents } from '@/composables/history/events';
-import type * as Vue from 'vue';
 import type { Collection } from '@/types/collection';
 import type { HistoryEvent, HistoryEventRequestPayload } from '@/types/history/events';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
+import type * as Vue from 'vue';
+import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
+import { useHistoryEvents } from '@/composables/history/events';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useMainStore } from '@/store/main';
+import { FilterBehaviour } from '@/types/filtering';
+import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
+import { Blockchain } from '@rotki/common';
+import flushPromises from 'flush-promises';
+import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 vi.mock('vue-router', async () => {
   const { ref } = await import('vue');

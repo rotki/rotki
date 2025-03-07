@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
-import { truncateAddress } from '@/utils/truncate';
-import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
+import EnsAvatar from '@/components/display/EnsAvatar.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { useAddressBookForm } from '@/composables/address-book/form';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useLinks } from '@/composables/links';
+import { useScramble } from '@/composables/scramble';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useLinks } from '@/composables/links';
-import { useAddressBookForm } from '@/composables/address-book/form';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useScramble } from '@/composables/scramble';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
-import EnsAvatar from '@/components/display/EnsAvatar.vue';
+import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
+import { truncateAddress } from '@/utils/truncate';
+import { Blockchain } from '@rotki/common';
 
 interface HashLinkProps {
   showIcon?: boolean;

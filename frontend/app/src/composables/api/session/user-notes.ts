@@ -1,11 +1,11 @@
+import type { Collection } from '@/types/collection';
+import type { ActionResult } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/types/notes';
 import { mapCollectionResponse } from '@/utils/collection';
-import type { MaybeRef } from '@vueuse/core';
-import type { Collection } from '@/types/collection';
-import type { ActionResult } from '@rotki/common';
 
 interface UseUserNotesApiReturn {
   fetchUserNotes: (filter: MaybeRef<UserNotesRequestPayload>) => Promise<Collection<UserNote>>;

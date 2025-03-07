@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { Section } from '@/types/status';
-import { CURRENCY_USD } from '@/types/currencies';
-import { bigNumberSum } from '@/utils/calculation';
+import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useStatusStore } from '@/store/status';
-import { useRefMap } from '@/composables/utils/useRefMap';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
+import { CURRENCY_USD } from '@/types/currencies';
+import { Section } from '@/types/status';
+import { bigNumberSum } from '@/utils/calculation';
 
 const props = withDefaults(
   defineProps<{

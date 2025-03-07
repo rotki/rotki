@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { toMessages } from '@/utils/validation';
-import { TaskType } from '@/types/task-type';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { DateFormat } from '@/types/date-format';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertToTimestamp } from '@/utils/date';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useTaskStore } from '@/store/tasks';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
+import type { ActionStatus } from '@/types/action';
+import type { NewHistoryEventPayload } from '@/types/history/events';
+import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { BigNumber } from '@rotki/common';
+import type { Validation } from '@vuelidate/core';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import type { Validation } from '@vuelidate/core';
-import type { BigNumber } from '@rotki/common';
-import type { HistoricalPriceFormPayload } from '@/types/prices';
-import type { NewHistoryEventPayload } from '@/types/history/events';
-import type { ActionStatus } from '@/types/action';
+import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { DateFormat } from '@/types/date-format';
+import { TaskType } from '@/types/task-type';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { convertToTimestamp } from '@/utils/date';
+import { toMessages } from '@/utils/validation';
 
 interface HistoryEventAssetPriceFormProps {
   datetime: string;

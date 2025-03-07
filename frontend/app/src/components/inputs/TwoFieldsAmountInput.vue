@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { arrayify } from '@/utils/array';
 import AmountInput from '@/components/inputs/AmountInput.vue';
+import { arrayify } from '@/utils/array';
 
 defineOptions({
   inheritAttrs: false,
@@ -10,7 +10,7 @@ const props = withDefaults(
   defineProps<{
     primaryValue: string;
     secondaryValue: string;
-    label: { primary?: string; secondary?: string };
+    label?: { primary?: string; secondary?: string };
     errorMessages?: {
       primary?: string | string[];
       secondary?: string | string[];

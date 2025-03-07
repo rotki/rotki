@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
-import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
-import EthNamesHint from '@/components/EthNamesHint.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import AddressBookManagementMore from '@/components/address-book-manager/AddressBookManagementMore.vue';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import type {
   AddressBookEntry,
   AddressBookLocation,
   AddressBookPayload,
   AddressBookRequestPayload,
 } from '@/types/eth-names';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
+import AddressBookManagementMore from '@/components/address-book-manager/AddressBookManagementMore.vue';
+import AddressBookTable from '@/components/address-book-manager/AddressBookTable.vue';
+import EthNamesHint from '@/components/EthNamesHint.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const { t } = useI18n();
 

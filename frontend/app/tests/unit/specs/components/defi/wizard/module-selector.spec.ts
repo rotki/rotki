@@ -1,11 +1,11 @@
-import { type VueWrapper, mount } from '@vue/test-utils';
-import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import { Module } from '@/types/modules';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Module } from '@/types/modules';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setModules } from '../../../../utils/general-settings';
 import { libraryDefaults } from '../../../../utils/provide-defaults';
 

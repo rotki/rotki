@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, maxLength, required } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useValidation } from '@/composables/validation';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useValidation } from '@/composables/validation';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, maxLength, required } from '@vuelidate/validators';
 
 const DEFAULT_DELIMITER = Defaults.DEFAULT_CSV_EXPORT_DELIMITER;
 const csvExportDelimiter = ref<string>(DEFAULT_DELIMITER);

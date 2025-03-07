@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { Defaults } from '@/data/defaults';
-import { toMessages } from '@/utils/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useValidation } from '@/composables/validation';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { RuiTextField } from '@rotki/ui-library';
 import { useFormStateWatcher } from '@/composables/form';
 import { toMessages } from '@/utils/validation';
-import type { RuiTextField } from '@rotki/ui-library';
-import type { ValidationErrors } from '@/types/api/errors';
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useMessageStore } from '@/store/message';
-import { useReportsStore } from '@/store/reports';
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
+import { useMessageStore } from '@/store/message';
+import { useReportsStore } from '@/store/reports';
 
 withDefaults(
   defineProps<{

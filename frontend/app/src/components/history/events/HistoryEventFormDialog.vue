@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { useTemplateRef } from 'vue';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { HistoryEvent, HistoryEventEntry } from '@/types/history/events';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { useTemplateRef } from 'vue';
 
 const open = defineModel<boolean>('open', { required: true });
 

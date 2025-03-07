@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes';
 import AccountBalancesDefaultPage from '@/components/accounts/AccountBalancesDefaultPage.vue';
+import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

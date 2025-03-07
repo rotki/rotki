@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
-import { useTaskStore } from '@/store/tasks';
-import { usePremiumStore } from '@/store/session/premium';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useSync } from '@/composables/session/sync';
-import { useLinks } from '@/composables/links';
-import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
 import SyncButtons from '@/components/status/sync/SyncButtons.vue';
 import SyncSettings from '@/components/status/sync/SyncSettings.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
+import { useLinks } from '@/composables/links';
+import { useSync } from '@/composables/session/sync';
 import { useLogout } from '@/modules/account/use-logout';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { usePremiumStore } from '@/store/session/premium';
+import { useTaskStore } from '@/store/tasks';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
+import { TaskType } from '@/types/task-type';
 
 const { t } = useI18n();
 const { logout } = useLogout();

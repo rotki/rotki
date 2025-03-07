@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { useInterop } from '@/composables/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
-import { useInterop } from '@/composables/electron-interop';
 
 const { t } = useI18n();
 

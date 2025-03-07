@@ -1,5 +1,5 @@
-import { startPromise } from '@shared/utils';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { startPromise } from '@shared/utils';
 
 export function useHistoryAutoRefresh(refresh: () => Promise<void>): void {
   const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());

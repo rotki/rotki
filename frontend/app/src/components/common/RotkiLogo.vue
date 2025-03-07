@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { checkIfDevelopment } from '@shared/utils';
 import type { LogoProps } from '@rotki/ui-library';
+import { checkIfDevelopment } from '@shared/utils';
 
 defineOptions({
   inheritAttrs: false,

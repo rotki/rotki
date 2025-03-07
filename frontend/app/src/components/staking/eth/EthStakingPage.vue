@@ -1,4 +1,30 @@
 <script setup lang="ts">
+import ActiveModules from '@/components/defi/ActiveModules.vue';
+import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
+import EthStakingPageSettingMenu from '@/components/staking/eth/EthStakingPageSettingMenu.vue';
+import EthValidatorFilter from '@/components/staking/eth/EthValidatorFilter.vue';
+import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { usePremium } from '@/composables/premium';
+import { useModules } from '@/composables/session/modules';
+import { useEth2DailyStats } from '@/composables/staking/eth2/daily-stats';
+import { useEth2Staking } from '@/composables/staking/eth2/eth2';
+import { useStatusUpdater } from '@/composables/status';
+import { EthStaking } from '@/premium/premium';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useStatusStore } from '@/store/status';
+import { useTaskStore } from '@/store/tasks';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events';
+import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { nonEmptyProperties } from '@/utils/data';
+import { logger } from '@/utils/logging';
 import {
   type BigNumber,
   Blockchain,
@@ -7,36 +33,10 @@ import {
   type EthStakingCombinedFilter,
   type EthStakingFilter,
 } from '@rotki/common';
-import { isEmpty } from 'es-toolkit/compat';
-import dayjs from 'dayjs';
 import { startPromise } from '@shared/utils';
+import dayjs from 'dayjs';
 import { omit } from 'es-toolkit';
-import { EthStaking } from '@/premium/premium';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events';
-import { logger } from '@/utils/logging';
-import { nonEmptyProperties } from '@/utils/data';
-import { useTaskStore } from '@/store/tasks';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useStatusStore } from '@/store/status';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import { usePremium } from '@/composables/premium';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
-import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useStatusUpdater } from '@/composables/status';
-import { useEth2DailyStats } from '@/composables/staking/eth2/daily-stats';
-import { useModules } from '@/composables/session/modules';
-import { useEth2Staking } from '@/composables/staking/eth2/eth2';
-import EthValidatorFilter from '@/components/staking/eth/EthValidatorFilter.vue';
-import EthStakingPageSettingMenu from '@/components/staking/eth/EthStakingPageSettingMenu.vue';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
+import { isEmpty } from 'es-toolkit/compat';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;

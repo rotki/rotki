@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
+import { execSync } from 'node:child_process';
+import fs from 'node:fs';
+import net from 'node:net';
 import path from 'node:path';
 import process from 'node:process';
-import { execSync } from 'node:child_process';
-import net from 'node:net';
-import fs from 'node:fs';
-import { startAndTest } from 'start-server-and-test';
 import { ArgumentParser } from 'argparse';
-import { config } from 'dotenv';
 import consola from 'consola';
+import { config } from 'dotenv';
+import { startAndTest } from 'start-server-and-test';
 
 const parser = new ArgumentParser({
   description: 'e2e tests',

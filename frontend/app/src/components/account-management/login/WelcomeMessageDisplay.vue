@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { checkIfDevelopment } from '@shared/utils';
-import { api } from '@/services/rotkehlchen-api';
-import { logger } from '@/utils/logging';
-import { useRandomStepper } from '@/composables/random-stepper';
+import type { WelcomeMessage } from '@/types/dynamic-messages';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FadeTransition from '@/components/helper/FadeTransition.vue';
-import type { WelcomeMessage } from '@/types/dynamic-messages';
+import { useRandomStepper } from '@/composables/random-stepper';
+import { api } from '@/services/rotkehlchen-api';
+import { logger } from '@/utils/logging';
+import { checkIfDevelopment } from '@shared/utils';
 
 const props = defineProps<{
   messages: WelcomeMessage[];

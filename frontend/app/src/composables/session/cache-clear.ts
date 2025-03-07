@@ -1,7 +1,7 @@
-import { useConfirmStore } from '@/store/confirm';
 import type { BaseMessage } from '@/types/messages';
-import type { Ref } from 'vue';
 import type { MaybeRef } from '@vueuse/core';
+import type { Ref } from 'vue';
+import { useConfirmStore } from '@/store/confirm';
 
 interface UseCacheClearReturn<T> {
   status: Ref<BaseMessage | null>;

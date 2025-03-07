@@ -1,10 +1,10 @@
-import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
+import type { StringSuggestionMatcher } from '@/types/filtering';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it } from 'vitest';
-import flushPromises from 'flush-promises';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
-import type { StringSuggestionMatcher } from '@/types/filtering';
 
 describe('table-filter/TableFilter.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof TableFilter>>;

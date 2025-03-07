@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useHistoricPrices } from '@/composables/price-manager/historic';
-import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';
+import { useHistoricPrices } from '@/composables/price-manager/historic';
+import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<HistoricalPriceFormPayload | undefined>({ required: true });
 

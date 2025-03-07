@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import BlockchainBalanceRefreshBehaviourMenu
+  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import {
   type AccountManageState,
   createNewBlockchainAccount,
 } from '@/composables/accounts/blockchain/use-account-manage';
+import { useAccountLoading } from '@/composables/accounts/loading';
+import { useRefresh } from '@/composables/balances/refresh';
+import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
+import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useAccountLoading } from '@/composables/accounts/loading';
-import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
-import AssetBalances from '@/components/AssetBalances.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import { useRefresh } from '@/composables/balances/refresh';
-import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
+import { startPromise } from '@shared/utils';
 
 definePage({
   meta: {

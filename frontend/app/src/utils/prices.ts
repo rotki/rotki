@@ -1,7 +1,7 @@
-import { cloneDeep } from 'es-toolkit';
-import type { MaybeRef } from '@vueuse/core';
 import type { Balances, BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
+import type { MaybeRef } from '@vueuse/core';
+import { cloneDeep } from 'es-toolkit';
 
 export function updateBalancesPrices(balances: Balances, prices: MaybeRef<AssetPrices>): Balances {
   for (const asset in balances) {

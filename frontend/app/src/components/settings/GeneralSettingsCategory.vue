@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import DateInputFormatSetting from '@/components/settings/general/DateInputFormatSetting.vue';
-import DateDisplayFormatSetting from '@/components/settings/general/DateDisplayFormatSetting.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
+import AutoDetectTokensSetting from '@/components/settings/general/AutoDetectTokensSetting.vue';
+import BalanceSaveFrequencySetting from '@/components/settings/general/BalanceSaveFrequencySetting.vue';
 import BtcDerivationGapLimitSetting from '@/components/settings/general/BtcDerivationGapLimitSetting.vue';
+import CsvExportDelimiterSetting from '@/components/settings/general/CsvExportDelimiterSetting.vue';
+import DateDisplayFormatSetting from '@/components/settings/general/DateDisplayFormatSetting.vue';
+import DateInputFormatSetting from '@/components/settings/general/DateInputFormatSetting.vue';
+import DisplayDateInLocaltimeSetting from '@/components/settings/general/DisplayDateInLocaltimeSetting.vue';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import TreatEthAsEth2Setting from '@/components/settings/general/TreatEthAsEth2Setting.vue';
-import BalanceSaveFrequencySetting from '@/components/settings/general/BalanceSaveFrequencySetting.vue';
-import VersionUpdateFrequencySetting from '@/components/settings/general/VersionUpdateFrequencySetting.vue';
-import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/AskUserUponSizeDiscrepancySetting.vue';
-import CsvExportDelimiterSetting from '@/components/settings/general/CsvExportDelimiterSetting.vue';
-import DisplayDateInLocaltimeSetting from '@/components/settings/general/DisplayDateInLocaltimeSetting.vue';
-import AutoDetectTokensSetting from '@/components/settings/general/AutoDetectTokensSetting.vue';
 import UsageAnalyticsSetting from '@/components/settings/general/UsageAnalyticsSetting.vue';
+import VersionUpdateFrequencySetting from '@/components/settings/general/VersionUpdateFrequencySetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
 const { t } = useI18n();

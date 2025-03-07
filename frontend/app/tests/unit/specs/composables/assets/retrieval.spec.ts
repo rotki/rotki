@@ -1,12 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CUSTOM_ASSET } from '@/types/asset';
+import type { ERC20Token } from '@/types/blockchain/accounts';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { CUSTOM_ASSET } from '@/types/asset';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
-import type { ERC20Token } from '@/types/blockchain/accounts';
 
 vi.mock('@/composables/api/assets/info', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({

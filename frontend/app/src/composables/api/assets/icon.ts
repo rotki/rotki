@@ -1,7 +1,7 @@
+import type { ActionResult } from '@rotki/common';
+import { apiUrls } from '@/services/api-urls';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { apiUrls } from '@/services/api-urls';
-import type { ActionResult } from '@rotki/common';
 
 interface CheckAssetOptions {
   abortController?: AbortController;

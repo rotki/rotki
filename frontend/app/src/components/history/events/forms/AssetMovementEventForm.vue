@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common';
-import dayjs from 'dayjs';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { isEmpty } from 'es-toolkit/compat';
-import useVuelidate from '@vuelidate/core';
-import { isEqual } from 'es-toolkit';
-import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { toMessages } from '@/utils/validation';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import { refIsTruthy } from '@/composables/ref';
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useFormStateWatcher } from '@/composables/form';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
+import LocationSelector from '@/components/helper/LocationSelector.vue';
+import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { refIsTruthy } from '@/composables/ref';
+import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { DateFormat } from '@/types/date-format';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { toMessages } from '@/utils/validation';
+import { HistoryEventEntryType } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
+import dayjs from 'dayjs';
+import { isEqual } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 
 interface AssetMovementEventFormProps {
   editableItem?: AssetMovementEvent;

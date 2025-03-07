@@ -1,4 +1,6 @@
-import { omit } from 'es-toolkit';
+import type { Collection, CollectionResponse } from '@/types/collection';
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionAndExternalService } from '@/services/utils';
@@ -12,9 +14,7 @@ import {
   EthNames,
 } from '@/types/eth-names';
 import { mapCollectionResponse } from '@/utils/collection';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
-import type { Collection, CollectionResponse } from '@/types/collection';
+import { omit } from 'es-toolkit';
 
 interface UseAddressesNamesApiReturn {
   getEnsNamesTask: (ethAddresses: string[]) => Promise<PendingTask>;

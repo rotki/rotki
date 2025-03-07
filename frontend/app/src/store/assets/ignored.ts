@@ -1,10 +1,10 @@
-import { uniqueStrings } from '@/utils/data';
-import { arrayify } from '@/utils/array';
-import { useNotificationsStore } from '@/store/notifications';
+import type { ActionStatus } from '@/types/action';
+import type { MaybeRef } from '@vueuse/core';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useConfirmStore } from '@/store/confirm';
-import type { MaybeRef } from '@vueuse/core';
-import type { ActionStatus } from '@/types/action';
+import { useNotificationsStore } from '@/store/notifications';
+import { arrayify } from '@/utils/array';
+import { uniqueStrings } from '@/utils/data';
 
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const ignoredAssets = ref<string[]>([]);

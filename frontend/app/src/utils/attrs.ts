@@ -1,5 +1,5 @@
-import { omit, pick } from 'es-toolkit';
 import type { SetupContext } from 'vue';
+import { omit, pick } from 'es-toolkit';
 
 type SetupContextAttrs = SetupContext['attrs'];
 

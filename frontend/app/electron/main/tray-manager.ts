@@ -1,9 +1,9 @@
-import path from 'node:path';
-import { Menu, type MenuItem, type MenuItemConstructorOptions, Tray, nativeImage } from 'electron';
-import { assert } from '@rotki/common';
+import type { AppConfig } from '@electron/main/app-config';
 import type { SettingsManager } from '@electron/main/settings-manager';
 import type { TrayUpdate } from '@shared/ipc';
-import type { AppConfig } from '@electron/main/app-config';
+import path from 'node:path';
+import { assert } from '@rotki/common';
+import { Menu, type MenuItem, type MenuItemConstructorOptions, nativeImage, Tray } from 'electron';
 
 interface TrayManagerListener {
   toggleWindowVisibility: () => boolean;

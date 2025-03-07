@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useMainStore } from '@/store/main';
-import { useAutoLogin, useRestartingStatus } from '@/composables/user/account';
-import DockerWarning from '@/components/account-management/DockerWarning.vue';
 import ConnectionFailureMessage from '@/components/account-management/ConnectionFailureMessage.vue';
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
+import DockerWarning from '@/components/account-management/DockerWarning.vue';
+import { useAutoLogin, useRestartingStatus } from '@/composables/user/account';
+import { useMainStore } from '@/store/main';
 
 defineSlots<{
   default: () => any;

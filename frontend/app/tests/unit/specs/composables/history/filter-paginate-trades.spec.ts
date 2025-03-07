@@ -1,13 +1,13 @@
+import type { Collection } from '@/types/collection';
+import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
+import type { LocationQuery } from '@/types/route';
+import type { MaybeRef } from '@vueuse/core';
+import type * as Vue from 'vue';
+import { type Filters, type Matcher, useTradeFilters } from '@/composables/filters/trades';
+import { useTrades } from '@/composables/history/trades';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useTrades } from '@/composables/history/trades';
-import { type Filters, type Matcher, useTradeFilters } from '@/composables/filters/trades';
-import type * as Vue from 'vue';
-import type { MaybeRef } from '@vueuse/core';
-import type { Collection } from '@/types/collection';
-import type { LocationQuery } from '@/types/route';
-import type { TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 
 vi.mock('vue-router', async () => {
   const { ref } = await import('vue');

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useBackendMessagesStore } from '@/store/backend-messages';
-import { useAddressBookForm } from '@/composables/address-book/form';
-import WinVersionUnsupported from '@/components/error/WinVersionUnsupported.vue';
-import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
-import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
+import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import MessageDialog from '@/components/dialogs/MessageDialog.vue';
-import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
+import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
+import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
+import WinVersionUnsupported from '@/components/error/WinVersionUnsupported.vue';
+import { useAddressBookForm } from '@/composables/address-book/form';
+import { useBackendMessagesStore } from '@/store/backend-messages';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 
 defineSlots<{
   default: () => any;

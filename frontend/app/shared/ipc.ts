@@ -1,6 +1,6 @@
+import type { DebugSettings } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
 import z from 'zod';
-import type { DebugSettings } from '@rotki/common';
 
 export const BackendCode = {
   TERMINATED: 0,

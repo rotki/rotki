@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import { omit } from 'es-toolkit';
+import type { CalendarEvent } from '@/types/history/calendar';
 import CalendarForm from '@/components/calendar/CalendarForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { ApiValidationError } from '@/types/api/errors';
-import { useMessageStore } from '@/store/message';
 import { useCalendarApi } from '@/composables/history/calendar';
-import type { CalendarEvent } from '@/types/history/calendar';
+import { useMessageStore } from '@/store/message';
+import { ApiValidationError } from '@/types/api/errors';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<CalendarEvent | undefined>({ required: true });
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useReportsStore } from '@/store/reports';
-import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import type { SelectedReport } from '@/types/reports';
+import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
+import { useReportsStore } from '@/store/reports';
 
 const props = withDefaults(
   defineProps<{

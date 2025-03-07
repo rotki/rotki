@@ -1,6 +1,6 @@
-import { handleResponse, validAuthorizedStatus, validStatus } from '@/services/utils';
-import { api } from '@/services/rotkehlchen-api';
 import type { ActionResult } from '@rotki/common';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse, validAuthorizedStatus, validStatus } from '@/services/utils';
 
 interface UsePremiumCredentialsApiReturn {
   setPremiumCredentials: (username: string, apiKey: string, apiSecret: string) => Promise<true>;

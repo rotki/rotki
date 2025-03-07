@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useRefMap } from '@/composables/utils/useRefMap';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { CamelCase } from '@/types/common';
 import AppImage from '@/components/common/AppImage.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import type { CamelCase } from '@/types/common';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { Blockchain } from '@rotki/common';
 
 const props = defineProps<{ module: Module }>();
 
@@ -62,7 +62,7 @@ const usableAddresses = computed(() => {
   return accountList.filter(address => !moduleAddresses.includes(address));
 });
 
-const addAddress = async function () {
+async function addAddress() {
   const currentModule = get(module);
   const currentAccount = get(selectedAccounts);
   assert(currentModule && currentAccount.length > 0);
@@ -71,7 +71,7 @@ const addAddress = async function () {
     module: currentModule,
   });
   set(selectedAccounts, []);
-};
+}
 
 function getAccount(address: string): BlockchainAccount {
   const account = get(accounts).find(account => getAccountAddress(account) === address);

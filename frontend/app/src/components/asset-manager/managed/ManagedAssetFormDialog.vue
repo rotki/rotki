@@ -1,26 +1,21 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import { omit } from 'es-toolkit';
+import type { SupportedAsset } from '@rotki/common';
 import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { ApiValidationError } from '@/types/api/errors';
 import { useMessageStore } from '@/store/message';
-import type { SupportedAsset } from '@rotki/common';
+import { ApiValidationError } from '@/types/api/errors';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editMode: boolean;
-  }>(),
-  {
-    editMode: false,
-  },
-);
+const props = defineProps<{
+  editMode: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
+  refresh: [];
 }>();
 
 const { t } = useI18n();

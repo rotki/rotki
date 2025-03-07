@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAssetStatisticState } from '@/composables/settings/use-asset-statistic-state';
 
 const props = defineProps<{

@@ -1,8 +1,8 @@
+import type { ActionResult } from '@rotki/common';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { IgnoredAssetResponse } from '@/types/asset';
-import type { ActionResult } from '@rotki/common';
 
 interface UseAssetIgnoreApiReturn {
   getIgnoredAssets: () => Promise<string[]>;

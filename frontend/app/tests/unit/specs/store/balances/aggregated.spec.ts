@@ -1,20 +1,20 @@
+import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
+import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
+import { useBalances } from '@/composables/balances';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { TRADE_LOCATION_BANKS } from '@/data/defaults';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useExchangesStore } from '@/store/exchanges';
+import { BalanceType } from '@/types/balances';
+import { useCurrencies } from '@/types/currencies';
+import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
 import { type AssetBalanceWithPrice, Blockchain } from '@rotki/common';
 import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
-import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { useCurrencies } from '@/types/currencies';
-import { BalanceType } from '@/types/balances';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useExchangesStore } from '@/store/exchanges';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useBalances } from '@/composables/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';
-import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
-import type { BitcoinAccounts, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
 import '../../../i18n';
 
 describe('store::balances/aggregated', () => {

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import RowActions from '@/components/helper/RowActions.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
-import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import type { Collection } from '@/types/collection';
 import type { CexMapping } from '@/types/asset';
+import type { Collection } from '@/types/collection';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
 
 interface ManageCexMappingTableProps {
   collection: Collection<CexMapping>;

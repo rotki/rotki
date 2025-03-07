@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { Section } from '@/types/status';
-import { useStatusStore } from '@/store/status';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import type { LiquityPoolDetailEntry } from '@rotki/common';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
 
-withDefaults(
-  defineProps<{
-    pool: LiquityPoolDetailEntry | null;
-  }>(),
-  {
-    pool: null,
-  },
-);
+defineProps<{ pool: LiquityPoolDetailEntry | null }>();
 
 const { t } = useI18n();
 

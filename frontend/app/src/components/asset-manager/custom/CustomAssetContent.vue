@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { type Filters, type Matcher, useCustomAssetFilter } from '@/composables/filters/custom-assets';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
-import { useAssetManagementApi } from '@/composables/api/assets/management';
+import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
+import type { Nullable } from '@rotki/common';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/components/asset-manager/custom/CustomAssetTable.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
-import type { Nullable } from '@rotki/common';
+import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { type Filters, type Matcher, useCustomAssetFilter } from '@/composables/filters/custom-assets';
+import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 
 const props = withDefaults(
   defineProps<{

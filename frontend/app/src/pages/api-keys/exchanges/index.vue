@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import { useNotificationsStore } from '@/store/notifications';
+import type { Exchange, ExchangeFormData } from '@/types/exchanges';
+import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
+import { useLocations } from '@/composables/locations';
 import { useConfirmStore } from '@/store/confirm';
-import { useSettingsStore } from '@/store/settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useExchangesStore } from '@/store/exchanges';
 import { useLocationStore } from '@/store/locations';
-import { useLocations } from '@/composables/locations';
-import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { Exchange, ExchangeFormData } from '@/types/exchanges';
+import { useNotificationsStore } from '@/store/notifications';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { externalLinks } from '@shared/external-links';
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
 const exchange = ref<ExchangeFormData>();

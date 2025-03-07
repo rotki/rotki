@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting, TimeUnit, timeframes } from '@rotki/common';
-import dayjs from 'dayjs';
+import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
+import { usePremium } from '@/composables/premium';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useStatisticsStore } from '@/store/statistics';
+import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
-import { useStatusStore } from '@/store/status';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useStatisticsStore } from '@/store/statistics';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { usePremium } from '@/composables/premium';
-import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
-import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
+import dayjs from 'dayjs';
 
 const { t } = useI18n();
 const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());

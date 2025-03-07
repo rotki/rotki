@@ -1,17 +1,4 @@
-import { Blockchain } from '@rotki/common';
-import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
-import { TaskType } from '@/types/task-type';
-import { convertBtcAccounts } from '@/utils/blockchain/accounts';
-import { createAccount } from '@/utils/blockchain/accounts/create';
-import { logger } from '@/utils/logging';
-import { isTaskCancelled } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTaskStore } from '@/store/tasks';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import type { EvmAccountsResult } from '@/types/api/accounts';
 import type {
   AccountPayload,
   BlockchainAccount,
@@ -21,7 +8,20 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { BlockchainMetadata } from '@/types/task';
-import type { EvmAccountsResult } from '@/types/api/accounts';
+import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { convertBtcAccounts } from '@/utils/blockchain/accounts';
+import { createAccount } from '@/utils/blockchain/accounts/create';
+import { logger } from '@/utils/logging';
+import { Blockchain } from '@rotki/common';
 
 interface UseBlockchainAccountsReturn {
   addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string>;

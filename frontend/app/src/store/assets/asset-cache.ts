@@ -1,9 +1,9 @@
-import { useNotificationsStore } from '@/store/notifications';
-import { useItemCache } from '@/composables/item-cache';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { logger } from '@/utils/logging';
-import type { AssetCollection, AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
+import type { AssetCollection, AssetInfo } from '@rotki/common';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useItemCache } from '@/composables/item-cache';
+import { useNotificationsStore } from '@/store/notifications';
+import { logger } from '@/utils/logging';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
   const fetchedAssetCollections = ref<Record<string, AssetCollection>>({});

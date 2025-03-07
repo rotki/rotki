@@ -1,11 +1,12 @@
-import { type ActionResult, OwnedAssets, type SupportedAsset } from '@rotki/common';
+import type { Collection } from '@/types/collection';
+import type { MaybeRef } from '@vueuse/core';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
   handleResponse,
   validStatus,
-  validWithSessionAndExternalService,
   validWithoutSessionStatus,
+  validWithSessionAndExternalService,
 } from '@/services/utils';
 import {
   type AssetIdResponse,
@@ -16,8 +17,7 @@ import {
   SupportedAssets,
 } from '@/types/asset';
 import { mapCollectionResponse } from '@/utils/collection';
-import type { Collection } from '@/types/collection';
-import type { MaybeRef } from '@vueuse/core';
+import { type ActionResult, OwnedAssets, type SupportedAsset } from '@rotki/common';
 
 interface UseAssetManagementApiReturn {
   queryAllAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;

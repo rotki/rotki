@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import {
-  type NetValue,
-  type TimeFramePeriod,
-  type Timeframe,
-  type Timeframes,
-  getTimeframeByRange,
-} from '@rotki/common';
-import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useGraph, useTooltip } from '@/composables/graphs';
+import type { ValueOverTime } from '@/types/graphs';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
+import { useGraph, useTooltip } from '@/composables/graphs';
 import { displayDateFormatter } from '@/data/date-formatter';
-import type { ValueOverTime } from '@/types/graphs';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import {
+  getTimeframeByRange,
+  type NetValue,
+  type Timeframe,
+  type TimeFramePeriod,
+  type Timeframes,
+} from '@rotki/common';
+import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import AppImage from '@/components/common/AppImage.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import GetPremiumPlaceholder from '@/components/graphs/GetPremiumPlaceholder.vue';
-import AppImage from '@/components/common/AppImage.vue';
 
 const { t } = useI18n();
 </script>

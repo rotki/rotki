@@ -1,18 +1,18 @@
-import { samePriceAssets } from '@/types/blockchain';
-import { uniqueStrings } from '@/utils/data';
-import { sumAssetBalances } from '@/utils/balances';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useBalanceSorting } from '@/composables/balances/sorting';
-import { useManualAssetBalances } from '@/composables/balances/manual';
+import type { AssetBalances } from '@/types/balances';
+import type { AssetPriceInfo } from '@/types/prices';
 import type { AssetBalanceWithPrice, ExclusionSource } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
-import type { AssetPriceInfo } from '@/types/prices';
 import type { ComputedRef } from 'vue';
-import type { AssetBalances } from '@/types/balances';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useManualAssetBalances } from '@/composables/balances/manual';
+import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBlockchainStore } from '@/store/blockchain';
+import { samePriceAssets } from '@/types/blockchain';
+import { sumAssetBalances } from '@/utils/balances';
+import { uniqueStrings } from '@/utils/data';
 
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;

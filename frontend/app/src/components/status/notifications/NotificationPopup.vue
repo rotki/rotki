@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { createNotification } from '@/utils/notifications';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useNotificationsStore } from '@/store/notifications';
 import Notification from '@/components/status/notifications/Notification.vue';
+import { useNotificationsStore } from '@/store/notifications';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { createNotification } from '@/utils/notifications';
 
 const { t } = useI18n();
 

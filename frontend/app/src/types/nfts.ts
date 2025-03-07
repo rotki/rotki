@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { NumericString } from '@rotki/common';
 import type { AssetInfoWithId } from '@/types/asset';
+import { NumericString } from '@rotki/common';
+import { z } from 'zod';
 
 /**
  * It is like {@link AssetInfoWithId} but with two extra properties for

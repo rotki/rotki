@@ -1,14 +1,13 @@
-import { Blockchain } from '@rotki/common';
-import { computed } from 'vue';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { startPromise } from '@shared/utils';
-import { Section } from '@/types/status';
-import { useBlockchainStore } from '@/store/blockchain';
-import { createAccount } from '@/utils/blockchain/accounts/create';
-import { useStatusStore } from '@/store/status';
+import type { EvmChainInfo, SupportedChains } from '@/types/api/chains';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import type { EvmChainInfo, SupportedChains } from '@/types/api/chains';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
+import { createAccount } from '@/utils/blockchain/accounts/create';
+import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/blockchain/balances/eth', () => ({
   useEthBalancesStore: vi.fn().mockReturnValue({
@@ -53,25 +52,29 @@ vi.mock('@/store/tasks', () => ({
   }),
 }));
 
-vi.mock('@/composables/info/chains', () => ({
-  useSupportedChains: vi.fn().mockReturnValue({
-    supportedChains: computed<SupportedChains>(() => [
-      {
-        evmChainName: 'ethereum',
-        id: Blockchain.ETH,
-        type: 'evm',
-        name: 'Ethereum',
-        image: '',
-        nativeToken: 'ETH',
-      } satisfies EvmChainInfo,
-    ]),
-    getChain: () => Blockchain.ETH,
-    getChainName: () => 'Ethereum',
-    getNativeAsset: (chain: Blockchain) => chain,
-    getChainImageUrl: (chain: Blockchain) => `${chain}.png`,
-    getChainAccountType: () => 'evm',
-  }),
-}));
+vi.mock('@/composables/info/chains', async () => {
+  const { computed } = await import('vue');
+  const { Blockchain } = await import('@rotki/common');
+  return ({
+    useSupportedChains: vi.fn().mockReturnValue({
+      supportedChains: computed<SupportedChains>(() => [
+        {
+          evmChainName: 'ethereum',
+          id: Blockchain.ETH,
+          type: 'evm',
+          name: 'Ethereum',
+          image: '',
+          nativeToken: 'ETH',
+        } satisfies EvmChainInfo,
+      ]),
+      getChain: () => Blockchain.ETH,
+      getChainName: () => 'Ethereum',
+      getNativeAsset: (chain: Blockchain) => chain,
+      getChainImageUrl: (chain: Blockchain) => `${chain}.png`,
+      getChainAccountType: () => 'evm',
+    }),
+  });
+});
 
 describe('composables::blockchain/balances/index', () => {
   setActivePinia(createPinia());

@@ -1,15 +1,15 @@
+import type { Buffer } from 'node:buffer';
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
-import process, { exit } from 'node:process';
 import fs from 'node:fs';
+import net from 'node:net';
 import { platform } from 'node:os';
 import path from 'node:path';
-import net from 'node:net';
-import { config } from 'dotenv';
-import consola from 'consola';
+import process, { exit } from 'node:process';
 import { assert } from '@rotki/common';
-import { omit } from 'es-toolkit';
 import { cac } from 'cac';
-import type { Buffer } from 'node:buffer';
+import consola from 'consola';
+import { config } from 'dotenv';
+import { omit } from 'es-toolkit';
 
 interface OutputListener {
   out: (buffer: Buffer) => void;

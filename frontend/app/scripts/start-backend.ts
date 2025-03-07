@@ -1,8 +1,8 @@
 import { type ChildProcess, spawn } from 'node:child_process';
-import process from 'node:process';
 import path from 'node:path';
-import consola from 'consola';
+import process from 'node:process';
 import { ArgumentParser } from 'argparse';
+import consola from 'consola';
 
 if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
   consola.error('Not CI or VIRTUAL_ENV');

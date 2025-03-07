@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
-import DbActivityProgress from '@/components/account-management/upgrade/DbActivityProgress.vue';
 import type { CurrentDbUpgradeProgress } from '@/types/login';
+import DbActivityProgress from '@/components/account-management/upgrade/DbActivityProgress.vue';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
+import { useSessionAuthStore } from '@/store/session/auth';
 
 const { dataMigrationStatus, dbUpgradeStatus } = storeToRefs(useSessionAuthStore());
 

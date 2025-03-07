@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { useSupportedChains } from '@/composables/info/chains';
-import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
+import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { useSupportedChains } from '@/composables/info/chains';
+import { z } from 'zod';
 
 enum AssetFilterKeys {
   SYMBOL = 'symbol',

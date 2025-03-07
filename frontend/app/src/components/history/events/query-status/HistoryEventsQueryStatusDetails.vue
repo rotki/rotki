@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventsQueryStatusLine from '@/components/history/events/query-status/HistoryEventsQueryStatusLine.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
-import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 defineProps<{ item: HistoryEventsQueryData }>();
 </script>

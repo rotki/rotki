@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import { startPromise } from '@shared/utils';
-import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
-import { useMessageStore } from '@/store/message';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { useBalances } from '@/composables/balances';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import { useBalances } from '@/composables/balances';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useMessageStore } from '@/store/message';
+import { startPromise } from '@shared/utils';
+import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<ManualBalance | RawManualBalance | undefined>({ required: true });
 

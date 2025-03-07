@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useMainStore } from '@/store/main';
 import { useInterop } from '@/composables/electron-interop';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
+import { useMainStore } from '@/store/main';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { startPromise } from '@shared/utils';
 
 const mainStore = useMainStore();
 const { updateNeeded, version } = storeToRefs(mainStore);

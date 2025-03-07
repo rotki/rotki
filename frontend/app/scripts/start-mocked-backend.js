@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
-import process from 'node:process';
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 
 if (!(process.env.CI || process.env.VIRTUAL_ENV)) {
   process.stdout.write(`\u001B[31mError\u001B[0m: Not CI or VIRTUAL_ENV\n\n`);

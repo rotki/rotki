@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { EmptyListId, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
-import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
-import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import SimpleTable from '@/components/common/SimpleTable.vue';
-import type { Nullable } from '@rotki/common';
 import type { BaseMessage } from '@/types/messages';
 import type { PrioritizedListData, PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import type { Nullable } from '@rotki/common';
+import SimpleTable from '@/components/common/SimpleTable.vue';
+import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
+import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
+import { EmptyListId, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 
 const props = withDefaults(
   defineProps<{

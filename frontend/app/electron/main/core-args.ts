@@ -1,9 +1,9 @@
-import process from 'node:process';
+import type { BackendOptions } from '@shared/ipc';
+import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import fs from 'node:fs';
+import process from 'node:process';
 import { assert } from '@rotki/common';
-import type { BackendOptions } from '@shared/ipc';
 
 const BACKEND_DIRECTORY = 'backend';
 

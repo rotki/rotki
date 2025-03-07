@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useLocations } from '@/composables/locations';
 import AppImage from '@/components/common/AppImage.vue';
+import { useLocations } from '@/composables/locations';
 
 const props = withDefaults(
   defineProps<{

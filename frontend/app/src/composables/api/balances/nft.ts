@@ -1,3 +1,5 @@
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -11,8 +13,6 @@ import {
   NonFungibleBalancesCollectionResponse,
   type NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
 
 interface UseNftBalancesApiReturn {
   fetchNfBalancesTask: (payload: NonFungibleBalancesRequestPayload) => Promise<PendingTask>;

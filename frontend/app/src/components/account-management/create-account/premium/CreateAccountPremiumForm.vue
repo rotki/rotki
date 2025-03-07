@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { PremiumSetup } from '@/types/login';
+import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation';
-import type { PremiumSetup } from '@/types/login';
 
 const props = defineProps<{
   loading: boolean;

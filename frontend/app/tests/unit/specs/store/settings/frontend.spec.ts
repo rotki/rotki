@@ -1,8 +1,8 @@
-import { BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist, assert } from '@rotki/common';
-import { type Pinia, createPinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import { camelCaseTransformer } from '@/services/axios-transformers';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import {
@@ -14,9 +14,9 @@ import {
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { camelCaseTransformer } from '@/services/axios-transformers';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { assert, BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
+import { createPinia, type Pinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({

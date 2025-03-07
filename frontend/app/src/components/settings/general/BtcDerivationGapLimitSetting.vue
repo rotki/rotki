@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { Defaults } from '@/data/defaults';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
 

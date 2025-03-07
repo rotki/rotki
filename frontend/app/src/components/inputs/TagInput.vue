@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type Tag, defaultTag } from '@/types/tags';
-import { useTagStore } from '@/store/session/tags';
+import ListItem from '@/components/common/ListItem.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import ListItem from '@/components/common/ListItem.vue';
+import { useTagStore } from '@/store/session/tags';
+import { defaultTag, type Tag } from '@/types/tags';
 
 const modelValue = defineModel<string[]>({ required: true });
 

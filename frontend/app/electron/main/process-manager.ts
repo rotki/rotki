@@ -1,10 +1,10 @@
-import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import process from 'node:process';
-import { Buffer } from 'node:buffer';
-import path from 'node:path';
-import { type Task, tasklist } from 'tasklist';
-import { wait } from '@shared/utils';
 import type stream from 'node:stream';
+import { Buffer } from 'node:buffer';
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
+import path from 'node:path';
+import process from 'node:process';
+import { wait } from '@shared/utils';
+import { type Task, tasklist } from 'tasklist';
 
 type OnErrorHandler = (error: Error) => void;
 

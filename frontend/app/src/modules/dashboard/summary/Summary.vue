@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import ExchangeSummary from './ExchangeSummary.vue';
 import BlockchainSummary from './BlockchainSummary.vue';
+import ExchangeSummary from './ExchangeSummary.vue';
 import ManualSummary from './ManualSummary.vue';
 </script>
 

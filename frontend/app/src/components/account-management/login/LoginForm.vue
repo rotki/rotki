@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { externalLinks } from '@shared/external-links';
-import { toMessages } from '@/utils/validation';
-import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
-import { compareTextByKeyword } from '@/utils/assets';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useDynamicMessages } from '@/composables/dynamic-messages';
-import { useInterop } from '@/composables/electron-interop';
-import { useUsersApi } from '@/composables/api/session/users';
-import WelcomeMessageDisplay from '@/components/account-management/login/WelcomeMessageDisplay.vue';
+import type { LoginCredentials, SyncApproval } from '@/types/login';
 import IncompleteUpgradeAlert from '@/components/account-management/login/IncompleteUpgradeAlert.vue';
 import PremiumSyncConflictAlert from '@/components/account-management/login/PremiumSyncConflictAlert.vue';
+import WelcomeMessageDisplay from '@/components/account-management/login/WelcomeMessageDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import { useUsersApi } from '@/composables/api/session/users';
+import { useDynamicMessages } from '@/composables/dynamic-messages';
+import { useInterop } from '@/composables/electron-interop';
 import { useLogout } from '@/modules/account/use-logout';
-import type { LoginCredentials, SyncApproval } from '@/types/login';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
+import { compareTextByKeyword } from '@/utils/assets';
+import { toMessages } from '@/utils/validation';
+import { externalLinks } from '@shared/external-links';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 
 const props = withDefaults(
   defineProps<{

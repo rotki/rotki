@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { useBalances } from '@/composables/balances';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useStatusStore } from '@/store/status';
+import { useTaskStore } from '@/store/tasks';
+import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
 
 const emit = defineEmits<{
   (e: 'click'): void;

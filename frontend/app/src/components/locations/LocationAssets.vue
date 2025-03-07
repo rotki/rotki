@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
-import AssetBalances from '@/components/AssetBalances.vue';
 import type { AssetBalanceWithPrice } from '@rotki/common';
+import AssetBalances from '@/components/AssetBalances.vue';
+import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 const props = defineProps<{
   identifier: string;

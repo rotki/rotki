@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { isBtcChain } from '@/types/blockchain/chains';
-import { useAccountLoading } from '@/composables/accounts/loading';
-import InputModeSelect from '@/components/accounts/management/inputs/InputModeSelect.vue';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import type { InputMode } from '@/types/input-mode';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
+import InputModeSelect from '@/components/accounts/management/inputs/InputModeSelect.vue';
+import { useAccountLoading } from '@/composables/accounts/loading';
+import { isBtcChain } from '@/types/blockchain/chains';
 
 const props = defineProps<{
   chain: string;

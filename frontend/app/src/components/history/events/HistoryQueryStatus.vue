@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useHistoryStore } from '@/store/history';
-import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
-import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
-import HistoryQueryStatusDialog from '@/components/history/events/HistoryQueryStatusDialog.vue';
-import EventsDecodingStatusCurrent from '@/components/history/events/EventsDecodingStatusCurrent.vue';
-import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
-import EventsCacheRefreshStatusCurrent from '@/components/history/events/EventsCacheRefreshStatusCurrent.vue';
-import HistoryQueryStatusBar from '@/components/history/events/HistoryQueryStatusBar.vue';
-import type { Blockchain } from '@rotki/common';
 import type {
   EvmTransactionQueryData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
+import type { Blockchain } from '@rotki/common';
+import EventsCacheRefreshStatusCurrent from '@/components/history/events/EventsCacheRefreshStatusCurrent.vue';
+import EventsDecodingStatusCurrent from '@/components/history/events/EventsDecodingStatusCurrent.vue';
+import HistoryQueryStatusBar from '@/components/history/events/HistoryQueryStatusBar.vue';
+import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
+import HistoryQueryStatusDialog from '@/components/history/events/HistoryQueryStatusDialog.vue';
+import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
+import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import { useHistoryStore } from '@/store/history';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 const currentAction = defineModel<'decode' | 'query'>('currentAction', { required: true });
 
@@ -24,7 +24,6 @@ const props = withDefaults(defineProps<{
   locations?: string[];
   decoding: boolean;
 }>(), {
-  loading: false,
   locations: () => [],
   onlyChains: () => [],
 });

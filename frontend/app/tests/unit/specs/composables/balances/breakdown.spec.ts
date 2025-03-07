@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({

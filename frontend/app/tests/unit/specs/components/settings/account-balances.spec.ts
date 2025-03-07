@@ -1,15 +1,15 @@
-import { Blockchain } from '@rotki/common';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type VueWrapper, mount } from '@vue/test-utils';
-import { setActivePinia } from 'pinia';
-import flushPromises from 'flush-promises';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useMainStore } from '@/store/main';
+import { useStatusStore } from '@/store/status';
+import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useStatusStore } from '@/store/status';
-import { useMainStore } from '@/store/main';
-import { useSupportedChains } from '@/composables/info/chains';
+import { Blockchain } from '@rotki/common';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 

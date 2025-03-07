@@ -1,6 +1,6 @@
-import { setupDevtoolsPlugin } from '@vue/devtools-api';
-import { BigNumber } from '@rotki/common';
 import type { App } from 'vue';
+import { BigNumber } from '@rotki/common';
+import { setupDevtoolsPlugin } from '@vue/devtools-api';
 
 const stateType = 'BigNumber';
 const componentStateTypes: string[] = [stateType];

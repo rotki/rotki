@@ -1,10 +1,10 @@
 /* istanbul ignore file */
 
-import { setupLayouts } from 'virtual:generated-layouts';
-import { type RouteLocationRaw, createRouter, createWebHashHistory } from 'vue-router';
-import { handleHotUpdate, routes } from 'vue-router/auto-routes';
-import { startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { startPromise } from '@shared/utils';
+import { setupLayouts } from 'virtual:generated-layouts';
+import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
+import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 

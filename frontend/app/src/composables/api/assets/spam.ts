@@ -1,6 +1,6 @@
+import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
-import type { ActionResult } from '@rotki/common';
 
 interface UseAssetSpamApiReturn {
   markAssetsAsSpam: (tokens: string[]) => Promise<boolean>;

@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
+import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
+import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
+import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
+import OverallBalances from '@/components/dashboard/OverallBalances.vue';
+import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useDynamicMessages } from '@/composables/dynamic-messages';
+import { useModules } from '@/composables/session/modules';
+import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { useTaskStore } from '@/store/tasks';
-import { useModules } from '@/composables/session/modules';
-import { useDynamicMessages } from '@/composables/dynamic-messages';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
-import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import OverallBalances from '@/components/dashboard/OverallBalances.vue';
-import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
+import { TaskType } from '@/types/task-type';
 import PoolTable from './liquidity-pools/PoolTable.vue';
 import Summary from './summary/Summary.vue';
 

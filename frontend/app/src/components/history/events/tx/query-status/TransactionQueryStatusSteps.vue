@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
 

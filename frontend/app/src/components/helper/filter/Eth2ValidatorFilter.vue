@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
 
 defineProps<{
   modelValue: EthStakingFilter;

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
 import type { AssetBalance } from '@rotki/common';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 
 defineProps<{
   loading: boolean;

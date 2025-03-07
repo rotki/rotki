@@ -1,9 +1,9 @@
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { handleResponse, validWithParamsSessionAndExternalService } from '@/services/utils';
-import { api } from '@/services/rotkehlchen-api';
-import type { ActionResult } from '@rotki/common';
 import type { SyncAction } from '@/types/session/sync';
 import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse, validWithParamsSessionAndExternalService } from '@/services/utils';
 
 interface UseSyncApiReturn { forceSync: (action: SyncAction) => Promise<PendingTask> }
 

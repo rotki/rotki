@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import AppImage from '@/components/common/AppImage.vue';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 
 const props = defineProps<{
   counterparty: string;

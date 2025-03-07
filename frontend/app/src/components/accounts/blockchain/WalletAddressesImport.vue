@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useMessageStore } from '@/store/message';
-import { useInterop } from '@/composables/electron-interop';
 import WalletImportSelection from '@/components/accounts/blockchain/WalletImportSelection.vue';
+import { useInterop } from '@/composables/electron-interop';
+import { useMessageStore } from '@/store/message';
 
 defineProps<{
   disabled: boolean;

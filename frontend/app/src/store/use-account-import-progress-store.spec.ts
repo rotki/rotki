@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it } from 'vitest';
 import {
   TotalCannotBeNegativeError,
   TotalNotInitializedError,
   useAccountImportProgressStore,
 } from '@/store/use-account-import-progress-store';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('useAccountImportProgress', () => {
   let store: ReturnType<typeof useAccountImportProgressStore>;

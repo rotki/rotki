@@ -1,16 +1,16 @@
-import { ApiValidationError } from '@/types/api/errors';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
-import { usePremiumStore } from '@/store/session/premium';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useMessageStore } from '@/store/message';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import type { ActionStatus } from '@/types/action';
 import type { KrakenAccountType } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
 import type { SettingsUpdate } from '@/types/user';
-import type { ActionStatus } from '@/types/action';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { useMessageStore } from '@/store/message';
+import { usePremiumStore } from '@/store/session/premium';
+import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { ApiValidationError } from '@/types/api/errors';
+import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 
 export const useSettingsStore = defineStore('settings', () => {
   const { setMessage } = useMessageStore();

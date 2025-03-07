@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
-import { NoteLocation } from '@/types/notes';
+import type { RouteLocationRaw } from 'vue-router';
 import AppImage from '@/components/common/AppImage.vue';
-import InternalLink from '@/components/helper/InternalLink.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import type { RouteLocationRaw } from 'vue-router';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import { NoteLocation } from '@/types/notes';
+import { startPromise } from '@shared/utils';
 
 type NavType = 'eth2' | 'liquity' | 'kraken';
 

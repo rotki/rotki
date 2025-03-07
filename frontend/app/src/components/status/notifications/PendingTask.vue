@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import { TaskType } from '@/types/task-type';
-import { useReportsStore } from '@/store/reports';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { calculatePercentage } from '@/utils/calculation';
 import type { Task, TaskMeta } from '@/types/task';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useReportsStore } from '@/store/reports';
+import { TaskType } from '@/types/task-type';
+import { calculatePercentage } from '@/utils/calculation';
+import dayjs from 'dayjs';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();
 const emit = defineEmits<{ (e: 'cancel', task: Task<TaskMeta>): void }>();

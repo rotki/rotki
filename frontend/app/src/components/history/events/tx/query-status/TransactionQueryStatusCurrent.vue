@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
-import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
 import type { Blockchain } from '@rotki/common';
+import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
+import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 
 const props = withDefaults(
   defineProps<{

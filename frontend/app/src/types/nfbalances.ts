@@ -1,8 +1,8 @@
-import { z } from 'zod';
-import { PriceInformation } from '@/types/prices';
-import { CollectionCommonFields } from '@/types/collection';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { PaginationRequestPayload } from '@/types/common';
+import { CollectionCommonFields } from '@/types/collection';
+import { PriceInformation } from '@/types/prices';
+import { z } from 'zod';
 
 export const NonFungibleBalance = PriceInformation.merge(
   z.object({

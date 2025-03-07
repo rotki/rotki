@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 withDefaults(
   defineProps<{

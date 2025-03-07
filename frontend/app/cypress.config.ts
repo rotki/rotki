@@ -1,7 +1,7 @@
-import * as process from 'node:process';
 import * as fs from 'node:fs';
-import { defineConfig } from 'cypress';
+import * as process from 'node:process';
 import coverageTask from '@cypress/code-coverage/task';
+import { defineConfig } from 'cypress';
 
 const group = process.env.GROUP ? `${process.env.GROUP}/` : '';
 const captureVideo = !!process.env.CI;

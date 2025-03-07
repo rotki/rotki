@@ -1,5 +1,5 @@
-import { BigNumber } from '@rotki/common';
 import type { AxiosResponseHeaders, AxiosResponseTransformer } from 'axios';
+import { BigNumber } from '@rotki/common';
 
 function isObject(data: any): boolean {
   return (

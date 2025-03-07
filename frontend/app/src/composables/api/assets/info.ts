@@ -1,10 +1,10 @@
+import type { EvmChainAddress } from '@/types/history/events';
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { AssetMap, AssetsWithId } from '@/types/asset';
-import type { ActionResult } from '@rotki/common';
-import type { PendingTask } from '@/types/task';
-import type { EvmChainAddress } from '@/types/history/events';
 
 export interface AssetSearchParams {
   value: string;

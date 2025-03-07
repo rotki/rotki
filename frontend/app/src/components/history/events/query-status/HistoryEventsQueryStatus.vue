@@ -1,7 +1,7 @@
 <script lang="ts" setup>
+import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import HistoryEventsQueryStatusCurrent from './HistoryEventsQueryStatusCurrent.vue';
 import HistoryEventsQueryStatusDetails from './HistoryEventsQueryStatusDetails.vue';
-import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
 interface HistoryEventsQueryStatusProps {
   locations?: string[];

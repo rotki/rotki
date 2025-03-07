@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { isNft } from '@/utils/nft';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import type { BalanceSnapshot } from '@/types/snapshots';
+import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import NftDetails from '@/components/helper/NftDetails.vue';
+import { isNft } from '@/utils/nft';
 
 const props = defineProps<{
   snapshot: BalanceSnapshot | null;

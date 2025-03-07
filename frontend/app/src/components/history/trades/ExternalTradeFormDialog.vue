@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { useTemplateRef } from 'vue';
-import { omit } from 'es-toolkit';
-import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useMessageStore } from '@/store/message';
-import { useTrades } from '@/composables/history/trades';
 import type { Trade } from '@/types/history/trade';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
+import { useTrades } from '@/composables/history/trades';
+import { useMessageStore } from '@/store/message';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<Trade | undefined>({ required: true });
 

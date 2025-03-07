@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import { Routes } from '@/router/routes';
-import InternalLink from '@/components/helper/InternalLink.vue';
 import AppImage from '@/components/common/AppImage.vue';
+import InternalLink from '@/components/helper/InternalLink.vue';
+import { Routes } from '@/router/routes';
+import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
 defineProps<{
   modules: Module[];

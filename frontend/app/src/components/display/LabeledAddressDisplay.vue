@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
-import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useScramble } from '@/composables/scramble';
-import HashLink from '@/components/helper/HashLink.vue';
-import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import type {
   BlockchainAccount,
   BlockchainAccountBalance,
 } from '@/types/blockchain/accounts';
+import EnsAvatar from '@/components/display/EnsAvatar.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import { useScramble } from '@/composables/scramble';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
+import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 
 const props = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;

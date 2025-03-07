@@ -1,7 +1,7 @@
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { useAccountingApi } from '@/composables/api/settings/accounting-api';
-import type { MaybeRef } from '@vueuse/core';
 import type { AccountingRuleLinkedSettingMap } from '@/types/settings/accounting';
+import type { MaybeRef } from '@vueuse/core';
+import { useAccountingApi } from '@/composables/api/settings/accounting-api';
+import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 export const useAccountingRuleMappings = createSharedComposable(() => {
   // eslint-disable-next-line @typescript-eslint/unbound-method

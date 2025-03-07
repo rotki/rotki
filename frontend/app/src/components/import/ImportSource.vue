@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf } from '@vuelidate/validators';
-import { displayDateFormatter } from '@/data/date-formatter';
-import { DateFormat } from '@/types/date-format';
-import { TaskType } from '@/types/task-type';
-import { toMessages } from '@/utils/validation';
-import { isTaskCancelled } from '@/utils';
-import { useTaskStore } from '@/store/tasks';
-import { refIsTruthy } from '@/composables/ref';
-import { useImportDataApi } from '@/composables/api/import';
-import { useInterop } from '@/composables/electron-interop';
-import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
-import FileUpload from '@/components/import/FileUpload.vue';
 import type { TaskMeta } from '@/types/task';
 import type { ImportSourceType } from '@/types/upload-types';
+import FileUpload from '@/components/import/FileUpload.vue';
+import DateFormatHelp from '@/components/settings/controls/DateFormatHelp.vue';
+import { useImportDataApi } from '@/composables/api/import';
+import { useInterop } from '@/composables/electron-interop';
+import { refIsTruthy } from '@/composables/ref';
+import { displayDateFormatter } from '@/data/date-formatter';
+import { useTaskStore } from '@/store/tasks';
+import { DateFormat } from '@/types/date-format';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf } from '@vuelidate/validators';
 
 const props = withDefaults(defineProps<{ source: ImportSourceType; icon?: string }>(), { icon: '' });
 

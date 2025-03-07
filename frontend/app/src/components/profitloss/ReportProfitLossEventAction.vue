@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { toMessages } from '@/utils/validation';
-import { convertFromTimestamp } from '@/utils/date';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useMessageStore } from '@/store/message';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 import type { ProfitLossEvent } from '@/types/reports';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useMessageStore } from '@/store/message';
+import { convertFromTimestamp } from '@/utils/date';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const props = defineProps<{
   event: ProfitLossEvent;

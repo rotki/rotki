@@ -1,7 +1,7 @@
-import { Buffer } from 'node:buffer';
-import Store from 'electron-store';
-import { safeStorage } from 'electron';
 import type { Credentials } from '@shared/ipc';
+import { Buffer } from 'node:buffer';
+import { safeStorage } from 'electron';
+import Store from 'electron-store';
 
 const ENCODING = 'latin1';
 

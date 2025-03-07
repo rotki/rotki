@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useConfirmStore } from '@/store/confirm';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useLatestPrices } from '@/composables/price-manager/latest';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
+import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useLatestPrices } from '@/composables/price-manager/latest';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = withDefaults(
   defineProps<{

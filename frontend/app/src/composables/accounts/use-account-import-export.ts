@@ -1,23 +1,23 @@
-import { z } from 'zod';
-import { Severity } from '@rotki/common';
-import { useSupportedChains } from '@/composables/info/chains';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import type { Eth2Validator } from '@/types/balances';
+import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils';
-import { downloadFileByTextContent } from '@/utils/download';
-import { useBlockchainStore } from '@/store/blockchain/index';
 import { useBlockchains } from '@/composables/blockchain/index';
+import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainStore } from '@/store/blockchain/index';
+import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useNotificationsStore } from '@/store/notifications/index';
 import { useTagStore } from '@/store/session/tags';
 import { useStatusStore } from '@/store/status';
-import { useNotificationsStore } from '@/store/notifications/index';
-import { Section } from '@/types/status';
-import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
-import { logger } from '@/utils/logging';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
-import type { Eth2Validator } from '@/types/balances';
+import { Section } from '@/types/status';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils';
+import { downloadFileByTextContent } from '@/utils/download';
+import { logger } from '@/utils/logging';
+import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
+import { Severity } from '@rotki/common';
+import { z } from 'zod';
 
 const CSVRow = z.object({
   address: z.string(),

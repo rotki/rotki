@@ -1,8 +1,8 @@
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useQueryStatus } from '@/composables/history/events/query-status/index';
-import type { MaybeRef } from '@vueuse/core';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
+import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
+import { useQueryStatus } from '@/composables/history/events/query-status/index';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 
 type QueryTranslationKey = 'transactions.query_status_events.done_date_range'
   | 'transactions.query_status_events.done_end_date'

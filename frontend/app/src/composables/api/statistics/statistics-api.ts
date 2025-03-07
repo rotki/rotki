@@ -1,3 +1,7 @@
+import type { PendingTask } from '@/types/task';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
+import { api } from '@/services/rotkehlchen-api';
+import { handleResponse, validStatus } from '@/services/utils';
 import {
   type ActionResult,
   type HistoricalAssetPricePayload,
@@ -7,10 +11,6 @@ import {
   TimedAssetHistoricalBalances,
   TimedBalances,
 } from '@rotki/common';
-import { snakeCaseTransformer } from '@/services/axios-transformers';
-import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus } from '@/services/utils';
-import type { PendingTask } from '@/types/task';
 
 interface UseStatisticsApiReturn {
   queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;

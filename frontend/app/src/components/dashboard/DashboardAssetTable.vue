@@ -1,30 +1,30 @@
 <script setup lang="ts">
-import { CURRENCY_USD } from '@/types/currencies';
-import { TableColumn } from '@/types/table-column';
-import { isEvmNativeToken } from '@/types/asset';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
-import { sortAssetBalances } from '@/utils/balances';
-import { assetFilterByKeyword } from '@/utils/assets';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useStatisticsStore } from '@/store/statistics';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import AssetBalances from '@/components/AssetBalances.vue';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
-import { useManualBalancesStore } from '@/store/balances/manual';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import AssetBalances from '@/components/AssetBalances.vue';
+import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
+import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
+import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { Routes } from '@/router/routes';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatisticsStore } from '@/store/statistics';
+import { isEvmNativeToken } from '@/types/asset';
+import { CURRENCY_USD } from '@/types/currencies';
+import { DashboardTableType } from '@/types/settings/frontend-settings';
+import { TableColumn } from '@/types/table-column';
+import { assetFilterByKeyword } from '@/utils/assets';
+import { sortAssetBalances } from '@/utils/balances';
+import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
 
 const props = withDefaults(
   defineProps<{

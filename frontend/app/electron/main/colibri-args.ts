@@ -1,8 +1,8 @@
-import process from 'node:process';
+import type { BackendOptions } from '@shared/ipc';
 import path from 'node:path';
+import process from 'node:process';
 import { assert } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
-import type { BackendOptions } from '@shared/ipc';
 
 export class ColibriConfigBuilder {
   private readonly args: string[] = [];

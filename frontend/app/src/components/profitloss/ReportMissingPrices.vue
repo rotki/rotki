@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ApiValidationError } from '@/types/api/errors';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
+import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
+import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
-import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { ApiValidationError } from '@/types/api/errors';
 
 const props = defineProps<{
   items: MissingPrice[];

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useHistoryStore } from '@/store/history';
-import { useCacheClear } from '@/composables/session/cache-clear';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useSessionPurge } from '@/composables/session/purge';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useSessionApi } from '@/composables/api/session/index';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useCacheClear } from '@/composables/session/cache-clear';
+import { useSessionPurge } from '@/composables/session/purge';
+import { useHistoryStore } from '@/store/history';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { startPromise } from '@shared/utils';
 
 const source = ref<string>();
 

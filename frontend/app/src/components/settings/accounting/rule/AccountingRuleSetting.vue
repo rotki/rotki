@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { startPromise } from '@shared/utils';
-import { TaskType } from '@/types/task-type';
-import { getPlaceholderRule } from '@/utils/settings';
-import { useMessageStore } from '@/store/message';
-import { useTaskStore } from '@/store/tasks';
-import { useConfirmStore } from '@/store/confirm';
-import { useAccountingApi } from '@/composables/api/settings/accounting-api';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useAccountingSettings } from '@/composables/settings/accounting';
-import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composables/filters/accounting-rule';
-import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
-import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
-import AccountingRuleWithLinkedSettingDisplay
-  from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
-import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
-import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
-import CollectionHandler from '@/components/helper/CollectionHandler.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
-import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
 import type { DataTableColumn } from '@rotki/ui-library';
+import CollectionHandler from '@/components/helper/CollectionHandler.vue';
+import RowActions from '@/components/helper/RowActions.vue';
+import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
+import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
+import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
+import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
+import AccountingRuleWithLinkedSettingDisplay
+  from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSettingDisplay.vue';
+import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { useAccountingApi } from '@/composables/api/settings/accounting-api';
+import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composables/filters/accounting-rule';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useAccountingSettings } from '@/composables/settings/accounting';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { getPlaceholderRule } from '@/utils/settings';
+import { startPromise } from '@shared/utils';
 
 const { t } = useI18n();
 const router = useRouter();

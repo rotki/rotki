@@ -1,7 +1,7 @@
-import { TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';
+import { TimeFramePeriod } from '@rotki/common';
 
 export const Defaults = {
   ANONYMOUS_USAGE_ANALYTICS: true,

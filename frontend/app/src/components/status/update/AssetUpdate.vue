@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useMainStore } from '@/store/main';
+import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
+import AssetConflictDialog from '@/components/status/update/AssetConflictDialog.vue';
+import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
+import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';
+import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';
+import AssetUpdateStatus from '@/components/status/update/AssetUpdateStatus.vue';
+import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
 import { useRestartingStatus } from '@/composables/user/account';
-import { useAssets } from '@/composables/assets';
-import AssetConflictDialog from '@/components/status/update/AssetConflictDialog.vue';
-import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';
-import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
-import AssetUpdateStatus from '@/components/status/update/AssetUpdateStatus.vue';
-import AssetUpdateSetting from '@/components/status/update/AssetUpdateSetting.vue';
 import { useLogout } from '@/modules/account/use-logout';
-import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
+import { useConfirmStore } from '@/store/confirm';
+import { useMainStore } from '@/store/main';
+import { useMessageStore } from '@/store/message';
 
 const props = withDefaults(defineProps<{ headless?: boolean }>(), {
   headless: false,

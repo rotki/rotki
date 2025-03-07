@@ -1,22 +1,22 @@
-import { cloneDeep, isEqual } from 'es-toolkit';
-import { useBlockchainStore } from '@/store/blockchain/index';
-import { usePremium } from '@/composables/premium';
-import { fetchDataAsync } from '@/utils/fetch-async';
-import { Module } from '@/types/modules';
-import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
-import { balanceSum, bigNumberSum } from '@/utils/calculation';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { sortDesc } from '@/utils/bignumbers';
-import { usePoolApi } from './use-pool-api';
-import { usePoolBalancesStore } from './use-pool-balances-store';
-import { type PoolBalance, PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
 import type { OnError } from '@/types/fetch';
 import type { TaskMeta } from '@/types/task';
 import type { BigNumber, Writeable } from '@rotki/common';
 import type { ComputedRef } from 'vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { usePremium } from '@/composables/premium';
+import { useBlockchainStore } from '@/store/blockchain/index';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { Module } from '@/types/modules';
+import { Section } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { sortDesc } from '@/utils/bignumbers';
+import { balanceSum, bigNumberSum } from '@/utils/calculation';
+import { fetchDataAsync } from '@/utils/fetch-async';
+import { cloneDeep, isEqual } from 'es-toolkit';
+import { type PoolBalance, PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
+import { usePoolApi } from './use-pool-api';
+import { usePoolBalancesStore } from './use-pool-balances-store';
 
 function updateExistingBalance(existingBalance: Writeable<PoolBalance>, newBalance: PoolBalance): void {
   existingBalance.userBalance = balanceSum(

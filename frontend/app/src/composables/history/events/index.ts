@@ -1,15 +1,6 @@
-import { startPromise } from '@shared/utils';
-import { omit } from 'es-toolkit';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { logger } from '@/utils/logging';
-import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
-import { getEthAddressesFromText } from '@/utils/history';
-import { useNotificationsStore } from '@/store/notifications';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useSupportedChains } from '@/composables/info/chains';
-import type { MaybeRef } from '@vueuse/core';
+import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
+import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
   EditHistoryEventPayload,
   HistoryEventEntry,
@@ -18,8 +9,17 @@ import type {
   HistoryEventsCollectionResponse,
   NewHistoryEventPayload,
 } from '@/types/history/events';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
-import type { ActionStatus } from '@/types/action';
+import type { MaybeRef } from '@vueuse/core';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useNotificationsStore } from '@/store/notifications';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
+import { getEthAddressesFromText } from '@/utils/history';
+import { logger } from '@/utils/logging';
+import { startPromise } from '@shared/utils';
+import { omit } from 'es-toolkit';
 
 interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventEntry>>;

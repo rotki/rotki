@@ -1,15 +1,15 @@
 <script lang="ts" setup>
-import { checkIfDevelopment } from '@shared/utils';
-import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
-import { useRefPropVModel } from '@/utils/model';
-import { useSupportedChains } from '@/composables/info/chains';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import HistoryEventsExport from '@/components/history/events/HistoryEventsExport.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
-import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
+import HistoryEventsExport from '@/components/history/events/HistoryEventsExport.vue';
+import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { useSupportedChains } from '@/composables/info/chains';
+import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
+import { useRefPropVModel } from '@/utils/model';
+import { checkIfDevelopment } from '@shared/utils';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 

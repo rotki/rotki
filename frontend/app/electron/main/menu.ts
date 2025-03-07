@@ -1,10 +1,10 @@
-import { type BaseWindow, BrowserWindow, Menu, type MenuItem, type MenuItemConstructorOptions, app, shell } from 'electron';
-import { externalLinks } from '@shared/external-links';
-import { IpcCommands } from '@electron/ipc-commands';
-import { assert } from '@rotki/common';
+import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
-import type { AppConfig } from '@electron/main/app-config';
+import { IpcCommands } from '@electron/ipc-commands';
+import { assert } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
+import { app, type BaseWindow, BrowserWindow, Menu, type MenuItem, type MenuItemConstructorOptions, shell } from 'electron';
 
 export interface MenuManagerListener {
   onDisplayTrayChanged: (displayTray: boolean) => void;

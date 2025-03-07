@@ -1,6 +1,6 @@
-import { useMessageStore } from '@/store/message';
+import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
-import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
+import { useMessageStore } from '@/store/message';
 
 export const useQueriedAddressesStore = defineStore('session/queried-addresses', () => {
   const queriedAddresses = ref<QueriedAddresses>({});

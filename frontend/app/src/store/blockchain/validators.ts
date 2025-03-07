@@ -1,20 +1,20 @@
-import { Blockchain } from '@rotki/common';
-import { pick } from 'es-toolkit';
-import { Module } from '@/types/modules';
-import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
-import { logger } from '@/utils/logging';
-import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
-import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
-import { useNotificationsStore } from '@/store/notifications';
-import { useBlockchainStore } from '@/store/blockchain/index';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSupportedChains } from '@/composables/info/chains';
-import { usePremium } from '@/composables/premium';
-import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import type { MaybeRef } from '@vueuse/core';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
+import type { MaybeRef } from '@vueuse/core';
+import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useSupportedChains } from '@/composables/info/chains';
+import { usePremium } from '@/composables/premium';
+import { useBlockchainStore } from '@/store/blockchain/index';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Module } from '@/types/modules';
+import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
+import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
+import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
+import { logger } from '@/utils/logging';
+import { Blockchain } from '@rotki/common';
+import { pick } from 'es-toolkit';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {
   const blockchainStore = useBlockchainStore();

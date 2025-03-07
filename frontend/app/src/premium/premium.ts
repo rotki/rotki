@@ -1,10 +1,10 @@
-import { checkIfDevelopment } from '@shared/utils';
-import { app } from '@/main';
-import { logger } from '@/utils/logging';
-import { setupPremium } from '@/premium/setup-premium';
-import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
-import type { Component } from 'vue';
 import type * as Chart from 'chart.js';
+import type { Component } from 'vue';
+import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
+import { app } from '@/main';
+import { setupPremium } from '@/premium/setup-premium';
+import { logger } from '@/utils/logging';
+import { checkIfDevelopment } from '@shared/utils';
 
 class AsyncLock {
   promise: Promise<void>;

@@ -1,37 +1,37 @@
+import type { ActionStatus } from '@/types/action';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { Collection } from '@/types/collection';
+import type { AssetPrices } from '@/types/prices';
+import type { TaskMeta } from '@/types/task';
+import type { BigNumber } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
+import { useManualBalancesApi } from '@/composables/api/balances/manual';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useStatusUpdater } from '@/composables/status';
+import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { type AssetBalances, type BalanceByLocation, BalanceType, type LocationBalance } from '@/types/balances';
 import {
   type ManualBalance,
   type ManualBalanceRequestPayload,
+  ManualBalances,
   type ManualBalanceWithPrice,
   type ManualBalanceWithValue,
-  ManualBalances,
   type RawManualBalance,
 } from '@/types/manual-balances';
+import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isTaskCancelled } from '@/utils';
-import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';
-import { logger } from '@/utils/logging';
 import { appendAssetBalance } from '@/utils/balances';
+import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';
 import { sortDesc } from '@/utils/bignumbers';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { useTaskStore } from '@/store/tasks';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusUpdater } from '@/composables/status';
-import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useManualBalancesApi } from '@/composables/api/balances/manual';
-import type { BigNumber } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
-import type { AssetPrices } from '@/types/prices';
-import type { TaskMeta } from '@/types/task';
-import type { ActionStatus } from '@/types/action';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
+import { logger } from '@/utils/logging';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData = ref<ManualBalanceWithValue[]>([]);

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { type SupportedCurrency, useCurrencies } from '@/types/currencies';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import ListItem from '@/components/common/ListItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useCurrencyUpdate } from '@/composables/use-currency-update';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { type SupportedCurrency, useCurrencies } from '@/types/currencies';
 
 const { currencies } = useCurrencies();
 const selectedCurrency = ref<SupportedCurrency>(get(currencies)[0].tickerSymbol);

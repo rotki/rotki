@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import { useInterop } from '@/composables/electron-interop';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import { useInterop } from '@/composables/electron-interop';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
+import { externalLinks } from '@shared/external-links';
 
 const downloadReady = ref(false);
 const downloading = ref(false);

@@ -1,17 +1,17 @@
-import { Blockchain } from '@rotki/common';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useConfirmStore } from '@/store/confirm';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import type {
   BlockchainAccountBalance,
   EthereumValidator,
   XpubData,
 } from '@/types/blockchain/accounts';
+import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainStore } from '@/store/blockchain';
+import { useConfirmStore } from '@/store/confirm';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { Blockchain } from '@rotki/common';
 
 type ShowConfirmationParams = {
   type: 'account';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import dayjs, { type Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/types/history/calendar';
+import dayjs, { type Dayjs } from 'dayjs';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });
 

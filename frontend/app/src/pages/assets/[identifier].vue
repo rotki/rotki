@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { externalLinks } from '@shared/external-links';
-import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { EVM_TOKEN } from '@/types/asset';
-import { NoteLocation } from '@/types/notes';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
-import { usePremium } from '@/composables/premium';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useSupportedChains } from '@/composables/info/chains';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useSpamAsset } from '@/composables/assets/spam';
+import type { AssetBalanceWithPrice } from '@rotki/common';
+import type { RouteLocationRaw } from 'vue-router';
+import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
-import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
 import AppImage from '@/components/common/AppImage.vue';
+import AssetAmountAndValuePlaceholder from '@/components/graphs/AssetAmountAndValuePlaceholder.vue';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HashLink from '@/components/helper/HashLink.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import AssetAmountAndValuePlaceholder from '@/components/graphs/AssetAmountAndValuePlaceholder.vue';
-import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { RouteLocationRaw } from 'vue-router';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useSpamAsset } from '@/composables/assets/spam';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useSupportedChains } from '@/composables/info/chains';
+import { usePremium } from '@/composables/premium';
+import { AssetAmountAndValueOverTime } from '@/premium/premium';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { EVM_TOKEN } from '@/types/asset';
+import { NoteLocation } from '@/types/notes';
+import { externalLinks } from '@shared/external-links';
 
 definePage({
   meta: {

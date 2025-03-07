@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ThemeManager } from '@/premium/premium';
-import { usePremium } from '@/composables/premium';
 import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { usePremium } from '@/composables/premium';
+import { ThemeManager } from '@/premium/premium';
 
 const { t } = useI18n();
 const premium = usePremium();

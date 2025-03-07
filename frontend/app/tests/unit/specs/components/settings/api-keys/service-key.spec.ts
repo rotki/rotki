@@ -1,7 +1,7 @@
-import { type VueWrapper, mount } from '@vue/test-utils';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 describe('serviceKey.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof ServiceKey>>;

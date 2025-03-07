@@ -1,22 +1,22 @@
 /* eslint-disable max-lines */
-import { Severity } from '@rotki/common';
-import { isEqual } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
-import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
-import { defaultCollectionState } from '@/utils/collection';
-import { logger } from '@/utils/logging';
-import { nonEmptyProperties } from '@/utils/data';
-import { useNotificationsStore } from '@/store/notifications';
-import { applyPaginationDefaults, applySortingDefaults, getApiSortingParams, parseQueryHistory, parseQueryPagination } from '@/composables/use-pagination-filter/utils';
-import { useItemsPerPage } from '@/composables/session/use-items-per-page';
+import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
+import type { Collection } from '@/types/collection';
+import type { PaginationRequestPayload } from '@/types/common';
 import type { LocationQuery, RawLocationQuery } from '@/types/route';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
-import type { PaginationRequestPayload } from '@/types/common';
-import type { Collection } from '@/types/collection';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
-import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
+import { useItemsPerPage } from '@/composables/session/use-items-per-page';
+import { applyPaginationDefaults, applySortingDefaults, getApiSortingParams, parseQueryHistory, parseQueryPagination } from '@/composables/use-pagination-filter/utils';
+import { useNotificationsStore } from '@/store/notifications';
+import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
+import { defaultCollectionState } from '@/utils/collection';
+import { nonEmptyProperties } from '@/utils/data';
+import { logger } from '@/utils/logging';
+import { Severity } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 
 type Params<
   TItem extends NonNullable<unknown>,

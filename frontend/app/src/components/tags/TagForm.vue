@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { helpers, required } from '@vuelidate/validators';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { useRefPropVModel } from '@/utils/model';
-import { useFormStateWatcher } from '@/composables/form';
-import TagIcon from '@/components/tags/TagIcon.vue';
 import type { Tag } from '@/types/tags';
+import TagIcon from '@/components/tags/TagIcon.vue';
+import { useFormStateWatcher } from '@/composables/form';
+import { useRefPropVModel } from '@/utils/model';
+import { toMessages } from '@/utils/validation';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<Tag>({ required: true });
 

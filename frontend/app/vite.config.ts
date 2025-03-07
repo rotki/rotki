@@ -1,19 +1,19 @@
+import type { ComponentResolver } from 'unplugin-vue-components';
 import { builtinModules } from 'node:module';
 import path, { join, resolve } from 'node:path';
 import process from 'node:process';
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
-import { defineConfig } from 'vitest/config';
-import checker from 'vite-plugin-checker';
-import VueRouter from 'unplugin-vue-router/vite';
 import { VueRouterAutoImports } from 'unplugin-vue-router';
+import VueRouter from 'unplugin-vue-router/vite';
+import checker from 'vite-plugin-checker';
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
-import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
-import Layouts from 'vite-plugin-vue-layouts';
 import vueDevTools from 'vite-plugin-vue-devtools';
-import type { ComponentResolver } from 'unplugin-vue-components';
+import Layouts from 'vite-plugin-vue-layouts';
+import { defineConfig } from 'vitest/config';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;

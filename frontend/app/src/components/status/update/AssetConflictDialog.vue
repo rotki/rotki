@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { uniqueObjects, uniqueStrings } from '@/utils/data';
-import AssetConflictRow from '@/components/status/update/AssetConflictRow.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import type { SupportedAsset, Writeable } from '@rotki/common';
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/types/asset';
 import type { ConflictResolutionStrategy } from '@/types/common';
+import type { SupportedAsset, Writeable } from '@rotki/common';
+import type { DataTableColumn } from '@rotki/ui-library';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import AssetConflictRow from '@/components/status/update/AssetConflictRow.vue';
+import { uniqueObjects, uniqueStrings } from '@/utils/data';
 
 const props = defineProps<{
   conflicts: AssetUpdateConflictResult[];

@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { ImportSource } from '@/types/upload-types';
+import type { RuiIcons } from '@rotki/ui-library';
 import AppImage from '@/components/common/AppImage.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
-import type { RuiIcons } from '@rotki/ui-library';
-import type { ImportSource } from '@/types/upload-types';
 
 const { t } = useI18n();
 

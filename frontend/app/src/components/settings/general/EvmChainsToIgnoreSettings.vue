@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSupportedChains } from '@/composables/info/chains';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { t } = useI18n();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());

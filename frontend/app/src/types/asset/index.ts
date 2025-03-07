@@ -1,7 +1,7 @@
+import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
+import { CollectionCommonFields } from '@/types/collection';
 import { AssetCollection, AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
 import { z } from 'zod';
-import { CollectionCommonFields } from '@/types/collection';
-import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
 
 export interface AssetDBVersion {
   readonly local: number;

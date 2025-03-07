@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import frontendSettings from '@test/fixtures/frontend_settings_v0.json';
-import { applyMigrations, migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
 import { FrontendSettings, getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
+import { applyMigrations, migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
+import frontendSettings from '@test/fixtures/frontend_settings_v0.json';
+import { describe, expect, it } from 'vitest';
 
 describe('frontend-settings-migrations', () => {
   it('should apply the frontend schema migration from v0 to v1', () => {

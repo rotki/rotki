@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
-import { useCurrencies } from '@/types/currencies';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { useAssetIconStore } from '@/store/assets/icon';
+import type { StyleValue } from 'vue';
+import AppImage from '@/components/common/AppImage.vue';
+import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
-import AppImage from '@/components/common/AppImage.vue';
-import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import type { StyleValue } from 'vue';
+import { useAssetIconStore } from '@/store/assets/icon';
+import { isBlockchain } from '@/types/blockchain/chains';
+import { useCurrencies } from '@/types/currencies';
+import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 
 interface AssetIconProps {
   identifier: string;

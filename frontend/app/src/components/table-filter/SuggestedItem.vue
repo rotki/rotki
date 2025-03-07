@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import { truncateAddress } from '@/utils/truncate';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import type { Suggestion } from '@/types/filtering';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useSupportedChains } from '@/composables/info/chains';
+import { truncateAddress } from '@/utils/truncate';
+import { useTemplateRef } from 'vue';
 
 const props = withDefaults(
   defineProps<{

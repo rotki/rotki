@@ -1,6 +1,6 @@
-import { api } from '@/services/rotkehlchen-api';
-import { useNfts } from '@/composables/assets/nft';
 import type { ComputedRef, Ref } from 'vue';
+import { useNfts } from '@/composables/assets/nft';
+import { api } from '@/services/rotkehlchen-api';
 
 interface UseNftImageReturnType {
   shouldRender: ComputedRef<boolean>;

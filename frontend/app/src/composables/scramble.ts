@@ -1,6 +1,6 @@
-import { findAddressKnownPrefix } from '@/utils/truncate';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import type { ComputedRef } from 'vue';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { findAddressKnownPrefix } from '@/utils/truncate';
 
 interface UseScrambleReturn {
   scrambleData: ComputedRef<boolean>;

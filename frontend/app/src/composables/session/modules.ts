@@ -1,6 +1,6 @@
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { Module } from '@/types/modules';
 import type { ComputedRef } from 'vue';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseModulesReturn {
   isAnyModuleEnabled: (modules: Module[]) => ComputedRef<boolean>;

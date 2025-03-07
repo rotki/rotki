@@ -1,20 +1,4 @@
-import { camelCase, omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
-import { assetSum, balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
-import { sum } from '@/utils/balances';
-import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
-import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
-import { getAccountAddress, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
-import type { MaybeRef } from '@vueuse/core';
-import type { Balance } from '@rotki/common';
-import type {
-  BlockchainAssetBalances,
-  BlockchainBalances,
-  BlockchainTotals,
-  BtcBalances,
-  EthBalance,
-} from '@/types/blockchain/balances';
+import type { AssetBalances } from '@/types/balances';
 import type {
   AddressData,
   Balances,
@@ -25,9 +9,25 @@ import type {
   BlockchainAccountWithBalance,
   ValidatorData,
 } from '@/types/blockchain/accounts';
+import type {
+  BlockchainAssetBalances,
+  BlockchainBalances,
+  BlockchainTotals,
+  BtcBalances,
+  EthBalance,
+} from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import type { AssetBalances } from '@/types/balances';
+import type { Balance } from '@rotki/common';
+import type { MaybeRef } from '@vueuse/core';
 import type { Ref } from 'vue';
+import { sum } from '@/utils/balances';
+import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
+import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
+import { getAccountAddress, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
+import { assetSum, balanceSum } from '@/utils/calculation';
+import { uniqueStrings } from '@/utils/data';
+import { camelCase, omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 
 interface AccountBalance {
   balance: Balance;

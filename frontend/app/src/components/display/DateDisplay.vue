@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { displayDateFormatter } from '@/data/date-formatter';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useScramble } from '@/composables/scramble';
-import { useCopy } from '@/composables/copy';
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
+import { useCopy } from '@/composables/copy';
+import { useScramble } from '@/composables/scramble';
+import { displayDateFormatter } from '@/data/date-formatter';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 const props = withDefaults(
   defineProps<{

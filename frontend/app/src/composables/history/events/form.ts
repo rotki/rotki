@@ -1,7 +1,7 @@
-import { useMessageStore } from '@/store/message';
-import { useHistoryEvents } from '@/composables/history/events/index';
 import type HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events';
+import { useHistoryEvents } from '@/composables/history/events/index';
+import { useMessageStore } from '@/store/message';
 
 export const useHistoryEventsForm = createSharedComposable(() => {
   const { setMessage } = useMessageStore();

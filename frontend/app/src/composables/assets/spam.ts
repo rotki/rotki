@@ -1,8 +1,8 @@
+import type { ActionStatus } from '@/types/action';
+import { useAssetSpamApi } from '@/composables/api/assets/spam';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useNotificationsStore } from '@/store/notifications';
-import { useAssetSpamApi } from '@/composables/api/assets/spam';
-import type { ActionStatus } from '@/types/action';
 
 interface UseSpamAssetReturn {
   markAssetsAsSpam: (tokens: string[]) => Promise<ActionStatus>;

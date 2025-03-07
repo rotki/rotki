@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useConfirmStore } from '@/store/confirm';
-import { useTaskStore } from '@/store/tasks';
+import type { Task, TaskMeta } from '@/types/task';
+import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
 import NoTasksRunning from '@/components/status/notifications/NoTasksRunning.vue';
 import PendingTask from '@/components/status/notifications/PendingTask.vue';
-import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
-import type { Task, TaskMeta } from '@/types/task';
+import { useConfirmStore } from '@/store/confirm';
+import { useTaskStore } from '@/store/tasks';
 
 const expanded = ref(false);
 

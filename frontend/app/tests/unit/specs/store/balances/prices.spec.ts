@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
-import { PriceOracle } from '@/types/settings/price-oracle';
+import { usePriceApi } from '@/composables/api/balances/price';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
-import { usePriceApi } from '@/composables/api/balances/price';
+import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
+import { PriceOracle } from '@/types/settings/price-oracle';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/store/tasks', () => ({

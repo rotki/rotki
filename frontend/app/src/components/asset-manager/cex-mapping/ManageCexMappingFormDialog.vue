@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
+import type { CexMapping } from '@/types/asset';
 import ManageCexMappingForm from '@/components/asset-manager/cex-mapping/ManageCexMappingForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { useMessageStore } from '@/store/message';
-import type { CexMapping } from '@/types/asset';
+import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<CexMapping | undefined>({ required: true });
 

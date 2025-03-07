@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
-import { Routes } from '@/router/routes';
-import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useRefMap } from '@/composables/utils/useRefMap';
-import BlockchainBalanceCardDetails from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardDetails.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
-import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
-import ListItem from '@/components/common/ListItem.vue';
 import type { ActionDataEntry } from '@/types/action';
 import type { RouteLocationRaw } from 'vue-router';
+import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
+import ListItem from '@/components/common/ListItem.vue';
+import BlockchainBalanceCardDetails from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardDetails.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { Routes } from '@/router/routes';
+import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
+import { Blockchain } from '@rotki/common';
 
 interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;

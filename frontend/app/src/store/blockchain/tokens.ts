@@ -1,19 +1,19 @@
-import { isEqual } from 'es-toolkit';
-import { TaskType } from '@/types/task-type';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { logger } from '@/utils/logging';
-import { isTaskCancelled } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBlockchainStore } from '@/store/blockchain/index';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import type { MaybeRef } from '@vueuse/core';
-import type { TaskMeta } from '@/types/task';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { TaskMeta } from '@/types/task';
+import type { MaybeRef } from '@vueuse/core';
+import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBlockchainStore } from '@/store/blockchain/index';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { logger } from '@/utils/logging';
+import { isEqual } from 'es-toolkit';
 
 function noTokens(): EthDetectedTokensInfo {
   return {

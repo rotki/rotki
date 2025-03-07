@@ -1,13 +1,13 @@
+import type { TaskMeta } from '@/types/task';
+import { useSessionApi } from '@/composables/api/session';
+import { useHistoryStore } from '@/store/history';
+import { useNotificationsStore } from '@/store/notifications';
+import { useStatusStore } from '@/store/status';
+import { useTaskStore } from '@/store/tasks';
 import { Purgeable } from '@/types/session/purge';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { useNotificationsStore } from '@/store/notifications';
-import { useHistoryStore } from '@/store/history';
-import { useTaskStore } from '@/store/tasks';
-import { useStatusStore } from '@/store/status';
-import { useSessionApi } from '@/composables/api/session';
-import type { TaskMeta } from '@/types/task';
 
 interface UseSessionPurge {
   purgeCache: (purgeable: Purgeable, value: string) => void;

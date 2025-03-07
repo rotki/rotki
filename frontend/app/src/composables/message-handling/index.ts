@@ -1,5 +1,24 @@
-import { type Notification, Priority, Severity } from '@rotki/common';
-import { backoff, startPromise } from '@shared/utils';
+import { useSessionApi } from '@/composables/api/session';
+import { useBlockchainBalances } from '@/composables/blockchain/balances';
+import {
+  useAccountingRuleConflictMessageHandler,
+} from '@/composables/message-handling/accounting-rule-conflict-message';
+import { useCalendarReminderHandler } from '@/composables/message-handling/calendar-reminder';
+import { useCsvImportResultHandler } from '@/composables/message-handling/csv-import-result';
+import { useMissingApiKeyHandler } from '@/composables/message-handling/missing-api-key';
+import { useNewTokenDetectedHandler } from '@/composables/message-handling/new-token-detected';
+import { usePremium } from '@/composables/premium';
+import { useSync } from '@/composables/session/sync';
+import { useExchangeUnknownAssetHandler } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import { camelCaseTransformer } from '@/services/axios-transformers';
+import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
+import { useLiquityStore } from '@/store/defi/liquity';
+import { useHistoryStore } from '@/store/history';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
+import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { useNotificationsStore } from '@/store/notifications';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useSessionAuthStore } from '@/store/session/auth';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,
@@ -10,29 +29,10 @@ import {
   SocketMessageType,
   WebsocketMessage,
 } from '@/types/websocket-messages';
-import { camelCaseTransformer } from '@/services/axios-transformers';
-import { logger } from '@/utils/logging';
 import { uniqueStrings } from '@/utils/data';
-import { useMissingApiKeyHandler } from '@/composables/message-handling/missing-api-key';
-import {
-  useAccountingRuleConflictMessageHandler,
-} from '@/composables/message-handling/accounting-rule-conflict-message';
-import { useCalendarReminderHandler } from '@/composables/message-handling/calendar-reminder';
-import { useCsvImportResultHandler } from '@/composables/message-handling/csv-import-result';
-import { useNewTokenDetectedHandler } from '@/composables/message-handling/new-token-detected';
-import { useHistoryStore } from '@/store/history';
-import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
-import { useNotificationsStore } from '@/store/notifications';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useSync } from '@/composables/session/sync';
-import { usePremium } from '@/composables/premium';
-import { useSessionApi } from '@/composables/api/session';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useExchangeUnknownAssetHandler } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import { logger } from '@/utils/logging';
+import { type Notification, Priority, Severity } from '@rotki/common';
+import { backoff, startPromise } from '@shared/utils';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;

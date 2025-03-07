@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { Blockchain } from '@rotki/common';
+import { z } from 'zod';
 
 const EvmRpcNode = z.object({
   active: z.boolean(),

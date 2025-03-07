@@ -1,4 +1,7 @@
-import { BigNumber } from '@rotki/common';
+import type { ActionStatus } from '@/types/action';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { useItemsPerPage } from '@/composables/session/use-items-per-page';
+import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import {
@@ -7,10 +10,7 @@ import {
   getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
-import { useComputedRef } from '@/composables/utils/useComputedRef';
-import { useItemsPerPage } from '@/composables/session/use-items-per-page';
-import type { ActionStatus } from '@/types/action';
+import { BigNumber } from '@rotki/common';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));

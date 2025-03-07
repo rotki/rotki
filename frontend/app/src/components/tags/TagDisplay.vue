@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useTagStore } from '@/store/session/tags';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { useTagStore } from '@/store/session/tags';
 
 withDefaults(
   defineProps<{

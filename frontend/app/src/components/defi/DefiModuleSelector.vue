@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import DefiIcon from '@/components/defi/DefiIcon.vue';
 import {
   type PurgeableModule,
   PurgeableOnlyModule,
   SUPPORTED_MODULES,
   type SupportedModule,
 } from '@/types/modules';
-import DefiIcon from '@/components/defi/DefiIcon.vue';
 
 type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };
 

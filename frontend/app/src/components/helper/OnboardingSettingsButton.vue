@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useMainStore } from '@/store/main';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
+import { useMainStore } from '@/store/main';
 
 const { t } = useI18n();
 const visible = ref<boolean>(false);

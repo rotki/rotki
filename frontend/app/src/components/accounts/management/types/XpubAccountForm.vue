@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { omit } from 'es-toolkit';
-import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
-import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
+import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
-import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
+import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
+import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
+import { omit } from 'es-toolkit';
 
 const modelValue = defineModel<XpubManage>({ required: true });
 

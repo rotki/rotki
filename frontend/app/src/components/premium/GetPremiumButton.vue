@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { usePremium } from '@/composables/premium';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
+import { usePremium } from '@/composables/premium';
 
 withDefaults(
   defineProps<{

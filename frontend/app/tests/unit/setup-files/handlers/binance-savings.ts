@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { HttpResponse, http } from 'msw';
+import { http, HttpResponse } from 'msw';
 import binanceSavings from '../../fixtures/binance-savings.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

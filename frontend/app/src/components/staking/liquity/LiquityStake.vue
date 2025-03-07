@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Section } from '@/types/status';
-import { useStatusStore } from '@/store/status';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import type { LiquityStakingDetailEntry } from '@rotki/common';
+import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
 
 withDefaults(
   defineProps<{

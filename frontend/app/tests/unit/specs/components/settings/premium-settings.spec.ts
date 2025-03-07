@@ -1,11 +1,11 @@
-import { type VueWrapper, mount } from '@vue/test-utils';
-import flushPromises from 'flush-promises/index';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import PremiumSettings from '@/pages/api-keys/premium/index.vue';
-import { useConfirmStore } from '@/store/confirm';
+import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremium } from '@/composables/premium';
-import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
+import PremiumSettings from '@/pages/api-keys/premium/index.vue';
+import { useConfirmStore } from '@/store/confirm';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises/index';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {

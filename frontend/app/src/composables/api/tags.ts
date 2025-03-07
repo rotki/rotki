@@ -1,8 +1,8 @@
+import type { ActionResult } from '@rotki/common';
 import { noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { type Tag, Tags } from '@/types/tags';
-import type { ActionResult } from '@rotki/common';
 
 interface UseTagsApiReturn {
   queryTags: () => Promise<Tags>;

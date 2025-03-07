@@ -1,21 +1,21 @@
 <script setup lang="ts">
+import type { BackendConfiguration } from '@/types/backend';
+import type { Writeable } from '@rotki/common';
+import type { RuiIcons } from '@rotki/ui-library';
+import type { BackendOptions } from '@shared/ipc';
+import BigDialog from '@/components/dialogs/BigDialog.vue';
+import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
+import SettingResetButton from '@/components/settings/SettingResetButton.vue';
+import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { useBackendManagement } from '@/composables/backend';
+import { useInterop } from '@/composables/electron-interop';
+import { useConfirmStore } from '@/store/confirm';
+import { useMainStore } from '@/store/main';
+import { toMessages } from '@/utils/validation';
+import { LogLevel } from '@shared/log-level';
 import useVuelidate from '@vuelidate/core';
 import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
 import { isEqual } from 'es-toolkit';
-import { LogLevel } from '@shared/log-level';
-import { toMessages } from '@/utils/validation';
-import { useMainStore } from '@/store/main';
-import { useConfirmStore } from '@/store/confirm';
-import { useBackendManagement } from '@/composables/backend';
-import { useInterop } from '@/composables/electron-interop';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
-import SettingResetButton from '@/components/settings/SettingResetButton.vue';
-import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import type { RuiIcons } from '@rotki/ui-library';
-import type { BackendOptions } from '@shared/ipc';
-import type { Writeable } from '@rotki/common';
-import type { BackendConfiguration } from '@/types/backend';
 
 const emit = defineEmits<{
   (e: 'dismiss'): void;
@@ -200,13 +200,13 @@ function icon(level: LogLevel): RuiIcons {
   throw new Error(`Invalid option: ${level}`);
 }
 
-const reset = async function () {
+async function reset() {
   set(confirmReset, false);
   dismiss();
   await resetOptions();
-};
+}
 
-const selectDataDirectory = async function () {
+async function selectDataDirectory() {
   if (get(selecting))
     return;
 
@@ -219,7 +219,7 @@ const selectDataDirectory = async function () {
   finally {
     set(selecting, false);
   }
-};
+}
 
 async function save() {
   dismiss();

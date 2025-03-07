@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import { useTemplateRef } from 'vue';
-import { NoteLocation } from '@/types/notes';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
-import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
-import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
-import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import { useModules } from '@/composables/session/modules';
-import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
-import { Section } from '@/types/status';
-import { useStatusStore } from '@/store/status';
-import { Module } from '@/types/modules';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { RouteLocationRaw } from 'vue-router';
+import AccountBalances from '@/components/accounts/AccountBalances.vue';
+import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
+import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
+import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
+import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
+import BlockchainBalanceRefreshBehaviourMenu
+  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useModules } from '@/composables/session/modules';
+import { useStatusStore } from '@/store/status';
+import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
+import { Module } from '@/types/modules';
+import { NoteLocation } from '@/types/notes';
+import { Section } from '@/types/status';
+import { useTemplateRef } from 'vue';
 
 definePage({
   meta: {

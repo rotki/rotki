@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ValidatorDisplay from '@/components/display/ValidatorDisplay.vue';
 import type { Eth2ValidatorEntry } from '@rotki/common';
+import ValidatorDisplay from '@/components/display/ValidatorDisplay.vue';
 
 defineOptions({
   inheritAttrs: false,

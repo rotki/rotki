@@ -1,7 +1,7 @@
+import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'es-toolkit/compat';
 import { z } from 'zod';
-import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 
 export const AssetPriceInput = z.tuple([NumericString, z.number()]);
 

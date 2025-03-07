@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { displayDateFormatter } from '@/data/date-formatter';
-import { size } from '@/utils/data';
-import { getFilepath } from '@/utils/backups';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useConfirmStore } from '@/store/confirm';
-import { useBackupApi } from '@/composables/api/backup';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import DateDisplay from '@/components/display/DateDisplay.vue';
+import RowAppend from '@/components/helper/RowAppend.vue';
+import { useBackupApi } from '@/composables/api/backup';
+import { displayDateFormatter } from '@/data/date-formatter';
+import { useConfirmStore } from '@/store/confirm';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { getFilepath } from '@/utils/backups';
+import { size } from '@/utils/data';
 
 const props = withDefaults(
   defineProps<{

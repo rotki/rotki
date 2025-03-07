@@ -1,17 +1,17 @@
-import { startPromise } from '@shared/utils';
-import { isEqual } from 'es-toolkit';
-import { logger } from '@/utils/logging';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
-import { usePeriodicStore } from '@/store/session/periodic';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useWebsocketStore } from '@/store/websocket';
-import { useTaskStore } from '@/store/tasks';
 import { useBalances } from '@/composables/balances';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useMessageHandling } from '@/composables/message-handling';
+import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useManualBalancesStore } from '@/store/balances/manual';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { usePeriodicStore } from '@/store/session/periodic';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useTaskStore } from '@/store/tasks';
+import { useWebsocketStore } from '@/store/websocket';
+import { BalanceSource } from '@/types/settings/frontend-settings';
+import { logger } from '@/utils/logging';
+import { startPromise } from '@shared/utils';
+import { isEqual } from 'es-toolkit';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';

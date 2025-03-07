@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { checkIfDevelopment } from '@shared/utils';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useLocale } from '@/composables/session/use-locale';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { checkIfDevelopment } from '@shared/utils';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 

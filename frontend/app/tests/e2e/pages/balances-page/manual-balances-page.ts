@@ -1,7 +1,7 @@
 import { BigNumber, toSentenceCase } from '@rotki/common';
-import { RotkiApp } from '../rotki-app';
-import { formatAmount, updateLocationBalance } from '../../utils/amounts';
 import { selectAsset } from '../../support/utils';
+import { formatAmount, updateLocationBalance } from '../../utils/amounts';
+import { RotkiApp } from '../rotki-app';
 
 export interface FixtureManualBalance {
   readonly asset: string;

@@ -1,6 +1,6 @@
-import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
-import { useQueryStatusStore } from '@/store/history/query-status/index';
 import type { EvmChainAddress } from '@/types/history/events/index';
+import { useQueryStatusStore } from '@/store/history/query-status/index';
+import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
 
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
   const createKey = ({ address, evmChain }: { address: string; evmChain: string }): string => address + evmChain;

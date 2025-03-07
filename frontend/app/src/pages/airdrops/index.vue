@@ -1,29 +1,29 @@
 <script setup lang="ts">
-import { type BigNumber, Blockchain } from '@rotki/common';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { TaskMeta } from '@/types/task';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
+import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useDefiApi } from '@/composables/api/defi';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
 import {
-  AIRDROP_POAP,
   type Airdrop,
+  AIRDROP_POAP,
   Airdrops,
   type PoapDelivery,
   type PoapDeliveryDetails,
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
-import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import { isTaskCancelled } from '@/utils';
-import { logger } from '@/utils/logging';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useTaskStore } from '@/store/tasks';
-import { useNotificationsStore } from '@/store/notifications';
-import { useDefiApi } from '@/composables/api/defi';
-import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import type { TaskMeta } from '@/types/task';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import { logger } from '@/utils/logging';
+import { type BigNumber, Blockchain } from '@rotki/common';
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 

@@ -1,10 +1,10 @@
-import os from 'node:os';
-import process from 'node:process';
-import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import process from 'node:process';
+import { cancel, intro, isCancel, multiselect, outro } from '@clack/prompts';
 import { cac } from 'cac';
 import consola from 'consola';
-import { cancel, intro, isCancel, multiselect, outro } from '@clack/prompts';
 
 const APP_NAME = 'rotki';
 const DATA_DIR = 'data';

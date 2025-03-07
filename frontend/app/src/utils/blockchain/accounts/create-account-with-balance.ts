@@ -1,7 +1,7 @@
-import { getAccountBalance } from '@/utils/blockchain/accounts/index';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import type { BlockchainAccount, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import { getAccountBalance } from '@/utils/blockchain/accounts/index';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 export function createAccountWithBalance(
   account: BlockchainAccount,

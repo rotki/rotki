@@ -1,29 +1,29 @@
+import type { TaskMeta } from '@/types/task';
+import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { usePremium } from '@/composables/premium';
+import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useNotificationsStore } from '@/store/notifications';
+import { useSessionAuthStore } from '@/store/session/auth';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { useTaskStore } from '@/store/tasks';
+import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
 import {
   type BigNumber,
   type HistoricalAssetPricePayload,
   HistoricalAssetPriceResponse,
   type NetValue,
   type TimeFramePeriod,
-  TimeUnit,
   timeframes,
+  TimeUnit,
 } from '@rotki/common';
 import dayjs from 'dayjs';
-import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
-import { isTaskCancelled } from '@/utils';
-import { TaskType } from '@/types/task-type';
-import { useTaskStore } from '@/store/tasks';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremium } from '@/composables/premium';
-import type { TaskMeta } from '@/types/task';
 
 function defaultNetValue(): NetValue {
   return {

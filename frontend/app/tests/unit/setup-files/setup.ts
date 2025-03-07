@@ -1,11 +1,11 @@
+import type { DatabaseInfo } from '@/types/backup';
 import { config } from '@vue/test-utils';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { mockT } from '../i18n';
+import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { RuiIconStub } from '../specs/stubs/RuiIcon';
 import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';
-import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { server } from './server';
-import type { DatabaseInfo } from '@/types/backup';
 import 'fake-indexeddb/auto';
 
 beforeAll(() => {

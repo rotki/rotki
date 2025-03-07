@@ -1,4 +1,20 @@
 <script setup lang="ts">
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
+import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
+import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
+import LiquityStatistics from '@/components/staking/liquity/LiquityStatistics.vue';
+import { useLiquityStore } from '@/store/defi/liquity';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
+import { zeroBalance } from '@/utils/bignumbers';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { balanceSum } from '@/utils/calculation';
+import { uniqueStrings } from '@/utils/data';
 import {
   type AssetBalance,
   type Balance,
@@ -10,22 +26,6 @@ import {
   type LiquityStakingDetails,
   type LiquityStatisticDetails,
 } from '@rotki/common';
-import { Section } from '@/types/status';
-import { zeroBalance } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
-import { balanceSum } from '@/utils/calculation';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useStatusStore } from '@/store/status';
-import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
-import LiquityStatistics from '@/components/staking/liquity/LiquityStatistics.vue';
-import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
-import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
-import HashLink from '@/components/helper/HashLink.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;

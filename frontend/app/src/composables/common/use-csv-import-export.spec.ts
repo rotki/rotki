@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
+import { describe, expect, it } from 'vitest';
 
 describe('useCsvImportExport', () => {
   describe('parseCSV', () => {

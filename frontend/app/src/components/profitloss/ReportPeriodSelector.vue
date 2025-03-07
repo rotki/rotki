@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import dayjs from 'dayjs';
-import { Quarter } from '@/types/settings/frontend-settings';
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
+import { Quarter } from '@/types/settings/frontend-settings';
+import dayjs from 'dayjs';
 
-const props = withDefaults(
-  defineProps<{
-    year: string | 'custom';
-    quarter: Quarter;
-  }>(),
-  {
-    year: () => new Date().getFullYear().toString(),
-  },
-);
+const props = defineProps<{
+  year: string | 'custom';
+  quarter: Quarter;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:period', period: PeriodChangedEvent | null): void;

@@ -1,18 +1,26 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common';
-import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
-import { useRefMap } from '@/composables/utils/useRefMap';
-import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
+import { Blockchain } from '@rotki/common';
 
-const additional = ['ETC'] as const;
-const supportedExplorers = [...Object.values(Blockchain), ...additional];
+const extraExplorers = ['ETC'] as const;
 
-const selection = ref<Blockchain | (typeof additional)[number]>(Blockchain.ETH);
+type ExtraExplorers = (typeof extraExplorers)[number];
+
+type SupportedExplorers = Blockchain | ExtraExplorers;
+
+const supportedExplorers = [
+  ...Object.values(Blockchain),
+  ...extraExplorers,
+] satisfies readonly (Blockchain | ExtraExplorers)[];
+
+const selection = ref<SupportedExplorers>(Blockchain.ETH);
 const address = ref<string>('');
 const tx = ref<string>('');
 const block = ref<string>('');
@@ -21,6 +29,8 @@ const token = ref<string>('');
 const store = useFrontendSettingsStore();
 const { explorers } = storeToRefs(store);
 const { t } = useI18n();
+
+const [CreateSelection, ReuseSelection] = createReusableTemplate<{ item: SupportedExplorers }>();
 
 const defaultUrls = computed<ExplorerUrls>(() => explorerUrls[get(selection)]);
 
@@ -84,6 +94,20 @@ onMounted(() => {
 
 <template>
   <SettingsItem>
+    <CreateSelection #default="{ item }">
+      <ChainDisplay
+        v-if="!Array.prototype.includes.call(extraExplorers, item)"
+        dense
+        :chain="item"
+      />
+      <AssetDetails
+        v-else
+        dense
+        class="[&>div]:!py-0 -my-[0.375rem]"
+        :asset="item"
+      />
+    </CreateSelection>
+
     <template #title>
       {{ t('explorers.title') }}
     </template>
@@ -100,30 +124,10 @@ onMounted(() => {
         @update:model-value="onChange()"
       >
         <template #item="{ item }">
-          <ChainDisplay
-            v-if="!additional.some((chain) => chain === item)"
-            dense
-            :chain="item"
-          />
-          <AssetDetails
-            v-else
-            dense
-            class="[&>div]:!py-0 -my-[0.375rem]"
-            :asset="item"
-          />
+          <ReuseSelection :item="item" />
         </template>
         <template #selection="{ item }">
-          <ChainDisplay
-            v-if="!additional.some((chain) => chain === item)"
-            dense
-            :chain="item"
-          />
-          <AssetDetails
-            v-else
-            dense
-            class="[&>div]:!py-0 -my-[0.375rem]"
-            :asset="item"
-          />
+          <ReuseSelection :item="item" />
         </template>
       </RuiMenuSelect>
 
@@ -134,6 +138,7 @@ onMounted(() => {
         :placeholder="addressUrl"
         @save-data="save('address', $event)"
       />
+
       <ExplorerInput
         v-if="txUrl"
         v-model="tx"
@@ -142,6 +147,7 @@ onMounted(() => {
         :placeholder="txUrl"
         @save-data="save('transaction', $event)"
       />
+
       <ExplorerInput
         v-if="blockUrl"
         v-model="block"
@@ -150,6 +156,7 @@ onMounted(() => {
         :placeholder="blockUrl"
         @save-data="save('block', $event)"
       />
+
       <ExplorerInput
         v-if="tokenUrl"
         v-model="token"

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
+import type { KrakenStakingDateFilter } from '@/types/staking';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
-import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
-import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';
+import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
+import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import type { KrakenStakingDateFilter } from '@/types/staking';
+import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 

@@ -1,8 +1,8 @@
 export * from './account';
 
-export * from './assets';
-
 export * from './assertions';
+
+export * from './assets';
 
 export * from './balances';
 

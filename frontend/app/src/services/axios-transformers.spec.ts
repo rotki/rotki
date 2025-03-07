@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { camelCaseTransformer, noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axios-transformers';
+import { describe, expect, it } from 'vitest';
 
 describe('axios transformers', () => {
   it('transform json to camelCase', () => {

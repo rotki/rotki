@@ -1,12 +1,12 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
-import { Blockchain } from '@rotki/common';
-import { SocketMessageType } from '@/types/websocket-messages';
+import type { EvmChainInfo } from '@/types/api/chains';
+import { useTokenDetection } from '@/composables/balances/token-detection';
+import { useMessageHandling } from '@/composables/message-handling';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useMessageHandling } from '@/composables/message-handling';
-import { useTokenDetection } from '@/composables/balances/token-detection';
-import type { EvmChainInfo } from '@/types/api/chains';
+import { SocketMessageType } from '@/types/websocket-messages';
+import { Blockchain } from '@rotki/common';
+import { mount } from '@vue/test-utils';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),

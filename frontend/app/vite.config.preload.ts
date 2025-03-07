@@ -1,6 +1,6 @@
 import { builtinModules } from 'node:module';
-import process from 'node:process';
 import { join } from 'node:path';
+import process from 'node:process';
 import { defineConfig } from 'vite';
 
 const PACKAGE_ROOT = __dirname;

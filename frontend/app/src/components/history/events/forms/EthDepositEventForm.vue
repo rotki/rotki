@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { Blockchain, HistoryEventEntryType } from '@rotki/common';
-import dayjs from 'dayjs';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { isEmpty } from 'es-toolkit/compat';
-import useVuelidate from '@vuelidate/core';
-import { toMessages } from '@/utils/validation';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import { useBlockchainStore } from '@/store/blockchain';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import JsonInput from '@/components/inputs/JsonInput.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import JsonInput from '@/components/inputs/JsonInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
+import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { useBlockchainStore } from '@/store/blockchain';
+import { DateFormat } from '@/types/date-format';
+import { bigNumberifyFromRef } from '@/utils/bignumbers';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { toMessages } from '@/utils/validation';
+import { Blockchain, HistoryEventEntryType } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
+import dayjs from 'dayjs';
+import { isEmpty } from 'es-toolkit/compat';
 
 interface EthDepositEventFormProps {
   editableItem?: EthDepositEvent;

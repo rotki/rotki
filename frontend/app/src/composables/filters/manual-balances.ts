@@ -1,10 +1,10 @@
-import z from 'zod';
-import { CommaSeparatedStringSchema } from '@/types/route';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { assetDeserializer, assetSuggestions } from '@/utils/assets';
+import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import type { MaybeRef } from '@vueuse/core';
-import type { FilterSchema } from '@/composables/use-pagination-filter/types';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { CommaSeparatedStringSchema } from '@/types/route';
+import { assetDeserializer, assetSuggestions } from '@/utils/assets';
+import z from 'zod';
 
 enum ManualBalanceFilterKeys {
   LOCATION = 'location',

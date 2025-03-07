@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { type BigNumber, Blockchain } from '@rotki/common';
-import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
-import Flag from '@/components/common/Flag.vue';
 import type { ExplorerUrls } from '@/types/asset/asset-urls';
+import Flag from '@/components/common/Flag.vue';
+import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import HashLink from '@/components/helper/HashLink.vue';
+import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
+import { type BigNumber, Blockchain } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

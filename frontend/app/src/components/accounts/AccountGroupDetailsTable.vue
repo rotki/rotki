@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useBlockchainStore } from '@/store/blockchain';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
-import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
+import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
+import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
+import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useBlockchainStore } from '@/store/blockchain';
+import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
+import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
 

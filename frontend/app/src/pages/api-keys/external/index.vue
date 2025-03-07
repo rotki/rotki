@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 
 const { t } = useI18n();
 

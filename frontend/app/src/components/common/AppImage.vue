@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { toRem } from '@/utils/data';
 import type { MaybeRef } from '@vueuse/core';
+import { toRem } from '@/utils/data';
 
 const props = withDefaults(
   defineProps<{

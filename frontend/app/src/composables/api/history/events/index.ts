@@ -1,4 +1,8 @@
-import { omit } from 'es-toolkit';
+import type { ActionDataEntry, ActionStatus } from '@/types/action';
+import type { CollectionResponse } from '@/types/collection';
+import type { PendingTask } from '@/types/task';
+import type { ActionResult } from '@rotki/common';
+import type { AxiosRequestConfig } from 'axios';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -24,10 +28,7 @@ import {
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
 import { nonEmptyProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
-import type { CollectionResponse } from '@/types/collection';
-import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
-import type { ActionDataEntry, ActionStatus } from '@/types/action';
+import { omit } from 'es-toolkit';
 
 interface QueryExchangePayload { name: string; location: string }
 
@@ -255,20 +256,18 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     filters: HistoryEventRequestPayload & { accounts?: [] },
     directoryPath?: string,
   ): Promise<PendingTask> => {
-    const func = directoryPath
-      ? api.instance.post<ActionResult<PendingTask>>
-      : api.instance.put<ActionResult<PendingTask>>;
-    const response = await func(
-      '/history/events/export',
-      snakeCaseTransformer({
-        asyncQuery: true,
-        directoryPath,
-        ...omit(filters, ['accounts']),
-      }),
-      {
-        validateStatus: validStatus,
-      },
-    );
+    const requestBody = snakeCaseTransformer({
+      asyncQuery: true,
+      directoryPath,
+      ...omit(filters, ['accounts']),
+    });
+    const url = '/history/events/export';
+    const config: AxiosRequestConfig<typeof requestBody> = {
+      validateStatus: validStatus,
+    };
+    const response = directoryPath
+      ? await api.instance.post<ActionResult<PendingTask>>(url, requestBody, config)
+      : await api.instance.put<ActionResult<PendingTask>>(url, requestBody, config);
 
     return handleResponse(response);
   };

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useRefMap } from '@/composables/utils/useRefMap';
-import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import type { Balance } from '@rotki/common';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import type { Balance } from '@rotki/common';
+import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = withDefaults(
   defineProps<{
