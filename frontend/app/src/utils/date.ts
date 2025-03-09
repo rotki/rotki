@@ -30,12 +30,7 @@ export function getDateInputISOFormat(format: DateFormat): string {
   }[format];
 }
 
-export function changeDateFormat(
-  date: string,
-  fromFormat: DateFormat,
-  toFormat: DateFormat,
-  milliseconds: boolean = false,
-): string {
+export function changeDateFormat(date: string, fromFormat: DateFormat, toFormat: DateFormat, milliseconds: boolean = false): string {
   if (!date)
     return '';
 
