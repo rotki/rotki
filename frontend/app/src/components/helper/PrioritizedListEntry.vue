@@ -37,6 +37,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   manualcurrent: '',
   [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2'),
   [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3'),
+  [PriceOracle.YAHOOFINANCE]: t('oracles.yahoo_finance'),
 };
 </script>
 

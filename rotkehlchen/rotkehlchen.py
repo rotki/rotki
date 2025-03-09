@@ -461,6 +461,7 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             defillama=self.defillama,
             alchemy=self.alchemy,
+            yahoofinance=self.yahoofinance,
             uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
             uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
         )
