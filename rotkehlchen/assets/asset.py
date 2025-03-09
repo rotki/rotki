@@ -254,6 +254,7 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
     # None means no special mapping. '' means not supported
     cryptocompare: str | None = field(init=False)
     coingecko: str | None = field(init=False)
+    yahoo_finance: str | None = field(init=False)
 
     def to_cryptocompare(self) -> str:
         """
@@ -280,13 +281,33 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
             raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
         return coingecko_str
 
+    def to_yahoo_finance(self) -> str:
+        """
+        Returns the symbol with which to query Yahoo Finance for the asset
+        May raise:
+            - UnsupportedAsset if the asset is not supported by Yahoo Finance
+        """
+        # For most stocks/ETFs, the symbol can be used directly
+        # If there's a special mapping, use it
+        if hasattr(self, 'yahoo_finance') and self.yahoo_finance:
+            return self.yahoo_finance
+            
+        # Otherwise default to the asset symbol
+        # Yahoo Finance typically uses the actual stock/ETF symbol
+        if not self.symbol:
+            raise UnsupportedAsset(f'{self.identifier} is not supported by Yahoo Finance')
+            
+        return self.symbol
+
     def has_coingecko(self) -> bool:
         return self.coingecko is not None and self.coingecko != ''
 
     def to_dict(self) -> dict[str, Any]:
+        yahoo_finance_field = getattr(self, 'yahoo_finance', None)
         return super().to_dict() | {
             'cryptocompare': self.cryptocompare,
             'coingecko': self.coingecko,
+            'yahoo_finance': yahoo_finance_field,
         }
 
 
@@ -305,6 +326,7 @@ class FiatAsset(AssetWithOracles):
         object.__setattr__(self, 'symbol', resolved.symbol)
         object.__setattr__(self, 'cryptocompare', resolved.cryptocompare)
         object.__setattr__(self, 'coingecko', resolved.coingecko)
+        object.__setattr__(self, 'yahoo_finance', resolved.yahoo_finance)
 
     @classmethod
     def initialize(
@@ -314,6 +336,7 @@ class FiatAsset(AssetWithOracles):
             symbol: str | None = None,
             coingecko: str | None = None,
             cryptocompare: str | None = '',
+            yahoo_finance: str | None = None,
     ) -> 'FiatAsset':
         asset = FiatAsset(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', AssetType.FIAT)
@@ -321,6 +344,7 @@ class FiatAsset(AssetWithOracles):
         object.__setattr__(asset, 'symbol', symbol)
         object.__setattr__(asset, 'cryptocompare', cryptocompare)
         object.__setattr__(asset, 'coingecko', coingecko)
+        object.__setattr__(asset, 'yahoo_finance', yahoo_finance)
         return asset
 
 
@@ -345,6 +369,7 @@ class CryptoAsset(AssetWithOracles):
         object.__setattr__(self, 'symbol', resolved.symbol)
         object.__setattr__(self, 'cryptocompare', resolved.cryptocompare)
         object.__setattr__(self, 'coingecko', resolved.coingecko)
+        object.__setattr__(self, 'yahoo_finance', resolved.yahoo_finance)
         object.__setattr__(self, 'started', resolved.started)
         object.__setattr__(self, 'forked', resolved.forked)
         object.__setattr__(self, 'swapped_for', resolved.swapped_for)
@@ -358,6 +383,7 @@ class CryptoAsset(AssetWithOracles):
             symbol: str | None = None,
             coingecko: str | None = None,
             cryptocompare: str | None = '',
+            yahoo_finance: str | None = None,
             started: Timestamp | None = None,
             forked: Optional['CryptoAsset'] = None,
             swapped_for: Optional['CryptoAsset'] = None,
@@ -368,6 +394,7 @@ class CryptoAsset(AssetWithOracles):
         object.__setattr__(asset, 'symbol', symbol)
         object.__setattr__(asset, 'cryptocompare', cryptocompare)
         object.__setattr__(asset, 'coingecko', coingecko)
+        object.__setattr__(asset, 'yahoo_finance', yahoo_finance)
         object.__setattr__(asset, 'started', started)
         object.__setattr__(asset, 'forked', forked)
         object.__setattr__(asset, 'swapped_for', swapped_for)
@@ -502,6 +529,7 @@ class EvmToken(CryptoAsset):
             swapped_for: CryptoAsset | None = None,
             coingecko: str | None = None,
             cryptocompare: str | None = '',
+            yahoo_finance: str | None = None,
             decimals: int | None = None,
             protocol: str | None = None,
             underlying_tokens: list[UnderlyingToken] | None = None,
@@ -519,6 +547,7 @@ class EvmToken(CryptoAsset):
         object.__setattr__(asset, 'symbol', symbol)
         object.__setattr__(asset, 'cryptocompare', cryptocompare)
         object.__setattr__(asset, 'coingecko', coingecko)
+        object.__setattr__(asset, 'yahoo_finance', yahoo_finance)
         object.__setattr__(asset, 'started', started)
         object.__setattr__(asset, 'forked', forked)
         object.__setattr__(asset, 'swapped_for', swapped_for)
@@ -527,7 +556,7 @@ class EvmToken(CryptoAsset):
         object.__setattr__(asset, 'token_kind', token_kind)
         object.__setattr__(asset, 'decimals', decimals)
         object.__setattr__(asset, 'protocol', protocol)
-        object.__setattr__(asset, 'underlying_tokens', underlying_tokens)
+        object.__setattr__(asset, 'underlying_tokens', underlying_tokens or [])
         return asset
 
     @classmethod

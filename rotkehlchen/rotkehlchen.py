@@ -77,6 +77,7 @@ from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
+from rotkehlchen.externalapis.yahoofinance import YahooFinance
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -193,6 +194,7 @@ class Rotkehlchen:
         self.coingecko = Coingecko(database=None)
         self.defillama = Defillama(database=None)
         self.alchemy = Alchemy(database=None)
+        self.yahoofinance = YahooFinance(database=None)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,
@@ -206,6 +208,7 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             defillama=self.defillama,
             alchemy=self.alchemy,
+            yahoofinance=self.yahoofinance,
             manualcurrent=ManualCurrentOracle(),
             msg_aggregator=self.msg_aggregator,
         )
@@ -254,7 +257,7 @@ class Rotkehlchen:
         self.cryptocompare.db = None
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
-        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, Inquirer()._manualcurrent):  # noqa: E501
+        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, self.yahoofinance, Inquirer()._manualcurrent):  # noqa: E501
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
         CachedSettings().reset()
@@ -334,6 +337,7 @@ class Rotkehlchen:
         self.defillama.set_database(self.data.db)
         self.coingecko.set_database(self.data.db)
         self.alchemy.set_database(self.data.db)
+        self.yahoofinance.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
@@ -552,6 +556,7 @@ class Rotkehlchen:
         self.defillama.unset_database()
         self.coingecko.unset_database()
         self.alchemy.unset_database()
+        self.yahoofinance.unset_database()
         Inquirer()._manualcurrent.unset_database()
         CachedSettings().reset()
 

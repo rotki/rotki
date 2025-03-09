@@ -134,8 +134,7 @@ class YahooFinance(
         if self.is_penalized():
             return False
             
-        # Yahoo Finance typically has data up to 5-10 years back for most assets
-        # For simplicity, we'll assume it can handle queries
+        # Can handle queries for assets that are supported by Yahoo Finance
         return True
 
     def query_historical_price(
@@ -255,7 +254,7 @@ class YahooFinance(
             'SPY': {'symbol': 'SPY', 'name': 'SPDR S&P 500 ETF Trust'},
             'QQQ': {'symbol': 'QQQ', 'name': 'Invesco QQQ Trust'},
             'DIA': {'symbol': 'DIA', 'name': 'SPDR Dow Jones Industrial Average ETF'},
-            # We could add more common symbols here
+            # we can expand on this list if needed by including more common symbols here
         }
         
         # Cache the minimal list

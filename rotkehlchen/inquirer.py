@@ -141,6 +141,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
+    from rotkehlchen.externalapis.yahoofinance import YahooFinance
     from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -169,6 +170,7 @@ CurrentPriceOracleInstance = Union[
     'UniswapV3Oracle',
     'UniswapV2Oracle',
     'ManualCurrentOracle',
+    'YahooFinance',
 ]
 
 
@@ -295,6 +297,7 @@ class Inquirer:
     _coingecko: 'Coingecko'
     _alchemy: 'Alchemy'
     _defillama: 'Defillama'
+    _yahoofinance: 'YahooFinance'
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
@@ -316,6 +319,7 @@ class Inquirer:
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
             alchemy: Optional['Alchemy'] = None,
+            yahoofinance: Optional['YahooFinance'] = None,
             manualcurrent: Optional['ManualCurrentOracle'] = None,
             msg_aggregator: Optional['MessagesAggregator'] = None,
     ) -> 'Inquirer':
@@ -328,6 +332,7 @@ class Inquirer:
         assert coingecko, error_msg
         assert defillama, error_msg
         assert alchemy, error_msg
+        assert yahoofinance, error_msg
         assert manualcurrent, error_msg
         assert msg_aggregator, error_msg
 
@@ -338,6 +343,7 @@ class Inquirer:
         Inquirer._coingecko = coingecko
         Inquirer._defillama = defillama
         Inquirer._alchemy = alchemy
+        Inquirer._yahoofinance = yahoofinance
         Inquirer._manualcurrent = manualcurrent
         Inquirer._cached_current_price = LRUCacheWithRemove(maxsize=1024)
         Inquirer._evm_managers = {}
