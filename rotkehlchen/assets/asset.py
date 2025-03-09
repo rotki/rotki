@@ -292,6 +292,26 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
         if hasattr(self, 'yahoo_finance') and self.yahoo_finance:
             return self.yahoo_finance
             
+        # For custom assets that might be stocks, try to extract ticker symbol
+        if hasattr(self, 'asset_type') and self.asset_type == AssetType.CUSTOM_ASSET:
+            # Check if this is a stock-type custom asset
+            if hasattr(self, 'custom_asset_type') and self.custom_asset_type.lower() in ('stock', 'etf'):
+                # For stocks like "Apple Inc", we should try to use the symbol 
+                # If we have notes with a ticker, use that
+                if hasattr(self, 'notes') and self.notes and ':' in self.notes:
+                    # Extract ticker from notes if format is "ticker: AAPL" or similar
+                    parts = self.notes.split(':')
+                    if len(parts) >= 2 and parts[0].strip().lower() in ('ticker', 'symbol'):
+                        return parts[1].strip()
+                
+                # If we can't find a symbol in notes, use the symbol attribute if available
+                if hasattr(self, 'symbol') and self.symbol:
+                    return self.symbol
+                    
+                # As a last resort, try to use the name as the symbol
+                # This won't work for companies with "Inc" or other suffixes
+                return self.name
+
         # Otherwise default to the asset symbol
         # Yahoo Finance typically uses the actual stock/ETF symbol
         if not self.symbol:

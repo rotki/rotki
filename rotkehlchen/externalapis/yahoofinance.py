@@ -74,14 +74,33 @@ class YahooFinance(
         # If to_asset is not USD, we might need additional conversion
         to_symbol = to_asset.symbol.upper()
         
+        log.debug(f'Yahoo Finance oracle querying prices for {len(from_assets)} assets')
+        
         for from_asset in from_assets:
             try:
-                yahoo_symbol = from_asset.to_yahoo_finance()
+                log.debug(
+                    f'Processing asset in Yahoo Finance oracle',
+                    asset_name=from_asset.name if hasattr(from_asset, 'name') else 'Unknown',
+                    asset_identifier=from_asset.identifier,
+                    asset_type=from_asset.asset_type if hasattr(from_asset, 'asset_type') else 'Unknown',
+                )
+                
+                try:
+                    yahoo_symbol = from_asset.to_yahoo_finance()
+                    log.debug(f'Resolved Yahoo Finance symbol: {yahoo_symbol} for asset {from_asset.identifier}')
+                except Exception as e:
+                    log.debug(
+                        f'Error getting Yahoo Finance symbol',
+                        asset=from_asset.identifier,
+                        error=str(e),
+                    )
+                    continue
                 
                 # Add currency if needed (for non-USD requests)
                 if to_symbol != 'USD':
                     yahoo_symbol = f"{yahoo_symbol}{to_symbol}=X"
                 
+                log.debug(f'Querying Yahoo Finance API for symbol: {yahoo_symbol}')
                 ticker_data = self._get_ticker_data(yahoo_symbol)
                 
                 # Try to get the last price
@@ -94,6 +113,13 @@ class YahooFinance(
                         to_asset=to_asset.identifier,
                         price=last_price,
                     )
+                else:
+                    log.debug(
+                        f'No valid price found in Yahoo Finance response',
+                        from_asset=from_asset.identifier,
+                        to_asset=to_asset.identifier,
+                        ticker_info=str(ticker_data.info)[:200] + '...' if len(str(ticker_data.info)) > 200 else str(ticker_data.info),
+                    )
             except (UnsupportedAsset, RemoteError) as e:
                 log.debug(
                     f'Failed to get Yahoo Finance price',
@@ -102,6 +128,13 @@ class YahooFinance(
                     error=str(e),
                 )
                 # Skip assets that aren't supported or have errors
+                continue
+            except Exception as e:
+                log.error(
+                    f'Unexpected error in Yahoo Finance oracle',
+                    from_asset=from_asset.identifier if hasattr(from_asset, 'identifier') else 'Unknown',
+                    error=str(e),
+                )
                 continue
                 
         return prices
