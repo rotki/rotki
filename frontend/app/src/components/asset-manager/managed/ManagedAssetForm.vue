@@ -14,7 +14,6 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
@@ -66,13 +65,10 @@ function parseDecimals(value?: string): number | null {
   return Number.isNaN(parsedValue) ? null : parsedValue;
 }
 
-const startedModel = computed({
-  get: () => {
-    const startedVal = get(started);
-    return startedVal ? convertFromTimestamp(startedVal) : '';
-  },
-  set: (value?: string) => {
-    set(started, value ? convertToTimestamp(value) : undefined);
+const startedModel = computed<number | null>({
+  get: () => get(started) || null,
+  set: (timestamp: number | null) => {
+    set(started, timestamp);
   },
 });
 
@@ -124,10 +120,7 @@ const v$ = useVuelidate(
   {
     address: {
       required: requiredIf(isEvmToken),
-      validated: helpers.withMessage(
-        t('asset_form.validation.valid_address'),
-        (v: string) => !get(isEvmToken) || isValidEthAddress(v),
-      ),
+      validated: helpers.withMessage(t('asset_form.validation.valid_address'), (v: string) => !get(isEvmToken) || isValidEthAddress(v)),
     },
     assetType: { required },
     coingecko: { externalServerValidation },
@@ -196,9 +189,7 @@ onBeforeMount(async () => {
     const queriedTypes = await getAssetTypes();
     set(
       types,
-      queriedTypes
-        .filter(item => item !== CUSTOM_ASSET)
-        .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
+      queriedTypes.filter(item => item !== CUSTOM_ASSET).map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
     );
   }
   catch (error: any) {
@@ -218,27 +209,28 @@ async function saveAsset() {
   let newIdentifier: string;
   const data = get(modelValue);
 
-  const payload: SupportedAsset = omit({
-    ...data,
-    coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
-    cryptocompare: get(cryptocompareEnabled) ? onlyIfTruthy(get(cryptocompare)) : '',
-    evmChain: get(evmChain) || null,
-    protocol: onlyIfTruthy(get(protocol)),
-    swappedFor: onlyIfTruthy(get(swappedFor)),
-    tokenKind: get(tokenKind) || null,
-    underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
-  }, ['ended', 'active', 'customAssetType']);
+  const payload: SupportedAsset = omit(
+    {
+      ...data,
+      coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
+      cryptocompare: get(cryptocompareEnabled) ? onlyIfTruthy(get(cryptocompare)) : '',
+      evmChain: get(evmChain) || null,
+      protocol: onlyIfTruthy(get(protocol)),
+      swappedFor: onlyIfTruthy(get(swappedFor)),
+      tokenKind: get(tokenKind) || null,
+      underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
+    },
+    ['ended', 'active', 'customAssetType'],
+  );
 
-  const assetPayload = get(isEvmToken)
-    ? payload
-    : omit(payload, ['decimals', 'address', 'evmChain', 'tokenKind', 'underlyingTokens']);
+  const assetPayload = get(isEvmToken) ? payload : omit(payload, ['decimals', 'address', 'evmChain', 'tokenKind', 'underlyingTokens']);
 
   if (props.editMode) {
     newIdentifier = get(identifier);
     await editAsset({ ...assetPayload, identifier: newIdentifier });
   }
   else {
-    ({ identifier: newIdentifier } = await addAsset(omit(assetPayload, ['identifier'])));
+    ;({ identifier: newIdentifier } = await addAsset(omit(assetPayload, ['identifier'])));
   }
   return newIdentifier;
 }
@@ -269,7 +261,7 @@ defineExpose({
       v-if="editMode"
       class="flex items-center text-caption text-rui-text-secondary -mt-2 mb-4 gap-2"
     >
-      <span class="font-medium"> {{ t('asset_form.identifier') }}: </span>
+      <span class="font-medium"> {{ t("asset_form.identifier") }}: </span>
       <div class="flex items-center">
         {{ identifier }}
         <CopyButton
@@ -390,7 +382,7 @@ defineExpose({
                 color="primary"
               />
             </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
+            <span> {{ t("asset_form.oracle_disable") }}</span>
           </RuiTooltip>
           <RuiTextField
             v-model="coingecko"
@@ -424,7 +416,7 @@ defineExpose({
                 color="primary"
               />
             </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
+            <span> {{ t("asset_form.oracle_disable") }}</span>
           </RuiTooltip>
           <RuiTextField
             v-model="cryptocompare"
@@ -460,7 +452,7 @@ defineExpose({
           header-class="p-4"
         >
           <template #header>
-            {{ t('asset_form.optional') }}
+            {{ t("asset_form.optional") }}
           </template>
           <template #default>
             <div class="p-4">
@@ -469,6 +461,7 @@ defineExpose({
                 :label="t('asset_form.labels.started')"
                 :error-messages="toMessages(v$.started)"
                 :disabled="loading"
+                :allow-empty="true"
               />
               <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
                 <RuiTextField

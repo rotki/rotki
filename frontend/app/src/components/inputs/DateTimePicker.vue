@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { timezones } from '@/data/timezones';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { DateFormat } from '@/types/date-format';
-import { changeDateFormat, convertDateByTimezone, getDateInputISOFormat, guessTimezone, isValidDate } from '@/utils/date';
+import { getDateInputISOFormat, guessTimezone, isValidDate } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -26,7 +25,7 @@ interface DateTimePickerProps {
   dense?: boolean;
 }
 
-const modelValue = defineModel<string>({ required: true });
+const modelValue = defineModel<number | null>({ default: null, required: false });
 
 const props = withDefaults(defineProps<DateTimePickerProps>(), {
   allowEmpty: false,
@@ -100,27 +99,32 @@ const rules = {
   },
 };
 
-const v$ = useVuelidate(rules, {
-  date: currentValue,
-  timezone: selectedTimezone,
-}, {
-  $autoDirty: true,
-  $externalResults: computed(() => ({ date: get(errorMessages) })),
-  $stopPropagation: true,
-});
+const v$ = useVuelidate(
+  rules,
+  {
+    date: currentValue,
+    timezone: selectedTimezone,
+  },
+  {
+    $autoDirty: true,
+    $externalResults: computed(() => ({ date: get(errorMessages) })),
+    $stopPropagation: true,
+  },
+);
 
 function isValidFormat(date: string): boolean {
-  return (
-    isValidDate(date, get(dateOnlyFormat))
-    || isValidDate(date, get(dateTimeFormat))
-    || isValidDate(date, get(dateTimeFormatWithSecond))
-    || (get(milliseconds) && isValidDate(date, get(dateTimeFormatWithMilliseconds)))
-  );
+  const result
+    = isValidDate(date, get(dateOnlyFormat))
+      || isValidDate(date, get(dateTimeFormat))
+      || isValidDate(date, get(dateTimeFormatWithSecond))
+      || (get(milliseconds) && isValidDate(date, get(dateTimeFormatWithMilliseconds)));
+  return result;
 }
 
 function isDateOnLimit(date: string): boolean {
-  if (!get(limitNow) || !isValidFormat(date))
+  if (!get(limitNow) || !isValidFormat(date)) {
     return true;
+  }
 
   const now = dayjs();
   let format: string = get(dateOnlyFormat);
@@ -128,17 +132,21 @@ function isDateOnLimit(date: string): boolean {
     format += ' HH:mm';
     if (date.at(-6) === ':')
       format += ':ss';
+    if (date.at(-4) === '.')
+      format += '.SSS';
   }
 
   const timezone = get(selectedTimezone);
 
   const dateStringToDate = dayjs.tz(date, format, timezone).tz(guessTimezone());
 
-  return !dateStringToDate.isAfter(now);
+  const isAfter = dateStringToDate.isAfter(now);
+  return !isAfter;
 }
 
 function isValid(date: string): boolean {
-  return isValidFormat(date) && isDateOnLimit(date);
+  const result = isValidFormat(date) && isDateOnLimit(date);
+  return result;
 }
 
 function updateIMaskValue(value: string) {
@@ -150,29 +158,16 @@ function updateIMaskValue(value: string) {
   });
 }
 
-function convertToUserDateFormat(value: string) {
-  const millisecondsVal = get(milliseconds);
-  const changedDateTimezone = convertDateByTimezone(
-    value,
-    DateFormat.DateMonthYearHourMinuteSecond,
-    guessTimezone(),
-    get(selectedTimezone),
-    millisecondsVal,
-  );
-
-  return changeDateFormat(
-    changedDateTimezone,
-    DateFormat.DateMonthYearHourMinuteSecond,
-    get(dateInputFormat),
-    millisecondsVal,
-  );
-}
-
-function onValueChange(value: string) {
-  if (!value && isDefined(iMask)) {
+function onValueChange(value: number | null) {
+  if (!value) {
     updateIMaskValue('');
+    return;
   }
-  const newValue = convertToUserDateFormat(value);
+
+  const dateFormat = get(dateOnly) ? get(dateOnlyFormat) : get(milliseconds) ? get(dateTimeFormatWithMilliseconds) : get(dateTimeFormatWithSecond);
+
+  const date = dayjs(value).tz(get(selectedTimezone));
+  const newValue = date.format(dateFormat);
 
   if (isDefined(iMask)) {
     updateIMaskValue(newValue);
@@ -182,28 +177,27 @@ function onValueChange(value: string) {
 
 function emitIfValid(value: string) {
   if (!isValid(value)) {
+    set(modelValue, null);
     return;
   }
-  const changedDateTimezone = convertDateByTimezone(
-    value,
-    get(dateInputFormat),
-    get(selectedTimezone),
-    guessTimezone(),
-    get(milliseconds),
-  );
-  const formattedValue = changeDateFormat(
-    changedDateTimezone,
-    get(dateInputFormat),
-    DateFormat.DateMonthYearHourMinuteSecond,
-    get(milliseconds),
-  );
-  set(modelValue, formattedValue);
+
+  const dateFormat = get(dateOnly) ? get(dateOnlyFormat) : get(milliseconds) ? get(dateTimeFormatWithMilliseconds) : get(dateTimeFormatWithSecond);
+
+  const date = dayjs(value, dateFormat).tz(get(selectedTimezone));
+
+  if (get(milliseconds)) {
+    set(modelValue, date.valueOf());
+  }
+  else {
+    set(modelValue, date.unix() * 1000);
+  }
 }
 
 function setNow() {
   const now = dayjs().tz(get(selectedTimezone));
   const format = get(milliseconds) ? get(dateTimeFormatWithMilliseconds) : get(dateTimeFormatWithSecond);
   const nowInString = now.format(format);
+
   set(currentValue, nowInString);
   emitIfValid(nowInString);
 }
@@ -296,9 +290,7 @@ function initIMask() {
 
   if (isDefined(modelValue)) {
     nextTick(() => {
-      const value = convertToUserDateFormat(get(modelValue));
-      newIMask.value = value;
-      set(currentValue, value);
+      onValueChange(get(modelValue));
     });
   }
 
@@ -329,8 +321,23 @@ function focus() {
   });
 }
 
-watch(modelValue, onValueChange);
-watch(selectedTimezone, () => onValueChange(get(modelValue)));
+watch(modelValue, (newValue) => {
+  if (newValue) {
+    onValueChange(newValue);
+  }
+});
+
+watch(selectedTimezone, () => {
+  if (get(modelValue)) {
+    onValueChange(get(modelValue));
+  }
+});
+
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
+    get(v$).$validate();
+});
+
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
@@ -338,6 +345,11 @@ watch(errorMessages, (errors) => {
 
 onMounted(() => {
   initIMask();
+  if (get(modelValue)) {
+    nextTick(() => {
+      onValueChange(get(modelValue));
+    });
+  }
 });
 
 onBeforeUnmount(() => {
