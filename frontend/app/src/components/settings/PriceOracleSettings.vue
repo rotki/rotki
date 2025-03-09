@@ -15,6 +15,7 @@ import {
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
+  YAHOOFINANCE_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
@@ -31,6 +32,7 @@ const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId
   COINGECKO_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
   ALCHEMY_PRIO_LIST_ITEM,
+  YAHOOFINANCE_PRIO_LIST_ITEM,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 ];

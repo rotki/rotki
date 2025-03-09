@@ -14,12 +14,14 @@ class CurrentPriceOracle(OracleSource):
     FIAT = auto()
     DEFILLAMA = auto()
     ALCHEMY = auto()
+    YAHOOFINANCE = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.DEFILLAMA,
     CurrentPriceOracle.CRYPTOCOMPARE,
+    CurrentPriceOracle.YAHOOFINANCE,
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
 )
@@ -29,6 +31,7 @@ SETTABLE_CURRENT_PRICE_ORACLES = {  # only these oracles should be configurable 
     CurrentPriceOracle.DEFILLAMA,
     CurrentPriceOracle.CRYPTOCOMPARE,
     CurrentPriceOracle.ALCHEMY,
+    CurrentPriceOracle.YAHOOFINANCE,
     CurrentPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3,
 }

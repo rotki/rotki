@@ -36,6 +36,9 @@ marshmallow==3.26.1
 webargs==8.6.0
 werkzeug==3.1.3
 
+# For stock/ETF data from Yahoo Finance
+yfinance==0.2.37
+
 # for icon validation
 filetype==1.2.0
 

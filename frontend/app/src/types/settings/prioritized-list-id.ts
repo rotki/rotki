@@ -60,6 +60,11 @@ export const UNISWAP3_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.UNISWAP3,
 };
 
+export const YAHOOFINANCE_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
+  icon: './assets/images/services/yahoofinance.svg',
+  identifier: PriceOracle.YAHOOFINANCE,
+};
+
 export const MANUAL_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   icon: './assets/images/oracles/book.svg',
   identifier: PriceOracle.MANUAL,
