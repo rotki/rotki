@@ -49,7 +49,7 @@ describe('components/DateTimePicker.vue', () => {
   it('should show indicator when format is wrong', async () => {
     wrapper = createWrapper({
       props: {
-        modelValue: '',
+        modelValue: null,
       },
     });
     await nextTick();
@@ -70,7 +70,7 @@ describe('components/DateTimePicker.vue', () => {
   it('should allow seconds value to be optional', async () => {
     wrapper = createWrapper({
       props: {
-        modelValue: '',
+        modelValue: null,
       },
     });
     await nextTick();
@@ -84,7 +84,7 @@ describe('components/DateTimePicker.vue', () => {
     wrapper = createWrapper({
       props: {
         milliseconds: true,
-        modelValue: '',
+        modelValue: null,
       },
     });
     await nextTick();
@@ -93,13 +93,17 @@ describe('components/DateTimePicker.vue', () => {
     await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue')![0]).toEqual(['12/12/2021 12:12:12.333']);
+
+    // convert the expected date string to a timestamp for comparison
+    const expectedTimestamp = new Date('2021-12-12T12:12:12.333').getTime();
+    const emittedValue = (wrapper.emitted('update:modelValue')![0] as any)[0];
+    expect(emittedValue).toBeCloseTo(expectedTimestamp, -2); // precision adjustment
   });
 
   it('should show trim value when the length of the input exceed the max length allowed', async () => {
     wrapper = createWrapper({
       props: {
-        modelValue: '',
+        modelValue: null,
       },
     });
     await nextTick();
@@ -124,7 +128,7 @@ describe('components/DateTimePicker.vue', () => {
     vi.setSystemTime(date);
 
     wrapper = createWrapper({
-      props: { limitNow: true, modelValue: '' },
+      props: { limitNow: true, modelValue: null },
     });
     await nextTick();
 
@@ -144,7 +148,7 @@ describe('components/DateTimePicker.vue', () => {
     vi.setSystemTime(date);
 
     wrapper = createWrapper({
-      props: { limitNow: true, modelValue: '' },
+      props: { limitNow: true, modelValue: null },
     });
     await nextTick();
 
@@ -154,7 +158,11 @@ describe('components/DateTimePicker.vue', () => {
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('01/01/2023 01:01:01');
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue')![0]).toEqual(['01/01/2023 01:01:01']);
+    const emittedValue = (wrapper.emitted('update:modelValue')![0] as any)[0];
+    const expectedTimestamp = date.getTime();
+    expect(emittedValue).toBe(expectedTimestamp);
+
+    vi.useRealTimers();
   });
 
   it('should work with format YYYY-MM-DD', async () => {
@@ -164,7 +172,7 @@ describe('components/DateTimePicker.vue', () => {
     });
 
     wrapper = createWrapper({
-      props: { modelValue: '12/12/2021 12:12:12' },
+      props: { modelValue: new Date('12/12/2021 12:12:12').getTime() },
     });
 
     await nextTick();
@@ -184,7 +192,7 @@ describe('components/DateTimePicker.vue', () => {
     it('should render and emit the value correctly', async () => {
       wrapper = createWrapper({
         props: {
-          modelValue: '12/12/2021 12:12:12',
+          modelValue: new Date('12/12/2021 12:12:12').getTime(),
         },
       });
 
@@ -216,7 +224,7 @@ describe('components/DateTimePicker.vue', () => {
       vi.setSystemTime(date);
 
       wrapper = createWrapper({
-        props: { limitNow: true, modelValue: '' },
+        props: { limitNow: true, modelValue: null },
       });
       await nextTick();
 
@@ -246,7 +254,7 @@ describe('components/DateTimePicker.vue', () => {
       vi.setSystemTime(date);
 
       wrapper = createWrapper({
-        props: { limitNow: true, modelValue: '' },
+        props: { limitNow: true, modelValue: null },
       });
       await nextTick();
 

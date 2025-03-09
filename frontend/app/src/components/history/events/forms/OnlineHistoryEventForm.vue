@@ -45,7 +45,7 @@ const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
-const datetime = ref<string>('');
+const datetime = ref<number | null>(null);
 const location = ref<string>('');
 const eventType = ref<string>('');
 const eventSubtype = ref<string>('none');
@@ -103,14 +103,10 @@ const states = {
   timestamp: datetime,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errorMessages,
+});
 
 useFormStateWatcher(states, stateUpdated);
 
@@ -123,7 +119,7 @@ const locationLabelSuggestions = computed(() =>
 function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, '');
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, '');
@@ -139,7 +135,7 @@ function reset() {
 function applyEditableData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -154,7 +150,7 @@ function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
 }
 
 async function save(): Promise<boolean> {
@@ -162,7 +158,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const timestamp = convertToTimestamp(datetime.value !== null ? String(datetime) : '', DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
@@ -181,12 +177,7 @@ async function save(): Promise<boolean> {
     timestamp,
   };
 
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-  );
+  return await saveHistoryEventHandler(editable ? { ...payload, identifier: editable.identifier } : payload, assetPriceForm, errorMessages, reset);
 }
 
 function checkPropsData() {
@@ -275,7 +266,7 @@ defineExpose({
       v-model:asset="asset"
       v-model:amount="amount"
       :v$="v$"
-      :datetime="datetime"
+      :datetime="datetime !== null ? String(datetime) : ''"
     />
 
     <RuiDivider class="mb-6 mt-2" />

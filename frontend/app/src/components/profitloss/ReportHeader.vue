@@ -15,13 +15,13 @@ defineProps<{
   >
     <template #start>
       <DateDisplay
-        :timestamp="period.start"
+        :timestamp="period.start ?? 0"
         class="font-medium"
       />
     </template>
     <template #end>
       <DateDisplay
-        :timestamp="period.end"
+        :timestamp="period.end ?? 0"
         class="font-medium"
       />
     </template>

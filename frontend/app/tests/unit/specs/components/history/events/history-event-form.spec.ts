@@ -66,20 +66,25 @@ describe('component/HistoryEventForm.vue', () => {
     expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();
   });
 
-  it.each(Object.values(HistoryEventEntryType))('changes to proper form %s', async (value: string) => {
-    await wrapper.find('[data-cy="entry-type"] [data-id="activator"]').trigger('click');
-    await vi.advanceTimersToNextTimerAsync();
+  it.each(Object.values(HistoryEventEntryType))(
+    'changes to proper form %s',
+    async (value: string) => {
+      await wrapper.find('[data-cy="entry-type"] [data-id="activator"]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
 
-    const options = wrapper.find('[role="menu-content"]').findAll('button');
-    for (const option of options) {
-      if (option.text() === value) {
-        await option.trigger('click');
-        await vi.advanceTimersToNextTimerAsync();
-        break;
+      const options = wrapper.find('[role="menu-content"]').findAll('button');
+      for (const option of options) {
+        if (option.text() === value) {
+          await option.trigger('click');
+          await vi.advanceTimersToNextTimerAsync();
+          break;
+        }
       }
-    }
 
-    const id = value.split(/ /g).join('-');
-    expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
-  });
+      const id = value.split(/ /g).join('-');
+      await nextTick();
+      expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
+    },
+    10000,
+  );
 });

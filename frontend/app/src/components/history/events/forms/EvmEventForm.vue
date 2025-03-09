@@ -53,7 +53,7 @@ const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 const txHash = ref<string>('');
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
-const datetime = ref<string>('');
+const datetime = ref<number | null>(null);
 const location = ref<string>('');
 const eventType = ref<string>('');
 const eventSubtype = ref<string>('none');
@@ -84,10 +84,7 @@ const historyEventLimitedProducts = computed<string[]>(() => {
 
 const rules = {
   address: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.address.validation.valid'),
-      (value: string) => !value || isValidEthAddress(value),
-    ),
+    isValid: helpers.withMessage(t('transactions.events.form.address.validation.valid'), (value: string) => !value || isValidEthAddress(value)),
   },
   amount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
@@ -129,8 +126,7 @@ const rules = {
   },
   timestamp: { externalServerValidation },
   txHash: {
-    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
-      isValidTxHash(value)),
+    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) => isValidTxHash(value)),
     required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
   },
 };
@@ -158,14 +154,10 @@ const states = {
   txHash,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errorMessages,
+});
 useFormStateWatcher(states, stateUpdated);
 
 const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
@@ -174,7 +166,7 @@ function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, dayjs().valueOf());
   set(location, get(lastLocation));
   set(address, '');
   set(locationLabel, '');
@@ -195,7 +187,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -216,7 +208,7 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
 }
 
 watch(errorMessages, (errors) => {
@@ -229,7 +221,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const timestamp = convertToTimestamp(datetime.value !== null ? String(datetime) : '', DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
@@ -253,12 +245,7 @@ async function save(): Promise<boolean> {
     txHash: get(txHash),
   };
 
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-  );
+  return await saveHistoryEventHandler(editable ? { ...payload, identifier: editable.identifier } : payload, assetPriceForm, errorMessages, reset);
 }
 
 function checkPropsData() {
@@ -349,7 +336,7 @@ defineExpose({
       v-model:asset="asset"
       v-model:amount="amount"
       :v$="v$"
-      :datetime="datetime"
+      :datetime="datetime !== null ? String(datetime) : ''"
       :hide-price-fields="isInformationalEvent"
     />
 
@@ -435,7 +422,7 @@ defineExpose({
         eager
       >
         <template #header>
-          {{ t('transactions.events.form.advanced') }}
+          {{ t("transactions.events.form.advanced") }}
         </template>
         <div class="py-2">
           <RuiTextField

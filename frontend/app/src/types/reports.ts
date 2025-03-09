@@ -113,8 +113,8 @@ export const ProfitLossReportOverview = z.object({
 export type ProfitLossReportOverview = z.infer<typeof ProfitLossReportOverview>;
 
 export interface ProfitLossReportPeriod {
-  readonly start: number;
-  readonly end: number;
+  readonly start: number | null;
+  readonly end: number | null;
 }
 
 export interface ProfitLossReportDebugPayload {

@@ -39,7 +39,7 @@ const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const txHash = ref<string>('');
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const datetime = ref<number | null>(null);
 const amount = ref<string>('');
 const sequenceIndex = ref<string>('');
 const validatorIndex = ref<string>('');
@@ -53,8 +53,7 @@ const rules = {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
   depositor: {
-    isValid: helpers.withMessage(t('transactions.events.form.depositor.validation.valid'), (value: string) =>
-      isValidEthAddress(value)),
+    isValid: helpers.withMessage(t('transactions.events.form.depositor.validation.valid'), (value: string) => isValidEthAddress(value)),
     required: helpers.withMessage(t('transactions.events.form.depositor.validation.non_empty'), required),
   },
   eventIdentifier: {
@@ -68,8 +67,7 @@ const rules = {
   },
   timestamp: { externalServerValidation: () => true },
   txHash: {
-    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
-      isValidTxHash(value)),
+    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) => isValidTxHash(value)),
     required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
   },
   validatorIndex: {
@@ -92,14 +90,10 @@ const states = {
   validatorIndex,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errorMessages,
+});
 
 useFormStateWatcher(states, stateUpdated);
 
@@ -109,7 +103,7 @@ function reset() {
   set(sequenceIndex, get(nextSequence) || '0');
   set(txHash, '');
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
   set(depositor, '');
@@ -123,7 +117,7 @@ function applyEditableData(entry: EthDepositEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel);
@@ -136,7 +130,7 @@ function applyGroupHeaderData(entry: EthDepositEvent) {
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel ?? '');
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
 }
 
 watch(errorMessages, (errors) => {
@@ -148,7 +142,7 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const timestamp = convertToTimestamp(datetime.value !== null ? String(datetime) : '', DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthDepositEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -164,12 +158,7 @@ async function save(): Promise<boolean> {
 
   const edit = get(editableItem);
 
-  return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-  );
+  return await saveHistoryEventHandler(edit ? { ...payload, identifier: edit.identifier } : payload, assetPriceForm, errorMessages, reset);
 }
 
 function checkPropsData() {
@@ -239,7 +228,7 @@ defineExpose({
       v-model:amount="amount"
       asset="ETH"
       :v$="v$"
-      :datetime="datetime"
+      :datetime="datetime !== null ? String(datetime) : ''"
       disable-asset
     />
 
@@ -276,7 +265,7 @@ defineExpose({
         eager
       >
         <template #header>
-          {{ t('transactions.events.form.advanced') }}
+          {{ t("transactions.events.form.advanced") }}
         </template>
         <div class="py-2">
           <RuiTextField

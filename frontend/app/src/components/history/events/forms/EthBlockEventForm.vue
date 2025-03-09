@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
@@ -35,7 +35,7 @@ const { editableItem, groupHeader } = toRefs(props);
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const datetime = ref<number | null>(null);
 const amount = ref<string>('');
 const blockNumber = ref<string>('');
 const validatorIndex = ref<string>('');
@@ -58,8 +58,7 @@ const rules = {
     ),
   },
   feeRecipient: {
-    isValid: helpers.withMessage(t('transactions.events.form.fee_recipient.validation.valid'), (value: string) =>
-      isValidEthAddress(value)),
+    isValid: helpers.withMessage(t('transactions.events.form.fee_recipient.validation.valid'), (value: string) => isValidEthAddress(value)),
     required: helpers.withMessage(t('transactions.events.form.fee_recipient.validation.non_empty'), required),
   },
   timestamp: { externalServerValidation: () => true },
@@ -81,19 +80,15 @@ const states = {
   validatorIndex,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errorMessages,
+});
 useFormStateWatcher(states, stateUpdated);
 
 function reset() {
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, dayjs().valueOf());
   set(amount, '0');
   set(blockNumber, '');
   set(validatorIndex, '');
@@ -106,7 +101,7 @@ function reset() {
 
 function applyEditableData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
   set(amount, entry.amount.toFixed());
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -119,7 +114,7 @@ function applyGroupHeaderData(entry: EthBlockEvent) {
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
 }
 
 watch(errorMessages, (errors) => {
@@ -132,7 +127,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const timestamp = convertToTimestamp(datetime.value !== null ? String(datetime) : '', DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthBlockEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -147,29 +142,31 @@ async function save(): Promise<boolean> {
 
   const edit = get(editableItem);
 
-  return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-  );
+  return await saveHistoryEventHandler(edit ? { ...payload, identifier: edit.identifier } : payload, assetPriceForm, errorMessages, reset);
 }
 
 function checkPropsData() {
   const editable = get(editableItem);
+  const group = get(groupHeader);
+
   if (editable) {
     applyEditableData(editable);
     return;
   }
-  const group = get(groupHeader);
+
   if (group) {
     applyGroupHeaderData(group);
     return;
   }
+
   reset();
 }
 
-watch([groupHeader, editableItem], checkPropsData);
+watch([groupHeader, editableItem], async () => {
+  await nextTick();
+  checkPropsData();
+});
+
 onMounted(() => {
   checkPropsData();
 });
@@ -216,6 +213,14 @@ defineExpose({
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
+      <AmountInput
+        v-model="amount"
+        variant="outlined"
+        data-cy="amount"
+        :label="t('transactions.events.form.amount.label')"
+        :error-messages="toMessages(v$.amount)"
+        @blur="v$.amount.$touch()"
+      />
     </div>
 
     <RuiDivider class="mb-6 mt-2" />
@@ -246,7 +251,7 @@ defineExpose({
       color="primary"
       data-cy="isMevReward"
     >
-      {{ t('transactions.events.form.is_mev_reward.label') }}
+      {{ t("transactions.events.form.is_mev_reward.label") }}
     </RuiCheckbox>
 
     <RuiDivider class="mb-2" />
@@ -258,7 +263,7 @@ defineExpose({
         eager
       >
         <template #header>
-          {{ t('transactions.events.form.advanced') }}
+          {{ t("transactions.events.form.advanced") }}
         </template>
         <div class="py-2">
           <RuiTextField

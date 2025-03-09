@@ -80,16 +80,10 @@ const rules = {
     required: helpers.withMessage(t('external_trade_form.validation.non_empty_base'), required),
   },
   fee: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_fee'),
-      requiredIf(refIsTruthy(feeCurrency)),
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_fee'), requiredIf(refIsTruthy(feeCurrency))),
   },
   feeCurrency: {
-    required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_fee_currency'),
-      requiredIf(refIsTruthy(feeModel)),
-    ),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_fee_currency'), requiredIf(refIsTruthy(feeModel))),
   },
   quoteAmount: { externalServerValidation },
   quoteAsset: {
@@ -112,14 +106,10 @@ const states = {
   timestamp: datetime,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errors,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errors,
+});
 
 useFormStateWatcher(states, stateUpdated);
 
@@ -128,13 +118,9 @@ function triggerFeeValidator() {
   get(feeCurrencyInput)?.autoCompleteInput?.validate(true);
 }
 
-const quoteHint = computed<string>(() =>
-  get(type) === 'buy' ? t('external_trade_form.buy_quote') : t('external_trade_form.sell_quote'),
-);
+const quoteHint = computed<string>(() => (get(type) === 'buy' ? t('external_trade_form.buy_quote') : t('external_trade_form.sell_quote')));
 
-const shouldRenderSummary = computed<boolean>(
-  () => !!(get(type) && get(base) && get(quote) && get(amountModel) && get(rateModel)),
-);
+const shouldRenderSummary = computed<boolean>(() => !!(get(type) && get(base) && get(quote) && get(amountModel) && get(rateModel)));
 
 const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
@@ -178,7 +164,7 @@ function onQuoteAmountChange() {
     set(rate, get(numericQuoteAmount).div(get(amount)));
 }
 
-watch([datetime, quote, base], async () => {
+watch([timestamp, quote, base], async () => {
   await fetchPrice();
 });
 
@@ -206,7 +192,7 @@ defineExpose({
     class="external-trade-form"
   >
     <DateTimePicker
-      v-model="datetime"
+      v-model="timestamp"
       limit-now
       data-cy="date"
       :label="t('common.datetime')"
@@ -306,7 +292,7 @@ defineExpose({
           keypath="external_trade_form.summary.buy"
         >
           <template #label>
-            <strong>{{ t('external_trade_form.summary.label') }}</strong>
+            <strong>{{ t("external_trade_form.summary.label") }}</strong>
           </template>
           <template #amount>
             <strong>
@@ -337,7 +323,7 @@ defineExpose({
           keypath="external_trade_form.summary.sell"
         >
           <template #label>
-            <strong>{{ t('external_trade_form.summary.label') }}</strong>
+            <strong>{{ t("external_trade_form.summary.label") }}</strong>
           </template>
           <template #amount>
             <strong>

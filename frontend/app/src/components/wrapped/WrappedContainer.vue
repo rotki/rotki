@@ -22,7 +22,7 @@ import { useCurrencies } from '@/types/currencies';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { sortDesc } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { convertFromTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
 import dayjs from 'dayjs';
 
@@ -42,8 +42,8 @@ const gnosisPayKey = computed(() => apiKey('gnosis_pay'));
 const showGnosisData = computed(() => get(premium) && get(gnosisPayKey));
 
 const loading = ref(false);
-const end = ref('');
-const start = ref('');
+const end = ref<number | null>(null);
+const start = ref<number | null>(null);
 const summary = ref<WrapStatisticsResult>();
 
 const { getEarliestEventTimestamp } = useHistoryEvents();
@@ -60,17 +60,16 @@ const debouncedHistoryEventsReady = debouncedRef(historyEventsReady, 500);
 const usedHistoryEventsReady = logicAnd(historyEventsReady, debouncedHistoryEventsReady);
 
 watchImmediate(usedHistoryEventsReady, async (curr, old) => {
-  if (curr && !old && get(start) === '') {
+  if (curr && !old && start.value === null) {
     const earliestEventTimestamp = await getEarliestEventTimestamp();
-
     if (earliestEventTimestamp) {
-      set(start, convertFromTimestamp(earliestEventTimestamp));
+      start.value = earliestEventTimestamp;
     }
   }
 });
 
 const gnosisPayResult = computed(() => {
-  const gnosisMaxPaymentsByCurrency = get(summary)?.gnosisMaxPaymentsByCurrency;
+  const gnosisMaxPaymentsByCurrency = summary.value?.gnosisMaxPaymentsByCurrency;
   if (!gnosisMaxPaymentsByCurrency) {
     return [];
   }
@@ -108,7 +107,7 @@ const gnosisPayResult = computed(() => {
 });
 
 async function fetchData() {
-  if (get(loading))
+  if (loading.value)
     return;
 
   try {
@@ -116,18 +115,17 @@ async function fetchData() {
     const startVal = get(start);
 
     if (!endVal) {
-      endVal = convertFromTimestamp(dayjs().unix());
-      set(end, endVal);
+      endVal = dayjs().unix();
+      end.value = endVal;
     }
 
-    set(loading, true);
-    const response = await fetchWrapStatistics(
-      {
-        end: convertToTimestamp(endVal),
-        start: startVal ? convertToTimestamp(startVal) : 0,
-      },
-    );
-    set(summary, response);
+    loading.value = true;
+
+    const response = await fetchWrapStatistics({
+      end: endVal ?? 0,
+      start: startVal ?? 0,
+    });
+    summary.value = response;
   }
   catch (error) {
     logger.error(error);
@@ -155,12 +153,7 @@ function calculateFontSize(symbol: string) {
   return `${1.8 - length * 0.4}em`;
 }
 
-const invalidRange = computed(
-  () =>
-    !!get(start)
-    && !!get(end)
-    && convertToTimestamp(get(start)) > convertToTimestamp(get(end)),
-);
+const invalidRange = computed(() => start.value !== null && end.value !== null && start.value > end.value);
 
 function getYearRange(year: number) {
   return {
@@ -170,11 +163,18 @@ function getYearRange(year: number) {
 }
 
 const isHighlightedYear = computed(() => {
-  if (!isDefined(props.highlightedYear))
+  if (props.highlightedYear == null)
     return false;
 
   const range = getYearRange(props.highlightedYear);
-  return get(start) === range.start && get(end) === range.end;
+
+  const startVal = get(start);
+  const endVal = get(end);
+
+  const rangeStart = Number(range.start);
+  const rangeEnd = Number(range.end);
+
+  return startVal === rangeStart && endVal === rangeEnd;
 });
 
 onBeforeMount(async () => {
@@ -194,19 +194,17 @@ defineExpose({
 </script>
 
 <template>
-  <div
-    class="flex flex-col gap-6 py-4 px-2"
-  >
+  <div class="flex flex-col gap-6 py-4 px-2">
     <div class="py-8 w-full rounded-lg flex flex-col items-center bg-gradient-to-b from-transparent to-rui-primary/[0.05]">
       <RotkiLogo
         :size="3"
         class="mb-4"
       />
       <h2 class="text-4xl font-bold mb-2">
-        {{ t('wrapped.title', { year: isHighlightedYear && highlightedYear ? `${highlightedYear}` : undefined }) }}
+        {{ t("wrapped.title", { year: isHighlightedYear && highlightedYear ? `${highlightedYear}` : undefined }) }}
       </h2>
       <p class="text-xl text-rui-text-secondary">
-        {{ t('wrapped.year_subtitle') }}
+        {{ t("wrapped.year_subtitle") }}
       </p>
     </div>
 
@@ -214,14 +212,10 @@ defineExpose({
       v-if="isFirstLoad()"
       type="info"
     >
-      <i18n-t
-        keypath="wrapped.history_events_nudge"
-      >
+      <i18n-t keypath="wrapped.history_events_nudge">
         <template #link>
-          <RouterLink
-            :to="Routes.HISTORY_EVENTS"
-          >
-            <span class="underline">{{ t('transactions.title') }}</span>
+          <RouterLink :to="Routes.HISTORY_EVENTS">
+            <span class="underline">{{ t("transactions.title") }}</span>
           </RouterLink>
         </template>
       </i18n-t>
@@ -231,7 +225,7 @@ defineExpose({
       v-if="refreshing"
       type="info"
     >
-      {{ t('wrapped.loading') }}
+      {{ t("wrapped.loading") }}
     </RuiAlert>
     <RuiAlert
       v-if="!premium"
@@ -239,7 +233,7 @@ defineExpose({
       class="py-1 [&>div]:items-center"
     >
       <div class="flex justify-between items-center">
-        {{ t('wrapped.premium_nudge') }}
+        {{ t("wrapped.premium_nudge") }}
         <ExternalLink
           :text="t('wrapped.get_rotki_premium')"
           variant="default"
@@ -259,7 +253,7 @@ defineExpose({
 
     <div class="flex gap-2 -mb-4 items-start">
       <div class="mt-2 mr-4 font-semibold">
-        {{ t('wrapped.filter_by_date') }}
+        {{ t("wrapped.filter_by_date") }}
       </div>
       <DateTimePicker
         v-model="start"
@@ -288,7 +282,7 @@ defineExpose({
         <template #prepend>
           <RuiIcon name="lu-send-horizontal" />
         </template>
-        {{ t('wrapped.get_data') }}
+        {{ t("wrapped.get_data") }}
       </RuiButton>
     </div>
 
@@ -297,7 +291,7 @@ defineExpose({
       type="error"
     >
       <template #title>
-        {{ t('generate.validation.end_after_start') }}
+        {{ t("generate.validation.end_after_start") }}
       </template>
     </RuiAlert>
 
@@ -325,7 +319,7 @@ defineExpose({
       v-else-if="!summary"
       class="p-4 text-center"
     >
-      {{ t('data_table.no_data') }}
+      {{ t("data_table.no_data") }}
     </div>
     <template v-else>
       <WrappedCard
@@ -340,7 +334,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.gas_spent_total') }}
+          {{ t("wrapped.gas_spent_total") }}
         </template>
         <template #value="{ item }">
           <AmountDisplay
@@ -362,7 +356,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.gas_spent') }}
+          {{ t("wrapped.gas_spent") }}
         </template>
         <template #label="{ item }">
           <HashLink
@@ -390,7 +384,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.exchange_activity') }}
+          {{ t("wrapped.exchange_activity") }}
         </template>
         <template #label="{ item }">
           <LocationDisplay
@@ -404,7 +398,7 @@ defineExpose({
             :value="item[1]"
             integer
           />
-          {{ t('actions.trades.task.title') }}
+          {{ t("actions.trades.task.title") }}
         </template>
       </WrappedCard>
 
@@ -420,7 +414,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.transactions_by_chain') }}
+          {{ t("wrapped.transactions_by_chain") }}
         </template>
         <template #label="{ item }">
           <ChainDisplay
@@ -433,7 +427,7 @@ defineExpose({
             :value="item[1]"
             integer
           />
-          {{ t('explorers.tx') }}
+          {{ t("explorers.tx") }}
         </template>
       </WrappedCard>
 
@@ -450,7 +444,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.gnosis_payments') }}
+          {{ t("wrapped.gnosis_payments") }}
         </template>
         <template #label="{ item }">
           <div
@@ -459,9 +453,7 @@ defineExpose({
           >
             {{ item.symbol }}
           </div>
-          <div>
-            {{ item.code }} - {{ item.name }}
-          </div>
+          <div>{{ item.code }} - {{ item.name }}</div>
         </template>
         <template #value="{ item }">
           <AmountDisplay
@@ -484,7 +476,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.top_days') }}
+          {{ t("wrapped.top_days") }}
         </template>
         <template #label="{ item, index }">
           <span>{{ index + 1 }}.</span>
@@ -495,7 +487,7 @@ defineExpose({
             :value="item.amount"
             integer
           />
-          {{ t('explorers.tx') }}
+          {{ t("explorers.tx") }}
         </template>
       </WrappedCard>
 
@@ -511,7 +503,7 @@ defineExpose({
           />
         </template>
         <template #header>
-          {{ t('wrapped.protocol_activity') }}
+          {{ t("wrapped.protocol_activity") }}
         </template>
         <template #label="{ item, index }">
           <span>{{ index + 1 }}.</span>
@@ -522,7 +514,7 @@ defineExpose({
             :value="item.transactions"
             integer
           />
-          {{ t('explorers.tx') }}
+          {{ t("explorers.tx") }}
         </template>
       </WrappedCard>
     </template>

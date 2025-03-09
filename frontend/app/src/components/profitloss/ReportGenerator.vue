@@ -3,7 +3,6 @@ import type { ProfitLossReportPeriod } from '@/types/reports';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { Routes } from '@/router/routes';
-import { convertToTimestamp } from '@/utils/date';
 
 const emit = defineEmits<{
   (e: 'generate', data: ProfitLossReportPeriod): void;
@@ -13,25 +12,19 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const range = ref({ end: '', start: '' });
+const range = ref<{ start: number | null; end: number | null }>({ end: null, start: null });
+
 const valid = ref<boolean>(false);
-
-const startTimestamp = computed<number>(() => convertToTimestamp(get(range).start));
-
-const endTimestamp = computed<number>(() => convertToTimestamp(get(range).end));
 
 function generate() {
   emit('generate', {
-    end: get(endTimestamp),
-    start: get(startTimestamp),
+    end: range.value.end,
+    start: range.value.start,
   });
 }
 
 function exportReportData() {
-  emit('export-data', {
-    end: get(endTimestamp),
-    start: get(startTimestamp),
-  });
+  emit('export-data', { end: range.value.end, start: range.value.start });
 }
 
 function importReportData() {
@@ -46,7 +39,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
     <template #custom-header>
       <div class="flex justify-between px-4 py-2">
         <CardTitle>
-          {{ t('common.actions.generate') }}
+          {{ t("common.actions.generate") }}
         </CardTitle>
         <RuiTooltip
           :popper="{ placement: 'top' }"
@@ -63,7 +56,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
               </RuiButton>
             </RouterLink>
           </template>
-          <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
+          <span>{{ t("profit_loss_report.settings_tooltip") }}</span>
         </RuiTooltip>
       </div>
     </template>
@@ -84,7 +77,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
             <template #prepend>
               <RuiIcon name="lu-scroll-text" />
             </template>
-            {{ t('common.actions.generate') }}
+            {{ t("common.actions.generate") }}
           </RuiButton>
         </div>
         <div>
@@ -101,7 +94,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 <template #prepend>
                   <RuiIcon name="lu-bug" />
                 </template>
-                {{ t('profit_loss_reports.debug.title') }}
+                {{ t("profit_loss_reports.debug.title") }}
               </RuiButton>
             </template>
             <div class="py-2">
@@ -112,7 +105,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 <template #prepend>
                   <RuiIcon name="lu-file-down" />
                 </template>
-                {{ t('profit_loss_reports.debug.export_data') }}
+                {{ t("profit_loss_reports.debug.export_data") }}
               </RuiButton>
               <RuiButton
                 variant="list"
@@ -121,7 +114,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 <template #prepend>
                   <RuiIcon name="lu-file-up" />
                 </template>
-                {{ t('profit_loss_reports.debug.import_data') }}
+                {{ t("profit_loss_reports.debug.import_data") }}
               </RuiButton>
             </div>
           </RuiMenu>

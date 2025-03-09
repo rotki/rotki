@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import dayjs, { type Dayjs } from 'dayjs';
 
 const model = defineModel<Dayjs>({ required: true });
@@ -18,22 +16,26 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const datePicker = ref();
-const datetime = ref<string>('0');
 
-watch(
-  model,
-  (model) => {
-    set(datetime, convertFromTimestamp(get(model).unix()));
+const datetime = computed<number | null>({
+  get: () => {
+    const modelValue = get(model);
+    return modelValue ? modelValue.valueOf() : null;
   },
-  {
-    immediate: true,
+  set: (timestamp: number | null) => {
+    if (timestamp) {
+      set(model, dayjs(timestamp));
+    }
+    else {
+      set(model, null);
+    }
   },
-);
+});
 
 function goToSelectedDate() {
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
-
-  set(model, dayjs(timestamp));
+  if (get(datetime)) {
+    set(model, dayjs(get(datetime)));
+  }
 }
 </script>
 
@@ -46,7 +48,7 @@ function goToSelectedDate() {
       :disabled="visibleDate.isSame(today, 'day')"
       @click="emit('set-today')"
     >
-      {{ t('calendar.today') }}
+      {{ t("calendar.today") }}
     </RuiButton>
     <RuiMenu wrapper-class="h-full">
       <template #activator="{ attrs }">

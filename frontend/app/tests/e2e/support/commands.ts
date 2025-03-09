@@ -128,7 +128,7 @@ function checkForTaskCompletion(result: { result?: { task_id?: number } }): void
     }
 
     // introduce some delay between tries since we don't want to stress the backend
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
+
     cy.wait(WAIT_TIME_MS);
 
     currentRetry++;
@@ -202,7 +202,6 @@ function assertNoRunningTasks() {
   cy.get(selector)
     .should('not.exist')
     .then(() => {
-      // eslint-disable-next-line cypress/no-unnecessary-waiting
       cy.wait(1000);
 
       cy.get('body').then(($body) => {

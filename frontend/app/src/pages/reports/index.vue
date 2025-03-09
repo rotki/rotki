@@ -72,8 +72,11 @@ async function generate(period: ProfitLossReportPeriod) {
   if (get(pinned)?.name === 'report-actionable-card')
     set(pinned, null);
 
-  const formatDate = (timestamp: number) =>
-    displayDateFormatter.format(new Date(timestamp * 1000), get(dateDisplayFormat));
+  const formatDate = (timestamp: number | null) => {
+    if (timestamp === null)
+      return '';
+    return displayDateFormatter.format(new Date(timestamp * 1000), get(dateDisplayFormat));
+  };
 
   const reportId = await generateReport(period);
 
@@ -114,6 +117,10 @@ async function generate(period: ProfitLossReportPeriod) {
 const { setMessage } = useMessageStore();
 
 async function exportData({ end, start }: ProfitLossReportPeriod) {
+  if (start === null || end === null) {
+    throw new Error('start and end values cannot be null');
+  }
+
   const payload: ProfitLossReportDebugPayload = {
     fromTimestamp: start,
     toTimestamp: end,
@@ -134,9 +141,7 @@ async function exportData({ end, start }: ProfitLossReportPeriod) {
 
     if (appSession) {
       message = {
-        description: result
-          ? t('profit_loss_reports.debug.export_message.success')
-          : t('profit_loss_reports.debug.export_message.failure'),
+        description: result ? t('profit_loss_reports.debug.export_message.success') : t('profit_loss_reports.debug.export_message.failure'),
         success: !!result,
         title: t('profit_loss_reports.debug.export_message.title'),
       };
@@ -174,9 +179,7 @@ async function importData() {
 
   try {
     const path = getPath(file);
-    const { taskId } = path
-      ? await importReportData(path)
-      : await uploadReportData(file);
+    const { taskId } = path ? await importReportData(path) : await uploadReportData(file);
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
       title: t('profit_loss_reports.debug.import_message.title'),
@@ -240,7 +243,7 @@ const progress = computed(() => reportsStore.progress);
           class="mt-2"
           @click="clearError()"
         >
-          {{ t('common.actions.close') }}
+          {{ t("common.actions.close") }}
         </RuiButton>
       </template>
     </ErrorScreen>
@@ -259,9 +262,9 @@ const progress = computed(() => reportsStore.progress);
         >
           {{ processingState }}
         </div>
-        {{ t('profit_loss_report.loading_message') }}
+        {{ t("profit_loss_report.loading_message") }}
       </template>
-      {{ t('profit_loss_report.loading_hint') }}
+      {{ t("profit_loss_report.loading_hint") }}
     </ProgressScreen>
     <RuiDialog
       v-model="importDataDialog"
@@ -269,7 +272,7 @@ const progress = computed(() => reportsStore.progress);
     >
       <RuiCard>
         <template #header>
-          {{ t('profit_loss_reports.debug.import_data_dialog.title') }}
+          {{ t("profit_loss_reports.debug.import_data_dialog.title") }}
         </template>
         <FileUpload
           ref="reportDebugDataUploader"
@@ -284,7 +287,7 @@ const progress = computed(() => reportsStore.progress);
             color="primary"
             @click="importDataDialog = false"
           >
-            {{ t('common.actions.cancel') }}
+            {{ t("common.actions.cancel") }}
           </RuiButton>
           <RuiButton
             color="primary"
@@ -292,7 +295,7 @@ const progress = computed(() => reportsStore.progress);
             :loading="importDataLoading"
             @click="importData()"
           >
-            {{ t('common.actions.import') }}
+            {{ t("common.actions.import") }}
           </RuiButton>
         </template>
       </RuiCard>

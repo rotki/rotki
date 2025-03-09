@@ -12,11 +12,11 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { isBlockchain } from '@/types/blockchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import dayjs from 'dayjs';
 import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
@@ -36,10 +36,18 @@ const color = useRefPropVModel(modelValue, 'color');
 const autoDelete = useRefPropVModel(modelValue, 'autoDelete');
 const timestamp = useRefPropVModel(modelValue, 'timestamp');
 
-const datetime = computed({
-  get: () => convertFromTimestamp(get(timestamp)),
-  set: (value: string) => {
-    set(timestamp, convertToTimestamp(value));
+const datetime = computed<number | null>({
+  get: () => {
+    const timestampValue = get(timestamp);
+    return timestampValue ? dayjs(timestampValue).valueOf() : null;
+  },
+  set: (value: number | null) => {
+    if (value) {
+      set(timestamp, value);
+    }
+    else {
+      set(timestamp, null);
+    }
   },
 });
 
@@ -51,11 +59,7 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
     const accountFound = Object.values(get(accountsPerChain))
       .flatMap(x => x)
       .filter(hasAccountAddress)
-      .find(
-        item =>
-          getAccountAddress(item) === model.address
-          && (!model.blockchain || model.blockchain === item.chain),
-      );
+      .find(item => getAccountAddress(item) === model.address && (!model.blockchain || model.blockchain === item.chain));
 
     if (accountFound) {
       return [accountFound];
@@ -100,14 +104,10 @@ const states = {
   timestamp: datetime,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errors,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errors,
+});
 
 useFormStateWatcher(states, stateUpdated);
 

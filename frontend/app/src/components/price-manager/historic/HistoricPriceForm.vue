@@ -8,7 +8,6 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
@@ -33,13 +32,6 @@ const fromAsset = useRefPropVModel(modelValue, 'fromAsset');
 const toAsset = useRefPropVModel(modelValue, 'toAsset');
 const price = useRefPropVModel(modelValue, 'price');
 const timestamp = useRefPropVModel(modelValue, 'timestamp');
-
-const datetime = computed({
-  get: () => convertFromTimestamp(get(timestamp)),
-  set: (value: string) => {
-    set(timestamp, convertToTimestamp(value));
-  },
-});
 
 const fromAssetSymbol = assetSymbol(fromAsset);
 const toAssetSymbol = assetSymbol(toAsset);
@@ -66,15 +58,11 @@ const rules = {
 const states = {
   fromAsset,
   price,
-  timestamp: datetime,
+  timestamp,
   toAsset,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  { $autoDirty: true, $externalResults: errors },
-);
+const v$ = useVuelidate(rules, states, { $autoDirty: true, $externalResults: errors });
 
 useFormStateWatcher(states, stateUpdated);
 
@@ -102,7 +90,7 @@ defineExpose({
       />
     </div>
     <DateTimePicker
-      v-model="datetime"
+      v-model="timestamp"
       :label="t('common.datetime')"
       :disabled="editMode"
       :error-messages="toMessages(v$.timestamp)"
