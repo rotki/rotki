@@ -54,7 +54,7 @@ class Balance:
         )
 
     def __mul__(self, other: Any) -> 'Balance':
-        if not isinstance(other, (int | FVal)):
+        if not isinstance(other, (int, FVal)):
             raise InputError(f'Tried to multiply balance with {type(other)}')
 
         return Balance(
