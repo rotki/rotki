@@ -10,22 +10,22 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 
-const props = defineProps<{ modelValue: { start: string; end: string } }>();
+interface Props {
+  modelValue: { start: number | null; end: number | null };
+  valid: boolean;
+}
+
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: { start: string; end: string }): void;
+  (e: 'update:model-value', value: { start: number | null; end: number | null }): void;
   (e: 'update:valid', valid: boolean): void;
 }>();
 
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
-const invalidRange = computed(
-  () =>
-    !!props.modelValue
-    && !!props.modelValue.start
-    && !!props.modelValue.end
-    && convertToTimestamp(props.modelValue.start) > convertToTimestamp(props.modelValue.end),
-);
+
+const invalidRange = computed(() => !!props.modelValue.start && !!props.modelValue.end && props.modelValue.start > props.modelValue.end);
 
 const year = computed(() => get(profitLossReportPeriod).year);
 const quarter = computed(() => get(profitLossReportPeriod).quarter);
@@ -34,7 +34,7 @@ const custom = computed(() => get(year) === 'custom');
 const start = useSimplePropVModel(props, 'start', emit);
 const end = useSimplePropVModel(props, 'end', emit);
 
-function input(data: { start: string; end: string }) {
+function input(data: { start: number | null; end: number | null }) {
   emit('update:model-value', data);
 }
 
@@ -43,8 +43,9 @@ function updateValid(valid: boolean) {
 }
 
 async function onChanged(event: SelectionChangedEvent) {
-  if (event.year === 'custom')
-    input({ end: '', start: '' });
+  if (event.year === 'custom') {
+    input({ end: null, start: null });
+  }
 
   await store.updateSetting({
     profitLossReportPeriod: event,
@@ -53,14 +54,14 @@ async function onChanged(event: SelectionChangedEvent) {
 
 function onPeriodChange(period: PeriodChangedEvent | null) {
   if (period === null) {
-    input({ end: '', start: '' });
+    input({ end: null, start: null });
     return;
   }
 
-  const start = period.start;
-  let end = period.end;
-  if (convertToTimestamp(period.end) > dayjs().unix())
-    end = dayjs().format('DD/MM/YYYY HH:mm:ss');
+  const start = convertToTimestamp(period.start);
+  let end = convertToTimestamp(period.end);
+  if (end > dayjs().unix())
+    end = dayjs().valueOf();
 
   input({ end, start });
 }
@@ -125,7 +126,7 @@ watchImmediate(v$, ({ $invalid }) => {
       type="error"
     >
       <template #title>
-        {{ t('generate.validation.end_after_start') }}
+        {{ t("generate.validation.end_after_start") }}
       </template>
     </RuiAlert>
   </div>
