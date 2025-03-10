@@ -7,6 +7,7 @@ import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settin
 import type { Theme, Themes } from '../settings/themes';
 import type {
   CommonQueryStatusData,
+  FailedHistoricalAssetPriceResponse,
   HistoricalAssetPricePayload,
   HistoricalAssetPriceResponse,
   LocationData,
@@ -35,9 +36,9 @@ export interface StatisticsApi {
   fetchNetValue: () => Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
   isQueryingDailyPrices: ComputedRef<boolean>;
+  failedDailyPrices: Ref<Record<string, FailedHistoricalAssetPriceResponse>>;
   queryHistoricalAssetPrices: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;
   historicalDailyPriceStatus: Ref<CommonQueryStatusData | undefined>;
-  historicalPriceStatus: Ref<CommonQueryStatusData | undefined>;
   cancelHistoricPriceTask: () => Promise<void>;
   cancelDailyHistoricPriceTask: () => Promise<void>;
 }

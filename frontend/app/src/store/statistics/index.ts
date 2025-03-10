@@ -6,6 +6,7 @@ import { usePremium } from '@/composables/premium';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -45,6 +46,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
   const { assetName } = useAssetInfoRetrieval();
+  const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
   const premium = usePremium();
 
   const api = useStatisticsApi();
@@ -170,8 +172,20 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const fetchHistoricalAssetPrice = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
     try {
+      const asset = payload.asset;
+      const failedState = { ...get(failedDailyPrices) };
+      const resolvedState = { ...get(resolvedFailedDailyPrices) };
+      const failedTimestamps = failedState[asset]?.noPricesTimestamps || [];
+      const resolvedTimestamps = resolvedState[asset] || [];
+
+      const excludeTimestamps
+        = failedTimestamps.filter(timestamp => !resolvedTimestamps.includes(timestamp));
+
       const taskType = TaskType.FETCH_DAILY_HISTORIC_PRICE;
-      const { taskId } = await api.queryHistoricalAssetPrices(payload);
+      const { taskId } = await api.queryHistoricalAssetPrices({
+        ...payload,
+        excludeTimestamps,
+      });
       const { result } = await awaitTask<HistoricalAssetPriceResponse, TaskMeta>(taskId, taskType, {
         description: t('actions.balances.historic_fetch_price.daily.task.detail', {
           asset: get(assetName(payload.asset)),
@@ -179,9 +193,35 @@ export const useStatisticsStore = defineStore('statistics', () => {
         title: t('actions.balances.historic_fetch_price.daily.task.title'),
       });
 
-      return HistoricalAssetPriceResponse.parse(result);
+      const parsed = HistoricalAssetPriceResponse.parse(result);
+
+      const { noPricesTimestamps, rateLimitedPricesTimestamps } = parsed;
+
+      if ((noPricesTimestamps.length === 0 && excludeTimestamps.length === 0) && rateLimitedPricesTimestamps.length === 0) {
+        if (failedState[asset]) {
+          const updatedFailedPrices = { ...failedState };
+          delete updatedFailedPrices[asset];
+          set(failedDailyPrices, updatedFailedPrices);
+        }
+        if (resolvedState[asset]) {
+          delete resolvedState[asset];
+          set(resolvedFailedDailyPrices, resolvedState);
+        }
+      }
+      else {
+        set(failedDailyPrices, {
+          ...failedState,
+          [asset]: {
+            noPricesTimestamps: noPricesTimestamps.length > 0 ? noPricesTimestamps : excludeTimestamps,
+            rateLimitedPricesTimestamps,
+          },
+        });
+      }
+
+      return parsed;
     }
     catch (error: any) {
+      console.error(error);
       if (!isTaskCancelled(error)) {
         notify({
           display: true,
@@ -193,6 +233,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       return {
         noPricesTimestamps: [],
         prices: {},
+        rateLimitedPricesTimestamps: [],
       };
     }
   };
