@@ -13,6 +13,7 @@ import { useSessionPurge } from '@/composables/session/purge';
 import { useLocationStore } from '@/store/locations';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
+import { toSentenceCase } from '@rotki/common';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

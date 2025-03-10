@@ -23,6 +23,7 @@ import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getPlaceholderRule } from '@/utils/settings';
+import { toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 const { t } = useI18n();

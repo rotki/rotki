@@ -17,6 +17,7 @@ import { useAccountImportProgressStore } from '@/store/use-account-import-progre
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 import { Section } from '@/types/status';
+import { Blockchain } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 
 definePage({

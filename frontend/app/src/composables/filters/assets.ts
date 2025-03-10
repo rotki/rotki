@@ -1,6 +1,7 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { useSupportedChains } from '@/composables/info/chains';
+import { isValidEthAddress } from '@rotki/common';
 import { z } from 'zod';
 
 enum AssetFilterKeys {

@@ -1,7 +1,7 @@
-import type { ThemeColors } from '@rotki/common';
 import { usePremium } from '@/composables/premium';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { hexToRgbPoints, type ThemeColors } from '@rotki/common';
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
 import { getColors } from 'theme-colors';
 

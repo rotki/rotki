@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
-import type { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -9,6 +8,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 import { toMessages } from '@/utils/validation';
+import { assert, type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 

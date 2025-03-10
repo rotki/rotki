@@ -3,7 +3,7 @@ import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
 import { uniqueStrings } from '@/utils/data';
-import { type BigNumber, Blockchain } from '@rotki/common';
+import { type BigNumber, bigNumberify, Blockchain, isEvmIdentifier, isValidEthAddress, isValidTxHash } from '@rotki/common';
 
 export const NoteType = {
   ADDRESS: 'address',

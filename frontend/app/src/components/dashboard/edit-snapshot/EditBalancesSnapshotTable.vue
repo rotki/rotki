@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
-import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector
@@ -20,6 +19,7 @@ import { BalanceType } from '@/types/balances';
 import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
+import { assert, type BigNumber, bigNumberify, One, toSentenceCase, Zero } from '@rotki/common';
 
 const props = defineProps<{
   modelValue: Snapshot;

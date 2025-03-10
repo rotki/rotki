@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset } from './types';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -8,6 +7,7 @@ import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
 
 interface PoolDetailsProps {
   assets: PoolAsset[];

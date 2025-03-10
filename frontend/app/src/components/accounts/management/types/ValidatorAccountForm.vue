@@ -6,6 +6,7 @@ import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { useRefPropVModel } from '@/utils/model';
+import { assert } from '@rotki/common';
 
 const modelValue = defineModel<StakingValidatorManage>({ required: true });
 

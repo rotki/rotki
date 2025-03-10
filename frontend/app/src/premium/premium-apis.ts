@@ -1,16 +1,3 @@
-import type {
-  AssetsApi,
-  BalancesApi,
-  BigNumber,
-  LocationData,
-  OwnedAssets,
-  StatisticsApi,
-  TimedAssetBalances,
-  TimedAssetHistoricalBalances,
-  TimedBalances,
-  UserSettingsApi,
-  UtilsApi,
-} from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { usePriceApi } from '@/composables/api/balances/price';
@@ -29,6 +16,20 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isNft } from '@/utils/nft';
 import { truncateAddress } from '@/utils/truncate';
+import {
+  type AssetsApi,
+  type BalancesApi,
+  type BigNumber,
+  type LocationData,
+  One,
+  type OwnedAssets,
+  type StatisticsApi,
+  type TimedAssetBalances,
+  type TimedAssetHistoricalBalances,
+  type TimedBalances,
+  type UserSettingsApi,
+  type UtilsApi,
+} from '@rotki/common';
 
 export function assetsApi(): AssetsApi {
   const { assetInfo, assetName, assetSymbol, tokenAddress } = useAssetInfoRetrieval();

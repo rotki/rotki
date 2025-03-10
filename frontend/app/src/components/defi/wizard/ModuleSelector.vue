@@ -12,6 +12,7 @@ import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
+import { transformCase } from '@rotki/common';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 

@@ -11,7 +11,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
-import { BigNumber } from '@rotki/common';
+import { BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import { or } from '@vueuse/math';
 
 const props = withDefaults(

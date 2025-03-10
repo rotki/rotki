@@ -2,9 +2,9 @@ import type { AssetSearchParams } from '@/composables/api/assets/info';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
 import type { AssetInfoWithId, AssetsWithId } from '@/types/asset';
 import type { DateFormat } from '@/types/date-format';
-import type { AssetBalance, AssetInfo, Nullable } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+import { assert, type AssetBalance, type AssetInfo, getTextToken, isValidEthAddress, type Nullable } from '@rotki/common';
 
 function levenshtein(a: string, b: string): number {
   let tmp;

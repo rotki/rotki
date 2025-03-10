@@ -3,6 +3,7 @@ import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useMessageStore } from '@/store/message';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 export const useExchangesStore = defineStore('exchanges', () => {

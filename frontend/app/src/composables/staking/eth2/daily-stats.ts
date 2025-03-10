@@ -1,5 +1,4 @@
 import type { TaskMeta } from '@/types/task';
-import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import { useEth2Api } from '@/composables/api/staking/eth2';
@@ -12,6 +11,13 @@ import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import {
+  assert,
+  type Eth2DailyStats,
+  type Eth2DailyStatsPayload,
+  type EthStakingDailyStatData,
+  Zero,
+} from '@rotki/common';
 import { omit } from 'es-toolkit';
 
 interface UseEthStakingDailyStatsReturn {

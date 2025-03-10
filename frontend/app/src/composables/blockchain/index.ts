@@ -22,7 +22,7 @@ import { isTaskCancelled } from '@/utils';
 import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
-import { type Account, Blockchain, Severity } from '@rotki/common';
+import { type Account, assert, Blockchain, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 interface EvmAccountAdditionSuccess {

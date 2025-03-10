@@ -3,6 +3,7 @@ import { useAccountLoading } from '@/composables/accounts/loading';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isOfEnum } from '@/utils';
+import { assert } from '@rotki/common';
 
 const props = defineProps<{
   blockchain: string;

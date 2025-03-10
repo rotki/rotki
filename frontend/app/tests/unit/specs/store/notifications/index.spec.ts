@@ -1,5 +1,5 @@
 import { useNotificationsStore } from '@/store/notifications';
-import { NotificationGroup, type NotificationPayload, Priority } from '@rotki/common';
+import { NotificationCategory, NotificationGroup, type NotificationPayload, Priority, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('store::notifications/index', () => {

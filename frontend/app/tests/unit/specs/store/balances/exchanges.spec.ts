@@ -1,5 +1,6 @@
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useSessionSettingsStore } from '@/store/settings/session';
+import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 

@@ -11,10 +11,10 @@ import { useExchangesStore } from '@/store/exchanges';
 import { BalanceType } from '@/types/balances';
 import { useCurrencies } from '@/types/currencies';
 import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
-import { type AssetBalanceWithPrice, Blockchain } from '@rotki/common';
+import { type AssetBalanceWithPrice, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { updateGeneralSettings } from '@test/utils/general-settings';
 import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { updateGeneralSettings } from '../../../utils/general-settings';
 import '../../../i18n';
 
 describe('store::balances/aggregated', () => {

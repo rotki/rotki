@@ -2,7 +2,6 @@
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
-import type { SupportedAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
 import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
@@ -23,6 +22,7 @@ import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useMessageStore } from '@/store/message';
 import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
 import { uniqueStrings } from '@/utils/data';
+import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
 import { some } from 'es-toolkit/compat';
 
 interface IgnoredFilter {

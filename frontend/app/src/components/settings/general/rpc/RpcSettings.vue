@@ -7,7 +7,7 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { isOfEnum } from '@/utils';
-import { Blockchain } from '@rotki/common';
+import { assert, Blockchain } from '@rotki/common';
 
 const { t } = useI18n();
 

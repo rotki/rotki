@@ -8,6 +8,7 @@ import { useBlockchainStore } from '@/store/blockchain/index';
 import { useNotificationsStore } from '@/store/notifications/index';
 import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { downloadFileByTextContent } from '@/utils/download';
+import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

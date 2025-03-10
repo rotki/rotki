@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { assert } from '@rotki/common';
 import { debounce } from 'es-toolkit';
 import { type Content, createJSONEditor, type JSONContent, type JsonEditor, type TextContent } from 'vanilla-jsoneditor';
 

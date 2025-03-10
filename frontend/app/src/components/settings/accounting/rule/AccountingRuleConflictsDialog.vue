@@ -20,6 +20,7 @@ import { useAccountingSettings } from '@/composables/settings/accounting';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useMessageStore } from '@/store/message';
 import { getCollectionData } from '@/utils/collection';
+import { toSentenceCase } from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'close'): void;

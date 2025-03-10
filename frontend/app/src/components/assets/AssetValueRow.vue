@@ -9,6 +9,7 @@ import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { One } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

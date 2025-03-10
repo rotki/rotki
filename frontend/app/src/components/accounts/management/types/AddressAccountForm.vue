@@ -6,6 +6,7 @@ import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { assert, Blockchain } from '@rotki/common';
 
 const modelValue = defineModel<AccountManage>({ required: true });
 

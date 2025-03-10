@@ -4,6 +4,7 @@ import { useDefiApi } from '@/composables/api/defi';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useMainStore } from '@/store/main';
+import { decodeHtmlEntities } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 
 export const useDefiMetadata = createSharedComposable(() => {

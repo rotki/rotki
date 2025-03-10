@@ -1,7 +1,7 @@
-import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { nonEmptyProperties } from '@/utils/data';
+import { type ActionResult, NumericString } from '@rotki/common';
 import { z } from 'zod';
 
 export const WrapStatisticsSchema = z.object({

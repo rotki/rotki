@@ -8,7 +8,7 @@ import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
-import { type Account, Blockchain } from '@rotki/common';
+import { type Account, Blockchain, getTextToken } from '@rotki/common';
 import { omit, uniqBy } from 'es-toolkit';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;

@@ -14,15 +14,7 @@ import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import {
-  type BigNumber,
-  type HistoricalAssetPricePayload,
-  HistoricalAssetPriceResponse,
-  type NetValue,
-  type TimeFramePeriod,
-  timeframes,
-  TimeUnit,
-} from '@rotki/common';
+import { type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 
 function defaultNetValue(): NetValue {

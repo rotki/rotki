@@ -12,6 +12,7 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
 import { compareTextByKeyword } from '@/utils/assets';
 import { toMessages } from '@/utils/validation';
+import { isValidUrl } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';

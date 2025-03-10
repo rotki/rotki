@@ -5,6 +5,7 @@ import TransactionForm from '@/components/history/events/tx/TransactionForm.vue'
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
+import { assert } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<AddTransactionHashPayload | undefined>({ required: true });

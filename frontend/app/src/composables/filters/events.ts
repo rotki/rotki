@@ -16,7 +16,7 @@ import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, 
 import { uniqueStrings } from '@/utils/data';
 import { getDateInputISOFormat } from '@/utils/date';
 import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
-import { HistoryEventEntryType } from '@rotki/common';
+import { HistoryEventEntryType, isValidEthAddress, isValidTxHash } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
 import { z } from 'zod';
 

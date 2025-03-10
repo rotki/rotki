@@ -5,7 +5,6 @@ import type {
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
 import type { TaskMeta } from '@/types/task';
-import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
@@ -18,6 +17,7 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import { type BigNumber, Zero } from '@rotki/common';
 
 export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', () => {
   const nonFungibleTotalValue = ref<BigNumber>(Zero);

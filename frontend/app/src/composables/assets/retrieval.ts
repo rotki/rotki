@@ -12,7 +12,7 @@ import { useTaskStore } from '@/store/tasks';
 import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { type AssetInfo, NotificationGroup, Severity } from '@rotki/common';
+import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier, NotificationGroup, Severity } from '@rotki/common';
 import { isCancel } from 'axios';
 
 export interface AssetResolutionOptions {

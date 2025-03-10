@@ -1,6 +1,6 @@
-import type { BigNumber, GraphApi, TooltipDisplayOption } from '@rotki/common';
 import type { Ref } from 'vue';
 import { useDarkMode } from '@/composables/dark-mode';
+import { assert, type BigNumber, bigNumberify, type GraphApi, type TooltipDisplayOption } from '@rotki/common';
 import { Chart, registerables, type TooltipModel } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 

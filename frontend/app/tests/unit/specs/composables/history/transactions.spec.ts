@@ -4,12 +4,12 @@ import type {
   EvmHistoryEvent,
   HistoryEventEntry,
 } from '@/types/history/events';
-import type { Blockchain } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { isOfEventType } from '@/utils/history/events';
+import { assert, type Blockchain } from '@rotki/common';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/tasks', async () => {

@@ -22,7 +22,7 @@ import { useTaskStore } from '@/store/tasks';
 import { SavedFilterLocation } from '@/types/filtering';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, One, Zero } from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'edit', value: StakingValidatorManage): void;

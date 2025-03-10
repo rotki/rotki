@@ -23,7 +23,7 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
-import { type BigNumber, Blockchain } from '@rotki/common';
+import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 

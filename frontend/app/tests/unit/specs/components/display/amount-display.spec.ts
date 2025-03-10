@@ -7,7 +7,7 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
-import { BigNumber } from '@rotki/common';
+import { BigNumber, bigNumberify, Zero } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

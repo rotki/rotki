@@ -3,6 +3,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { useMainStore } from '@/store/main';
 import { getBackendUrl } from '@/utils/account-management';
 import { createTestingPinia } from '@pinia/testing';
+import { assert } from '@rotki/common';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

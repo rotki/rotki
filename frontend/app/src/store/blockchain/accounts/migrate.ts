@@ -5,7 +5,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { type Notification, NotificationCategory, Severity } from '@rotki/common';
+import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 
