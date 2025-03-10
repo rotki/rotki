@@ -7,6 +7,7 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { convertFromTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
@@ -19,6 +20,7 @@ const props = defineProps<{
 
 const { currency, event } = toRefs(props);
 
+const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { getHistoricPrice } = useBalancePricesStore();
 const { addHistoricalPrice } = useAssetPricesApi();
 
@@ -59,6 +61,11 @@ const v$ = useVuelidate(
 
 const { setMessage } = useMessageStore();
 
+async function savePrice(payload: HistoricalPriceFormPayload) {
+  await addHistoricalPrice(payload);
+  resetHistoricalPricesData([payload]);
+}
+
 async function updatePrice() {
   const payload: HistoricalPriceFormPayload = {
     fromAsset: get(event).assetIdentifier,
@@ -68,7 +75,7 @@ async function updatePrice() {
   };
 
   try {
-    await addHistoricalPrice(payload);
+    await savePrice(payload);
     set(showDialog, false);
   }
   catch (error: any) {
