@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
+    from rotkehlchen.externalapis.yahoofinance import YahooFinance
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ class PriceHistorian:
     _coingecko: 'Coingecko'
     _defillama: 'Defillama'
     _alchemy: 'Alchemy'
+    _yahoofinance: 'YahooFinance'
     _uniswapv2: 'UniswapV2Oracle'
     _uniswapv3: 'UniswapV3Oracle'
     _oracles: Sequence[HistoricalPriceOracle] | None = None
@@ -82,6 +84,7 @@ class PriceHistorian:
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
             alchemy: Optional['Alchemy'] = None,
+            yahoofinance: Optional['YahooFinance'] = None,
             uniswapv2: Optional['UniswapV2Oracle'] = None,
             uniswapv3: Optional['UniswapV3Oracle'] = None,
     ) -> 'PriceHistorian':
@@ -94,6 +97,7 @@ class PriceHistorian:
         assert coingecko, error_msg
         assert defillama, error_msg
         assert alchemy, error_msg
+        assert yahoofinance, error_msg
         assert uniswapv2, error_msg
         assert uniswapv3, error_msg
 
@@ -102,6 +106,7 @@ class PriceHistorian:
         PriceHistorian._coingecko = coingecko
         PriceHistorian._defillama = defillama
         PriceHistorian._alchemy = alchemy
+        PriceHistorian._yahoofinance = yahoofinance
         PriceHistorian._uniswapv2 = uniswapv2
         PriceHistorian._uniswapv3 = uniswapv3
 

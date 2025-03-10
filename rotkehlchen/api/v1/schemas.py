@@ -1133,6 +1133,7 @@ class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
     balance_type = SerializableEnumField(enum_class=BalanceType, load_default=BalanceType.ASSET)
+    price = AmountField(load_default=None)  # Add a price field to capture the price from the UI
 
     @post_load
     def make_manually_tracked_balances(
@@ -1141,7 +1142,19 @@ class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
             **_kwargs: Any,
     ) -> ManuallyTrackedBalance:
         data['identifier'] = -1  # can be any value because id will be set automatically
-        return ManuallyTrackedBalance(**data)
+        
+        # Store the price in a special attribute that will be used by the add_manually_tracked_balances function
+        price = None
+        if 'price' in data:
+            price = data.pop('price')  # Remove price from data before creating ManuallyTrackedBalance
+            
+        result = ManuallyTrackedBalance(**data)
+        
+        # If we had a price, store it as a special attribute
+        if price is not None:
+            setattr(result, '_price', price)
+            
+        return result
 
 
 class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
@@ -1153,7 +1166,18 @@ class ManuallyTrackedBalanceEditSchema(ManuallyTrackedBalanceAddSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> ManuallyTrackedBalance:
-        return ManuallyTrackedBalance(**data)
+        # Store the price in a special attribute that will be used by the edit_manually_tracked_balances function
+        price = None
+        if 'price' in data:
+            price = data.pop('price')  # Remove price from data before creating ManuallyTrackedBalance
+            
+        result = ManuallyTrackedBalance(**data)
+        
+        # If we had a price, store it as a special attribute
+        if price is not None:
+            setattr(result, '_price', price)
+            
+        return result
 
 
 class ManuallyTrackedBalancesAddSchema(AsyncQueryArgumentSchema):
