@@ -28,10 +28,7 @@ fn default_data_dir(is_prod: bool) -> std::io::Result<PathBuf> {
             is_prod
         ),
         os => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Unsupported OS: {}", os),
-            ))
+            return Err(std::io::Error::other(format!("Unsupported OS: {}", os)))
         }
     };
     std::fs::create_dir_all(&datadir)?;
