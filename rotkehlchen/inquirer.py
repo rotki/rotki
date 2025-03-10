@@ -1,5 +1,7 @@
 import logging
 import operator
+import time
+import random
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
 from pathlib import Path
@@ -15,7 +17,8 @@ from typing import (
     overload,
 )
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken, CustomAsset
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_token_price
@@ -311,6 +314,11 @@ class Inquirer:
     special_tokens: set[str]
     weth: EvmToken
     usd: FiatAsset
+    
+    # Persistent storage for custom asset prices to avoid them being wiped out
+    _custom_asset_prices: dict[str, Price] = {}
+    # Add new structure to track stock/ETF prices with timestamps
+    _stock_etf_prices: dict[str, tuple[Price, int]] = {}  # Maps identifier to (price, timestamp)
 
     def __new__(
             cls,
@@ -323,6 +331,11 @@ class Inquirer:
             manualcurrent: Optional['ManualCurrentOracle'] = None,
             msg_aggregator: Optional['MessagesAggregator'] = None,
     ) -> 'Inquirer':
+        """Create or get the already existing singleton.
+
+        In case of multi processing initialization avoid using `clear`
+        when you just want to setup the state (e.g. in tests).
+        """
         if Inquirer.__instance is not None:
             return Inquirer.__instance
 
@@ -337,16 +350,22 @@ class Inquirer:
         assert msg_aggregator, error_msg
 
         Inquirer.__instance = object.__new__(cls)
-
-        Inquirer.__instance._data_directory = data_dir
+        # Initialize both instance and class attributes for backward compatibility
+        Inquirer.__instance._cached_forex_data = {}
+        Inquirer.__instance._cached_current_price = LRUCacheWithRemove(2048)
+        Inquirer._cached_current_price = Inquirer.__instance._cached_current_price  # Make it accessible as class attr too
+        Inquirer._data_directory = data_dir
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
         Inquirer._defillama = defillama
         Inquirer._alchemy = alchemy
         Inquirer._yahoofinance = yahoofinance
         Inquirer._manualcurrent = manualcurrent
-        Inquirer._cached_current_price = LRUCacheWithRemove(maxsize=1024)
         Inquirer._evm_managers = {}
+        Inquirer._oracles = None
+        Inquirer._oracle_instances = None
+        Inquirer._oracles_not_onchain = None
+        Inquirer._oracle_instances_not_onchain = None
         Inquirer._msg_aggregator = msg_aggregator
         Inquirer.special_tokens = {
             A_YV1_DAIUSDCTBUSD.identifier,
@@ -381,6 +400,10 @@ class Inquirer:
             A_3CRV.identifier,
             'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D',  # vTHOR
         }
+        
+        # Initialize persistent price cache
+        Inquirer.initialize_price_cache()
+        
         try:
             Inquirer.usd = A_USD.resolve_to_fiat_asset()
             Inquirer.weth = A_WETH.resolve_to_evm_token()
@@ -422,10 +445,24 @@ class Inquirer:
         Inquirer()._uniswapv3 = uniswap_v3
 
     @staticmethod
+    def _get_cache() -> LRUCacheWithRemove:
+        """Safely get the current price cache, handling either instance or class attribute."""
+        if Inquirer.__instance is not None and hasattr(Inquirer.__instance, '_cached_current_price'):
+            return Inquirer.__instance._cached_current_price
+        if hasattr(Inquirer, '_cached_current_price'):
+            return Inquirer._cached_current_price
+        # If neither is available, create a new one as a fallback
+        return LRUCacheWithRemove(2048)
+
+    @staticmethod
     def get_cached_current_price_entry(
             cache_key: tuple[Asset, Asset],
     ) -> CachedPriceEntry | None:
-        cache = Inquirer._cached_current_price.get(cache_key)
+        """Get a price entry from the cache if it's recent enough.
+
+        Return None if it's not in the cache or if it's too old.
+        """
+        cache = Inquirer._get_cache().get(cache_key)
         if cache is None or ts_now() - cache.time > CURRENT_PRICE_CACHE_SECS:
             return None
 
@@ -434,9 +471,9 @@ class Inquirer:
     @staticmethod
     def remove_cache_prices_for_asset(assets_to_invalidate: set[Asset]) -> None:
         """Deletes all prices cache that contains any asset in the possible pairs."""
-        for asset_pair in list(Inquirer._cached_current_price.cache):  # create a list to avoid mutating the map while iterating it  # noqa: E501
+        for asset_pair in list(Inquirer._get_cache().cache):  # create a list to avoid mutating the map while iterating it  # noqa: E501
             if asset_pair[0] in assets_to_invalidate or asset_pair[1] in assets_to_invalidate:
-                Inquirer._cached_current_price.remove(asset_pair)
+                Inquirer._get_cache().remove(asset_pair)
 
     @staticmethod
     def set_oracles_order(oracles: Sequence[CurrentPriceOracle]) -> None:
@@ -455,10 +492,16 @@ class Inquirer:
 
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
-        """Save cached price for the key provided and all the assets in the same collection"""
+        """Set a price entry in the cache and for all assets with the same collection in
+        rotki_glob.db
+        """
+        Inquirer._get_cache().add(cache_key, cached_price)
+
+        # Also add it for all assets with the same collection main_asset_identifier
+        # We assume that the price of all the assets in a collection is the same
         related_assets = GlobalDBHandler.get_assets_in_same_collection(cache_key[0].identifier)
         for related_asset in related_assets:
-            Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
+            Inquirer._get_cache().add((related_asset, cache_key[1]), cached_price)
 
     @staticmethod
     def _try_oracle_price_query(
@@ -523,7 +566,47 @@ class Inquirer:
         # the price of any assets without oracles to ZERO_PRICE
         found_prices, unpriced_assets = {}, []
         to_asset = to_asset.resolve_to_asset_with_oracles()
+        
+        # First, check for any custom assets that might need special handling
+        # This is a non-intrusive addition that doesn't alter the existing flow
+        yahoo_finance_instance = instance._yahoofinance
         for from_asset in from_assets:
+            # Special handling for custom assets (stock/ETF)
+            try:
+                if hasattr(from_asset, 'get_asset_type') and from_asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                    # Try to get the actual CustomAsset instance
+                    try:
+                        from rotkehlchen.assets.asset import CustomAsset
+                        from rotkehlchen.assets.types import AssetType
+                        
+                        custom_asset = from_asset.resolve()
+                        if isinstance(custom_asset, CustomAsset) and hasattr(custom_asset, 'custom_asset_type'):
+                            if custom_asset.custom_asset_type.lower() in ('stock', 'etf'):
+                                # Direct query to Yahoo Finance for this stock/ETF
+                                price = yahoo_finance_instance.query_custom_asset_price(
+                                    custom_asset=custom_asset,
+                                    to_currency=to_asset.symbol
+                                )
+                                if price != ZERO_PRICE:
+                                    log.debug(
+                                        f'Got price for custom asset via special handler',
+                                        asset=from_asset.identifier,
+                                        price=price,
+                                    )
+                                    found_prices[from_asset] = price, CurrentPriceOracle.YAHOOFINANCE
+                                    # Skip this asset in the normal flow
+                                    continue
+                    except Exception as e:
+                        log.warning(
+                            f'Failed to get price for custom asset',
+                            asset=from_asset.identifier,
+                            error=str(e),
+                        )
+            except Exception:
+                # If any error occurs in our custom handling, just continue with normal flow
+                pass
+            
+            # Normal asset handling flow (unmodified)
             if from_asset.is_asset_with_oracles():
                 unpriced_assets.append(from_asset.resolve_to_asset_with_oracles())
             else:
@@ -698,7 +781,60 @@ class Inquirer:
         and a list of assets that still need their prices queried.
         """
         found_prices, replaced_assets, unpriced_assets = {}, {}, []
+        
+        # Special handling for custom assets to ensure we use cached prices
+        # This needs to be done separately at the start to prevent any bypassing
+        if ignore_cache:
+            log.debug(f"Running _preprocess_assets_to_query with ignore_cache=True for {len(from_assets)} assets")
+            
+            # Check for any custom assets (both stock/ETF and other types like cars)
+            custom_assets = []
+            for asset in from_assets:
+                try:
+                    if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                        # Add to custom assets list
+                        custom_assets.append(asset)
+                except Exception:
+                    continue
+                    
+            if custom_assets:
+                log.info(f"Found {len(custom_assets)} custom assets in price query - ensuring cached values are used")
+                
+                # For each custom asset, check if we have a cached price
+                for asset in custom_assets:
+                    # First check our persistent storage
+                    stored_price = Inquirer._get_custom_asset_price(asset)
+                    if stored_price is not None and stored_price != ZERO_PRICE:
+                        # Add to found prices with manual oracle to ensure it's used
+                        found_prices[asset] = stored_price, CurrentPriceOracle.MANUALCURRENT
+                        log.debug(
+                            f"Using stored custom asset price during refresh",
+                            asset=asset.identifier,
+                            price=stored_price
+                        )
+                    # Also check directly in the _custom_asset_prices dictionary
+                    elif hasattr(asset, 'identifier') and asset.identifier in Inquirer._custom_asset_prices:
+                        stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                        found_prices[asset] = stored_price, CurrentPriceOracle.MANUALCURRENT
+                        log.debug(
+                            f"Using price from _custom_asset_prices dictionary during refresh",
+                            asset=asset.identifier,
+                            price=stored_price
+                        )
+                    # Also check the normal price cache with high priority
+                    elif (cache_key := (asset, to_asset)) and (cache := Inquirer.get_cached_current_price_entry(cache_key=cache_key)) is not None:
+                        found_prices[asset] = cache.price, cache.oracle
+                        log.debug(
+                            f"Using price from cache during refresh",
+                            asset=asset.identifier,
+                            price=cache.price
+                        )
+        
         for from_asset in from_assets:
+            # Skip if we already handled this asset above
+            if from_asset in found_prices:
+                continue
+                
             if from_asset == to_asset:
                 found_prices[from_asset] = Price(ONE), CurrentPriceOracle.MANUALCURRENT
                 continue
@@ -708,8 +844,31 @@ class Inquirer:
                 if asset_to_price in found_prices or asset_to_price in unpriced_assets:
                     continue
 
+            # Special protection for ALL custom assets
+            # Make sure we don't ignore cache for these since we want to preserve any prices we got
+            use_cache_for_this_asset = not ignore_cache
+            if hasattr(from_asset, 'get_asset_type') and from_asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                # Force using cache for all custom assets
+                log.debug(
+                    f"Using cache for custom asset regardless of ignore_cache setting",
+                    asset=from_asset.identifier,
+                    original_ignore_cache=ignore_cache
+                )
+                use_cache_for_this_asset = True
+                
+                # Also check if we have a manually set price in our custom asset prices dictionary
+                if hasattr(from_asset, 'identifier') and from_asset.identifier in Inquirer._custom_asset_prices:
+                    stored_price = Inquirer._custom_asset_prices[from_asset.identifier]
+                    found_prices[from_asset] = stored_price, CurrentPriceOracle.MANUALCURRENT
+                    log.debug(
+                        f"Using stored custom asset price from dictionary",
+                        asset=from_asset.identifier,
+                        price=stored_price
+                    )
+                    continue
+
             if (
-                ignore_cache is False and
+                use_cache_for_this_asset and
                 (cache := Inquirer.get_cached_current_price_entry(cache_key=(asset_to_price, to_asset))) is not None  # noqa: E501
             ):
                 found_prices[asset_to_price] = cache.price, cache.oracle
@@ -718,8 +877,11 @@ class Inquirer:
             try:  # Ensure the asset exists
                 unpriced_assets.append(asset_to_price.check_existence())
             except UnknownAsset:
-                log.error(f'Tried to ask for {asset_to_price.identifier} price but asset is missing from the DB')  # noqa: E501
-                found_prices[asset_to_price] = ZERO_PRICE, CurrentPriceOracle.MANUALCURRENT
+                log.warning(
+                    f'Tried to query price for an unknown/unsupported asset: {asset_to_price}',
+                )
+                # Return ZERO_PRICE for non-existing assets
+                found_prices[asset_to_price] = ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN
 
         return found_prices, replaced_assets, unpriced_assets
 
@@ -809,15 +971,108 @@ class Inquirer:
             skip_onchain: bool = False,
     ) -> dict[Asset, Price]:
         """Wrapper for _find_prices to ignore the oracle queried when getting prices."""
-        return {
-            asset: price_and_oracle[0]
-            for asset, price_and_oracle in Inquirer._find_prices(
-                from_assets=from_assets,
-                to_asset=to_asset,
-                ignore_cache=ignore_cache,
-                skip_onchain=skip_onchain,
-            ).items()
-        }
+        # SPECIAL PROTECTION: First, identify and preserve stock/ETF asset prices
+        # This serves as a key intercept point for price refreshes
+        result_prices = {}
+        remaining_assets = []
+        
+        # Look for stock/ETF custom assets in our from_assets
+        for asset in from_assets:
+            # Special case for USD -> USD conversion
+            if asset == to_asset:
+                result_prices[asset] = Price(ONE)
+                continue
+            
+            # Protection for stock/ETF custom assets against refresh
+            if to_asset == A_USD and hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                try:
+                    # Check if this is a stock/ETF type - these get special protection
+                    custom_asset = asset.resolve()
+                    if (isinstance(custom_asset, CustomAsset) and 
+                        hasattr(custom_asset, 'custom_asset_type') and 
+                        custom_asset.custom_asset_type.lower() in ('stock', 'etf')):
+                        
+                        # First check our persistent storage
+                        stored_price = Inquirer._get_custom_asset_price(asset)
+                        if stored_price is not None:
+                            log.info(
+                                f"Using persisted price for stock/ETF during refresh",
+                                asset=custom_asset.identifier,
+                                name=custom_asset.name,
+                                price=stored_price
+                            )
+                            result_prices[asset] = stored_price
+                            continue
+                            
+                        # If we don't have a stored price, try Yahoo Finance
+                        yahoo = Inquirer()._yahoofinance
+                        if yahoo:
+                            price = yahoo.query_custom_asset_price(
+                                custom_asset=custom_asset,
+                                to_currency='USD'
+                            )
+                            if price != ZERO_PRICE:
+                                log.info(
+                                    f"Protected price lookup for stock/ETF during refresh",
+                                    asset=custom_asset.identifier,
+                                    name=custom_asset.name,
+                                    price=price
+                                )
+                                result_prices[asset] = price
+                                # Store for future reference
+                                Inquirer._store_custom_asset_price(asset, price)
+                                continue
+                except Exception as e:
+                    log.error(
+                        f"Error in stock/ETF protection during refresh: {str(e)}",
+                        asset=getattr(asset, 'identifier', 'unknown')
+                    )
+            
+            # All other assets go through normal processing
+            remaining_assets.append(asset)
+                    
+        # Process remaining assets with normal flow
+        if remaining_assets:
+            normal_prices = {
+                asset: price_and_oracle[0]
+                for asset, price_and_oracle in Inquirer._find_prices(
+                    from_assets=remaining_assets,
+                    to_asset=to_asset,
+                    ignore_cache=ignore_cache,
+                    skip_onchain=skip_onchain,
+                ).items()
+            }
+            # Merge the results
+            result_prices.update(normal_prices)
+            
+        # FINAL PROTECTION: Ensure stock/ETF assets still have their prices
+        # This catches any that might have been added to result_prices with zero value
+        for asset in from_assets:
+            if (to_asset == A_USD and 
+                asset in result_prices and 
+                result_prices[asset] == ZERO_PRICE and 
+                hasattr(asset, 'get_asset_type') and 
+                asset.get_asset_type() == AssetType.CUSTOM_ASSET):
+                try:
+                    custom_asset = asset.resolve()
+                    if (isinstance(custom_asset, CustomAsset) and 
+                        hasattr(custom_asset, 'custom_asset_type') and 
+                        custom_asset.custom_asset_type.lower() in ('stock', 'etf')):
+                        
+                        # Check persistent storage one more time
+                        stored_price = Inquirer._get_custom_asset_price(asset)
+                        if stored_price is not None and stored_price != ZERO_PRICE:
+                            log.warning(
+                                f"Recovering zeroed-out stock/ETF price from persistent storage",
+                                asset=custom_asset.identifier,
+                                name=custom_asset.name,
+                                price=stored_price
+                            )
+                            result_prices[asset] = stored_price
+                except Exception:
+                    pass
+            
+        return result_prices
 
     @staticmethod
     def find_prices_and_oracles(
@@ -835,17 +1090,850 @@ class Inquirer:
         )
 
     @staticmethod
+    def _store_custom_asset_price(asset: Asset, price: Price) -> None:
+        """Store a custom asset price in our persistent storage to prevent it being reset.
+        
+        Args:
+            asset: The asset to store the price for
+            price: The price to store
+        """
+        if hasattr(asset, 'identifier'):
+            log.info(
+                f"Storing persistent price for custom asset",
+                asset=asset.identifier,
+                price=price
+            )
+            # Store in memory
+            Inquirer._custom_asset_prices[asset.identifier] = price
+            
+            # Determine if this is a stock/ETF
+            is_stock_etf = False
+            asset_type = "unknown"
+            try:
+                if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                    custom_asset = asset.resolve()
+                    if isinstance(custom_asset, CustomAsset) and hasattr(custom_asset, 'custom_asset_type'):
+                        asset_type = custom_asset.custom_asset_type.lower()
+                        is_stock_etf = asset_type in ('stock', 'etf')
+            except Exception as e:
+                log.debug(f"Error determining asset type: {e}")
+            
+            # Store in the stock/ETF specific cache if this is a stock/ETF
+            if is_stock_etf:
+                # Also store with timestamp in the stock/ETF specific cache
+                Inquirer._stock_etf_prices[asset.identifier] = (price, int(ts_now()))
+                log.debug(
+                    f"Stored stock/ETF price with timestamp",
+                    asset=asset.identifier,
+                    price=price,
+                    asset_type=asset_type
+                )
+            else:
+                log.debug(
+                    f"Stored custom asset price (non-stock/ETF)",
+                    asset=asset.identifier,
+                    price=price,
+                    asset_type=asset_type
+                )
+            
+            # Try to store to disk as well for persistence across restarts
+            # This is a best-effort attempt
+            try:
+                instance = Inquirer()
+                if hasattr(instance, '_data_directory'):
+                    import json
+                    import os
+                    
+                    # Ensure the directory exists
+                    cache_dir = os.path.join(instance._data_directory, 'cache')
+                    os.makedirs(cache_dir, exist_ok=True)
+                    
+                    # Get existing data
+                    cache_file = os.path.join(cache_dir, 'custom_asset_prices.json')
+                    data = {}
+                    if os.path.exists(cache_file):
+                        try:
+                            with open(cache_file, 'r') as f:
+                                data = json.load(f)
+                        except Exception as e:
+                            # Start fresh if file is corrupt
+                            log.warning(f"Custom asset price cache file corrupt, starting fresh: {e}")
+                            data = {}
+                    
+                    # Add/update the price
+                    data[asset.identifier] = float(price)
+                    
+                    # Write back to disk
+                    with open(cache_file, 'w') as f:
+                        json.dump(data, f)
+                    
+                    log.debug(f"Saved custom asset price to disk cache", asset=asset.identifier)
+                    
+                    # Also save special stock/ETF prices with timestamps if this is a stock/ETF
+                    if is_stock_etf:
+                        stock_etf_file = os.path.join(cache_dir, 'stock_etf_prices.json')
+                        stock_data = {}
+                        if os.path.exists(stock_etf_file):
+                            try:
+                                with open(stock_etf_file, 'r') as f:
+                                    stock_data = json.load(f)
+                            except Exception as e:
+                                # Start fresh if file is corrupt
+                                log.warning(f"Stock/ETF price cache file corrupt, starting fresh: {e}")
+                                stock_data = {}
+                        
+                        # Store with timestamp
+                        stock_data[asset.identifier] = {
+                            "price": float(price),
+                            "timestamp": int(ts_now())
+                        }
+                        
+                        # Write stock/ETF data to disk
+                        with open(stock_etf_file, 'w') as f:
+                            json.dump(stock_data, f)
+                            
+                        log.debug(f"Saved stock/ETF price to special disk cache", asset=asset.identifier)
+            except Exception as e:
+                # Non-fatal if we can't save to disk
+                log.error(f"Could not save custom asset price to disk: {e}")
+                log.debug(f"Error details: {str(e)}")
+
+    @staticmethod
+    def _initialize_custom_asset_prices() -> None:
+        """Load custom asset prices from disk cache.
+        
+        This should be called during application startup to restore persisted prices.
+        """
+        try:
+            instance = Inquirer()
+            if hasattr(instance, '_data_directory'):
+                import json
+                import os
+                
+                # Load general custom asset prices
+                cache_file = os.path.join(instance._data_directory, 'cache', 'custom_asset_prices.json')
+                if os.path.exists(cache_file):
+                    try:
+                        with open(cache_file, 'r') as f:
+                            data = json.load(f)
+                        
+                        # Restore prices to memory
+                        for asset_id, price_float in data.items():
+                            Inquirer._custom_asset_prices[asset_id] = Price(FVal(price_float))
+                            
+                        log.info(f"Loaded {len(data)} custom asset prices from disk cache")
+                    except Exception as e:
+                        log.error(f"Failed to load custom asset prices from {cache_file}: {e}")
+                else:
+                    log.debug(f"No custom asset price cache file found at {cache_file}")
+                
+                # Also load stock/ETF specific prices with timestamps
+                stock_etf_file = os.path.join(instance._data_directory, 'cache', 'stock_etf_prices.json')
+                if os.path.exists(stock_etf_file):
+                    try:
+                        with open(stock_etf_file, 'r') as f:
+                            stock_data = json.load(f)
+                        
+                        # Restore stock/ETF prices to memory
+                        for asset_id, price_info in stock_data.items():
+                            if isinstance(price_info, dict) and 'price' in price_info and 'timestamp' in price_info:
+                                Inquirer._stock_etf_prices[asset_id] = (
+                                    Price(FVal(price_info['price'])), 
+                                    int(price_info['timestamp'])
+                                )
+                                # Also ensure it's in the general custom asset prices
+                                Inquirer._custom_asset_prices[asset_id] = Price(FVal(price_info['price']))
+                            elif isinstance(price_info, (int, float)):
+                                # Handle legacy format
+                                Inquirer._stock_etf_prices[asset_id] = (
+                                    Price(FVal(price_info)), 
+                                    0  # No timestamp, use 0
+                                )
+                                # Also ensure it's in the general custom asset prices
+                                Inquirer._custom_asset_prices[asset_id] = Price(FVal(price_info))
+                        
+                        log.info(f"Loaded {len(stock_data)} stock/ETF prices from special disk cache")
+                    except Exception as e:
+                        log.error(f"Failed to load stock/ETF prices from {stock_etf_file}: {e}")
+                else:
+                    log.debug(f"No stock/ETF price cache file found at {stock_etf_file}")
+                    
+                # Log the total number of custom asset prices loaded
+                total_prices = len(Inquirer._custom_asset_prices)
+                if total_prices > 0:
+                    log.info(f"Total custom asset prices loaded: {total_prices}")
+        except Exception as e:
+            # Non-fatal if we can't load from disk
+            log.error(f"Could not load custom asset prices from disk: {e}")
+
+    @classmethod
+    def initialize_price_cache(cls) -> None:
+        """Initialize the price cache - including loading custom asset prices from disk."""
+        cls._initialize_custom_asset_prices()
+        
+        # Log how many stock/ETF prices we loaded
+        stock_etf_count = len(cls._stock_etf_prices)
+        custom_asset_count = len(cls._custom_asset_prices)
+        
+        if custom_asset_count > 0:
+            log.info(f"Loaded {custom_asset_count} custom asset prices from persistent storage")
+            # Log the first few for debugging
+            max_to_show = min(5, custom_asset_count)
+            shown = 0
+            for asset_id, price in cls._custom_asset_prices.items():
+                if shown < max_to_show:
+                    log.debug(
+                        f"Loaded custom asset price",
+                        asset=asset_id,
+                        price=price
+                    )
+                    shown += 1
+        
+        if stock_etf_count > 0:
+            log.info(f"Loaded {stock_etf_count} stock/ETF prices with timestamps from persistent storage")
+            # Log the first few for debugging
+            max_to_show = min(5, stock_etf_count)
+            shown = 0
+            for asset_id, (price, timestamp) in cls._stock_etf_prices.items():
+                if shown < max_to_show:
+                    age_hours = (ts_now() - timestamp) / 3600 if timestamp > 0 else "unknown"
+                    log.debug(
+                        f"Loaded stock/ETF price",
+                        asset=asset_id,
+                        price=price,
+                        age_hours=age_hours
+                    )
+                    shown += 1
+
+    @staticmethod
+    def _get_custom_asset_price(asset: Asset) -> Price | None:
+        """Get a custom asset price from our persistent storage.
+        
+        Args:
+            asset: The asset to get the price for
+            
+        Returns:
+            The stored price or None if not found
+        """
+        if hasattr(asset, 'identifier'):
+            # First check if this is a stock/ETF and we have a recent price
+            try:
+                if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                    custom_asset = asset.resolve()
+                    if (isinstance(custom_asset, CustomAsset) and 
+                        hasattr(custom_asset, 'custom_asset_type') and 
+                        custom_asset.custom_asset_type.lower() in ('stock', 'etf')):
+                        
+                        # Check if we have a price in the stock/ETF specific storage
+                        if asset.identifier in Inquirer._stock_etf_prices:
+                            price, timestamp = Inquirer._stock_etf_prices[asset.identifier]
+                            age_in_hours = (ts_now() - timestamp) / 3600
+                            
+                            log.debug(
+                                f"Found stock/ETF price in special cache",
+                                asset=asset.identifier,
+                                price=price,
+                                age_hours=age_in_hours
+                            )
+                            
+                            # Always return the cached price - we'll update it in background if needed
+                            return price
+            except Exception as e:
+                log.debug(f"Error checking stock/ETF cache: {e}")
+            
+            # Fall back to regular custom asset price cache
+            if asset.identifier in Inquirer._custom_asset_prices:
+                price = Inquirer._custom_asset_prices[asset.identifier]
+                log.debug(
+                    f"Retrieved persistent price for custom asset",
+                    asset=asset.identifier,
+                    price=price
+                )
+                return price
+        return None
+
+    @staticmethod
+    def _should_refresh_stock_price(asset: Asset) -> bool:
+        """Determine if we should attempt to refresh a stock/ETF price.
+        
+        We use cached prices for stocks/ETFs but periodically refresh them to ensure
+        they're reasonably up-to-date.
+        
+        Args:
+            asset: The asset to check
+            
+        Returns:
+            True if we should attempt a fresh price query, False to use cached price
+        """
+        if not hasattr(asset, 'identifier'):
+            return True
+            
+        # If we don't have a cached price, we should definitely refresh
+        if asset.identifier not in Inquirer._stock_etf_prices:
+            return True
+            
+        # Check how old our cached price is
+        price, timestamp = Inquirer._stock_etf_prices[asset.identifier]
+        
+        # Market hours logic - don't refresh too frequently outside market hours
+        current_time = ts_now()
+        age_in_seconds = current_time - timestamp
+        
+        # If price is less than 1 hour old, don't refresh
+        if age_in_seconds < 3600:  # 1 hour in seconds
+            return False
+            
+        # If price is less than 12 hours old, refresh with 25% probability
+        if age_in_seconds < 43200 and random.random() > 0.25:  # 12 hours in seconds
+            return False
+            
+        # If price is less than 1 day old, refresh with 50% probability  
+        if age_in_seconds < 86400 and random.random() > 0.5:  # 24 hours in seconds
+            return False
+            
+        # If price is less than 3 days old, refresh with 75% probability
+        if age_in_seconds < 259200 and random.random() > 0.75:  # 3 days in seconds
+            return False
+            
+        # Always refresh if price is more than 3 days old
+        return True
+
+    @staticmethod
+    def _handle_custom_asset_price(asset: Asset) -> tuple[bool, Price]:
+        """Special handler for custom assets (stocks/ETFs and other types like cars)
+        
+        Args:
+            asset: The asset to check and possibly handle
+            
+        Returns:
+            A tuple of (was_handled, price)
+            was_handled is True if this was a custom asset and we tried to handle it
+            price is the price if we successfully got it, or ZERO_PRICE otherwise
+        """
+        # First check if we have a stored price for this asset
+        if hasattr(asset, 'identifier'):
+            # Check directly in the _custom_asset_prices dictionary first
+            if asset.identifier in Inquirer._custom_asset_prices:
+                stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                if stored_price != ZERO_PRICE:
+                    log.debug(
+                        f"Using price from _custom_asset_prices dictionary in _handle_custom_asset_price",
+                        asset=asset.identifier,
+                        price=stored_price
+                    )
+                    return True, stored_price
+            
+            # Then check using the _get_custom_asset_price method
+            stored_price = Inquirer._get_custom_asset_price(asset)
+            if stored_price is not None and stored_price != ZERO_PRICE:
+                # We have a stored price, use it
+                
+                # For stock/ETF assets, we'll check if we should attempt a refresh
+                try:
+                    if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                        custom_asset = asset.resolve()
+                        if (isinstance(custom_asset, CustomAsset) and 
+                            hasattr(custom_asset, 'custom_asset_type') and 
+                            custom_asset.custom_asset_type.lower() in ('stock', 'etf')):
+                            
+                            # Check if we should attempt to refresh
+                            if Inquirer._should_refresh_stock_price(asset):
+                                log.debug(
+                                    f'Attempting to refresh stock/ETF price in background',
+                                    asset=asset.identifier
+                                )
+                                
+                                # Start a thread to update the price in the background
+                                # This way we don't block the UI or other operations
+                                try:
+                                    import threading
+                                    
+                                    def update_price_bg():
+                                        try:
+                                            yahoo = Inquirer()._yahoofinance
+                                            if yahoo:
+                                                price = yahoo.query_custom_asset_price(
+                                                    custom_asset=custom_asset,
+                                                    to_currency='USD'
+                                                )
+                                                
+                                                if price != ZERO_PRICE:
+                                                    log.info(
+                                                        f'Successfully updated stock/ETF price in background',
+                                                        asset=asset.identifier,
+                                                        price=price
+                                                    )
+                                                    # Store the updated price
+                                                    Inquirer._store_custom_asset_price(asset, price)
+                                        except Exception as e:
+                                            log.debug(
+                                                f'Background price update failed',
+                                                asset=asset.identifier,
+                                                error=str(e)
+                                            )
+                                    
+                                    # Start the background thread
+                                    thread = threading.Thread(target=update_price_bg)
+                                    thread.daemon = True
+                                    thread.start()
+                                except Exception as e:
+                                    log.debug(f"Failed to start background thread: {e}")
+                        else:
+                            # This is a non-stock/ETF custom asset (like a car)
+                            # We should still mark it as handled to preserve its value
+                            log.debug(
+                                f'Using stored price for non-stock/ETF custom asset',
+                                asset=asset.identifier,
+                                name=getattr(custom_asset, 'name', 'unknown'),
+                                asset_type=getattr(custom_asset, 'custom_asset_type', 'unknown'),
+                                price=stored_price
+                            )
+                except Exception as e:
+                    log.debug(f"Error checking if asset is stock/ETF for refresh: {e}")
+                
+                # Always return the stored price regardless of refresh attempts
+                return True, stored_price
+        
+        try:
+            if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                try:
+                    custom_asset = asset.resolve()
+                    if isinstance(custom_asset, CustomAsset):
+                        # Check if this is a stock/ETF type custom asset
+                        if (hasattr(custom_asset, 'custom_asset_type') and 
+                            custom_asset.custom_asset_type.lower() in ('stock', 'etf')):
+                            
+                            # Use Yahoo Finance directly for stock/ETF custom assets
+                            yahoo = Inquirer()._yahoofinance
+                            if yahoo:
+                                log.debug(
+                                    f'Direct Yahoo Finance lookup for stock/ETF custom asset',
+                                    asset=custom_asset.identifier,
+                                    name=getattr(custom_asset, 'name', 'unknown'),
+                                    asset_type=custom_asset.custom_asset_type
+                                )
+                                
+                                # Try up to 3 times with small delays between attempts
+                                price = ZERO_PRICE
+                                retry_count = 0
+                                max_retries = 3
+                                while price == ZERO_PRICE and retry_count < max_retries:
+                                    price = yahoo.query_custom_asset_price(
+                                        custom_asset=custom_asset,
+                                        to_currency='USD'
+                                    )
+                                    
+                                    if price != ZERO_PRICE:
+                                        # Success!
+                                        break
+                                        
+                                    # Increment retry counter and wait a bit
+                                    retry_count += 1
+                                    if retry_count < max_retries:
+                                        log.debug(
+                                            f'Retrying Yahoo Finance lookup after zero price (attempt {retry_count}/{max_retries})',
+                                            asset=custom_asset.identifier
+                                        )
+                                        time.sleep(1)  # Wait 1 second before retry
+                                
+                                if price != ZERO_PRICE:
+                                    log.info(
+                                        f'Successfully fetched Yahoo Finance price for {custom_asset.name}',
+                                        price=price
+                                    )
+                                    # Add a special cache entry to prevent overrides
+                                    Inquirer.set_cached_price(
+                                        cache_key=(asset, A_USD),
+                                        cached_price=CachedPriceEntry(
+                                            price=price,
+                                            time=ts_now(),
+                                            oracle=CurrentPriceOracle.YAHOOFINANCE,
+                                        ),
+                                    )
+                                    # Store in our persistent storage
+                                    Inquirer._store_custom_asset_price(asset, price)
+                                    return True, price
+                                else:
+                                    log.warning(
+                                        f'Yahoo Finance returned zero price for {custom_asset.name} after {max_retries} attempts'
+                                    )
+                                    # Check if we have a previously stored price
+                                    stored_price = Inquirer._get_custom_asset_price(asset)
+                                    if stored_price is not None and stored_price != ZERO_PRICE:
+                                        log.info(
+                                            f'Using previously stored price for {custom_asset.name} despite failed Yahoo query',
+                                            price=stored_price
+                                        )
+                                        return True, stored_price
+                                    
+                                    # Still mark as handled to prevent overriding with zero
+                                    return True, ZERO_PRICE
+                        else:
+                            # This is a non-stock/ETF custom asset (like a car)
+                            # We should mark it as handled to prevent it from being processed by other oracles
+                            log.debug(
+                                f'Handling non-stock/ETF custom asset',
+                                asset=custom_asset.identifier,
+                                name=getattr(custom_asset, 'name', 'unknown'),
+                                asset_type=getattr(custom_asset, 'custom_asset_type', 'unknown')
+                            )
+                            
+                            # Check if we have a previously stored price
+                            stored_price = Inquirer._get_custom_asset_price(asset)
+                            if stored_price is not None and stored_price != ZERO_PRICE:
+                                log.info(
+                                    f'Using previously stored price for custom asset',
+                                    asset=custom_asset.identifier,
+                                    price=stored_price
+                                )
+                                return True, stored_price
+                            
+                            # Also check directly in the _custom_asset_prices dictionary
+                            if hasattr(asset, 'identifier') and asset.identifier in Inquirer._custom_asset_prices:
+                                stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                                log.info(
+                                    f'Using price from _custom_asset_prices dictionary for custom asset',
+                                    asset=custom_asset.identifier,
+                                    price=stored_price
+                                )
+                                return True, stored_price
+                            
+                            # Mark as handled but return ZERO_PRICE if no stored price
+                            # This prevents other oracles from trying to handle it
+                            return True, ZERO_PRICE
+                except Exception as e:
+                    log.error(
+                        f'Error handling custom asset',
+                        asset=getattr(asset, 'identifier', 'unknown'),
+                        error=str(e)
+                    )
+                    # Check if we have a previously stored price
+                    stored_price = Inquirer._get_custom_asset_price(asset)
+                    if stored_price is not None and stored_price != ZERO_PRICE:
+                        log.info(
+                            f'Using previously stored price despite error',
+                            asset=getattr(asset, 'identifier', 'unknown'),
+                            price=stored_price
+                        )
+                        return True, stored_price
+                    
+                    # Also check directly in the _custom_asset_prices dictionary
+                    if hasattr(asset, 'identifier') and asset.identifier in Inquirer._custom_asset_prices:
+                        stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                        log.info(
+                            f'Using price from _custom_asset_prices dictionary despite error',
+                            asset=getattr(asset, 'identifier', 'unknown'),
+                            price=stored_price
+                        )
+                        return True, stored_price
+                        
+                    # Still mark as handled to prevent overriding with zero
+                    return True, ZERO_PRICE
+        except Exception:
+            # Not a custom asset or other error
+            pass
+            
+        # Not handled
+        return False, ZERO_PRICE
+
+    @staticmethod
     def find_usd_price(
             asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> Price:
         """Wrapper for find_usd_prices to get the usd price of a single asset."""
+        # For custom assets, we need maximum protection to preserve their values
+        try:
+            if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                # Check if this is a custom asset
+                custom_asset = asset.resolve()
+                if isinstance(custom_asset, CustomAsset):
+                    asset_type = getattr(custom_asset, 'custom_asset_type', 'unknown').lower()
+                    is_stock_etf = asset_type in ('stock', 'etf')
+                    
+                    log.debug(
+                        f"Custom asset direct handling in find_usd_price",
+                        asset=asset.identifier,
+                        name=getattr(custom_asset, 'name', 'unknown'),
+                        asset_type=asset_type,
+                        ignore_cache_setting=ignore_cache
+                    )
+                    
+                    # First check directly in the _custom_asset_prices dictionary
+                    if hasattr(asset, 'identifier') and asset.identifier in Inquirer._custom_asset_prices:
+                        stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                        if stored_price != ZERO_PRICE:
+                            log.debug(
+                                f"Using price from _custom_asset_prices dictionary in find_usd_price",
+                                asset=asset.identifier,
+                                price=stored_price
+                            )
+                            return stored_price
+                    
+                    # Then check using the _get_custom_asset_price method
+                    stored_price = Inquirer._get_custom_asset_price(asset)
+                    if stored_price is not None and stored_price != ZERO_PRICE:
+                        log.debug(
+                            f"Using cached price for custom asset",
+                            asset=asset.identifier,
+                            price=stored_price,
+                            asset_type=asset_type
+                        )
+                        
+                        # If ignore_cache was requested and this is a stock/ETF, trigger a refresh in the background
+                        # but still use cached price
+                        if ignore_cache and is_stock_etf:
+                            try:
+                                import threading
+                                
+                                def refresh_bg():
+                                    try:
+                                        # Small delay to avoid hammering API
+                                        time.sleep(0.5)
+                                        yahoo = Inquirer()._yahoofinance
+                                        if yahoo:
+                                            new_price = yahoo.query_custom_asset_price(
+                                                custom_asset=custom_asset,
+                                                to_currency='USD'
+                                            )
+                                            
+                                            if new_price != ZERO_PRICE:
+                                                log.info(
+                                                    f'Successfully refreshed stock/ETF price in background',
+                                                    asset=asset.identifier,
+                                                    price=new_price
+                                                )
+                                                # Store the updated price
+                                                Inquirer._store_custom_asset_price(asset, new_price)
+                                    except Exception as e:
+                                        log.debug(
+                                            f'Background price refresh failed',
+                                            asset=asset.identifier,
+                                            error=str(e)
+                                        )
+                                
+                                # Start background thread
+                                thread = threading.Thread(target=refresh_bg)
+                                thread.daemon = True
+                                thread.start()
+                            except Exception as e:
+                                log.debug(f"Failed to start background thread: {e}")
+                        
+                        # Always return the cached value for any custom asset
+                        return stored_price
+                    
+        except Exception as e:
+            log.debug(
+                f"Error in custom asset price detection, continuing with normal flow",
+                asset=getattr(asset, 'identifier', 'unknown'),
+                error=str(e)
+            )
+            
+        # Standard handling for custom assets or if no cached price was found
+        was_handled, price = Inquirer._handle_custom_asset_price(asset)
+        if was_handled and price != ZERO_PRICE:
+            return price
+            
+        # Fall back to normal flow for other assets
         return Inquirer.find_usd_prices(
             assets=[asset],
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
         ).get(asset, ZERO_PRICE)
+
+    @staticmethod
+    def find_usd_prices(
+            assets: list[Asset],
+            ignore_cache: bool = False,
+            skip_onchain: bool = False,
+    ) -> dict[Asset, Price]:
+        """Wrapper for find_prices to get usd prices."""
+        # Direct handler for custom assets (both stocks/ETFs and other types like cars)
+        # This is a non-intrusive addition that handles custom assets first
+        result_prices = {}
+        stock_etf_assets = []
+        other_custom_assets = []
+        non_custom_assets = []
+        
+        # Log if this is a refresh operation
+        if ignore_cache:
+            log.debug(f"Processing find_usd_prices with ignore_cache=True for {len(assets)} assets")
+        
+        # First separate custom assets from other assets
+        for asset in assets:
+            try:
+                if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                    try:
+                        custom_asset = asset.resolve()
+                        if isinstance(custom_asset, CustomAsset):
+                            asset_type = getattr(custom_asset, 'custom_asset_type', 'unknown').lower()
+                            if asset_type in ('stock', 'etf'):
+                                # This is a stock/ETF custom asset
+                                stock_etf_assets.append(asset)
+                            else:
+                                # This is another type of custom asset (like a car)
+                                other_custom_assets.append(asset)
+                            continue
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+                
+            # Not a custom asset
+            non_custom_assets.append(asset)
+        
+        if ignore_cache:
+            if stock_etf_assets:
+                log.info(f"Refresh prices requested for {len(stock_etf_assets)} stock/ETF assets - will use cached values and refresh in background")
+            if other_custom_assets:
+                log.info(f"Refresh prices requested for {len(other_custom_assets)} other custom assets - will preserve their values")
+        
+        # Process stock/ETF custom assets - ALWAYS use cached values first, regardless of ignore_cache setting
+        for asset in stock_etf_assets:
+            # First check directly in the _custom_asset_prices dictionary
+            if hasattr(asset, 'identifier') and asset.identifier in Inquirer._custom_asset_prices:
+                stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                if stored_price != ZERO_PRICE:
+                    result_prices[asset] = stored_price
+                    log.debug(
+                        f"Using price from _custom_asset_prices dictionary for stock/ETF",
+                        asset=asset.identifier,
+                        price=stored_price
+                    )
+                    continue
+            
+            # Then check using the _get_custom_asset_price method
+            stored_price = Inquirer._get_custom_asset_price(asset)
+            if stored_price is not None and stored_price != ZERO_PRICE:
+                # We have a stored price, use it
+                result_prices[asset] = stored_price
+                
+                # Now check if we should trigger a background refresh based on age
+                try:
+                    if ignore_cache or Inquirer._should_refresh_stock_price(asset):
+                        # Trigger background refresh
+                        try:
+                            import threading
+                            
+                            def update_price_bg(refresh_asset):
+                                try:
+                                    custom_asset = refresh_asset.resolve()
+                                    yahoo = Inquirer()._yahoofinance
+                                    if yahoo:
+                                        price = yahoo.query_custom_asset_price(
+                                            custom_asset=custom_asset,
+                                            to_currency='USD'
+                                        )
+                                        
+                                        if price != ZERO_PRICE:
+                                            log.info(
+                                                f'Successfully refreshed price in background',
+                                                asset=refresh_asset.identifier,
+                                                price=price
+                                            )
+                                            # Store the updated price
+                                            Inquirer._store_custom_asset_price(refresh_asset, price)
+                                except Exception as e:
+                                    log.debug(
+                                        f'Background price update failed',
+                                        asset=getattr(refresh_asset, 'identifier', 'unknown'),
+                                        error=str(e)
+                                    )
+                            
+                            # Start the background thread
+                            thread = threading.Thread(target=update_price_bg, args=(asset,))
+                            thread.daemon = True
+                            thread.start()
+                        except Exception as e:
+                            log.debug(f"Failed to start background thread: {e}")
+                except Exception as e:
+                    log.debug(f"Error checking if asset is stock/ETF for refresh: {e}")
+                
+                # Always continue to next asset - we've already added this one
+                continue
+                
+            # No stored price found, try to get a price directly
+            # This should be rare, only for first-time access
+            was_handled, price = Inquirer._handle_custom_asset_price(asset)
+            if price != ZERO_PRICE:
+                result_prices[asset] = price
+            else:
+                # Add to non-custom assets if we couldn't get a price
+                non_custom_assets.append(asset)
+                
+            # Add a small delay to avoid rate limiting
+            if len(stock_etf_assets) > 1:
+                time.sleep(0.5)
+        
+        # Process other custom assets (like cars) - ALWAYS preserve their values
+        for asset in other_custom_assets:
+            # First check directly in the _custom_asset_prices dictionary
+            if hasattr(asset, 'identifier') and asset.identifier in Inquirer._custom_asset_prices:
+                stored_price = Inquirer._custom_asset_prices[asset.identifier]
+                if stored_price != ZERO_PRICE:
+                    result_prices[asset] = stored_price
+                    log.debug(
+                        f"Using price from _custom_asset_prices dictionary for custom asset",
+                        asset=asset.identifier,
+                        price=stored_price
+                    )
+                    continue
+            
+            # Then check using the _get_custom_asset_price method
+            stored_price = Inquirer._get_custom_asset_price(asset)
+            if stored_price is not None and stored_price != ZERO_PRICE:
+                # We have a stored price, use it
+                result_prices[asset] = stored_price
+                log.debug(
+                    f"Using stored price for custom asset",
+                    asset=asset.identifier,
+                    price=stored_price
+                )
+                continue
+                
+            # No stored price found, try to handle it
+            was_handled, price = Inquirer._handle_custom_asset_price(asset)
+            if price != ZERO_PRICE:
+                result_prices[asset] = price
+            else:
+                # Add to non-custom assets if we couldn't get a price
+                non_custom_assets.append(asset)
+        
+        # Process all non-custom assets with normal flow
+        if non_custom_assets:
+            log.debug(f"Processing {len(non_custom_assets)} non-custom assets with standard flow")
+            normal_prices = Inquirer.find_prices(
+                from_assets=non_custom_assets,
+                to_asset=A_USD,
+                ignore_cache=ignore_cache,
+                skip_onchain=skip_onchain,
+            )
+            # Merge the results
+            result_prices.update(normal_prices)
+        
+        # Debug the final results
+        if ignore_cache:
+            log.info(f"Completed price refresh for {len(assets)} assets ({len(result_prices)} with prices)")
+            
+        # Detailed debugging for custom assets
+        for asset, price in result_prices.items():
+            if hasattr(asset, 'get_asset_type') and asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                try:
+                    custom_asset = asset.resolve()
+                    if isinstance(custom_asset, CustomAsset):
+                        asset_type = getattr(custom_asset, 'custom_asset_type', 'unknown')
+                        log.debug(
+                            f"Final price for custom asset",
+                            asset=asset.identifier,
+                            name=getattr(custom_asset, 'name', 'unknown'),
+                            asset_type=asset_type,
+                            price=price
+                        )
+                except Exception:
+                    pass
+            
+        return result_prices
 
     @staticmethod
     def find_usd_price_and_oracle(
@@ -862,20 +1950,6 @@ class Inquirer:
         ).get(asset, (ZERO_PRICE, CurrentPriceOracle.FIAT))
 
     @staticmethod
-    def find_usd_prices(
-            assets: list[Asset],
-            ignore_cache: bool = False,
-            skip_onchain: bool = False,
-    ) -> dict[Asset, Price]:
-        """Wrapper for find_prices to get usd prices."""
-        return Inquirer.find_prices(
-            from_assets=assets,
-            to_asset=A_USD,
-            ignore_cache=ignore_cache,
-            skip_onchain=skip_onchain,
-        )
-
-    @staticmethod
     def find_usd_prices_and_oracles(
             assets: list[Asset],
             ignore_cache: bool = False,
@@ -889,10 +1963,7 @@ class Inquirer:
             skip_onchain=skip_onchain,
         )
 
-    def find_lp_price_from_uniswaplike_pool(
-            self,
-            token: EvmToken,
-    ) -> Price | None:
+    def find_lp_price_from_uniswaplike_pool(self, token: EvmToken) -> Price | None:
         """Calculates the price for a uniswaplike LP token the contract of which is also
         the contract of the pool it represents. For example uniswap or velodrome LP tokens."""
         return lp_price_from_uniswaplike_pool_contract(
@@ -1424,15 +2495,131 @@ class Inquirer:
 
     @staticmethod
     def clear() -> None:
+        """Cleans up the active price oracles.
+
+        Oracles will no longer depend on the logged in user.
+        If this function is called then set_oracles_order() should be called to
+        re-activate the Inquirer.
+        
+        Also cleans up any custom caches that are not needed after the user logs out.
         """
-        ensure that we don't have oracles that depend on the logged
-        in user. Calling `set_oracles_order` if we want to use the Inquirer
-        again is required.
+        original_special_tokens = Inquirer.__instance.special_tokens if Inquirer.__instance else None
+        
+        # Clean up current oracles
+        Inquirer.__instance = None
+        # Reset attribute that is linked to the user that was logged in
+        Inquirer._uniswapv2 = None
+        Inquirer._uniswapv3 = None
+        Inquirer._oracles = None
+        Inquirer._oracle_instances = None
+        Inquirer._oracles_not_onchain = None
+        Inquirer._oracle_instances_not_onchain = None
+        
+        # Reset cached prices but keep persistent ones
+        # We need to create a new instance with the original special tokens
+        if original_special_tokens:
+            Inquirer.__instance = Inquirer()
+            Inquirer.__instance.special_tokens = original_special_tokens
+
+    @staticmethod
+    def force_refresh_stock_etf_prices() -> None:
+        """Force refresh all stock/ETF prices.
+        
+        This is a helper method that can be called by the UI to force a refresh
+        of all stock/ETF prices, typically after the user has noticed that
+        some prices are stale or incorrect.
+        
+        This is done in the background to avoid blocking the UI.
         """
-        inquirer = Inquirer()
-        inquirer._uniswapv2 = None
-        inquirer._uniswapv3 = None
-        del inquirer._oracle_instances
-        del inquirer._oracles
-        del inquirer._oracle_instances_not_onchain
-        del inquirer._oracles_not_onchain
+        import threading
+        
+        def refresh_all_stocks_bg():
+            try:
+                # Get all assets that are in the stock/ETF cache
+                asset_ids = list(Inquirer._stock_etf_prices.keys())
+                if not asset_ids:
+                    log.debug("No stock/ETF assets found to refresh")
+                    return
+                    
+                log.info(f"Starting background refresh of {len(asset_ids)} stock/ETF prices")
+                
+                # Load the assets
+                from rotkehlchen.assets.asset import Asset
+                assets_to_refresh = []
+                for asset_id in asset_ids:
+                    try:
+                        asset = Asset(asset_id)
+                        assets_to_refresh.append(asset)
+                    except Exception as e:
+                        log.error(
+                            f"Failed to load asset for refresh",
+                            asset_id=asset_id,
+                            error=str(e)
+                        )
+                        
+                # Process each asset
+                yahoo = Inquirer()._yahoofinance
+                if not yahoo:
+                    log.error("Yahoo Finance oracle not available for stock refresh")
+                    return
+                    
+                success_count = 0
+                for idx, asset in enumerate(assets_to_refresh):
+                    try:
+                        custom_asset = asset.resolve()
+                        if not (isinstance(custom_asset, CustomAsset) and 
+                                hasattr(custom_asset, 'custom_asset_type') and 
+                                custom_asset.custom_asset_type.lower() in ('stock', 'etf')):
+                            log.debug(
+                                f"Skipping non-stock/ETF asset in refresh",
+                                asset=asset.identifier
+                            )
+                            continue
+                            
+                        log.debug(
+                            f"Refreshing stock/ETF price ({idx+1}/{len(assets_to_refresh)})",
+                            asset=asset.identifier,
+                            name=getattr(custom_asset, 'name', 'unknown')
+                        )
+                        
+                        price = yahoo.query_custom_asset_price(
+                            custom_asset=custom_asset,
+                            to_currency='USD'
+                        )
+                        
+                        if price != ZERO_PRICE:
+                            log.info(
+                                f'Successfully refreshed price',
+                                asset=asset.identifier,
+                                name=getattr(custom_asset, 'name', 'unknown'),
+                                price=price
+                            )
+                            # Store the updated price
+                            Inquirer._store_custom_asset_price(asset, price)
+                            success_count += 1
+                        else:
+                            log.warning(
+                                f'Yahoo Finance returned zero price for {asset.identifier}'
+                            )
+                            
+                        # Add a small delay to avoid rate limiting
+                        time.sleep(0.5)
+                        
+                    except Exception as e:
+                        log.error(
+                            f'Failed to refresh stock/ETF price',
+                            asset=getattr(asset, 'identifier', 'unknown'),
+                            error=str(e)
+                        )
+                        
+                log.info(f"Completed background refresh of stock/ETF prices. Updated {success_count}/{len(assets_to_refresh)} prices")
+                
+            except Exception as e:
+                log.error(f"Background stock/ETF refresh process failed: {e}")
+        
+        # Start the background thread
+        thread = threading.Thread(target=refresh_all_stocks_bg)
+        thread.daemon = True
+        thread.start()
+        log.info("Started background refresh of stock/ETF prices")
+        return

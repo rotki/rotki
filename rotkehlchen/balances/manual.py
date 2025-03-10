@@ -2,13 +2,15 @@ from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, Price
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+import logging
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -95,6 +97,69 @@ def add_manually_tracked_balances(
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to add was given')
+    
+    # Store prices for custom assets before adding to DB
+    from rotkehlchen.inquirer import Inquirer
+    from rotkehlchen.logging import RotkehlchenLogsAdapter
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    log = RotkehlchenLogsAdapter(logger)
+    
+    for entry in data:
+        try:
+            if hasattr(entry, 'asset') and hasattr(entry.asset, 'get_asset_type') and entry.asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                # This is a custom asset
+                custom_asset = entry.asset.resolve()
+                if isinstance(custom_asset, CustomAsset):
+                    # For custom assets, we need to store the price
+                    if hasattr(entry, 'amount') and entry.amount != 0:
+                        # Get the price from the manual balance entry
+                        # This is the value the user entered in the "Price" field
+                        price_value = getattr(entry, '_price', None)
+                        
+                        if price_value is None:
+                            # If we can't get the price directly, try to infer it from other attributes
+                            log.warning(
+                                f"Could not get price directly from manual balance entry, using amount as price",
+                                asset=entry.asset.identifier
+                            )
+                            price_value = entry.amount
+                        
+                        from rotkehlchen.types import Price
+                        from rotkehlchen.fval import FVal
+                        
+                        # Convert to Price object
+                        price = Price(FVal(price_value))
+                        
+                        log.info(
+                            f"Storing price for custom asset from manual balance",
+                            asset=entry.asset.identifier,
+                            price=price,
+                            amount=entry.amount,
+                            asset_type=getattr(custom_asset, 'custom_asset_type', 'unknown')
+                        )
+                        
+                        # Store the price in the custom asset prices dictionary
+                        # This is the key part - store the price so it's preserved during refreshes
+                        Inquirer._store_custom_asset_price(entry.asset, price)
+                        
+                        # Also store the price directly in the _custom_asset_prices dictionary
+                        # This ensures it's available even if _get_custom_asset_price doesn't find it
+                        if hasattr(entry.asset, 'identifier'):
+                            Inquirer._custom_asset_prices[entry.asset.identifier] = price
+                            log.debug(
+                                f"Directly stored price in _custom_asset_prices dictionary",
+                                asset=entry.asset.identifier,
+                                price=price
+                            )
+        except Exception as e:
+            log.error(
+                f"Error storing price for custom asset",
+                asset=getattr(entry.asset, 'identifier', 'unknown'),
+                error=str(e)
+            )
+    
     with db.user_write() as cursor:
         db.ensure_tags_exist(
             cursor=cursor,
@@ -115,6 +180,69 @@ def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBa
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to edit was given')
+    
+    # Update prices for custom assets before editing in DB
+    from rotkehlchen.inquirer import Inquirer
+    from rotkehlchen.logging import RotkehlchenLogsAdapter
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    log = RotkehlchenLogsAdapter(logger)
+    
+    for entry in data:
+        try:
+            if hasattr(entry, 'asset') and hasattr(entry.asset, 'get_asset_type') and entry.asset.get_asset_type() == AssetType.CUSTOM_ASSET:
+                # This is a custom asset
+                custom_asset = entry.asset.resolve()
+                if isinstance(custom_asset, CustomAsset):
+                    # For custom assets, we need to store the price
+                    if hasattr(entry, 'amount') and entry.amount != 0:
+                        # Get the price from the manual balance entry
+                        # This is the value the user entered in the "Price" field
+                        price_value = getattr(entry, '_price', None)
+                        
+                        if price_value is None:
+                            # If we can't get the price directly, try to infer it from other attributes
+                            log.warning(
+                                f"Could not get price directly from manual balance entry, using amount as price",
+                                asset=entry.asset.identifier
+                            )
+                            price_value = entry.amount
+                        
+                        from rotkehlchen.types import Price
+                        from rotkehlchen.fval import FVal
+                        
+                        # Convert to Price object
+                        price = Price(FVal(price_value))
+                        
+                        log.info(
+                            f"Updating price for custom asset from manual balance edit",
+                            asset=entry.asset.identifier,
+                            price=price,
+                            amount=entry.amount,
+                            asset_type=getattr(custom_asset, 'custom_asset_type', 'unknown')
+                        )
+                        
+                        # Store the price in the custom asset prices dictionary
+                        # This is the key part - store the price so it's preserved during refreshes
+                        Inquirer._store_custom_asset_price(entry.asset, price)
+                        
+                        # Also store the price directly in the _custom_asset_prices dictionary
+                        # This ensures it's available even if _get_custom_asset_price doesn't find it
+                        if hasattr(entry.asset, 'identifier'):
+                            Inquirer._custom_asset_prices[entry.asset.identifier] = price
+                            log.debug(
+                                f"Directly stored price in _custom_asset_prices dictionary during edit",
+                                asset=entry.asset.identifier,
+                                price=price
+                            )
+        except Exception as e:
+            log.error(
+                f"Error updating price for custom asset",
+                asset=getattr(entry.asset, 'identifier', 'unknown'),
+                error=str(e)
+            )
+    
     with db.user_write() as cursor:
         db.ensure_tags_exist(
             cursor=cursor,

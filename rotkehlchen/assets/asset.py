@@ -292,25 +292,20 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
         if hasattr(self, 'yahoo_finance') and self.yahoo_finance:
             return self.yahoo_finance
             
-        # For custom assets that might be stocks, try to extract ticker symbol
+        # Special handling for custom assets
         if hasattr(self, 'asset_type') and self.asset_type == AssetType.CUSTOM_ASSET:
             # Check if this is a stock-type custom asset
-            if hasattr(self, 'custom_asset_type') and self.custom_asset_type.lower() in ('stock', 'etf'):
-                # For stocks like "Apple Inc", we should try to use the symbol 
-                # If we have notes with a ticker, use that
-                if hasattr(self, 'notes') and self.notes and ':' in self.notes:
-                    # Extract ticker from notes if format is "ticker: AAPL" or similar
-                    parts = self.notes.split(':')
-                    if len(parts) >= 2 and parts[0].strip().lower() in ('ticker', 'symbol'):
-                        return parts[1].strip()
-                
-                # If we can't find a symbol in notes, use the symbol attribute if available
-                if hasattr(self, 'symbol') and self.symbol:
-                    return self.symbol
-                    
-                # As a last resort, try to use the name as the symbol
-                # This won't work for companies with "Inc" or other suffixes
-                return self.name
+            if hasattr(self, 'custom_asset_type') and hasattr(self, 'notes'):
+                if self.custom_asset_type.lower() in ('stock', 'etf'):
+                    # For stock/ETF custom assets, try to extract ticker from notes
+                    if self.notes and 'ticker:' in self.notes.lower():
+                        ticker_part = self.notes.lower().split('ticker:')[1].strip()
+                        # Extract first word after "ticker:"
+                        ticker = ticker_part.split()[0].upper() if ' ' in ticker_part else ticker_part.upper()
+                        return ticker
+            
+            # For other custom assets, we currently don't support Yahoo Finance
+            raise UnsupportedAsset(f'{self.identifier} is not supported by Yahoo Finance')
 
         # Otherwise default to the asset symbol
         # Yahoo Finance typically uses the actual stock/ETF symbol
@@ -451,7 +446,7 @@ class CustomAsset(AssetWithNameAndType):
             custom_asset_type: str,
             notes: str | None = None,
     ) -> 'CustomAsset':
-        asset = CustomAsset(identifier=identifier)
+        asset = CustomAsset(identifier=identifier, direct_field_initialization=True)
         object.__setattr__(asset, 'asset_type', AssetType.CUSTOM_ASSET)
         object.__setattr__(asset, 'name', name)
         object.__setattr__(asset, 'custom_asset_type', custom_asset_type)
