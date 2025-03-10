@@ -122,7 +122,6 @@
     "vite-plugin-istanbul": "7.0.0",
     "vite-plugin-pwa": "0.21.1",
     "vite-plugin-vue-devtools": "7.7.2",
-    "vite-plugin-vue-layouts": "0.11.0",
     "vitest": "3.0.8",
     "vue-component-type-helpers": "2.2.8",
     "vue-tsc": "2.2.8",
