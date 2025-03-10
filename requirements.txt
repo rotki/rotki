@@ -8,7 +8,7 @@ content-hash==2.0.0
 rotki-pysqlcipher3==2024.10.1
 requests==2.32.3
 urllib3==2.3.0
-coincurve==20.0.0
+coincurve==21.0.0
 base58check==1.0.2
 bech32==1.2.0
 jsonschema==4.23.0
