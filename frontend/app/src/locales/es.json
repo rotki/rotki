@@ -99,15 +99,15 @@
       },
       "crypto_to_crypto": "Error al configurar cripto a cripto: {message}",
       "eth_staking_taxable_after_withdrawal": {
-        "disabled": "Configuración de tributación de staking de ETH deshabilitada correctamente después del retiro",
-        "enabled": "Configuración de tributación de staking de ETH habilitada correctamente después del retiro",
-        "error": "Error al cambiar la configuración de tributación de staking de ETH después del retiro: {message}"
+        "disabled": "Configuración de tributación de staking de ETH tras activarse los retiros deshabilitada correctamente",
+        "enabled": "Configuración de tributación de staking de ETH tras activarse los retiros deshabilitada correctamente",
+        "error": "Error al cambiar la configuración de tributación de staking de ETH después del activarese los retiros: {message}"
       },
       "export_csv_formulas": "Error al configurar la opción para incluir fórmulas en la exportación CSV: {message}",
       "gas_costs": "Error al configurar los costos de gas de Ethereum: {message}",
       "have_csv_summary": "Error al configurar la opción para incluir un resumen en la exportación CSV: {message}",
-      "tax_free": "Período livre de tasas {enabled}",
-      "tax_free_period": "Período isento de tasas definido para {period} dias"
+      "tax_free": "Período extenso de tasas {enabled}",
+      "tax_free_period": "Período extenso de impuestos definido para {period} dias"
     },
     "validation": {
       "tax_free_days": "Por favor, ingrese el número de días",
@@ -116,22 +116,22 @@
   },
   "account_settings_display": {
     "cost_basis_fees": "Las tarifas de la base de costos fueron tomadas en cuenta:",
-    "cost_basis_method": "Método de la base de costos:",
-    "crypto2crypto": "Tomadas en cuenta las transacciones de cripto a cripto:",
+    "cost_basis_method": "Método para calcular el coste base:",
+    "crypto2crypto": "Se tuvieron en cuenta los intercambios de cripto a cripto:",
     "days": "{days} días",
     "eth_staking_taxable_after_withdrawal_enabled": "Los eventos de staking de ETH se omiten hasta que los retiros estén habilitados:",
-    "gas_costs": "Tomadas en cuenta los costos de gas:",
+    "gas_costs": "Se tuvieron en cuenta los costes en gas:",
     "past_cost_basis": "La base de costos pasada fue calculada durante la creación del informe:",
-    "profit_currency": "Moneda de Beneficio:",
+    "profit_currency": "Moneda de beneficio:",
     "subtitle": "Estas configuraciones contables fueron utilizadas durante la creación del informe",
-    "tax_free_period": "Período isento de tasas:",
+    "tax_free_period": "Período extenso de impuestos:",
     "title": "Configuraciones Contables"
   },
   "accounting_settings": {
     "trade": {
       "labels": {
-        "calculate_past_cost_basis": "Calcular la base de costos pasada al crear el informe",
-        "cost_basis_method": "Método de la base de costos",
+        "calculate_past_cost_basis": "Calcular el coste base pasado al crear el informe",
+        "cost_basis_method": "Método para calcular el coste base",
         "eth_staking_taxable_after_withdrawal_enabled": "Should omit ETH staking events from accounting until withdrawals are enabled",
         "include_crypto2crypto": "Take into account crypto to crypto trades",
         "include_fees_in_cost_basis": "Take into account cost basis fees",
