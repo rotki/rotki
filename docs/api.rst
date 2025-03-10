@@ -6308,8 +6308,8 @@ Get saved events of a PnL Report
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson str from_timestamp: Optional. A filter for the from_timestamp of the range of events to query.
    :reqjson str to_timestamp: Optional. A filter for the to_timestamp of the range of events to query.
-   :reqjson list[string] order_by_attributes: Optional. Default is ["timestamp"]. The list of the attributes to order results by.
-   :reqjson list[bool] ascending: Optional. Default is [false]. The order in which to return results depending on the order by attribute.
+   :reqjson list[string][optional] order_by_attributes: Optional. Default is ["timestamp"]. The list of the attributes to order results by. The attributes accepted for sorting are: asset, pnl_free, pnl_taxable and timestamp.
+   :reqjson list[bool][optional] ascending: Optional. Default is [false]. The order in which to return results depending on the order by attribute.
    :reqjson str event_type: Optional. Not used yet. In the future will be a filter for the type of event to query.
 
    **Example Response**:

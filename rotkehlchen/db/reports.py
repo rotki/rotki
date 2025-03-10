@@ -9,6 +9,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.db.settings import DBSettings
+from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -226,14 +227,30 @@ class DBAccountingReports:
         - InputError if the event can not be written to the DB. Probably report id does not exist.
         """
         data = event.serialize_for_db(ts_converter)
+
+        try:
+            asset_symbol = event.asset.symbol_or_name()
+        except WrongAssetType:
+            asset_symbol = None
+
         query = """
         INSERT INTO pnl_events(
-            report_id, timestamp, data
+            report_id, timestamp, data, pnl_taxable, pnl_free, asset
         )
-        VALUES(?, ?, ?);"""
+        VALUES(?, ?, ?, ?, ?, ?);"""
         with self.db.transient_write() as cursor:
             try:
-                cursor.execute(query, (report_id, time, data))
+                cursor.execute(
+                    query,
+                    (
+                        report_id,
+                        time,
+                        data,
+                        str(event.pnl.taxable),
+                        str(event.pnl.free),
+                        asset_symbol,
+                    ),
+                )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(
                     f'Could not write {event} data to the DB due to {e!s}. '

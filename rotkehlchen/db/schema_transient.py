@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS pnl_events (
     report_id INTEGER NOT NULL,
     timestamp INTEGER NOT NULL,
     data TEXT NOT NULL,
+    pnl_taxable TEXT NOT NULL,
+    pnl_free TEXT NOT NULL,
+    asset TEXT,
     FOREIGN KEY (report_id) REFERENCES pnl_reports(identifier) ON DELETE CASCADE ON UPDATE CASCADE
 );
 """
