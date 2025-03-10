@@ -3841,7 +3841,6 @@
     },
     "form": {
       "account": {
-        "label": "Compte associé à la transaction",
         "validation": {
           "non_empty": "Le champ compte ne peut pas être vide"
         }
