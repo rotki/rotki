@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.errors.misc import DBSchemaError
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.logging import RotkehlchenLogger
 
 

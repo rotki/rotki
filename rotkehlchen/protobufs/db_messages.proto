@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+import "all_common.proto";
+
+enum DBConnectionType {
+  USER = 0;
+  TRANSIENT = 1;
+  GLOBAL = 2;
+}
+
+enum DBMethod {
+  INITIALIZE = 0;
+  OPEN_CURSOR = 1;
+  CLOSE_CURSOR = 2;
+  EXECUTE = 3;
+  EXECUTEMANY = 4;
+  EXECUTESCRIPT = 5;
+  ROLLBACK = 6;
+  COMMIT = 7;
+  CLOSE = 8;
+}
+
+message DBWriteResult {
+  int32 rowcount = 1;
+  uint64 lastrowid = 2;
+}
+
+message DBCallData {
+  DBConnectionType connection_type = 1;
+  string db_path = 2;
+  optional string cursor_name = 3;
+  DBMethod method = 4;
+  repeated TypedData args = 5;
+  map<string, TypedData> kwargs = 6;
+}
+
+message DBReturnData {
+  optional DBWriteResult result = 1;
+  optional Error error = 2;
+}

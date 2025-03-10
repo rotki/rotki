@@ -5,13 +5,13 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
     from rotkehlchen.db.history_events import DBHistoryEvents
 
 
 def edit_asset_movements(
         events_db: 'DBHistoryEvents',
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         events: list[AssetMovement],
 ) -> None:
     """

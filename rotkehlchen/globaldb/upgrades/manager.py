@@ -32,7 +32,7 @@ from .v9_v10 import migrate_to_v10
 from .v10_11 import migrate_to_v11
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -226,8 +226,10 @@ def configure_globaldb(
     )
 
     # its not a fresh database and foreign keys are not turned on by default.
-    connection.executescript('PRAGMA foreign_keys=on;')
-    connection.execute('PRAGMA journal_mode=WAL;')
+    for _conn in (connection._conn, connection):  # for both reader and write
+        _conn.executescript('PRAGMA foreign_keys=on;')
+        _conn.execute('PRAGMA journal_mode=WAL;')
+
     if is_fresh_db is True:
         connection.executescript(DB_SCRIPT_CREATE_TABLES)
         with connection.write_ctx() as cursor:

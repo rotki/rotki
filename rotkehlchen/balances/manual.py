@@ -95,14 +95,17 @@ def add_manually_tracked_balances(
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to add was given')
-    with db.user_write() as cursor:
+
+    with db.conn.read_ctx() as cursor:
         db.ensure_tags_exist(
             cursor=cursor,
             given_data=data,
             action='adding',
             data_type='manually tracked balances',
         )
-        db.add_manually_tracked_balances(write_cursor=cursor, data=data)
+
+    with db.user_write() as write_cursor:
+        db.add_manually_tracked_balances(write_cursor=write_cursor, data=data)
 
 
 def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBalance]) -> None:
@@ -115,13 +118,15 @@ def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBa
     """
     if len(data) == 0:
         raise InputError('Empty list of manually tracked balances to edit was given')
-    with db.user_write() as cursor:
+
+    with db.conn.read_ctx() as cursor:
         db.ensure_tags_exist(
             cursor=cursor,
             given_data=data,
             action='editing',
             data_type='manually tracked balances',
         )
+    with db.user_write() as cursor:
         db.edit_manually_tracked_balances(cursor, data)
 
 

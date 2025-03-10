@@ -215,7 +215,7 @@ async function startPythonBackend(
     ...(profilingArgs ? profilingArgs.split(' ') : []),
     ...(profilingCmd ? ['python'] : []),
     '-m',
-    'rotkehlchen',
+    'rotkehlchen.start',
     '--rest-api-port',
     availableWebPort.toString(),
     '--api-cors',
