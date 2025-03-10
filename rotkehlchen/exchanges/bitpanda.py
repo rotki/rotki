@@ -18,7 +18,10 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.exchange import (
+    ExchangeQueryBalances,
+    ExchangeWithoutApiSecret,
+)
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -34,7 +37,6 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     ApiKey,
-    ApiSecret,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -57,13 +59,12 @@ log = RotkehlchenLogsAdapter(logger)
 MAX_PAGE_SIZE = 100
 
 
-class Bitpanda(ExchangeInterface):
+class Bitpanda(ExchangeWithoutApiSecret):
 
     def __init__(
             self,
             name: str,
             api_key: ApiKey,
-            secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ):
@@ -71,7 +72,6 @@ class Bitpanda(ExchangeInterface):
             name=name,
             location=Location.BITPANDA,
             api_key=api_key,
-            secret=secret,
             database=database,
             msg_aggregator=msg_aggregator,
         )

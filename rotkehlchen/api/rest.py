@@ -675,7 +675,7 @@ class RestAPI:
             name: str,
             location: Location,
             api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_secret: ApiSecret | None,
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
             binance_markets: list[str] | None,

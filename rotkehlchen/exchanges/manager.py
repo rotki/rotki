@@ -19,7 +19,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
-from .constants import SUPPORTED_EXCHANGES
+from .constants import EXCHANGES_WITHOUT_API_SECRET, SUPPORTED_EXCHANGES
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -198,7 +198,7 @@ class ExchangeManager:
             name: str,
             location: Location,
             api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_secret: ApiSecret | None,
             database: 'DBHandler',
             passphrase: str | None = None,
             **kwargs: Any,
@@ -263,15 +263,18 @@ class ExchangeManager:
         elif credentials.location == Location.BINANCEUS:
             kwargs['uri'] = BINANCEUS_BASE_URL
 
-        return exchange_ctor(
-            name=credentials.name,
-            api_key=credentials.api_key,
-            secret=credentials.api_secret,
-            database=database,
-            msg_aggregator=self.msg_aggregator,
+        params = {
+            'name': credentials.name,
+            'api_key': credentials.api_key,
+            'database': database,
+            'msg_aggregator': self.msg_aggregator,
             # remove all empty kwargs
             **{k: v for k, v in kwargs.items() if v is not None},
-        )
+        }
+        if credentials.location not in EXCHANGES_WITHOUT_API_SECRET:
+            params['secret'] = credentials.api_secret
+
+        return exchange_ctor(**params)
 
     def initialize_exchanges(
             self,

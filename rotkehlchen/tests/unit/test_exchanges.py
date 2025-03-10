@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 from rotkehlchen.api.server import APIServer
@@ -6,6 +7,9 @@ from rotkehlchen.exchanges.binance import Binance
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def test_exchanges_filtering(database, exchange_manager, function_scope_messages_aggregator):
@@ -190,3 +194,26 @@ def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: AP
     selected_pairs = rotki.exchange_manager.connected_exchanges[Location.BINANCE][0].selected_pairs  # type: ignore[attr-defined] # binance has the attribute present
     assert isinstance(selected_pairs, list)
     assert selected_pairs == expected_trade_pairs
+
+
+def test_bitpanda_credentials_in_db(database: 'DBHandler') -> None:
+    """Regression test for bitpanda credentials should work with NULL api_secret in database.
+
+    Bitpanda only requires api_key, not api_secret. This test verifies the application
+    handles this case correctly when retrieving credentials from the database.
+
+    https://github.com/rotki/rotki/issues/9586
+    """
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO user_credentials(name, location, api_key) VALUES (?, ?, ?)',
+            ('Bitpanda 1', Location.BITPANDA.serialize_for_db(), make_api_key()),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        credentials = database.get_exchange_credentials(
+            cursor=cursor,
+            location=Location.BITPANDA,
+        )
+
+    assert len(credentials[Location.BITPANDA]) == 1
