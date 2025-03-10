@@ -50,7 +50,7 @@ export function statisticsApi(): StatisticsApi {
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
   const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = useStatisticsStore();
-  const { historicalDailyPriceStatus, historicalPriceStatus } = storeToRefs(useHistoricCachePriceStore());
+  const { failedDailyPrices, historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
   const {
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
@@ -71,9 +71,9 @@ export function statisticsApi(): StatisticsApi {
     async cancelHistoricPriceTask(): Promise<void> {
       await cancelTaskByTaskType(TaskType.FETCH_HISTORIC_PRICE);
     },
+    failedDailyPrices,
     fetchNetValue,
     historicalDailyPriceStatus,
-    historicalPriceStatus,
     isQueryingDailyPrices: useIsTaskRunning(TaskType.FETCH_DAILY_HISTORIC_PRICE),
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();

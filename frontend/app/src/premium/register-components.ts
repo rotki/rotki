@@ -9,6 +9,7 @@ import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
+import MissingDailyPrices from '@/components/graphs/MissingDailyPrices.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
@@ -126,6 +127,8 @@ export function registerComponents(app: App): void {
   // Version 26 - 1.34
   app.component('RefreshButton', RefreshButton);
   app.component('AssetBalanceStatisticSourceSetting', AssetBalanceStatisticSourceSetting);
+
+  app.component('MissingDailyPrices', MissingDailyPrices);
   ruiRegister(app);
   logger.info('Components registered');
 }

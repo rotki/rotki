@@ -9,6 +9,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
 
 const props = defineProps<{
@@ -24,7 +25,17 @@ const { t } = useI18n();
 const { isPinned, items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
+const refreshing = ref<boolean>(false);
+
+const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
+const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
+
+const tableRef = ref();
+const tableContainer = computed(() => get(tableRef)?.$el);
+
+const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
+const { getHistoricPrice } = useBalancePricesStore();
 
 function createKey(item: MissingPrice) {
   return item.fromAsset + item.toAsset + item.time;
@@ -33,13 +44,6 @@ function createKey(item: MissingPrice) {
 async function getHistoricalPrices() {
   set(prices, await fetchHistoricalPrices());
 }
-
-onMounted(async () => {
-  await getHistoricalPrices();
-});
-
-const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
-const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
 
 const formattedItems = computed<EditableMissingPrice[]>(() =>
   get(items).map((item) => {
@@ -102,12 +106,9 @@ async function updatePrice(item: EditableMissingPrice) {
     });
   }
 
+  resetHistoricalPricesData([payload]);
   await getHistoricalPrices();
 }
-
-const tableRef = ref();
-
-const tableContainer = computed(() => get(tableRef)?.$el);
 
 const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
   {
@@ -137,10 +138,6 @@ const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
 
 useRememberTableSorting<EditableMissingPrice>(TableId.REPORTS_MISSING_PRICES, sort, headers);
 
-const { getHistoricPrice } = useBalancePricesStore();
-
-const refreshing = ref<boolean>(false);
-
 async function refreshHistoricalPrice(item: EditableMissingPrice) {
   set(refreshing, true);
   const rateFromHistoricPrice = await getHistoricPrice({
@@ -163,6 +160,10 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
   }
   set(refreshing, false);
 }
+
+onMounted(async () => {
+  await getHistoricalPrices();
+});
 </script>
 
 <template>
