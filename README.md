@@ -68,6 +68,7 @@ For **advanced features**, check out the [Pro Version](https://rotki.com/product
 ✅ **Transaction Decoding**: Readable breakdown of blockchain transactions, exchange events and other history.  
 ✅ **Data Customization**: Personalize UI, main currency, language, and more.  
 ✅ **PnL Reports**: Perform detailed profit/loss analysis using customizable accounting settings.  
+✅ **Stock & ETF Tracking**: Track traditional investments using Yahoo Finance integration for accurate pricing.
 
 ---
 
