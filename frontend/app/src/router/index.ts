@@ -2,7 +2,6 @@
 
 import { useSessionAuthStore } from '@/store/session/auth';
 import { startPromise } from '@shared/utils';
-import { setupLayouts } from 'virtual:generated-layouts';
 import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 
@@ -10,7 +9,7 @@ const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 
 export const router = createRouter({
   history: createWebHashHistory(base),
-  routes: setupLayouts(routes),
+  routes,
   scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {
       const element = document.getElementById(to.hash.replace(/#/, ''));
