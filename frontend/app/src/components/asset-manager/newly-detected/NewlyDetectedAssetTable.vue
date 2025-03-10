@@ -10,7 +10,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, getAddressFromEvmIdentifier } from '@rotki/common';
 
 interface Token extends NewDetectedToken {
   address: string;

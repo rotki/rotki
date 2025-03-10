@@ -16,7 +16,7 @@ import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils'
 import { downloadFileByTextContent } from '@/utils/download';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
-import { Severity } from '@rotki/common';
+import { Blockchain, Severity } from '@rotki/common';
 import { z } from 'zod';
 
 const CSVRow = z.object({

@@ -1,4 +1,5 @@
 import { nonEmptyProperties, toRem } from '@/utils/data';
+import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 
 describe('utils/data', () => {

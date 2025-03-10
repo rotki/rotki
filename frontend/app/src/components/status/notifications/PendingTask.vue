@@ -4,6 +4,7 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useReportsStore } from '@/store/reports';
 import { TaskType } from '@/types/task-type';
 import { calculatePercentage } from '@/utils/calculation';
+import { bigNumberify } from '@rotki/common';
 import dayjs from 'dayjs';
 
 const props = defineProps<{ task: Task<TaskMeta> }>();

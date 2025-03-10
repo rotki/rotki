@@ -7,7 +7,7 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
-import { HistoryEventEntryType } from '@rotki/common';
+import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

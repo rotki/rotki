@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { rgbPointsToHex } from '@rotki/common';
+
 const model = defineModel<string | undefined>({ required: true });
 
 const contextColorsInHex: string[] = contextColors

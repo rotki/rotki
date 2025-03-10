@@ -10,7 +10,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, toSentenceCase } from '@rotki/common';
 
 interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;

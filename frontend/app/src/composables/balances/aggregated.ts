@@ -1,6 +1,5 @@
 import type { AssetBalances } from '@/types/balances';
 import type { AssetPriceInfo } from '@/types/prices';
-import type { AssetBalanceWithPrice, ExclusionSource } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -13,6 +12,7 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { samePriceAssets } from '@/types/blockchain';
 import { sumAssetBalances } from '@/utils/balances';
 import { uniqueStrings } from '@/utils/data';
+import { type AssetBalanceWithPrice, type ExclusionSource, Zero } from '@rotki/common';
 
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;

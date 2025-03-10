@@ -4,6 +4,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { Routes } from '@/router/routes';
 import { useLocationStore } from '@/store/locations';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { Blockchain } from '@rotki/common';
 
 export const useLocations = createSharedComposable(() => {
   const { tradeLocations } = storeToRefs(useLocationStore());

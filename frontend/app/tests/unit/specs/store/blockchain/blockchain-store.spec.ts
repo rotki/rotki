@@ -1,7 +1,7 @@
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
 import { useBlockchainStore } from '@/store/blockchain';
-import { Blockchain } from '@rotki/common';
+import { bigNumberify, Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 describe('useBlockchainStore', () => {

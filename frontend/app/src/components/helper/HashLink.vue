@@ -10,7 +10,7 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 import { truncateAddress } from '@/utils/truncate';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, consistOfNumbers } from '@rotki/common';
 
 interface HashLinkProps {
   showIcon?: boolean;

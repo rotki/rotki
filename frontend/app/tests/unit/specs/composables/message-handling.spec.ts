@@ -4,7 +4,7 @@ import { useMessageHandling } from '@/composables/message-handling';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { SocketMessageType } from '@/types/websocket-messages';
-import { Blockchain } from '@rotki/common';
+import { assert, Blockchain } from '@rotki/common';
 import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 

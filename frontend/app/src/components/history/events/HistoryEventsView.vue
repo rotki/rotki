@@ -42,7 +42,7 @@ import { TaskType } from '@/types/task-type';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
-import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
+import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { not } from '@vueuse/math';
 import { isEqual } from 'es-toolkit';

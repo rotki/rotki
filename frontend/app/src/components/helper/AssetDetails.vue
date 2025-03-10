@@ -4,6 +4,7 @@ import type { StyleValue } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { getAddressFromEvmIdentifier } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

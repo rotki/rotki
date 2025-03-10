@@ -2,14 +2,7 @@ import type { CommonMessageHandler, MissingApiKey } from '@/types/websocket-mess
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { getServiceRegisterUrl } from '@/utils/url';
-import {
-  type Blockchain,
-  type Notification,
-  type NotificationAction,
-  NotificationCategory,
-  Priority,
-  Severity,
-} from '@rotki/common';
+import { type Blockchain, type Notification, type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 
 export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<MissingApiKey> {

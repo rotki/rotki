@@ -1,7 +1,7 @@
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
-import { HistoryEventEntryType } from '@rotki/common';
+import { HistoryEventEntryType, One } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';

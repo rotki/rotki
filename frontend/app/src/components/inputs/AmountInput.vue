@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { logger } from '@/utils/logging';
+import { assert } from '@rotki/common';
 import { RuiTextField } from '@rotki/ui-library';
 import IMask, { type InputMask } from 'imask';
 

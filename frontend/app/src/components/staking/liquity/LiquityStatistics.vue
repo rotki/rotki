@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
@@ -8,6 +7,7 @@ import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
 import { bigNumberSum } from '@/utils/calculation';
+import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

@@ -7,6 +7,7 @@ import { useFormStateWatcher } from '@/composables/form';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+import { toSentenceCase } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 

@@ -1,5 +1,6 @@
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/assets/retrieval', () => ({

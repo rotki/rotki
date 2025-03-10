@@ -2,6 +2,7 @@
 import type { ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { calculateTotalProfitLoss } from '@/utils/report';
+import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

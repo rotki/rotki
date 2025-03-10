@@ -7,6 +7,7 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { toSentenceCase } from '@rotki/common';
 
 interface LocationData {
   evmChain: string;

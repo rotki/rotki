@@ -3,6 +3,7 @@ import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
 

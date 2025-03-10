@@ -19,7 +19,7 @@ import { useStatusStore } from '@/store/status';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { CURRENCY_USD } from '@/types/currencies';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { type BigNumber, Blockchain } from '@rotki/common';
+import { type BigNumber, Blockchain, toSentenceCase } from '@rotki/common';
 
 type AssetLocations = AssetLocation[];
 

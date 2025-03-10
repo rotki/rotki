@@ -11,7 +11,7 @@ import { useStatisticsStore } from '@/store/statistics';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
-import { TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
+import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
 
 const { t } = useI18n();

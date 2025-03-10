@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
-import type { Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -35,6 +34,7 @@ import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
 import { createNewTrade } from '@/utils/history/trades';
+import { toSnakeCase, type Writeable } from '@rotki/common';
 import { omit } from 'es-toolkit';
 
 const props = withDefaults(

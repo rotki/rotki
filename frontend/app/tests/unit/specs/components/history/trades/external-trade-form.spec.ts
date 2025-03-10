@@ -6,6 +6,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { type Trade, TradeType } from '@/types/history/trade';
 import { setupDayjs } from '@/utils/date';
 import { createNewTrade } from '@/utils/history/trades';
+import { One } from '@rotki/common';
 import { RuiAutoComplete } from '@rotki/ui-library';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import BigNumber from 'bignumber.js';

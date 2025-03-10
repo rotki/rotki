@@ -7,6 +7,7 @@ import type {
 } from '@/types/manual-balances';
 import type BigNumber from 'bignumber.js';
 import { includes } from '@/utils/blockchain/accounts/common';
+import { Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 
 interface Filters {

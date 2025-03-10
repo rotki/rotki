@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { MissingAcquisition, SelectedReport } from '@/types/reports';
-import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -9,6 +8,7 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { bigNumberSum } from '@/utils/calculation';
+import { assert, type BigNumber } from '@rotki/common';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 

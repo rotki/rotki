@@ -4,6 +4,7 @@ import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag, type Tag } from '@/types/tags';
+import { invertColor, randomColor } from '@rotki/common';
 
 const modelValue = defineModel<string[]>({ required: true });
 

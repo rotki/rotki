@@ -1,6 +1,7 @@
 import type { WebVersion } from '@/types';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import { getBackendUrl } from '@/utils/account-management';
+import { assert } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 
 interface UseInteropReturn {

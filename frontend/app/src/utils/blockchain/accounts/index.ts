@@ -17,7 +17,6 @@ import type {
   EthBalance,
 } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import type { Balance } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { Ref } from 'vue';
 import { sum } from '@/utils/balances';
@@ -26,6 +25,7 @@ import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/cr
 import { getAccountAddress, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
+import { type Balance, Zero } from '@rotki/common';
 import { camelCase, omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 

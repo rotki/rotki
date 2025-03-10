@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { toHumanReadable } from '@rotki/common';
 
 const props = defineProps<{
   counterparty: string;

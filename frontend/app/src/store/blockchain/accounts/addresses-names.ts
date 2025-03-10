@@ -22,7 +22,7 @@ import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, isValidEthAddress } from '@rotki/common';
 
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());

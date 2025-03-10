@@ -9,7 +9,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
 import { isNft } from '@/utils/nft';
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
+import { NotificationCategory, type NotificationPayload, One, Severity, Zero } from '@rotki/common';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;
