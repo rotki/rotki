@@ -1771,7 +1771,7 @@ Setup or remove an exchange
    :reqjson string name: A name to give to this exchange's key
    :reqjson string location: The location of the exchange to setup
    :reqjson string api_key: The api key with which to setup the exchange
-   :reqjson string api_secret: The api secret with which to setup the exchange
+   :reqjson string api_secret: The API secret for the exchange. Required for all exchanges except Bitpanda, which only uses API key.
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
    :reqjson list binance_markets: An optional setting for binance and binanceus. A list of string for markets that should be queried.

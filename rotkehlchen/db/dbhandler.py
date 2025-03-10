@@ -1882,6 +1882,7 @@ class DBHandler:
                 continue
 
             passphrase = None if entry[4] is None else entry[4]
+            api_secret = '' if entry[3] is None else entry[3]
             try:
                 location = Location.deserialize_from_db(entry[1])
             except DeserializationError as e:
@@ -1899,7 +1900,7 @@ class DBHandler:
                 name=entry[0],
                 location=location,
                 api_key=ApiKey(entry[2]),
-                api_secret=ApiSecret(str.encode(entry[3])),
+                api_secret=ApiSecret(str.encode(api_secret)),
                 passphrase=passphrase,
             ))
 
