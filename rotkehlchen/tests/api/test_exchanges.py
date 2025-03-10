@@ -19,7 +19,11 @@ from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
 )
-from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import (
+    EXCHANGES_WITH_PASSPHRASE,
+    EXCHANGES_WITHOUT_API_SECRET,
+    SUPPORTED_EXCHANGES,
+)
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
@@ -126,8 +130,9 @@ def test_setup_exchange(rotkehlchen_api_server: 'APIServer') -> None:
             'location': str(location),
             'name': f'my_{location!s}',
             'api_key': api_key,
-            'api_secret': api_secret,
         }
+        if location not in EXCHANGES_WITHOUT_API_SECRET:
+            data['api_secret'] = api_secret
         if location in EXCHANGES_WITH_PASSPHRASE:
             data['passphrase'] = '123'
         response = requests.put(
@@ -1087,3 +1092,22 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges: 'APIServer')
     assert 'FTTBNB' not in result
     if ci_run is False:
         assert binance_pairs_num > binanceus_pairs_num
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_setup_bitpanda_exchange(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that setting up Bitpanda exchange works as expected.
+
+    This is a regression test that verifies Bitpanda can be added
+    without providing an API secret.
+    """
+    data = {
+        'location': str(Location.BITPANDA),
+        'name': 'my_bitpanda',
+        'api_key': make_random_uppercasenumeric_string(size=10),
+    }
+    with mock_validate_api_key_success(Location.BITPANDA):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
+        )
+    assert_proper_response(response)

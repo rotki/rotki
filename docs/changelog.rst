@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`9586` Fix an issue where adding a Bitpanda exchange account would fail due to incorrectly requiring an API secret when Bitpanda only uses API keys.
 * :feature:`9583` Allow sorting of the PnL reports table.
 * :bug:`-` Prevents too many error notifications when beaconcha.in rate limits the app for long periods of time.
 * :bug:`-` Uniswap v3 swaps in ethereum using the universal router 2 will now be decoded properly.

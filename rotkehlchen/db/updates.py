@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from collections.abc import Sequence
 from sqlite3 import OperationalError
 from typing import TYPE_CHECKING, Any
@@ -59,7 +60,7 @@ class RotkiDataUpdater:
     def __init__(self, msg_aggregator: 'MessagesAggregator', user_db: 'DBHandler') -> None:
         self.msg_aggregator = msg_aggregator
         self.user_db = user_db
-        self.branch = 'develop'
+        self.branch = os.getenv('GITHUB_BASE_REF', 'develop')
         if is_production():
             self.branch = 'main'
         self.update_type_mappings = {  # better than dynamic getattr. More explicit, negligible memory overhead if any  # noqa: E501

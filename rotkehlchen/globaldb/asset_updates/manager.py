@@ -1,4 +1,5 @@
 import logging
+import os
 import sqlite3
 from collections import defaultdict
 from contextlib import suppress
@@ -179,7 +180,7 @@ class AssetsUpdater:
         self.asset_parser = AssetParser()
         self.asset_collection_parser = AssetCollectionParser()
         self.multiasset_mappings_parser = MultiAssetMappingsParser()
-        self.branch = 'develop'
+        self.branch = os.getenv('GITHUB_BASE_REF', 'develop')
         if is_production():
             self.branch = 'master'
 
