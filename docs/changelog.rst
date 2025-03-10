@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9583` Allow sorting of the PnL reports table.
 * :bug:`-` Prevents too many error notifications when beaconcha.in rate limits the app for long periods of time.
 * :bug:`-` Uniswap v3 swaps in ethereum using the universal router 2 will now be decoded properly.
 * :bug:`-` Batched cowswap trades will no longer raise unknown token error in some rare cases.
