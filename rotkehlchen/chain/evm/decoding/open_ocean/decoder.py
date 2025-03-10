@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -42,9 +42,11 @@ class OpenOceanDecoder(DecoderInterface, ABC):
             raw_amount: int,
     ) -> tuple['CryptoAsset', 'FVal']:
         """Get asset and normalized amount from asset address and raw amount.
-        Specifically handles when asset is native rather than erc20 token.
+        Handles decimals when asset is native rather than an erc20 token.
+        Uses native token if address is ZERO_ADDRESS:
+        https://github.com/openocean-finance/OpenOceanExchangeV2/blob/5e83cc1cf0a29a3ab23e405f9528b876ff8b1478/contracts/libraries/UniversalERC20.sol#L62
         """
-        asset = self.base.get_or_create_evm_asset(address=asset_address)
+        asset = self.base.get_or_create_evm_asset(address=asset_address) if asset_address != ZERO_ADDRESS else self.evm_inquirer.native_token  # noqa: E501
         amount = token_normalized_value_decimals(
             token_amount=raw_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS if asset == self.evm_inquirer.native_token else asset.resolve_to_evm_token().decimals,  # noqa: E501

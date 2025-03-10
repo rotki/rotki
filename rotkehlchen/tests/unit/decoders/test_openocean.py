@@ -10,7 +10,14 @@ from rotkehlchen.chain.evm.decoding.open_ocean.constants import (
     OPENOCEAN_LABEL,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ARB, A_BSC_BNB, A_ETH, A_POLYGON_POS_MATIC, A_WETH
+from rotkehlchen.constants.assets import (
+    A_ARB,
+    A_BSC_BNB,
+    A_ETH,
+    A_POLYGON_POS_MATIC,
+    A_WETH,
+    A_XDAI,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -22,6 +29,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -438,3 +446,55 @@ def test_openocean_swap_on_binance_sc(
         counterparty=CPT_OPENOCEAN,
         address=string_to_evm_address('0x55877bD7F2EE37BDe55cA4B271A3631f3A7ef121'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x1Bc91Ad00C40ddE565a055bbe39069b84868738e']])
+def test_openocean_swap_xdai_to_token(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x806a840fd2c7ed43eefb2069a3a1d1921b668f3762a3ec6928549055d5b65453')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_amount, spend_amount, receive_amount = gnosis_accounts[0], TimestampMS(1741275975000), '0.000389004', '18.7', '18.651429'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_XDAI,
+            amount=FVal(spend_amount),
+            location_label=user_address,
+            notes=f'Swap {spend_amount} XDAI in {OPENOCEAN_LABEL}',
+            counterparty=CPT_OPENOCEAN,
+            address=OPENOCEAN_EXCHANGE_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+            amount=FVal(receive_amount),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} USDC from {OPENOCEAN_LABEL} swap',
+            counterparty=CPT_OPENOCEAN,
+            address=string_to_evm_address('0x8D2B7e5501Eb6D92F8e349f2FEbe785DD070bE74'),
+        ),
+    ]
