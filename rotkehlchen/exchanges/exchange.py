@@ -67,29 +67,25 @@ class ExchangeWithExtras:
         self.edit_exchange_extras(extras)
 
 
-class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
+class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
+    """Base class for exchanges that don't necessarily require a secret key."""
 
     def __init__(
             self,
             name: str,
             location: Location,
             api_key: ApiKey,
-            secret: ApiSecret,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
     ):
         assert isinstance(api_key, T_ApiKey), (
             f'api key for {name} should be a string'
         )
-        assert isinstance(secret, T_ApiSecret), (
-            f'secret for {name} should be a bytestring'
-        )
         super().__init__()
         self.name = name
         self.location = location
         self.db = database
         self.api_key = api_key
-        self.secret = secret
         self.msg_aggregator = msg_aggregator
         self.first_connection_made = False
         self.session = create_session()
@@ -123,10 +119,8 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         """
         if credentials.api_key is not None:
             self.api_key = credentials.api_key
-        if credentials.api_secret is not None:
-            self.secret = credentials.api_secret
 
-        return credentials.api_key is not None or credentials.api_secret is not None or credentials.passphrase is not None  # noqa: E501
+        return credentials.api_key is not None or credentials.passphrase is not None
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Returns the balances held in the exchange in the following format:
@@ -455,3 +449,41 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 'details': details,
             },
         )
+
+
+class ExchangeInterface(ExchangeWithoutApiSecret):
+    """Exchange interface for exchanges that require a secret key."""
+
+    def __init__(
+            self,
+            name: str,
+            location: Location,
+            api_key: ApiKey,
+            secret: ApiSecret,
+            database: 'DBHandler',
+            msg_aggregator: 'MessagesAggregator',
+    ):
+        super().__init__(
+            name=name,
+            location=location,
+            api_key=api_key,
+            database=database,
+            msg_aggregator=msg_aggregator,
+        )
+        assert isinstance(secret, T_ApiSecret), (
+            f'secret for {name} should be a bytestring'
+        )
+        self.secret = secret
+
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        """Edits the exchange object with new credentials given from the API
+        Returns true if an edit happened and false otherwise.
+
+        Needs to be implemented for each subclass
+        """
+        if credentials.api_key is not None:
+            self.api_key = credentials.api_key
+        if credentials.api_secret is not None:
+            self.secret = credentials.api_secret
+
+        return credentials.api_key is not None or credentials.api_secret is not None or credentials.passphrase is not None  # noqa: E501

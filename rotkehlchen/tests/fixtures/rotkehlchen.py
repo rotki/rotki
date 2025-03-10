@@ -14,7 +14,7 @@ from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
-from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
+from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, EXCHANGES_WITHOUT_API_SECRET
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
@@ -743,7 +743,7 @@ def rotkehlchen_api_server_with_exchanges(
             name=exchangeobj.name,
             location=exchange_location,
             api_key=exchangeobj.api_key,
-            api_secret=exchangeobj.secret,
+            api_secret=exchangeobj.secret if exchange_location not in EXCHANGES_WITHOUT_API_SECRET else None,  # noqa: E501
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
         )

@@ -1705,7 +1705,7 @@ class DBHandler:
             name: str,
             location: Location,
             api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_secret: ApiSecret | None,
             passphrase: str | None = None,
             kraken_account_type: KrakenAccountType | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
@@ -1717,7 +1717,7 @@ class DBHandler:
             cursor.execute(
                 'INSERT INTO user_credentials '
                 '(name, location, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?, ?)',
-                (name, location.serialize_for_db(), api_key, api_secret.decode(), passphrase),
+                (name, location.serialize_for_db(), api_key, api_secret.decode() if api_secret is not None else None, passphrase),  # noqa: E501
             )
 
             if location == Location.KRAKEN and kraken_account_type is not None:
@@ -1899,7 +1899,7 @@ class DBHandler:
                 name=entry[0],
                 location=location,
                 api_key=ApiKey(entry[2]),
-                api_secret=ApiSecret(str.encode(entry[3])),
+                api_secret=ApiSecret(str.encode(entry[3])) if entry[3] is not None else None,
                 passphrase=passphrase,
             ))
 

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`9586` Adding a new Bitpanda exchange account should now work correctly again.
 * :bug:`-` OpenOcean native token swaps should now be decoded correctly on chains where the native token is not ETH.
 * :feature:`9583` Allow sorting of the PnL reports table.
 * :bug:`-` Prevents too many error notifications when beaconcha.in rate limits the app for long periods of time.
