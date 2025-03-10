@@ -100,7 +100,7 @@
       "crypto_to_crypto": "Error al configurar cripto a cripto: {message}",
       "eth_staking_taxable_after_withdrawal": {
         "disabled": "Configuración de tributación de staking de ETH tras activarse los retiros deshabilitada correctamente",
-        "enabled": "Configuración de tributación de staking de ETH tras activarse los retiros deshabilitada correctamente",
+        "enabled": "Configuración de tributación de staking de ETH tras activarse los retiros habilitada correctamente",
         "error": "Error al cambiar la configuración de tributación de staking de ETH después del activarese los retiros: {message}"
       },
       "export_csv_formulas": "Error al configurar la opción para incluir fórmulas en la exportación CSV: {message}",
