@@ -217,7 +217,7 @@ export function useMessageHandling(): UseMessageHandling {
       addNotification(await handleProgressUpdates(message.data));
     }
     else {
-      logger.warn(`Unsupported socket message received: '${type}'`);
+      logger.warn(`Unsupported socket message received: '${type.toString()}'`);
     }
 
     notifications.forEach(notify);
