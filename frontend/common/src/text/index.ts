@@ -209,32 +209,11 @@ export function pluralizeLastWord(sentence: string): string {
   return words.join(' ');
 }
 
-export function sanitizeAddress(address?: string): string {
-  if (!address)
-    return '';
-
-  return address.replace(/[^\da-z]+/gi, '');
-}
-
 export function isValidEthAddress(address?: string): boolean {
   if (!address)
     return false;
 
   return /^0x[\dA-Fa-f]{40}$/.test(address);
-}
-
-export function isValidBtcAddress(address?: string): boolean {
-  if (!address)
-    return false;
-
-  return /^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address);
-}
-
-export function isValidBchAddress(address?: string): boolean {
-  if (!address)
-    return false;
-
-  return /^(bitcoincash:)?[pq][\da-z]{41}$/i.test(address);
 }
 
 export function isValidTxHash(address?: string): boolean {

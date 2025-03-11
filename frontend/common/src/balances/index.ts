@@ -23,17 +23,11 @@ export const Percentage = z.string().refine((arg) => {
   message: 'Percentage must be between 0 and 100',
 });
 
-export type Percentage = z.infer<typeof Percentage>;
-
 const WithPrice = z.object({ usdPrice: NumericString });
 
-export const AssetBalanceWithPriceBeforeBreakdown = AssetBalance.merge(WithPrice);
+const AssetBalanceWithPriceBeforeBreakdown = AssetBalance.merge(WithPrice);
 const AssetBalanceWithPrice = AssetBalanceWithPriceBeforeBreakdown.extend({
   breakdown: z.array(AssetBalanceWithPriceBeforeBreakdown).optional(),
 });
 
 export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;
-
-export interface HasBalance {
-  readonly balance: Balance;
-}

@@ -11,7 +11,7 @@ const Eth2DailyStat = z.object({
 
 export type Eth2DailyStat = z.infer<typeof Eth2DailyStat>;
 
-export type EthStakingDailyStats = Eth2DailyStat & { ownershipPercentage?: string };
+type EthStakingDailyStats = Eth2DailyStat & { ownershipPercentage?: string };
 
 export const Eth2DailyStats = z.object({
   entries: z.array(Eth2DailyStat),
@@ -36,7 +36,7 @@ const EthStakingStats = z.object({
   withdrawals: NumericString.optional(),
 });
 
-export type EthStakingStats = z.infer<typeof EthStakingStats>;
+type EthStakingStats = z.infer<typeof EthStakingStats>;
 
 export const EthStakingPerformanceResponse = z.object({
   entriesFound: z.number(),
@@ -47,7 +47,7 @@ export const EthStakingPerformanceResponse = z.object({
 
 export type EthStakingPerformanceResponse = z.infer<typeof EthStakingPerformanceResponse>;
 
-export type EthStakingValidatorPerformance = EthStakingStats & {
+type EthStakingValidatorPerformance = EthStakingStats & {
   index: number;
   status?: string;
   total?: BigNumber;
@@ -98,12 +98,6 @@ interface EthStakingValidatorFilter {
 export type EthStakingFilter = EthStakingDepositorFilter | EthStakingValidatorFilter;
 
 export type EthStakingFilterType = 'address' | 'validator';
-
-export interface StakingBalance {
-  publicKey: string;
-  usdValue: BigNumber;
-  amount: BigNumber;
-}
 
 export interface EthStakingPeriod {
   fromTimestamp?: number;

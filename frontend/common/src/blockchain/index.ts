@@ -15,5 +15,3 @@ export enum Blockchain {
   SCROLL = 'scroll',
   ZKSYNC_LITE = 'zksync_lite',
 }
-
-export type BlockchainSelection = Blockchain | 'ALL';

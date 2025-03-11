@@ -10,7 +10,7 @@ export enum EvmTokenKind {
   ERC721 = 'erc721',
 }
 
-export const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
+const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
 
 const UnderlyingToken = z.object({
   address: z.string(),
@@ -20,7 +20,7 @@ const UnderlyingToken = z.object({
 
 export type UnderlyingToken = z.infer<typeof UnderlyingToken>;
 
-export const BaseAsset = z.object({
+const BaseAsset = z.object({
   coingecko: z.string().nullish(),
   cryptocompare: z.string().nullish(),
   evmChain: z.string().nullish(),
@@ -31,8 +31,6 @@ export const BaseAsset = z.object({
   symbol: z.string().nullish(),
   tokenKind: EvmTokenKindEnum.nullish(),
 });
-
-export type BaseAsset = z.infer<typeof BaseAsset>;
 
 export const SupportedAsset = BaseAsset.extend({
   active: z.boolean().optional(),
@@ -80,7 +78,7 @@ export const AssetCollection = z.object({
 export type AssetCollection = z.infer<typeof AssetCollection>;
 
 // note: make sure that the identifier is checksummed
-export const assetSymbolToIdentifierMap: Record<string, string> = {
+const assetSymbolToIdentifierMap: Record<string, string> = {
   ADX: 'eip155:1/erc20:0xADE00C28244d5CE17D72E40330B1c318cD12B7c3',
   DAI: 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F',
 };
