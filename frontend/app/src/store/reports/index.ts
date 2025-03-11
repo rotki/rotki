@@ -1,11 +1,13 @@
+import type { Collection, CollectionResponse } from '@/types/collection';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
+  ProfitLossEvent,
+  ProfitLossEventsPayload,
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,
   ReportActionableItem,
   ReportError,
   Reports,
-  SelectedReport,
 } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
 import { useHistoryApi } from '@/composables/api/history';
@@ -14,12 +16,11 @@ import { jsonTransformer } from '@/services/axios-transformers';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { mapCollectionResponse } from '@/utils/collection';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 import { isTransactionEvent } from '@/utils/report';
@@ -44,34 +45,20 @@ function emptyError(): ReportError {
   };
 }
 
-function defaultReport(): SelectedReport {
-  return {
-    end: 0,
-    entries: [],
-    entriesFound: 0,
-    entriesLimit: 0,
-    firstProcessedTimestamp: 0,
-    lastProcessedTimestamp: 0,
-    overview: {},
-    processedActions: 0,
-    settings: {
-      calculatePastCostBasis: false,
-      includeCrypto2crypto: false,
-      includeFeesInCostBasis: true,
-      includeGasCosts: false,
-      profitCurrency: CURRENCY_USD,
-      taxfreeAfterPeriod: 0,
-    },
-    start: 0,
-    totalActions: 0,
-  };
-}
-
 function defaultReports(): Reports {
   return {
     entries: [],
     entriesFound: 0,
     entriesLimit: 0,
+  };
+}
+
+export function defaultReportEvents(): Collection<ProfitLossEvent> {
+  return {
+    data: [],
+    found: 0,
+    limit: 0,
+    total: 0,
   };
 }
 
@@ -88,9 +75,7 @@ function defaultProgress(): Progress {
 }
 
 export const useReportsStore = defineStore('reports', () => {
-  const report = ref<SelectedReport>(defaultReport());
   const reports = ref<Reports>(defaultReports());
-  const loaded = ref(false);
   const reportProgress = ref<Progress>(defaultProgress());
   const reportError = ref(emptyError());
   const lastGeneratedReport = ref<number | null>(null);
@@ -101,7 +86,6 @@ export const useReportsStore = defineStore('reports', () => {
 
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
   const { fetchEnsNames } = useAddressesNamesStore();
 
@@ -110,7 +94,7 @@ export const useReportsStore = defineStore('reports', () => {
     exportReportCSV,
     exportReportData: exportReportDataCaller,
     fetchActionableItems,
-    fetchReportEvents,
+    fetchReportEvents: fetchReportEventsCaller,
     fetchReports: fetchReportsCaller,
     generateReport: generateReportCaller,
   } = useReportsApi();
@@ -180,37 +164,15 @@ export const useReportsStore = defineStore('reports', () => {
     }
   };
 
-  const fetchReport = async (reportId: number, page?: { limit: number; offset: number }): Promise<boolean> => {
-    set(loaded, false);
-    const currentPage = page ?? { limit: get(itemsPerPage), offset: 0 };
-
+  const fetchReportEvents = async (payload: MaybeRef<ProfitLossEventsPayload>): Promise<Collection<ProfitLossEvent>> => {
     try {
-      const selectedReport = get(reports).entries.find(value => value.identifier === reportId);
+      const response = await fetchReportEventsCaller(get(payload));
 
-      if (!selectedReport)
-        return false;
-
-      const reportEntries = await fetchReportEvents(reportId, currentPage);
-      set(report, {
-        ...reportEntries,
-        end: selectedReport.endTs,
-        firstProcessedTimestamp: selectedReport.firstProcessedTimestamp,
-        lastProcessedTimestamp: selectedReport.lastProcessedTimestamp,
-        overview: selectedReport.overview,
-        processedActions: selectedReport.processedActions,
-        settings: selectedReport.settings,
-        start: selectedReport.startTs,
-        totalActions: selectedReport.totalActions,
-      });
-
-      if (isLatestReport(reportId)) {
-        const actionable = await fetchActionableItems();
-        set(actionableItems, actionable);
-      }
-      set(loaded, false);
+      const mapped = mapCollectionResponse<ProfitLossEvent, CollectionResponse<ProfitLossEvent>>(response);
 
       const addressesNamesPayload: AddressBookSimplePayload[] = [];
-      reportEntries.entries
+
+      mapped.data
         .filter(event => isTransactionEvent(event))
         .forEach((event) => {
           const blockchain = event.location || Blockchain.ETH;
@@ -228,16 +190,23 @@ export const useReportsStore = defineStore('reports', () => {
 
       if (addressesNamesPayload.length > 0)
         startPromise(fetchEnsNames(addressesNamesPayload));
+
+      return mapped;
     }
     catch (error: any) {
+      logger.error(error);
       notify({
         error,
         message: value => t('actions.reports.fetch.error.description', value),
         title: t('actions.reports.fetch.error.title'),
       });
-      return false;
+      return defaultReportEvents();
     }
-    return true;
+  };
+
+  const getActionableItems = async (): Promise<void> => {
+    const actionable = await fetchActionableItems();
+    set(actionableItems, actionable);
   };
 
   const generateReport = async (period: ProfitLossReportPeriod): Promise<number> => {
@@ -335,32 +304,24 @@ export const useReportsStore = defineStore('reports', () => {
     set(reportError, emptyError());
   };
 
-  const clearReport = (): void => {
-    set(report, defaultReport());
-  };
-
   const reset = (): void => {
     set(reports, defaultReports());
     clearError();
-    clearReport();
-    set(loaded, false);
   };
 
   return {
     actionableItems,
     clearError,
-    clearReport,
     createCsv,
     deleteReport,
     exportReportData,
-    fetchReport,
+    fetchReportEvents,
     fetchReports,
     generateReport,
+    getActionableItems,
     isLatestReport,
-    loaded,
     processingState,
     progress,
-    report,
     reportError,
     reports,
     reset,
