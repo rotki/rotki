@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.db.cache import DBCacheStatic
@@ -113,8 +114,14 @@ class GnosisPay:
 
         if response.status_code != HTTPStatus.OK:
             if response.status_code == HTTPStatus.UNAUTHORIZED:
-                self.database.msg_aggregator.add_warning(
-                    msg='Gnosis Pay authentication token is invalid or has expired. Either remove it or get a new one.',  # noqa: E501
+                try:
+                    error_message = response.json().get('message', response.text)
+                except JSONDecodeError:
+                    error_message = response.text
+
+                self.database.msg_aggregator.add_message(
+                    message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
+                    data={'error': error_message},
                 )
 
             raise RemoteError(
