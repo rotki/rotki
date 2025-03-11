@@ -6,7 +6,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
@@ -17,6 +16,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.events.utils import create_event_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import Location, TimestampMS
@@ -103,7 +103,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             notes += notes_suffix
 
         super().__init__(
-            event_identifier=event_identifier if event_identifier is not None else self._create_event_identifier(  # noqa: E501
+            event_identifier=event_identifier if event_identifier is not None else create_event_identifier(  # noqa: E501
                 location=location,
                 timestamp=timestamp,
                 asset=asset,
@@ -121,29 +121,6 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             identifier=identifier,
             extra_data=extra_data,
             location_label=location_label,
-        )
-
-    @staticmethod
-    def _create_event_identifier(
-            location: Location,
-            timestamp: TimestampMS,
-            asset: Asset,
-            amount: FVal,
-            unique_id: str | None,
-    ) -> str:
-        """Create a unique event identifier from the given parameters.
-        `unique_id` is a transaction id from the exchange, which in combination with the
-        location makes a unique event identifier. If this is not available, the location,
-        timestamp, asset, and balance must all be combined to ensure a unique identifier.
-        """
-        if unique_id is not None:
-            return hash_id(str(location) + unique_id)
-
-        return hash_id(
-            str(location) +
-            str(timestamp) +
-            asset.identifier +
-            str(amount),
         )
 
     @property

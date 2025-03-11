@@ -1,9 +1,14 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_ms_to_sec
+
+if TYPE_CHECKING:
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Asset, TimestampMS
 
 
 def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
@@ -27,3 +32,26 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
         data['event_type'] = event.event_subtype.serialize()
 
     return data
+
+
+def create_event_identifier(
+        location: Location,
+        timestamp: 'TimestampMS',
+        asset: 'Asset',
+        amount: 'FVal',
+        unique_id: str | None,
+) -> str:
+    """Create a unique event identifier from the given parameters.
+    `unique_id` is a transaction id from an exchange, which in combination with the
+    location makes a unique event identifier. If this is not available, the location,
+    timestamp, asset, and balance must all be combined to ensure a unique identifier.
+    """
+    if unique_id is not None:
+        return hash_id(str(location) + unique_id)
+
+    return hash_id(
+        str(location) +
+        str(timestamp) +
+        asset.identifier +
+        str(amount),
+    )

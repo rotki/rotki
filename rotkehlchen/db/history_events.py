@@ -47,6 +47,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -471,7 +472,7 @@ class DBHistoryEvents:
         for entry in cursor:
             entry_type = HistoryBaseEntryType(entry[type_idx])
             try:
-                deserialized_event: HistoryEvent | AssetMovement | (EvmEvent | (EthWithdrawalEvent | EthBlockEvent))  # noqa: E501
+                deserialized_event: HistoryEvent | AssetMovement | SwapEvent | (EvmEvent | (EthWithdrawalEvent | EthBlockEvent))  # noqa: E501
                 # Deserialize event depending on its type
                 if entry_type == HistoryBaseEntryType.EVM_EVENT:
                     data = (
@@ -506,12 +507,13 @@ class DBHistoryEvents:
                     )
                     deserialized_event = EthDepositEvent.deserialize_from_db(data)
 
-                elif entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT:
-                    data = entry[data_start_idx:]
-                    deserialized_event = AssetMovement.deserialize_from_db(data)
                 else:
                     data = entry[data_start_idx:]
-                    deserialized_event = HistoryEvent.deserialize_from_db(data)
+                    deserialized_event = (
+                        AssetMovement if entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else  # noqa: E501
+                        SwapEvent if entry_type == HistoryBaseEntryType.SWAP_EVENT else
+                        HistoryEvent
+                    ).deserialize_from_db(data)
             except (DeserializationError, UnknownAsset) as e:
                 log.error(f'Failed to deserialize history event {entry} due to {e!s}')
                 failed_to_deserialize = True

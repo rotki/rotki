@@ -40,7 +40,7 @@ from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
-from rotkehlchen.api.rest_helpers.history_events import edit_asset_movements
+from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -281,7 +281,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
-    from rotkehlchen.history.events.structures.asset_movement import AssetMovement
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
@@ -1080,13 +1079,17 @@ class RestAPI:
 
     def edit_history_events(self, events: list['HistoryBaseEntry']) -> Response:
         events_db = DBHistoryEvents(self.rotkehlchen.data.db)
-        if events[0].entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT:
+        if (events_type := events[0].entry_type) in {
+            HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
+            HistoryBaseEntryType.SWAP_EVENT,
+        }:
             try:
                 with events_db.db.conn.write_ctx() as write_cursor:
-                    edit_asset_movements(
+                    edit_grouped_events_with_optional_fee(
                         events_db=events_db,
                         write_cursor=write_cursor,
-                        events=cast('list[AssetMovement]', events),
+                        events=events,
+                        events_type=events_type,
                     )
             except InputError as e:
                 return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
