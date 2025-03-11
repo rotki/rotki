@@ -1,14 +1,19 @@
+from http import HTTPStatus
 from unittest.mock import patch
 
 import gevent
 import pytest
+from requests.models import Response
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
@@ -42,6 +47,13 @@ def mock_gnosispay_and_run_periodic_task(task_manager, contents):
             gevent.sleep(.5)
         except gevent.Timeout as e:
             raise AssertionError(f'gnosispay query was not scheduled within {timeout} seconds') from e  # noqa: E501
+
+
+def mock_unauthorized_requests_get(url, params=None, **kwargs):
+    response = Response()
+    response.status_code = HTTPStatus.UNAUTHORIZED
+    response._content = b'{"message": "No authorization token was found"}'
+    return response
 
 
 @pytest.mark.parametrize('max_tasks_num', [1])
@@ -127,3 +139,22 @@ def test_gnosispay_periodic_task(task_manager, database, gnosispay_credentials):
             has_premium=True,
         )
     assert new_events == [event]
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
+    """Test that gnosis pay sends the session expired message"""
+    gnosispay = init_gnosis_pay(database)
+
+    # Patch to avoid requests in the Gnosis pay api
+    with patch.object(
+        target=gnosispay.session,
+        attribute='get',
+        side_effect=mock_unauthorized_requests_get,
+    ):
+        gnosispay.get_data_for_transaction(tx_hash='', tx_timestamp=0)
+
+    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
+        data={'error': 'No authorization token was found'},
+    )

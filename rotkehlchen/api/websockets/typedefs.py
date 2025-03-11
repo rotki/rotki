@@ -27,6 +27,7 @@ class WSMessageType(Enum):
     CALENDAR_REMINDER = auto()
     EXCHANGE_UNKNOWN_ASSET = auto()
     PROGRESS_UPDATES = auto()
+    GNOSISPAY_SESSIONKEY_EXPIRED = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member
