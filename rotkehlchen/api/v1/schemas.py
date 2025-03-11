@@ -1717,7 +1717,8 @@ class AccountingReportDataSchema(TimestampRangeSchema, DBPaginationSchema, DBOrd
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        valid_ordering_attr = {None, 'timestamp'}
+        valid_ordering_attr = {None, 'timestamp', 'pnl_taxable', 'pnl_free', 'asset'}
+
         if (
             data['order_by_attributes'] is not None and
             not set(data['order_by_attributes']).issubset(valid_ordering_attr)
