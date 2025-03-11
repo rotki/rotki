@@ -1173,7 +1173,10 @@
     },
     "filter": {
       "address": "Filter by the address",
+      "address_hint": "E.g. 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       "chain": "Filter by evm chain",
+      "identifier": "Filter by identifier",
+      "identifier_hint": "E.g. eip155:8453/erc20:0x833589fCD6e...b54bdA02913",
       "name": "Filter by the name of the asset",
       "name_hint": "Search using the asset name",
       "symbol": "Filter by the symbol of the asset",

@@ -209,7 +209,7 @@ describe('store::assets/retrieval', () => {
 
     it('asset name and symbol using fallback', () => {
       const address = '0x12BB890508c125661E03b09EC06E404bc9289040';
-      const identifier = `eip155:1/erc-20:${address}`;
+      const identifier = `eip155:1/erc20:${address}`;
       vi.mocked(assetCacheStore.retrieve).mockReturnValue(computed(() => null));
 
       const result = get(assetInfoRetrieval.assetInfo(identifier));
