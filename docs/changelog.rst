@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix error message in "Add transaction by tx hash" form is not reset.
 * :feature:`-` Allow user to filter by identifier in asset table, and asset dropdown.
 * :bug:`9586` Adding a new Bitpanda exchange account should now work correctly again.
 * :bug:`-` OpenOcean native token swaps should now be decoded correctly on chains where the native token is not ETH.

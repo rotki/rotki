@@ -4572,7 +4572,7 @@
     },
     "form": {
       "account": {
-        "label": "Account to be associated with the transaction",
+        "no_address_found": "No address found",
         "validation": {
           "non_empty": "The account field cannot be empty"
         }

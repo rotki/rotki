@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { useTemplateRef } from 'vue';
-import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useMessageStore } from '@/store/message';
+import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useMessageStore } from '@/store/message';
 import type { AddTransactionHashPayload, EvmChainAndTxHash } from '@/types/history/events';
 
 const modelValue = defineModel<AddTransactionHashPayload | undefined>({ required: true });
