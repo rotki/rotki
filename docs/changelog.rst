@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9239` Users will now be able to sort the PnL events table.
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.

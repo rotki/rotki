@@ -1,19 +1,23 @@
 import type { ActionStatus } from '@/types/action';
+import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validTaskStatus } from '@/services/utils';
 import {
+  type ProfitLossEvent,
+  ProfitLossEventsCollectionResponse,
+  type ProfitLossEventsPayload,
   type ProfitLossOverview,
   type ProfitLossReportDebugPayload,
-  ProfitLossReportEvents,
   ProfitLossReportOverview,
   type ProfitLossReportPeriod,
   ReportActionableItem,
   Reports,
 } from '@/types/reports';
 import { downloadFileByBlobResponse } from '@/utils/download';
+import { omit } from 'es-toolkit';
 
 interface UseReportsApi {
   generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;
@@ -25,7 +29,7 @@ interface UseReportsApi {
   fetchActionableItems: () => Promise<ReportActionableItem>;
   fetchReports: () => Promise<Reports>;
   fetchReport: (reportId: number) => Promise<ProfitLossOverview>;
-  fetchReportEvents: (reportId: number, page: { limit: number; offset: number }) => Promise<ProfitLossReportEvents>;
+  fetchReportEvents: (payload: ProfitLossEventsPayload) => Promise<CollectionResponse<ProfitLossEvent>>;
   deleteReport: (reportId: number) => Promise<boolean>;
 }
 
@@ -143,14 +147,17 @@ export function useReportsApi(): UseReportsApi {
   };
 
   const fetchReportEvents = async (
-    reportId: number,
-    page: { limit: number; offset: number },
-  ): Promise<ProfitLossReportEvents> => {
-    const response = await api.instance.post<ActionResult<ProfitLossReportEvents>>(`/reports/${reportId}/data`, page, {
-      validateStatus: validStatus,
-    });
+    payload: ProfitLossEventsPayload,
+  ): Promise<CollectionResponse<ProfitLossEvent>> => {
+    const response = await api.instance.post<ActionResult<CollectionResponse<ProfitLossEvent>>>(
+      `/reports/${payload.reportId}/data`,
+      snakeCaseTransformer(omit(payload, ['reportId'])),
+      {
+        validateStatus: validStatus,
+      },
+    );
     const data = handleResponse(response);
-    return ProfitLossReportEvents.parse(data);
+    return ProfitLossEventsCollectionResponse.parse(data);
   };
 
   const deleteReport = async (reportId: number): Promise<boolean> => {

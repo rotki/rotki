@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
+import type { ProfitLossOverviewItem, Report } from '@/types/reports';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { calculateTotalProfitLoss } from '@/utils/report';
 import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
-    report: SelectedReport | Report;
+    report: Report;
     symbol?: string | null;
     flat?: boolean;
     loading?: boolean;

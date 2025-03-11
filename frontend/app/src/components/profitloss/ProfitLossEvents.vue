@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ProfitLossEvent, ProfitLossEvents, SelectedReport } from '@/types/reports';
-import type { DataTableColumn, DataTableOptions, DataTableSortData } from '@rotki/ui-library';
+import type { Collection } from '@/types/collection';
+import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/types/reports';
+import type { DataTableColumn } from '@rotki/ui-library';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -13,6 +14,9 @@ import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue
 import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLossEventAction.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
+import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useReportsStore } from '@/store/reports';
+import { getCollectionData } from '@/utils/collection';
 import { isTransactionEvent } from '@/utils/report';
 import { some } from 'es-toolkit/compat';
 
@@ -21,37 +25,51 @@ interface GroupLine {
   bottom: boolean;
 }
 
+interface PnLItem extends ProfitLossEvent {
+  id: number;
+  groupLine: GroupLine;
+}
+
+const reportEvents = defineModel<Collection<ProfitLossEvent>>('reportEvents', { required: true });
+
 const props = withDefaults(
   defineProps<{
-    report: SelectedReport;
-    loading?: boolean;
+    report: Report;
     refreshing?: boolean;
   }>(),
   {
-    loading: false,
     refreshing: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:page', page: { reportId: number; offset: number; limit: number }): void;
-}>();
-
 const { t } = useI18n();
-
-type PnLItem = ProfitLossEvent & { id: number; groupLine: GroupLine };
 
 const { report } = toRefs(props);
 
-const tablePagination = ref<DataTableOptions<PnLItem>['pagination']>();
 const expanded = ref<PnLItem[]>([]);
 
-const sort = ref<DataTableSortData<PnLItem>>({
-  column: 'timestamp',
-  direction: 'asc',
+const { fetchReportEvents } = useReportsStore();
+
+const {
+  fetchData,
+  isLoading,
+  pagination,
+  sort,
+  state,
+} = usePaginationFilters<
+  ProfitLossEvent,
+  ProfitLossEventsPayload
+>(fetchReportEvents, {
+  defaultSortBy: [{
+    column: 'timestamp',
+    direction: 'desc',
+  }],
+  extraParams: computed(() => ({
+    reportId: get(report).identifier,
+  })),
+  history: 'router',
 });
 
-const route = useRoute('/reports/[id]');
 const { getChain } = useSupportedChains();
 
 const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
@@ -66,6 +84,11 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
     label: '',
   },
   {
+    key: 'timestamp',
+    label: t('common.datetime'),
+    sortable: true,
+  },
+  {
     align: 'center',
     class: 'w-[6.875rem]',
     key: 'type',
@@ -77,6 +100,11 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
     class: 'w-[7.5rem]',
     key: 'location',
     label: t('common.location'),
+  },
+  {
+    key: 'asset',
+    label: t('common.asset'),
+    sortable: true,
   },
   {
     align: 'end',
@@ -97,15 +125,13 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
     align: 'end',
     key: 'pnl_free',
     label: t('profit_loss_events.headers.pnl_free'),
+    sortable: true,
   },
   {
     align: 'end',
     key: 'pnl_taxable',
     label: t('profit_loss_events.headers.pnl_taxable'),
-  },
-  {
-    key: 'timestamp',
-    label: t('common.datetime'),
+    sortable: true,
   },
   {
     key: 'notes',
@@ -119,43 +145,23 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
   },
 ]);
 
-const items = computed<PnLItem[]>(() =>
-  get(report).entries.map((value, index) => ({
+const { data } = getCollectionData<ProfitLossEvent>(state);
+
+const items = computed<PnLItem[]>(() => {
+  const dataVal = get(data);
+  return dataVal.map((value, index) => ({
     ...value,
-    groupLine: checkGroupLine(get(report).entries, index),
+    groupLine: checkGroupLine(dataVal, index),
     id: index,
-  })),
-);
-
-const itemLength = computed(() => {
-  const { entriesFound, entriesLimit } = report.value;
-  if (entriesLimit > 0 && entriesLimit <= entriesFound)
-    return entriesLimit;
-
-  return entriesFound;
+  }));
 });
 
 const premium = usePremium();
 
-const showUpgradeMessage = computed(() => !premium.value && report.value.totalActions > report.value.processedActions);
-
-function updatePagination(tableOptions: DataTableOptions<PnLItem>) {
-  const { pagination } = tableOptions;
-  set(tablePagination, pagination);
-
-  if (!pagination)
-    return;
-
-  const { limit, page } = pagination;
-
-  const reportId = Number.parseInt(get(route).params.id as string);
-
-  emit('update:page', {
-    limit,
-    offset: limit * (page - 1),
-    reportId,
-  });
-}
+const showUpgradeMessage = computed(() => {
+  const { processedActions, totalActions } = get(report);
+  return !get(premium) && totalActions > processedActions;
+});
 
 function checkGroupLine(entries: ProfitLossEvents, index: number) {
   const current = entries[index];
@@ -175,6 +181,14 @@ function isExpanded(id: number) {
 function expand(item: PnLItem) {
   set(expanded, isExpanded(item.id) ? [] : [item]);
 }
+
+watch(state, (state) => {
+  set(reportEvents, state);
+});
+
+onMounted(async () => {
+  await fetchData();
+});
 </script>
 
 <template>
@@ -184,21 +198,15 @@ function expand(item: PnLItem) {
     </template>
     <RuiDataTable
       v-model:expanded="expanded"
-      v-model:sort="sort"
+      v-model:sort.external="sort"
+      v-model:pagination.external="pagination"
       :cols="tableHeaders"
       :rows="items"
-      :loading="loading || refreshing"
-      :pagination="{
-        limit: tablePagination?.limit ?? 10,
-        page: tablePagination?.page ?? 1,
-        total: itemLength,
-      }"
-      :pagination-modifiers="{ external: true }"
+      :loading="isLoading || refreshing"
+      row-attr="id"
       outlined
       single-expand
       sticky-header
-      row-attr="id"
-      @update:options="updatePagination($event)"
     >
       <template #item.group="{ row }">
         <RuiTooltip
@@ -223,34 +231,34 @@ function expand(item: PnLItem) {
           <span>{{ t('profit_loss_events.same_action') }}</span>
         </RuiTooltip>
       </template>
+      <template #item.timestamp="{ row }">
+        <DateDisplay :timestamp="row.timestamp" />
+      </template>
       <template #item.type="{ row }">
         <ProfitLossEventType :type="row.type" />
       </template>
       <template #item.location="{ row }">
         <LocationDisplay :identifier="row.location" />
       </template>
-      <template #item.timestamp="{ row }">
-        <DateDisplay :timestamp="row.timestamp" />
+      <template #item.asset="{ row }">
+        <AssetLink
+          v-if="row.assetIdentifier"
+          :asset="row.assetIdentifier"
+          link
+        >
+          <AssetIcon
+            class="flex"
+            :identifier="row.assetIdentifier"
+            size="24px"
+          />
+        </AssetLink>
       </template>
       <template #item.free_amount="{ row }">
-        <div class="flex items-center justify-between flex-nowrap gap-4">
-          <AssetLink
-            v-if="row.assetIdentifier"
-            :asset="row.assetIdentifier"
-            link
-          >
-            <AssetIcon
-              class="flex"
-              :identifier="row.assetIdentifier"
-              size="24px"
-            />
-          </AssetLink>
-          <AmountDisplay
-            force-currency
-            :value="row.freeAmount"
-            :asset="row.assetIdentifier ? row.assetIdentifier : ''"
-          />
-        </div>
+        <AmountDisplay
+          force-currency
+          :value="row.freeAmount"
+          :asset="row.assetIdentifier ? row.assetIdentifier : ''"
+        />
       </template>
       <template #item.taxable_amount="{ row }">
         <AmountDisplay

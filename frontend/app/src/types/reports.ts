@@ -1,4 +1,6 @@
+import type { PaginationRequestPayload } from '@/types/common';
 import type { Quarter } from '@/types/settings/frontend-settings';
+import { CollectionCommonFields } from '@/types/collection';
 import { BaseAccountingSettings } from '@/types/user';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod';
@@ -31,6 +33,21 @@ export const MatchedAcquisitions = z.object({
 
 export type MatchedAcquisitions = z.infer<typeof MatchedAcquisitions>;
 
+export const Report = z.object({
+  endTs: z.number(),
+  firstProcessedTimestamp: z.number(),
+  identifier: z.number(),
+  lastProcessedTimestamp: z.number(),
+  overview: ProfitLossOverview,
+  processedActions: z.number(),
+  settings: BaseAccountingSettings,
+  startTs: z.number(),
+  timestamp: z.number(),
+  totalActions: z.number(),
+});
+
+export type Report = z.infer<typeof Report>;
+
 export const CostBasis = z.object({
   isComplete: z.boolean().nullish(),
   matchedAcquisitions: z.array(MatchedAcquisitions).nullish(),
@@ -55,24 +72,17 @@ export const ProfitLossEvent = z.object({
 
 export type ProfitLossEvent = z.infer<typeof ProfitLossEvent>;
 
-export const Report = z.object({
-  endTs: z.number(),
-  firstProcessedTimestamp: z.number(),
-  identifier: z.number(),
-  lastProcessedTimestamp: z.number(),
-  overview: ProfitLossOverview,
-  processedActions: z.number(),
-  settings: BaseAccountingSettings,
-  startTs: z.number(),
-  timestamp: z.number(),
-  totalActions: z.number(),
-});
-
-export type Report = z.infer<typeof Report>;
-
 const ProfitLossEvents = z.array(ProfitLossEvent);
 
 export type ProfitLossEvents = z.infer<typeof ProfitLossEvents>;
+
+export interface ProfitLossEventsPayload extends PaginationRequestPayload<ProfitLossEvent> {
+  reportId: number;
+}
+
+export const ProfitLossEventsCollectionResponse = CollectionCommonFields.extend({
+  entries: z.array(ProfitLossEvent),
+});
 
 export const ReportProgress = z.object({
   processingState: z.string(),
@@ -101,28 +111,6 @@ export const ProfitLossReportOverview = z.object({
 });
 
 export type ProfitLossReportOverview = z.infer<typeof ProfitLossReportOverview>;
-
-export const ProfitLossReportEvents = z.object({
-  entries: ProfitLossEvents,
-  entriesFound: z.number(),
-  entriesLimit: z.number(),
-});
-
-export type ProfitLossReportEvents = z.infer<typeof ProfitLossReportEvents>;
-
-export interface SelectedReport {
-  overview: ProfitLossOverview;
-  entries: ProfitLossEvents;
-  entriesLimit: number;
-  entriesFound: number;
-  lastProcessedTimestamp: number;
-  processedActions: number;
-  totalActions: number;
-  start: number;
-  end: number;
-  firstProcessedTimestamp: number;
-  settings: BaseAccountingSettings;
-}
 
 export interface ProfitLossReportPeriod {
   readonly start: number;

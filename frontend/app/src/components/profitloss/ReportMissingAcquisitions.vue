@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MissingAcquisition, SelectedReport } from '@/types/reports';
+import type { MissingAcquisition } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -21,7 +21,6 @@ interface MappedGroupedItems {
 }
 
 const props = defineProps<{
-  report: SelectedReport;
   items: MissingAcquisition[];
   isPinned: boolean;
 }>();
