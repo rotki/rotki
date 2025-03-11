@@ -1,5 +1,6 @@
 import type { MissingMapping } from '@/modules/data/schemas';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { assert } from '@rotki/common';
 import Dexie, { type EntityTable } from 'dexie';
 
 interface DexieDB extends Dexie {

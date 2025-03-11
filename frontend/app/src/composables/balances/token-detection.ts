@@ -7,6 +7,7 @@ import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { assert } from '@rotki/common';
 
 interface UseTokenDetectionReturn {
   detectingTokens: ComputedRef<boolean>;

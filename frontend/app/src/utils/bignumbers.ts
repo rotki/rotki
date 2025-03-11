@@ -1,5 +1,5 @@
-import type { Balance, BigNumber } from '@rotki/common';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import { type Balance, type BigNumber, bigNumberify, Zero } from '@rotki/common';
 
 export function bigNumberifyFromRef(value: Ref<string | number> | WritableComputedRef<string | number>): ComputedRef<BigNumber> {
   return computed(() => {

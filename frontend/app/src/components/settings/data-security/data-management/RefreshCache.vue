@@ -8,6 +8,7 @@ import { useSessionPurge } from '@/composables/session/purge';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { assert, toCapitalCase, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 const source = ref<string>();

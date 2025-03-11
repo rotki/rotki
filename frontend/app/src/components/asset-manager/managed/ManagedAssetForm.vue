@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import type { SelectOption, SelectOptions } from '@/types/common';
-import type { SupportedAsset, UnderlyingToken } from '@rotki/common';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -18,6 +17,7 @@ import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';

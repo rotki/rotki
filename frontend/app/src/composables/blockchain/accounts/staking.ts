@@ -17,7 +17,7 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
-import { type BigNumber, Blockchain } from '@rotki/common';
+import { type BigNumber, bigNumberify, Blockchain } from '@rotki/common';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: ComputedRef<{ showWarning: boolean; limit: number; total: number }>;

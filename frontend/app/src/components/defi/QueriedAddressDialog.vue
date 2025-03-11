@@ -11,7 +11,7 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { Blockchain } from '@rotki/common';
+import { assert, Blockchain, transformCase } from '@rotki/common';
 
 const props = defineProps<{ module: Module }>();
 

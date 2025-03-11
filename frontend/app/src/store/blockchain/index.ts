@@ -28,7 +28,7 @@ import { assetSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { updateBlockchainAssetBalances } from '@/utils/prices';
 import { removeTags } from '@/utils/tags';
-import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
+import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
 import { camelCase, omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 

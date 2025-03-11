@@ -5,6 +5,7 @@ import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNA
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useTaskStore } from '@/store/tasks';
 import { BalanceType } from '@/types/balances';
+import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 

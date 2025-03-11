@@ -1,5 +1,4 @@
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
 import type { AxiosResponse } from 'axios';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
@@ -18,6 +17,7 @@ import {
   type ExchangeSavingsRequestPayload,
 } from '@/types/exchanges';
 import { nonEmptyProperties } from '@/utils/data';
+import { type ActionResult, transformCase } from '@rotki/common';
 
 interface UseExchangeApiReturn {
   queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;

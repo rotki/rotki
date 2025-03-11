@@ -77,7 +77,6 @@ export default defineConfig({
         }
       : {}),
     AutoImport({
-      packagePresets: ['@rotki/common'],
       include: [
         /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
         /\.vue$/,

@@ -1,3 +1,4 @@
+import { toCapitalCase } from '@rotki/common';
 import { z } from 'zod';
 
 const BasicChainInfo = z.object({

@@ -3,6 +3,7 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { Eth2Validator } from '@/types/balances';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+import { consistOfNumbers } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';

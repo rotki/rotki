@@ -25,6 +25,7 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { SavedFilterLocation } from '@/types/filtering';
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
+import { toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{
   category: string;

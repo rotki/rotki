@@ -4,6 +4,7 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+import { invertColor, randomColor } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 

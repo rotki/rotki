@@ -10,7 +10,7 @@ import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
-import { HistoryEventEntryType } from '@rotki/common';
+import { HistoryEventEntryType, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { cloneDeep } from 'es-toolkit';
 

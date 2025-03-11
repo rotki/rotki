@@ -2,6 +2,7 @@
 import HashLink from '@/components/helper/HashLink.vue';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { getAddressFromEvmIdentifier } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

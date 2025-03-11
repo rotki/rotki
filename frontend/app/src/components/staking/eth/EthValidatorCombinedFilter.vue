@@ -4,11 +4,11 @@ import type {
   SearchMatcher,
 
 } from '@/types/filtering';
-import type { EthStakingCombinedFilter } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
 import { getDateInputISOFormat } from '@/utils/date';
+import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

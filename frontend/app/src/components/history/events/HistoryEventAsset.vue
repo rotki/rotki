@@ -6,6 +6,7 @@ import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { CURRENCY_USD } from '@/types/currencies';
+import { Zero } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;

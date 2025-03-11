@@ -9,6 +9,7 @@ import { useLocationStore } from '@/store/locations';
 import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+import { toSentenceCase } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 

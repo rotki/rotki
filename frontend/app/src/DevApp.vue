@@ -4,6 +4,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { Routes } from '@/router/routes';
 import { useLocationStore } from '@/store/locations';
 import { uniqueStrings } from '@/utils/data';
+import { toHumanReadable, toSentenceCase } from '@rotki/common';
 
 function reset() {
   sessionStorage.removeItem('vuex');

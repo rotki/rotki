@@ -4,6 +4,7 @@ import type { ComponentExposed } from 'vue-component-type-helpers';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import { useExchangesStore } from '@/store/exchanges';
+import { assert } from '@rotki/common';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 

@@ -1,4 +1,5 @@
 import type { ProfitLossEvent, ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
+import { Zero } from '@rotki/common';
 
 export function calculateTotalProfitLoss(item: Report | SelectedReport): ProfitLossOverviewItem {
   let totalFree = Zero;

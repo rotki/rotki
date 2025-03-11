@@ -11,7 +11,7 @@ import { useSupportedChainsApi } from '@/composables/api/info/chains';
 import { useArrayInclude } from '@/composables/array';
 import { useMainStore } from '@/store/main';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { Blockchain, getTextToken } from '@rotki/common';
+import { Blockchain, getTextToken, toHumanReadable, toSentenceCase, toSnakeCase } from '@rotki/common';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === 'evm';

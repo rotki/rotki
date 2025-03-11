@@ -5,6 +5,7 @@ import { useAccountLoading } from '@/composables/accounts/loading';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
+import { transformCase } from '@rotki/common';
 
 const emit = defineEmits(['update:selection']);
 

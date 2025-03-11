@@ -2,6 +2,7 @@ import type { ActionResult } from '@rotki/common';
 import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validTaskStatus } from '@/services/utils';
+import { withRetry } from '@/services/with-retry';
 import { ApiValidationError } from '@/types/api/errors';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
 import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
@@ -14,15 +15,18 @@ interface UseTaskApiReturn {
 }
 
 export function useTaskApi(): UseTaskApiReturn {
-  const queryTasks = async (): Promise<TaskStatus> => {
+  const queryTasks = async (): Promise<TaskStatus> => withRetry(async () => {
     const response = await api.instance.get<ActionResult<TaskStatus>>(`/tasks`, {
       validateStatus: validTaskStatus,
     });
 
     return handleResponse(response);
-  };
+  });
 
-  const queryTaskResult = async <T>(id: number, transformer?: AxiosResponseTransformer[]): Promise<ActionResult<T>> => {
+  const queryTaskResult = async <T>(
+    id: number,
+    transformer?: AxiosResponseTransformer[],
+  ): Promise<ActionResult<T>> => withRetry(async () => {
     const config: Partial<AxiosRequestConfig> = {
       validateStatus: validTaskStatus,
     };
@@ -58,7 +62,7 @@ export function useTaskApi(): UseTaskApiReturn {
     }
 
     throw new Error('No result');
-  };
+  });
 
   const cancelAsyncTask = async (id: number): Promise<boolean> => {
     const config: Partial<AxiosRequestConfig> = {

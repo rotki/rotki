@@ -6,6 +6,7 @@ import type { ComputedRef, Ref } from 'vue';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { useConfirmStore } from '@/store/confirm';
 import { logger } from '@/utils/logging';
+import { assert, toCapitalCase, transformCase } from '@rotki/common';
 
 function getName(name: ExternalServiceName, chain?: string): string {
   if (name === 'etherscan' || name === 'blockscout') {

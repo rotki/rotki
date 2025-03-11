@@ -1,5 +1,6 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import { bigNumberify } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

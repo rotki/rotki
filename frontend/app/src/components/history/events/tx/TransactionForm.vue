@@ -11,6 +11,7 @@ import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
+import { isValidTxHash } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 

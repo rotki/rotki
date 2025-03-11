@@ -1,4 +1,5 @@
 import { type Trade, TradeType } from '@/types/history/trade';
+import { bigNumberify } from '@rotki/common';
 import dayjs from 'dayjs';
 
 export function createNewTrade(): Trade {

@@ -10,7 +10,7 @@ import {
   getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { BigNumber } from '@rotki/common';
+import { assert, BigNumber } from '@rotki/common';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));

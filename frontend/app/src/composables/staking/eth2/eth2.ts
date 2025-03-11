@@ -12,12 +12,7 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import { logger } from '@/utils/logging';
-import {
-  Blockchain,
-  type EthStakingPayload,
-  type EthStakingPerformance,
-  type EthStakingPerformanceResponse,
-} from '@rotki/common';
+import { assert, Blockchain, type EthStakingPayload, type EthStakingPerformance, type EthStakingPerformanceResponse } from '@rotki/common';
 import { omit } from 'es-toolkit';
 
 interface UseEthStakingReturn {

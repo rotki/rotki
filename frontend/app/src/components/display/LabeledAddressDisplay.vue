@@ -9,6 +9,7 @@ import { useScramble } from '@/composables/scramble';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
+import { consistOfNumbers } from '@rotki/common';
 
 const props = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;

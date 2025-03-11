@@ -21,7 +21,7 @@ import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';
-import { BigNumber, Blockchain } from '@rotki/common';
+import { assert, BigNumber, Blockchain } from '@rotki/common';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { keyBy } from 'es-toolkit';
 

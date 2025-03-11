@@ -1,8 +1,8 @@
 import type { useBalancePricesStore } from '@/store/balances/prices';
-import type { BigNumber } from '@rotki/common';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { type BigNumber, bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, ref, type ToRefs } from 'vue';
 import { useUsdValueThreshold } from './usd-value-threshold';

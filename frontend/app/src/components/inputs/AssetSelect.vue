@@ -6,6 +6,7 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { uniqueObjects } from '@/utils/data';
+import { assert, getValidSelectorFromEvmAddress, transformCase } from '@rotki/common';
 import { CanceledError } from 'axios';
 
 defineOptions({

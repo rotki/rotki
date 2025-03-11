@@ -16,7 +16,7 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix } from '@/utils/xpub';
-import { Blockchain } from '@rotki/common';
+import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 interface AccountManageMode {

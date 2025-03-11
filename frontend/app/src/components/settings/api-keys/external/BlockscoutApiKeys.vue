@@ -4,6 +4,7 @@ import BlockscoutApiKey from '@/components/settings/api-keys/external/Blockscout
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { transformCase } from '@rotki/common';
 
 const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);

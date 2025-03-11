@@ -3,6 +3,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
+import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 

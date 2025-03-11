@@ -19,7 +19,7 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { logger } from '@/utils/logging';
 import { useRefPropVModel } from '@/utils/model';
-import { Blockchain } from '@rotki/common';
+import { assert, Blockchain, toHumanReadable } from '@rotki/common';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
 

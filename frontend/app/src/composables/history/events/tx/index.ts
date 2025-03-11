@@ -1,6 +1,5 @@
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
-import type { Blockchain } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -29,6 +28,7 @@ import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
+import { type Blockchain, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { groupBy, omit } from 'es-toolkit';
 

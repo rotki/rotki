@@ -2,7 +2,6 @@
 import type { ActionStatus } from '@/types/action';
 import type { NewHistoryEventPayload } from '@/types/history/events';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
-import type { BigNumber } from '@rotki/common';
 import type { Validation } from '@vuelidate/core';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -18,6 +17,7 @@ import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
+import { assert, type BigNumber } from '@rotki/common';
 
 interface HistoryEventAssetPriceFormProps {
   datetime: string;

@@ -9,7 +9,7 @@ import {
   isEvmEventRef,
   isWithdrawalEventRef,
 } from '@/utils/history/events';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, toSentenceCase, toSnakeCase } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;

@@ -4,6 +4,7 @@ import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useNotificationsStore } from '@/store/notifications';
 import { isEtherscanKey } from '@/types/external';
+import { NotificationCategory } from '@rotki/common';
 import { etherscanLinks } from '@shared/external-links';
 import { camelCase } from 'es-toolkit';
 

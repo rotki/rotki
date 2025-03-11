@@ -1,6 +1,7 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import { logger } from '@/utils/logging';
+import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 const CACHE_EXPIRY = 1000 * 60 * 10;

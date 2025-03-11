@@ -1,4 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
+import { assert } from '@rotki/common';
 
 export class TotalNotInitializedError extends Error {
   constructor() {

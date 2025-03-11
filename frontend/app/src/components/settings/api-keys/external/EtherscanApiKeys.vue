@@ -6,6 +6,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Blockchain, transformCase } from '@rotki/common';
 
 const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);

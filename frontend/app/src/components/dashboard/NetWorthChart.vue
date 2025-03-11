@@ -8,13 +8,7 @@ import { useGraph, useTooltip } from '@/composables/graphs';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import {
-  getTimeframeByRange,
-  type NetValue,
-  type Timeframe,
-  type TimeFramePeriod,
-  type Timeframes,
-} from '@rotki/common';
+import { assert, bigNumberify, getTimeframeByRange, type NetValue, type Timeframe, type TimeFramePeriod, type Timeframes } from '@rotki/common';
 import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';

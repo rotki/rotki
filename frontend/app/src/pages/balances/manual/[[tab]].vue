@@ -11,6 +11,7 @@ import { useHistoryStore } from '@/store/history';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
 definePage({

@@ -4,6 +4,7 @@ import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import AppImage from '@/components/common/AppImage.vue';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PriceOracle } from '@/types/settings/price-oracle';
+import { toSentenceCase } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

@@ -1,5 +1,5 @@
 import { AmountFormatter } from '@/data/amount-formatter';
-import { BigNumber } from '@rotki/common';
+import { BigNumber, bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 
 describe('amountFormatter', () => {
