@@ -585,7 +585,7 @@ class BackendBuilder:
         build_directory.mkdir(exist_ok=True)
         os.chdir(build_directory)
         git_clone_ret_code = subprocess.call(
-            'git clone https://github.com/pyinstaller/pyinstaller.git',
+            f'git clone --depth 1 --branch v{tag_version} https://github.com/pyinstaller/pyinstaller.git',
             shell=True,
         )
         if git_clone_ret_code != 0:
