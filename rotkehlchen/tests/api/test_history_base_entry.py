@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USD, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -16,6 +16,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
@@ -756,3 +757,112 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             json=entries[0],
         )
         assert cursor.execute(*query_for_events).fetchone()[0] == 1
+
+
+def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    entries = [
+        {
+            'entry_type': 'swap event',
+            'timestamp': 1569924575000,
+            'location': 'bitfinex',
+            'spend_amount': '50',
+            'spend_asset': 'USD',
+            'receive_amount': '0.026',
+            'receive_asset': 'ETH',
+            'unique_id': 'TRADE1',
+        }, {
+            'entry_type': 'swap event',
+            'timestamp': 1569924576000,
+            'location': 'bitfinex',
+            'spend_amount': '0.01',
+            'spend_asset': 'ETH',
+            'receive_amount': '20',
+            'receive_asset': 'USD',
+            'fee_amount': '0.000004',
+            'fee_asset': 'ETH',
+            'unique_id': 'TRADE2',
+            'notes': ['Example note', '', ''],
+        },
+    ]
+    for entry in entries:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert 'identifier' in result
+        entry['identifier'] = result['identifier']
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )) == 5  # spend/receive (2) from first swap, and spend/receive/fee (3) from the second
+
+    # Edit the event identifier of the first entry and add a fee
+    entry = entries[0].copy()
+    entry['fee_amount'], entry['fee_asset'], entry['event_identifier'], entry['notes'] = '0.1', 'USD', 'test_id', ['Note1', 'Note2', 'Note3']  # noqa: E501
+    requests.patch(api_url_for(rotkehlchen_api_server, 'historyeventresource'), json=entry)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        ) == [SwapEvent(
+            identifier=1,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USD,
+            amount=FVal('50'),
+            notes='Note1',
+            event_identifier='test_id',
+        ), SwapEvent(
+            identifier=2,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('0.026'),
+            notes='Note2',
+            event_identifier='test_id',
+        ), SwapEvent(
+            identifier=6,  # highest id since it was added during edit
+            timestamp=TimestampMS(1569924575000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('0.1'),
+            notes='Note3',
+            event_identifier='test_id',
+        ), SwapEvent(
+            identifier=3,
+            timestamp=TimestampMS(1569924576000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.01'),
+            unique_id='TRADE2',
+            notes='Example note',
+        ), SwapEvent(
+            identifier=4,
+            timestamp=TimestampMS(1569924576000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USD,
+            amount=FVal('20'),
+            unique_id='TRADE2',
+        ), SwapEvent(
+            identifier=5,
+            timestamp=TimestampMS(1569924576000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000004'),
+            unique_id='TRADE2',
+        )]

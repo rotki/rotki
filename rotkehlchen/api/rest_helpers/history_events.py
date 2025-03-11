@@ -2,20 +2,21 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.history_events import DBHistoryEvents
 
 
-def edit_asset_movements(
+def edit_grouped_events_with_optional_fee(
         events_db: 'DBHistoryEvents',
         write_cursor: 'DBCursor',
-        events: list[AssetMovement],
+        events: list[HistoryBaseEntry],
+        events_type: HistoryBaseEntryType,
 ) -> None:
     """
-    Handle asset movement events, including fee-related modifications:
+    Handle grouped events, including fee-related modifications:
     - Delete fee entry if it existed but is now removed
     - Create fee entry if it wasn't present before
     - Update existing events when modifications occur
@@ -34,34 +35,39 @@ def edit_asset_movements(
         else:
             raise InputError(f'Tried to edit event with id {events[0].identifier} but could not find it in the DB')  # noqa: E501
 
-        num_of_events = read_cursor.execute(
+        existing_events_num = read_cursor.execute(
             'SELECT COUNT(*) FROM history_events WHERE event_identifier=?',
             (event_identifier,),
         ).fetchone()[0]
 
-    if len(events) == 1 and num_of_events == 2:
+    no_fee_num = 1 if events_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else 2
+    with_fee_num = no_fee_num + 1
+
+    if (edit_events_num := len(events)) == no_fee_num and existing_events_num == with_fee_num:
         # in the db we had a fee entry and now we have removed it
-        events_db.edit_history_event(
-            event=events[0],
-            write_cursor=write_cursor,
-        )
+        for idx in range(edit_events_num):
+            events_db.edit_history_event(
+                event=events[idx],
+                write_cursor=write_cursor,
+            )
         write_cursor.execute(
             'DELETE FROM history_events WHERE event_identifier=? and sequence_index=?',
-            (events[0].event_identifier, events[0].sequence_index + 1),
+            (events[0].event_identifier, events[0].sequence_index + no_fee_num),
         )
-    elif len(events) == 2 and num_of_events == 1:
+    elif edit_events_num == with_fee_num and existing_events_num == no_fee_num:
         # we didn't have a fee in the db and we have it now
-        events_db.edit_history_event(
-            event=events[0],
-            write_cursor=write_cursor,
-        )
+        for idx in range(existing_events_num):
+            events_db.edit_history_event(
+                event=events[idx],
+                write_cursor=write_cursor,
+            )
         events_db.add_history_event(
             write_cursor=write_cursor,
-            event=events[1],
+            event=events[-1],
             mapping_values={HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},
         )
     else:
-        assert len(events) == num_of_events and num_of_events in (1, 2)
+        assert edit_events_num == existing_events_num and existing_events_num in (no_fee_num, with_fee_num)  # noqa: E501
         for event in events:
             events_db.edit_history_event(
                 event=event,
