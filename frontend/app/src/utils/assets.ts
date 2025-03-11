@@ -138,7 +138,12 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
     let keyword = value;
     let address;
 
-    if (isValidEthAddress(value)) {
+    if (isEvmIdentifier(value)) {
+      keyword = '';
+      address = getAddressFromEvmIdentifier(value);
+    }
+
+    else if (isValidEthAddress(value)) {
       keyword = '';
       address = value;
     }
