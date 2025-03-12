@@ -105,6 +105,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'PickleFinance',
         'PolygonPosBridge',
         'Puffer',
+        'Rainbow',
         'Safemultisig',
         'ScrollBridge',
         'Spark',
@@ -225,6 +226,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'sky',
         'puffer',
         'openocean',
+        'rainbow_swaps',
     }
 
 
