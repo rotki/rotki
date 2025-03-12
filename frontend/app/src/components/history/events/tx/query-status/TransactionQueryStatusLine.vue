@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
-import { useSupportedChains } from '@/composables/info/chains';
+import HashLink from '@/modules/common/links/HashLink.vue';
 
 defineProps<{ item: EvmTransactionQueryData }>();
 
 const { getItemTranslationKey, getLabel } = useTransactionQueryStatus();
-const { getChain } = useSupportedChains();
 </script>
 
 <template>
@@ -26,7 +24,7 @@ const { getChain } = useSupportedChains();
       <div class="font-bold text-no-wrap">
         <HashLink
           :text="item.address"
-          :chain="getChain(item.evmChain)"
+          :location="item.evmChain"
         />
       </div>
     </template>

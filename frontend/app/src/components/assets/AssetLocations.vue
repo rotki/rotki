@@ -54,7 +54,7 @@ const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetBreakdown } = useBalancesBreakdown();
 const { addressNameSelector } = useAddressesNamesStore();
-const { getChain, getChainName } = useSupportedChains();
+const { getChainName, matchChain } = useSupportedChains();
 
 const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
 
@@ -135,50 +135,44 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     label = labelValidator;
   else label = `${labelAccount} / ${labelValidator}`;
 
-  return [
-    {
-      align: 'center',
-      cellClass: 'w-36',
-      key: 'location',
-      label: t('common.location'),
-      sortable: true,
-    },
-    {
-      key: 'label',
-      label,
-      sortable: true,
-    },
-    {
-      align: 'end',
-      key: 'amount',
-      label: t('common.amount'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      key: 'usdValue',
-      label: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD,
-      }),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      key: 'percentage',
-      label: t('asset_locations.header.percentage'),
-      sortable: false,
-    },
-  ];
+  return [{
+    align: 'center',
+    cellClass: 'w-36',
+    key: 'location',
+    label: t('common.location'),
+    sortable: true,
+  }, {
+    key: 'label',
+    label,
+    sortable: true,
+  }, {
+    align: 'end',
+    key: 'amount',
+    label: t('common.amount'),
+    sortable: true,
+  }, {
+    align: 'end',
+    key: 'usdValue',
+    label: t('asset_locations.header.value', {
+      symbol: get(currencySymbol) ?? CURRENCY_USD,
+    }),
+    sortable: true,
+  }, {
+    align: 'end',
+    key: 'percentage',
+    label: t('asset_locations.header.percentage'),
+    sortable: false,
+  }];
 });
 
 watch(locationFilter, (location) => {
-  if (location && !getChain(location, null)) {
+  if (location && !matchChain(location)) {
     set(selectedAccounts, []);
   }
 });
 
 watch(selectedAccounts, (accounts) => {
-  if (accounts.length > 0 && !getChain(get(locationFilter), null)) {
+  if (accounts.length > 0 && !matchChain(get(locationFilter))) {
     set(locationFilter, '');
   }
 });

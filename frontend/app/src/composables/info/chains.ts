@@ -100,13 +100,12 @@ export const useSupportedChains = createSharedComposable(() => {
   /**
    *
    * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
-   * @param {any} defaultValue - Default value to be returned, when the location is not found.
    * @return {Blockchain} - Blockchain id found
    * @example
    * getChain('zksync_lite'); // Blockchain.ZKSYNC_LITE
    * getChain('ethereum'); // Blockchain.ETH
    */
-  const getChain = (location: string, defaultValue: any = Blockchain.ETH): Blockchain => {
+  const matchChain = (location: string): Blockchain | undefined => {
     // note: we're using toSnakeCase here to always ensure that chains
     // with combined names gets parsed to match their chain name
     const chainData = get(supportedChains).find((item) => {
@@ -119,9 +118,25 @@ export const useSupportedChains = createSharedComposable(() => {
 
     if (chainData && isBlockchain(chainData.id))
       return chainData.id;
-
-    return defaultValue;
+    return undefined;
   };
+
+  /**
+   * Retrieves the blockchain chain based on the specified location.
+   *
+   * This function attempts to match a given location to a specific blockchain
+   * chain using the `matchChain` function.
+   * If no match is found, the provided default value is returned.
+   * The default value defaults to `Blockchain.ETH` if not explicitly specified.
+   *
+   * @param {string} location - The location used to determine the blockchain chain.
+   * @param {Blockchain} [defaultValue=Blockchain.ETH] - The blockchain chain to return if no match is found.
+   * @returns {Blockchain} The blockchain chain corresponding to the specified location or the default value.
+   */
+  const getChain = (
+    location: string,
+    defaultValue: Blockchain = Blockchain.ETH,
+  ): Blockchain => matchChain(location) ?? defaultValue;
 
   /**
    *
@@ -134,7 +149,7 @@ export const useSupportedChains = createSharedComposable(() => {
   const getChainName = (location: MaybeRef<string>): ComputedRef<string> =>
     computed(() => {
       const locationVal = get(location);
-      const chain = getChain(locationVal, null);
+      const chain = matchChain(locationVal);
       if (!chain)
         return toSentenceCase(locationVal);
 
@@ -179,6 +194,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getNativeAsset,
     isEvm,
     isEvmLikeChains,
+    matchChain,
     supportedChains,
     supportsTransactions,
     txChains,

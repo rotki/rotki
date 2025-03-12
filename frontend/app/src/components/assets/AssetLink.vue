@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import HashLink from '@/components/helper/HashLink.vue';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { getAddressFromEvmIdentifier } from '@rotki/common';
 
 const props = withDefaults(
@@ -37,10 +37,11 @@ const { navigateToDetails } = useAssetPageNavigation(asset);
     </RuiButton>
     <HashLink
       v-if="address && link"
-      link-only
+      display-mode="link"
+      hide-text
       type="token"
       :text="address"
-      :evm-chain="assetDetails?.evmChain"
+      :location="assetDetails?.evmChain"
     />
   </div>
 </template>

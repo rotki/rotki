@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UnderlyingToken } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
-import HashLink from '@/components/helper/HashLink.vue';
+import HashLink from '@/modules/common/links/HashLink.vue';
 
 defineProps<{ tokens: UnderlyingToken[] }>();
 
@@ -39,7 +39,8 @@ const tableHeaders = computed<DataTableColumn<UnderlyingToken>[]>(() => [
       <template #item.address="{ row }">
         <HashLink
           :text="row.address"
-          full-address
+          location="eth"
+          :truncate-length="0"
           type="token"
         />
       </template>

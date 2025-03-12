@@ -2,11 +2,11 @@
 import type { NewDetectedToken } from '@/types/websocket-messages';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useSupportedChains } from '@/composables/info/chains';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
@@ -200,9 +200,8 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
 
       <template #item.address="{ row }">
         <HashLink
-          :chain="row.evmChain"
+          :location="row.evmChain"
           :text="row.address"
-          hide-alias-name
           type="token"
         />
       </template>
@@ -214,7 +213,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
 
         <div v-if="row.seenTxHash">
           <HashLink
-            :chain="row.evmChain"
+            :location="row.evmChain"
             :text="row.seenTxHash"
             type="transaction"
           />

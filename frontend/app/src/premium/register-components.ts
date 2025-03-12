@@ -13,7 +13,6 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -27,6 +26,7 @@ import AssetBalanceStatisticSourceSetting from '@/components/settings/AssetBalan
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { logger } from '@/utils/logging';
 import {
   RuiAccordion,

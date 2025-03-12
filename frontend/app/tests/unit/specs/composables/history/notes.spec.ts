@@ -133,7 +133,6 @@ describe('composables::history/notes', () => {
       {
         type: NoteType.ADDRESS,
         address,
-        showIcon: true,
         showHashLink: true,
       },
     ];
@@ -155,13 +154,11 @@ describe('composables::history/notes', () => {
       {
         type: NoteType.ADDRESS,
         address,
-        showIcon: true,
         showHashLink: true,
       },
       {
         type: NoteType.ADDRESS,
         address,
-        showIcon: true,
         showHashLink: true,
       },
     ];
@@ -383,13 +380,11 @@ describe('composables::history/notes', () => {
       {
         type: NoteType.ADDRESS,
         address,
-        showIcon: true,
         showHashLink: true,
       },
       {
         type: NoteType.ADDRESS,
         address,
-        showIcon: true,
         showHashLink: true,
       },
       {

@@ -5,7 +5,6 @@ import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
@@ -14,6 +13,7 @@ import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/composables/filters/eth-validator';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -212,17 +212,14 @@ defineExpose({
       <template #item.index="{ row }">
         <HashLink
           class="my-2"
-          chain="eth2"
-          type="address"
-          :show-icon="false"
+          location="eth2"
           :text="row.index.toString()"
         />
       </template>
       <template #item.publicKey="{ row }">
         <HashLink
           class="my-2"
-          chain="eth2"
-          type="address"
+          location="eth2"
           :show-icon="false"
           :text="row.publicKey.toString()"
         />

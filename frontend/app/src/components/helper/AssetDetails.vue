@@ -2,8 +2,8 @@
 import type { AssetInfoWithId } from '@/types/asset';
 import type { StyleValue } from 'vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { getAddressFromEvmIdentifier } from '@rotki/common';
 
 const props = withDefaults(
@@ -58,8 +58,9 @@ const currentAsset = computed<AssetInfoWithId>(() => ({
     <HashLink
       v-if="link && address"
       type="token"
-      :evm-chain="assetDetails?.evmChain"
-      link-only
+      :location="assetDetails?.evmChain"
+      display-mode="link"
+      hide-text
       :text="address"
     />
   </div>

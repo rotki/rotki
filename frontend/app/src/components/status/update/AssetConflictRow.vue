@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UnderlyingToken } from '@rotki/common';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
+import HashLink from '@/modules/common/links/HashLink.vue';
 
 const props = defineProps<{
   field: string;
@@ -45,7 +45,7 @@ const address = computed(() => {
         <HashLink
           v-if="address"
           :text="address"
-          no-link
+          display-mode="copy"
         />
         <span v-else>-</span>
       </span>
