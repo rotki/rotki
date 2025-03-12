@@ -2,20 +2,22 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH, A_WBTC, A_WETH_ARB
+from rotkehlchen.constants.assets import A_ARB, A_ETH, A_WBTC, A_WETH_ARB
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.globaldb.cache import globaldb_set_unique_cache_value
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     CURVE_LENDING_VAULTS_PROTOCOL,
+    CacheType,
     ChainID,
     EvmTokenKind,
     Location,
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -60,6 +63,29 @@ def fixture_arbitrum_vault_token(
             weight=ONE,
         )],
     )
+
+
+@pytest.fixture(name='arbitrum_vault_token_with_gauge')
+def fixture_arbitrum_vault_token_with_gauge(
+        database: 'DBHandler',
+        globaldb: 'GlobalDBHandler',
+) -> 'EvmToken':
+    vault_token = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        protocol=CURVE_LENDING_VAULTS_PROTOCOL,
+        name='Curve Vault for crvUSD',
+        symbol='cvcrvUSD',
+    )
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_unique_cache_value(
+            write_cursor=write_cursor,
+            key_parts=[CacheType.CURVE_LENDING_VAULT_GAUGE, vault_token.evm_address],
+            value='0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836',
+        )
+
+    return vault_token
 
 
 @pytest.fixture(name='ethereum_vault_underlying_token')
@@ -710,5 +736,155 @@ def test_add_collateral(
             location_label=user_address,
             notes=f'Set WETH spending approval of {user_address} by 0xB5c6082d3307088C98dA8D79991501E113e6365d to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0xB5c6082d3307088C98dA8D79991501E113e6365d'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xb84212f378bfb4C552899F2580a2b43a9241b651']])
+def test_deposit_into_lending_vault_gauge(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_vault_token_with_gauge: 'EvmToken',
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x547aa41360bb39e32e14d4d70bf2a2285635d6c9306549f5e62fbaa355500f9e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    timestamp, user_address, gas_amount, deposit_and_receive_amount = TimestampMS(1741528686000), arbitrum_one_accounts[0], '0.000004084593092', '35147690.896605748325841967'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
+            amount=FVal(deposit_and_receive_amount),
+            location_label=user_address,
+            notes=f'Deposit {deposit_and_receive_amount} cvcrvUSD into cvcrvUSD-gauge',
+            counterparty=CPT_CURVE,
+            product=EvmProduct.GAUGE,
+            address=string_to_evm_address('0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
+            amount=FVal(deposit_and_receive_amount),
+            location_label=user_address,
+            counterparty=CPT_CURVE,
+            notes=f'Receive {deposit_and_receive_amount} cvcrvUSD-gauge after depositing in curve lending vault gauge',  # noqa: E501
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x7e1E1c5ac70038a9718431C92A618F01f8DADa18']])
+def test_withdraw_from_lending_vault_gauge(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_vault_token_with_gauge: 'EvmToken',
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xe4e6ce22451a1dbadbb72b99123ce4a04d8b56f63be6fd49f0b6493430bdb772')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    timestamp, user_address, gas_amount, return_and_withdrawn_amount = TimestampMS(1741752784000), arbitrum_one_accounts[0], '0.000005044185033', '95369.61296121579592937'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
+            amount=FVal(return_and_withdrawn_amount),
+            location_label=user_address,
+            notes=f'Return {return_and_withdrawn_amount} cvcrvUSD-gauge after withdrawing from curve lending vault gauge',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
+            amount=FVal(return_and_withdrawn_amount),
+            location_label=user_address,
+            product=EvmProduct.GAUGE,
+            counterparty=CPT_CURVE,
+            notes=f'Withdraw {return_and_withdrawn_amount} cvcrvUSD from cvcrvUSD-gauge',
+            address=string_to_evm_address('0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xadDD1457C5Fd1a4F2b3161cA614b519b368a3184']])
+def test_claim_rewards_from_lending_vault_gauge(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_vault_token_with_gauge: 'EvmToken',
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x8ada83b9904451335617d625c9f9ba255af193be786149c2914a1f81468d85fe')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    timestamp, user_address, gas_amount, reward_amount = TimestampMS(1740833839000), arbitrum_one_accounts[0], '0.0000008302', '0.037091751198938204'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ARB,
+            amount=FVal(reward_amount),
+            location_label=user_address,
+            notes=f'Receive {reward_amount} ARB rewards from curve lending cvcrvUSD-gauge',
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
         ),
     ]
