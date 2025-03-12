@@ -65,7 +65,7 @@ class SwapEvent(HistoryBaseEntry):
             location=location,
             event_type=HistoryEventType.TRADE,
             event_subtype=event_subtype,
-            asset=asset.check_existence(),
+            asset=asset,
             amount=amount,
             location_label=location_label,
             notes=notes,
@@ -85,6 +85,8 @@ class SwapEvent(HistoryBaseEntry):
         May raise:
         - DeserializationError
         - UnknownAsset
+        But these exceptions shouldn't normally happen since
+        the data from the db should already be correct.
         """
         amount = deserialize_fval(entry[7], 'amount', 'swap event')
         return cls(
@@ -102,10 +104,12 @@ class SwapEvent(HistoryBaseEntry):
     def serialize(self) -> dict[str, Any]:
         """Serialize the event for api.
         Autogenerates the event notes, appending any notes added by the user in a second sentence.
+        May raise UnknownAsset, but this would be an edge case as the asset should already have
+        been checked for existence when it was deserialized from an API or from the database.
         """
         serialized_data = super().serialize()
         location_name = get_formatted_location_name(self.location)
-        asset_symbol = self.asset.resolve_to_asset_with_symbol().symbol
+        asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.SPEND:
             notes = f'Swap {self.amount} {asset_symbol} in {location_name}.'
         elif self.event_subtype == HistoryEventSubType.RECEIVE:

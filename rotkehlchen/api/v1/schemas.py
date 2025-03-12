@@ -968,7 +968,7 @@ class CreateHistoryEventSchema(Schema):
         event_identifier = fields.String(required=False, load_default=None)
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
         fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        notes = fields.String(required=False, load_default=None)
+        notes = fields.List(fields.String(), required=False, validate=validate.Length(min=1, max=2))  # noqa: E501
 
         @post_load
         def make_history_base_entry(
@@ -976,10 +976,22 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
+            if (notes := data.get('notes')) is None:
+                movement_notes, fee_notes = None, None
+            elif len(notes) == 1:
+                movement_notes, fee_notes = notes[0], None
+            else:  # len == 2, enforced by validate.Length above
+                movement_notes, fee_notes = notes
+
             if ((fee := data['fee']) is None) ^ (data['fee_asset'] is None):
                 raise ValidationError(
                     message='fee and fee_asset must be provided together',
                     field_name='fee',
+                )
+            elif fee is None and fee_notes is not None:
+                raise ValidationError(
+                    message='fee_notes may only be provided when fee_amount is present',
+                    field_name='fee_notes',
                 )
 
             extra_data: AssetMovementExtraData = {}
@@ -1008,7 +1020,8 @@ class CreateHistoryEventSchema(Schema):
                     subtype=HistoryEventSubType.FEE,
                 ),
                 location_label=data['location_label'],
-                given_notes=data['notes'],
+                movement_notes=movement_notes,
+                fee_notes=fee_notes,
             ) if fee is not None else [AssetMovement(
                 is_fee=False,
                 asset=data['asset'],
@@ -1021,7 +1034,7 @@ class CreateHistoryEventSchema(Schema):
                 extra_data=extra_data,
                 event_identifier=data['event_identifier'],
                 location_label=data['location_label'],
-                given_notes=data['notes'],
+                notes=movement_notes,
             )]
 
             return {'events': events}
@@ -1043,12 +1056,6 @@ class CreateHistoryEventSchema(Schema):
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
-            if ((fee_amount := data['fee_amount']) is None) ^ (data['fee_asset'] is None):
-                raise ValidationError(
-                    message='fee_amount and fee_asset must be provided together',
-                    field_name='fee_amount',
-                )
-
             if (notes := data.get('notes')) is None:
                 spend_notes, receive_notes, fee_notes = None, None, None
             elif len(notes) == 2:
@@ -1056,6 +1063,17 @@ class CreateHistoryEventSchema(Schema):
                 fee_notes = None
             else:  # len == 3, enforced by validate.Length above
                 spend_notes, receive_notes, fee_notes = notes
+
+            if ((fee_amount := data['fee_amount']) is None) ^ (data['fee_asset'] is None):
+                raise ValidationError(
+                    message='fee_amount and fee_asset must be provided together',
+                    field_name='fee_amount',
+                )
+            elif fee_amount is None and fee_notes is not None:
+                raise ValidationError(
+                    message='fee_notes may only be provided when fee_amount is present',
+                    field_name='fee_notes',
+                )
 
             context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
             events = create_swap_events(
