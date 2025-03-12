@@ -15,6 +15,7 @@ import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { logger } from '@/utils/logging';
 import { type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 
@@ -170,6 +171,34 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   };
 
+  const resetFailedStates = (asset: string, parsed: HistoricalAssetPriceResponse, excludeTimestamps: number[]): void => {
+    const { noPricesTimestamps, rateLimitedPricesTimestamps } = parsed;
+
+    const failedState = { ...get(failedDailyPrices) };
+    const resolvedState = { ...get(resolvedFailedDailyPrices) };
+
+    if ((noPricesTimestamps.length === 0 && excludeTimestamps.length === 0) && rateLimitedPricesTimestamps.length === 0) {
+      if (failedState[asset]) {
+        const updatedFailedPrices = { ...failedState };
+        delete updatedFailedPrices[asset];
+        set(failedDailyPrices, updatedFailedPrices);
+      }
+      if (resolvedState[asset]) {
+        delete resolvedState[asset];
+        set(resolvedFailedDailyPrices, resolvedState);
+      }
+    }
+    else {
+      set(failedDailyPrices, {
+        ...failedState,
+        [asset]: {
+          noPricesTimestamps: noPricesTimestamps.length > 0 ? noPricesTimestamps : excludeTimestamps,
+          rateLimitedPricesTimestamps,
+        },
+      });
+    }
+  };
+
   const fetchHistoricalAssetPrice = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
     try {
       const asset = payload.asset;
@@ -194,34 +223,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
       });
 
       const parsed = HistoricalAssetPriceResponse.parse(result);
-
-      const { noPricesTimestamps, rateLimitedPricesTimestamps } = parsed;
-
-      if ((noPricesTimestamps.length === 0 && excludeTimestamps.length === 0) && rateLimitedPricesTimestamps.length === 0) {
-        if (failedState[asset]) {
-          const updatedFailedPrices = { ...failedState };
-          delete updatedFailedPrices[asset];
-          set(failedDailyPrices, updatedFailedPrices);
-        }
-        if (resolvedState[asset]) {
-          delete resolvedState[asset];
-          set(resolvedFailedDailyPrices, resolvedState);
-        }
-      }
-      else {
-        set(failedDailyPrices, {
-          ...failedState,
-          [asset]: {
-            noPricesTimestamps: noPricesTimestamps.length > 0 ? noPricesTimestamps : excludeTimestamps,
-            rateLimitedPricesTimestamps,
-          },
-        });
-      }
-
+      resetFailedStates(asset, parsed, excludeTimestamps);
       return parsed;
     }
     catch (error: any) {
-      console.error(error);
+      logger.error(error);
       if (!isTaskCancelled(error)) {
         notify({
           display: true,

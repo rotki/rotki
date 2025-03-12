@@ -27,30 +27,36 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
+const tab = ref(0);
 
 const { assetName } = useAssetInfoRetrieval();
-const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
+const store = useHistoricCachePriceStore();
+const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(store);
+const { resetHistoricalPricesData } = store;
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
+
+const name = assetName(props.asset);
 
 const failedPrices = computed<FailedHistoricalAssetPriceResponse>(() => get(failedDailyPrices)[props.asset]);
 
-const name = assetName(props.asset);
-const tab = ref(0);
-
-const { resetHistoricalPricesData } = useHistoricCachePriceStore();
-const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
-
-async function getHistoricalPrices() {
-  set(prices, await fetchHistoricalPrices());
-}
-
-const noPricesTimestamps = get(failedPrices).noPricesTimestamps;
+const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
+  {
+    key: 'time',
+    label: t('common.datetime'),
+    sortable: true,
+  },
+  {
+    key: 'price',
+    label: t('common.price'),
+  },
+]);
 
 const formattedItems = computed<EditableMissingPrice[]>(() => {
   const fromAsset = props.asset;
   const toAsset = get(currencySymbol);
 
-  return noPricesTimestamps.map((time) => {
+  return get(failedPrices).noPricesTimestamps.map((time) => {
     const savedHistoricalPrice = get(prices).find(
       price => price.fromAsset === fromAsset && price.toAsset === toAsset && price.timestamp === time,
     );
@@ -72,6 +78,10 @@ const formattedItems = computed<EditableMissingPrice[]>(() => {
     };
   });
 });
+
+async function getHistoricalPrices() {
+  set(prices, await fetchHistoricalPrices());
+}
 
 async function updatePrice(item: EditableMissingPrice) {
   if (item.useRefreshedHistoricalPrice)
@@ -124,18 +134,6 @@ async function updatePrice(item: EditableMissingPrice) {
 
   await getHistoricalPrices();
 }
-
-const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
-  {
-    key: 'time',
-    label: t('common.datetime'),
-    sortable: true,
-  },
-  {
-    key: 'price',
-    label: t('common.price'),
-  },
-]);
 
 onMounted(async () => {
   await getHistoricalPrices();
