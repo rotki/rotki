@@ -16,16 +16,32 @@ const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof 
 const key = apiKey(name);
 const status = actionStatus(name);
 
+const serviceKeyCardRef = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCardRef');
+
+const route = useRoute();
+const router = useRouter();
+
 const link = externalLinks.usageGuideSection.gnosisPayKey;
 
 watchImmediate(key, (value) => {
   if (value)
     set(understand, true);
 });
+
+watch(route, async (route) => {
+  const { query } = route;
+  if (query?.service === 'gnosisPay') {
+    nextTick(() => {
+      get(serviceKeyCardRef)?.setOpen(true);
+    });
+    await router.replace({ query: {} });
+  }
+}, { immediate: true });
 </script>
 
 <template>
   <ServiceKeyCard
+    ref="serviceKeyCardRef"
     need-premium
     rounded-icon
     :key-set="!!key"

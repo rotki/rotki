@@ -12,7 +12,7 @@ const { t } = useI18n();
 const { keys } = useExternalApiKeys(t);
 const tabIndex = ref<number>(0);
 const route = useRoute();
-const serviceKeyCardRef = ref<InstanceType<typeof ServiceKeyCard>>();
+const serviceKeyCardRef = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCardRef');
 const unified = ref(false);
 
 const { useUnifiedEtherscanApi } = storeToRefs(useGeneralSettingsStore());

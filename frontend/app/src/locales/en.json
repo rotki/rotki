@@ -3461,6 +3461,10 @@
       "title": "CSV Import Result: {sourceName}"
     },
     "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
+    "gnosis_pay_session_key_expired": {
+      "replace_key": "Replace key",
+      "title": "Gnosis Pay session key expired"
+    },
     "missing_api_key": {
       "action": "Enter key",
       "etherscan": {

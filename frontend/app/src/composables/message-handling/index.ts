@@ -9,7 +9,10 @@ import { useMissingApiKeyHandler } from '@/composables/message-handling/missing-
 import { useNewTokenDetectedHandler } from '@/composables/message-handling/new-token-detected';
 import { usePremium } from '@/composables/premium';
 import { useSync } from '@/composables/session/sync';
-import { useExchangeUnknownAssetHandler } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import {
+  useExchangeUnknownAssetHandler,
+} from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import { Routes } from '@/router/routes';
 import { camelCaseTransformer } from '@/services/axios-transformers';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 import { useLiquityStore } from '@/store/defi/liquity';
@@ -22,6 +25,7 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,
+  type GnosisPaySessionKeyExpiredData,
   MESSAGE_WARNING,
   type PremiumStatusUpdateData,
   type ProgressUpdateResultData,
@@ -128,6 +132,24 @@ export function useMessageHandling(): UseMessageHandling {
     }
   };
 
+  const router = useRouter();
+
+  const handleGnosisPaySessionKeyExpired = async (data: GnosisPaySessionKeyExpiredData): Promise<Notification> => ({
+    action: {
+      action: async () => router.push({
+        path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+        query: { service: 'gnosisPay' },
+      }),
+      icon: 'lu-arrow-right',
+      label: t('notification_messages.gnosis_pay_session_key_expired.replace_key'),
+      persist: true,
+    },
+    display: true,
+    message: data.error,
+    severity: Severity.WARNING,
+    title: t('notification_messages.gnosis_pay_session_key_expired.title'),
+  });
+
   const handleProgressUpdates = async (rawData: ProgressUpdateResultData): Promise<Notification | null> => {
     const subtype = rawData.subtype;
 
@@ -215,6 +237,9 @@ export function useMessageHandling(): UseMessageHandling {
     }
     else if (type === SocketMessageType.PROGRESS_UPDATES) {
       addNotification(await handleProgressUpdates(message.data));
+    }
+    else if (type === SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED) {
+      addNotification(await handleGnosisPaySessionKeyExpired(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);
