@@ -233,6 +233,12 @@ export const ExchangeUnknownAssetData = z.object({
   name: z.string(),
 });
 
+export const GnosisPaySessionKeyExpiredData = z.object({
+  error: z.string(),
+});
+
+export type GnosisPaySessionKeyExpiredData = z.infer<typeof GnosisPaySessionKeyExpiredData>;
+
 export type ExchangeUnknownAssetData = z.infer<typeof ExchangeUnknownAssetData>;
 
 export const SocketMessageType = {
@@ -245,6 +251,7 @@ export const SocketMessageType = {
   EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',
   EVM_TRANSACTION_STATUS: 'evm_transaction_status',
   EXCHANGE_UNKNOWN_ASSET: 'exchange_unknown_asset',
+  GNOSISPAY_SESSIONKEY_EXPIRED: 'gnosispay_sessionkey_expired',
   HISTORY_EVENTS_STATUS: 'history_events_status',
   LEGACY: 'legacy',
   MISSING_API_KEY: 'missing_api_key',
@@ -341,6 +348,11 @@ const ProgressUpdatesMessage = z.object({
   type: z.literal(SocketMessageType.PROGRESS_UPDATES),
 });
 
+const GnosisPaySessionKeyExpiredMessage = z.object({
+  data: GnosisPaySessionKeyExpiredData,
+  type: z.literal(SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED),
+});
+
 export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
@@ -359,6 +371,7 @@ export const WebsocketMessage = z.union([
   CalendarReminderMessage,
   ExchangeUnknownAssetMessage,
   ProgressUpdatesMessage,
+  GnosisPaySessionKeyExpiredMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;
