@@ -1841,7 +1841,7 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
-    # verify that a the difference in text being upper or lower case doesn't affect the check
+    # verify that the difference in text being upper or lower case doesn't affect the check
     with database.user_write() as write_cursor:
         write_cursor.execute('DROP TABLE eth2_daily_staking_details')
         write_cursor.execute(DB_CREATE_ETH2_DAILY_STAKING_DETAILS.lower())
