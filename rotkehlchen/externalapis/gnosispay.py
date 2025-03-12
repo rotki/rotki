@@ -35,7 +35,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 # the seconds around a transaction to search for when querying the API
-GNOSIS_PAY_TX_TIMESTAMP_RANGE = 10
+GNOSIS_PAY_TX_TIMESTAMP_RANGE = 30
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -142,6 +142,7 @@ class GnosisPay:
                 log.debug(f'Ignoring gnosis pay data entry {data}')
                 return None  # only use Approved/Reversal for payments
 
+            log.debug(f'Deserializing gnosis pay transaction: {data}')
             if (city := data['merchant']['city'].rstrip()).startswith('+') or city.replace('-', '').isdigit():  # noqa: E501
                 city = None
             tx_currency_symbol = data['transactionCurrency']['symbol']
@@ -337,6 +338,7 @@ class GnosisPay:
             log.error(f'Could not query Gnosis Pay API due to {e!s}')
             return None
 
+        log.debug(f'Gnosis api query returned {len(data)} transactions')
         # since this may contain more transactions than the one we need dont
         # let the query go to waste and update data for all
         for entry in data:
