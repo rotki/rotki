@@ -3663,9 +3663,10 @@ class RestAPI:
         if self.rotkehlchen.premium is None:
             with_limit = True
             entries_limit = FREE_PNL_EVENTS_LIMIT
+
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         try:
-            report_data, entries_found = dbreports.get_report_data(
+            report_data, entries_found, entries_total = dbreports.get_report_data(
                 filter_=filter_query,
                 with_limit=with_limit,
             )
@@ -3678,6 +3679,7 @@ class RestAPI:
                 export_type=AccountingEventExportType.API,
             ) for x in report_data],
             'entries_found': entries_found,
+            'entries_total': entries_total,
             'entries_limit': entries_limit,
         }
         result_dict = _wrap_in_result(result, '')

@@ -170,7 +170,7 @@ def test_report_events_sort_by_columns(database):
                 report_id=report_id,
             )
 
-            results, _ = dbreport.get_report_data(filter_=filter_query, with_limit=True)
+            results, _, _ = dbreport.get_report_data(filter_=filter_query, with_limit=True)
             for idx, event in enumerate(results):
                 field_value_fn = test_case['check_field']
                 field_value = field_value_fn(event)

@@ -6359,7 +6359,8 @@ Get saved events of a PnL Report
                 "type": "trade"
         }],
         "entries_found": 2,
-        "entries_limit": 1000
+        "entries_total": 10,
+        "entries_limit": 2
        },
        "message": ""
       }
@@ -6377,6 +6378,9 @@ Get saved events of a PnL Report
    :resjson int timestamp: The timestamp this event took place in.
    :resjson str type: The type of event. Can be any of the possible accounting event types.
    :resjson str group_id: Optional. Can be missing. An id signifying events that should be grouped together in the frontend. If missing no grouping needs to happen.
+   :resjson int entries_found: The number of entries found in the current query. This limited by the "limit" field and for free this is limited by FREE_PNL_EVENTS_LIMIT.
+   :resjson int entries_total: The total number of entries in the database for the requested report id, ignoring any filters.
+   :resjson int entries_limit: The limit of entries that can be returned.
 
    :statuscode 200: Report event data was successfully queried.
    :statuscode 400: Report id does not exist.
