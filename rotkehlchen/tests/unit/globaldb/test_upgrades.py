@@ -971,6 +971,19 @@ def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?)',
+            (
+                CacheType.VELODROME_POOL_ADDRESS.serialize(),
+                CacheType.VELODROME_GAUGE_ADDRESS.serialize(),
+                CacheType.AERODROME_POOL_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_ADDRESS.serialize(),
+            ),
+        ).fetchone()[0] == 1914
+        assert cursor.execute(
+            'SELECT value, last_queried_ts FROM unique_cache WHERE key = ?',
+            (CacheType.CURVE_LENDING_VAULTS.serialize(),),
+        ).fetchone() == ('10000', 1741813725)
         assert table_exists(cursor=cursor, name='counterparty_asset_mappings') is False
 
     with ExitStack() as stack:
@@ -985,6 +998,19 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
     assert globaldb.get_setting_value('version', 0) == 12
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='counterparty_asset_mappings') is True
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?)',
+            (
+                CacheType.VELODROME_POOL_ADDRESS.serialize(),
+                CacheType.VELODROME_GAUGE_ADDRESS.serialize(),
+                CacheType.AERODROME_POOL_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_ADDRESS.serialize(),
+            ),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT value, last_queried_ts FROM unique_cache WHERE key = ?',
+            (CacheType.CURVE_LENDING_VAULTS.serialize(),),
+        ).fetchone() == ('0', 0)
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

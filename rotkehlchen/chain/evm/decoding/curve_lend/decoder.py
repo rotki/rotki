@@ -1,21 +1,28 @@
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.ethereum.utils import (
+    should_update_protocol_cache,
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, GAUGE_DEPOSIT
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
     ReloadableDecoderMixin,
 )
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
+    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
@@ -26,12 +33,13 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CURVE_LENDING_VAULTS_PROTOCOL, CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CURVE_VAULT_ABI
+from .constants import CURVE_VAULT_ABI, CURVE_VAULT_GAUGE_WITHDRAW
 from .utils import query_curve_lending_vaults
 
 if TYPE_CHECKING:
@@ -76,6 +84,7 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         self.leverage_zap = leverage_zap
         self.vaults: set[ChecksumEvmAddress] = set()
         self.controllers: set[ChecksumEvmAddress] = set()
+        self.gauges: set[ChecksumEvmAddress] = set()
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
@@ -96,17 +105,23 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             # we are missing new vaults. Populate the cache
             vault_data = cursor.execute(f'SELECT address {query_body}', bindings).fetchall()
 
-        for row in vault_data:
-            if (controller_address := self._maybe_get_cached_vault_address(
-                cache_type=CacheType.CURVE_LENDING_VAULT_CONTROLLER,
-                vault_address=(vault_address := row[0]),
-                contract_method='controller',
-            )) is None:
-                log.error(f'Failed to load controller address for Curve lending vault {vault_address}')  # noqa: E501
-                continue
+            for row in vault_data:
+                if (controller_address := self._maybe_get_cached_vault_address(
+                    cache_type=CacheType.CURVE_LENDING_VAULT_CONTROLLER,
+                    vault_address=(vault_address := row[0]),
+                    contract_method='controller',
+                )) is None:
+                    log.error(f'Failed to load controller address for Curve lending vault {vault_address}')  # noqa: E501
+                    continue
 
-            self.vaults.add(vault_address)
-            self.controllers.add(controller_address)
+                if (gauge_address := globaldb_get_unique_cache_value(
+                    cursor=cursor,
+                    key_parts=[CacheType.CURVE_LENDING_VAULT_GAUGE, str(vault_address)],
+                )) is not None:
+                    self.gauges.add(string_to_evm_address(gauge_address))
+
+                self.vaults.add(vault_address)
+                self.controllers.add(controller_address)
 
         return self.addresses_to_decoders()
 
@@ -617,13 +632,108 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+        """This decodes deposit & withdraw events of the vault's gauge contract."""
+        if context.tx_log.topics[0] not in (GAUGE_DEPOSIT, CURVE_VAULT_GAUGE_WITHDRAW):
+            return DEFAULT_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        gauge_asset = self.base.get_or_create_evm_asset(context.tx_log.address)
+        paired_events_data, from_event_type, from_event_subtype, to_event_type, to_event_subtype, to_notes = None, HistoryEventType.SPEND, HistoryEventSubType.NONE, None, None, ''  # noqa: E501
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.amount == amount and
+                    event.address == context.tx_log.address
+            ):
+                event.counterparty = CPT_CURVE
+                event.product = EvmProduct.GAUGE
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} into {gauge_asset.symbol}'  # noqa: E501
+
+                paired_events_data = ([event], True)
+                from_event_type = HistoryEventType.RECEIVE
+                from_event_subtype = HistoryEventSubType.NONE
+                to_event_type = HistoryEventType.RECEIVE
+                to_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                to_notes = f'Receive {amount} {gauge_asset.symbol} after depositing in curve lending vault gauge'  # noqa: E501
+                break
+
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.amount == amount and
+                    event.address == context.tx_log.address
+            ):
+                event.counterparty = CPT_CURVE
+                event.product = EvmProduct.GAUGE
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {gauge_asset.symbol}'  # noqa: E501
+
+                paired_events_data = ([event], False)
+                from_event_type = HistoryEventType.SPEND
+                from_event_subtype = HistoryEventSubType.NONE
+                to_event_type = HistoryEventType.SPEND
+                to_event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                to_notes = f'Return {amount} {gauge_asset.symbol} after withdrawing from curve lending vault gauge'  # noqa: E501
+                break
+        else:
+            log.error(f'Failed to find deposit/withdraw event for curve lending vault gauge for {context.transaction}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        return DecodingOutput(action_items=[
+            ActionItem(
+                action='transform',
+                from_event_type=from_event_type,
+                from_event_subtype=from_event_subtype,
+                asset=gauge_asset,
+                amount=amount,
+                to_counterparty=CPT_CURVE,
+                to_notes=to_notes,
+                paired_events_data=paired_events_data,
+                to_event_type=to_event_type,
+                to_event_subtype=to_event_subtype,
+            ),
+        ])
+
+    def _maybe_enrich_curve_lending_gauge_rewards(self, context: EnricherContext) -> TransferEnrichmentOutput:  # noqa: E501
+        """ This enriches rewards paid to users from the vault's gauge contract.
+        It is always a transfer of the reward tokens of the gauge without any other log emitted.
+
+        May raise:
+        - UnknownAsset
+        - WrongAssetType
+        """
+        if (
+                (source_address := bytes_to_address(context.tx_log.topics[1])) in self.gauges and
+                context.event.event_type == HistoryEventType.RECEIVE and
+                context.event.event_subtype == HistoryEventSubType.NONE and
+                (crypto_asset := context.event.asset.resolve_to_evm_token()).evm_address not in self.vaults  # noqa: E501
+        ):
+            context.event.event_subtype = HistoryEventSubType.REWARD
+            context.event.notes = f'Receive {context.event.amount} {crypto_asset.symbol} rewards from curve lending {self.base.get_or_create_evm_asset(source_address).symbol}'  # noqa: E501
+            context.event.counterparty = CPT_CURVE
+            return TransferEnrichmentOutput(matched_counterparty=CPT_CURVE)
+
+        return FAILED_ENRICHMENT_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return (
             dict.fromkeys(self.vaults, (self._decode_vault_events,)) |
-            dict.fromkeys(self.controllers, (self._decode_vault_controller_events,))
+            dict.fromkeys(self.controllers, (self._decode_vault_controller_events,)) |
+            dict.fromkeys(self.gauges, (self._decode_staking_events,))
         )
+
+    def enricher_rules(self) -> list[Callable]:
+        return [self._maybe_enrich_curve_lending_gauge_rewards]
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

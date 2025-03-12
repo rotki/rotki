@@ -325,7 +325,7 @@ def _query_curve_data_from_api(
         existing_pools: set[ChecksumEvmAddress],
 ) -> list[CurvePoolData]:
     """
-    Query all curve information(lp tokens, pools, gagues, pool coins) from curve api.
+    Query all curve information(lp tokens, pools, gauges, pool coins) from curve api.
 
     May raise:
     - RemoteError if failed to query curve api
