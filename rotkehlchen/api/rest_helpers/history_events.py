@@ -61,6 +61,7 @@ def edit_grouped_events_with_optional_fee(
                 event=events[idx],
                 write_cursor=write_cursor,
             )
+        # Add the new fee event. Since its being manually added by the user it must be marked as customized.  # noqa: E501
         events_db.add_history_event(
             write_cursor=write_cursor,
             event=events[-1],

@@ -112,7 +112,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                     location=location,
                     location_label=location_label,
                     event_type=HistoryEventType.DEPOSIT if row[2] == 'A' else HistoryEventType.WITHDRAWAL,  # noqa: E501
-                    asset=Asset(row[6]),
+                    asset=Asset(row[6]).check_existence(),  # Added existence check here since AssetMovement has been changed to no longer resolve the asset on initialization  # noqa: E501
                     amount=FVal(row[7]),
                     fee_asset=Asset(row[8]),
                     fee=FVal(row[9]),

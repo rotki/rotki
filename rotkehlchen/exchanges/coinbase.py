@@ -979,7 +979,7 @@ class Coinbase(ExchangeInterface):
             # Only get address/transaction id for "send" type of transactions
             address = None
             transaction_id, transaction_hash = raw_data.get('id'), None
-            notes_suffix, fee = None, Fee(ZERO)
+            notes, fee = None, Fee(ZERO)
             tx_type = raw_data['type']  # not sure if fiat
             event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             amount_data = raw_data['amount']
@@ -988,7 +988,7 @@ class Coinbase(ExchangeInterface):
             if tx_type == 'fiat_withdrawal':
                 event_type = HistoryEventType.WITHDRAWAL
             elif tx_type == 'pro_deposit':
-                notes_suffix = ' to CoinbasePro'
+                notes = 'Transfer funds to CoinbasePro'
                 event_type = HistoryEventType.WITHDRAWAL
             elif tx_type in ('send', 'tx'):
                 event_type = HistoryEventType.WITHDRAWAL if amount_data['amount'].startswith('-') else HistoryEventType.DEPOSIT  # noqa: E501
@@ -996,7 +996,7 @@ class Coinbase(ExchangeInterface):
                 event_type = HistoryEventType.DEPOSIT
             elif tx_type == 'pro_withdrawal':
                 event_type = HistoryEventType.DEPOSIT
-                notes_suffix = ' from CoinbasePro'
+                notes = 'Transfer funds from CoinbasePro'
             else:
                 log.error(
                     f'In a coinbase deposit/withdrawal we got unknown type {tx_type}',
@@ -1075,7 +1075,7 @@ class Coinbase(ExchangeInterface):
                     transaction_id=transaction_hash,
                     extra_data={'reference': transaction_id} if transaction_id is not None else None,  # noqa: E501
                 ),
-                notes_suffix=notes_suffix,
+                movement_notes=notes,
             )
 
         return None

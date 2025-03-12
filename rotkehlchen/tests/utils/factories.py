@@ -1,7 +1,7 @@
 import base64
 import random
 import string
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from eth_utils.address import to_checksum_address
 
@@ -36,6 +36,9 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 DEFAULT_START_TS = Timestamp(1451606400)
 ZERO_TIMESTAMP_MS = TimestampMS(0)
@@ -158,7 +161,7 @@ def make_ethereum_event(
 
 
 def generate_events_response(
-        data: list['EvmEvent'],
+        data: list['HistoryBaseEntry'],
         accounting_status: EventAccountingRuleStatus = EventAccountingRuleStatus.PROCESSED,
 ) -> list:
     return [
