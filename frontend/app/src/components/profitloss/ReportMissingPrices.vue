@@ -2,7 +2,6 @@
 import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
 import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -11,6 +10,8 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
+import { useTemplateRef } from 'vue';
 
 const props = defineProps<{
   items: MissingPrice[];
@@ -30,7 +31,8 @@ const refreshing = ref<boolean>(false);
 const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
 
-const tableRef = ref();
+const tableRef = useTemplateRef<ComponentPublicInstance<typeof RuiDataTable>>('tableRef');
+
 const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
@@ -41,7 +43,7 @@ function createKey(item: MissingPrice) {
   return item.fromAsset + item.toAsset + item.time;
 }
 
-async function getHistoricalPrices() {
+async function getHistoricalPrices(): Promise<void> {
   set(prices, await fetchHistoricalPrices());
 }
 
