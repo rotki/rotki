@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Some Gnosis pay transactions that were missing merchant data should now redecode again properly.
 * :bug:`-` Fix error message in "Add transaction by tx hash" form is not reset.
 * :feature:`-` Allow user to filter by identifier in asset table, and asset dropdown.
 * :bug:`9586` Adding a new Bitpanda exchange account should now work correctly again.
