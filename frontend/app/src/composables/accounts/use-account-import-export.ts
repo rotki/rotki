@@ -128,7 +128,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
         address: validator.publicKey,
         addressExtras: ownershipPercentage ? { ownershipPercentage } : {},
         chain: Blockchain.ETH2,
-        label: '',
+        label: t('blockchain_balances.validator_index_label', { index: validator.index }),
         tags: [],
       });
     }
