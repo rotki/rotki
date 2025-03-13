@@ -37,6 +37,7 @@
   "enableAliasNames": true,
   "explorers": {},
   "graphZeroBased": false,
+  "ignoreSnapshotError": false,
   "itemsPerPage": 10,
   "language": "en",
   "lastKnownTimeframe": "All",

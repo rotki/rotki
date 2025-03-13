@@ -61,6 +61,7 @@ describe('types/user', () => {
       },
       defaultThemeVersion: 1,
       graphZeroBased: true,
+      ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       notifyNewNfts: false,
       nftsInNetValue: true,

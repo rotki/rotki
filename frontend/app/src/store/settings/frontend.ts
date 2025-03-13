@@ -39,6 +39,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const darkTheme = useComputedRef(settings, 'darkTheme');
   const defaultThemeVersion = useComputedRef(settings, 'defaultThemeVersion');
   const graphZeroBased = useComputedRef(settings, 'graphZeroBased');
+  const ignoreSnapshotError = useComputedRef(settings, 'ignoreSnapshotError');
   const showGraphRangeSelector = useComputedRef(settings, 'showGraphRangeSelector');
   const nftsInNetValue = useComputedRef(settings, 'nftsInNetValue');
   const renderAllNftImages = useComputedRef(settings, 'renderAllNftImages');
@@ -131,6 +132,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     enableAliasNames,
     explorers,
     graphZeroBased,
+    ignoreSnapshotError,
     itemsPerPage,
     language,
     lastKnownTimeframe,

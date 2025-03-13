@@ -2,8 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` The "Ignore Errors" setting in the snapshot menu will persist after the user moves to another page or logs out.
 * :bug:`-` Some Gnosis pay transactions that were missing merchant data should now redecode again properly.
-* :bug:`-` Fix error message in "Add transaction by tx hash" form is not reset.
+* :bug:`-` "Add transaction by tx hash" is now reusable again after errors.
 * :feature:`-` Allow user to filter by identifier in asset table, and asset dropdown.
 * :bug:`9586` Adding a new Bitpanda exchange account should now work correctly again.
 * :bug:`-` OpenOcean native token swaps should now be decoded correctly on chains where the native token is not ETH.
