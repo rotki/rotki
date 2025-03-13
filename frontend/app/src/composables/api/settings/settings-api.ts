@@ -8,6 +8,7 @@ import type { ActionResult } from '@rotki/common';
 interface UseSettingApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
   getSettings: () => Promise<UserSettingsModel>;
+  getRawSettings: () => Promise<SettingsUpdate>;
   backendSettings: () => Promise<BackendConfiguration>;
 }
 
@@ -35,6 +36,14 @@ export function useSettingsApi(): UseSettingApiReturn {
     return UserSettingsModel.parse(data);
   };
 
+  const getRawSettings = async (): Promise<SettingsUpdate> => {
+    const response = await api.instance.get<ActionResult<SettingsUpdate>>('/settings', {
+      validateStatus: validWithSessionStatus,
+    });
+
+    return handleResponse(response);
+  };
+
   const backendSettings = async (): Promise<BackendConfiguration> => {
     const response = await api.instance.get<ActionResult<BackendConfiguration>>('/settings/configuration');
     return BackendConfiguration.parse(handleResponse(response));
@@ -42,6 +51,7 @@ export function useSettingsApi(): UseSettingApiReturn {
 
   return {
     backendSettings,
+    getRawSettings,
     getSettings,
     setSettings,
   };

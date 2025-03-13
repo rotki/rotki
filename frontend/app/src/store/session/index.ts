@@ -7,7 +7,7 @@ import {
   type UnlockPayload,
 } from '@/types/login';
 import { TaskType } from '@/types/task-type';
-import { type SettingsUpdate, UserAccount, type UserSettingsModel } from '@/types/user';
+import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/types/user';
 import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
 import { lastLogin } from '@/utils/account-management';
@@ -121,6 +121,16 @@ export const useSessionStore = defineStore('session', () => {
     }
   };
 
+  async function migrateAndSaveSettings(frontendSettings?: string): Promise<string | undefined> {
+    const migratedSettings = migrateSettingsIfNeeded(frontendSettings);
+
+    if (migratedSettings) {
+      await settingsApi.setSettings({ frontendSettings: migratedSettings });
+      return migratedSettings;
+    }
+    return frontendSettings;
+  }
+
   const login = async (credentials: LoginCredentials): Promise<ActionStatus> => {
     try {
       const username = credentials.username ? credentials.username : lastLogin();
@@ -131,7 +141,14 @@ export const useSessionStore = defineStore('session', () => {
       const conflict = get(conflictExist);
 
       if (isLogged && !conflict) {
-        [settings, exchanges] = await Promise.all([settingsApi.getSettings(), exchangeApi.getExchanges()]);
+        const [rawSettings, activeExchanges] = await Promise.all([
+          settingsApi.getRawSettings(),
+          exchangeApi.getExchanges(),
+        ]);
+
+        rawSettings.frontendSettings = await migrateAndSaveSettings(rawSettings.frontendSettings);
+        exchanges = activeExchanges;
+        settings = UserSettingsModel.parse(rawSettings);
       }
       else {
         if (!credentials.username)
@@ -149,12 +166,7 @@ export const useSessionStore = defineStore('session', () => {
           title: 'login in',
         });
 
-        const migratedSettings = migrateSettingsIfNeeded(result.settings.frontendSettings);
-
-        if (migratedSettings) {
-          await settingsApi.setSettings({ frontendSettings: migratedSettings });
-          result.settings.frontendSettings = migratedSettings;
-        }
+        result.settings.frontendSettings = await migrateAndSaveSettings(result.settings.frontendSettings);
 
         const account = UserAccount.parse(result);
         ({ exchanges, settings } = account);
