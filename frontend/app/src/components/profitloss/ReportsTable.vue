@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Report } from '@/types/reports';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
+import type BigNumber from 'bignumber.js';
 import type { RouteLocationRaw } from 'vue-router';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -10,15 +11,21 @@ import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreActi
 import { useReportsStore } from '@/store/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
-const expanded = ref<Report[]>([]);
+interface ReportData extends Report {
+  free: BigNumber;
+  taxable: BigNumber;
+}
+
+const expanded = ref<ReportData[]>([]);
 const reportStore = useReportsStore();
 const { deleteReport, fetchReports, isLatestReport } = reportStore;
 const { reports } = storeToRefs(reportStore);
 const { t } = useI18n();
 
-const items = computed(() =>
+const items = computed<(ReportData & { id: number })[]>(() =>
   get(reports).entries.map((value, index) => ({
     ...value,
+    ...calculateTotalProfitLoss(value),
     id: index,
   })),
 );
@@ -28,29 +35,34 @@ const limits = computed(() => ({
   total: get(reports).entriesFound,
 }));
 
-const tableHeaders = computed<DataTableColumn<Report>[]>(() => [
+const tableHeaders = computed<DataTableColumn<ReportData>[]>(() => [
   {
     key: 'startTs',
     label: t('profit_loss_reports.columns.start'),
+    sortable: true,
   },
   {
     key: 'endTs',
     label: t('profit_loss_reports.columns.end'),
+    sortable: true,
   },
   {
     align: 'end',
     key: 'free',
     label: t('profit_loss_reports.columns.taxfree_profit_loss'),
+    sortable: true,
   },
   {
     align: 'end',
     key: 'taxable',
     label: t('profit_loss_reports.columns.taxable_profit_loss'),
+    sortable: true,
   },
   {
     align: 'end',
     key: 'timestamp',
     label: t('profit_loss_reports.columns.created'),
+    sortable: true,
   },
   {
     align: 'end',
@@ -77,7 +89,7 @@ function getReportUrl(identifier: number): RouteLocationRaw {
 
 const latestReport = (reportId: number) => get(isLatestReport(reportId));
 
-const sort = ref<DataTableSortColumn<Report>>({
+const sort = ref<DataTableSortColumn<ReportData>>({
   column: 'timestamp',
   direction: 'desc',
 });
@@ -90,10 +102,10 @@ const sort = ref<DataTableSortColumn<Report>>({
     </template>
     <RuiDataTable
       v-model:expanded="expanded"
+      v-model:sort="sort"
       :cols="tableHeaders"
       :rows="items"
       single-expand
-      :sort="sort"
       outlined
       row-attr="identifier"
     >
@@ -128,7 +140,7 @@ const sort = ref<DataTableSortColumn<Report>>({
           force-currency
           show-currency="symbol"
           pnl
-          :value="calculateTotalProfitLoss(row).free"
+          :value="row.free"
           :fiat-currency="row.settings.profitCurrency"
         />
       </template>
@@ -137,7 +149,7 @@ const sort = ref<DataTableSortColumn<Report>>({
           force-currency
           show-currency="symbol"
           pnl
-          :value="calculateTotalProfitLoss(row).taxable"
+          :value="row.taxable"
           :fiat-currency="row.settings.profitCurrency"
         />
       </template>

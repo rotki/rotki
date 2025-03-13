@@ -69,6 +69,7 @@ describe('settings:frontend', () => {
       darkTheme: DARK_COLORS,
       defaultThemeVersion: 1,
       graphZeroBased: false,
+      ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
       renderAllNftImages: true,
@@ -145,6 +146,7 @@ describe('settings:frontend', () => {
       },
       defaultThemeVersion: 1,
       graphZeroBased: true,
+      ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
       renderAllNftImages: false,
@@ -216,6 +218,7 @@ describe('settings:frontend', () => {
       graph: '#555555',
     });
     expect(store.graphZeroBased).toBe(true);
+    expect(store.ignoreSnapshotError).toBe(false);
     expect(store.showGraphRangeSelector).toBe(true);
     expect(store.nftsInNetValue).toBe(true);
     expect(store.renderAllNftImages).toBe(false);

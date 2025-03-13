@@ -17,7 +17,7 @@ from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.exchanges.exchange import ExchangeInterface
+from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.exchanges.iconomi import Iconomi
@@ -906,16 +906,13 @@ def create_test_bitpanda(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
         api_key: ApiKey | None = None,
-        secret: ApiSecret | None = None,
 ) -> Bitpanda:
     if api_key is None:
         api_key = make_api_key()
-    if secret is None:
-        secret = make_api_secret()
+
     return Bitpanda(
         name='bitpanda',
         api_key=api_key,
-        secret=secret,
         database=database,
         msg_aggregator=msg_aggregator,
     )
@@ -1100,7 +1097,7 @@ def try_get_first_exchange(
 def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Location,
-) -> ExchangeInterface | None:
+) -> ExchangeWithoutApiSecret | ExchangeInterface | None:
     """Tries to get the first exchange of a given type from the exchange manager
 
     If no such exchange exists returns None.

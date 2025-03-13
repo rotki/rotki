@@ -18,7 +18,7 @@ import {
 } from '@/types/login';
 import { migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
 import { TaskType } from '@/types/task-type';
-import { type SettingsUpdate, UserAccount, type UserSettingsModel } from '@/types/user';
+import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
 import { logger } from '@/utils/logging';
 
@@ -42,7 +42,7 @@ export function useLogin(): UseLoginReturn {
 
   const { initialize } = useSessionSettings();
   const { checkIfLogged, createAccount: callCreatAccount, login: callLogin } = useUsersApi();
-  const { getSettings, setSettings } = useSettingsApi();
+  const { getRawSettings, setSettings } = useSettingsApi();
   const { getExchanges } = useExchangeApi();
 
   api.setOnAuthFailure(() => {
@@ -108,6 +108,16 @@ export function useLogin(): UseLoginReturn {
     }
   };
 
+  async function migrateAndSaveSettings(frontendSettings?: string): Promise<string | undefined> {
+    const migratedSettings = migrateSettingsIfNeeded(frontendSettings);
+
+    if (migratedSettings) {
+      await setSettings({ frontendSettings: migratedSettings });
+      return migratedSettings;
+    }
+    return frontendSettings;
+  }
+
   const login = async (credentials: LoginCredentials): Promise<ActionStatus> => {
     try {
       const username = credentials.username ? credentials.username : lastLogin();
@@ -118,7 +128,14 @@ export function useLogin(): UseLoginReturn {
       const conflict = get(conflictExist);
 
       if (isLogged && !conflict) {
-        [settings, exchanges] = await Promise.all([getSettings(), getExchanges()]);
+        const [rawSettings, activeExchanges] = await Promise.all([
+          getRawSettings(),
+          getExchanges(),
+        ]);
+
+        rawSettings.frontendSettings = await migrateAndSaveSettings(rawSettings.frontendSettings);
+        exchanges = activeExchanges;
+        settings = UserSettingsModel.parse(rawSettings);
       }
       else {
         if (!credentials.username)
@@ -136,12 +153,7 @@ export function useLogin(): UseLoginReturn {
           title: 'login in',
         });
 
-        const migratedSettings = migrateSettingsIfNeeded(result.settings.frontendSettings);
-
-        if (migratedSettings) {
-          await setSettings({ frontendSettings: migratedSettings });
-          result.settings.frontendSettings = migratedSettings;
-        }
+        result.settings.frontendSettings = await migrateAndSaveSettings(result.settings.frontendSettings);
 
         const account = UserAccount.parse(result);
         ({ exchanges, settings } = account);

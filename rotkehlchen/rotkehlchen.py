@@ -1263,7 +1263,7 @@ class Rotkehlchen:
             name: str,
             location: Location,
             api_key: ApiKey,
-            api_secret: ApiSecret,
+            api_secret: ApiSecret | None,
             passphrase: str | None = None,
             kraken_account_type: Optional['KrakenAccountType'] = None,
             binance_selected_trade_pairs: list[str] | None = None,

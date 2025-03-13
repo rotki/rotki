@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
     assetInfo: vi.fn().mockImplementation((identifier) => {
-      const collectionId = identifier.endsWith('USDC') ? 'USDC' : undefined;
+      const collectionId = identifier.endsWith('USDC') ? 'USDC' : identifier;
       return {
         identifier,
         evmChain: 'ethereum',
@@ -42,7 +42,7 @@ vi.mock('@/store/balances/manual', async () => {
         },
       ])),
       getLocationBreakdown: vi.fn().mockReturnValue(computed(() => ({
-        ETH: {
+        GNO: {
           amount: bigNumberify(1000),
           usdValue: bigNumberify(1000),
         },
@@ -71,7 +71,7 @@ vi.mock('@/store/balances/exchanges', async () => {
         tags: null,
       }])),
       getLocationBreakdown: vi.fn().mockReturnValue(computed(() => ({
-        ETH: {
+        GNO: {
           amount: bigNumberify(1000),
           usdValue: bigNumberify(1000),
         },
@@ -122,7 +122,7 @@ describe('composables::balances/breakdown', () => {
   });
 
   it('assetBreakdown', () => {
-    const assetBreakdown = balancesBreakdown.assetBreakdown('ETH');
+    const assetBreakdown = balancesBreakdown.assetBreakdown('GNO');
     const expectedResult = [
       {
         location: 'ethereum',
@@ -165,6 +165,11 @@ describe('composables::balances/breakdown', () => {
         symbol: 'USDC',
         mainAsset: 'USDC',
       },
+      GNO: {
+        name: 'GNO',
+        symbol: 'GNO',
+        mainAsset: 'GNO',
+      },
     });
     const locationBreakdown = balancesBreakdown.locationBreakdown('kraken');
     const expectedResult = [
@@ -195,12 +200,20 @@ describe('composables::balances/breakdown', () => {
         ],
       },
       {
-        asset: 'ETH',
+        asset: 'GNO',
         amount: bigNumberify(2000),
         usdValue: bigNumberify(2000),
         usdPrice: bigNumberify(-1),
+        breakdown: [
+          {
+            asset: 'GNO',
+            amount: bigNumberify(2000),
+            usdValue: bigNumberify(2000),
+            usdPrice: bigNumberify(-1),
+          },
+        ],
       },
     ];
-    expect(get(locationBreakdown)).toMatchObject(expectedResult);
+    expect(get(locationBreakdown)).toStrictEqual(expectedResult);
   });
 });

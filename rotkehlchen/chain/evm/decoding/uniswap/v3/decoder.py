@@ -34,6 +34,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import (
     evm_address_to_identifier,
     tokenid_belongs_to_collection,
+    tokenid_to_collectible_id,
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -41,6 +42,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
+    UNISWAPV3_PROTOCOL,
     ChecksumEvmAddress,
     EvmTokenKind,
     EvmTransaction,
@@ -531,7 +533,9 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             self,
             context: EnricherContext,
     ) -> TransferEnrichmentOutput:
-        """This method enriches Uniswap V3 LP creation transactions."""
+        """This method enriches Uniswap V3 LP creation transactions and updates the
+        position token's name and symbol to include the collectible id.
+        """
         if (
             tokenid_belongs_to_collection(
                 token_identifier=context.event.asset.identifier,
@@ -546,6 +550,16 @@ class Uniswapv3CommonDecoder(DecoderInterface):
             context.event.event_subtype = HistoryEventSubType.NFT
             context.event.notes = f'Create {CPT_UNISWAP_V3} LP with id {int.from_bytes(context.tx_log.topics[3])}'  # noqa: E501
             context.event.counterparty = CPT_UNISWAP_V3
+            context.event.asset = get_or_create_evm_token(
+                userdb=self.evm_inquirer.database,
+                evm_address=self.nft_manager,
+                chain_id=self.evm_inquirer.chain_id,
+                token_kind=EvmTokenKind.ERC721,
+                symbol=f'UNI-V3-POS-{(collectible_id := tokenid_to_collectible_id(identifier=context.event.asset.identifier))}',  # noqa: E501
+                name=f'Uniswap V3 Positions #{collectible_id}',
+                collectible_id=str(collectible_id),
+                protocol=UNISWAPV3_PROTOCOL,
+            )
             return TransferEnrichmentOutput(matched_counterparty=CPT_UNISWAP_V3)
 
         return FAILED_ENRICHMENT_OUTPUT

@@ -1,10 +1,12 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { useSupportedChains } from '@/composables/info/chains';
-import { isValidEthAddress } from '@rotki/common';
+import { arrayify } from '@/utils/array';
+import { isEvmIdentifier, isValidEthAddress } from '@rotki/common';
 import { z } from 'zod';
 
 enum AssetFilterKeys {
+  IDENTIFIER = 'identifier',
   SYMBOL = 'symbol',
   NAME = 'name',
   EVM_CHAIN = 'chain',
@@ -12,6 +14,7 @@ enum AssetFilterKeys {
 }
 
 enum AssetFilterValueKeys {
+  IDENTIFIER = 'identifiers',
   SYMBOL = 'symbol',
   NAME = 'name',
   EVM_CHAIN = 'evmChain',
@@ -29,6 +32,16 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
   const { t } = useI18n();
 
   const matchers = computed<Matcher[]>(() => [
+    {
+      description: t('assets.filter.identifier'),
+      hint: t('assets.filter.identifier_hint'),
+      key: AssetFilterKeys.IDENTIFIER,
+      keyValue: AssetFilterValueKeys.IDENTIFIER,
+      multiple: true,
+      string: true,
+      suggestions: (): string[] => [],
+      validate: (address: string): boolean => isEvmIdentifier(address),
+    },
     {
       description: t('assets.filter.symbol'),
       hint: t('assets.filter.symbol_hint'),
@@ -57,6 +70,7 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
     },
     {
       description: t('assets.filter.address'),
+      hint: t('assets.filter.address_hint'),
       key: AssetFilterKeys.ADDRESS,
       keyValue: AssetFilterValueKeys.ADDRESS,
       string: true,
@@ -66,9 +80,16 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
   ]);
 
   const OptionalString = z.string().optional();
+  const OptionalMultipleString = z
+    .array(z.string())
+    .or(z.string())
+    .transform(arrayify)
+    .optional();
+
   const RouteFilterSchema = z.object({
     [AssetFilterValueKeys.ADDRESS]: OptionalString,
     [AssetFilterValueKeys.EVM_CHAIN]: OptionalString,
+    [AssetFilterValueKeys.IDENTIFIER]: OptionalMultipleString,
     [AssetFilterValueKeys.NAME]: OptionalString,
     [AssetFilterValueKeys.SYMBOL]: OptionalString,
   });

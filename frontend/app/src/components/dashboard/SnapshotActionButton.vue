@@ -4,6 +4,7 @@ import type { Writeable } from '@rotki/common';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useBalances } from '@/composables/balances';
 import { useInterop } from '@/composables/electron-interop';
@@ -11,6 +12,7 @@ import { usePremium } from '@/composables/premium';
 import { useLogout } from '@/modules/account/use-logout';
 import { useMessageStore } from '@/store/message';
 import { usePeriodicStore } from '@/store/session/periodic';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 import { startPromise } from '@shared/utils';
 
@@ -30,6 +32,7 @@ const { getPath } = useInterop();
 const { fetchNetValue } = useStatisticsStore();
 const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
+const { ignoreSnapshotError } = storeToRefs(useFrontendSettingsStore());
 const { isDark } = useRotkiTheme();
 
 async function refreshAllAndSave() {
@@ -96,6 +99,10 @@ async function importSnapshot() {
   set(balanceSnapshotFile, null);
   set(locationDataSnapshotFile, null);
 }
+
+watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
+  set(ignoreErrors, ignoreSnapshotError);
+});
 </script>
 
 <template>
@@ -121,7 +128,7 @@ async function importSnapshot() {
         {{ t('snapshot_action_button.snapshot_title') }}
       </div>
 
-      <div class="pt-2 text-rui-text-secondary">
+      <div class="pt-0.5 text-sm text-rui-text-secondary">
         <DateDisplay
           v-if="lastBalanceSave"
           :timestamp="lastBalanceSave"
@@ -153,6 +160,7 @@ async function importSnapshot() {
           <template #activator>
             <RuiIcon
               name="lu-info"
+              size="18"
               color="primary"
             />
           </template>
@@ -166,13 +174,22 @@ async function importSnapshot() {
         tooltip-class="max-w-[16rem]"
       >
         <template #activator>
-          <RuiCheckbox
-            v-model="ignoreErrors"
-            color="primary"
-            hide-details
+          <SettingsOption
+            #default="{ error, success, updateImmediate }"
+            setting="ignoreSnapshotError"
+            frontend-setting
           >
-            {{ t('snapshot_action_button.ignore_errors_label') }}
-          </RuiCheckbox>
+            <RuiCheckbox
+              v-model="ignoreErrors"
+              color="primary"
+              :error-messages="error"
+              :success-messages="success"
+              hide-details
+              @update:model-value="updateImmediate($event)"
+            >
+              {{ t('snapshot_action_button.ignore_errors_label') }}
+            </RuiCheckbox>
+          </SettingsOption>
         </template>
         {{ t('snapshot_action_button.ignore_errors_tooltip') }}
       </RuiTooltip>

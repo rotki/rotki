@@ -400,7 +400,11 @@ defineExpose({
           />
         </template>
         <template #value="{ item }">
-          {{ item[1] }} {{ t('actions.trades.task.title') }}
+          <AmountDisplay
+            :value="item[1]"
+            integer
+          />
+          {{ t('actions.trades.task.title') }}
         </template>
       </WrappedCard>
 
@@ -425,7 +429,11 @@ defineExpose({
           />
         </template>
         <template #value="{ item }">
-          {{ item[1] }} {{ t('explorers.tx') }}
+          <AmountDisplay
+            :value="item[1]"
+            integer
+          />
+          {{ t('explorers.tx') }}
         </template>
       </WrappedCard>
 
@@ -483,7 +491,11 @@ defineExpose({
           {{ formatDate(item.timestamp) }}
         </template>
         <template #value="{ item }">
-          {{ item.amount }} {{ t('explorers.tx') }}
+          <AmountDisplay
+            :value="item.amount"
+            integer
+          />
+          {{ t('explorers.tx') }}
         </template>
       </WrappedCard>
 
@@ -506,7 +518,11 @@ defineExpose({
           <CounterpartyDisplay :counterparty="item.protocol" />
         </template>
         <template #value="{ item }">
-          {{ item.transactions }} {{ t('explorers.tx') }}
+          <AmountDisplay
+            :value="item.transactions"
+            integer
+          />
+          {{ t('explorers.tx') }}
         </template>
       </WrappedCard>
     </template>

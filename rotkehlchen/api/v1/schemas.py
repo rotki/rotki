@@ -80,7 +80,12 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.misc import InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
-from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import (
+    ALL_SUPPORTED_EXCHANGES,
+    EXCHANGES_WITH_PASSPHRASE,
+    EXCHANGES_WITHOUT_API_SECRET,
+    SUPPORTED_EXCHANGES,
+)
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -1581,10 +1586,29 @@ class ExchangesResourceAddSchema(Schema):
     name = fields.String(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     api_key = ApiKeyField(required=True)
-    api_secret = ApiSecretField(required=True)
+    api_secret = ApiSecretField(load_default=None)
     passphrase = fields.String(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     binance_markets = fields.List(fields.String(), load_default=None)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        location = data['location']
+        if data['api_secret'] is None and location not in EXCHANGES_WITHOUT_API_SECRET:
+            raise ValidationError(
+                f'{location.name.title()} requires an API secret',
+                field_name='api_secret',
+            )
+
+        if location in EXCHANGES_WITH_PASSPHRASE and not data.get('passphrase'):
+            raise ValidationError(
+                f'{location.name.title()} requires a passphrase',
+                field_name='passphrase',
+            )
 
 
 class ExchangesDataResourceSchema(Schema):

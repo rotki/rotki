@@ -129,6 +129,7 @@ export const FrontendSettings = z.object({
   enableAliasNames: z.boolean().default(true),
   explorers: ExplorersSettings.default({}),
   graphZeroBased: z.boolean().default(false),
+  ignoreSnapshotError: z.boolean().default(false),
   itemsPerPage: z.number().positive().int().default(10),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
   lastKnownTimeframe: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),

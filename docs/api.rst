@@ -1771,7 +1771,7 @@ Setup or remove an exchange
    :reqjson string name: A name to give to this exchange's key
    :reqjson string location: The location of the exchange to setup
    :reqjson string api_key: The api key with which to setup the exchange
-   :reqjson string api_secret: The api secret with which to setup the exchange
+   :reqjson string api_secret: The API secret for the exchange. Required for all exchanges except Bitpanda, which only uses API key.
    :reqjson string passphrase: An optional passphrase, only for exchanges, like coinbase pro, which need a passphrase.
    :reqjson string kraken_account_type: An optional setting for kraken. The type of the user's kraken account. Valid values are "starter", "intermediate" and "pro".
    :reqjson list binance_markets: An optional setting for binance and binanceus. A list of string for markets that should be queried.
@@ -4902,7 +4902,7 @@ Dealing with History Events
                       "identifier": 1,
 		      "entry_type": "evm event",
                       "asset": "ETH",
-                      "balance": {"amount": "0.00863351371344", "usd_value": "0"},
+                      "amount": "0.00863351371344",
                       "counterparty": "gas",
                       "event_identifier": "10x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "event_subtype": "fee",
@@ -4927,7 +4927,7 @@ Dealing with History Events
                       "identifier": 2,
 		      "entry_type": "evm event",
                       "asset": "ETH",
-                      "balance": {"amount": "0.00163351371344", "usd_value": "0"},
+                      "amount": "0.00163351371344",
                       "counterparty": "gas",
                       "event_identifier": "10x1c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "event_subtype": "fee",
@@ -4951,7 +4951,7 @@ Dealing with History Events
                       "identifier": 3,
 		      "entry_type": "eth_withdrawal_event",
                       "asset": "ETH",
-                      "balance": {"amount": "0.00163351371344", "usd_value": "0"},
+                      "amount": "0.00163351371344",
                       "event_identifier": "EW_1454_20453",
                       "event_subtype": "remove_asset",
                       "event_type": "staking",
@@ -4974,7 +4974,7 @@ Dealing with History Events
                       "identifier": 4,
 		      "entry_type": "eth_block_event",
                       "asset": "ETH",
-                      "balance": {"amount": "0.00163351371344", "usd_value": "0"},
+                      "amount": "0.00163351371344",
                       "event_identifier": "evm_1_block_15534342",
                       "event_subtype": "block_production",
                       "event_type": "staking",
@@ -4996,7 +4996,7 @@ Dealing with History Events
                       "identifier": 5,
 		      "entry_type": "eth deposit event",
                       "asset": "ETH",
-                      "balance": {"amount": "32", "usd_value": "0"},
+                      "amount": "32",
                       "counterparty": "eth2",
                       "event_identifier": "10x2c822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                       "event_subtype": "deposit asset",
@@ -5077,7 +5077,7 @@ Dealing with History Events
                "event_identifier": "RE_xxxxxxxxxx",
                "location": "ethereum",
                "timestamp": 1569924574,
-               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "amount": "1.542",
                "sequence_index": 162,
                "event_type": "informational",
                "event_subtype": "approve",
@@ -5116,7 +5116,7 @@ Dealing with History Events
                "location": "ethereum",
                "event_type": "informational",
                "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "amount": "1.542",
                "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
                "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
                "event_subtype": "approve",
@@ -5153,7 +5153,7 @@ Dealing with History Events
                "entry_type": "eth block event",
                "event_identifier": "BLOCK_11",
                "timestamp": 1569924574,
-               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "amount": "1.542",
                "block_number": 11,
                "validator_index": 1,
                "fee_recipient": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -5181,7 +5181,7 @@ Dealing with History Events
             {
                "entry_type": "eth deposit event",
                "timestamp": 1569924574,
-               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "amount": "1.542",
                "tx_hash": "0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
                "event_identifier": "RE_xxxxxxxxxx",
                "validator_index": 1,
@@ -5212,7 +5212,7 @@ Dealing with History Events
             {
                "entry_type": "eth withdrawal event",
                "timestamp": 1569924574,
-               "balance": {"amount": "1.542", "usd_value": "1.675"},
+               "amount": "1.542",
                "is_exit": true,
                "validator_index": 1,
                "withdrawal_address": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
@@ -5240,7 +5240,7 @@ Dealing with History Events
                 "entry_type": "asset movement event",
                 "event_type": "deposit",
                 "timestamp": 1569924574,
-                "balance": {"amount": "0.5", "usd_value": "100.0"},
+                "amount": "0.5",
                 "asset": "ETH",
                 "location": "binance",
                 "fee": "0.001",
@@ -5262,7 +5262,7 @@ Dealing with History Events
 
    :reqjson string entry_type: The type of the event that will be processed. Different validation is used based on the value for this field. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :reqjson int timestamp: The timestamp of the entry **in milliseconds**.
-   :reqjson object balance: The amount/usd value of the event. If not known usd_value can also be "0".
+   :reqjson object amount: The amount of the event.
 
    **Example Response**:
 
@@ -5303,7 +5303,7 @@ Dealing with History Events
           "location": "blockchain",
           "event_type": "informational",
           "asset": "eip155:1/erc20:0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359",
-          "balance": {"amount": "1.542", "usd_value": "1.675"},
+          "amount": "1.542",
           "location_label": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
           "notes": "Approve 1 SAI of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 for spending by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE",
           "event_subtype": "approve",
@@ -5734,13 +5734,9 @@ Export PnL report debug data
                 "timestamp": 1651258550,
                 "location": "blockchain",
                 "asset": "ETH",
-                "balance": {
-                    "amount": "3.55448345",
-                    "usd_value": "24455.415502078435"
-                },
+                "amount": "3.55448345",
                 "event_type": "receive",
                 "accounting_event_type": "history base entry",
-
                 "event_subtype": null,
                 "location_label": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
                 "notes": "Receive 3.55448345 ETH 0xaBEA9132b05A70803a4E85094fD0e1800777fBEF -> 0x19e4057A38a730be37c4DA690b103267AAE1d75d",
@@ -5754,10 +5750,7 @@ Export PnL report debug data
                 "location": "blockchain",
                 "accounting_event_type": "history base entry",
                 "asset": "ETH",
-                "balance": {
-                    "amount": "0.009",
-                    "usd_value": "33.85395142596176076"
-                },
+                "amount": "0.009",
                 "event_type": "spend",
                 "event_subtype": "fee",
                 "location_label": "0x19e4057A38a730be37c4DA690b103267AAE1d75d",
@@ -7109,352 +7102,6 @@ Getting MakerDAO vault details
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
-Getting Aave balances
-========================
-
-.. http:get:: /api/(version)/blockchains/eth/modules/aave/balances
-
-   Doing a GET on the aave balances resource will return the balances that the user has locked in Aave for lending and borrowing along with their current APYs.
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/eth/modules/aave/balances HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                  "lending": {
-                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
-                          "balance": {
-                              "amount": "350.0",
-                              "usd_value": "351.21"
-                          },
-                          "apy": "3.51%"
-                      },
-                      "eip155:1/erc20:0xdd974D5C2e2928deA5F71b9825b8b646686BD200": {
-                          "balance": {
-                              "amount": "220.21",
-                              "usd_value": "363.3465"
-                          },
-                          "apy": "0.53%"
-                      },
-                  },
-                  "borrowing": {
-                      "eip155:1/erc20:0x80fB784B7eD66730e8b1DBd9820aFD29931aab03": {
-                          "balance": {
-                              "amount": "590.21",
-                              "usd_value": "146.076975"
-                          },
-                          "variable_apr": "7.46%"
-                          "stable_apr": "9.03%"
-                      }
-                  }
-              },
-              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                  "lending": {},
-                  "borrowing": {
-                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
-                          "balance": {
-                              "amount": "560",
-                              "usd_value": "156.8"
-                          },
-                          "variable_apr": "7.46%"
-                          "stable_apr": "9.03%"
-                      }
-                  }
-              }
-          },
-          "message": ""
-      }
-
-   :resjson object result: A mapping of all accounts that currently have Aave balance to the balances and APY data for each account for lending and borrowing. Each key is an asset and its values are the current balance and the APY in %
-
-   :statuscode 200: Aave balances successfully queried.
-   :statuscode 409: User is not logged in. Or aave module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
-
-Getting Aave stats
-========================
-
-.. http:get:: /api/(version)/blockchains/eth/modules/aave/stats
-
-   Doing a GET on the aave stats resource will return the interest payments of each account in Aave's lending.
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/ETH/modules/aave/stats HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson int from_timestamp: Timestamp from which to query aave historical data. If not given 0 is implied.
-   :reqjson int to_timestamp: Timestamp until which to query aave historical data. If not given current timestamp is implied.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                  "total_earned": {
-                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
-                          "amount": "0.9482",
-                          "usd_value": "1.001"
-                      },
-                      "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498": {
-                          "amount": "0.523",
-                          "usd_value": "0.0253"
-                      }
-                  },
-                  "total_lost": {
-                      "eip155:1/erc20:0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
-                          "amount": "0.3212",
-                          "usd_value": "3560.32"
-                      }
-                  },
-                  "total_earned_liquidations": {},
-              },
-              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                  "total_earned_interest": {
-                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
-                          "amount": "0.9482",
-                          "usd_value": "0.2312"
-                      }
-                  },
-                  "total_lost": {},
-                  "total_earned_liquidations": {},
-              }
-          },
-          "message": ""
-      }
-
-   :resjson object result: A mapping of accounts to the Aave history report of each account. If an account is not in the mapping rotki does not see anything ever deposited in Aave for it.
-   :resjson object total_earned_interest: A mapping of asset identifier to total earned (amount + usd_value mapping) for each asset's interest earnings. The total earned is essentially the sum of all interest payments plus the difference between ``balanceOf`` and ``principalBalanceOf`` for each asset.
-   :resjson object total_lost: A mapping of asset identifier to total lost (amount + usd_value mapping) for each asset. The total losst for each asset is essentially the accrued interest from borrowing and the collateral lost from liquidations.
-   :resjson object total_earned_liquidations: A mapping of asset identifier to total earned (amount + usd_value mapping) for each repaid asset during liquidations.
-
-   :statuscode 200: Aave history successfully queried.
-   :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 401: No user is currently logged in or currently logged in user does not have a premium subscription.
-   :statuscode 409: Aave module is not activated.
-   :statuscode 500: Internal rotki error
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
-
-Getting Compound balances
-==============================
-
-.. http:get:: /api/(version)/blockchains/eth/modules/compound/balances
-
-   Doing a GET on the compound balances resource will return the balances that the user has locked in Compound for lending and borrowing along with their current APYs. The APYs are return in a string percentage with 2 decimals of precision. If for some reason APY can't be queried ``null`` is returned.
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/eth/modules/compound/balances HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-                  "rewards": {
-                      "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888": {
-                          "balance" :{
-                              "amount": "3.5",
-                              "usd_value": "892.5",
-                          }
-                      }
-                  },
-                  "lending": {
-                      "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
-                          "balance": {
-                              "amount": "350.0",
-                              "usd_value": "351.21"
-                          },
-                          "apy": "3.51%"
-                      },
-                      "eip155:1/erc20:0xFC4B8ED459e00e5400be803A9BB3954234FD50e3": {
-                          "balance": {
-                              "amount": "1",
-                              "usd_value": "9500"
-                          },
-                          "apy": null,
-                      },
-                  },
-                  "borrowing": {
-                      "ETH": {
-                          "balance": {
-                              "amount": "10",
-                              "usd_value": "3450"
-                          },
-                          "apy": "7.46%"
-                      }
-                  }
-              },
-              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                  "lending": {},
-                  "borrowing": {
-                      "eip155:1/erc20:0x0D8775F648430679A709E98d2b0Cb6250d2887EF": {
-                          "balance": {
-                              "amount": "560",
-                              "usd_value": "156.8"
-                          },
-                          "apy": "7.46%"
-                      }
-                  }
-              }
-          },
-          "message": ""
-      }
-
-   :resjson object result: A mapping of all accounts that currently have compound balance to the balances and APY data for each account for lending and borrowing. Each key is an asset identifier and its values are the current balance and the APY in %
-
-   :statuscode 200: Compound balances successfully queried.
-   :statuscode 401: User is not logged in.
-   :statuscode 409: Compound module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
-
-Getting compound statistics
-=============================
-
-.. http:get:: /api/(version)/blockchains/ETH/modules/compound/stats
-
-   .. note::
-      This endpoint is only available for premium users
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   Doing a GET on the compound stats resource will return information related profit and loss of the events present in the database.
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/ETH/modules/compound/stats HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson int from_timestamp: Timestamp from which to query compound historical data. If not given 0 is implied.
-   :reqjson int to_timestamp: Timestamp until which to query compound historical data. If not given current timestamp is implied.
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result":{
-          "interest_profit":{
-            "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056":{
-              "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888":{
-                "amount":"3.5",
-                "usd_value":"892.5"
-              },
-              "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F":{
-                "amount":"250",
-                "usd_value":"261.1"
-              }
-            },
-            "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237":{
-              "eip155:1/erc20:0xE41d2489571d322189246DaFA5ebDe1F4699F498":{
-                "amount":"0.55",
-                "usd_value":"86.1"
-              }
-            }
-          },
-          "debt_loss":{
-            "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237":{
-              "ETH":{
-                "amount":"0.1",
-                "usd_value":"30.5"
-              }
-            }
-          },
-          "liquidation_profit":{
-            "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237":{
-              "ETH":{
-                "amount":"0.00005",
-                "usd_value":"0.023"
-              }
-            }
-          },
-          "rewards":{
-            "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056":{
-              "eip155:1/erc20:0xc00e94Cb662C3520282E6f5717214004A7f26888":{
-                "amount":"3.5",
-                "usd_value":"892.5"
-              }
-            }
-          }
-        },
-        "message":""
-      }
-
-   :resjson object interest_profit: A mapping of addresses to mappings of totals assets earned from lending over a given period
-   :resjson object debt_loss: A mapping of addresses to mappings of totals assets lost to repayment fees and liquidation over a given period.
-   :resjson object liquidation_profit: A mapping of addresses to mappings of totals assets gained thanks to liquidation repayments over a given period.
-   :resjson object rewards: A mapping of addresses to mappings of totals assets (only COMP atm) gained as a reward for using Compound over a given period.
-
-   :statuscode 200: Compound statistics successfully queried.
-   :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 401: User is not logged in.
-   :statuscode 403: Logged in user does not have premium.
-   :statuscode 409: Compound module is not activated.
-   :statuscode 500: Internal rotki error.
-
 
 Getting Liquity balances
 ========================
@@ -8013,238 +7660,6 @@ Getting Uniswap V3 balances
    :statuscode 401: User is not logged in.
    :statuscode 409: Uniswap module is not activated.
    :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
-
-Getting Uniswap/Sushiswap events
-================================
-
-.. http:get:: /api/(version)/blockchains/eth/modules/{module}/stats
-
-   Doing a GET on the uniswap/sushiswap stats endpoint will return information about the profit and loss on uniswap/sushiswap events for the selected range.
-
-   .. note::
-      This endpoint is only available for premium users
-
-   .. note::
-      module can only be one of ``uniswap`` or ``sushiswap`` for this endpoint.
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/eth/modules/uniswap/history/events HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "message": "",
-          "result": {
-              "0x6C0F75eb3D69B9Ea2fB88dbC37fc086a12bBC93F": [
-                  {
-                      "pool_address": "0x2C7a51A357d5739C5C74Bf3C96816849d2c9F726",
-                      "profit_loss0": "264.089867496935331902",
-                      "profit_loss1": "88.677078283001177264",
-                      "token0": "eip155:1/erc20:0x0e2298E3B3390e3b945a5456fBf59eCc3f55DA16",
-                      "token1": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
-                      "usd_profit_loss": "162.1876736563418464415499063"
-                  }
-              ]
-          }
-      }
-
-
-   :resjson object result: A mapping between accounts and their Uniswap events stats per pool.
-   :resjson string pool_address: The contract address of the pool.
-   :resjson string profit_loss0: The token0 profit/loss.
-   :resjson string profit_loss1: The token1 profit/loss.
-   :resjson object token0: The pool's pair left token identifier
-   :resjson object token1: The pool's pair right token identifier.
-   :resjson string usd_profit_loss: The total profit/loss in USD.
-
-
-   :statuscode 200: Uniswap events successfully queried.
-   :statuscode 400: Requested module is not allowed to query statistics.
-   :statuscode 401: User is not logged in.
-   :statuscode 403: Logged in user does not have premium.
-   :statuscode 409: Uniswap module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan or the graph node could not be reached or returned unexpected response.
-
-
-Getting yearn finance vaults balances
-==========================================
-
-.. http:get:: /api/(version)/blockchains/eth/modules/yearn/vaults/balances
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   Doing a GET on the yearn finance vaults balances resource will return all yearn vault balances.
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/eth/modules/yearn/vaults/balances HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-          "result": {
-              "0x1D7D7Eb7035B42F39f200AA3af8a65BC3475A237": {
-                  "YCRV Vault": {
-                      "underlying_token": "eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
-                      "vault_token": "eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c",
-                      "underlying_value": {
-                          "amount": "25", "usd_value": "150"
-                      },
-                      "vault_value": {
-                          "amount": "19", "usd_value": "150"
-                      },
-                      "roi": "25.55%"
-                  },
-                  "YYFI Vault": {
-                      "underlying_token": "eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
-                      "vault_token": "eip155:1/erc20:0xBA2E7Fed597fd0E3e70f5130BcDbbFE06bB94fe1",
-                      "underlying_value": {
-                          "amount": "25", "usd_value": "150"
-                      },
-                      "vault_value": {
-                          "amount": "19", "usd_value": "150"
-                      }
-                  }
-              },
-          "0xA0B6B7fEa3a3ce3b9e6512c0c5A157a385e81056": {
-              "YALINK Vault": {
-                      "underlying_token": "eip155:1/erc20:0xA64BD6C70Cb9051F6A9ba1F163Fdc07E0DfB5F84",
-                      "vault_token": "eip155:1/erc20:0x29E240CFD7946BA20895a7a02eDb25C210f9f324",
-                      "underlying_value": {
-                          "amount": "25", "usd_value": "150"
-                      },
-                      "vault_value": {
-                          "amount": "19", "usd_value": "150"
-                      },
-                      "roi": "35.15%"
-              }
-          }
-          },
-          "message": ""
-      }
-
-   :resjson object result: A mapping of addresses to a mapping of vault names to vault balances
-   :resjsonarr string underlying_token: The symbol of the token that is deposited to the vault
-   :resjsonarr string vault_token: The symbol of the token that is minted when you deposit underlying token to the vault
-   :resjsonarr object underlying_value: The value of the underlying token for the vault.
-   :resjsonarr object vault_value: The value of the vault token for the vault.
-   :resjsonarr optional[string] roi: An optional string. The Return of Investment for the vault since its creation.
-
-
-   :statuscode 200: Yearn vault balances successfully queried.
-   :statuscode 401: User is not logged in.
-   :statuscode 409: Yearn module is not activated.
-   :statuscode 500: Internal rotki error.
-   :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
-
-
-Getting yearn finance V2 vaults balances
-==========================================
-
-.. http:get:: /api/(version)/blockchains/eth/modules/yearn/vaultsv2/balances
-
-   .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``
-
-   .. note::
-      This endpoint also accepts parameters as query arguments.
-
-   Doing a GET on the yearn finance vaults V2 balances resource will return all yearn vault balances.
-
-
-   **Example Request**:
-
-   .. http:example:: curl wget httpie python-requests
-
-      GET /api/1/blockchains/eth/modules/yearn/vaultsv2/balances HTTP/1.1
-      Host: localhost:5042
-
-   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-
-   **Example Response**:
-
-   .. sourcecode:: http
-
-      HTTP/1.1 200 OK
-      Content-Type: application/json
-
-      {
-        "result":{
-            "0x915C4580dFFD112db25a6cf06c76cDd9009637b7":{
-              "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9":{
-                  "underlying_token":"eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                  "vault_token":"eip155:1/erc20:0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
-                  "underlying_value":{
-                    "amount":"74.292820",
-                    "usd_value":"105.0"
-                  },
-                  "vault_value":{
-                    "amount":"70",
-                    "usd_value":"105.0"
-                  },
-                  "roi":"-238.20%"
-              },
-              "0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67":{
-                  "underlying_token":"eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
-                  "vault_token":"eip155:1/erc20:0xB8C3B7A2A618C552C23B1E4701109a9E756Bab67",
-                  "underlying_value":{
-                    "amount":"2627.246068139435250",
-                    "usd_value":"3825.0"
-                  },
-                  "vault_value":{
-                    "amount":"2550",
-                    "usd_value":"3825.0"
-                  },
-                  "roi":"9.14%"
-              }
-            }
-        },
-        "message":""
-      }
-
-   :resjson object result: A mapping of addresses to a mapping of vault names to vault balances
-   :resjsonarr string underlying_token: The identifier of the token that is deposited to the vault
-   :resjsonarr string vault_token: The identifier of the token that is minted when you deposit underlying token to the vault
-   :resjsonarr object underlying_value: The value of the underlying token for the vault.
-   :resjsonarr object vault_value: The value of the vault token for the vault.
-   :resjsonarr optional[string] roi: An optional string. The Return of Investment for the vault since its creation.
-
-
-   :statuscode 200: Yearn vault V2 balances successfully queried.
-   :statuscode 401: User is not logged in.
-   :statuscode 409: Yearn module is not activated.
-   :statuscode 500: Internal Rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 

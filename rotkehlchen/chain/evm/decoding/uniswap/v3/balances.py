@@ -156,8 +156,6 @@ class UniswapV3Balances(ProtocolWithBalance):
                     evm_address=self.uniswap_v3_nft_manager.address,
                     chain_id=self.evm_inquirer.chain_id,
                     token_kind=EvmTokenKind.ERC721,
-                    symbol=f'UNI-V3-POS-{collectible_id}',
-                    name=f'Uniswap V3 Positions #{collectible_id}',
                     collectible_id=str(collectible_id),
                     protocol=UNISWAPV3_PROTOCOL,
                 )

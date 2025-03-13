@@ -37,6 +37,8 @@ const props = withDefaults(defineProps<{
   errorMessages?: string[];
   showDetails?: boolean;
   customHint?: string;
+  noDataText?: string;
+  required?: boolean;
 }>(), {
   chains: () => [],
   customHint: '',
@@ -50,6 +52,7 @@ const props = withDefaults(defineProps<{
   multichain: false,
   multiple: false,
   outlined: false,
+  required: false,
   showDetails: false,
   unique: false,
   usableAddresses: () => [],
@@ -89,17 +92,17 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
   const filteredChains = get(chains);
   const accountData = get(accounts);
 
-  const blockchainAccounts: AccountWithAddressData[] = get(unique)
-    ? uniqBy(accountData, account => getAccountAddress(account))
-    : accountData;
-
   const filteredAccounts = filteredChains.length === 0
-    ? blockchainAccounts
-    : blockchainAccounts.filter(({ chain }) => chain === 'ALL' || filteredChains.includes(chain));
+    ? accountData
+    : accountData.filter(({ chain }) => chain === 'ALL' || filteredChains.includes(chain));
+
+  const filteredByUnique: AccountWithAddressData[] = get(unique)
+    ? uniqBy(filteredAccounts, account => getAccountAddress(account))
+    : filteredAccounts;
 
   if (get(multichain)) {
     const entries: Record<string, number> = {};
-    filteredAccounts.forEach((account) => {
+    filteredByUnique.forEach((account) => {
       const address = getAccountAddress(account);
       if (entries[address])
         entries[address] += 1;
@@ -111,7 +114,7 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
       if (count <= 1)
         continue;
 
-      filteredAccounts.push(
+      filteredByUnique.push(
         createAccount(
           {
             address,
@@ -127,7 +130,7 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
     }
   }
 
-  return filteredAccounts;
+  return filteredByUnique;
 });
 
 const hintText = computed<string>(() => {
@@ -223,7 +226,7 @@ function getAccount(account: AccountWithAddressData): Account {
       :hide-no-data="!hideOnEmptyUsable"
       :chips="multiple"
       :item-height="40"
-      clearable
+      :clearable="!required"
       :dense="dense"
       :variant="outlined ? 'outlined' : 'default'"
       :outlined="outlined"
@@ -232,7 +235,7 @@ function getAccount(account: AccountWithAddressData): Account {
       class="blockchain-account-selector"
       :error-messages="errorMessages"
       v-bind="getNonRootAttrs($attrs)"
-      :no-data-text="t('blockchain_account_selector.no_data')"
+      :no-data-text="noDataText || t('blockchain_account_selector.no_data')"
       return-object
       @update:model-value="input($event)"
     >

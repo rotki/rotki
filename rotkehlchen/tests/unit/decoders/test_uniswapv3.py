@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import get_token
 from rotkehlchen.chain.base.modules.uniswap.v3.constants import UNISWAP_UNIVERSAL_ROUTER
 from rotkehlchen.chain.binance_sc.modules.uniswap.v3.constants import (
     UNISWAP_UNIVERSAL_ROUTER as UNISWAP_UNIVERSAL_ROUTER_BINANCE_SC,
@@ -34,7 +35,14 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -579,6 +587,16 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
         ),
     ]
     assert events == expected_events
+
+    # Ensure the position token's name and symbol are set correctly
+    position_token = get_token(
+        evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id=(collectible_id := '401357'),
+    )
+    assert position_token.name == f'Uniswap V3 Positions #{collectible_id}'
+    assert position_token.symbol == f'UNI-V3-POS-{collectible_id}'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

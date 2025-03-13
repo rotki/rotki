@@ -195,7 +195,7 @@ function icon(level: LogLevel): RuiIcons {
   else if (level === LogLevel.CRITICAL)
     return 'lu-skull';
   else if (level === LogLevel.TRACE)
-    return 'file-lu-search';
+    return 'lu-file-search';
 
   throw new Error(`Invalid option: ${level}`);
 }

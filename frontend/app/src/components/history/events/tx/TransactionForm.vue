@@ -2,16 +2,16 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AddTransactionHashPayload } from '@/types/history/events';
+import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainStore } from '@/store/blockchain';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { isValidTxHash } from '@rotki/common';
+import { Blockchain, isValidTxHash } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 
@@ -21,9 +21,46 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const { t } = useI18n();
 
+const lastChain = useLocalStorage('rotki.history_event.add_by_tx_hash.chain', Blockchain.ETH);
 const txHash = useRefPropVModel(modelValue, 'txHash');
+const evmChain = useRefPropVModel(modelValue, 'evmChain');
+const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
+const { getChain, txEvmChains } = useSupportedChains();
+const txChains = useArrayMap(txEvmChains, x => x.id);
+
+const chainOptions = computed(() => {
+  const accountChains = Object.entries(get(accountsPerChain))
+    .filter(([_, accounts]) => accounts.length > 0)
+    .map(([chain]) => chain);
+
+  return get(txChains).filter(chain => accountChains.includes(chain));
+});
+
+const usableChains = computed<string[]>(() => {
+  const evmChainVal = get(evmChain);
+  if (!evmChainVal) {
+    return get(chainOptions);
+  }
+
+  return [getChain(evmChainVal)];
+});
+
+watch(evmChain, (chain) => {
+  if (chain) {
+    set(lastChain, chain);
+  }
+});
+
+onMounted(() => {
+  const last = get(lastChain);
+  const options = get(chainOptions);
+  if (!options.includes(last) && options.length > 0) {
+    set(lastChain, options[0]);
+  }
+  set(evmChain, get(lastChain));
+});
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({
   get: () => {
@@ -48,18 +85,13 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
     const associatedAddress = account
       ? getAccountAddress(account)
       : '';
-    const evmChain = account && isBlockchain(account.chain) ? account.chain : '';
 
     set(modelValue, {
       ...get(modelValue),
       associatedAddress,
-      evmChain,
     });
   },
 });
-
-const { txEvmChains } = useSupportedChains();
-const txChains = useArrayMap(txEvmChains, x => x.id);
 
 const rules = {
   associatedAddress: {
@@ -68,6 +100,7 @@ const rules = {
       (accounts: BlockchainAccount<AddressData>[]) => accounts.length > 0,
     ),
   },
+  evmChain: { required },
   txHash: {
     isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHash),
     required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
@@ -75,7 +108,8 @@ const rules = {
 };
 
 const states = {
-  associatedAddress: accounts,
+  associatedAddress,
+  evmChain,
   txHash,
 };
 
@@ -90,20 +124,39 @@ const v$ = useVuelidate(
 
 useFormStateWatcher(states, stateUpdated);
 
+onBeforeUnmount(() => {
+  set(errors, {});
+});
+
 defineExpose({
   validate: () => get(v$).$validate(),
 });
 </script>
 
 <template>
-  <form class="flex flex-col gap-8">
-    <BlockchainAccountSelector
-      v-model="accounts"
-      :chains="txChains"
-      outlined
-      :label="t('transactions.form.account.label')"
-      :error-messages="toMessages(v$.associatedAddress)"
-    />
+  <form class="flex flex-col gap-4">
+    <div class="flex gap-2">
+      <ChainSelect
+        v-model="evmChain"
+        class="max-w-[20rem]"
+        :items="chainOptions"
+        :error-messages="toMessages(v$.evmChain)"
+      />
+      <BlockchainAccountSelector
+        v-model="accounts"
+        class="flex-1"
+        :chains="usableChains"
+        hide-chain-icon
+        outlined
+        multichain
+        required
+        unique
+        :label="t('common.address')"
+        :error-messages="toMessages(v$.associatedAddress)"
+        :no-data-text="t('transactions.form.account.no_address_found')"
+      />
+    </div>
+
     <RuiTextField
       v-model="txHash"
       :label="t('common.tx_hash')"

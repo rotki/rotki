@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AccountManageAdd, AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
@@ -26,8 +26,11 @@ const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(catego
 
 const { chainIds } = useAccountCategoryHelper(category);
 
-function createNewBlockchainAccount(): AccountManageAdd {
-  return {
+const route = useRoute();
+const router = useRouter();
+
+function createNewBlockchainAccount(): void {
+  set(account, {
     chain: get(chainIds)[0],
     data: [
       {
@@ -37,13 +40,21 @@ function createNewBlockchainAccount(): AccountManageAdd {
     ],
     mode: 'add',
     type: 'account',
-  };
+  });
 }
 
 function refresh() {
   if (isDefined(table))
     get(table).refresh();
 }
+
+onMounted(async () => {
+  const { query } = get(route);
+  if (query.add) {
+    createNewBlockchainAccount();
+    await router.replace({ query: {} });
+  }
+});
 </script>
 
 <template>
@@ -70,7 +81,7 @@ function refresh() {
       <RuiButton
         data-cy="add-blockchain-account"
         color="primary"
-        @click="account = createNewBlockchainAccount()"
+        @click="createNewBlockchainAccount()"
       >
         <template #prepend>
           <RuiIcon name="lu-plus" />

@@ -4,8 +4,18 @@ Changelog
 
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
+* :bug:`-` The "Ignore Errors" setting in the snapshot menu will persist after the user moves to another page or logs out.
+* :bug:`-` Some Gnosis pay transactions that were missing merchant data should now redecode again properly.
+* :bug:`-` "Add transaction by tx hash" is now reusable again after errors.
+* :feature:`-` Allow user to filter by identifier in asset table, and asset dropdown.
+* :bug:`9586` Adding a new Bitpanda exchange account should now work correctly again.
+* :bug:`-` OpenOcean native token swaps should now be decoded correctly on chains where the native token is not ETH.
+* :feature:`9583` Allow sorting of the PnL reports table.
+* :bug:`-` Prevents too many error notifications when beaconcha.in rate limits the app for long periods of time.
 * :bug:`-` Uniswap v3 swaps in ethereum using the universal router 2 will now be decoded properly.
+* :bug:`-` Batched cowswap trades will no longer raise unknown token error in some rare cases.
 * :bug:`9547` Bitcoin balance query should work again for users of the linux binary.
+* :bug:`-` Docker users will no longer greeted with a schema error when opening a the logging page from a new tab while a session is active.
 
 * :release:`1.38.0 <2025-02-28>`
 * :bug:`-` Fix selected binance trading pairs not being properly loaded when restarting rotki.

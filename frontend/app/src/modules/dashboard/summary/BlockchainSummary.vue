@@ -8,7 +8,7 @@ import { useBlockchainStore } from '@/store/blockchain';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
-import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
+import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButton.vue';
 
 const { blockchainTotals } = storeToRefs(useBlockchainStore());
 const { isTaskRunning } = useTaskStore();
@@ -34,17 +34,7 @@ const isLoading = logicOr(isBlockchainLoading, isTokenDetecting);
       <template #refreshMenu>
         <BlockchainBalanceRefreshBehaviourMenu />
       </template>
-      <SummaryCardCreateButton
-        v-if="blockchainTotals.length === 0"
-        :to="{
-          path: '/accounts/evm',
-          query: {
-            add: 'true',
-          },
-        }"
-      >
-        {{ t('dashboard.blockchain_balances.add') }}
-      </SummaryCardCreateButton>
+      <BlockchainSummaryCardCreateButton v-if="blockchainTotals.length === 0" />
       <div
         v-else
         data-cy="blockchain-balances"

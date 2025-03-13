@@ -55,7 +55,7 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
       const collectionKey = key.split('collection-')[1];
       const assetCollectionInfo = !isAssetCollection ? false : get(fetchedAssetCollections)?.[collectionKey];
 
-      if (assetCollectionInfo && grouped.length > 1) {
+      if (assetCollectionInfo) {
         const sumBalance = grouped.reduce(
           (accumulator, currentBalance) => balanceSum(accumulator, currentBalance),
           zeroBalance(),

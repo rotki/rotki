@@ -182,7 +182,7 @@ defineExpose({
       <TwoFieldsAmountInput
         v-model:primary-value="assetToFiatPrice"
         v-model:secondary-value="fiatValue"
-        class="mb-5"
+        class="mb-4"
         :loading="fetching"
         :disabled="fetching"
         :label="{

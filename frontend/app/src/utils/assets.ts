@@ -4,7 +4,16 @@ import type { AssetInfoWithId, AssetsWithId } from '@/types/asset';
 import type { DateFormat } from '@/types/date-format';
 import type { ComputedRef, Ref } from 'vue';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
-import { assert, type AssetBalance, type AssetInfo, getTextToken, isValidEthAddress, type Nullable } from '@rotki/common';
+import {
+  assert,
+  type AssetBalance,
+  type AssetInfo,
+  getAddressFromEvmIdentifier,
+  getTextToken,
+  isEvmIdentifier,
+  isValidEthAddress,
+  type Nullable,
+} from '@rotki/common';
 
 function levenshtein(a: string, b: string): number {
   let tmp;
@@ -138,7 +147,12 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
     let keyword = value;
     let address;
 
-    if (isValidEthAddress(value)) {
+    if (isEvmIdentifier(value)) {
+      keyword = '';
+      address = getAddressFromEvmIdentifier(value);
+    }
+
+    else if (isValidEthAddress(value)) {
       keyword = '';
       address = value;
     }
