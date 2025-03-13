@@ -75,7 +75,7 @@ class DBFilterOrder(NamedTuple):
         for idx, (attribute, ascending) in enumerate(self.rules):
             if idx != 0:
                 querystr += ','
-            if attribute in {'amount', 'fee', 'rate', 'last_price', 'last_price_asset', 'manual_price'}:  # noqa: E501
+            if attribute in {'amount', 'fee', 'rate', 'last_price', 'last_price_asset', 'manual_price', 'pnl_taxable', 'pnl_free'}:  # noqa: E501
                 order_by = f'CAST({attribute} AS REAL)'
             else:
                 order_by = attribute

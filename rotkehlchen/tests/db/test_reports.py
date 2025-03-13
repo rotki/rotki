@@ -74,7 +74,7 @@ def test_report_settings(database):
 
 def test_report_events_sort_by_columns(database):
     """Test that sorting by asset, pnl_taxable and timestamp works correctly"""
-    timestamp_1_secs, timestamp_2_secs, eth_price_ts_1, eth_price_ts_2, half_amount, hundred = Timestamp(1741634066), Timestamp(1741634100), FVal('2000'), FVal('2200'), FVal(0.5), FVal('100')  # noqa: E501
+    timestamp_1_secs, timestamp_2_secs, eth_price_ts_1, eth_price_ts_2, half_amount, hundred, forty = Timestamp(1741634066), Timestamp(1741634100), FVal('2000'), FVal('2200'), FVal(0.5), FVal('100'), FVal('40')  # noqa: E501
 
     dbreport, settings = setup_db_account_settings(database)
 
@@ -125,6 +125,19 @@ def test_report_events_sort_by_columns(database):
             cost_basis=None,
             index=0,
             extra_data={},
+        ), ProcessedAccountingEvent(
+            event_type=AccountingEventType.TRANSACTION_EVENT,
+            notes='Send 40 DAI to 0xABC',
+            location=Location.ETHEREUM,
+            timestamp=timestamp_2_secs,
+            asset=A_DAI,
+            free_amount=ZERO,
+            taxable_amount=forty,
+            price=Price(ONE),
+            pnl=PNL(taxable=forty, free=ZERO),
+            cost_basis=None,
+            index=0,
+            extra_data={},
         ),
     ]
 
@@ -139,19 +152,19 @@ def test_report_events_sort_by_columns(database):
     test_cases = [
         {
             'column': 'asset',
-            'expected_values': [A_DAI, A_ETH, A_ETH],
+            'expected_values': [A_DAI, A_DAI, A_ETH, A_ETH],
             'check_field': lambda event: event.asset,
         }, {
             'column': 'pnl_free',
-            'expected_values': [ZERO, ONE, hundred],
+            'expected_values': [ZERO, ZERO, ONE, hundred],
             'check_field': lambda event: event.pnl.free,
         }, {
             'column': 'pnl_taxable',
-            'expected_values': [ZERO, half_amount, eth_price_ts_1],
+            'expected_values': [ZERO, half_amount, forty, eth_price_ts_1],
             'check_field': lambda event: event.pnl.taxable,
         }, {
             'column': 'timestamp',
-            'expected_values': [timestamp_1_secs, timestamp_2_secs, timestamp_2_secs],
+            'expected_values': [timestamp_1_secs, timestamp_2_secs, timestamp_2_secs, timestamp_2_secs],  # noqa: E501
             'check_field': lambda event: event.timestamp,
         },
     ]
