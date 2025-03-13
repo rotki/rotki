@@ -144,6 +144,7 @@ def maybe_submit_usage_analytics(data_dir: Path, should_submit: bool) -> None:
         response = requests.put(
             url='https://rotki.com/api/1/usage_analytics',
             json=analytics,
+            headers={'User-Agent': f'rotki/{analytics["rotki_version"]}'},
             timeout=CachedSettings().get_timeout_tuple(),
         )
     except requests.exceptions.RequestException:
