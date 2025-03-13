@@ -52,6 +52,7 @@ describe('settings:utils', () => {
       [LIGHT_THEME]: LIGHT_COLORS,
       [DARK_THEME]: DARK_COLORS,
       graphZeroBased: false,
+      ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
       renderAllNftImages: true,
