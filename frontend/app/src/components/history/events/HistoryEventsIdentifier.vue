@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/types/history/events';
-import HashLink from '@/components/helper/HashLink.vue';
-import { useSupportedChains } from '@/composables/info/chains';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEventRef,
   isEthBlockEventRef,
@@ -19,7 +18,6 @@ const { t } = useI18n();
 
 const { event } = toRefs(props);
 
-const { getChain } = useSupportedChains();
 const { is2xlAndUp } = useBreakpoint();
 
 const translationKey = computed<string>(() => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`);
@@ -28,6 +26,8 @@ const evmOrDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthD
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 const assetMovementEvent = isAssetMovementEventRef(event);
+
+const assetMovementTransactionId = computed<string | undefined>(() => get(assetMovementEvent)?.extraData?.transactionId ?? undefined);
 
 /**
  * The key is used to avoid an issue where the block event identifier would be reused
@@ -65,7 +65,6 @@ const key = computed(() => {
       <HashLink
         :class="$style.wrapper"
         :text="blockEvent.blockNumber.toString()"
-        :show-icon="false"
         type="block"
       />
     </template>
@@ -77,39 +76,30 @@ const key = computed(() => {
       <HashLink
         :class="$style.wrapper"
         :text="withdrawEvent.validatorIndex.toString()"
-        :show-icon="false"
-        :chain="Blockchain.ETH2"
-        type="address"
+        :location="Blockchain.ETH2"
       />
     </template>
 
     <template
-      v-if="evmOrDepositEvent"
+      v-if="evmOrDepositEvent || assetMovementTransactionId"
       #txHash
     >
       <HashLink
+        v-if="evmOrDepositEvent"
         :class="$style.wrapper"
         :text="evmOrDepositEvent.txHash"
-        :show-icon="false"
         type="transaction"
-        :chain="getChain(evmOrDepositEvent.location)"
-        :truncate-length="8"
-        :full-address="is2xlAndUp"
+        :location="evmOrDepositEvent.location"
+        :truncate-length="is2xlAndUp ? 0 : 8"
       />
-    </template>
-
-    <template
-      v-else-if="assetMovementEvent && assetMovementEvent.extraData?.transactionId"
-      #txHash
-    >
       <HashLink
+        v-else-if="assetMovementTransactionId"
         :class="$style.wrapper"
-        :text="assetMovementEvent!.extraData?.transactionId || undefined"
-        :show-icon="false"
+        :text="assetMovementTransactionId"
         type="transaction"
-        :truncate-length="8"
-        :full-address="is2xlAndUp"
-        copy-only
+        :truncate-length="is2xlAndUp ? 0 : 8"
+        display-mode="copy"
+        hide-text
       />
     </template>
 

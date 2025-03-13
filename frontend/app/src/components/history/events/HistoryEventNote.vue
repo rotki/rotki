@@ -3,8 +3,8 @@ import type { ExplorerUrls } from '@/types/asset/asset-urls';
 import Flag from '@/components/common/Flag.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { type BigNumber, Blockchain } from '@rotki/common';
 
 defineOptions({
@@ -71,17 +71,15 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         {{ ` ${note.word} ` }}
       </template>
       <HashLink
-        v-else-if="note.showHashLink && isLinkType(note.type)"
+        v-else-if="note.showHashLink && note.address && isLinkType(note.type)"
         :key="index"
         class="inline-flex"
         :class="{
           [$style.address]: true,
-          'pl-2': !note.showIcon,
         }"
         :text="note.address"
         :type="note.type"
-        :chain="note.chain ?? chain"
-        :show-icon="!!note.showIcon"
+        :location="note.chain ?? chain"
       />
       <AmountDisplay
         v-else-if="note.type === NoteType.AMOUNT && note.amount"

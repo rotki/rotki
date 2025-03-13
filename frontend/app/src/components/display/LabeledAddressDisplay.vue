@@ -4,8 +4,8 @@ import type {
   BlockchainAccountBalance,
 } from '@/types/blockchain/accounts';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { useScramble } from '@/composables/scramble';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
@@ -156,11 +156,10 @@ const truncatedLabelDisplayed = computed(() => {
       <HashLink
         class="h-full"
         :text="accountAddress"
-        buttons
-        :copy-only="isXpub"
+        :display-mode="isXpub ? 'copy' : 'default'"
+        hide-text
         size="14"
-        :show-icon="false"
-        :chain="getChain(account)"
+        :location="getChain(account)"
       />
     </div>
   </RuiChip>

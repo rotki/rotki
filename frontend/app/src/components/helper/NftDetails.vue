@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { StyleValue } from 'vue';
 import AppImage from '@/components/common/AppImage.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNftImage } from '@/composables/nft-image';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -162,7 +162,10 @@ const fallbackData = computed(() => {
           <div class="flex">
             <div>{{ t('nft_balance_table.contract_address') }}:</div>
             <div class="pl-1 font-medium">
-              <HashLink :text="fallbackData.address" />
+              <HashLink
+                :text="fallbackData.address"
+                location="eth"
+              />
             </div>
           </div>
           <div class="flex">

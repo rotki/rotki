@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
+import HashLink from '@/modules/common/links/HashLink.vue';
 
 defineProps<{ item: HistoryEventsQueryData }>();
 
@@ -19,10 +19,7 @@ const { getItemTranslationKey } = useEventsQueryStatus();
       <div class="font-bold px-2 text-no-wrap">
         <HashLink
           :text="item.name"
-          no-link
-          :show-icon="false"
           :location="item.location"
-          disable-scramble
         />
       </div>
     </template>

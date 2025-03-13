@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import LiquityStatistics from '@/components/staking/liquity/LiquityStatistics.vue';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useStatusStore } from '@/store/status';

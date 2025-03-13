@@ -9,13 +9,13 @@ import AppImage from '@/components/common/AppImage.vue';
 import AssetAmountAndValuePlaceholder from '@/components/graphs/AssetAmountAndValuePlaceholder.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import HashLink from '@/components/helper/HashLink.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
@@ -177,13 +177,13 @@ async function toggleWhitelistAsset() {
         <div class="flex items-center gap-2 ml-4">
           <HashLink
             v-if="address"
-            :chain="chain"
+            :location="chain"
             type="token"
             :text="address"
-            link-only
+            display-mode="link"
+            hide-text
             size="18"
             class="[&_a]:!p-2.5"
-            :show-icon="false"
           />
 
           <template

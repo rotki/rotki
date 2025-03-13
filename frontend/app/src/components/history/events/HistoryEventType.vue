@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events';
 import type { Blockchain } from '@rotki/common';
-import HashLink from '@/components/helper/HashLink.vue';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEvent,
   isEthDepositEventRef,
@@ -66,13 +66,8 @@ const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isE
           class="mr-2"
         />
         <HashLink
-          :show-icon="!exchangeEvent"
-          :no-link="!!exchangeEvent"
           :text="event.locationLabel"
-          :chain="chain"
-          :type="exchangeEvent ? 'label' : 'address'"
           :location="event.location"
-          :disable-scramble="!!exchangeEvent"
         />
       </div>
       <RuiChip

@@ -25,7 +25,6 @@ export interface NoteFormat {
   asset?: string;
   url?: string;
   chain?: Blockchain;
-  showIcon?: boolean;
   showHashLink?: boolean;
   countryCode?: string;
 }
@@ -201,7 +200,6 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         formats.push({
           address: word,
           showHashLink: true,
-          showIcon: true,
           type: NoteType.ADDRESS,
         });
         return putBackPunctuation();

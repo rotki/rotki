@@ -41,7 +41,7 @@ const { t } = useI18n();
 const { blockchainOnly, showPercentage, total } = toRefs(props);
 const { assetBreakdown: blockchainAssetBreakdown, liabilityBreakdown: blockchainLiabilityBreakdown } = useBlockchainStore();
 const { assetBreakdown, liabilityBreakdown } = useBalancesBreakdown();
-const { getChain } = useSupportedChains();
+const { matchChain } = useSupportedChains();
 
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   const assets = props.assets.length > 0 ? props.assets : [props.identifier];
@@ -70,7 +70,7 @@ const rows = computed<AssetBreakdown[]>(() => {
   }, []);
   return groupAssetBreakdown(data, item =>
     // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
-    getChain(item.location, null) || item.location);
+    matchChain(item.location) || item.location);
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
