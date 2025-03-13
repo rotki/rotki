@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9385` Users will see the default label using the validator index when exporting validators.
 * :bug:`-` The "Ignore Errors" setting in the snapshot menu will persist after the user moves to another page or logs out.
 * :bug:`-` Some Gnosis pay transactions that were missing merchant data should now redecode again properly.
 * :bug:`-` "Add transaction by tx hash" is now reusable again after errors.

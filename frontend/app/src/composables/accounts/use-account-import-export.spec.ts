@@ -14,6 +14,9 @@ import type { AccountPayload, XpubAccountPayload } from '@/types/blockchain/acco
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
 const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641';
 
+const INDEX_1 = 507258;
+const INDEX_2 = 512123;
+
 const XPUB = 'xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ';
 const DERIVATION_PATH = 'm/86/0/0';
 
@@ -174,16 +177,16 @@ describe('useAccountImportExport', () => {
 
       store.updateAccounts(Blockchain.ETH2, [
         createValidatorAccount({
-          index: 55751,
-          ownershipPercentage: '44',
-          publicKey: VALIDATOR_2,
-          status: 'exited',
-        }, chainInfo),
-        createValidatorAccount({
-          index: 507258,
+          index: INDEX_1,
           ownershipPercentage: '22',
           publicKey: VALIDATOR_1,
           status: 'active',
+        }, chainInfo),
+        createValidatorAccount({
+          index: INDEX_2,
+          ownershipPercentage: '44',
+          publicKey: VALIDATOR_2,
+          status: 'exited',
         }, chainInfo),
       ]);
 
@@ -194,8 +197,8 @@ describe('useAccountImportExport', () => {
       expect(downloadFileByTextContent).toHaveBeenCalledWith(
         [
           'address,address extras,chain,label,tags',
-          `${VALIDATOR_2},ownershipPercentage=44,eth2,,`,
-          `${VALIDATOR_1},ownershipPercentage=22,eth2,,`,
+          `${VALIDATOR_1},ownershipPercentage=22,eth2,blockchain_balances.validator_index_label::${INDEX_1},`,
+          `${VALIDATOR_2},ownershipPercentage=44,eth2,blockchain_balances.validator_index_label::${INDEX_2},`,
         ].join('\n'),
         'blockchain-accounts.csv',
         'text/csv',
