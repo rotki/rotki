@@ -242,7 +242,7 @@ export function useMessageHandling(): UseMessageHandling {
       addNotification(await handleGnosisPaySessionKeyExpired(message.data));
     }
     else {
-      logger.warn(`Unsupported socket message received: '${type}'`);
+      logger.warn(`Unsupported socket message received: '${type.toString()}'`);
     }
 
     notifications.forEach(notify);
