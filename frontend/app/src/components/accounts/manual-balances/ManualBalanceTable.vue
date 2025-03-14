@@ -14,6 +14,8 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/composables/filters/manual-balances';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useManualBalancePagination } from '@/modules/balances/manual/use-manual-balance-pagination';
+import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -39,7 +41,8 @@ const tags = ref<string[]>([]);
 const store = useManualBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { manualBalances, manualLiabilities } = storeToRefs(store);
-const { deleteManualBalance, fetchBalances, fetchLiabilities, fetchManualBalances } = store;
+const { deleteManualBalance, fetchManualBalances } = useManualBalances();
+const { fetchBalances, fetchLiabilities } = useManualBalancePagination();
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.MANUAL_BALANCES);
@@ -106,55 +109,47 @@ function getRowClass(item: ManualBalance) {
   return `manual-balance__location__${item.location}`;
 }
 
-const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
-  {
-    align: 'center',
-    cellClass: 'py-2 w-[120px]',
-    class: 'w-[120px]',
-    key: 'location',
-    label: t('common.location'),
-  },
-  {
-    key: 'label',
-    label: t('common.label'),
-    sortable: true,
-  },
-  {
-    class: 'w-[12rem] xl:w-[16rem] 2xl:w-[20rem]',
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'usdPrice',
-    label: t('common.price_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'amount',
-    label: t('common.amount'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'usdValue',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    cellClass: 'w-[120px]',
-    class: 'w-[120px]',
-    key: 'actions',
-    label: t('common.actions_text'),
-  },
-]);
+const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
+  align: 'center',
+  cellClass: 'py-2 w-[120px]',
+  class: 'w-[120px]',
+  key: 'location',
+  label: t('common.location'),
+}, {
+  key: 'label',
+  label: t('common.label'),
+  sortable: true,
+}, {
+  class: 'w-[12rem] xl:w-[16rem] 2xl:w-[20rem]',
+  key: 'asset',
+  label: t('common.asset'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'usdPrice',
+  label: t('common.price_in_symbol', {
+    symbol: get(currencySymbol),
+  }),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'amount',
+  label: t('common.amount'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'usdValue',
+  label: t('common.value_in_symbol', {
+    symbol: get(currencySymbol),
+  }),
+  sortable: true,
+}, {
+  align: 'end',
+  cellClass: 'w-[120px]',
+  class: 'w-[120px]',
+  key: 'actions',
+  label: t('common.actions_text'),
+}]);
 
 const { show } = useConfirmStore();
 

@@ -5,12 +5,13 @@ import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualAssetBalances } from '@/composables/balances/manual';
 import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainStore } from '@/store/blockchain';
 import { samePriceAssets } from '@/types/blockchain';
 import { sumAssetBalances } from '@/utils/balances';
+import { aggregateTotals } from '@/utils/blockchain/accounts';
 import { uniqueStrings } from '@/utils/data';
 import { type AssetBalanceWithPrice, type ExclusionSource, Zero } from '@rotki/common';
 
@@ -24,8 +25,8 @@ interface UseAggregatedBalancesReturn {
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { assetPrice } = useBalancePricesStore();
-  const { aggregatedLiabilities, aggregatedTotals } = storeToRefs(useBlockchainStore());
-  const { balances: exchangeBalances } = storeToRefs(useExchangeBalancesStore());
+  const { balances: blockchainBalances } = storeToRefs(useBlockchainStore());
+  const { balances: exchangeBalances } = useExchangeData();
   const { balances: manualBalances, liabilities: manualLiabilities } = useManualAssetBalances();
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -38,7 +39,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
       const map = {
-        blockchain: aggregatedTotals,
+        blockchain: aggregateTotals(get(blockchainBalances)),
         exchange: exchangeBalances,
         manual: manualBalances,
       } as const;
@@ -63,7 +64,10 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const liabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
       const liabilities = sumAssetBalances(
-        [get(aggregatedLiabilities), get(manualLiabilities)],
+        [
+          aggregateTotals(get(blockchainBalances), 'liabilities'),
+          get(manualLiabilities),
+        ],
         getAssociatedAssetIdentifier,
       );
 

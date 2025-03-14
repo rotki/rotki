@@ -8,7 +8,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -26,7 +26,7 @@ const savingsAssets = ref<string[]>([]);
 const savingsReceived = ref<AssetBalance[]>([]);
 
 const { isLoading: isSectionLoading } = useStatusStore();
-const { fetchExchangeSavings } = useExchangeBalancesStore();
+const { fetchExchangeSavings } = useBinanceSavings();
 
 const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -63,54 +63,45 @@ const receivedTableSort = ref<DataTableSortData<AssetBalance>>({
   direction: 'desc' as const,
 });
 
-const receivedTableHeaders = computed<DataTableColumn<AssetBalance>[]>(() => [
-  {
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'amount',
-    label: t('common.amount'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'usdValue',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    sortable: true,
-  },
-]);
+const receivedTableHeaders = computed<DataTableColumn<AssetBalance>[]>(() => [{
+  key: 'asset',
+  label: t('common.asset'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'amount',
+  label: t('common.amount'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'usdValue',
+  label: t('common.value_in_symbol', {
+    symbol: get(currencySymbol),
+  }),
+  sortable: true,
+}]);
 
-const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [
-  {
-    key: 'timestamp',
-    label: t('common.datetime'),
-    sortable: true,
-  },
-  {
-    key: 'asset',
-    label: t('common.asset'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'amount',
-    label: t('common.amount'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    key: 'usdValue',
-    label: t('common.value_in_symbol', {
-      symbol: get(currencySymbol),
-    }),
-    sortable: true,
-  },
-]);
+const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [{
+  key: 'timestamp',
+  label: t('common.datetime'),
+  sortable: true,
+}, {
+  key: 'asset',
+  label: t('common.asset'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'amount',
+  label: t('common.amount'),
+  sortable: true,
+}, {
+  align: 'end',
+  key: 'usdValue',
+  label: t('common.value_in_symbol', {
+    symbol: get(currencySymbol),
+  }),
+  sortable: true,
+}]);
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)

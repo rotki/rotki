@@ -8,6 +8,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainStore } from '@/store/blockchain';
 import { appendAssetBalance, mergeAssociatedAssets } from '@/utils/balances';
+import { aggregateTotals } from '@/utils/blockchain/accounts';
 import { bigNumberSum } from '@/utils/calculation';
 
 interface UseBlockchainAggregatedBalancesReturn {
@@ -22,18 +23,18 @@ export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalanc
   const { assetPrice } = useBalancePricesStore();
   const { toSortedAssetBalanceArray, toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const blockchainStore = useBlockchainStore();
-  const { aggregatedTotalsWithFilter } = blockchainStore;
-  const { aggregatedTotals } = storeToRefs(blockchainStore);
+  const { balances } = storeToRefs(blockchainStore);
 
   const getTotals = (): AssetBalance[] => {
-    const ownedAssets = mergeAssociatedAssets(aggregatedTotals, getAssociatedAssetIdentifier);
+    const ownedAssets = mergeAssociatedAssets(aggregateTotals(get(balances)), getAssociatedAssetIdentifier);
     return toSortedAssetBalanceArray(get(ownedAssets), asset => get(isAssetIgnored(asset)));
   };
 
   const blockchainTotal = computed<BigNumber>(() => bigNumberSum(getTotals().map(asset => asset.usdValue)));
 
   const blockchainAssets = (chains: MaybeRef<string[]> = []): ComputedRef<AssetBalanceWithPrice[]> => computed(() => {
-    const ownedAssets = mergeAssociatedAssets(get(aggregatedTotalsWithFilter(chains)), getAssociatedAssetIdentifier);
+    const blockchainAssets = aggregateTotals(get(balances), 'assets', get(chains));
+    const ownedAssets = mergeAssociatedAssets(blockchainAssets, getAssociatedAssetIdentifier);
     return toSortedAssetBalanceWithPrice(get(ownedAssets), asset => get(isAssetIgnored(asset)), assetPrice);
   });
 

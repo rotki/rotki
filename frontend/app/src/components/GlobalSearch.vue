@@ -15,8 +15,8 @@ import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useInterop } from '@/composables/electron-interop';
 import { useLocations } from '@/composables/locations';
 import { useAppRoutes } from '@/router/routes';
-import { useExchangesStore } from '@/store/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { startPromise } from '@shared/utils';
 
 interface SearchItem {
@@ -54,7 +54,7 @@ const key = '/';
 const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { connectedExchanges } = storeToRefs(useExchangesStore());
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { balances } = useAggregatedBalances();
 const { balancesByLocation } = useBalancesBreakdown();
 const { getLocationData } = useLocations();

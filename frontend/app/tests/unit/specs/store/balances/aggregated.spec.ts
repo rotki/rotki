@@ -7,7 +7,7 @@ import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainStore } from '@/store/blockchain';
-import { useExchangesStore } from '@/store/exchanges';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { BalanceType } from '@/types/balances';
 import { useCurrencies } from '@/types/currencies';
 import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
@@ -24,9 +24,9 @@ describe('store::balances/aggregated', () => {
 
   it('aggregatedBalances', () => {
     const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
-    const { connectedExchanges } = storeToRefs(useExchangesStore());
+    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
     const { prices } = storeToRefs(useBalancePricesStore());
-    const { manualBalancesData } = storeToRefs(useManualBalancesStore());
+    const { manualBalances } = storeToRefs(useManualBalancesStore());
     const { balances } = useAggregatedBalances();
     const { balances: ethBalances } = storeToRefs(useBlockchainStore());
 
@@ -81,7 +81,7 @@ describe('store::balances/aggregated', () => {
       },
     });
 
-    set(manualBalancesData, [
+    set(manualBalances, [
       {
         identifier: 1,
         usdValue: bigNumberify(50),
@@ -311,7 +311,7 @@ describe('store::balances/aggregated', () => {
 
   it('aggregatedBalances, make sure `isCurrentCurrency` do not break the calculation', () => {
     const { exchangeBalances } = storeToRefs(useExchangeBalancesStore());
-    const { connectedExchanges } = storeToRefs(useExchangesStore());
+    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
     set(connectedExchanges, [
       {
         location: 'kraken',
@@ -374,8 +374,8 @@ describe('store::balances/aggregated', () => {
       },
     });
 
-    const { manualBalancesData } = storeToRefs(useManualBalancesStore());
-    set(manualBalancesData, [
+    const { manualBalances } = storeToRefs(useManualBalancesStore());
+    set(manualBalances, [
       {
         identifier: 1,
         usdValue: bigNumberify(50),
