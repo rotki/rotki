@@ -6,6 +6,8 @@ Changelog
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
+
+* :release:`1.38.1 <2025-03-14>`
 * :feature:`9385` Users will see the default label using the validator index when exporting validators.
 * :bug:`-` The "Ignore Errors" setting in the snapshot menu will persist after the user moves to another page or logs out.
 * :bug:`-` Some Gnosis pay transactions that were missing merchant data should now redecode again properly.
@@ -20,6 +22,7 @@ Changelog
 * :bug:`9547` Bitcoin balance query should work again for users of the linux binary.
 * :bug:`-` Docker users will no longer greeted with a schema error when opening a the logging page from a new tab while a session is active.
 * :bug:`9624` Users will now be able to distinguish between US, Australian, Canadian and New Zealand Dollar when they are displayed by symbol.
+* :bug:`-` The search filter in the currency selection dropdown will now automatic reset when the dialog closes.
 
 * :release:`1.38.0 <2025-02-28>`
 * :bug:`-` Fix selected binance trading pairs not being properly loaded when restarting rotki.

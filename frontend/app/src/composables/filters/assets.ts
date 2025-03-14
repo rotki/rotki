@@ -40,7 +40,7 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
       multiple: true,
       string: true,
       suggestions: (): string[] => [],
-      validate: (address: string): boolean => isEvmIdentifier(address),
+      validate: (): true => true,
     },
     {
       description: t('assets.filter.symbol'),
