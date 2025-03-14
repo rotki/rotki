@@ -4,25 +4,16 @@ from unittest.mock import patch
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC, A_USDT
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import (
-    AssetAmount,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TimestampMS,
-    TradeType,
-)
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
 def test_name():
@@ -189,11 +180,10 @@ def test_okx_query_balances(mock_okx: Okx):
     assert len(errors) == 0
 
 
-def test_okx_query_trades(mock_okx: Okx):
-    def mock_okx_trades(method, url):   # pylint: disable=unused-argument
-        return MockResponse(
-            200,
-            """
+def test_okx_query_trades(mock_okx: 'Okx') -> None:
+    def mock_okx_trades(method, url):  # pylint: disable=unused-argument
+        if 'trade/orders-history-archive' in url:
+            data = """
 {
    "code":"0",
    "data":[
@@ -214,7 +204,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"TRX-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE1",
          "ordType":"limit",
          "pnl":"0",
          "posSide":"",
@@ -256,7 +246,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"TRX-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE2",
          "ordType":"limit",
          "pnl":"0",
          "posSide":"",
@@ -298,7 +288,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"TRX-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE3",
          "ordType":"limit",
          "pnl":"0",
          "posSide":"",
@@ -340,7 +330,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"TRX-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE4",
          "ordType":"limit",
          "pnl":"0",
          "posSide":"",
@@ -382,7 +372,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"USDC-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE5",
          "ordType":"market",
          "pnl":"0",
          "posSide":"",
@@ -424,7 +414,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"ETH-USDC",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE6",
          "ordType":"market",
          "pnl":"0",
          "posSide":"",
@@ -466,7 +456,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"USDC-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE7",
          "ordType":"limit",
          "pnl":"0",
          "posSide":"",
@@ -508,7 +498,7 @@ def test_okx_query_trades(mock_okx: Okx):
          "instId":"USDC-USDT",
          "instType":"SPOT",
          "lever":"",
-         "ordId":"555555555555555555",
+         "ordId":"TRADE8",
          "ordType":"limit",
          "pnl":"0",
          "posSide":"",
@@ -535,120 +525,208 @@ def test_okx_query_trades(mock_okx: Okx):
       }
    ],
    "msg":""
-}""",
-        )
+}"""
+        else:
+            data = '{"code":"0","data":[]}'
+        return MockResponse(200, data)
 
     with patch.object(mock_okx.session, 'request', side_effect=mock_okx_trades):
-        trades = mock_okx.query_online_trade_history(Timestamp(1609103082), Timestamp(1672175105))
-
-    expected_trades = ([
-        Trade(
-            timestamp=Timestamp(1665846604),
+        assert mock_okx.query_online_history_events(
+            Timestamp(1609103082),
+            Timestamp(1672175105),
+        ) == [SwapEvent(
+            timestamp=TimestampMS(1665846604080),
             location=Location.OKX,
-            base_asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(30009.966)),
-            rate=Price(FVal(0.06236)),
-            fee=Fee(FVal(1.87142147976)),
-            fee_currency=A_USDT,
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1665641177),
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('30009.966'),
+            unique_id='TRADE1',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665846604080),
             location=Location.OKX,
-            base_asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(10)),
-            rate=Price(FVal(0.06174)),
-            fee=Fee(FVal(0.01)),
-            fee_currency=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1665641133),
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('1871.42147976'),
+            unique_id='TRADE1',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665846604080),
             location=Location.OKX,
-            base_asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(24)),
-            rate=Price(FVal(0.06174)),
-            fee=Fee(FVal(0.024)),
-            fee_currency=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1665641100),
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal('1.87142147976'),
+            unique_id='TRADE1',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641177030),
             location=Location.OKX,
-            base_asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(30000)),
-            rate=Price(FVal(0.06174)),
-            fee=Fee(FVal(24)),
-            fee_currency=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1665594495),
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('0.61740'),
+            unique_id='TRADE2',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641177030),
             location=Location.OKX,
-            base_asset=A_USDC,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(3513.8312)),
-            rate=Price(FVal(1.0001)),
-            fee=Fee(FVal(3.51418258312)),
-            fee_currency=A_USDT,
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1665512880),
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('10'),
+            unique_id='TRADE2',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641177030),
             location=Location.OKX,
-            base_asset=A_ETH,
-            quote_asset=A_USDC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(4.5)),
-            rate=Price(FVal('1287.177158951111111')),
-            fee=Fee(FVal(0.00315)),
-            fee_currency=A_ETH,
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1664784938),
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('0.01'),
+            unique_id='TRADE2',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641133954),
             location=Location.OKX,
-            base_asset=A_USDC,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(3600)),
-            rate=Price(ONE),
-            fee=Fee(FVal(3.6)),
-            fee_currency=A_USDT,
-            link='555555555555555555',
-            notes=None,
-        ),
-        Trade(
-            timestamp=Timestamp(1664783042),
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('1.48176'),
+            unique_id='TRADE3',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641133954),
             location=Location.OKX,
-            base_asset=A_USDC,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(850)),
-            rate=Price(ONE),
-            fee=Fee(FVal(0.85)),
-            fee_currency=A_USDT,
-            link='555555555555555555',
-            notes=None,
-        ),
-    ], (1609103082, 1672175105))
-
-    assert trades == expected_trades
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('24'),
+            unique_id='TRADE3',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641133954),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('0.024'),
+            unique_id='TRADE3',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641100283),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('1852.20000'),
+            unique_id='TRADE4',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641100283),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('30000'),
+            unique_id='TRADE4',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665641100283),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('eip155:1/erc20:0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
+            amount=FVal('24'),
+            unique_id='TRADE4',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665594495006),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDC,
+            amount=FVal('3513.8312'),
+            unique_id='TRADE5',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665594495006),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('3514.18258312'),
+            unique_id='TRADE5',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665594495006),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal('3.51418258312'),
+            unique_id='TRADE5',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665512880478),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDC,
+            amount=FVal('5792.2972152799999995'),
+            unique_id='TRADE6',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665512880478),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('4.5'),
+            unique_id='TRADE6',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1665512880478),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.00315'),
+            unique_id='TRADE6',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1664784938639),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDC,
+            amount=FVal('3600'),
+            unique_id='TRADE7',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1664784938639),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('3600'),
+            unique_id='TRADE7',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1664784938639),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal('3.6'),
+            unique_id='TRADE7',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1664783042522),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDC,
+            amount=FVal('850'),
+            unique_id='TRADE8',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1664783042522),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('850'),
+            unique_id='TRADE8',
+            location_label='okx',
+        ), SwapEvent(
+            timestamp=TimestampMS(1664783042522),
+            location=Location.OKX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal('0.85'),
+            unique_id='TRADE8',
+            location_label='okx',
+        )]
 
 
 def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
@@ -734,7 +812,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
 }
             """
         else:
-            data = ''
+            data = '{"code":"0","data":[]}'
         return MockResponse(200, data)
 
     with patch.object(
