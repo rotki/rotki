@@ -231,8 +231,20 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
             return path1 == path2 and r1.method == r2.method
         return r1.uri == r2.uri and r1.method == r2.method
 
+    def github_branch_matcher(r1, r2):
+        """Match GitHub raw URLs, ignoring the branch part."""
+        base_url = 'https://raw.githubusercontent.com/rotki/data/'
+        if r1.uri.startswith(base_url) and r2.uri.startswith(base_url):
+            # Extract path after the base URL
+            path1 = r1.uri[len(base_url):].split('/')
+            path2 = r2.uri[len(base_url):].split('/')
+            # Compare everything except the branch (first part after base_url)
+            return path1[1:] == path2[1:] and r1.method == r2.method
+        return r1.uri == r2.uri and r1.method == r2.method
+
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
+    vcr.register_matcher('github_branch_matcher', github_branch_matcher)
     return vcr
 
 
