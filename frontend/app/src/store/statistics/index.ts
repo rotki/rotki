@@ -3,7 +3,7 @@ import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { usePremium } from '@/composables/premium';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -41,7 +41,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { nftsInNetValue } = storeToRefs(useFrontendSettingsStore());
   const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
-  const { nonFungibleTotalValue } = storeToRefs(useNonFungibleBalancesStore());
+  const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
   const { assetName } = useAssetInfoRetrieval();

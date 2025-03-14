@@ -8,9 +8,10 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { useRefresh } from '@/composables/balances/refresh';
+import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { Routes } from '@/router/routes';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useExchangesStore } from '@/store/exchanges';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
@@ -33,8 +34,9 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { useIsTaskRunning } = useTaskStore();
-const { fetchExchangeSavings, getBalances, refreshExchangeSavings } = useExchangeBalancesStore();
-const { connectedExchanges } = storeToRefs(useExchangesStore());
+const { getBalances } = useExchangeData();
+const { fetchExchangeSavings, refreshExchangeSavings } = useBinanceSavings();
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
 const { refreshBalance } = useRefresh();
 

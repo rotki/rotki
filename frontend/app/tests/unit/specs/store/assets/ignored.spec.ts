@@ -51,9 +51,9 @@ describe('store::assets/ignored', () => {
   });
 
   it('isAssetIgnored return correct result', () => {
-    const { isAssetIgnored } = store;
+    const { useIsAssetIgnored } = store;
 
-    expect(get(isAssetIgnored('ETH'))).toEqual(true);
-    expect(get(isAssetIgnored('BCH'))).toEqual(false);
+    expect(get(useIsAssetIgnored('ETH'))).toEqual(true);
+    expect(get(useIsAssetIgnored('BCH'))).toEqual(false);
   });
 });

@@ -6,13 +6,13 @@ import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useStatusUpdater } from '@/composables/status';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
-import { transformCase } from '@rotki/common';
+import { transformCase, Zero } from '@rotki/common';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 
@@ -28,31 +28,26 @@ const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { queriedAddresses } = storeToRefs(queriedAddressStore);
 const { update: updateSettings } = useSettingsStore();
 
-const balancesStore = useNonFungibleBalancesStore();
+const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
 const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
-const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [
-  {
-    class: 'w-full',
-    key: 'name',
-    label: t('common.name'),
-  },
-  {
-    key: 'selectedAccounts',
-    label: t('module_selector.table.select_accounts'),
-  },
-  {
-    align: 'end',
-    cellClass: 'flex justify-end align-center',
-    key: 'enabled',
-    label: t('module_selector.table.enabled'),
-  },
-  {
-    align: 'center',
-    key: 'actions',
-    label: '',
-  },
-]);
+const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [{
+  class: 'w-full',
+  key: 'name',
+  label: t('common.name'),
+}, {
+  key: 'selectedAccounts',
+  label: t('module_selector.table.select_accounts'),
+}, {
+  align: 'end',
+  cellClass: 'flex justify-end align-center',
+  key: 'enabled',
+  label: t('module_selector.table.enabled'),
+}, {
+  align: 'center',
+  key: 'actions',
+  label: '',
+}]);
 
 const modules = computed<ModuleEntry[]>(() => {
   const active = get(activeModules);
@@ -69,7 +64,9 @@ const modules = computed<ModuleEntry[]>(() => {
 const { start: fetch } = useTimeoutFn(() => resetStatus(), 800, {
   immediate: false,
 });
-const { start: clearNfBalances } = useTimeoutFn(() => balancesStore.$reset(), 800, { immediate: false });
+const { start: clearNfBalances } = useTimeoutFn(() => {
+  set(nonFungibleTotalValue, Zero);
+}, 800, { immediate: false });
 
 async function update(activeModules: Module[]) {
   set(loading, true);

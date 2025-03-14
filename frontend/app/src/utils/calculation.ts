@@ -2,10 +2,10 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
 
 export function assetSum(balances: Record<string, Balance>): BigNumber {
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
   return Object.entries(balances).reduce((sum, [asset, balance]) => {
-    if (get(isAssetIgnored(asset)))
+    if (get(useIsAssetIgnored(asset)))
       return sum;
 
     return sum.plus(balance.usdValue);

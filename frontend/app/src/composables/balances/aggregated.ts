@@ -1,18 +1,36 @@
 import type { AssetBalances } from '@/types/balances';
+import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPriceInfo } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useManualAssetBalances } from '@/composables/balances/manual';
 import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainStore } from '@/store/blockchain';
 import { samePriceAssets } from '@/types/blockchain';
 import { sumAssetBalances } from '@/utils/balances';
+import { aggregateTotals } from '@/utils/blockchain/accounts';
+import { balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
-import { type AssetBalanceWithPrice, type ExclusionSource, Zero } from '@rotki/common';
+import { type AssetBalanceWithPrice, type Balance, type ExclusionSource, Zero } from '@rotki/common';
+
+function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
+  const ownedAssets: AssetBalances = {};
+
+  for (const { amount, asset, usdValue } of balances) {
+    const balance: Balance = {
+      amount,
+      usdValue,
+    };
+    if (!ownedAssets[asset])
+      ownedAssets[asset] = balance;
+    else ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
+  }
+  return ownedAssets;
+}
 
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;
@@ -22,11 +40,11 @@ interface UseAggregatedBalancesReturn {
 }
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { useIsAssetIgnored } = useIgnoredAssetsStore();
   const { assetPrice } = useBalancePricesStore();
-  const { aggregatedLiabilities, aggregatedTotals } = storeToRefs(useBlockchainStore());
-  const { balances: exchangeBalances } = storeToRefs(useExchangeBalancesStore());
-  const { balances: manualBalances, liabilities: manualLiabilities } = useManualAssetBalances();
+  const { balances: blockchainBalances } = storeToRefs(useBlockchainStore());
+  const { balances: exchangeBalances } = useExchangeData();
+  const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
@@ -38,9 +56,9 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   ): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
       const map = {
-        blockchain: aggregatedTotals,
+        blockchain: aggregateTotals(get(blockchainBalances)),
         exchange: exchangeBalances,
-        manual: manualBalances,
+        manual: toAssetBalances(get(manualBalances)),
       } as const;
 
       const sources: AssetBalances[] = Object.entries(map)
@@ -54,7 +72,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
       return toSortedAssetBalanceWithPrice(
         ownedAssets,
-        asset => hideIgnored && get(isAssetIgnored(asset)),
+        asset => hideIgnored && get(useIsAssetIgnored(asset)),
         assetPrice,
         groupMultiChain,
       );
@@ -63,13 +81,16 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const liabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
       const liabilities = sumAssetBalances(
-        [get(aggregatedLiabilities), get(manualLiabilities)],
+        [
+          aggregateTotals(get(blockchainBalances), 'liabilities'),
+          toAssetBalances(get(manualLiabilities)),
+        ],
         getAssociatedAssetIdentifier,
       );
 
       return toSortedAssetBalanceWithPrice(
         liabilities,
-        asset => hideIgnored && get(isAssetIgnored(asset)),
+        asset => hideIgnored && get(useIsAssetIgnored(asset)),
         assetPrice,
       );
     });

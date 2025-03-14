@@ -47,7 +47,7 @@ const route = useRoute();
 
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
-const { ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetInfo, assetName, assetSymbol, refetchAssetInfo, tokenAddress } = useAssetInfoRetrieval();
@@ -55,7 +55,7 @@ const { getChain } = useSupportedChains();
 const premium = usePremium();
 const { balances } = useAggregatedBalances();
 
-const isIgnored = isAssetIgnored(identifier);
+const isIgnored = useIsAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
 
 const isCollectionParent = computed<boolean>(() => {

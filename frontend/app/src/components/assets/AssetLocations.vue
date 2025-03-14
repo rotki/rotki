@@ -10,8 +10,8 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -52,14 +52,14 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { getAccountByAddress } = useBlockchainStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
-const { assetBreakdown } = useBalancesBreakdown();
+const { useAssetBreakdown } = useAssetBalancesBreakdown();
 const { addressNameSelector } = useAddressesNamesStore();
 const { getChainName, matchChain } = useSupportedChains();
 
 const totalUsdValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).usdValue);
 
 const assetLocations = computed<AssetLocations>(() => {
-  const breakdowns = get(assetBreakdown(get(identifier)));
+  const breakdowns = get(useAssetBreakdown(get(identifier)));
   return breakdowns.map((item: AssetBreakdown) => {
     const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
     return {

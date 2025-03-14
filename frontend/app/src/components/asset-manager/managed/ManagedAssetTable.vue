@@ -133,14 +133,14 @@ function getAsset(item: SupportedAsset) {
 }
 
 const { setMessage } = useMessageStore();
-const { fetchIgnoredAssets, ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { fetchIgnoredAssets, ignoreAsset, ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
 
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
 async function toggleIgnoreAsset(asset: SupportedAsset) {
   const { identifier, name, symbol } = asset;
-  if (get(isAssetIgnored(identifier))) {
+  if (get(useIsAssetIgnored(identifier))) {
     await unignoreAsset(identifier);
   }
   else {
@@ -178,7 +178,7 @@ async function toggleWhitelistAsset(identifier: string) {
 async function massIgnore(ignored: boolean) {
   const ids = get(selected)
     .filter((identifier) => {
-      const isItemIgnored = get(isAssetIgnored(identifier));
+      const isItemIgnored = get(useIsAssetIgnored(identifier));
       return ignored ? !isItemIgnored : isItemIgnored;
     })
     .filter(uniqueStrings);
@@ -331,7 +331,7 @@ const disabledRows = computed(() => {
                     color="primary"
                     hide-details
                     :disabled="isSpamAsset(row)"
-                    :model-value="isAssetIgnored(row.identifier).value"
+                    :model-value="useIsAssetIgnored(row.identifier).value"
                     @update:model-value="toggleIgnoreAsset(row)"
                   />
                 </template>

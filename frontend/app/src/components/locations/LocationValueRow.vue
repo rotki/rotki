@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type BigNumber, Zero } from '@rotki/common';
 
 const props = defineProps<{ identifier: string }>();
 
-const { identifier } = toRefs(props);
-
 const { t } = useI18n();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { balancesByLocation } = useBalancesBreakdown();
+const { balancesByLocation } = useLocationBalancesBreakdown();
 
 const totalValue = computed<BigNumber>(() => {
   const locations = get(balancesByLocation);
-  return locations?.[identifier.value] ?? Zero;
+  return locations?.[props.identifier] ?? Zero;
 });
 </script>
 

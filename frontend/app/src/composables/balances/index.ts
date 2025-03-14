@@ -5,8 +5,10 @@ import { useBalancesApi } from '@/composables/api/balances';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useBlockchains } from '@/composables/blockchain';
 import { useStatusUpdater } from '@/composables/status';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
+import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainStore } from '@/store/blockchain';
 import { useNotificationsStore } from '@/store/notifications';
@@ -19,11 +21,11 @@ import { uniqueStrings } from '@/utils/data';
 import { startPromise } from '@shared/utils';
 
 export const useBalances = createSharedComposable(() => {
-  const manualBalancesStore = useManualBalancesStore();
-  const { missingCustomAssets } = storeToRefs(manualBalancesStore);
-  const { fetchManualBalances, updatePrices: updateManualPrices } = manualBalancesStore;
+  const { fetchManualBalances } = useManualBalances();
+  const { missingCustomAssets } = useManualBalanceData();
   const { updatePrices: updateChainPrices } = useBlockchainStore();
-  const { fetchConnectedExchangeBalances, updatePrices: updateExchangePrices } = useExchangeBalancesStore();
+  const { updatePrices } = useBalancesStore();
+  const { fetchConnectedExchangeBalances } = useExchanges();
   const { refreshAccounts } = useBlockchains();
   const { assets } = useAggregatedBalances();
   const { queryBalancesAsync } = useBalancesApi();
@@ -38,8 +40,7 @@ export const useBalances = createSharedComposable(() => {
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     const pricesConvertedToUsd = { ...get(prices) };
     updateChainPrices(pricesConvertedToUsd);
-    updateManualPrices(pricesConvertedToUsd);
-    updateExchangePrices(pricesConvertedToUsd);
+    updatePrices(pricesConvertedToUsd);
   };
 
   const filterMissingAssets = (assets: string[]): string[] => {

@@ -1,8 +1,8 @@
 import { useBalances } from '@/composables/balances';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useMessageHandling } from '@/composables/message-handling';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
-import { useManualBalancesStore } from '@/store/balances/manual';
+import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -25,8 +25,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { consume } = useMessageHandling();
   const { monitor } = useTaskStore();
   const { autoRefresh } = useBalances();
-  const { fetchManualBalances } = useManualBalancesStore();
-  const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
+  const { fetchManualBalances } = useManualBalances();
+  const { fetchConnectedExchangeBalances } = useExchanges();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
   const frontendStore = useFrontendSettingsStore();

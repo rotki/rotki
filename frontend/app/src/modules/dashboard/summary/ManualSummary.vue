@@ -1,15 +1,15 @@
 <script lang="ts" setup>
+import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { Routes } from '@/router/routes';
-import { useManualBalancesStore } from '@/store/balances/manual';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import ManualBalanceCardList from './ManualBalanceCardList.vue';
 import SummaryCard from './SummaryCard.vue';
 import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
 
-const manualBalancesStore = useManualBalancesStore();
-const { fetchManualBalances } = manualBalancesStore;
-const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
+const { fetchManualBalances } = useManualBalances();
+const { manualBalanceByLocation } = useManualBalanceData();
 const { useIsTaskRunning } = useTaskStore();
 
 const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);

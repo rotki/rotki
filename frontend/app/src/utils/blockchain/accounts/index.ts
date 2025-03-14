@@ -18,7 +18,6 @@ import type {
 } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
-import type { Ref } from 'vue';
 import { sum } from '@/utils/balances';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
 import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
@@ -264,34 +263,57 @@ export function convertBtcBalances(
   };
 }
 
-export function* iterateAssets(balances: Balances, key: keyof EthBalance = 'assets', filterChains: string[] = []): Generator<[string, Balance]> {
+interface GeneratorFilters {
+  chains?: string[];
+  skipIdentifier?: (asset: string) => boolean;
+  assetAssociationMap?: Record<string, string>;
+}
+
+export function* iterateAssets(
+  balances: Balances,
+  key: keyof EthBalance = 'assets',
+  filters: GeneratorFilters = {},
+): Generator<[string, Balance]> {
+  const {
+    assetAssociationMap = {},
+    chains = [],
+    skipIdentifier = (): boolean => false,
+  } = filters;
   for (const chain of Object.keys(balances)) {
     const chainBalances = balances[chain];
-    if (filterChains.length === 0 || filterChains.includes(chain)) {
-      for (const account of Object.values(chainBalances)) {
-        if (!account[key])
+    if (!(chains.length === 0 || chains.includes(chain))) {
+      continue;
+    }
+
+    for (const account of Object.values(chainBalances)) {
+      if (!account[key])
+        continue;
+
+      for (const [identifier, balance] of Object.entries(account[key])) {
+        if (skipIdentifier(identifier))
           continue;
 
-        for (const [identifier, balance] of Object.entries(account[key]))
-          yield [identifier, balance] as const;
+        const assetIdentifier = assetAssociationMap[identifier] ?? identifier;
+        yield [assetIdentifier, balance] as const;
       }
     }
   }
 }
 
-export function aggregateTotals(balances: MaybeRef<Balances>, key: keyof EthBalance = 'assets', filterChains: MaybeRef<string[]> = []): Readonly<Ref<AssetBalances>> {
-  return computed<AssetBalances>(() => {
-    const aggregated: AssetBalances = {};
+export function aggregateTotals(
+  balances: Balances,
+  key: keyof EthBalance = 'assets',
+  filters: GeneratorFilters = {},
+): AssetBalances {
+  const aggregated: AssetBalances = {};
 
-    for (const [identifier, balance] of iterateAssets(get(balances), key, get(filterChains))) {
-      if (!aggregated[identifier])
-        aggregated[identifier] = balance;
-      else
-        aggregated[identifier] = balanceSum(aggregated[identifier], balance);
-    }
-
-    return aggregated;
-  });
+  for (const [identifier, balance] of iterateAssets(balances, key, filters)) {
+    if (!aggregated[identifier])
+      aggregated[identifier] = balance;
+    else
+      aggregated[identifier] = balanceSum(aggregated[identifier], balance);
+  }
+  return aggregated;
 }
 
 export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): boolean {

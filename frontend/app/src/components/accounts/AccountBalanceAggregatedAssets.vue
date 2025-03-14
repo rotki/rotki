@@ -15,7 +15,7 @@ const props = defineProps<{
 const { chains, groupId } = toRefs(props);
 const { getAccountDetails } = useBlockchainStore();
 
-const { isAssetIgnored } = useIgnoredAssetsStore();
+const { useIsAssetIgnored } = useIgnoredAssetsStore();
 const { assetPrice } = useBalancePricesStore();
 const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
@@ -40,7 +40,7 @@ const assets = computed<AssetBalanceWithPrice[]>(() => {
     });
   });
 
-  return toSortedAssetBalanceWithPrice(get(assets), asset => get(isAssetIgnored(asset)), assetPrice);
+  return toSortedAssetBalanceWithPrice(get(assets), asset => get(useIsAssetIgnored(asset)), assetPrice);
 });
 </script>
 

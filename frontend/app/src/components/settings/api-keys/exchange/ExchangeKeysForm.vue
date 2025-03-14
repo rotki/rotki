@@ -4,8 +4,8 @@ import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
-import { useExchangesStore } from '@/store/exchanges';
 import { useLocationStore } from '@/store/locations';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
@@ -19,8 +19,8 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 
 const editKeys = ref<boolean>(false);
 
-const { getExchangeNonce } = useExchangesStore();
 const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(useLocationStore());
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { getLocationData } = useLocations();
 const { t, te } = useI18n();
 
@@ -113,7 +113,7 @@ useFormStateWatcher({
 
 function suggestedName(exchange: string): string {
   const location = getLocationData(exchange);
-  const nonce = get(getExchangeNonce(exchange));
+  const nonce = get(connectedExchanges).filter(({ location }) => location === exchange).length + 1;
   return location ? `${location.name} ${nonce}` : '';
 }
 

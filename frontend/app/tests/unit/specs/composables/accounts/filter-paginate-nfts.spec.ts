@@ -4,7 +4,7 @@ import type { LocationQuery } from '@/types/route';
 import type { MaybeRef } from '@vueuse/core';
 import type * as Vue from 'vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
+import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
@@ -45,7 +45,7 @@ describe('composables::history/filter-paginate', () => {
 
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchNonFungibleBalances = useNonFungibleBalancesStore().fetchNonFungibleBalances;
+    fetchNonFungibleBalances = useNftBalances().fetchNonFungibleBalances;
   });
 
   afterEach(() => {

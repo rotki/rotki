@@ -56,7 +56,7 @@ defineSlots<{
 }>();
 
 const { errorMessages, excludes, includeNfts, items, showIgnored } = toRefs(props);
-const { isAssetIgnored } = useIgnoredAssetsStore();
+const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
 const search = ref<string>('');
 const assets = ref<(AssetInfoWithId | NftAsset)[]>([]);
@@ -83,7 +83,7 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
 
   const includeIgnored = get(showIgnored);
   const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
-    const unIgnored = includeIgnored || !get(isAssetIgnored(identifier));
+    const unIgnored = includeIgnored || !get(useIsAssetIgnored(identifier));
 
     const included = itemsVal && itemsVal.length > 0 ? itemsVal.includes(identifier) : true;
 
