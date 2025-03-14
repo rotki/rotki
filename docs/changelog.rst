@@ -16,6 +16,7 @@ Changelog
 * :bug:`9547` Bitcoin balance query should work again for users of the linux binary.
 * :bug:`-` Docker users will no longer greeted with a schema error when opening a the logging page from a new tab while a session is active.
 * :bug:`9624` Users will now be able to distinguish between US, Australian, Canadian and New Zealand Dollar when they are displayed by symbol.
+* :bug:`-` The search filter in the currency selection dropdown will now automatic reset when the dialog closes.
 
 * :release:`1.38.0 <2025-02-28>`
 * :bug:`-` Fix selected binance trading pairs not being properly loaded when restarting rotki.

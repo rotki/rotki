@@ -62,6 +62,12 @@ function calculateFontSize(symbol: string) {
   const length = symbol.length;
   return `${2.4 - length * 0.4}em`;
 }
+
+watch(visible, (isVisible, wasVisible) => {
+  if (!isVisible && wasVisible) {
+    set(filter, '');
+  }
+});
 </script>
 
 <template>
