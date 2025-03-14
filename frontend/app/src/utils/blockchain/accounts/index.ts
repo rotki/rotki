@@ -18,7 +18,6 @@ import type {
 } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
-import type { Ref } from 'vue';
 import { sum } from '@/utils/balances';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
 import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
@@ -279,19 +278,16 @@ export function* iterateAssets(balances: Balances, key: keyof EthBalance = 'asse
   }
 }
 
-export function aggregateTotals(balances: MaybeRef<Balances>, key: keyof EthBalance = 'assets', filterChains: MaybeRef<string[]> = []): Readonly<Ref<AssetBalances>> {
-  return computed<AssetBalances>(() => {
-    const aggregated: AssetBalances = {};
+export function aggregateTotals(balances: Balances, key: keyof EthBalance = 'assets', filterChains: string[] = []): AssetBalances {
+  const aggregated: AssetBalances = {};
 
-    for (const [identifier, balance] of iterateAssets(get(balances), key, get(filterChains))) {
-      if (!aggregated[identifier])
-        aggregated[identifier] = balance;
-      else
-        aggregated[identifier] = balanceSum(aggregated[identifier], balance);
-    }
-
-    return aggregated;
-  });
+  for (const [identifier, balance] of iterateAssets(balances, key, filterChains)) {
+    if (!aggregated[identifier])
+      aggregated[identifier] = balance;
+    else
+      aggregated[identifier] = balanceSum(aggregated[identifier], balance);
+  }
+  return aggregated;
 }
 
 export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): boolean {

@@ -3,7 +3,7 @@ import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useBalances } from '@/composables/balances';
-import { useManualBalancesStore } from '@/store/balances/manual';
+import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useMessageStore } from '@/store/message';
 import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
@@ -22,7 +22,7 @@ const form = useTemplateRef<InstanceType<typeof ManualBalancesForm>>('form');
 const stateUpdated = ref(false);
 
 const { setMessage } = useMessageStore();
-const { save: saveBalance } = useManualBalancesStore();
+const { save: saveBalance } = useManualBalances();
 
 const { refreshPrices } = useBalances();
 

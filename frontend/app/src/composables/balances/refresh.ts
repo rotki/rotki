@@ -2,7 +2,7 @@ import type { MaybeRef } from '@vueuse/core';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
@@ -12,7 +12,7 @@ import { Blockchain } from '@rotki/common';
 
 export const useRefresh = createSharedComposable(() => {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
-  const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
+  const { fetchConnectedExchangeBalances } = useExchanges();
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { txEvmChains } = useSupportedChains();

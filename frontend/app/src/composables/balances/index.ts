@@ -5,6 +5,9 @@ import { useBalancesApi } from '@/composables/api/balances';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useBlockchains } from '@/composables/blockchain';
 import { useStatusUpdater } from '@/composables/status';
+import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useManualBalancesStore } from '@/store/balances/manual';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -20,10 +23,12 @@ import { startPromise } from '@shared/utils';
 
 export const useBalances = createSharedComposable(() => {
   const manualBalancesStore = useManualBalancesStore();
-  const { missingCustomAssets } = storeToRefs(manualBalancesStore);
-  const { fetchManualBalances, updatePrices: updateManualPrices } = manualBalancesStore;
+  const { fetchManualBalances } = useManualBalances();
+  const { missingCustomAssets } = useManualBalanceData();
+  const { updatePrices: updateManualPrices } = manualBalancesStore;
   const { updatePrices: updateChainPrices } = useBlockchainStore();
-  const { fetchConnectedExchangeBalances, updatePrices: updateExchangePrices } = useExchangeBalancesStore();
+  const { updatePrices: updateExchangePrices } = useExchangeBalancesStore();
+  const { fetchConnectedExchangeBalances } = useExchanges();
   const { refreshAccounts } = useBlockchains();
   const { assets } = useAggregatedBalances();
   const { queryBalancesAsync } = useBalancesApi();

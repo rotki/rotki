@@ -12,7 +12,7 @@ import TagInput from '@/components/inputs/TagInput.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
-import { useManualBalancesStore } from '@/store/balances/manual';
+import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useLocationStore } from '@/store/locations';
 import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
@@ -53,7 +53,7 @@ const tags = computed<string[]>({
 });
 
 const amount = useBigNumberModel(rawAmount);
-const { manualLabels } = useManualBalancesStore();
+const { manualLabels } = useManualBalanceData();
 const { tradeLocations } = storeToRefs(useLocationStore());
 const { assetInfo } = useAssetInfoRetrieval();
 
