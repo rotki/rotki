@@ -1217,6 +1217,7 @@ class EVMTransactionDecoder(ABC):
                 transaction=transaction,
                 action_items=action_items,
                 all_logs=all_logs,
+                decoded_events=decoded_events,
                 token=found_token,
                 event=transfer,
             ),

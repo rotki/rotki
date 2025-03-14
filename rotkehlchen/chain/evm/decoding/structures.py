@@ -64,6 +64,7 @@ class EnricherContext(DecoderBasicContext):
     """Arguments context for enrichment rules"""
     token: 'EvmToken'
     event: 'EvmEvent'
+    decoded_events: list['EvmEvent']
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
