@@ -1399,6 +1399,7 @@
       "validators": "Validators"
     },
     "title": "Blockchain Balances per asset",
+    "validator_index_label": "Ethereum validator No. {index}",
     "validators": "Ethereum Validators"
   },
   "calendar": {
