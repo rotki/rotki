@@ -149,12 +149,12 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start
     # the unsupported/unknown assets
     websocket_connection.wait_until_messages_num(num=20, timeout=10)
     assert [msg for msg in websocket_connection.messages if msg['type'] != 'history_events_status'][::-1] == [  # noqa: E501
-        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'NOEXISTINGASSET', 'details': 'trade'}},  # noqa: E501
-        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found poloniex trade with unsupported asset BALLS. Ignoring it.'}},  # noqa: E501
         {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'IDONTEXIST', 'details': 'asset movement'}},  # noqa: E501
         {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found withdrawal of unsupported poloniex asset BALLS. Ignoring it.'}},  # noqa: E501
         {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'IDONTEXIST', 'details': 'asset movement'}},  # noqa: E501
         {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found deposit of unsupported poloniex asset EBT. Ignoring it.'}},  # noqa: E501
+        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'NOEXISTINGASSET', 'details': 'trade'}},  # noqa: E501
+        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found poloniex trade with unsupported asset BALLS. Ignoring it.'}},  # noqa: E501
         {'type': 'legacy', 'data': {'verbosity': 'error', 'value': "Failed to read ledger event from kraken {'refid': 'D3', 'time': 1408994442, 'type': 'deposit', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '10', 'fee': '0', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided."}},  # noqa: E501
         {'type': 'legacy', 'data': {'verbosity': 'error', 'value': "Failed to read ledger event from kraken {'refid': 'W3', 'time': 1408994442, 'type': 'withdrawal', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '-10', 'fee': '0.11', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided."}},  # noqa: E501
     ]

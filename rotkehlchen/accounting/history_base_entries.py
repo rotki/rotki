@@ -171,7 +171,7 @@ class EventsAccountant:
         extra_data = general_extra_data | {'group_id': group_id}
         _, trade_taxable_amount = self.pot.add_out_event(
             originating_event_id=out_event.identifier,
-            event_type=AccountingEventType.TRANSACTION_EVENT,
+            event_type=out_event.get_accounting_event_type(),
             notes=out_event.notes or '',
             location=out_event.location,
             timestamp=timestamp,
@@ -184,7 +184,7 @@ class EventsAccountant:
         )
 
         add_in_event_kwargs = {
-            'event_type': AccountingEventType.TRANSACTION_EVENT,
+            'event_type': in_event.get_accounting_event_type(),
             'notes': in_event.notes or '',
             'location': in_event.location,
             'timestamp': timestamp,

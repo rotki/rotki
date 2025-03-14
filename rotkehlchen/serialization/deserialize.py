@@ -26,6 +26,7 @@ from rotkehlchen.types import (
     Fee,
     HexColorCode,
     Timestamp,
+    TimestampMS,
     TradePair,
     deserialize_evm_tx_hash,
 )
@@ -194,18 +195,23 @@ def deserialize_timestamp_from_floatstr(time: str | (FVal | float)) -> Timestamp
     )
 
 
-def deserialize_timestamp_from_intms(time: int) -> Timestamp:
-    """Deserializes a timestamp an integer in milliseconds
-
-
-    Can throw DeserializationError if the data is not as expected
+def deserialize_timestamp_ms_from_intms(value: Any) -> TimestampMS:
+    """Deserializes a TimestampMS from an integer timestamp in milliseconds.
+    May raise DeserializationError if the data is not as expected.
     """
-    if not isinstance(time, int):
+    if not isinstance(value, int):
         raise DeserializationError(
-            f'Failed to deserialize a timestamp entry from a {type(time)} entry',
+            f'Failed to deserialize a timestamp entry from a {type(value)} entry',
         )
 
-    return Timestamp(int(time / 1000))
+    return TimestampMS(value)
+
+
+def deserialize_timestamp_from_intms(value: Any) -> Timestamp:
+    """Deserializes a Timestamp from an integer timestamp in milliseconds.
+    May raise DeserializationError if the data is not as expected.
+    """
+    return Timestamp(int(deserialize_timestamp_ms_from_intms(value) / 1000))
 
 
 def deserialize_fval(

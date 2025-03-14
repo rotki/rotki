@@ -21,7 +21,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
@@ -30,6 +30,11 @@ from rotkehlchen.history.events.structures.asset_movement import (
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -39,6 +44,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp,
     deserialize_timestamp_from_intms,
+    deserialize_timestamp_ms_from_intms,
     get_pair_position_str,
 )
 from rotkehlchen.types import (
@@ -63,9 +69,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> Trade:
-    """Turn a poloniex trade returned from poloniex trade history to our common trade
-    history format
+def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
+    """Convert a poloniex trade returned from poloniex trade history into a list of SwapEvents.
 
     Throws:
         - UnsupportedAsset due to asset_from_poloniex()
@@ -73,46 +78,38 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> Trade:
         - UnprocessableTradePair due to the pair data being in an unexpected format
     """
     try:
-        pair = poloniex_trade['symbol']
-        trade_type = TradeType.deserialize(poloniex_trade['side'])
-        # quantity is the base units of the trade
-        amount = deserialize_asset_amount(poloniex_trade['quantity'])
-        rate = deserialize_price(poloniex_trade['price'])
-        fee = deserialize_fee(poloniex_trade['feeAmount'])
-        fee_currency = asset_from_poloniex(poloniex_trade['feeCurrency'])
-        base_currency = asset_from_poloniex(get_pair_position_str(pair, 'first'))
-        quote_currency = asset_from_poloniex(get_pair_position_str(pair, 'second'))
-        timestamp = deserialize_timestamp_from_intms(poloniex_trade['createTime'])
+        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            raw_trade_type=poloniex_trade['side'],
+            base_asset=asset_from_poloniex(get_pair_position_str((pair := poloniex_trade['symbol']), 'first')),  # noqa: E501
+            quote_asset=asset_from_poloniex(get_pair_position_str(pair, 'second')),
+            amount=deserialize_asset_amount(poloniex_trade['quantity']),
+            rate=deserialize_price(poloniex_trade['price']),
+        )
+        log.debug(
+            'Processing poloniex Swap',
+            timestamp=(timestamp := deserialize_timestamp_ms_from_intms(poloniex_trade['createTime'])),  # noqa: E501
+            spend_asset=spend_asset,
+            spend_amount=spend_amount,
+            receive_asset=receive_asset,
+            receive_amount=receive_amount,
+            fee_asset=(fee_currency := asset_from_poloniex(poloniex_trade['feeCurrency'])),
+            fee_amount=(fee := deserialize_fee(poloniex_trade['feeAmount'])),
+        )
     except KeyError as e:
         raise DeserializationError(
             f'Poloniex trade deserialization error. Missing key entry for {e!s} in trade dict',
         ) from e
 
-    log.debug(
-        'Processing poloniex Trade',
-        timestamp=timestamp,
-        order_type=trade_type,
-        base_currency=base_currency,
-        quote_currency=quote_currency,
-        amount=amount,
-        fee=fee,
-        rate=rate,
-    )
-
-    return Trade(
+    return create_swap_events(
         timestamp=timestamp,
         location=Location.POLONIEX,
-        # Since in Poloniex the base currency is the cost currency, iow in poloniex
-        # for BTC_ETH we buy ETH with BTC and sell ETH for BTC, we need to turn it
-        # into the Rotkehlchen way which is following the base/quote approach.
-        base_asset=base_currency,
-        quote_asset=quote_currency,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee,
-        fee_currency=fee_currency,
-        link=str(poloniex_trade['id']),
+        spend_asset=spend_asset,
+        spend_amount=spend_amount,
+        receive_asset=receive_asset,
+        receive_amount=receive_amount,
+        fee_asset=fee_currency,
+        fee_amount=fee,
+        unique_id=str(poloniex_trade['id']),
     )
 
 
@@ -448,56 +445,41 @@ class Poloniex(ExchangeInterface):
 
         return assets_balance, ''
 
-    def query_online_trade_history(
+    def _deserialize_trade(
             self,
+            trade_data: dict[str, Any],
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        raw_data = self.return_trade_history(
-            start=start_ts,
-            end=end_ts,
-        )
-        log.debug('Poloniex trade history query', results_num=len(raw_data))
-        our_trades = []
-        for trade in raw_data:
-            account_type = trade.get('accountType', None)
-            try:
-                if account_type == 'SPOT':
-                    timestamp = deserialize_timestamp_from_intms(trade['createTime'])
-                    if timestamp < start_ts or timestamp > end_ts:
-                        continue
-                    our_trades.append(trade_from_poloniex(trade))
-                else:
-                    log.warning(
-                        f'Error deserializing a poloniex trade. Unknown trade '
-                        f'accountType {account_type} found.',
-                    )
-                    continue
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found poloniex trade with unsupported asset'
-                    f' {e.identifier}. Ignoring it.',
+    ) -> list[SwapEvent]:
+        """Processes a single trade from poloniex and deserializes it via trade_from_poloniex.
+        Returns the deserialized SwapEvents in a list.
+        Logs error/warning and returns an empty list if unable to deserialize.
+        """
+        account_type = trade_data.get('accountType')
+        try:
+            if account_type == 'SPOT':
+                if start_ts < deserialize_timestamp_from_intms(trade_data['createTime']) < end_ts:
+                    return trade_from_poloniex(trade_data)
+            else:
+                log.warning(
+                    f'Error deserializing a poloniex trade. Unknown trade '
+                    f'accountType {account_type} found.',
                 )
-                continue
-            except UnknownAsset as e:
-                self.send_unknown_asset_message(
-                    asset_identifier=e.identifier,
-                    details='trade',
-                )
-                continue
-            except (UnprocessableTradePair, DeserializationError) as e:
-                self.msg_aggregator.add_error(
-                    'Error deserializing a poloniex trade. Check the logs '
-                    'and open a bug report.',
-                )
-                log.error(
-                    'Error deserializing poloniex trade',
-                    trade=trade,
-                    error=str(e),
-                )
-                continue
+        except UnsupportedAsset as e:
+            self.msg_aggregator.add_warning(
+                f'Found poloniex trade with unsupported asset'
+                f' {e.identifier}. Ignoring it.',
+            )
+        except UnknownAsset as e:
+            self.send_unknown_asset_message(asset_identifier=e.identifier, details='trade')
+        except (UnprocessableTradePair, DeserializationError) as e:
+            self.msg_aggregator.add_error(
+                'Error deserializing a poloniex trade. Check the logs '
+                'and open a bug report.',
+            )
+            log.error('Error deserializing poloniex trade', trade=trade_data, error=str(e))
 
-        return our_trades, (start_ts, end_ts)
+        return []
 
     def _deserialize_asset_movement(
             self,
@@ -505,8 +487,8 @@ class Poloniex(ExchangeInterface):
             movement_data: dict[str, Any],
     ) -> list[AssetMovement]:
         """Processes a single deposit/withdrawal from polo and deserializes it
-
-        Can log error/warning and return None if something went wrong at deserialization
+        Returns the deserialized AssetMovements in a list.
+        Logs error/warning and returns an empty list if unable to deserialize.
         """
         try:
             if movement_type == HistoryEventType.DEPOSIT:
@@ -579,20 +561,32 @@ class Poloniex(ExchangeInterface):
             results_num=len(result['withdrawals']) + len(result['deposits']),
         )
 
-        movements = []
+        events: list[HistoryBaseEntry] = []
         for withdrawal in result['withdrawals']:
-            movements.extend(self._deserialize_asset_movement(
+            events.extend(self._deserialize_asset_movement(
                 movement_type=HistoryEventType.WITHDRAWAL,
                 movement_data=withdrawal,
             ))
 
         for deposit in result['deposits']:
-            movements.extend(self._deserialize_asset_movement(
+            events.extend(self._deserialize_asset_movement(
                 movement_type=HistoryEventType.DEPOSIT,
                 movement_data=deposit,
             ))
 
-        return movements
+        raw_trade_history = self.return_trade_history(
+            start=start_ts,
+            end=end_ts,
+        )
+        log.debug('Poloniex trade history query', results_num=len(raw_trade_history))
+        for trade in raw_trade_history:
+            events.extend(self._deserialize_trade(
+                trade_data=trade,
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ))
+
+        return events
 
     def query_online_margin_history(
             self,

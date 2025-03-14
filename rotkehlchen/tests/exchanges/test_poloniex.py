@@ -1,4 +1,3 @@
-import json
 import warnings as test_warnings
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
@@ -11,10 +10,10 @@ from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.poloniex import Poloniex, trade_from_poloniex
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_AIR2
 from rotkehlchen.tests.utils.exchanges import (
@@ -56,22 +55,28 @@ def test_name():
 
 
 def test_trade_from_poloniex():
-    amount = FVal(TEST_AMOUNT_STR)
-    rate = FVal(TEST_RATE_STR)
-    fee = FVal(TEST_FEE_STR)
-    trade = trade_from_poloniex(TEST_POLO_TRADE)
-
-    assert isinstance(trade, Trade)
-    assert isinstance(trade.timestamp, int)
-    assert trade.timestamp == 1500758317
-    assert trade.trade_type == TradeType.SELL
-    assert trade.rate == rate
-    assert trade.amount == amount
-    assert trade.base_asset == A_ETH
-    assert trade.quote_asset == A_BTC
-    assert trade.fee == fee
-    assert trade.fee_currency == A_BTC
-    assert trade.location == Location.POLONIEX
+    assert trade_from_poloniex(TEST_POLO_TRADE) == [SwapEvent(
+        timestamp=TimestampMS(1500758317000),
+        location=Location.POLONIEX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal(TEST_AMOUNT_STR),
+        unique_id='192167',
+    ), SwapEvent(
+        timestamp=TimestampMS(1500758317000),
+        location=Location.POLONIEX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.1411665444631867'),
+        unique_id='192167',
+    ), SwapEvent(
+        timestamp=TimestampMS(1500758317000),
+        location=Location.POLONIEX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=FVal(TEST_FEE_STR),
+        unique_id='192167',
+    )]
 
 
 def test_poloniex_trade_deserialization_errors():
@@ -121,47 +126,68 @@ def test_poloniex_trade_with_asset_needing_conversion():
         'type': 'LIMIT',
         'side': 'SELL',
     }
-    trade = trade_from_poloniex(poloniex_trade)
-    assert trade.base_asset == A_BTC
-    assert trade.quote_asset == A_AIR2
-    assert trade.fee_currency == A_AIR2
-    assert trade.location == Location.POLONIEX
+    events = trade_from_poloniex(poloniex_trade)
+    assert events[0].asset == A_BTC
+    assert events[1].asset == A_AIR2
+    assert events[2].asset == A_AIR2
+    assert events[0].location == Location.POLONIEX
 
 
-def test_query_trade_history(poloniex):
+def test_query_trade_history(poloniex: 'Poloniex'):
     """Happy path test for poloniex trade history querying"""
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(200, POLONIEX_TRADES_RESPONSE)
+        if '/trades' in url:
+            return MockResponse(200, POLONIEX_TRADES_RESPONSE)
+
+        return MockResponse(200, '{"withdrawals": [], "deposits": []}')
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-        trades = poloniex.query_trade_history(
-            start_ts=1500000000,
-            end_ts=1565732120,
-            only_cache=False,
-        )
-
-    assert len(trades) == 2
-    assert trades[0].timestamp == 1539709423
-    assert trades[0].location == Location.POLONIEX
-    assert trades[0].base_asset == A_ETH
-    assert trades[0].quote_asset == A_BTC
-    assert trades[0].trade_type == TradeType.BUY
-    assert trades[0].amount == FVal('3600.53748129')
-    assert trades[0].rate == FVal('0.00003432')
-    assert trades[0].fee.is_close(FVal('7.20107496258'))
-    assert isinstance(trades[0].fee_currency, Asset)
-    assert trades[0].fee_currency == A_ETH
-
-    assert trades[1].timestamp == 1539713117
-    assert trades[1].location == Location.POLONIEX
-    assert trades[1].base_asset == A_BCH
-    assert trades[1].quote_asset == A_BTC
-    assert trades[1].trade_type == TradeType.SELL
-    assert trades[1].amount == FVal('1.40308443')
-    assert trades[1].rate == FVal('0.06935244')
-    assert trades[1].fee.is_close(FVal('0.00009730732'))
-    assert isinstance(trades[1].fee_currency, Asset)
-    assert trades[1].fee_currency == A_BTC
+        assert poloniex.query_online_history_events(
+            start_ts=Timestamp(1500000000),
+            end_ts=Timestamp(1565732120),
+        ) == [SwapEvent(
+            timestamp=TimestampMS(1539713117000),
+            location=Location.POLONIEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_BCH,
+            amount=FVal('1.40308443'),
+            unique_id='394131412',
+        ), SwapEvent(
+            timestamp=TimestampMS(1539713117000),
+            location=Location.POLONIEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_BTC,
+            amount=FVal('0.0973073287465092'),
+            unique_id='394131412',
+        ), SwapEvent(
+            timestamp=TimestampMS(1539713117000),
+            location=Location.POLONIEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BTC,
+            amount=FVal('0.00009730732'),
+            unique_id='394131412',
+        ), SwapEvent(
+            timestamp=TimestampMS(1539709423000),
+            location=Location.POLONIEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_BTC,
+            amount=FVal('0.1235704463578728'),
+            unique_id='13536350',
+        ), SwapEvent(
+            timestamp=TimestampMS(1539709423000),
+            location=Location.POLONIEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('3600.53748129'),
+            unique_id='13536350',
+        ), SwapEvent(
+            timestamp=TimestampMS(1539709423000),
+            location=Location.POLONIEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('7.20107496258'),
+            unique_id='13536350',
+        )]
 
 
 def test_query_trade_history_unexpected_data(poloniex):
@@ -171,15 +197,18 @@ def test_query_trade_history_unexpected_data(poloniex):
     def mock_poloniex_and_query(given_trades, expected_warnings_num, expected_errors_num, expected_trades_len=0):  # noqa: E501
 
         def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-            return MockResponse(200, given_trades)
+            if '/trades' in url:
+                return MockResponse(200, given_trades)
+
+            return MockResponse(200, '{"withdrawals": [], "deposits": []}')
 
         with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-            trades, _ = poloniex.query_online_trade_history(
-                start_ts=1500000000,
-                end_ts=1565732120,
+            events = poloniex.query_online_history_events(
+                start_ts=Timestamp(1500000000),
+                end_ts=Timestamp(1565732120),
             )
 
-        assert len(trades) == expected_trades_len
+        assert len(events) == expected_trades_len
         warnings = poloniex.msg_aggregator.consume_warnings()
         assert len(warnings) == expected_warnings_num
         errors = poloniex.msg_aggregator.consume_errors()
@@ -198,7 +227,7 @@ def test_query_trade_history_unexpected_data(poloniex):
     "accountType": "SPOT"}]"""
 
     # First make sure it works with normal data
-    mock_poloniex_and_query(input_trades, expected_warnings_num=0, expected_errors_num=0, expected_trades_len=1)  # noqa: E501
+    mock_poloniex_and_query(input_trades, expected_warnings_num=0, expected_errors_num=0, expected_trades_len=3)  # noqa: E501
 
     # from here and on invalid data
     # invalid timestamp
@@ -232,24 +261,6 @@ def test_query_trade_history_unexpected_data(poloniex):
     # invalid accountType
     given_input = input_trades.replace('"SPOT"', '"dsadsdsadd"')
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
-
-
-@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_query_trade_history_unknown_asset(poloniex):
-    """Test that poloniex trade history querying returning unknown asset is handled correctly"""
-    TEST_POLO_TRADE['symbol'] = 'ETH_SDSDSD'
-
-    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(200, json.dumps([TEST_POLO_TRADE]))
-
-    with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-        trades, _ = poloniex.query_online_trade_history(
-            start_ts=1500000000,
-            end_ts=1565732120,
-        )
-
-    assert len(trades) == 0
-    assert len(poloniex.msg_aggregator.rotki_notifier.messages) == 1
 
 
 def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHandler'):
@@ -302,10 +313,10 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
     is raised and a warning is generated. Same for unsupported assets"""
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(
-            200,
-            POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
-        )
+        if '/trades' in url:
+            return MockResponse(200, '[]')
+
+        return MockResponse(200, POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE)
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         # Test that after querying the api only ETH and BTC assets are there
@@ -398,6 +409,9 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex: 'Poloniex'):
     """
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+        if '/trades' in url:
+            return MockResponse(200, '[]')
+
         return MockResponse(
             200,
             '{"withdrawals": [{"currency": "FAC", "timestamp": 1478994442, '
@@ -430,6 +444,9 @@ def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
     def mock_poloniex_and_query(given_movements, expected_warnings_num, expected_errors_num):
 
         def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+            if '/trades' in url:
+                return MockResponse(200, '[]')
+
             return MockResponse(200, given_movements)
 
         with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
