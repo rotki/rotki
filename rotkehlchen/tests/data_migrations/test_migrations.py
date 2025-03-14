@@ -357,7 +357,7 @@ def test_migration_5(
     assert Path(icons_path, '_ceth_0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9_small.png').exists() is False  # noqa: E501
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['github_branch_matcher'])
 @pytest.mark.parametrize('data_migration_version', [9])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
@@ -419,7 +419,7 @@ def test_migration_10(
         assert write_cursor.execute("SELECT COUNT(*) FROM rpc_nodes WHERE name='polygon pos etherscan'").fetchone()[0] == 1  # noqa: E501
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['github_branch_matcher'])
 @pytest.mark.parametrize('data_migration_version', [10])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -449,7 +449,7 @@ def test_migration_11(
     )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['github_branch_matcher'])
 @pytest.mark.parametrize('data_migration_version', [12])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -482,7 +482,7 @@ def test_migration_13(
     )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['github_branch_matcher'])
 @pytest.mark.parametrize('data_migration_version', [13])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
