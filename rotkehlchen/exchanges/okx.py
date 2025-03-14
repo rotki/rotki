@@ -18,7 +18,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address
 from rotkehlchen.history.deserialization import deserialize_price
@@ -27,6 +27,11 @@ from rotkehlchen.history.events.structures.asset_movement import (
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -39,10 +44,9 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
     TimestampMS,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
@@ -292,34 +296,6 @@ class Okx(ExchangeInterface):
 
         return dict(assets_balance), ''
 
-    def query_online_trade_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """
-        https://www.okx.com/docs-v5/en/#rest-api-trade-get-order-history-last-3-months
-
-        May raise
-        - RemoteError from _api_query_list_paginated
-        """
-        raw_trades = self._api_query_list_paginated(
-            endpoint=OkxEndpoint.TRADES,
-            pagination_key='ordId',
-            options={
-                'start_ts': start_ts,
-                'end_ts': end_ts,
-            },
-        )
-
-        trades: list[Trade] = []
-        for raw_trade in raw_trades:
-            trade = self.trade_from_okx(raw_trade)
-            if trade is not None:
-                trades.append(trade)
-
-        return trades, (start_ts, end_ts)
-
     def query_online_margin_history(
             self,
             start_ts: Timestamp,
@@ -335,6 +311,7 @@ class Okx(ExchangeInterface):
         """
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-deposit-history
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-withdrawal-history
+        https://www.okx.com/docs-v5/en/#rest-api-trade-get-order-history-last-3-months
 
         May raise
         - RemoteError from _api_query_list_paginated
@@ -355,45 +332,56 @@ class Okx(ExchangeInterface):
                 'end_ts': end_ts,
             },
         )
+        trades = self._api_query_list_paginated(
+            endpoint=OkxEndpoint.TRADES,
+            pagination_key='ordId',
+            options={
+                'start_ts': start_ts,
+                'end_ts': end_ts,
+            },
+        )
 
-        movements: list[AssetMovement] = []
+        events: list[AssetMovement | SwapEvent] = []
         for raw_movement in deposits:
-            movements.extend(self.asset_movement_from_okx(
+            events.extend(self.asset_movement_from_okx(
                 raw_movement=raw_movement,
                 event_type=HistoryEventType.DEPOSIT,
             ))
         for raw_movement in withdrawals:
-            movements.extend(self.asset_movement_from_okx(
+            events.extend(self.asset_movement_from_okx(
                 raw_movement=raw_movement,
                 event_type=HistoryEventType.WITHDRAWAL,
             ))
+        for raw_trade in trades:
+            events.extend(self.swap_events_from_okx(raw_trade))
 
-        return movements
+        return events
 
-    def trade_from_okx(self, raw_trade: dict[str, Any]) -> Trade | None:
-        """
-        Converts a raw trade from OKX into a Trade object.
-        If there is an error `None` is returned and error is logged.
+    def swap_events_from_okx(self, raw_trade: dict[str, Any]) -> list[SwapEvent]:
+        """Converts a raw trade from OKX into SwapEvents.
+        If there is an error an empty list is returned and error is logged.
         """
         try:
-            timestamp = ts_ms_to_sec(TimestampMS(int(raw_trade['cTime'])))
+            timestamp = TimestampMS(int(raw_trade['cTime']))
             try:
                 base_asset_str, quote_asset_str = raw_trade['instId'].split('-')
             except ValueError as e:
                 raise DeserializationError(
                     f'Expected pair {raw_trade["instId"]} to contain a "-"',
                 ) from e
-            base_asset = asset_from_okx(base_asset_str)
-            quote_asset = asset_from_okx(quote_asset_str)
-            trade_type = TradeType.deserialize(raw_trade['side'])
-            amount = deserialize_asset_amount(raw_trade['accFillSz'])
-            rate = deserialize_price(raw_trade['avgPx'])
+            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+                raw_trade_type=raw_trade['side'],
+                base_asset=asset_from_okx(base_asset_str),
+                quote_asset=asset_from_okx(quote_asset_str),
+                amount=deserialize_asset_amount(raw_trade['accFillSz']),
+                rate=deserialize_price(raw_trade['avgPx']),
+            )
             fee_amount = deserialize_fee(raw_trade['fee'])
             # fee charged by the platform is represented by a negative number
-            if fee_amount < 0:
+            if fee_amount < ZERO:
                 fee_amount = Fee(-1 * fee_amount)
             fee_asset = asset_from_okx(raw_trade['feeCcy'])
-            link = raw_trade['ordId']
+            unique_id = raw_trade['ordId']
         except UnknownAsset as e:
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
@@ -417,20 +405,20 @@ class Okx(ExchangeInterface):
                 f'trade {raw_trade}. Error was: {msg}',
             )
         else:
-            return Trade(
+            return create_swap_events(
                 timestamp=timestamp,
-                location=Location.OKX,
-                base_asset=base_asset,
-                quote_asset=quote_asset,
-                trade_type=trade_type,
-                amount=amount,
-                rate=rate,
-                fee=fee_amount,
-                fee_currency=fee_asset,
-                link=link,
+                location=self.location,
+                spend_asset=spend_asset,
+                spend_amount=spend_amount,
+                receive_asset=receive_asset,
+                receive_amount=receive_amount,
+                fee_asset=fee_asset,
+                fee_amount=fee_amount,
+                location_label=self.name,
+                unique_id=unique_id,
             )
 
-        return None
+        return []  # this is the error case
 
     def asset_movement_from_okx(
             self,

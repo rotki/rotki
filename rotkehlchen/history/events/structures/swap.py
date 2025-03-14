@@ -9,7 +9,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_event_identifier
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import AssetAmount, Location, TimestampMS
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE
 
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Price
 
 
 class SwapEvent(HistoryBaseEntry):
@@ -224,3 +225,22 @@ def create_swap_events(
         ))
 
     return events
+
+
+def get_swap_spend_receive(
+        raw_trade_type: str,
+        base_asset: Asset,
+        quote_asset: Asset,
+        amount: 'AssetAmount',
+        rate: 'Price',
+) -> tuple['Asset', 'AssetAmount', 'Asset', 'AssetAmount']:
+    """Deserialize the trade type and calculate amounts and assets spent and received.
+    Returns spend_asset, spend_amount, receive_asset, and receive_amount in a tuple.
+    May raise DeserializationError if raw_trade_type has an unexpected value.
+    """
+    if (sanitized_symbol := raw_trade_type.strip().lower()) in {'buy', 'limit_buy', 'settlement_buy', 'settlement buy'}:  # noqa: E501
+        return quote_asset, AssetAmount(amount * rate), base_asset, amount
+    elif sanitized_symbol in {'sell', 'limit_sell', 'settlement_sell', 'settlement sell'}:
+        return base_asset, amount, quote_asset, AssetAmount(amount * rate)
+
+    raise DeserializationError(f'Failed to deserialize trade type from {type(raw_trade_type)} entry')  # noqa: E501
