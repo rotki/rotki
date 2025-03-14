@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.38.1 <2025-03-14>`
 * :feature:`9385` Users will see the default label using the validator index when exporting validators.
 * :bug:`-` The "Ignore Errors" setting in the snapshot menu will persist after the user moves to another page or logs out.
 * :bug:`-` Some Gnosis pay transactions that were missing merchant data should now redecode again properly.
