@@ -180,10 +180,10 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         Returns a tuple of the trades of the exchange and a Tuple of the queried time
         range. The time range can differ from the given time range if an error happened
         and the call stopped in the middle.
+
+        Deprecated, Trades are changing to SwapEvents and queried via query_online_history_events
         """
-        raise NotImplementedError(
-            'query_online_trade_history() should only be implemented by subclasses',
-        )
+        return [], (start_ts, end_ts)
 
     def query_online_margin_history(
             self,
