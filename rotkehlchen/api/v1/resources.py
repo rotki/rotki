@@ -1296,7 +1296,7 @@ class ExchangeEventsQueryResource(BaseMethodView):
             self,
             location: Location,
             async_query: bool,
-            name: str | None,
+            name: str | None = None,
     ) -> Response:
         return self.rest_api.query_exchange_history_events(
             name=name,
