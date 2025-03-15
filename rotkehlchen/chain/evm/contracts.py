@@ -52,24 +52,6 @@ class EvmContract(NamedTuple):
             block_identifier=block_identifier,
         )
 
-    def get_logs_since_deployment(
-            self,
-            node_inquirer: 'EvmNodeInquirer',
-            event_name: str,
-            argument_filters: dict[str, Any],
-            to_block: int | Literal['latest'] = 'latest',
-            call_order: Sequence['WeightedNode'] | None = None,
-    ) -> Any:
-        return node_inquirer.get_logs(
-            contract_address=self.address,
-            abi=self.abi,
-            event_name=event_name,
-            argument_filters=argument_filters,
-            from_block=self.deployed_block,
-            to_block=to_block,
-            call_order=call_order,
-        )
-
     def get_logs(
             self,
             node_inquirer: 'EvmNodeInquirer',

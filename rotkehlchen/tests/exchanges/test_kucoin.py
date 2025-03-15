@@ -23,6 +23,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -64,14 +65,14 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
         raise RemoteError(f'Kucoin returned invalid JSON response: {response.text}') from e
 
     for asset in get_exchange_asset_symbols(Location.KUCOIN):
-        assert globaldb.is_asset_symbol_unsupported(Location.KUCOIN, asset) is False, f'Kucoin assets {asset} should not be unsupported'  # noqa: E501
+        assert is_asset_symbol_unsupported(globaldb, Location.KUCOIN, asset) is False, f'Kucoin assets {asset} should not be unsupported'  # noqa: E501
 
     for entry in response_dict['data']:
         symbol = entry['currency']
         try:
             asset_from_kucoin(symbol)
         except UnsupportedAsset:
-            assert globaldb.is_asset_symbol_unsupported(Location.KUCOIN, symbol)
+            assert is_asset_symbol_unsupported(globaldb, Location.KUCOIN, symbol)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {symbol} in kucoin. '

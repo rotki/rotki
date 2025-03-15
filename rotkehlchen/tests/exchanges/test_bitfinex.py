@@ -29,6 +29,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
@@ -57,7 +58,7 @@ def test_assets_are_known(mock_bitfinex, globaldb):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
     for asset in get_exchange_asset_symbols(Location.BITFINEX):
-        assert globaldb.is_asset_symbol_unsupported(Location.BITFINEX, asset) is False, f'Bitfinex assets {asset} should not be unsupported'  # noqa: E501
+        assert is_asset_symbol_unsupported(globaldb, Location.BITFINEX, asset) is False, f'Bitfinex assets {asset} should not be unsupported'  # noqa: E501
 
     currencies_response = mock_bitfinex._query_currencies()
     if currencies_response.success is False:
@@ -102,7 +103,7 @@ def test_assets_are_known(mock_bitfinex, globaldb):
         try:
             asset_from_bitfinex(bitfinex_name=symbol)
         except UnsupportedAsset:
-            assert globaldb.is_asset_symbol_unsupported(Location.BITFINEX, symbol)
+            assert is_asset_symbol_unsupported(globaldb, Location.BITFINEX, symbol)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {symbol} in '

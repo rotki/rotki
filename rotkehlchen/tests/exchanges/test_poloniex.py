@@ -23,6 +23,7 @@ from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_TRADES_RESPONSE,
     get_exchange_asset_symbols,
 )
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -253,7 +254,7 @@ def test_query_trade_history_unknown_asset(poloniex):
 
 def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHandler'):
     for asset in get_exchange_asset_symbols(Location.POLONIEX):
-        assert globaldb.is_asset_symbol_unsupported(Location.POLONIEX, asset) is False, f'Poloniex assets {asset} should not be unsupported'  # noqa: E501
+        assert is_asset_symbol_unsupported(globaldb, Location.POLONIEX, asset) is False, f'Poloniex assets {asset} should not be unsupported'  # noqa: E501
 
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:
@@ -261,7 +262,7 @@ def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHand
             try:
                 _ = asset_from_poloniex(poloniex_asset)
             except UnsupportedAsset:
-                assert globaldb.is_asset_symbol_unsupported(Location.POLONIEX, poloniex_asset)
+                assert is_asset_symbol_unsupported(globaldb, Location.POLONIEX, poloniex_asset)
             except UnknownAsset as e:
                 test_warnings.warn(UserWarning(
                     f'Found unknown asset {e.identifier} with symbol {poloniex_asset} in Poloniex. Support for it has to be added',  # noqa: E501
