@@ -20,7 +20,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.snapshots import get_main_currency_price
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 BALANCES_FILENAME = 'balances_snapshot.csv'
 BALANCES_FOR_IMPORT_FILENAME = 'balances_snapshot_import.csv'
@@ -221,7 +221,7 @@ class DBSnapshot:
 
     def import_snapshot(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             processed_balances_list: list[DBAssetBalance],
             processed_location_data_list: list[LocationData],
     ) -> None:
@@ -239,7 +239,7 @@ class DBSnapshot:
 
     def update(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             timestamp: Timestamp,
             balances_snapshot: list[DBAssetBalance],
             location_data_snapshot: list[LocationData],
@@ -261,7 +261,7 @@ class DBSnapshot:
             processed_location_data_list=location_data_snapshot,
         )
 
-    def delete(self, write_cursor: 'DBCursor', timestamp: Timestamp) -> None:
+    def delete(self, write_cursor: 'DBWriterClient', timestamp: Timestamp) -> None:
         """Deletes a snapshot of the database at a given timestamp
         May raise:
         - InputError
@@ -273,7 +273,7 @@ class DBSnapshot:
         if write_cursor.rowcount == 0:
             raise InputError('No snapshot found for the specified timestamp')
 
-    def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: list[str]) -> None:
+    def add_nft_asset_ids(self, write_cursor: 'DBWriterClient', entries: list[str]) -> None:
         """Add NFT identifiers to the DB to prevent unknown asset error."""
         nft_ids = [x for x in entries if x.startswith(NFT_DIRECTIVE)]
         self.db.add_asset_identifiers(write_cursor, nft_ids)

@@ -4,7 +4,7 @@ from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 class DBQueryRanges:
@@ -41,7 +41,7 @@ class DBQueryRanges:
 
     def update_used_query_range(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             location_string: str,
             queried_ranges: list[tuple[Timestamp, Timestamp]],
     ) -> None:
@@ -51,7 +51,9 @@ class DBQueryRanges:
 
         starts = [x[0] for x in queried_ranges]
         ends = [x[1] for x in queried_ranges]
-        saved_range = self.db.get_used_query_range(write_cursor, location_string)
+        with self.db.conn.read_ctx() as cursor:
+            saved_range = self.db.get_used_query_range(cursor, location_string)
+
         if saved_range is not None:
             starts.append(saved_range[0])
             ends.append(saved_range[1])
