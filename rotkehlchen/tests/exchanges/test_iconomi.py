@@ -7,9 +7,9 @@ from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
@@ -100,7 +100,7 @@ def test_iconomi_assets_are_known(
         globaldb,
 ):
     for asset in get_exchange_asset_symbols(Location.ICONOMI):
-        assert globaldb.is_asset_symbol_unsupported(Location.ICONOMI, asset) is False, f'Iconomi assets {asset} should not be unsupported'  # noqa: E501
+        assert is_asset_symbol_unsupported(globaldb, Location.ICONOMI, asset) is False, f'Iconomi assets {asset} should not be unsupported'  # noqa: E501
 
     # use a real Iconomi instance so that we always get the latest data
     iconomi = Iconomi(
@@ -115,7 +115,7 @@ def test_iconomi_assets_are_known(
     for asset_info in resp:
         if not asset_info['supported']:
             continue
-        if GlobalDBHandler.is_asset_symbol_unsupported(Location.ICONOMI, asset_info['ticker']):
+        if is_asset_symbol_unsupported(globaldb, Location.ICONOMI, asset_info['ticker']):
             continue
         supported_tickers.append(asset_info['ticker'])
 

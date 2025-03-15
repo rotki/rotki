@@ -17,6 +17,7 @@ from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
@@ -98,7 +99,7 @@ def test_assets_are_known(htx_exchange: Htx, globaldb):
                 f'Support for it has to be added',
             ))
         except UnsupportedAsset as e:
-            if globaldb.is_asset_symbol_unsupported(Location.HTX, ticker['bcdn']) is False:
+            if is_asset_symbol_unsupported(globaldb, Location.HTX, ticker['bcdn']) is False:
                 test_warnings.warn(UserWarning(
                     f'Found unsupported asset {e.identifier} in HTX. '
                     f'Support for it has to be added',

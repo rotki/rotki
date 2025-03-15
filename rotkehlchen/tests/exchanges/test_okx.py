@@ -12,6 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.constants import A_XMR
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
@@ -43,7 +44,7 @@ def test_assets_are_known(mock_okx: Okx, globaldb):
                 f'Support for it has to be added',
             ))
         except UnsupportedAsset as e:
-            if globaldb.is_asset_symbol_unsupported(Location.OKX, okx_asset) is False:
+            if is_asset_symbol_unsupported(globaldb, Location.OKX, okx_asset) is False:
                 test_warnings.warn(UserWarning(
                     f'Found unsupported asset {e.identifier} in OKX. '
                     f'Support for it has to be added',

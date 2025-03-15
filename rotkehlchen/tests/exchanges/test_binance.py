@@ -43,6 +43,7 @@ from rotkehlchen.tests.utils.exchanges import (
     get_exchange_asset_symbols,
     mock_binance_balance_response,
 )
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -174,7 +175,7 @@ def test_trade_from_binance(function_scope_binance):
 )
 def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     for asset in get_exchange_asset_symbols(Location.BINANCE):
-        assert globaldb.is_asset_symbol_unsupported(Location.BINANCE, asset) is False, f'Binance assets {asset} should not be unsupported'  # noqa: E501
+        assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, asset) is False, f'Binance assets {asset} should not be unsupported'  # noqa: E501
 
     exchange_data = requests.get('https://api3.binance.com/api/v3/exchangeInfo').json()
     binance_assets = set()
@@ -191,7 +192,7 @@ def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused
         try:
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
-            assert globaldb.is_asset_symbol_unsupported(Location.BINANCE, binance_asset)
+            assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, binance_asset)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {binance_asset} in binance. '

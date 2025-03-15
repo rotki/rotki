@@ -591,10 +591,13 @@ def test_get_logs_anonymous(ethereum_inquirer, ethereum_manager_connect_at_start
     query_web3_logs_patch = patch('rotkehlchen.chain.evm.node_inquirer._query_web3_get_logs', side_effect=mock_query_web3_get_logs)  # noqa: E501
 
     with etherscan_query_patch, query_web3_logs_patch:
-        makerdao_pot.get_logs_since_deployment(
-            node_inquirer=ethereum_inquirer,
+        ethereum_inquirer.get_logs(
+            contract_address=pot_address,
+            abi=makerdao_pot.abi,
             event_name='LogNote',
             argument_filters=argument_filters,
+            from_block=makerdao_pot.deployed_block,
+            to_block='latest',
             call_order=call_order,
         )
 

@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from contextlib import ExitStack
 from copy import deepcopy
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
@@ -12,6 +12,10 @@ from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import CacheType, ChainID, EvmTokenKind, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.types import Location
 
 underlying_address1 = make_evm_address()
 underlying_address2 = make_evm_address()
@@ -127,3 +131,12 @@ def globaldb_get_general_cache_last_queried_ts(
     if result is None:
         return None
     return Timestamp(result[0])
+
+
+def is_asset_symbol_unsupported(globaldb: 'GlobalDBHandler', location: 'Location', asset_symbol: str) -> bool:  # noqa: E501
+    """Returns if the asset with the given symbol is not supported in the given location."""
+    with globaldb.conn.read_ctx() as cursor:
+        return cursor.execute(
+            'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
+            (location.serialize_for_db(), asset_symbol),
+        ).fetchone()[0] > 0

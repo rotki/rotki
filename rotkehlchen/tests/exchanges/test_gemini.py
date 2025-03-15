@@ -22,6 +22,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
 )
 from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -76,7 +77,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini, globaldb):
     Use the real gemini API
     """
     for asset in get_exchange_asset_symbols(Location.GEMINI):
-        assert globaldb.is_asset_symbol_unsupported(Location.GEMINI, asset) is False, f'Gemini assets {asset} should not be unsupported'  # noqa: E501
+        assert is_asset_symbol_unsupported(globaldb, Location.GEMINI, asset) is False, f'Gemini assets {asset} should not be unsupported'  # noqa: E501
 
     symbols = sandbox_gemini._public_api_query('symbols')
     for symbol in symbols:
@@ -95,7 +96,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini, globaldb):
                 f'Unknown Gemini asset detected. {e} Symbol: {symbol}',
             ))
         except UnsupportedAsset as e:
-            assert globaldb.is_asset_symbol_unsupported(Location.GEMINI, str(e).split(' ')[2])  # noqa: PT017
+            assert globaldb.is_asset_symbol_unsupported(globaldb, Location.GEMINI, str(e).split(' ')[2])  # noqa: PT017, E501
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')

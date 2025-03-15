@@ -16,6 +16,7 @@ from rotkehlchen.tests.utils.exchanges import (
     BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
     assert_binance_asset_movements_result,
 )
+from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp
 
@@ -38,7 +39,7 @@ def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused
         try:
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
-            assert globaldb.is_asset_symbol_unsupported(Location.BINANCE, binance_asset)
+            assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, binance_asset)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} in binanceus. '
