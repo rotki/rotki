@@ -2,7 +2,7 @@ import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { useSupportedChains } from '@/composables/info/chains';
 import { arrayify } from '@/utils/array';
-import { isEvmIdentifier, isValidEthAddress } from '@rotki/common';
+import { isValidEthAddress } from '@rotki/common';
 import { z } from 'zod';
 
 enum AssetFilterKeys {
