@@ -28,7 +28,7 @@ def main() -> None:
             log.critical(tb)
             print(f'Failed to start rotki backend:\n{tb}')
             sys.exit(1)
-    except:  # noqa: B001, E722, RUF100  # pylint: disable=bare-except
+    except:  # noqa: E722, RUF100  # pylint: disable=bare-except
         tb = traceback.format_exc()
         log.critical(tb)
         print(f'Failed to start rotki backend:\n{tb}')
