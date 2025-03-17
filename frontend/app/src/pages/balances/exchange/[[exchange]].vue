@@ -32,7 +32,7 @@ const { t } = useI18n();
 const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { fetchExchangeSavings, getBalances, refreshExchangeSavings } = useExchangeBalancesStore();
 const { connectedExchanges } = storeToRefs(useExchangesStore());
 
@@ -50,7 +50,7 @@ const usedExchanges = computed<string[]>(() =>
     .filter(uniqueStrings),
 );
 
-const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 
 const router = useRouter();
 const route = useRoute();

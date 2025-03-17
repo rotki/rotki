@@ -131,7 +131,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
 
     const threshold = get(balanceUsdValueThreshold);
 
-    if (get(isTaskRunning(taskType)) && meta?.location === location)
+    if (isTaskRunning(taskType) && meta?.location === location)
       return;
 
     const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.EXCHANGES);
@@ -262,7 +262,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
       if (locations.length > 0)
         await Promise.all(locations.map(syncExchangeSavings));
 
-      setStatus(get(isTaskRunning(TaskType.QUERY_EXCHANGE_SAVINGS)) ? Status.REFRESHING : Status.LOADED);
+      setStatus(isTaskRunning(TaskType.QUERY_EXCHANGE_SAVINGS) ? Status.REFRESHING : Status.LOADED);
     }
     catch (error) {
       logger.error(error);

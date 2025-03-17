@@ -113,7 +113,7 @@ const currentAction = ref<'decode' | 'query'>('query');
 
 const addTransactionModelValue = ref<AddTransactionHashPayload>();
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
 const { decodingStatus } = storeToRefs(useHistoryStore());
@@ -129,10 +129,10 @@ const { fetchUndecodedTransactionsStatus, pullAndRedecodeTransactions, redecodeT
 const historyEventMappings = useHistoryEventMappings();
 
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
-const protocolCacheUpdatesLoading = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
-const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
-const isTransactionsLoading = isTaskRunning(TaskType.TX);
+const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
 
 const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
 const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));

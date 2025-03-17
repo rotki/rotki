@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LocationIcon from '@/components/history/LocationIcon.vue';
+import DetectTokensChainsSelectionItem from '@/components/accounts/balances/DetectTokensChainsSelectionItem.vue';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useTaskStore } from '@/store/tasks';
@@ -12,7 +12,7 @@ const open = ref<boolean>(false);
 const search = ref<string>('');
 const selectedChains = ref<string[]>([]);
 
-const { isTaskRunning } = useTaskStore();
+const { isTaskRunning, useIsTaskRunning } = useTaskStore();
 const { txEvmChains } = useSupportedChains();
 const { massDetectTokens } = useRefresh();
 
@@ -30,7 +30,7 @@ function chainIndex(chain: string) {
 }
 
 function toggleChain(chain: string) {
-  if (get(isDetecting()))
+  if (isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { chain }))
     return;
   const chains = [...get(selectedChains)];
   const index = chainIndex(chain);
@@ -43,7 +43,7 @@ function toggleChain(chain: string) {
 }
 
 function toggleSelectAll() {
-  if (get(isDetecting()))
+  if (isTaskRunning(TaskType.FETCH_DETECTED_TOKENS))
     return;
   const filteredVal = get(filtered);
   if (get(selectedChains).length < filteredVal.length) {
@@ -64,9 +64,7 @@ function reset() {
   set(selectedChains, []);
 }
 
-function isDetecting(chain?: string) {
-  return get(isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, chain ? { chain: get(chain) } : {}));
-}
+const isDetectingTokens = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
 
 watch(search, () => {
   reset();
@@ -120,49 +118,20 @@ watch(open, (open) => {
           class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
           @click="toggleChain(item.id)"
         >
-          <RuiCheckbox
-            :model-value="chainIndex(item.id) > -1"
-            :disabled="isDetecting()"
-            color="primary"
-            size="sm"
-            hide-details
-            @click.prevent.stop="toggleChain(item.id)"
+          <DetectTokensChainsSelectionItem
+            :item="item"
+            :allow-redetect="selectedChains.length === 0"
+            :detecting="isDetectingTokens"
+            :enabled="chainIndex(item.id) > -1"
+            @toggle="toggleChain(item.id)"
+            @detect="detectClick(item.id)"
           />
-          <LocationIcon
-            size="1.25"
-            class="text-sm"
-            :item="item.evmChainName"
-            horizontal
-          />
-          <div class="grow" />
-          <TransitionGroup
-            enter-active-class="opacity-100"
-            leave-active-class="opacity-0"
-          >
-            <RuiButton
-              v-if="selectedChains.length === 0"
-              variant="text"
-              color="primary"
-              class="flex !px-4 !py-2"
-              size="sm"
-              :loading="isDetecting(item.id)"
-              @click.prevent.stop="detectClick(item.id)"
-            >
-              <div class="flex items-center gap-1.5">
-                <RuiIcon
-                  name="lu-refresh-ccw"
-                  size="16"
-                />
-                {{ t('account_balances.detect_tokens.selection.redetect') }}
-              </div>
-            </RuiButton>
-          </TransitionGroup>
         </div>
       </div>
       <div class="p-4 border-t border-default flex items-center justify-between">
         <RuiCheckbox
           color="primary"
-          :disabled="isDetecting()"
+          :disabled="isDetectingTokens"
           :indeterminate="selectedChains.length > 0 && selectedChains.length < filtered.length"
           :model-value="selectedChains.length > 0 && selectedChains.length === filtered.length"
           size="sm"
@@ -182,7 +151,7 @@ watch(open, (open) => {
           <RuiButton
             color="primary"
             :disabled="selectedChains.length === 0"
-            :loading="isDetecting()"
+            :loading="isDetectingTokens"
             @click="detectClick()"
           >
             {{

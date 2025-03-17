@@ -25,10 +25,10 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const frontendStore = useFrontendSettingsStore();
 const { balanceUsdValueThreshold } = storeToRefs(frontendStore);
 
-const { isTaskRunning } = useTaskStore();
-const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
-const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+const { useIsTaskRunning } = useTaskStore();
+const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
+const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
 const v$ = useVuelidate(
   {

@@ -17,7 +17,7 @@ import Summary from './summary/Summary.vue';
 const Type = DashboardTableType;
 
 const { t } = useI18n({ useScope: 'global' });
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { isModuleEnabled } = useModules();
 const { balances, liabilities } = useAggregatedBalances();
 const { activeDashboardMessages } = useDynamicMessages();
@@ -27,10 +27,10 @@ const aggregatedLiabilities = liabilities();
 
 const nftEnabled = isModuleEnabled(Module.NFTS);
 
-const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
-const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-const isAllBalancesLoading = isTaskRunning(TaskType.QUERY_BALANCES);
+const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
+const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+const isAllBalancesLoading = useIsTaskRunning(TaskType.QUERY_BALANCES);
 
 const isBlockchainLoading = logicOr(isQueryingBlockchain, isLoopringLoading);
 const isAnyLoading = logicOr(isBlockchainLoading, isExchangeLoading, isAllBalancesLoading);

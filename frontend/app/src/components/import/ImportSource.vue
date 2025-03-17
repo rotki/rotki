@@ -63,9 +63,9 @@ const dateInputFormatExample = computed(() => {
 });
 
 const taskType = TaskType.IMPORT_CSV;
-const { awaitTask, isTaskRunning } = useTaskStore();
+const { awaitTask, useIsTaskRunning } = useTaskStore();
 
-const loading = isTaskRunning(taskType, { source: get(source) });
+const loading = useIsTaskRunning(taskType, { source: get(source) });
 const { importDataFrom, importFile } = useImportDataApi();
 
 async function uploadPackaged(file: string) {

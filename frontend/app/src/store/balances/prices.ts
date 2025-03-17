@@ -190,7 +190,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     toAsset,
   }: OracleCachePayload): Promise<ActionStatus> => {
     const taskType = TaskType.CREATE_PRICE_CACHE;
-    if (get(isTaskRunning(taskType))) {
+    if (isTaskRunning(taskType)) {
       return {
         message: t('actions.balances.create_oracle_cache.already_running'),
         success: false,

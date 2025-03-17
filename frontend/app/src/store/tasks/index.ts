@@ -97,23 +97,35 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(taskId);
   };
 
-  const isTaskRunning = (type: TaskType, meta: Record<string, any> = {}): ComputedRef<boolean> => computed<boolean>(() =>
-    !!find(get(tasks), (item) => {
-      const sameType = item.type === type;
-      const keys = Object.keys(meta);
-      if (keys.length === 0)
-        return sameType;
+  const checkIfTaskIsRunning = (
+    runningTasks: TaskMap<TaskMeta>,
+    type: TaskType,
+    meta: Record<string, any> = {},
+  ): boolean => !!find(runningTasks, (item) => {
+    const sameType = item.type === type;
+    const keys = Object.keys(meta);
+    if (keys.length === 0)
+      return sameType;
 
-      return (
-        sameType
-        && keys.every(
-          key =>
-          // @ts-expect-error meta key has any type
-            key in item.meta && item.meta[key] === meta[key],
-        )
-      );
-    }),
-  );
+    return (
+      sameType
+      && keys.every(
+        key =>
+        // @ts-expect-error meta key has any type
+          key in item.meta && item.meta[key] === meta[key],
+      )
+    );
+  });
+
+  const isTaskRunning = (
+    type: TaskType,
+    meta: Record<string, any> = {},
+  ): boolean => checkIfTaskIsRunning(get(tasks), type, meta);
+
+  const useIsTaskRunning = (
+    type: TaskType,
+    meta: MaybeRef<Record<string, any>> = {},
+  ): ComputedRef<boolean> => computed<boolean>(() => checkIfTaskIsRunning(get(tasks), type, get(meta)));
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
     const task = find(Object.values(get(tasks)), item => item.type === type);
@@ -157,7 +169,7 @@ export const useTaskStore = defineStore('tasks', () => {
   const cancelTask = async (task: Task<TaskMeta>): Promise<boolean> => {
     const { id, meta, type } = task;
 
-    if (!get(isTaskRunning(type, meta)))
+    if (!isTaskRunning(type, meta))
       return false;
 
     try {
@@ -367,6 +379,7 @@ export const useTaskStore = defineStore('tasks', () => {
     remove,
     taskById: tasks,
     tasks: taskList,
+    useIsTaskRunning,
   };
 });
 

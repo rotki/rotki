@@ -111,14 +111,14 @@ const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
   ];
 });
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();
 
 const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
 
 const accountOperation = logicOr(
-  isTaskRunning(TaskType.ADD_ACCOUNT),
-  isTaskRunning(TaskType.REMOVE_ACCOUNT),
+  useIsTaskRunning(TaskType.ADD_ACCOUNT),
+  useIsTaskRunning(TaskType.REMOVE_ACCOUNT),
   loading,
 );
 

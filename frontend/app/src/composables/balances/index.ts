@@ -86,7 +86,7 @@ export const useBalances = createSharedComposable(() => {
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
     const taskType = TaskType.QUERY_BALANCES;
-    if (get(isTaskRunning(taskType)))
+    if (isTaskRunning(taskType))
       return;
 
     try {

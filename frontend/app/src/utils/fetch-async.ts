@@ -23,7 +23,7 @@ export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R
   const task = data.task;
   const { getStatus, setStatus } = useStatusUpdater(task.section);
 
-  if (get(isTaskRunning(task.type, data.task.checkLoading)) || (getStatus() === Status.LOADED && !data.refresh)) {
+  if (isTaskRunning(task.type, data.task.checkLoading) || (getStatus() === Status.LOADED && !data.refresh)) {
     logger.debug(`${Section[data.task.section]} is already loading`);
     return;
   }

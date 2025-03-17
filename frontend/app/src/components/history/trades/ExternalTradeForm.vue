@@ -29,7 +29,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { getHistoricPrice } = useBalancePricesStore();
 
 const base = useRefPropVModel(modelValue, 'baseAsset');
@@ -136,7 +136,7 @@ const shouldRenderSummary = computed<boolean>(
   () => !!(get(type) && get(base) && get(quote) && get(amountModel) && get(rateModel)),
 );
 
-const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
 function updateRate(forceUpdate = false) {
   if (get(amount) && get(rate) && (!get(quoteAmountInputFocused) || forceUpdate))

@@ -28,8 +28,8 @@ defineSlots<{
 const historyStore = useHistoryStore();
 const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(historyStore);
 
-const { isTaskRunning } = useTaskStore();
-const taskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const { useIsTaskRunning } = useTaskStore();
+const taskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
 const { t } = useI18n();
 

@@ -11,13 +11,13 @@ import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
 import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButton.vue';
 
 const { blockchainTotals } = storeToRefs(useBlockchainStore());
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { refreshBalance } = useRefresh();
 const { t } = useI18n({ useScope: 'global' });
 
-const isTokenDetecting = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
-const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+const isTokenDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
+const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
 const isBlockchainLoading = logicOr(isQueryingBlockchain, isLoopringLoading);
 const isLoading = logicOr(isBlockchainLoading, isTokenDetecting);
 </script>

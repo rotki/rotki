@@ -18,8 +18,8 @@ const emit = defineEmits<{
   (e: 'delete-tx', data: EvmChainAndTxHash): void;
 }>();
 
-const { isTaskRunning } = useTaskStore();
-const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const { useIsTaskRunning } = useTaskStore();
+const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
 
 const { event } = toRefs(props);
 

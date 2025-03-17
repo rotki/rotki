@@ -9,15 +9,15 @@ const props = defineProps<{ item: EvmUnDecodedTransactionsData }>();
 
 const { t } = useI18n();
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
 const remaining = computed<number>(() => props.item.total - props.item.processed);
-
 const isComplete = computed<boolean>(() => get(remaining) === 0);
+const taskMeta = computed(() => ({
+  chain: props.item.chain,
+}));
 
-const decoding = computed<boolean>(() =>
-  get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.chain })),
-);
+const decoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING, taskMeta);
 </script>
 
 <template>

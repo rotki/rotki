@@ -28,11 +28,11 @@ definePage({
   },
 });
 
-const { awaitTask, isTaskRunning } = useTaskStore();
+const { awaitTask, useIsTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
 const { clearError, exportReportData, fetchReports, generateReport } = reportsStore;
-const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
+const isRunning = useIsTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File>();
 const importDataLoading = ref<boolean>(false);

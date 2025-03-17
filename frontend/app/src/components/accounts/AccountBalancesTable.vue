@@ -59,7 +59,7 @@ const collapsed = ref<DataRow[]>([]) as Ref<DataRow[]>;
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();
 const { supportsTransactions } = useSupportedChains();
 const { showConfirmation } = useAccountDelete();
@@ -156,8 +156,8 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
 });
 
 const accountOperation = logicOr(
-  isTaskRunning(TaskType.ADD_ACCOUNT),
-  isTaskRunning(TaskType.REMOVE_ACCOUNT),
+  useIsTaskRunning(TaskType.ADD_ACCOUNT),
+  useIsTaskRunning(TaskType.REMOVE_ACCOUNT),
   isSectionLoading,
 );
 

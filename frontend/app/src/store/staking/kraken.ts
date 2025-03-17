@@ -95,7 +95,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const taskType = TaskType.STAKING_KRAKEN;
     try {
       const firstLoad = isFirstLoad();
-      if (get(isTaskRunning(taskType)) || (loading() && refresh))
+      if (isTaskRunning(taskType) || (loading() && refresh))
         return;
 
       setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
@@ -116,7 +116,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
         ...dateFilter,
       }));
 
-      setStatus(get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED);
+      setStatus(isTaskRunning(taskType) ? Status.REFRESHING : Status.LOADED);
     }
     catch (error: any) {
       logger.error(error);

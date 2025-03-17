@@ -48,13 +48,13 @@ const fetchedAssetToFiatPrice = ref<string>('');
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
 const { getHistoricPrice } = useBalancePricesStore();
 const { addHistoricalPrice } = useAssetPricesApi();
 
 const isCurrentCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
-const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
 const numericAssetToUsdPrice = bigNumberifyFromRef(assetToUsdPrice);
 const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);

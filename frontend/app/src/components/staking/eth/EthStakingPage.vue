@@ -61,13 +61,13 @@ const enabled = isModuleEnabled(module);
 const { dailyStats, dailyStatsLoading, pagination, refresh: reloadStats, refreshStats } = useEth2DailyStats();
 
 const { isLoading } = useStatusStore();
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
 const { isFirstLoad } = useStatusUpdater(performanceSection);
 
 const performanceRefreshing = isLoading(performanceSection);
 const statsRefreshing = isLoading(statsSection);
-const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
+const blockProductionLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
   queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
 });
 
