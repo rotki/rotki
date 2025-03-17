@@ -141,6 +141,7 @@ from rotkehlchen.api.v1.schemas import (
     QueriedAddressesSchema,
     QueryAddressbookSchema,
     QueryCalendarSchema,
+    RefetchEvmTransactionsSchema,
     RefreshProtocolDataSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
@@ -3356,4 +3357,28 @@ class HistoricalPricesPerAssetResource(BaseMethodView):
             from_timestamp=from_timestamp,
             only_cache_period=only_cache_period,
             exclude_timestamps=exclude_timestamps,
+        )
+
+
+class RefetchEvmTransactionsResource(BaseMethodView):
+
+    def make_post_schema(self) -> RefetchEvmTransactionsSchema:
+        return RefetchEvmTransactionsSchema(db=self.rest_api.rotkehlchen.data.db)
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            to_timestamp: Timestamp,
+            from_timestamp: Timestamp,
+            address: ChecksumEvmAddress | None = None,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE | None = None,
+    ) -> Response:
+        return self.rest_api.force_refetch_evm_transactions(
+            address=address,
+            evm_chain=evm_chain,
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
         )

@@ -676,3 +676,17 @@ class DBEvmTx:
         if (result := cursor.fetchone()) is None:
             return None
         return result[0]
+
+    def get_transactions_in_range(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> int:
+        """Return the number of transactions between from_ts and to_ts for a given chain"""
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT COUNT(*) FROM evm_transactions WHERE chain_id = ? AND timestamp BETWEEN ? AND ?',  # noqa: E501
+                (chain_id.serialize_for_db(), from_ts, to_ts),
+            )
+            return cursor.fetchone()[0]

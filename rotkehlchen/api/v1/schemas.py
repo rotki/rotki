@@ -4024,3 +4024,40 @@ class RefreshProtocolDataSchema(AsyncQueryArgumentSchema):
         enum_class=ProtocolsWithCache,
         required=True,
     )
+
+
+class RefetchEvmTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
+    address = EvmAddressField(load_default=None)
+    evm_chain = EvmChainNameField(
+        load_default=None,
+        limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS),
+    )
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__()
+        self.db = db
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['to_timestamp'] <= data['from_timestamp']:
+            raise ValidationError(
+                message='from_timestamp must be smaller than to_timestamp',
+                field_name='from_timestamp',
+            )
+
+        if (address := data['address']) is not None:
+            with self.db.conn.read_ctx() as cursor:
+                query, bindings = 'SELECT COUNT(*) FROM blockchain_accounts WHERE account=?', [address]  # noqa: E501
+                if (evm_chain := data['evm_chain']) is not None:
+                    query += ' AND blockchain=?'
+                    bindings.append(evm_chain.serialize_for_db())
+
+                if cursor.execute(query, bindings).fetchone()[0] == 0:
+                    raise ValidationError(
+                        message=f'Account {address} with {evm_chain=} is not tracked by rotki',
+                        field_name='address',
+                    )
