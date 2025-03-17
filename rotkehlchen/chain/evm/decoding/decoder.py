@@ -503,7 +503,7 @@ class EVMTransactionDecoder(ABC):
         # Sort post decoding rules by priority (which is the first element of the tuple)
         rules.sort(key=operator.itemgetter(0))
         for _, rule in rules:
-            decoded_events, _ = decode_safely(
+            result_events, is_err = decode_safely(
                 msg_aggregator=self.msg_aggregator,
                 tx_hash=transaction.tx_hash,
                 chain_id=transaction.chain_id,
@@ -512,6 +512,12 @@ class EVMTransactionDecoder(ABC):
                 decoded_events=decoded_events,
                 all_logs=all_logs,
             )
+            if not is_err:  # post decoding appends and returns to decoded events if successful
+                if len(result_events) > len(decoded_events):
+                    decoded_events = result_events
+                    break  # an event was added, so let's break out of post decoding
+                else:
+                    decoded_events = result_events
 
         return decoded_events
 
@@ -570,17 +576,14 @@ class EVMTransactionDecoder(ABC):
                 action_items=action_items,
             )
             if input_data_rules and len(tx_log.topics) != 0 and (input_rule := input_data_rules.get(tx_log.topics[0])) is not None:  # noqa: E501
-                result, err = decode_safely(
+                result, is_err = decode_safely(
                     msg_aggregator=self.msg_aggregator,
                     tx_hash=context.transaction.tx_hash,
                     chain_id=context.transaction.chain_id,
                     func=input_rule,
                     context=context,
                 )
-                if err:
-                    result = DEFAULT_DECODING_OUTPUT
-
-                if result.event:
+                if not is_err and result.event:
                     events.append(result.event)
                     continue  # since the input data rule found an event for this log
 
