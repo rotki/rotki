@@ -14,7 +14,7 @@ export const useHistoryStore = defineStore('history', () => {
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
-  const { isTaskRunning } = useTaskStore();
+  const { useIsTaskRunning } = useTaskStore();
   const { getChain, isEvmLikeChains } = useSupportedChains();
 
   const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
@@ -40,7 +40,7 @@ export const useHistoryStore = defineStore('history', () => {
     });
   };
 
-  const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+  const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
   const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData): void => {
     set(receivingProtocolCacheStatus, true);

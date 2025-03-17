@@ -109,7 +109,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       }
     }
     finally {
-      setStatus(get(isTaskRunning(taskType, { isEvm })) ? Status.REFRESHING : Status.LOADED);
+      setStatus(isTaskRunning(taskType, { isEvm }) ? Status.REFRESHING : Status.LOADED);
     }
   };
 
@@ -223,7 +223,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const isEvm = type === TransactionChainType.EVM;
     if (addresses.length > 0)
-      setStatus(get(isTaskRunning(TaskType.TX, { isEvm })) ? Status.REFRESHING : Status.LOADED);
+      setStatus(isTaskRunning(TaskType.TX, { isEvm }) ? Status.REFRESHING : Status.LOADED);
     logger.debug(`finished refreshing ${type} transactions for ${addresses.length} addresses`);
   };
 

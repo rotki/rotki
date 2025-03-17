@@ -16,7 +16,8 @@ vi.mock('@/store/tasks', async () => {
   const { ref } = await import('vue');
   return {
     useTaskStore: vi.fn().mockReturnValue({
-      isTaskRunning: vi.fn().mockImplementation(() => ref(false)),
+      useIsTaskRunning: vi.fn().mockImplementation(() => ref(false)),
+      isTaskRunning: vi.fn().mockImplementation(() => false),
       awaitTask: vi.fn().mockResolvedValue({}),
     }),
   };

@@ -10,19 +10,18 @@ const emit = defineEmits<{
   (e: 'click'): void;
 }>();
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalances();
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.PRICES);
 const { t } = useI18n();
 
-const loadingData = computed<boolean>(
-  () =>
-    get(isTaskRunning(TaskType.QUERY_BALANCES))
-    || get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES))
-    || get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES))
-    || get(isTaskRunning(TaskType.MANUAL_BALANCES)),
+const loadingData = logicOr(
+  useIsTaskRunning(TaskType.QUERY_BALANCES),
+  useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
+  useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES),
+  useIsTaskRunning(TaskType.MANUAL_BALANCES),
 );
 
 const { assets } = useAggregatedBalances();

@@ -9,11 +9,11 @@ import { TaskType } from '@/types/task-type';
 import ExchangeBox from './ExchangeBox.vue';
 
 const { exchanges } = storeToRefs(useExchangeBalancesStore());
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { refreshBalance } = useRefresh();
 const { t } = useI18n({ useScope: 'global' });
 
-const isExchangeLoading = isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
+const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 </script>
 
 <template>

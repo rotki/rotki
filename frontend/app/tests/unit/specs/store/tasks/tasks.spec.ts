@@ -75,13 +75,13 @@ describe('store:tasks', () => {
 
   it('task is not running', () => {
     store.addTask(1, TaskType.TX, getMeta());
-    expect(get(store.isTaskRunning(TaskType.IMPORT_CSV))).toBe(false);
+    expect(get(store.useIsTaskRunning(TaskType.IMPORT_CSV))).toBe(false);
   });
 
   it('task is running', () => {
     store.addTask(1, TaskType.TX, getMeta());
     store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
-    expect(get(store.isTaskRunning(TaskType.MANUAL_BALANCES_ADD))).toBe(true);
+    expect(get(store.useIsTaskRunning(TaskType.MANUAL_BALANCES_ADD))).toBe(true);
   });
 
   it('task is running with strict meta check', () => {
@@ -91,8 +91,8 @@ describe('store:tasks', () => {
     });
     store.addTask(1, TaskType.TX, meta);
     store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
-    expect(get(store.isTaskRunning(TaskType.TX, getMeta()))).toBe(false);
-    expect(get(store.isTaskRunning(TaskType.TX, meta))).toBe(true);
+    expect(get(store.useIsTaskRunning(TaskType.TX, getMeta()))).toBe(false);
+    expect(get(store.useIsTaskRunning(TaskType.TX, meta))).toBe(true);
   });
 
   it('unknown tasks do not have metadata', () => {
@@ -111,7 +111,7 @@ describe('store:tasks', () => {
       }),
     );
 
-    expect(get(store.isTaskRunning(TaskType.QUERY_BALANCES))).toBe(true);
+    expect(get(store.useIsTaskRunning(TaskType.QUERY_BALANCES))).toBe(true);
     expect(get(store.metadata(TaskType.QUERY_BALANCES))).toMatchObject({
       title: '',
       ignoreResult: true,
@@ -119,7 +119,7 @@ describe('store:tasks', () => {
 
     await store.monitor();
 
-    expect(get(store.isTaskRunning(TaskType.QUERY_BALANCES))).toBe(false);
+    expect(get(store.useIsTaskRunning(TaskType.QUERY_BALANCES))).toBe(false);
   });
 
   it('monitoring resolves an awaited task', async () => {

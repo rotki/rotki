@@ -50,7 +50,7 @@ const columns = computed<DataTableColumn<OracleCacheEntry>[]>(() => [
   },
 ]);
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { createOracleCache, deletePriceCache, getPriceCache } = useBalancePricesStore();
 
 const oracles: PrioritizedListItemData<PriceOracle>[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
@@ -92,7 +92,7 @@ watch(selection, async () => {
   await load();
 });
 
-const pending = isTaskRunning(TaskType.CREATE_PRICE_CACHE);
+const pending = useIsTaskRunning(TaskType.CREATE_PRICE_CACHE);
 
 const { notify } = useNotificationsStore();
 const { assetSymbol } = useAssetInfoRetrieval();

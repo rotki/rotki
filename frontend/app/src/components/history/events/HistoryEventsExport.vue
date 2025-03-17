@@ -22,7 +22,7 @@ const { appSession, openDirectory } = useInterop();
 
 const { downloadHistoryEventsCSV, exportHistoryEventsCSV } = useHistoryEventsApi();
 
-const { awaitTask, isTaskRunning } = useTaskStore();
+const { awaitTask, useIsTaskRunning } = useTaskStore();
 const { notify } = useNotificationsStore();
 
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
@@ -108,7 +108,7 @@ function showConfirmation() {
   );
 }
 
-const taskRunning = isTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
+const taskRunning = useIsTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
 </script>
 
 <template>

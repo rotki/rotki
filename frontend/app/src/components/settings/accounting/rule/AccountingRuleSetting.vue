@@ -249,10 +249,10 @@ onMounted(async () => {
   await refresh();
 });
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
-const exportFileLoading = isTaskRunning(TaskType.EXPORT_ACCOUNTING_RULES);
-const importFileLoading = isTaskRunning(TaskType.IMPORT_ACCOUNTING_RULES);
+const exportFileLoading = useIsTaskRunning(TaskType.EXPORT_ACCOUNTING_RULES);
+const importFileLoading = useIsTaskRunning(TaskType.IMPORT_ACCOUNTING_RULES);
 
 const importFileDialog = ref<boolean>(false);
 </script>

@@ -43,7 +43,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const fetchUndecodedTransactionsBreakdown = async (type: TransactionChainType): Promise<void> => {
     const isEvm = type === TransactionChainType.EVM;
     const taskType = TaskType.FETCH_UNDECODED_TXS;
-    if (get(isTaskRunning(taskType, { isEvm }))) {
+    if (isTaskRunning(taskType, { isEvm })) {
       logger.debug(`was already fetching undecoded transactions for ${type}`);
       return;
     }
@@ -117,7 +117,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   ): Promise<void> => {
     const taskType = TaskType.TRANSACTIONS_DECODING;
 
-    if (get(isTaskRunning(taskType, { chain })))
+    if (isTaskRunning(taskType, { chain }))
       return;
 
     try {

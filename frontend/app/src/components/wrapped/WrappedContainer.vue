@@ -33,7 +33,7 @@ const props = defineProps<{
 const { t } = useI18n();
 const premium = usePremium();
 const { apiKey } = useExternalApiKeys(t);
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { findCurrency } = useCurrencies();
 const { fetchWrapStatistics } = useWrapStatisticsApi();
 const { getChain } = useSupportedChains();
@@ -49,9 +49,9 @@ const summary = ref<WrapStatisticsResult>();
 const { getEarliestEventTimestamp } = useHistoryEvents();
 
 const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
-const protocolCacheUpdatesLoading = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
-const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 
 const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
 

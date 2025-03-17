@@ -9,18 +9,20 @@ const props = defineProps<{ item: EvmTransactionQueryData }>();
 
 const { t } = useI18n();
 const { getStatusData } = useTransactionQueryStatus();
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { isMdAndDown } = useBreakpoint();
 
 const { item } = toRefs(props);
 
-const transactionsLoading = computed(() => {
+const taskMeta = computed(() => {
   const data = get(item);
-  return get(isTaskRunning(TaskType.TX, {
+  return {
     address: data.address,
     chain: data.evmChain,
-  }));
+  };
 });
+
+const transactionsLoading = useIsTaskRunning(TaskType.TX, taskMeta);
 
 const stepList = computed(() => [
   t('transactions.query_status.statuses.querying_transactions'),

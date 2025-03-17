@@ -16,7 +16,7 @@ interface UseBlockchainAccountLoadingReturn {
 }
 
 export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): UseBlockchainAccountLoadingReturn {
-  const { isTaskRunning } = useTaskStore();
+  const { useIsTaskRunning } = useTaskStore();
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { isLoading } = useStatusStore();
 
@@ -25,15 +25,15 @@ export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): Us
   const isAnyBalancesFetching = computed(() => {
     if (!category) {
       return get(logicOr(
-        isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
-        isTaskRunning(TaskType.L2_LOOPRING),
+        useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
+        useIsTaskRunning(TaskType.L2_LOOPRING),
       ));
     }
 
-    const chainsTask = get(chainIds).map(chain => isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain }));
+    const chainsTask = get(chainIds).map(chain => useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain }));
 
     if (get(isEvm)) {
-      chainsTask.push(isTaskRunning(TaskType.L2_LOOPRING));
+      chainsTask.push(useIsTaskRunning(TaskType.L2_LOOPRING));
     }
 
     return get(logicOr(...(chainsTask)));
@@ -48,7 +48,7 @@ export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): Us
   });
 
   const isDetectingTokens = computed(() => get(isEvm) && isDefined(massDetecting));
-  const operationRunning = logicOr(isTaskRunning(TaskType.ADD_ACCOUNT), isTaskRunning(TaskType.REMOVE_ACCOUNT));
+  const operationRunning = logicOr(useIsTaskRunning(TaskType.ADD_ACCOUNT), useIsTaskRunning(TaskType.REMOVE_ACCOUNT));
   const refreshDisabled = logicOr(isSectionLoading, isDetectingTokens);
   const deleteDisabled = logicOr(isAnyBalancesFetching, operationRunning);
 

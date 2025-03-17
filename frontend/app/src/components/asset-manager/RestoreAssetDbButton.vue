@@ -29,8 +29,8 @@ const { restartBackend } = useBackendManagement();
 
 const { t } = useI18n();
 
-const { isTaskRunning } = useTaskStore();
-const loading = isTaskRunning(TaskType.RESET_ASSET);
+const { useIsTaskRunning } = useTaskStore();
+const loading = useIsTaskRunning(TaskType.RESET_ASSET);
 
 async function restoreAssets(resetType: ResetType) {
   if (get(loading))

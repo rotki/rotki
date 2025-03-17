@@ -53,9 +53,9 @@ const {
   resetQueryStatus: resetEventsQueryStatus,
   sortedQueryStatus: events,
 } = useEventsQueryStatus(locations);
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
-const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
 

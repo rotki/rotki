@@ -34,7 +34,7 @@ export const useSync = createSharedComposable(() => {
 
   const forceSync = async (logout: () => Promise<void>): Promise<void> => {
     const taskType = TaskType.FORCE_SYNC;
-    if (get(isTaskRunning(taskType)))
+    if (isTaskRunning(taskType))
       return;
 
     const notifyFailure = (error: string): void => {

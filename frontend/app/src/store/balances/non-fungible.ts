@@ -23,7 +23,7 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
 
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
-  const { awaitTask } = useTaskStore();
+  const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
   const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
@@ -43,10 +43,9 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
     return mapCollectionResponse(result);
   };
 
-  const { isTaskRunning } = useTaskStore();
   const syncNonFungiblesTask = async (): Promise<void> => {
     const taskType = TaskType.NF_BALANCES;
-    if (get(isTaskRunning(taskType)))
+    if (isTaskRunning(taskType))
       return;
 
     const defaults: NonFungibleBalancesRequestPayload = {

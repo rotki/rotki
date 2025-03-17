@@ -13,17 +13,17 @@ interface UseAccountLoadingReturn {
 export const useAccountLoading = createSharedComposable((): UseAccountLoadingReturn => {
   const pending = ref<boolean>(false);
 
-  const { isTaskRunning } = useTaskStore();
+  const { useIsTaskRunning } = useTaskStore();
 
-  const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-  const isLoopringLoading = isTaskRunning(TaskType.L2_LOOPRING);
+  const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+  const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
 
   const isBlockchainLoading = computed<boolean>(() => get(isQueryingBlockchain) || get(isLoopringLoading));
 
   const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> =>
     logicOr(
-      isTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {}),
-      isTaskRunning(TaskType.REMOVE_ACCOUNT, blockchain ? { blockchain } : {}),
+      useIsTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {}),
+      useIsTaskRunning(TaskType.REMOVE_ACCOUNT, blockchain ? { blockchain } : {}),
     );
 
   const loading: ComputedRef<boolean> = logicOr(isAccountOperationRunning(), pending, isQueryingBlockchain);

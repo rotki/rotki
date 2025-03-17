@@ -10,18 +10,17 @@ const props = defineProps<{
 }>();
 
 const { identifier } = toRefs(props);
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
 const { t } = useI18n();
 
 const { locationBreakdown: breakdown } = useBalancesBreakdown();
 const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = breakdown(identifier);
 
-const loadingData = computed<boolean>(
-  () =>
-    get(isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES))
-    || get(isTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES))
-    || get(isTaskRunning(TaskType.QUERY_BALANCES)),
+const loadingData = logicOr(
+  useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
+  useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES),
+  useIsTaskRunning(TaskType.QUERY_BALANCES),
 );
 </script>
 

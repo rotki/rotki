@@ -25,8 +25,8 @@ function validate(): Promise<boolean> {
   return get(input).validate();
 }
 
-const { isTaskRunning } = useTaskStore();
-const taskRunning = isTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
+const { useIsTaskRunning } = useTaskStore();
+const taskRunning = useIsTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
 
 defineExpose({
   validate,

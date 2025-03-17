@@ -265,7 +265,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
-      if (get(isTaskRunning(taskType)))
+      if (isTaskRunning(taskType))
         return;
 
       const { taskId } = await deleteXpubCaller(params);

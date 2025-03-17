@@ -18,14 +18,14 @@ interface UseTokenDetectionReturn {
 }
 
 export function useTokenDetection(chain: MaybeRef<string>, accountAddress: MaybeRef<string | null> = null): UseTokenDetectionReturn {
-  const { isTaskRunning } = useTaskStore();
+  const { useIsTaskRunning } = useTaskStore();
   const { fetchDetectedTokens: fetchDetectedTokensCaller, getEthDetectedTokensInfo } = useBlockchainTokensStore();
   const { addresses } = useBlockchainStore();
   const { supportsTransactions } = useSupportedChains();
 
   const isDetectingTaskRunning = (address: string | null): ComputedRef<boolean> =>
     computed(() => get(
-      isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+      useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
         chain: get(chain),
         ...(address ? { address } : {}),
       }),

@@ -303,7 +303,7 @@ export function useBlockchains(): UseBlockchainsReturn {
 
   const addAccounts = async (chain: string, payload: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption): Promise<void> => {
     const taskType = TaskType.ADD_ACCOUNT;
-    if (get(isTaskRunning(taskType))) {
+    if (isTaskRunning(taskType)) {
       logger.debug(`${TaskType[taskType]} is already running.`);
       return;
     }

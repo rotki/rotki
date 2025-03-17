@@ -43,13 +43,13 @@ const assetToFiatPrice = ref<string>('');
 const fiatValueFocused = ref<boolean>(false);
 const fetchedAssetToFiatPrice = ref<string>('');
 
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { getHistoricPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { addHistoricalPrice } = useAssetPricesApi();
 
-const fetching = isTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
+const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 
 const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);
 const numericFiatValue = bigNumberifyFromRef(fiatValue);

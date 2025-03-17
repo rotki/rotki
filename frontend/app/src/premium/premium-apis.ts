@@ -59,7 +59,7 @@ export function statisticsApi(): StatisticsApi {
   } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
 
-  const { cancelTaskByTaskType, isTaskRunning } = useTaskStore();
+  const { cancelTaskByTaskType, useIsTaskRunning } = useTaskStore();
 
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {
@@ -74,7 +74,7 @@ export function statisticsApi(): StatisticsApi {
     fetchNetValue,
     historicalDailyPriceStatus,
     historicalPriceStatus,
-    isQueryingDailyPrices: isTaskRunning(TaskType.FETCH_DAILY_HISTORIC_PRICE),
+    isQueryingDailyPrices: useIsTaskRunning(TaskType.FETCH_DAILY_HISTORIC_PRICE),
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },

@@ -10,9 +10,9 @@ import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
 const manualBalancesStore = useManualBalancesStore();
 const { fetchManualBalances } = manualBalancesStore;
 const { manualBalanceByLocation } = storeToRefs(manualBalancesStore);
-const { isTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 
-const isManualBalancesLoading = isTaskRunning(TaskType.MANUAL_BALANCES);
+const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
 const { t } = useI18n({ useScope: 'global' });
 </script>
 

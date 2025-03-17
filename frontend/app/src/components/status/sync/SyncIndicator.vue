@@ -82,8 +82,8 @@ async function performSync() {
   pause();
 }
 
-const { isTaskRunning } = useTaskStore();
-const isSyncing = isTaskRunning(TaskType.FORCE_SYNC);
+const { useIsTaskRunning } = useTaskStore();
+const isSyncing = useIsTaskRunning(TaskType.FORCE_SYNC);
 
 watch(isSyncing, (current, prev) => {
   if (current !== prev && !current)

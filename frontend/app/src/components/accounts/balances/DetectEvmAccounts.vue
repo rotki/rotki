@@ -3,8 +3,8 @@ import { useBlockchains } from '@/composables/blockchain';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-const { isTaskRunning } = useTaskStore();
-const isEvmAccountsDetecting = isTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
+const { useIsTaskRunning } = useTaskStore();
+const isEvmAccountsDetecting = useIsTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
 const { detectEvmAccounts } = useBlockchains();
 
 const { t } = useI18n();
