@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Users will be able to see the address of each account within an xpub.
+* :bug:`-` Failed paraswap v6 swaps will no longer fail to decode in rotki.
 
 * :release:`1.38.1 <2025-03-14>`
 * :feature:`9385` Users will see the default label using the validator index when exporting validators.
