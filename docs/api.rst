@@ -13639,3 +13639,54 @@ Historical Balance Queries
       :statuscode 400: Malformed query
       :statuscode 401: User is not logged in
       :statuscode 500: Internal Rotki error
+
+
+Refetch EVM transactions for a specific time period
+==================================================
+
+.. http:post:: /api/(version)/blockchains/evm/transactions/refetch
+
+   Doing a POST on the transactions refetch endpoint will force a re-query of transactions for the
+   specified time period. This is useful to recover potentially missed transactions due to API
+   issues or other temporary failures. Unlike normal transaction queries, this ignores query
+   range checks.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/evm/transactions/refetch HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": false,
+          "from_timestamp": 1640995200,
+          "to_timestamp": 1672531200,
+          "evm_chain": "ethereum",
+          "address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B"
+      }
+
+   :reqjson bool async_query: If true, the query will be processed asynchronously.
+   :reqjson int from_timestamp: Start of the time period to refetch transactions for.
+   :reqjson int to_timestamp: End of the time period to refetch transactions for.
+   :reqjson string evm_chain: Optional. The EVM chain to query (e.g., "ethereum", "optimism"). If not provided, all supported chains will be queried.
+   :reqjson string address: Optional. The address to query transactions for. If not provided, all tracked addresses will be queried.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": {"new_transactions_count": 12}, "message": "" }
+
+   :resjson int new_transactions_count: The number of new transactions found and added to the database.
+   :statuscode 200: Transactions successfully refetched.
+   :statuscode 401: User is not logged in.
+   :statuscode 400: Invalid parameters such as from_timestamp > to_timestamp. Address not tracked by rotki.
+   :statuscode 500: Internal rotki error

@@ -6,7 +6,9 @@ import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -33,10 +35,12 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -257,3 +261,75 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
         assert_error_async_response(response_data, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
     else:
         assert_error_response(response, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xb8553D9ee35dd23BB96fbd679E651B929821969B']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.freeze_time('2022-12-30 06:06:00 GMT')
+def test_force_refetch_evm_transactions_success(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that force refetching EVM transactions works successfully"""
+    now = ts_now()
+    four_days_ago = Timestamp(now - 4 * DAY_IN_SECONDS)
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    db_evmtx = DBEvmTx(db)
+
+    # First, query all transactions to get initial state
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmtransactionsresource',
+        ), json={'async_query': False},
+    )
+    assert_proper_sync_response_with_result(response)
+
+    # Count initial transactions
+    total_transaction_count = db_evmtx.count_evm_transactions(ChainID.ETHEREUM)
+
+    # Delete some transactions to simulate missing data
+    with db.conn.write_ctx() as cursor:
+        removed_transactions = cursor.execute(
+            'DELETE FROM evm_transactions WHERE chain_id = ? AND timestamp >= ? AND timestamp <= ?',  # noqa: E501
+            (ChainID.ETHEREUM.serialize_for_db(), four_days_ago, now),
+        ).rowcount
+
+    # Count transactions after deletion
+    assert db_evmtx.count_evm_transactions(ChainID.ETHEREUM) == 8
+
+    # Now, refetch the transactions
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'refetchevmtransactionsresource',
+        ), json={
+            'async_query': False,
+            'from_timestamp': four_days_ago,
+            'to_timestamp': now,
+            'evm_chain': ChainID.ETHEREUM.to_name(),
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['new_transactions_count'] == removed_transactions
+
+    # Count transactions after refetch
+    assert total_transaction_count == db_evmtx.count_evm_transactions(ChainID.ETHEREUM)
+
+    # check validation errors
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'refetchevmtransactionsresource',
+        ), json={
+            'async_query': False,
+            'from_timestamp': four_days_ago,
+            'to_timestamp': now,
+            'address': ZERO_ADDRESS,
+            'evm_chain': ChainID.ETHEREUM.to_name(),
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not tracked by rotki',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

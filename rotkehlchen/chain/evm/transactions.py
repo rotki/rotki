@@ -1,9 +1,10 @@
 import logging
 from abc import ABC
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 from gevent.lock import Semaphore
 
@@ -48,6 +49,47 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+T = TypeVar('T', bound=Callable[..., Any])
+
+
+def with_tx_status_messaging(func: T) -> T:
+    """Decorator to handle transaction query locking and status messaging."""
+
+    @wraps(func)
+    def wrapper(
+            self: 'EvmTransactions',
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            *args: Any,
+            **kwargs: Any,
+    ) -> None:
+        chain_id = self.evm_inquirer.chain_id.to_name()
+        with self.address_tx_locks[address]:
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'evm_chain': chain_id,
+                    'period': [start_ts, end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
+                },
+            )
+            result = func(self, address, start_ts, end_ts, *args, **kwargs)
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                data={
+                    'address': address,
+                    'evm_chain': chain_id,
+                    'period': [start_ts, end_ts],
+                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
+                },
+            )
+
+            return result
+
+    return cast('T', wrapper)  # Cast to preserve the original type signature
+
 
 class EvmTransactions(ABC):  # noqa: B024
 
@@ -79,6 +121,7 @@ class EvmTransactions(ABC):  # noqa: B024
         for lock in locks:  # clean up
             lock.release()
 
+    @with_tx_status_messaging
     def single_address_query_transactions(
             self,
             address: ChecksumEvmAddress,
@@ -93,37 +136,16 @@ class EvmTransactions(ABC):  # noqa: B024
 
         Trueblocks ... we need you.
         """
-        lock = self.address_tx_locks[address]
-        serialized_chain_id = self.evm_inquirer.chain_id.to_name()
-        with lock:
-            self.msg_aggregator.add_message(
-                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
-                data={
-                    'address': address,
-                    'evm_chain': serialized_chain_id,
-                    'period': [start_ts, end_ts],
-                    'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
-                },
-            )
-            self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
-            self._get_internal_transactions_for_ranges(
-                address=address,
-                start_ts=start_ts,
-                end_ts=end_ts,
-            )
-            self._get_erc20_transfers_for_ranges(
-                address=address,
-                start_ts=start_ts,
-                end_ts=end_ts,
-            )
-        self.msg_aggregator.add_message(
-            message_type=WSMessageType.EVM_TRANSACTION_STATUS,
-            data={
-                'address': address,
-                'evm_chain': serialized_chain_id,
-                'period': [start_ts, end_ts],
-                'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
-            },
+        self._get_transactions_for_range(address=address, start_ts=start_ts, end_ts=end_ts)
+        self._get_internal_transactions_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+        self._get_erc20_transfers_for_ranges(
+            address=address,
+            start_ts=start_ts,
+            end_ts=end_ts,
         )
 
     def query_chain(self, filter_query: EvmTransactionsFilterQuery) -> None:
@@ -166,8 +188,13 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
             location_string: str | None = None,
+            update_ranges: bool = True,
     ) -> None:
-        """Helper function to abstract tx querying functionality for different range types"""
+        """Helper function to abstract tx querying functionality for different range types
+
+        If update_ranges is True, updates the database tracking for this query range.
+        Otherwise, data is fetched without updating the query range.
+        """
         for new_transactions in self.evm_inquirer.etherscan.get_transactions(
                 account=address,
                 action='txlist',
@@ -183,15 +210,14 @@ class EvmTransactions(ABC):  # noqa: B024
                     evm_transactions=new_transactions,
                     relevant_address=address,
                 )
-            if period.range_type == 'timestamps':
-                assert location_string, 'should always be given for timestamps'
-                with self.database.user_write() as write_cursor:
-                    # update last queried time for the address
-                    self.dbranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore
-                    )
+                if period.range_type == 'timestamps':
+                    assert location_string, 'should always be given for timestamps'
+                    if update_ranges:  # update last queried time for the address
+                        self.dbranges.update_used_query_range(
+                            write_cursor=write_cursor,
+                            location_string=location_string,
+                            queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore
+                        )
 
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.EVM_TRANSACTION_STATUS,
@@ -257,11 +283,15 @@ class EvmTransactions(ABC):  # noqa: B024
             period_or_hash: TimestampOrBlockRange | EVMTxHash,
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
+            update_ranges: bool = True,
     ) -> None:
         """Helper function to abstract internal tx querying for different range types
         or for a specific parent transaction hash.
 
         If address is None, then etherscan query will return all internal transactions.
+
+        If update_ranges is True, updates the database tracking for this query range.
+        Otherwise, data is fetched without updating the query range.
         """
         for new_internal_txs in self.evm_inquirer.etherscan.get_transactions(
                 account=address,
@@ -292,13 +322,13 @@ class EvmTransactions(ABC):  # noqa: B024
                 if isinstance(period_or_hash, TimestampOrBlockRange) and period_or_hash.range_type == 'timestamps':  # noqa: E501
                     assert location_string, 'should always be given for timestamps'
                     log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {period_or_hash.from_value} - {timestamp}')  # noqa: E501
-                    with self.database.conn.write_ctx() as write_cursor:
-                        # update last queried time for address
-                        self.dbranges.update_used_query_range(
-                            write_cursor=write_cursor,
-                            location_string=location_string,
-                            queried_ranges=[(period_or_hash.from_value, timestamp)],  # type: ignore
-                        )
+                    if update_ranges:  # update last queried time for address
+                        with self.database.conn.write_ctx() as write_cursor:
+                            self.dbranges.update_used_query_range(
+                                write_cursor=write_cursor,
+                                location_string=location_string,
+                                queried_ranges=[(period_or_hash.from_value, timestamp)],  # type: ignore
+                            )
 
                     self.msg_aggregator.add_message(
                         message_type=WSMessageType.EVM_TRANSACTION_STATUS,
@@ -380,37 +410,15 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
-                    account=address,
-                    from_ts=query_start_ts,
-                    to_ts=query_end_ts,
-                ):
-                    for tx_hash in erc20_tx_hashes:
-                        with self.database.conn.read_ctx() as cursor:
-                            tx, _ = self.get_or_create_transaction(
-                                cursor=cursor,
-                                tx_hash=tx_hash,
-                                relevant_address=address,
-                            )
-                        timestamp = tx.timestamp
-                        log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {query_start_ts} - {timestamp}')  # noqa: E501
-                        with self.database.user_write() as write_cursor:
-                            # update last queried time for the address
-                            self.dbranges.update_used_query_range(
-                                write_cursor=write_cursor,
-                                location_string=location_string,
-                                queried_ranges=[(query_start_ts, timestamp)],
-                            )
-
-                        self.msg_aggregator.add_message(
-                            message_type=WSMessageType.EVM_TRANSACTION_STATUS,
-                            data={
-                                'address': address,
-                                'evm_chain': self.evm_inquirer.chain_id.to_name(),
-                                'period': [query_start_ts, timestamp],
-                                'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),  # noqa: E501
-                            },
-                        )
+                self._query_and_save_erc20_transfers_for_range(
+                    address=address,
+                    period=TimestampOrBlockRange(
+                        range_type='timestamps',
+                        from_value=query_start_ts,
+                        to_value=query_end_ts,
+                    ),
+                    location_string=location_string,
+                )
             except RemoteError as e:
                 log.error(
                     f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
@@ -427,6 +435,51 @@ class EvmTransactions(ABC):  # noqa: B024
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
+
+    def _query_and_save_erc20_transfers_for_range(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+            location_string: str,
+            update_ranges: bool = True,
+    ) -> None:
+        """Helper function to abstract ERC20 transfer querying functionality for different range types
+
+        If update_ranges is True, updates the database tracking for this query range.
+        Otherwise, data is fetched without updating the query range.
+        """  # noqa: E501
+        for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
+            account=address,
+            from_ts=Timestamp(period.from_value),
+            to_ts=Timestamp(period.to_value),
+        ):
+            for tx_hash in erc20_tx_hashes:
+                with self.database.conn.read_ctx() as cursor:
+                    tx, _ = self.get_or_create_transaction(
+                        cursor=cursor,
+                        tx_hash=tx_hash,
+                        relevant_address=address,
+                    )
+
+                if period.range_type == 'timestamps':
+                    log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {period.from_value} - {tx.timestamp}')  # noqa: E501
+                    if update_ranges:  # update last queried time for the address
+                        with self.database.user_write() as write_cursor:
+                            self.dbranges.update_used_query_range(
+                                write_cursor=write_cursor,
+                                location_string=location_string,
+                                queried_ranges=[(Timestamp(period.from_value), tx.timestamp)],
+                            )
+
+                    self.msg_aggregator.add_message(
+                        message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                        data={
+                            'address': address,
+                            'evm_chain': self.evm_inquirer.chain_id.to_name(),
+                            'period': [period.from_value, tx.timestamp],
+                            'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),
+                        },
+                    )
 
     def address_has_been_spammed(self, address: ChecksumEvmAddress) -> bool:
         """
@@ -846,3 +899,44 @@ class EvmTransactions(ABC):  # noqa: B024
         """Can be implemented by each chain subclass to add chain-specific data queries
         for all tracked addresses at once"""
         return None
+
+    @with_tx_status_messaging
+    def refetch_transactions_for_address(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        """Force refetch transactions for an address within a time range.
+
+       Directly queries for transactions, internal transactions, and ERC20
+       transfers without updating query ranges, allowing recovery of
+       potentially missed transactions.
+
+       May raise:
+       - DeserializationError
+       - pysqlcipher3.dbapi2.OperationalError
+       - RemoteError if any of the remote queries fail.
+       """
+        self._query_and_save_transactions_for_range(
+            address=address,
+            period=(period := TimestampOrBlockRange(
+                range_type='timestamps',
+                from_value=start_ts,
+                to_value=end_ts,
+            )),
+            location_string=(location_string := f'{self.evm_inquirer.blockchain.to_range_prefix("txs")}_{address}'),  # noqa: E501
+            update_ranges=False,
+        )
+        self._query_and_save_internal_transactions_for_range_or_parent_hash(
+            address=address,
+            period_or_hash=period,
+            location_string=location_string,
+            update_ranges=False,
+        )
+        self._query_and_save_erc20_transfers_for_range(
+            address=address,
+            period=period,
+            location_string=location_string,
+            update_ranges=False,
+        )

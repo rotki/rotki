@@ -5346,3 +5346,66 @@ class RestAPI:
             'no_prices_timestamps': no_prices_ts,
             'rate_limited_prices_timestamps': rate_limited_prices_ts,
         })
+
+    @async_api_call()
+    def force_refetch_evm_transactions(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            address: ChecksumEvmAddress | None = None,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE | None = None,
+    ) -> dict[str, Any]:
+        """Re-query EVM transactions for a given time range, adding only missing transactions.
+
+        This function requests a force refetch of transactions for the specified time range,
+        bypassing the normal query range checks. This can be useful in cases where transactions
+        might have been missed due to API issues or other temporary problems.
+        """
+        log.debug(
+            'Force refetching EVM transactions',
+            from_ts=from_timestamp,
+            to_ts=to_timestamp,
+            chain=evm_chain.name if evm_chain else 'all supported chains',
+            address=address or 'all addresses',
+        )
+
+        transaction_count = 0
+        db_evmtx = DBEvmTx(self.rotkehlchen.data.db)
+        chains_to_query: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE] = [evm_chain] if evm_chain else list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)  # noqa: E501
+        for chain_id in chains_to_query:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
+            if address:
+                addresses_to_query: tuple[ChecksumEvmAddress, ...] = (address,)
+            else:
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                    addresses_to_query = self.rotkehlchen.data.db.get_blockchain_accounts(cursor).get(chain_manager.node_inquirer.blockchain)  # noqa: E501
+
+            if len(addresses_to_query) == 0:
+                continue
+
+            # Get total count before query
+            before_count = db_evmtx.get_transactions_in_range(
+                chain_id=chain_id,
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            )
+            for addr in addresses_to_query:
+                try:
+                    chain_manager.transactions.refetch_transactions_for_address(
+                        address=addr,
+                        start_ts=from_timestamp,
+                        end_ts=to_timestamp,
+                    )
+                except (sqlcipher.OperationalError, RemoteError, DeserializationError) as e:  # pylint: disable=no-member
+                    log.debug(f'Skipping transaction refetching for {addr} on {chain_id} due to: {e!s}')  # noqa: E501
+                    continue
+
+            # Get total count after query and count the difference as addition
+            after_count = db_evmtx.get_transactions_in_range(
+                chain_id=chain_id,
+                from_ts=from_timestamp,
+                to_ts=to_timestamp,
+            )
+            transaction_count += (after_count - before_count)
+
+        return _wrap_in_ok_result({'new_transactions_count': transaction_count})
