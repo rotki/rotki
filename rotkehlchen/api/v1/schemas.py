@@ -4065,3 +4065,32 @@ class RefetchEvmTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchem
                         message=f'Account {address} with chain {evm_chain.to_name()} is not tracked by rotki',  # noqa: E501
                         field_name='address',
                     )
+
+
+class AddressesInteraction(Schema):
+    from_address = fields.String(required=True)
+    to_address = fields.String(required=True)
+
+
+class AssetTransferSchema(AddressesInteraction):
+    amount = PositiveAmountField()
+
+
+class TokenTransfer(AssetTransferSchema):
+    token = AssetField(expected_type=EvmToken)
+
+
+class NativeAssetTransfer(AssetTransferSchema):
+    blockchain = BlockchainField(required=True)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if not data['blockchain'].is_evm():
+            raise ValidationError(
+                message='The provided blockchain is not a valid EVM chain',
+                field_name='blockchain',
+            )

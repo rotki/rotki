@@ -5409,3 +5409,62 @@ class RestAPI:
             transaction_count += (after_count - before_count)
 
         return _wrap_in_ok_result({'new_transactions_count': transaction_count})
+
+    def addresses_interacted_before(
+            self,
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+    ) -> Response:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT COUNT(*) FROM history_events JOIN evm_events_info ON '
+                'history_events.identifier=evm_events_info.identifier WHERE '
+                'location_label=? AND address=?',
+                (from_address, to_address),
+            )
+            return api_response(_wrap_in_ok_result(result=cursor.fetchone()[0] > 0))
+
+    @async_api_call()
+    def prepare_token_transfer(
+            self,
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            token: EvmToken,
+            amount: FVal,
+    ) -> dict[str, Any]:
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
+            blockchain=token.chain_id.to_blockchain(),  # type: ignore  # checked in the validation
+        )
+
+        try:
+            payload = manager.active_management.create_token_transfer(
+                from_address=from_address,
+                to_address=to_address,
+                token=token,
+                amount=amount,
+            )
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
+
+        return _wrap_in_ok_result(result=payload)
+
+    @async_api_call()
+    def prepare_native_transfer(
+            self,
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            blockchain: SupportedBlockchain,
+            amount: FVal,
+    ) -> dict[str, Any]:
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore  # checked in the validation
+
+        try:
+            payload = manager.active_management.transfer_native_token(
+                from_address=from_address,
+                to_address=to_address,
+                amount=amount,
+            )
+        except RemoteError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
+
+        return _wrap_in_ok_result(result=payload)

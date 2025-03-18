@@ -154,6 +154,11 @@ from rotkehlchen.api.v1.resources import (
     WatchersResource,
     create_blueprint,
 )
+from rotkehlchen.api.v1.wallet_resources import (
+    AddressesInteractedResource,
+    PrepareNativeTransferResource,
+    PrepareTokenTransferResource,
+)
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
@@ -323,6 +328,9 @@ URLS_V1: URLS = [
     ('/balances/historical/asset', HistoricalAssetAmountsResource),
     ('/balances/historical/asset/prices', HistoricalPricesPerAssetResource),
     ('/balances/historical/netvalue', HistoricalNetValueResource),
+    ('/wallet/transfer/token', PrepareTokenTransferResource),
+    ('/wallet/transfer/native', PrepareNativeTransferResource),
+    ('/wallet/interacted', AddressesInteractedResource),
 ]
 
 logger = logging.getLogger(__name__)

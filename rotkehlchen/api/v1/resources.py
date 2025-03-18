@@ -8,7 +8,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
-from flask.views import MethodView
 from marshmallow import Schema, ValidationError
 from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
@@ -22,6 +21,7 @@ from rotkehlchen.api.rest import (
     make_response_from_dict,
     wrap_in_fail_result,
 )
+from rotkehlchen.api.v1.common_resources import BaseMethodView
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingReportDataSchema,
@@ -480,12 +480,6 @@ def get_match_header() -> str | None:
         match_header = match_header[1:-1]  # remove enclosing quotes
 
     return match_header
-
-
-class BaseMethodView(MethodView):
-    def __init__(self, rest_api_object: RestAPI, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.rest_api = rest_api_object
 
 
 class SettingsResource(BaseMethodView):
