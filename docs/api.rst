@@ -13690,3 +13690,115 @@ Refetch EVM transactions for a specific time period
    :statuscode 401: User is not logged in.
    :statuscode 400: Invalid parameters such as from_timestamp > to_timestamp. Address not tracked by rotki.
    :statuscode 500: Internal rotki error
+
+
+Active management
+==================
+
+  .. http:post:: /api/(version)/wallet/transfer/token
+
+    Prepares a token transfer transaction without submitting it to the blockchain. This endpoint returns the transaction data needed to perform an ERC20 token transfer.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/(version)/wallet/transfer/token HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "from_address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+          "to_address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+          "token": "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+          "amount": "0.000000000000000001"
+        }
+
+      :reqjsonarr string from_address: The address from which the tokens will be sent
+      :reqjsonarr string to_address: The address to which the tokens will be sent
+      :reqjsonarr string token: The token identifier in the format eip155:{chain_id}/erc20:{contract_address}
+      :reqjsonarr string amount: The amount of tokens to transfer as a string
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "message": "",
+          "result": {
+            "chainId": 1,
+            "from": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+            "to": "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+            "data": "0xa9059cbb0000000000000000000000009531c059098e3d194ff87febb587ab07b30b13060000000000000000000000000000000000000000000000000000000000000001"
+          },
+          "status_code": 200
+        }
+
+      :resjson object result: The transaction data needed for the token transfer
+      :resjson integer chainId: The chain ID of the blockchain network
+      :resjson string from: The sender's address
+      :resjson string to: The token contract address
+      :resjson string data: The encoded transaction data for the token transfer
+      :statuscode 200: Transaction data successfully prepared
+      :statuscode 400: Malformed request
+      :statuscode 409: Error preparing the payload
+      :statuscode 500: Internal Rotki error
+
+  .. http:post:: /api/(version)/wallet/transfer/native
+
+    Prepares a native cryptocurrency transfer transaction without submitting it to the blockchain. This endpoint returns the transaction data needed to perform a transfer of the blockchain's native asset (e.g., ETH).
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/(version)/wallet/transfer/native HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "from_address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+          "to_address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+          "amount": "0.0003",
+          "blockchain": "ETH"
+        }
+
+      :reqjsonarr string from_address: The address from which the native cryptocurrency will be sent
+      :reqjsonarr string to_address: The address to which the native cryptocurrency will be sent
+      :reqjsonarr string amount: The amount of native cryptocurrency to transfer as a string
+      :reqjsonarr string blockchain: The blockchain identifier (e.g., "ETH" for Ethereum)
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "message": "",
+          "result": {
+            "from": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+            "to": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+            "value": 300000000000000,
+            "maxFeePerGas": 2000000000,
+            "maxPriorityFeePerGas": 1000000000,
+            "nonce": 55
+          },
+          "status_code": 200
+        }
+
+      :resjson object result: The transaction data needed for the native transfer
+      :resjson string from: The sender's address
+      :resjson string to: The recipient's address
+      :resjson integer value: The amount to transfer in the smallest unit of the native cryptocurrency
+      :resjson integer maxFeePerGas: The maximum fee per gas unit the user is willing to pay
+      :resjson integer maxPriorityFeePerGas: The maximum priority fee per gas unit
+      :resjson integer nonce: The transaction nonce
+      :statuscode 200: Transaction data successfully prepared
+      :statuscode 400: Malformed request
+      :statuscode 409: Error preparing the payload
+      :statuscode 500: Internal Rotki error

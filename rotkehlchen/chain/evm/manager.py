@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.evm.active_management.manager import ActiveManager
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
 )
@@ -37,6 +38,7 @@ class EvmManager:
         self.tokens = tokens
         self.transactions_decoder = transactions_decoder
         self.accounting_aggregator = accounting_aggregator
+        self.active_management = ActiveManager(node_inquirer=node_inquirer)
 
     def get_historical_balance(
             self,
