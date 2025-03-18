@@ -8,6 +8,7 @@ import type { TaskMeta } from '@/types/task';
 import type { MaybeRef } from '@vueuse/core';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
@@ -17,12 +18,15 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
-import { type BigNumber, Zero } from '@rotki/common';
 
-export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', () => {
-  const nonFungibleTotalValue = ref<BigNumber>(Zero);
+interface NftBalancesReturn {
+  fetchNonFungibleBalances: (payload: MaybeRef<NonFungibleBalancesRequestPayload>) => Promise<Collection<NonFungibleBalance>>;
+  refreshNonFungibleBalances: (userInitiated?: boolean) => Promise<void>;
+}
 
+export function useNftBalances(): NftBalancesReturn {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
@@ -45,7 +49,7 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
 
   const syncNonFungiblesTask = async (): Promise<void> => {
     const taskType = TaskType.NF_BALANCES;
-    if (isTaskRunning(taskType))
+    if (get(isTaskRunning(taskType)))
       return;
 
     const defaults: NonFungibleBalancesRequestPayload = {
@@ -101,10 +105,6 @@ export const useNonFungibleBalancesStore = defineStore('balances/non-fungible', 
 
   return {
     fetchNonFungibleBalances,
-    nonFungibleTotalValue,
     refreshNonFungibleBalances,
   };
-});
-
-if (import.meta.hot)
-  import.meta.hot.accept(acceptHMRUpdate(useNonFungibleBalancesStore, import.meta.hot));
+}

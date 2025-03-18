@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import { useRefresh } from '@/composables/balances/refresh';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
 import { Routes } from '@/router/routes';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import ExchangeBox from './ExchangeBox.vue';
 
-const { exchanges } = storeToRefs(useExchangeBalancesStore());
+const { exchanges } = useExchangeData();
 const { useIsTaskRunning } = useTaskStore();
 const { refreshBalance } = useRefresh();
 const { t } = useI18n({ useScope: 'global' });

@@ -3,7 +3,7 @@ import type { ExchangeFormData } from '@/types/exchanges';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
-import { useExchangesStore } from '@/store/exchanges';
+import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { assert } from '@rotki/common';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
@@ -12,7 +12,7 @@ const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
-const { setupExchange } = useExchangesStore();
+const { setupExchange } = useExchanges();
 const { t } = useI18n();
 
 const title = computed<string>(() => {

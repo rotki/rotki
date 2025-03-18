@@ -30,7 +30,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const massDetecting = ref<string>();
 
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { useIsAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
   const { addresses, balances } = storeToRefs(useBlockchainStore());
   const { fetchDetectedTokens: fetchDetectedTokensCaller, fetchDetectedTokensTask } = useBlockchainBalancesApi();
@@ -108,7 +108,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const getTokens = (balances: BlockchainAssetBalances, address: string): string[] => {
     const assets = balances?.[address]?.assets ?? [];
-    return Object.keys(assets).filter(id => !get(isAssetIgnored(id)));
+    return Object.keys(assets).filter(id => !get(useIsAssetIgnored(id)));
   };
 
   const getEthDetectedTokensInfo = (

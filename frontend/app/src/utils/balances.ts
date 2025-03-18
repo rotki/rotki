@@ -65,14 +65,14 @@ export function groupAssetBreakdown(
 export function appendAssetBalance(
   value: AssetBalance,
   assets: AssetBalances,
-  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
+  assetAssociationMap: Record<string, string>,
 ): void {
-  const identifier = getAssociatedAssetIdentifier(value.asset);
-  const associatedAsset: string = get(identifier);
-  const ownedAsset = assets[associatedAsset];
+  const identifier = assetAssociationMap?.[value.asset] ?? value.asset;
+  const ownedAsset = assets[identifier];
   if (!ownedAsset)
-    assets[associatedAsset] = { ...value };
-  else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+    assets[identifier] = { ...value };
+  else
+    assets[identifier] = { ...balanceSum(ownedAsset, value) };
 }
 
 export function sumAssetBalances(

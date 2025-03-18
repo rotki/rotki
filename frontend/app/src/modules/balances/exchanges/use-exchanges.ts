@@ -1,26 +1,106 @@
+import type { ExchangeBalancePayload } from '@/types/blockchain/accounts';
 import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
+import type { ExchangeMeta } from '@/types/task';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useExchangeBalancesStore } from '@/store/balances/exchanges';
+import { useStatusUpdater } from '@/composables/status';
+import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useMessageStore } from '@/store/message';
+import { useNotificationsStore } from '@/store/notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { assert } from '@rotki/common';
+import { useTaskStore } from '@/store/tasks';
+import { AssetBalances } from '@/types/balances';
+import { BalanceSource } from '@/types/settings/frontend-settings';
+import { Section, Status } from '@/types/status';
+import { TaskType } from '@/types/task-type';
+import { isTaskCancelled } from '@/utils';
+import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
-export const useExchangesStore = defineStore('exchanges', () => {
-  const exchangeBalancesStore = useExchangeBalancesStore();
-  const { fetchExchangeBalances } = exchangeBalancesStore;
-  const { exchangeBalances } = storeToRefs(exchangeBalancesStore);
-  const sessionStore = useSessionSettingsStore();
-  const { setConnectedExchanges } = sessionStore;
-  const { connectedExchanges } = storeToRefs(sessionStore);
+interface UseExchangesReturn {
+  fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;
+  fetchExchangeBalances: (payload: ExchangeBalancePayload) => Promise<void>;
+  addExchange: (exchange: Exchange) => void;
+  editExchange: (payload: EditExchange) => void;
+  removeExchange: (exchange: Exchange) => Promise<boolean>;
+  setupExchange: (exchange: ExchangeFormData) => Promise<boolean>;
+}
+
+export function useExchanges(): UseExchangesReturn {
+  const { t } = useI18n({ useScope: 'global' });
+
+  const { awaitTask, isTaskRunning, metadata } = useTaskStore();
+  const { notify } = useNotificationsStore();
+  const { exchangeBalances } = storeToRefs(useBalancesStore());
+  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+  const { setConnectedExchanges } = useSessionSettingsStore();
+  const { queryExchangeBalances } = useExchangeApi();
+  const balanceUsdValueThreshold = useUsdValueThreshold(BalanceSource.EXCHANGES);
 
   const { callSetupExchange, queryRemoveExchange } = useExchangeApi();
   const { setMessage } = useMessageStore();
 
-  const { t } = useI18n();
+  const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
+    const { ignoreCache, location } = payload;
+    const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
+    const meta = metadata<ExchangeMeta>(taskType);
 
-  const getExchangeNonce = (exchange: string): ComputedRef<number> =>
-    computed(() => get(connectedExchanges).filter(({ location }) => location === exchange).length + 1);
+    const threshold = get(balanceUsdValueThreshold);
+
+    if (isTaskRunning(taskType) && meta?.location === location)
+      return;
+
+    const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.EXCHANGES);
+
+    const newStatus = isFirstLoad() ? Status.LOADING : Status.REFRESHING;
+    setStatus(newStatus);
+
+    try {
+      const { taskId } = await queryExchangeBalances(location, ignoreCache, threshold);
+      const meta: ExchangeMeta = {
+        location,
+        title: t('actions.balances.exchange_balances.task.title', {
+          location,
+        }),
+      };
+
+      const { result } = await awaitTask<AssetBalances, ExchangeMeta>(taskId, taskType, meta, true);
+
+      set(exchangeBalances, {
+        ...get(exchangeBalances),
+        [location]: AssetBalances.parse(result),
+      });
+      setStatus(Status.LOADED);
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        const message = t('actions.balances.exchange_balances.error.message', {
+          error: error.message,
+          location,
+        });
+        const title = t('actions.balances.exchange_balances.error.title', {
+          location: toSentenceCase(location),
+        });
+
+        notify({
+          display: true,
+          message,
+          title,
+        });
+      }
+      resetStatus();
+    }
+  };
+
+  const fetchConnectedExchangeBalances = async (refresh = false): Promise<void> => {
+    const exchanges = get(connectedExchanges);
+    for (const exchange of exchanges) {
+      await fetchExchangeBalances({
+        ignoreCache: refresh,
+        location: exchange.location,
+      });
+    }
+  };
 
   const addExchange = (exchange: Exchange): void => {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
@@ -131,13 +211,10 @@ export const useExchangesStore = defineStore('exchanges', () => {
 
   return {
     addExchange,
-    connectedExchanges,
     editExchange,
-    getExchangeNonce,
+    fetchConnectedExchangeBalances,
+    fetchExchangeBalances,
     removeExchange,
     setupExchange,
   };
-});
-
-if (import.meta.hot)
-  import.meta.hot.accept(acceptHMRUpdate(useExchangesStore, import.meta.hot));
+}

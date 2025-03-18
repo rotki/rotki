@@ -38,7 +38,7 @@ const chainsFilter = ref<string[]>([]);
 const { t } = useI18n();
 const route = useRoute('balances-blockchain');
 
-const { blockchainAssets } = useBlockchainAggregatedBalances();
+const { useBlockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 
@@ -46,7 +46,7 @@ const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
 
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
-const aggregatedBalances = blockchainAssets(chainsFilter);
+const aggregatedBalances = useBlockchainAssets(chainsFilter);
 
 onMounted(() => {
   const { query } = get(route);

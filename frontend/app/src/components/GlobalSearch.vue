@@ -11,12 +11,12 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useInterop } from '@/composables/electron-interop';
 import { useLocations } from '@/composables/locations';
+import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useAppRoutes } from '@/router/routes';
-import { useExchangesStore } from '@/store/exchanges';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { startPromise } from '@shared/utils';
 
 interface SearchItem {
@@ -54,9 +54,9 @@ const key = '/';
 const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { connectedExchanges } = storeToRefs(useExchangesStore());
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { balances } = useAggregatedBalances();
-const { balancesByLocation } = useBalancesBreakdown();
+const { balancesByLocation } = useLocationBalancesBreakdown();
 const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoRetrieval();
 

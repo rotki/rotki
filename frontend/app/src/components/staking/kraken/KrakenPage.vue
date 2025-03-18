@@ -9,8 +9,8 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
 import { useBalances } from '@/composables/balances';
 import { Routes } from '@/router/routes';
-import { useExchangesStore } from '@/store/exchanges';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
@@ -21,7 +21,7 @@ const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const store = useKrakenStakingStore();
 const { $reset, load } = store;
 const { events } = toRefs(store);
-const { connectedExchanges } = storeToRefs(useExchangesStore());
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
 const { refreshPrices } = useBalances();

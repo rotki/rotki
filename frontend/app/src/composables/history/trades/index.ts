@@ -7,9 +7,9 @@ import type { MaybeRef } from '@vueuse/core';
 import { useTradesApi } from '@/composables/api/history/trades';
 import { useLocations } from '@/composables/locations';
 import { useStatusUpdater } from '@/composables/status';
-import { useExchangesStore } from '@/store/exchanges';
 import { useHistoryStore } from '@/store/history';
 import { useNotificationsStore } from '@/store/notifications';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { Section, Status } from '@/types/status';
@@ -30,7 +30,7 @@ interface UseTradesReturn {
 
 export function useTrades(): UseTradesReturn {
   const { fetchAssociatedLocations } = useHistoryStore();
-  const { connectedExchanges } = storeToRefs(useExchangesStore());
+  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { exchangeName } = useLocations();
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();

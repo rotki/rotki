@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { AssetBalanceWithPrice } from '@rotki/common';
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
+import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -14,8 +13,8 @@ const { useIsTaskRunning } = useTaskStore();
 
 const { t } = useI18n();
 
-const { locationBreakdown: breakdown } = useBalancesBreakdown();
-const locationBreakdown: ComputedRef<AssetBalanceWithPrice[]> = breakdown(identifier);
+const { useLocationBreakdown } = useLocationBalancesBreakdown();
+const locationBreakdown = useLocationBreakdown(identifier);
 
 const loadingData = logicOr(
   useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),

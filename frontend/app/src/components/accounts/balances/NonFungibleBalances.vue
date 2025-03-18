@@ -18,8 +18,8 @@ import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPrice
 import NftImageRenderingSettingMenu from '@/components/settings/general/nft/NftImageRenderingSettingMenu.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useNonFungibleBalancesStore } from '@/store/balances/non-fungible';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
@@ -30,7 +30,7 @@ import { uniqueStrings } from '@/utils/data';
 
 defineProps<{ modules: Module[] }>();
 
-const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNonFungibleBalancesStore();
+const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNftBalances();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n();
@@ -94,7 +94,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
 
 const { setMessage } = useMessageStore();
-const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+const { ignoreAsset, ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 
 const {
   fetchData,
@@ -120,7 +120,7 @@ const {
 
 const { show } = useConfirmStore();
 
-const isIgnored = (identifier: string) => isAssetIgnored(identifier);
+const isIgnored = (identifier: string) => useIsAssetIgnored(identifier);
 
 function refreshCallback() {
   if (get(ignoredAssetsHandling) !== 'none') {

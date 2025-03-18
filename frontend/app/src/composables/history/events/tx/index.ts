@@ -6,11 +6,11 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainStore } from '@/store/blockchain';
-import { useExchangesStore } from '@/store/exchanges/index';
 import { useHistoryStore } from '@/store/history';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import {
@@ -45,7 +45,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   } = useHistoryEventsApi();
 
   const { addresses } = storeToRefs(useBlockchainStore());
-  const { connectedExchanges } = storeToRefs(useExchangesStore());
+  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { updateSetting } = useFrontendSettingsStore();

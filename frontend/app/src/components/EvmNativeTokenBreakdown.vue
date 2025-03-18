@@ -6,41 +6,36 @@ import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { calculatePercentage } from '@/utils/calculation';
 import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    assets: string[];
-    details?: {
-      groupId?: string;
-      chains?: string[];
-    };
-    blockchainOnly?: boolean;
-    showPercentage?: boolean;
-    total?: BigNumber;
-    isLiability?: boolean;
-  }>(),
-  {
-    blockchainOnly: false,
-    isLiability: false,
-    showPercentage: false,
-    total: undefined,
-  },
-);
+const props = withDefaults(defineProps<{
+  identifier: string;
+  assets: string[];
+  details?: {
+    groupId?: string;
+    chains?: string[];
+  };
+  blockchainOnly?: boolean;
+  showPercentage?: boolean;
+  total?: BigNumber;
+  isLiability?: boolean;
+}>(), {
+  blockchainOnly: false,
+  isLiability: false,
+  showPercentage: false,
+  total: undefined,
+});
 
 const { t } = useI18n();
 
 const { blockchainOnly, showPercentage, total } = toRefs(props);
-const { assetBreakdown: blockchainAssetBreakdown, liabilityBreakdown: blockchainLiabilityBreakdown } = useBlockchainStore();
-const { assetBreakdown, liabilityBreakdown } = useBalancesBreakdown();
+const { useAssetBreakdown } = useAssetBalancesBreakdown();
 const { matchChain } = useSupportedChains();
 
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
@@ -50,14 +45,10 @@ const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   const isLiability = props.isLiability;
 
   for (const asset of assets) {
-    if (details || get(blockchainOnly)) {
-      const func = !isLiability ? blockchainAssetBreakdown : blockchainLiabilityBreakdown;
-      breakdown[asset] = get(func(asset, details?.chains, details?.groupId));
-    }
-    else {
-      const func = !isLiability ? assetBreakdown : liabilityBreakdown;
-      breakdown[asset] = get(func(asset));
-    }
+    breakdown[asset] = get(useAssetBreakdown(asset, isLiability, {
+      ...details,
+      blockchainOnly: get(blockchainOnly),
+    }));
   }
 
   return breakdown;
@@ -81,43 +72,38 @@ const sort = ref<DataTableSortData<AssetBreakdown>>({
 });
 
 const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
-  const headers: DataTableColumn<AssetBreakdown>[] = [
-    {
-      align: 'center',
-      cellClass: 'py-2',
-      class: 'text-no-wrap',
-      key: 'location',
-      label: t('common.location'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-2',
-      class: 'w-full',
-      key: 'tokens',
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-2',
-      class: 'w-full',
-      key: 'amount',
-      label: t('common.amount'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-2',
-      key: 'usdValue',
-      label: t('asset_locations.header.value', {
-        symbol: get(currencySymbol) ?? CURRENCY_USD,
-      }),
-      sortable: true,
-    },
-  ];
+  const cols: DataTableColumn<AssetBreakdown>[] = [{
+    align: 'center',
+    cellClass: 'py-2',
+    class: 'text-no-wrap',
+    key: 'location',
+    label: t('common.location'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-2',
+    class: 'w-full',
+    key: 'tokens',
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-2',
+    class: 'w-full',
+    key: 'amount',
+    label: t('common.amount'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-2',
+    key: 'usdValue',
+    label: t('asset_locations.header.value', {
+      symbol: get(currencySymbol) ?? CURRENCY_USD,
+    }),
+    sortable: true,
+  }];
 
   if (get(showPercentage)) {
-    headers.push({
+    cols.push({
       align: 'end',
       cellClass: 'py-2',
       class: 'text-no-wrap',
@@ -126,7 +112,7 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
     });
   }
 
-  return headers;
+  return cols;
 });
 
 function percentage(value: BigNumber) {
