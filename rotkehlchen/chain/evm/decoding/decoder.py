@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 import gevent
 from gevent.lock import Semaphore
+from web3.exceptions import Web3Exception
 
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
@@ -118,6 +119,7 @@ def decode_safely(
         IndexError,
         ValueError,
         ConversionError,
+        Web3Exception,
     ) as e:
         log.error(traceback.format_exc())
         error_prefix = f'Decoding of transaction {tx_hash.hex()} in {chain_id.to_name()}'
