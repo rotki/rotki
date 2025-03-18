@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_DXDAO_MESA
@@ -145,8 +146,8 @@ class DxdaomesaDecoder(DecoderInterface):
             method_name='tokenIdToAddressMap',
             arguments=[[topic_data[1]], [topic_data[2]]],
         )  # The resulting addresses are non checksummed but they can be found in the DB
-        buy_token = self.base.get_or_create_evm_asset(result[0][0])
-        sell_token = self.base.get_or_create_evm_asset(result[1][0])
+        buy_token = self.base.get_or_create_evm_asset(deserialize_evm_address(result[0][0]))
+        sell_token = self.base.get_or_create_evm_asset(deserialize_evm_address(result[1][0]))
         buy_amount = asset_normalized_value(amount=log_data[3], asset=buy_token)
         sell_amount = asset_normalized_value(amount=log_data[4], asset=sell_token)
         event = self.base.make_event_from_transaction(
