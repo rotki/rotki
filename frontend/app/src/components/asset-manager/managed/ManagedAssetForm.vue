@@ -247,6 +247,15 @@ function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
+watchImmediate(modelValue, (asset) => {
+  if (asset.underlyingTokens && asset.underlyingTokens.length > 0) {
+    set(underlyingTokens, asset.underlyingTokens);
+  }
+  else {
+    set(underlyingTokens, []);
+  }
+});
+
 defineExpose({
   saveAsset,
   saveIcon,
