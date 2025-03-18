@@ -1,9 +1,15 @@
 from typing import Final, Literal, get_args
 
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
 
 CPT_CURVE: Final = 'curve'
+CURVE_COUNTERPARTY_DETAILS: Final = CounterpartyDetails(
+    identifier=CPT_CURVE,
+    label='Curve.fi',
+    image='curve.png',
+)
 ADD_LIQUIDITY_EVENTS: Final = {
     b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r',  # ADD_LIQUIDITY  # noqa: E501
     b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h',  # ADD_LIQUIDITY_2_ASSETS  # noqa: E501

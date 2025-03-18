@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     ADD_LIQUIDITY_EVENTS,
     ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE,
     CPT_CURVE,
+    CURVE_COUNTERPARTY_DETAILS,
     EXCHANGE_MULTIPLE,
     EXCHANGE_NG,
     GAUGE_DEPOSIT,
@@ -796,4 +797,4 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_CURVE, label='Curve.fi', image='curve.png'),)
+        return (CURVE_COUNTERPARTY_DETAILS,)

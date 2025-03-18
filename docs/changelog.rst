@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9571` rotki will now correctly decode Curve Savings transactions.
 * :feature:`9592` Users can now force a query of EVM transactions for specific time periods to recover missed transactions.
 * :feature:`9239` Users will now be able to sort the PnL events table.
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
