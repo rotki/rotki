@@ -1,9 +1,12 @@
+import type { Balances } from '@/types/blockchain/accounts';
+import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
-import { updateBalancesPrices } from '@/utils/prices';
+import { updateBalancesPrices, updateBlockchainAssetBalances } from '@/utils/prices';
 import { type BigNumber, Zero } from '@rotki/common';
+import { camelCase } from 'es-toolkit';
 
 function updatePriceData(data: ManualBalanceWithValue[], prices: MaybeRef<AssetPrices>): ManualBalanceWithValue[] {
   return data.map((item) => {
@@ -25,7 +28,11 @@ export const useBalancesStore = defineStore('balances', () => {
   const exchangeBalances = ref<ExchangeData>({});
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
 
+  const balances = ref<Balances>({});
+
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
+    set(balances, updateBlockchainAssetBalances(balances, prices));
+
     const exchanges = { ...get(exchangeBalances) };
     for (const exchange in exchanges) exchanges[exchange] = updateBalancesPrices(exchanges[exchange], prices);
 
@@ -35,11 +42,21 @@ export const useBalancesStore = defineStore('balances', () => {
     set(manualLiabilities, updatePriceData(get(manualLiabilities), prices));
   };
 
+  const updateBalances = (chain: string, { perAccount }: BlockchainBalances): void => {
+    const data = perAccount[camelCase(chain)] ?? {};
+    set(balances, {
+      ...get(balances),
+      [chain]: data,
+    });
+  };
+
   return {
+    balances,
     exchangeBalances,
     manualBalances,
     manualLiabilities,
     nonFungibleTotalValue,
+    updateBalances,
     updatePrices,
   };
 });

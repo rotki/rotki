@@ -7,7 +7,8 @@ import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vu
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -25,7 +26,8 @@ const ETH = Blockchain.ETH;
 const store = useQueriedAddressesStore();
 const { addQueriedAddress, deleteQueriedAddress } = store;
 const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
-const { getAccounts, getAddresses } = useBlockchainStore();
+const { getAccounts } = useBlockchainAccountsStore();
+const { getAddresses } = useAccountAddresses();
 
 const { t } = useI18n();
 

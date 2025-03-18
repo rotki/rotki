@@ -6,11 +6,13 @@ import type {
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useConfirmStore } from '@/store/confirm';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { uniqueStrings } from '@/utils/data';
 import { Blockchain } from '@rotki/common';
 
 type ShowConfirmationParams = {
@@ -25,7 +27,7 @@ interface EvmPayloadData {
   address: string;
   chains: string[];
   includeAllChains: boolean;
-};
+}
 
 type Payload = {
   type: 'validator';
@@ -116,17 +118,58 @@ function toPayload(params: ShowConfirmationParams): Payload {
   };
 }
 
+interface RemoveAccountsParams { addresses: string[]; chains: string[] }
+
 interface UseAccountDeleteReturn {
   showConfirmation: (params: ShowConfirmationParams, onComplete?: () => void) => void;
+  removeAccounts: (params: RemoveAccountsParams) => void;
 }
 
 export function useAccountDelete(): UseAccountDeleteReturn {
+  const { accounts } = storeToRefs(useBlockchainAccountsStore());
+  const { balances } = storeToRefs(useBalancesStore());
   const { deleteEth2Validators } = useEthStaking();
   const { deleteXpub, removeAccount, removeAgnosticAccount } = useBlockchainAccounts();
-  const { removeAccounts } = useBlockchainStore();
   const { t } = useI18n();
   const { show } = useConfirmStore();
   const { getChainName } = useSupportedChains();
+
+  const removeAccounts = ({ addresses, chains }: RemoveAccountsParams): void => {
+    const knownAccounts = { ...get(accounts) };
+    const knownBalances = { ...get(balances) };
+    const groupAddresses: string[] = [];
+
+    for (const chain of chains) {
+      const chainAccounts = knownAccounts[chain];
+      if (chainAccounts) {
+        const groupIds = chainAccounts
+          .filter(account => addresses.includes(getAccountAddress(account)) && account.groupId && account.groupHeader)
+          .map(account => account.groupId!);
+
+        const groups = chainAccounts.filter(account => account.groupId && groupIds.includes(account.groupId));
+        groupAddresses.push(...groups.map(account => getAccountAddress(account)));
+
+        knownAccounts[chain] = chainAccounts.filter(
+          account => !(
+            addresses.includes(getAccountAddress(account)) || (account.groupId && groupIds.includes(account.groupId))
+          ),
+        );
+      }
+
+      const chainBalances = knownBalances[chain];
+      if (!chainBalances)
+        continue;
+
+      for (const address of [...addresses, ...groupAddresses].filter(uniqueStrings)) {
+        if (chainBalances[address])
+          delete chainBalances[address];
+      }
+      knownBalances[chain] = chainBalances;
+    }
+
+    set(accounts, knownAccounts);
+    set(balances, knownBalances);
+  };
 
   async function removeValidator(publicKey: string): Promise<void> {
     await deleteEth2Validators([publicKey]);
@@ -231,6 +274,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   }
 
   return {
+    removeAccounts,
     showConfirmation,
   };
 }

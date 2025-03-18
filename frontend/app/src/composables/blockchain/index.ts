@@ -5,11 +5,11 @@ import type { TaskMeta } from '@/types/task';
 import type { MaybeRef } from '@vueuse/core';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useAccountAdditionNotifications } from '@/composables/blockchain/use-account-addition-notifications';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useNotificationsStore } from '@/store/notifications';
@@ -74,7 +74,7 @@ export function useBlockchains(): UseBlockchainsReturn {
   const { enableModule } = useSettingsStore();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
   const { evmChains, getChainName, isEvm, supportedChains, supportsTransactions } = useSupportedChains();
-  const { getAddresses } = useBlockchainStore();
+  const { getAddresses } = useAccountAddresses();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();

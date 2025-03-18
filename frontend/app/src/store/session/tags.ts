@@ -1,7 +1,7 @@
 import type { ActionStatus } from '@/types/action';
 import type { Tag, Tags } from '@/types/tags';
 import { useTagsApi } from '@/composables/api/tags';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useMessageStore } from '@/store/message';
 import { logger } from '@/utils/logging';
 import { invertColor, randomColor } from '@rotki/common';
@@ -11,7 +11,7 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const tags = computed(() => Object.values(get(allTags)));
 
-  const { removeTag } = useBlockchainAccounts();
+  const { removeTag } = useBlockchainAccountsStore();
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();

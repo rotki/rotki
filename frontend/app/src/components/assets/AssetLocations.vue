@@ -11,8 +11,8 @@ import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
-import { useBlockchainStore } from '@/store/blockchain';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -49,7 +49,7 @@ const locationFilter = ref<string>('');
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getAccountByAddress } = useBlockchainStore();
+const { getAccountByAddress } = useBlockchainAccountsStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
 const { useAssetBreakdown } = useAssetBalancesBreakdown();

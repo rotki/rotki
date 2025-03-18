@@ -21,7 +21,7 @@ import { useRefresh } from '@/composables/balances/refresh';
 import { useBlockchains } from '@/composables/blockchain';
 import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { SavedFilterLocation } from '@/types/filtering';
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
@@ -32,7 +32,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'edit', account: AccountManageState): void;
+  edit: [account: AccountManageState];
 }>();
 
 const { category } = toRefs(props);
@@ -46,9 +46,7 @@ const tab = ref<number>(0);
 const expanded = ref<string[]>([]);
 const query = ref<LocationQuery>({});
 
-const blockchainStore = useBlockchainStore();
-const { fetchAccounts: fetchAccountsPage } = blockchainStore;
-const { groups } = storeToRefs(blockchainStore);
+const { fetchAccounts: fetchAccountsPage } = useBlockchainAccountData();
 const { handleBlockchainRefresh, refreshBlockchainBalances } = useRefresh();
 const { fetchAccounts } = useBlockchains();
 
@@ -123,10 +121,6 @@ function getChains(row: BlockchainAccountGroupWithBalance): string[] {
   return excludedChains ? chains.filter(chain => !excludedChains.includes(chain)) : chains;
 }
 
-watchImmediate(groups, async () => {
-  await fetchData();
-});
-
 watchDebounced(
   logicOr(isDetectingTokens, isSectionLoading, operationRunning),
   async (isLoading, wasLoading) => {
@@ -137,6 +131,10 @@ watchDebounced(
     debounce: 800,
   },
 );
+
+onMounted(async () => {
+  await fetchData();
+});
 
 defineExpose({
   refresh: async () => {

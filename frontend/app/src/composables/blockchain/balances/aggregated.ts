@@ -3,9 +3,9 @@ import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useBlockchainStore } from '@/store/blockchain';
 import { aggregateTotals } from '@/utils/blockchain/accounts';
 
 interface UseBlockchainAggregatedBalancesReturn {
@@ -17,7 +17,7 @@ export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalanc
   const { assetAssociationMap } = useAssetInfoRetrieval();
   const { assetPrice } = useBalancePricesStore();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
-  const { balances } = storeToRefs(useBlockchainStore());
+  const { balances } = storeToRefs(useBalancesStore());
 
   const blockchainAssets = (chains: MaybeRef<string[]> = []): ComputedRef<AssetBalanceWithPrice[]> => computed(() => {
     const blockchainAssets = aggregateTotals(get(balances), 'assets', {

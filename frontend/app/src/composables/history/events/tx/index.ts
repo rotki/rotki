@@ -5,7 +5,7 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { useSupportedChains } from '@/composables/info/chains';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useHistoryStore } from '@/store/history';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useNotificationsStore } from '@/store/notifications';
@@ -44,7 +44,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
     queryOnlineHistoryEvents,
   } = useHistoryEventsApi();
 
-  const { addresses } = storeToRefs(useBlockchainStore());
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
@@ -57,6 +56,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     fetchUndecodedTransactionsStatus,
   } = useHistoryTransactionDecoding();
   const { resetProtocolCacheUpdatesStatus, resetUndecodedTransactionsStatus } = useHistoryStore();
+  const { addresses } = useAccountAddresses();
 
   queue.setOnCompletion(() => {
     if (getStatus() === Status.LOADED) {

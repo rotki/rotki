@@ -3,7 +3,7 @@ import type { TaskMeta } from '@/types/task';
 import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Module } from '@/types/modules';
@@ -61,8 +61,8 @@ interface UsePoolBalancesReturn {
 }
 
 export function usePoolBalances(): UsePoolBalancesReturn {
-  const chainStore = useBlockchainStore();
-  const ethAddresses = computed<string[]>(() => chainStore.getAddresses(Blockchain.ETH));
+  const { addresses } = useAccountAddresses();
+  const ethAddresses = computed<string[]>(() => get(addresses)[Blockchain.ETH] ?? []);
 
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
   const { activeModules } = storeToRefs(useGeneralSettingsStore());

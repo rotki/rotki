@@ -8,7 +8,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -43,7 +43,7 @@ const datetime = computed({
   },
 });
 
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({
   get: () => {

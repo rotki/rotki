@@ -1,5 +1,4 @@
 import { useSessionApi } from '@/composables/api/session';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import {
   useAccountingRuleConflictMessageHandler,
 } from '@/composables/message-handling/accounting-rule-conflict-message';
@@ -12,6 +11,7 @@ import { useSync } from '@/composables/session/sync';
 import {
   useExchangeUnknownAssetHandler,
 } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { Routes } from '@/router/routes';
 import { camelCaseTransformer } from '@/services/axios-transformers';
 import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';

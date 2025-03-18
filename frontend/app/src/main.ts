@@ -11,9 +11,9 @@ import { attemptPolyfillResizeObserver } from '@/utils/cypress';
 import { setupDayjs } from '@/utils/date';
 import { setupFormatter } from '@/utils/setup-formatter';
 import { checkIfDevelopment } from '@shared/utils';
+import { createPinia } from 'pinia';
 
 /* istanbul ignore file */
-import { createPinia } from 'pinia';
 import './main.scss';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';

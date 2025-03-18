@@ -1,8 +1,8 @@
 import { useBalances } from '@/composables/balances';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useMessageHandling } from '@/composables/message-handling';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

@@ -2,7 +2,7 @@
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
@@ -66,7 +66,7 @@ const { chains, hideOnEmptyUsable, multichain, multiple, unique, usableAddresses
 
 const { t } = useI18n();
 
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { addressNameSelector } = useAddressesNamesStore();
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();

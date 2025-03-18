@@ -6,7 +6,7 @@ import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useRefPropVModel } from '@/utils/model';
@@ -26,7 +26,7 @@ const txHash = useRefPropVModel(modelValue, 'txHash');
 const evmChain = useRefPropVModel(modelValue, 'evmChain');
 const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
 
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { getChain, txEvmChains } = useSupportedChains();
 const txChains = useArrayMap(txEvmChains, x => x.id);
 

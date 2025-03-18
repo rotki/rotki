@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import AccountAssetBalances from '@/components/accounts/balances/AccountAssetBalances.vue';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 
 const props = defineProps<{
   chain: string;
   address: string;
 }>();
 
+const { address, chain } = toRefs(props);
 const { t } = useI18n();
-const { getAccountDetails } = useBlockchainStore();
+const { useAccountDetails } = useBlockchainAccountData();
 
-const details = computed(() => getAccountDetails(props.chain, props.address));
+const details = useAccountDetails(chain, address);
 </script>
 
 <template>

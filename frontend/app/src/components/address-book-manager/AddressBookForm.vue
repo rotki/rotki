@@ -7,7 +7,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useBlockie } from '@/composables/accounts/blockie';
 import { useFormStateWatcher } from '@/composables/form';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
@@ -37,7 +37,7 @@ const location = useRefPropVModel(modelValue, 'location');
 const address = useRefPropVModel(modelValue, 'address');
 const blockchain = useRefPropVModel(modelValue, 'blockchain');
 const blockchainModel = nullDefined(blockchain);
-const { addresses } = useBlockchainStore();
+const { addresses } = useAccountAddresses();
 const addressesNamesStore = useAddressesNamesStore();
 const { addressNameSelector, getAddressesWithoutNames } = addressesNamesStore;
 

@@ -3,11 +3,8 @@ import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useBlockchainStore } from '@/store/blockchain';
-import { sortDesc } from '@/utils/bignumbers';
+import { useAccountAssetsSummary } from '@/modules/balances/use-account-assets-summary';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { balanceSum } from '@/utils/calculation';
 import { type AssetBalance, Zero } from '@rotki/common';
 
 const props = defineProps<{
@@ -16,47 +13,24 @@ const props = defineProps<{
   loading: boolean;
 }>();
 
-const { getAccountDetails } = useBlockchainStore();
-const { assetInfo } = useAssetInfoRetrieval();
+const { chains } = toRefs(props);
+const { useAccountTopTokens } = useAccountAssetsSummary();
+const router = useRouter();
+
+const address = computed<string>(() => getAccountAddress(props.row));
+const topTokens = useAccountTopTokens(chains, address);
 
 const assets = computed<AssetBalance[]>(() => {
   const row = props.row;
-  const address = getAccountAddress(row);
-
   if (row.data.type === 'xpub' && row.nativeAsset) {
-    return [
-      {
-        amount: row.amount || Zero,
-        asset: row.nativeAsset,
-        usdValue: row.usdValue,
-      },
-    ];
+    return [{
+      amount: row.amount || Zero,
+      asset: row.nativeAsset,
+      usdValue: row.usdValue,
+    }];
   }
-
-  const assets: Record<string, AssetBalance> = {};
-  props.chains.forEach((chain) => {
-    const details = getAccountDetails(chain, address);
-    details.assets.forEach((item) => {
-      const assetId = item.asset;
-      const info = get(assetInfo(assetId));
-      const key = info?.collectionId ? `collection-${info.collectionId}` : assetId;
-
-      if (assets[key]) {
-        assets[key] = {
-          ...assets[key],
-          ...balanceSum(assets[key], item),
-        };
-      }
-      else {
-        assets[key] = item;
-      }
-    });
-  });
-
-  return Object.values(assets).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+  return get(topTokens);
 });
-
-const router = useRouter();
 
 async function navigateToAsset(asset: AssetBalance) {
   await router.push({

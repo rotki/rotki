@@ -10,7 +10,6 @@ import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balan
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useBlockchainStore } from '@/store/blockchain';
 import { useNotificationsStore } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTaskStore } from '@/store/tasks';
@@ -23,7 +22,6 @@ import { startPromise } from '@shared/utils';
 export const useBalances = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();
   const { missingCustomAssets } = useManualBalanceData();
-  const { updatePrices: updateChainPrices } = useBlockchainStore();
   const { updatePrices } = useBalancesStore();
   const { fetchConnectedExchangeBalances } = useExchanges();
   const { refreshAccounts } = useBlockchains();
@@ -38,9 +36,7 @@ export const useBalances = createSharedComposable(() => {
   const { fetchNetValue } = useStatisticsStore();
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
-    const pricesConvertedToUsd = { ...get(prices) };
-    updateChainPrices(pricesConvertedToUsd);
-    updatePrices(pricesConvertedToUsd);
+    updatePrices({ ...get(prices) });
   };
 
   const filterMissingAssets = (assets: string[]): string[] => {

@@ -1,8 +1,8 @@
 import type { MaybeRef } from '@vueuse/core';
 import { useTokenDetection } from '@/composables/balances/token-detection';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
