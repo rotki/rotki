@@ -4,7 +4,7 @@ import { type StakingValidatorManage, useAccountManage } from '@/composables/acc
 import { useBlockchains } from '@/composables/blockchain/index';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainStore } from '@/store/blockchain/index';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useNotificationsStore } from '@/store/notifications/index';
 import { useTagStore } from '@/store/session/tags';
@@ -69,7 +69,7 @@ function doesAccountExist(row: CSVRow, accounts: { address: string; chain: strin
 
 export function useAccountImportExport(): UseAccountImportExportReturn {
   const { isEvm, isEvmLikeChains } = useSupportedChains();
-  const { groups } = storeToRefs(useBlockchainStore());
+  const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts, addEvmAccounts } = useBlockchains();
   const { attemptTagCreation } = useTagStore();
@@ -108,17 +108,17 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   function exportAccounts(): void {
     const rows: CSVRow[] = [];
 
-    for (const group of get(groups)) {
-      const addressExtras: Record<string, string> = group.data.type === 'xpub' && group.data.derivationPath
-        ? { derivationPath: group.data.derivationPath }
+    for (const account of getAccounts()) {
+      const addressExtras: Record<string, string> = account.data.type === 'xpub' && account.data.derivationPath
+        ? { derivationPath: account.data.derivationPath }
         : {};
 
       rows.push({
-        address: getAccountAddress(group),
+        address: getAccountAddress(account),
         addressExtras,
-        chain: getChainType(group.chains),
-        label: group.label,
-        tags: group.tags ?? [],
+        chain: getChainType(account.chains),
+        label: account.label,
+        tags: account.tags ?? [],
       });
     }
 
@@ -178,7 +178,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     const accounts: [string, string, AddAccountsPayload | XpubAccountPayload][] = [];
 
     const knownTags = Object.keys(allTags);
-    const knownAccounts = get(groups).map(group => ({
+    const knownAccounts = getAccounts().map(group => ({
       address: getAccountAddress(group),
       chain: getChainType(group.chains),
     })).concat(get(ethStakingValidators).map(validator => ({

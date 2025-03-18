@@ -2,15 +2,15 @@
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import { useRefresh } from '@/composables/balances/refresh';
+import { useBlockchainTotalSummary } from '@/modules/balances/blockchain/use-blockchain-total-summary';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import { Routes } from '@/router/routes';
-import { useBlockchainStore } from '@/store/blockchain';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
 import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButton.vue';
 
-const { blockchainTotals } = storeToRefs(useBlockchainStore());
+const { blockchainTotals } = useBlockchainTotalSummary();
 const { useIsTaskRunning } = useTaskStore();
 const { refreshBalance } = useRefresh();
 const { t } = useI18n({ useScope: 'global' });

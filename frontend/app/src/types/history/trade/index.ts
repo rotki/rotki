@@ -1,9 +1,9 @@
+// Trades
 import type { PaginationRequestPayload } from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
 import { EntryMeta } from '@/types/history/meta';
-
-// Trades
 import { NumericString } from '@rotki/common';
+
 import { z } from 'zod';
 
 export enum TradeType {

@@ -5,8 +5,8 @@ import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainStore } from '@/store/blockchain';
 import { BalanceType } from '@/types/balances';
 import { bigNumberify, type Blockchain } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
@@ -197,7 +197,8 @@ describe('evmNativeTokenBreakdown.vue', () => {
     pinia = createPinia();
     setActivePinia(pinia);
 
-    const { updateAccounts, updateBalances } = useBlockchainStore();
+    const { updateAccounts } = useBlockchainAccountsStore();
+    const { updateBalances } = useBalancesStore();
     const { manualBalances, exchangeBalances } = storeToRefs(useBalancesStore());
     set(manualBalances, testManualBalances);
     set(exchangeBalances, testExchangeBalances);

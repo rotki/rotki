@@ -15,7 +15,7 @@ import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useCalendarApi } from '@/composables/history/calendar';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -39,7 +39,7 @@ const modelValue = ref<CalendarEvent>();
 const editMode = ref<boolean>(false);
 
 const { deleteCalendarEvent, fetchCalendarEvents } = useCalendarApi();
-const { getAccountByAddress } = useBlockchainStore();
+const { getAccountByAddress } = useBlockchainAccountsStore();
 const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
 function emptyEventForm() {

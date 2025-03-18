@@ -4,7 +4,7 @@ import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useScramble } from '@/composables/scramble';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
@@ -72,10 +72,12 @@ const props = withDefaults(defineProps<HashLinkProps>(), {
   type: 'address',
 });
 
+const { text } = toRefs(props);
+
 const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
-const { accountTags } = useBlockchainStore();
+const { useAccountTags } = useBlockchainAccountData();
 const { addressNameSelector } = useAddressesNamesStore();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { matchChain } = useSupportedChains();
@@ -173,7 +175,7 @@ const base = computed<string>(() => {
   return base.endsWith('/') ? base : `${base}/`;
 });
 
-const tags = computed<string[]>(() => get(accountTags(props.text)));
+const tags = useAccountTags(text);
 </script>
 
 <template>

@@ -2,25 +2,24 @@ import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
-import { useBlockchainStore } from '@/store/blockchain/index';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
-import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
 import { logger } from '@/utils/logging';
-import { Blockchain } from '@rotki/common';
-import { pick } from 'es-toolkit';
+import { assert, type Balance, Blockchain, Zero } from '@rotki/common';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {
-  const blockchainStore = useBlockchainStore();
-  const { blockchainAccounts } = storeToRefs(blockchainStore);
   const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { updateAccounts } = blockchainStore;
+  const { accounts } = storeToRefs(useBlockchainAccountsStore());
+  const { updateAccounts } = useBlockchainAccountsStore();
+  const { balances } = storeToRefs(useBalancesStore());
 
   const { getEth2Validators } = useBlockchainAccountsApi();
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
@@ -36,11 +35,23 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   }>();
 
   const ethStakingValidators = computed<EthereumValidator[]>(() => {
-    const validatorAccounts = get(blockchainAccounts)[Blockchain.ETH2] ?? [];
-    return validatorAccounts.filter(isAccountWithBalanceValidator).map(validator => ({
-      ...pick(validator, ['usdValue', 'amount']),
-      ...validator.data,
-    }));
+    const accountData = get(accounts)[Blockchain.ETH2] ?? [];
+    const accountBalances = get(balances)[Blockchain.ETH2] ?? [];
+
+    const validators: EthereumValidator[] = [];
+    for (const account of accountData) {
+      assert(account.data.type === 'validator');
+      const accountBalance: Balance = accountBalances[account.data.publicKey]?.assets?.ETH2 ?? {
+        amount: Zero,
+        usdValue: Zero,
+      };
+      validators.push({
+        ...account.data,
+        ...accountBalance,
+      });
+    }
+
+    return validators;
   });
 
   const fetchValidators = async (

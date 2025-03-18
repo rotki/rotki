@@ -8,7 +8,7 @@ import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -29,7 +29,7 @@ const { category } = toRefs(props);
 
 const expanded = ref<string[]>([]);
 
-const { fetchGroupAccounts } = useBlockchainStore();
+const { fetchGroupAccounts } = useBlockchainAccountData();
 
 const {
   fetchData,

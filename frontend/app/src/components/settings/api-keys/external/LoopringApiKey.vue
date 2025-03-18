@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
-import { useBlockchainBalances } from '@/composables/blockchain/balances';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';

@@ -2,7 +2,7 @@ import type { EthDetectedTokensInfo } from '@/types/balances';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -20,7 +20,7 @@ interface UseTokenDetectionReturn {
 export function useTokenDetection(chain: MaybeRef<string>, accountAddress: MaybeRef<string | null> = null): UseTokenDetectionReturn {
   const { useIsTaskRunning } = useTaskStore();
   const { fetchDetectedTokens: fetchDetectedTokensCaller, getEthDetectedTokensInfo } = useBlockchainTokensStore();
-  const { addresses } = useBlockchainStore();
+  const { addresses } = useAccountAddresses();
   const { supportsTransactions } = useSupportedChains();
 
   const isDetectingTaskRunning = (address: string | null): ComputedRef<boolean> =>

@@ -7,7 +7,7 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
@@ -80,7 +80,7 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
-const { getAddresses } = useBlockchainStore();
+const { getAddresses } = useAccountAddresses();
 
 const states = {
   amount,

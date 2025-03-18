@@ -4,8 +4,8 @@ import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainStore } from '@/store/blockchain';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -28,8 +28,8 @@ interface UseAssetBalancesBreakdownReturn {
 }
 
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
-  const { exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { accounts, balances } = useBlockchainStore();
+  const { balances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
+  const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getEvmChainName } = useSupportedChains();
   const { assetAssociationMap } = useAssetInfoRetrieval();
 

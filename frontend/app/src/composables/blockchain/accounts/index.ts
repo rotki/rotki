@@ -11,7 +11,7 @@ import type { BlockchainMetadata } from '@/types/task';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -32,7 +32,6 @@ interface UseBlockchainAccountsReturn {
   removeAgnosticAccount: (chainType: string, address: string) => Promise<void>;
   fetch: (blockchain: string) => Promise<void>;
   deleteXpub: (params: DeleteXpubParams) => Promise<void>;
-  removeTag: (tag: string) => void;
 }
 
 export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
@@ -49,7 +48,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   } = useBlockchainAccountsApi();
   const { deleteXpub: deleteXpubCaller } = useBlockchainAccountsApi();
   const { fetchEthStakingValidators } = useEthStaking();
-  const { removeTag, updateAccounts } = useBlockchainStore();
+  const { updateAccounts } = useBlockchainAccountsStore();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -312,6 +311,5 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     fetch,
     removeAccount,
     removeAgnosticAccount,
-    removeTag,
   };
 }

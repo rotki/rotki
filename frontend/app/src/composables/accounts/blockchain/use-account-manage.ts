@@ -9,7 +9,7 @@ import type { Ref } from 'vue';
 import { useBlockchains } from '@/composables/blockchain';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
@@ -156,10 +156,10 @@ export function useAccountManage(): UseAccountManageReturn {
 
   const { t } = useI18n();
 
+  const { updateAccountData, updateAccounts } = useBlockchainAccountsStore();
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
-  const { updateAccountData, updateAccounts } = useBlockchainStore();
   const { setMessage } = useMessageStore();
 
   function handleErrors(error: any, props: Record<string, any> = {}): void {

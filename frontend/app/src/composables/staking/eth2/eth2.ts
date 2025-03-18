@@ -4,7 +4,7 @@ import type { ComputedRef, Ref } from 'vue';
 import { useEth2Api } from '@/composables/api/staking/eth2';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
@@ -38,7 +38,7 @@ export function useEth2Staking(): UseEthStakingReturn {
 
   const api = useEth2Api();
 
-  const { getBlockchainAccounts } = useBlockchainStore();
+  const { getBlockchainAccounts } = useBlockchainAccountData();
 
   async function syncEthStakingPerformance(userInitiated = false): Promise<boolean> {
     if (!get(premium))

@@ -6,7 +6,8 @@ import type { ComputedRef } from 'vue';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -34,9 +35,10 @@ export function useEthStaking(): UseEthStakingReturn {
     deleteEth2Validators: deleteEth2ValidatorsCaller,
     editEth2Validator: editEth2ValidatorCaller,
   } = useBlockchainAccountsApi();
-  const blockchainStore = useBlockchainStore();
-  const { getAccounts, updateAccounts, updateBalances } = blockchainStore;
-  const { balances } = storeToRefs(blockchainStore);
+  const { updateAccounts } = useBlockchainAccountsStore();
+  const { getAccounts } = useBlockchainAccountsStore();
+  const { balances } = storeToRefs(useBalancesStore());
+  const { updateBalances } = useBalancesStore();
 
   const blockchainValidatorsStore = useBlockchainValidatorsStore();
   const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(blockchainValidatorsStore);

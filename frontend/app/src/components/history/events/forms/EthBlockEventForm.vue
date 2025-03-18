@@ -6,7 +6,7 @@ import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSear
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
@@ -174,7 +174,7 @@ onMounted(() => {
   checkPropsData();
 });
 
-const { getAddresses } = useBlockchainStore();
+const { getAddresses } = useAccountAddresses();
 
 const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
 

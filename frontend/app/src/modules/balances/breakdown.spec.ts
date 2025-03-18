@@ -3,11 +3,11 @@ import type { AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accou
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useBlockchainStore } from '@/store/blockchain';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { BalanceType } from '@/types/balances';
 import { type AssetBalanceWithPrice, bigNumberify, type Blockchain } from '@rotki/common';
@@ -183,7 +183,8 @@ describe('composables::balances/breakdown', () => {
   beforeEach(async () => {
     setActivePinia(createPinia());
     const { exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
-    const { updateAccounts, updateBalances } = useBlockchainStore();
+    const { updateAccounts } = useBlockchainAccountsStore();
+    const { updateBalances } = useBalancesStore();
     const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
     set(connectedExchanges, [{
       location: 'kraken',

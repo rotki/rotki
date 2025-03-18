@@ -4,7 +4,7 @@ import { useAccountManage } from '@/composables/accounts/blockchain/use-account-
 import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts/index';
-import { useBlockchainStore } from '@/store/blockchain/index';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useNotificationsStore } from '@/store/notifications/index';
 import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { downloadFileByTextContent } from '@/utils/download';
@@ -120,7 +120,7 @@ describe('useAccountImportExport', () => {
 
   describe('exportAccounts', () => {
     it('should export accounts', () => {
-      const store = useBlockchainStore();
+      const { updateAccounts } = useBlockchainAccountsStore();
 
       const tags = ['tag1', 'tag2'];
 
@@ -141,12 +141,12 @@ describe('useAccountImportExport', () => {
         nativeAsset: 'ETH',
       };
 
-      store.updateAccounts(Blockchain.ETH, [
+      updateAccounts(Blockchain.ETH, [
         createAccount(account, chainInfo),
         createAccount(secondAccount, chainInfo),
       ]);
 
-      store.updateAccounts(Blockchain.OPTIMISM, [
+      updateAccounts(Blockchain.OPTIMISM, [
         createAccount(account, {
           chain: Blockchain.OPTIMISM,
           nativeAsset: 'ETH',
@@ -169,14 +169,14 @@ describe('useAccountImportExport', () => {
     });
 
     it('should export validators', () => {
-      const store = useBlockchainStore();
+      const { updateAccounts } = useBlockchainAccountsStore();
 
       const chainInfo = {
         chain: Blockchain.ETH2,
         nativeAsset: 'ETH',
       };
 
-      store.updateAccounts(Blockchain.ETH2, [
+      updateAccounts(Blockchain.ETH2, [
         createValidatorAccount({
           index: INDEX_1,
           ownershipPercentage: '22',
@@ -341,7 +341,8 @@ describe('useAccountImportExport', () => {
 
     it('should skip a validator if it is already present', async () => {
       const { save } = useAccountManage();
-      useBlockchainStore().updateAccounts(Blockchain.ETH2, [
+      const { updateAccounts } = useBlockchainAccountsStore();
+      updateAccounts(Blockchain.ETH2, [
         createValidatorAccount({
           index: 55751,
           ownershipPercentage: '44',

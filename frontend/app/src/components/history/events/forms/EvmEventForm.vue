@@ -14,7 +14,7 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { useBlockchainStore } from '@/store/blockchain';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
@@ -138,7 +138,7 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
-const { getAddresses } = useBlockchainStore();
+const { getAddresses } = useAccountAddresses();
 const { txChainsToLocation } = useSupportedChains();
 
 const states = {
