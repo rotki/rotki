@@ -10,7 +10,11 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, GAUGE_DEPOSIT
+from rotkehlchen.chain.evm.decoding.curve.constants import (
+    CPT_CURVE,
+    CURVE_COUNTERPARTY_DETAILS,
+    GAUGE_DEPOSIT,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
     ReloadableDecoderMixin,
@@ -737,4 +741,4 @@ class CurveLendCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_CURVE, label='Curve.fi', image='curve.png'),)
+        return (CURVE_COUNTERPARTY_DETAILS,)
