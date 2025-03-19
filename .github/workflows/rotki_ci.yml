@@ -233,6 +233,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+          workspaces: colibri
 
       - run: cargo check --workspace && cargo clippy --workspace
         working-directory: ./colibri
