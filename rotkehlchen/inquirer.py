@@ -28,7 +28,7 @@ from rotkehlchen.chain.evm.decoding.aura_finance.utils import get_aura_pool_pric
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.balancer.utils import get_balancer_pool_price
 from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID_TYPE, CURVE_CHAIN_IDS
-from rotkehlchen.chain.evm.decoding.curve_lend.utils import get_curve_vault_token_price
+from rotkehlchen.chain.evm.decoding.curve.lend.utils import get_curve_vault_token_price
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
     read_gearbox_data_from_cache,
