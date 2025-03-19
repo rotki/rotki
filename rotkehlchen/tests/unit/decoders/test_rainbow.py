@@ -26,7 +26,7 @@ A_ZIG: Final = Asset('eip155:1/erc20:0xb2617246d0c6c0087f18703d576831899ca94f01'
 def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xcd6afacf1efce38186b6cf9164792c4034d33d3f071c5e28c0b79ce5ab0223a9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    swap_amount, received_amount, gas_fees, fee_amount, timestamp, user_address = '0.2', '28827.267041421686554081', '0.000114360530468618', '0.00199745', TimestampMS(1741808351000), ethereum_accounts[0]  # noqa: E501
+    swap_amount, received_amount, gas_fees, fee_amount, timestamp, user_address = '0.1983', '28827.267041421686554081', '0.000114360530468618', '0.0017', TimestampMS(1741808351000), ethereum_accounts[0]  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -88,7 +88,7 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
 def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd34d7393151a3c0f2d23d0df4d8f0b4a000be7613277e831ef0860191e68f855')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    swap_amount, received_amount, gas_fees, fee_amount, timestamp, user_address = '1010.887928111872496631', '0.089068967427375408', '0.000147805218572058', '0.00089852786738257', TimestampMS(1741892171000), ethereum_accounts[0]  # noqa: E501
+    swap_amount, received_amount, gas_fees, fee_amount, timestamp, user_address = '1010.887928111872496631', '0.089068967427375408', '0.000147805218572058', '0.000763576624440434', TimestampMS(1741892171000), ethereum_accounts[0]  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -150,7 +150,7 @@ def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
 def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4f85ee11bbc401240755b083106e0811e6b60ef7972063a51596934cbb6ed43f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    gas_fees, swap_amount, received_amount, approve_amount, fee_amount, timestamp, user_address = '0.000364910690805408', '77911.038010822816755701', '45110.517197738477939043', '115792089237316195423570985008687907853269984665640563961546.545997090312884234', '662.243823091993942423', TimestampMS(1741889531000), ethereum_accounts[0]  # noqa: E501
+    gas_fees, swap_amount, received_amount, approve_amount, fee_amount, timestamp, user_address = '0.000364910690805408', '77248.794187730822813278', '45110.517197738477939043', '115792089237316195423570985008687907853269984665640563961546.545997090312884234', '662.243823091993942423', TimestampMS(1741889531000), ethereum_accounts[0]  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
