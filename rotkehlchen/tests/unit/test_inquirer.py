@@ -1019,6 +1019,15 @@ def test_find_curve_lending_vault_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_savings_crvusd_price(inquirer_defi: 'Inquirer') -> None:
+    """Test that we get the correct price for scrvUSD token"""
+    price = inquirer_defi.find_usd_price(asset=Asset('eip155:1/erc20:0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'))  # noqa: E501
+    assert price == FVal('1.041968030723485250')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
     """Test that we get the correct price for Uniswap V3 position NFTs in all supported chains."""
 
