@@ -40,4 +40,5 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
                 string_to_evm_address('0x0023055B2F86EAE827C2bee06BBF483738fb600c'),
                 string_to_evm_address('0x347Ff9951D24E29b559E3323b5370Aa29993e613'),
             ],
+            retro_funding_strategy_addresses=[string_to_evm_address('0x2Caa214E2de4b05A9E0E1a1cCfDb3c673a28acCf')],
         )

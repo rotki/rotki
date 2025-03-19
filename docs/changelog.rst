@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Some more gitcoin rounds are added to rotki. Especially the new retro funding rounds.
 * :feature:`9571` rotki will now correctly decode Curve Savings transactions.
 * :feature:`9592` Users can now force a query of EVM transactions for specific time periods to recover missed transactions.
 * :feature:`9239` Users will now be able to sort the PnL events table.

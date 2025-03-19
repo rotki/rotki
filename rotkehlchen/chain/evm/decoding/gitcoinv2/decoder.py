@@ -81,6 +81,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             round_impl_addresses: list['ChecksumEvmAddress'],
             payout_strategy_addresses: list['ChecksumEvmAddress'],
             voting_merkle_distributor_addresses: list['ChecksumEvmAddress'] | None = None,
+            retro_funding_strategy_addresses: list['ChecksumEvmAddress'] | None = None,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -93,6 +94,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         assert len(self.payout_strategy_addresses) == len(self.round_impl_addresses), 'payout should match round number'  # noqa: E501
         self.voting_impl_addresses = voting_impl_addresses
         self.voting_merkle_distributor_addresses = voting_merkle_distributor_addresses
+        self.retro_funding_strategy_addresses = retro_funding_strategy_addresses
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.recipient_id_to_addr: LRUCacheWithRemove[ChecksumEvmAddress, ChecksumEvmAddress] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
 
@@ -184,6 +186,14 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 address=recipient_address,
             )
             return DecodingOutput(event=event)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_retro_funding_strategy(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == REGISTERED:
+            return self._decode_registered(context)
+        elif context.tx_log.topics[0] == FUNDS_DISTRIBUTED:
+            return self._decode_funds_distributed(context)
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -479,10 +489,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         )
         return DecodingOutput(event=event)
 
-    def _decode_payout_action(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != FUNDS_DISTRIBUTED:
-            return DEFAULT_DECODING_OUTPUT
-
+    def _decode_funds_distributed(self, context: DecoderContext) -> DecodingOutput:
         grantee = bytes_to_address(context.tx_log.data[32:64])
         if self.base.is_tracked(grantee) is False:
             return DEFAULT_DECODING_OUTPUT
@@ -506,6 +513,12 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_payout_action(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != FUNDS_DISTRIBUTED:
+            return DEFAULT_DECODING_OUTPUT
+
+        return self._decode_funds_distributed(context)
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
@@ -515,6 +528,8 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         mappings |= dict.fromkeys(self.payout_strategy_addresses, (self._decode_payout_action,))
         if self.voting_merkle_distributor_addresses:
             mappings |= dict.fromkeys(self.voting_merkle_distributor_addresses, (self._decode_voting_merkle_distributor,))  # noqa: E501
+        if self.retro_funding_strategy_addresses:
+            mappings |= dict.fromkeys(self.retro_funding_strategy_addresses, (self._decode_retro_funding_strategy,))  # noqa: E501
         if self.project_registry:
             mappings[self.project_registry] = (self._decode_project_action,)
 
