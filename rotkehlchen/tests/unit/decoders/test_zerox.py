@@ -1232,3 +1232,171 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
         counterparty=CPT_COWSWAP,
         address=address,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x24519D3972C663516d80b4EB86c737E29A1c01fa']])
+def test_swap_settler_eth_token_ethereum(ethereum_inquirer, ethereum_accounts):
+    """
+    Check that a swap eth to token via settler is decoded correctly for the 1.7 settler version.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xd3e2b5dd91bcde440ef8d15dd01229562647be8cb07ae4dab48b80f6159e7f44')  # noqa: E501
+    user_address, timestamp = ethereum_accounts[0], TimestampMS(1742384099000)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00031940213490407'),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal(amount := '0.001490680243368199'),
+        location_label=user_address,
+        notes=f'Swap {amount} ETH via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:1/erc20:0xa93d86Af16fe83F064E3C0e2F3d129F7B7b002b0'),
+        amount=FVal(amount := '392149.120952574'),
+        location_label=user_address,
+        notes=f'Receive {amount} COCORO as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
+    )]
+
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x44b04E97676D99FF69e165Fa0a28D5057fc405a1']])
+def test_swap_settler_token_eth_ethereum(ethereum_inquirer, ethereum_accounts):
+    """
+    Check that a swap token to eth via settler is decoded correctly for the 1.7 settler version.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xcd135f41b57f72ece4939b376d33f09b84e88e4d576a0f87240d723a62e6ea93')  # noqa: E501
+    user_address, timestamp, asset, approval_recipient = ethereum_accounts[0], TimestampMS(1742365487000), Asset('eip155:1/erc20:0x24fcFC492C1393274B6bcd568ac9e225BEc93584'), '0x000000000022D473030F116dDEE9F6B43aC78BA3'  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.000070761041229375'),
+        location_label=user_address,
+        notes='Burn 0.000070761041229375 ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=asset,
+        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039451.064165596108164711'),  # noqa: E501
+        location_label=user_address,
+        notes=f'Set MAVIA spending approval of {user_address} by {approval_recipient} to {approval_amount}',  # noqa: E501
+        address=approval_recipient,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=TimestampMS(1742365487000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=asset,
+        amount=FVal(swap_amount := '6.519842317021475224'),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} MAVIA via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=4,
+        timestamp=TimestampMS(1742365487000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(received_amount := '0.00188844058048022'),
+        location_label=user_address,
+        notes=f'Receive {received_amount} ETH as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
+    )]
+
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x67b427Ed763893302BE8A94Ac8F3a09793458772']])
+def test_swap_settler_token_token_ethereum(ethereum_inquirer, ethereum_accounts):
+    """
+    Check that a swap token to token via settler is decoded correctly for the 1.7 settler version.
+    """
+    tx_hash = deserialize_evm_tx_hash('0xd467dc8ddf753d1d49962ba84e42b369a8ab3de53cf45df84b56923747df11de')  # noqa: E501
+    user_address, timestamp = ethereum_accounts[0], TimestampMS(1742390195000)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    evm_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000179016899701947'),
+        notes=f'Burn {gas_amount} ETH for gas',
+        location_label=user_address,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal(swap_amount := '215'),
+        notes=f'Swap {swap_amount} USDC via the 0x protocol',
+        location_label=user_address,
+        counterparty=CPT_ZEROX,
+        address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:1/erc20:0x2bc46Eb4ae80ddD9c8A6e064C74327C8244D88e2'),
+        amount=FVal(received_amount := '1220.713756928144413912'),
+        notes=f'Receive {received_amount} SVM as the result of a swap via the 0x protocol',
+        location_label=user_address,
+        counterparty=CPT_ZEROX,
+        address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
+    )]
+
+    assert events == evm_events
