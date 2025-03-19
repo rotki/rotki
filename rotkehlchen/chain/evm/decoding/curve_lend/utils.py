@@ -127,17 +127,17 @@ def query_curve_lending_vaults(database: 'DBHandler') -> None:
     )
 
 
-def get_curve_lending_vault_token_price(
+def get_curve_vault_token_price(
         inquirer: 'Inquirer',
         vault_token: 'EvmToken',
         evm_inquirer: 'EvmNodeInquirer',
 ) -> Price:
-    """Gets the token price for a Curve lending vault."""
+    """Gets the token price for a Curve vault."""
     return get_vault_price(
         inquirer=inquirer,
         vault_token=vault_token,
         evm_inquirer=evm_inquirer,
         vault_abi=CURVE_VAULT_ABI,
         pps_method='pricePerShare',
-        display_name='Curve lending',
+        display_name='Curve vault',
     )
