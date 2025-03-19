@@ -41,6 +41,7 @@ class ZeroxCommonDecoder(DecoderInterface):
             msg_aggregator: 'MessagesAggregator',
             router_address: ChecksumEvmAddress,
             flash_wallet_address: ChecksumEvmAddress,
+            settler_routers_addresses: set[ChecksumEvmAddress] | None = None,
     ) -> None:
         """router_address is the main point of contact with the 0x protocol.
         flash_wallet_address is a contract that can execute arbitrary calls from 0x router_address.
@@ -48,30 +49,48 @@ class ZeroxCommonDecoder(DecoderInterface):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
         self.router_address = router_address
+        self.settler_routers_addresses = settler_routers_addresses
         self.flash_wallet_address = flash_wallet_address
+        self.router_addresses_set = {self.router_address}
+        if self.settler_routers_addresses:
+            self.router_addresses_set |= self.settler_routers_addresses
 
     def _update_send_receive_fee_events(
             self,
             send_event: 'EvmEvent | None' = None,
             receive_event: 'EvmEvent | None' = None,
             fee_event: 'EvmEvent | None' = None,
+            used_router_address: 'ChecksumEvmAddress | None' = None,
     ) -> None:
         """An auxiliary function to update the send, receive and/or fee events with the 0x values"""  # noqa: E501
+        # This is a case for swaps made via the settler
+        # The send event contains the settler address, so need to
+        # update the others events with the settler address
+        router_address = self.router_address
+        if (
+            send_event is not None and
+            self.settler_routers_addresses is not None and
+            send_event.address in self.settler_routers_addresses
+        ):
+            router_address = send_event.address
+        elif used_router_address is not None:
+            router_address = used_router_address
+
         if send_event is not None:
             send_event.counterparty = CPT_ZEROX
-            send_event.address = self.router_address
+            send_event.address = router_address
             send_event.event_type = HistoryEventType.TRADE
             send_event.event_subtype = HistoryEventSubType.SPEND
             send_event.notes = f'Swap {send_event.amount} {send_event.asset.symbol_or_name()} via the 0x protocol'  # noqa: E501
         if receive_event is not None:
             receive_event.counterparty = CPT_ZEROX
-            receive_event.address = self.router_address
+            receive_event.address = router_address
             receive_event.event_type = HistoryEventType.TRADE
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
             receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.symbol_or_name()} as the result of a swap via the 0x protocol'  # noqa: E501
         if fee_event is not None:
             fee_event.counterparty = CPT_ZEROX
-            fee_event.address = self.router_address
+            fee_event.address = router_address
             fee_event.event_type = HistoryEventType.SPEND
             fee_event.event_subtype = HistoryEventSubType.FEE
             fee_event.notes = f'Spend {fee_event.amount} {fee_event.asset.symbol_or_name()} as a 0x protocol fee'  # noqa: E501
@@ -187,12 +206,23 @@ class ZeroxCommonDecoder(DecoderInterface):
         for _log in all_logs:
             send_event = send_address_to_events.get(_log.address)
             receive_event = receive_address_to_events.get(_log.address)
-
-            if _log.topics[0] in UNISWAP_SIGNATURES and self.router_address in {
-                bytes_to_address(_log.topics[1]),  # 0x is sender
-                bytes_to_address(_log.topics[2]),  # 0x is receiver
-            }:
-                self._update_send_receive_fee_events(send_event=send_event, receive_event=receive_event)  # noqa: E501
+            if (
+                _log.topics[0] in UNISWAP_SIGNATURES and
+                len(used_router_address := self.router_addresses_set & {
+                    bytes_to_address(_log.topics[1]),  # 0x is sender
+                    bytes_to_address(_log.topics[2]),  # 0x is receiver
+                }) > 0
+            ):
+                # Some events are already being decoded as a swap through uniswap,
+                # and do not have the 0x router address. Therefore, it is necessary
+                # to update the events with the values from the 0x protocol. To do this,
+                # we need to pass the used router address (ZeroEx or Settler) to update
+                # the event with the correct router address.
+                self._update_send_receive_fee_events(
+                    send_event=send_event,
+                    receive_event=receive_event,
+                    used_router_address=used_router_address.pop(),
+                )
 
             if (  # sent_token is transferred from tracked sender to 0x
                 send_event is not None and
@@ -265,7 +295,7 @@ class ZeroxCommonDecoder(DecoderInterface):
         return {CPT_ZEROX: [(-1, self._decode_swap)]}
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {self.router_address: CPT_ZEROX}
+        return dict.fromkeys(self.router_addresses_set, CPT_ZEROX)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.router_address: (self._decode_meta_tx_swap,)}
