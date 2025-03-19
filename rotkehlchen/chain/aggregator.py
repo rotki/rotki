@@ -59,7 +59,7 @@ from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
-from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
+from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.uniswap.v3.balances import UniswapV3Balances
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances

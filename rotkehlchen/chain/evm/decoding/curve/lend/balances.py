@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
-from rotkehlchen.chain.evm.decoding.curve_lend.constants import CURVE_VAULT_CONTROLLER_ABI
+from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_VAULT_CONTROLLER_ABI
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError

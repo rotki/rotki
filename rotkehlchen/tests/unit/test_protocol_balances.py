@@ -45,7 +45,7 @@ from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
-from rotkehlchen.chain.evm.decoding.curve_lend.balances import CurveLendBalances
+from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.extrafi.cache import (
     get_existing_reward_pools,
     query_extrafi_data,
@@ -700,7 +700,7 @@ def test_compound_v3_token_balances_liabilities(
             target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
         ),
         patch(
-            target='rotkehlchen.chain.evm.decoding.curve_lend.decoder.should_update_protocol_cache',
+            target='rotkehlchen.chain.evm.decoding.curve.lend.decoder.should_update_protocol_cache',
         ),
     ):
         blockchain.ethereum.transactions_decoder.decode_transaction_hashes(

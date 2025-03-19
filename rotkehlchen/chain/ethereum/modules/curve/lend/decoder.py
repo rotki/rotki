@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.curve_lend.decoder import CurveLendCommonDecoder
+from rotkehlchen.chain.evm.decoding.curve.lend.decoder import CurveLendCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class CurveLendDecoder(CurveLendCommonDecoder):
+class CurvelendDecoder(CurveLendCommonDecoder):
 
     def __init__(
             self,

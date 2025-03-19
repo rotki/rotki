@@ -6,7 +6,7 @@ from unittest.mock import patch
 import requests
 from freezegun import freeze_time
 
-from rotkehlchen.chain.evm.decoding.curve_lend.utils import query_curve_lending_vaults
+from rotkehlchen.chain.evm.decoding.curve.lend.utils import query_curve_lending_vaults
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.globaldb.cache import (
