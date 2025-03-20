@@ -20,30 +20,17 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
-from .constants import CPT_RAINBOW_SWAPS
+from .constants import CPT_RAINBOW_SWAPS, RAINBOW_ROUTER_CONTRACT
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RainbowCommonDecoder(DecoderInterface):
-
-    def __init__(
-            self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            router_address: ChecksumEvmAddress,
-    ) -> None:
-        super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.router_address = router_address
+class RainbowDecoder(DecoderInterface):
 
     def _create_and_append_fee_event(
             self,
@@ -65,9 +52,9 @@ class RainbowCommonDecoder(DecoderInterface):
             asset=fee_asset,
             amount=fee_amount,
             location_label=sender,
-            notes=f'Spend {fee_amount} {fee_asset.resolve_to_asset_with_symbol().symbol} a Rainbow fee',  # noqa: E501
+            notes=f'Spend {fee_amount} {fee_asset.resolve_to_asset_with_symbol().symbol} as Rainbow fee',  # noqa: E501
             counterparty=CPT_RAINBOW_SWAPS,
-            address=self.router_address,
+            address=RAINBOW_ROUTER_CONTRACT,
         )
         decoded_events.append(fee_event)
         maybe_reshuffle_events(
@@ -93,7 +80,7 @@ class RainbowCommonDecoder(DecoderInterface):
         """
         out_event = in_event = None
         for event in decoded_events:
-            if event.address != self.router_address:
+            if event.address != RAINBOW_ROUTER_CONTRACT:
                 continue
 
             if (
@@ -112,7 +99,7 @@ class RainbowCommonDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_RAINBOW_SWAPS
-                event.address = self.router_address
+                event.address = RAINBOW_ROUTER_CONTRACT
                 out_event = event
 
         if out_event is None or in_event is None:
@@ -154,11 +141,11 @@ class RainbowCommonDecoder(DecoderInterface):
                 blockchain=self.evm_inquirer.blockchain,
             ):
                 if ((
-                    internal_tx.from_address == self.router_address and
+                    internal_tx.from_address == RAINBOW_ROUTER_CONTRACT and
                     internal_tx.to_address != out_event.location_label
                 ) or (
                     internal_tx.from_address != out_event.location_label and
-                    internal_tx.to_address == self.router_address
+                    internal_tx.to_address == RAINBOW_ROUTER_CONTRACT
                 )):
                     swapped_amount = from_wei(internal_tx.value)
                     break
@@ -188,7 +175,7 @@ class RainbowCommonDecoder(DecoderInterface):
                     continue  # we only look for transfers
 
                 if (
-                    bytes_to_address(log_event.topics[1]) == self.router_address and
+                    bytes_to_address(log_event.topics[1]) == RAINBOW_ROUTER_CONTRACT and
                     bytes_to_address(log_event.topics[2]) != in_event.location_label and
                     (possible_fee_amount := (out_event.amount - asset_normalized_value(
                         amount=int.from_bytes(log_event.data),
@@ -201,7 +188,7 @@ class RainbowCommonDecoder(DecoderInterface):
                     break
                 elif (
                     bytes_to_address(log_event.topics[1]) != in_event.location_label and  # from
-                    bytes_to_address(log_event.topics[2]) == self.router_address and  # to
+                    bytes_to_address(log_event.topics[2]) == RAINBOW_ROUTER_CONTRACT and  # to
                     (possible_fee_amount := asset_normalized_value(
                         amount=int.from_bytes(log_event.data),
                         asset=(in_asset := in_event.asset.resolve_to_crypto_asset()),
@@ -232,7 +219,7 @@ class RainbowCommonDecoder(DecoderInterface):
         """
         Enricher transfer events to rainbow router. The contract doesn't emit events for swaps.
         """
-        if context.event.address == self.router_address:
+        if context.event.address == RAINBOW_ROUTER_CONTRACT:
             return TransferEnrichmentOutput(matched_counterparty=CPT_RAINBOW_SWAPS)
 
         return FAILED_ENRICHMENT_OUTPUT

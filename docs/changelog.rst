@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9600` rotki will now correctly decode swaps going through the rainbow router on all supported chains.
 * :feature:`-` Some more gitcoin rounds are added to rotki. Especially the new retro funding rounds.
 * :feature:`9571` rotki will now correctly decode Curve Savings transactions.
 * :feature:`9592` Users can now force a query of EVM transactions for specific time periods to recover missed transactions.

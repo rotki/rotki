@@ -103,7 +103,7 @@ def test_get_report_data_with_premium(
         start_with_valid_premium: bool,
 ) -> None:
     """Test that getting report data works correctly with premium subscription active"""
-    # First create a report and added events
+    # First create a report and add events
     report_id, events = setup_report_events(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
 
     # Query report data with no filters
