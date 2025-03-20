@@ -1,5 +1,6 @@
 
 from collections.abc import Sequence
+from itertools import groupby
 from typing import Any
 
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
@@ -11,6 +12,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
     HistoryBaseEntryType,
@@ -22,6 +24,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -31,6 +34,8 @@ KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_hash', 'validator_index', 'sequence_index', 'event_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'is_exit'},  # noqa: E501
     HistoryBaseEntryType.EVM_EVENT: {'tx_hash', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'notes', 'counterparty', 'product', 'address', 'extra_data', 'event_identifier'},  # noqa: E501
+    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'asset', 'event_identifier', 'extra_data'},  # noqa: E501
+    HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'event_identifier'},
 }
 
 
@@ -42,14 +47,38 @@ def pop_multiple_keys(serialized_event: dict[str, Any], entry_type: HistoryBaseE
             serialized_event.pop(field)
 
 
-def entry_to_input_dict(
-        entry: 'HistoryBaseEntry',
+def maybe_group_entries(entries: list[HistoryBaseEntry]) -> list[list[HistoryBaseEntry]]:
+    """Group AssetMovements and SwapEvents by their event_identifier so they can be processed
+    as a unit when adding/editing via the api.
+
+    Only specific entry types are grouped by event_identifier because while the other types may
+    share event_identifiers they are still processed individually when adding/editing via the api.
+    """
+    grouped_entries, need_group_by_id = [], []
+    for entry in entries:
+        if entry.entry_type in {
+            HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
+            HistoryBaseEntryType.SWAP_EVENT,
+        }:
+            need_group_by_id.append(entry)
+        else:
+            grouped_entries.append([entry])
+
+    grouped_entries.extend([list(g) for k, g in groupby(need_group_by_id, lambda entry: entry.event_identifier)])  # noqa: E501
+    return grouped_entries
+
+
+def entries_to_input_dict(
+        entries: list[HistoryBaseEntry],
         include_identifier: bool,
 ) -> dict[str, Any]:
+    """Converts a group of HistoryBaseEntry events into a dictionary,
+    optionally including the event identifier.
     """
-    Converts a HistoryBaseEntry into a dictionary, optionally including the event identifier.
-    """
-    serialized = entry.serialize()
+    if len(entries) == 0:
+        return {}
+
+    serialized = (entry := entries[0]).serialize()
     if include_identifier:
         assert entry.identifier is not None
         serialized['identifier'] = entry.identifier
@@ -67,6 +96,26 @@ def entry_to_input_dict(
         if include_identifier is False:  # when creating an eth deposit event we don't include the event_identifier  # noqa: E501
             serialized.pop('event_identifier')
         serialized['depositor'] = serialized.pop('location_label')
+    elif entry.entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT:
+        if (extra_data := serialized.get('extra_data')) is not None:
+            serialized['address'] = extra_data.get('address')
+            serialized['transaction_id'] = extra_data.get('transaction_id')
+            serialized['blockchain'] = extra_data.get('blockchain')
+            serialized['unique_id'] = extra_data.get('reference')
+            serialized.pop('extra_data')
+        if len(entries) == 2:
+            serialized['fee'] = (fee_entry := entries[1].serialize())['amount']
+            serialized['fee_asset'] = fee_entry['asset']
+    elif entry.entry_type == HistoryBaseEntryType.SWAP_EVENT:
+        assert len(entries) > 1
+        serialized['spend_amount'] = serialized.pop('amount')
+        serialized['spend_asset'] = serialized.pop('asset')
+        serialized['receive_amount'] = (receive_entry := entries[1].serialize())['amount']
+        serialized['receive_asset'] = receive_entry['asset']
+        if len(entries) == 3:
+            serialized['fee_amount'] = (fee_entry := entries[2].serialize())['amount']
+            serialized['fee_asset'] = fee_entry['asset']
+
     return serialized
 
 
@@ -165,6 +214,52 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         fee_recipient_tracked=True,
         block_number=15824493,
         is_mev_reward=False,
+    ), AssetMovement(
+        timestamp=TimestampMS(1701654218000),
+        location=Location.COINBASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=A_ETH,
+        amount=FVal('0.0586453'),
+        unique_id='MOVEMENT1',
+        location_label='Coinbase 1',
+        extra_data={
+            'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
+            'transaction_id': '0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
+            'reference': 'MOVEMENT1',
+        },
+    ), AssetMovement(
+        timestamp=TimestampMS(1701654218000),
+        location=Location.COINBASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        asset=A_ETH,
+        amount=FVal('0.000423'),
+        unique_id='MOVEMENT1',
+        location_label='Coinbase 1',
+        is_fee=True,
+    ), SwapEvent(
+        timestamp=TimestampMS(1722153221000),
+        location=Location.OKX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('5792.2972152799999995'),
+        unique_id='TRADE1',
+        location_label='Okx 1',
+    ), SwapEvent(
+        timestamp=TimestampMS(1722153221000),
+        location=Location.OKX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('4.5'),
+        unique_id='TRADE1',
+        location_label='Okx 1',
+    ), SwapEvent(
+        timestamp=TimestampMS(1722153221000),
+        location=Location.OKX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.00315'),
+        unique_id='TRADE1',
+        location_label='Okx 1',
     )]
 
 

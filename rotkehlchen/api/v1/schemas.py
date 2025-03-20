@@ -1016,6 +1016,7 @@ class CreateHistoryEventSchema(Schema):
                 fee_asset=data['fee_asset'],
                 event_type=data['event_type'],
                 identifier=data.get('identifier'),
+                event_identifier=data['event_identifier'],
                 amount=data['amount'],
                 extra_data=extra_data,
                 fee_identifier=CreateHistoryEventSchema.history_event_context.get()['schema'].get_grouped_event_identifier(

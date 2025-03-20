@@ -35,7 +35,7 @@ from rotkehlchen.types import Location, TimestampMS
 def assert_csv_export_response(
         response: requests.Response,
         csv_dir: Path,
-        expected_count: int = 9,
+        expected_count: int = 14,
         is_download: bool = False,
         includes_extra_headers: bool = True,
         csv_delimiter: str = ',',

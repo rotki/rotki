@@ -34,7 +34,8 @@ from rotkehlchen.tests.utils.factories import generate_events_response
 from rotkehlchen.tests.utils.history_base_entry import (
     KEYS_IN_ENTRY_TYPE,
     add_entries,
-    entry_to_input_dict,
+    entries_to_input_dict,
+    maybe_group_entries,
     predefined_events_to_insert,
 )
 from rotkehlchen.types import (
@@ -107,7 +108,7 @@ def assert_editing_works(
 
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-        json=entry_to_input_dict(entry, include_identifier=True),
+        json=entries_to_input_dict(entries=[entry], include_identifier=True),
     )
     assert_simple_ok_response(response)
     assert entry.identifier is not None
@@ -140,15 +141,16 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = predefined_events_to_insert()
-    for entry in entries:
-        json_data = entry_to_input_dict(entry, include_identifier=False)
+    for group in (grouped_entries := maybe_group_entries(entries=entries.copy())):
+        json_data = entries_to_input_dict(group, include_identifier=False)
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=json_data,
         )
         result = assert_proper_sync_response_with_result(response)
         assert 'identifier' in result
-        entry.identifier = result['identifier']
+        for idx, entry in enumerate(group):
+            entry.identifier = result['identifier'] + idx
 
     with rotki.data.db.conn.read_ctx() as cursor:
         saved_events = db.get_history_events(
@@ -164,7 +166,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     assert isinstance(entry, EvmEvent)
     # test editing unknown fails
     unknown_id = 42
-    json_data = entry_to_input_dict(entry, include_identifier=True)
+    json_data = entries_to_input_dict(entries=[entry], include_identifier=True)
     json_data['identifier'] = unknown_id
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -177,7 +179,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     )
     # test editing by making sequence index same as an existing one fails
     entry.sequence_index = 3
-    json_data = entry_to_input_dict(entry, include_identifier=True)
+    json_data = entries_to_input_dict(entries=[entry], include_identifier=True)
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=json_data,
@@ -189,7 +191,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     )
     # test adding event with sequence index same as an existing one fails
     entry.sequence_index = 3
-    json_data = entry_to_input_dict(entry, include_identifier=False)
+    json_data = entries_to_input_dict(entries=[entry], include_identifier=False)
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=json_data,
@@ -204,6 +206,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
     assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501
     assert_editing_works(entries[8], rotkehlchen_api_server, db, 8, {'notes': 'Validator 1001 produced block 5. Relayer reported 1500.1 ETH as the MEV reward going to 0x9531C059098e3d194fF87FebB587aB07B30B1306', 'event_identifier': 'BP1_5'})  # eth block event  # noqa: E501
+    # Editing of AssetMovements and Swaps is tested in test_add_edit_asset_movements and test_add_edit_swap_events  # noqa: E501
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -213,7 +216,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert len(saved_events) == 9
+        assert len(saved_events) == 14
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
 
@@ -233,7 +236,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert len(saved_events) == 9
+        assert len(saved_events) == 14
         for idx, event in enumerate(saved_events):
             assert event == entries[idx]
 
@@ -250,7 +253,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             group_by_event_ids=False,
         )
         # entry is now last since the timestamp was modified
-        assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
+        assert saved_events == [entries[0], entries[2]] + entries[4:]
 
         # test that deleting last event of a transaction hash fails
         response = requests.delete(
@@ -268,14 +271,15 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
+        assert saved_events == [entries[0], entries[2]] + entries[4:]
 
         # now let's try to edit event_identifier for all possible events.
-        for idx, entry in enumerate(entries):
-            if entry.identifier in {2, 4}:
+        for idx, group in enumerate(grouped_entries):
+            if group[0].identifier in {2, 4}:
                 continue  # we deleted those
-            entry.event_identifier = f'new_eventid{idx}'
-            json_data = entry_to_input_dict(entry, include_identifier=True)
+            for entry in group:
+                entry.event_identifier = f'new_eventid{idx}'
+            json_data = entries_to_input_dict(group, include_identifier=True)
             json_data['event_identifier'] = f'new_eventid{idx}'
             response = requests.patch(
                 api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -288,7 +292,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             has_premium=True,
             group_by_event_ids=False,
         )
-        assert saved_events == [entries[0], entries[2], entries[4], entries[5], entries[6], entries[7], entries[8]]  # noqa: E501
+        assert saved_events == [entries[0], entries[2]] + entries[4:]
 
 
 def test_event_with_details(rotkehlchen_api_server: 'APIServer') -> None:
@@ -443,9 +447,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 9
+    assert result['entries_found'] == 14
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 9
+    assert result['entries_total'] == 14
     for event in result['entries']:
         assert event['entry'] in expected_entries
 
@@ -467,10 +471,10 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         json={'group_by_event_ids': True},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 6
+    assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 6
-    assert len(result['entries']) == 6
+    assert result['entries_total'] == 8
+    assert len(result['entries']) == 8
 
     # check also that in groups we add the missing_accounting_rule key
     assert 'missing_accounting_rule' not in result['entries'][1]
@@ -485,9 +489,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
-    assert result['entries_found'] == 6
+    assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 6
+    assert result['entries_total'] == 8
 
     # now with grouping, pagination and a filter
     response = requests.post(
@@ -499,9 +503,9 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
-    assert result['entries_found'] == 4
+    assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 6
+    assert result['entries_total'] == 8
 
     # filter by location using kraken and ethereum
     response = requests.post(
@@ -515,7 +519,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 9
+    assert result['entries_total'] == 14
 
     response = requests.post(
         api_url_for(
@@ -528,11 +532,11 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     assert len(result['entries']) == 8
     assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
-    assert result['entries_total'] == 9
+    assert result['entries_total'] == 14
 
     # test pagination and exclude_ignored_assets and group by event ids works
     toggle_ignore_an_asset(rotkehlchen_api_server, A_ETH)
-    for exclude_ignored_assets, found in ((True, 2), (False, 6)):
+    for exclude_ignored_assets, found in ((True, 2), (False, 8)):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -544,10 +548,10 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         assert len(result['entries']) == min(found, 5)
         assert result['entries_found'] == found
         assert result['entries_limit'] == 100
-        assert result['entries_total'] == 6
+        assert result['entries_total'] == 8
 
     # test pagination and exclude_ignored_assets without group by event ids works
-    for exclude_ignored_assets, events_found, sub_events_found in ((True, 3, 3), (False, 9, 9)):
+    for exclude_ignored_assets, events_found, sub_events_found in ((True, 3, 3), (False, 14, 14)):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -559,17 +563,17 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         assert len(result['entries']) == min(sub_events_found, 5)
         assert result['entries_found'] == events_found
         assert result['entries_limit'] == 100
-        assert result['entries_total'] == 9
+        assert result['entries_total'] == 14
 
     # test pagination works fine with/without exclude_ignored_assets filter with/without premium
     db_history_events = DBHistoryEvents(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_history_events.db.user_write() as cursor:
         for limit, exclude_ignored, total, found in (
-            (None, False, 6, 6),  # premium without ignoring assets, we get all the events
+            (None, False, 8, 8),  # premium without ignoring assets, we get all the events
             (None, True, 2, 2),  # premium with ignoring assets (ETH), we get only 2 events
-            (3, False, 6, 3),  # free limit (3) without ignoring assets, total events are 6 but we get only 3 (limited)  # noqa: E501
+            (3, False, 8, 3),  # free limit (3) without ignoring assets, total events are 8 but we get only 3 (limited)  # noqa: E501
             (2, True, 2, 2),  # free limit (2) with ignoring assets, total events are 2, all shown (limit not exceeded)  # noqa: E501
-            (1, False, 6, 1),  # free limit (1) without ignoring assets, total events are 6 but we get only 1 (limited)  # noqa: E501
+            (1, False, 8, 1),  # free limit (1) without ignoring assets, total events are 8 but we get only 1 (limited)  # noqa: E501
             (1, True, 2, 1),  # free limit (1) with ignoring assets, total events are 2 but we get only 1 (limited)  # noqa: E501
         ):
             assert db_history_events.get_history_events_count(
