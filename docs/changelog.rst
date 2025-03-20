@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Editing an AssetMovement with a reference should now work fine again.
 * :bug:`-` Users will be able to see the address of each account within an xpub.
 * :bug:`-` An exception in the last decoding step will no longer stop transaction decoding in rotki.
 * :bug:`-` Failed paraswap v6 swaps will no longer fail to decode in rotki.

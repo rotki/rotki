@@ -991,11 +991,14 @@ class CreateHistoryEventSchema(Schema):
             if (blockchain := data['blockchain']) is not None:
                 extra_data['blockchain'] = blockchain
 
+            if (unique_id := data['unique_id']) is not None:
+                extra_data['reference'] = unique_id
+
             events = create_asset_movement_with_fee(
                 fee=fee,
                 asset=data['asset'],
                 location=data['location'],
-                unique_id=data['unique_id'],
+                unique_id=unique_id,
                 timestamp=data['timestamp'],
                 fee_asset=data['fee_asset'],
                 event_type=data['event_type'],
@@ -1010,7 +1013,7 @@ class CreateHistoryEventSchema(Schema):
                 asset=data['asset'],
                 amount=data['amount'],
                 location=data['location'],
-                unique_id=data['unique_id'],
+                unique_id=unique_id,
                 timestamp=data['timestamp'],
                 identifier=data.get('identifier'),
                 event_type=data['event_type'],
