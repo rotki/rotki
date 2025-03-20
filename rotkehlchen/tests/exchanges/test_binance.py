@@ -27,8 +27,9 @@ from rotkehlchen.exchanges.binance import (
     Binance,
     trade_from_binance,
 )
-from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Location
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.constants import A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
@@ -45,7 +46,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now_in_ms
 
 if TYPE_CHECKING:
@@ -113,60 +114,100 @@ def test_trade_from_binance(function_scope_binance):
         },
     ]
     our_expected_list = [
-        Trade(
-            timestamp=1512561941,
+        [SwapEvent(
+            timestamp=TimestampMS(1512561941000),
             location=Location.BINANCE,
-            base_asset=A_RDN,
-            quote_asset=A_ETH,
-            trade_type=TradeType.BUY,
-            amount=FVal(5.0),
-            rate=FVal(0.0063213),
-            fee=FVal(0.005),
-            fee_currency=A_RDN,
-            link='1',
-        ),
-        Trade(
-            timestamp=1531117990,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.03160650'),
+            unique_id='1',
+        ), SwapEvent(
+            timestamp=TimestampMS(1512561941000),
             location=Location.BINANCE,
-            base_asset=A_ETH,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=FVal(0.505),
-            rate=FVal(481.0),
-            fee=FVal(0.242905),
-            fee_currency=A_USDT,
-            link='2',
-        ),
-        Trade(
-            timestamp=1531728338,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_RDN,
+            amount=FVal('5.0'),
+            unique_id='1',
+        ), SwapEvent(
+            timestamp=TimestampMS(1512561941000),
             location=Location.BINANCE,
-            base_asset=A_BTC,
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=FVal(0.051942),
-            rate=FVal(6376.39),
-            fee=FVal(0.00005194),
-            fee_currency=A_BTC,
-            link='3',
-        ),
-        Trade(
-            timestamp=1531871806,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_RDN,
+            amount=FVal('0.005'),
+            unique_id='1',
+        )],
+        [SwapEvent(
+            timestamp=TimestampMS(1531117990000),
             location=Location.BINANCE,
-            base_asset=A_ADA,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=FVal(285.2),
-            rate=FVal(0.17442),
-            fee=FVal(0.00180015),
-            fee_currency=A_BNB,
-            link='4',
-        ),
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.505'),
+            unique_id='2',
+        ), SwapEvent(
+            timestamp=TimestampMS(1531117990000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('242.9050'),
+            unique_id='2',
+        ), SwapEvent(
+            timestamp=TimestampMS(1531117990000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal('0.242905'),
+            unique_id='2',
+        )],
+        [SwapEvent(
+            timestamp=TimestampMS(1531728338000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('331.20244938'),
+            unique_id='3',
+        ), SwapEvent(
+            timestamp=TimestampMS(1531728338000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_BTC,
+            amount=FVal('0.051942'),
+            unique_id='3',
+        ), SwapEvent(
+            timestamp=TimestampMS(1531728338000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BTC,
+            amount=FVal('0.00005194'),
+            unique_id='3',
+        )],
+        [SwapEvent(
+            timestamp=TimestampMS(1531871806000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ADA,
+            amount=FVal('285.2'),
+            unique_id='4',
+        ), SwapEvent(
+            timestamp=TimestampMS(1531871806000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('49.744584'),
+            unique_id='4',
+        ), SwapEvent(
+            timestamp=TimestampMS(1531871806000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BNB,
+            amount=FVal('0.00180015'),
+            unique_id='4',
+        )],
     ]
 
     for idx, binance_trade in enumerate(binance_trades_list):
-        our_trade = trade_from_binance(binance_trade, binance.symbols_to_pair, location=Location.BINANCE)  # noqa: E501
-        assert our_trade == our_expected_list[idx]
-        assert isinstance(our_trade.fee_currency, Asset)
+        _, events = trade_from_binance(binance_trade, binance.symbols_to_pair, location=Location.BINANCE)  # noqa: E501
+        assert events == our_expected_list[idx]
+        assert isinstance(events[2].asset, Asset)
 
 
 @pytest.mark.skipif(
@@ -223,7 +264,7 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
     assert balances[A_AXS].amount == FVal('122.09202928')
 
 
-def test_binance_query_trade_history(function_scope_binance):
+def test_binance_query_trade_history(function_scope_binance: 'Binance'):
     """Test that turning a binance trade as returned by the server to our format works"""
     binance = function_scope_binance
 
@@ -248,12 +289,15 @@ def test_binance_query_trade_history(function_scope_binance):
             else:
                 raise AssertionError('Unexpected binance request in test')
         else:
-            raise AssertionError('Unexpected binance request in test')
+            text = '[]'
 
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'request', side_effect=mock_my_trades):
-        trades = binance.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
+        events = binance.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1638529919),
+        )
 
     with function_scope_binance.db.conn.read_ctx() as cursor:
         assert function_scope_binance.db.get_dynamic_cache(
@@ -264,42 +308,76 @@ def test_binance_query_trade_history(function_scope_binance):
             queried_pair='BNBBTC',
         ) == 28457
 
-    expected_trades = [Trade(
-        timestamp=1499865549,
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1499865549590),
         location=Location.BINANCE,
-        base_asset=A_BNB,
-        quote_asset=A_BTC,
-        trade_type=TradeType.BUY,
-        amount=FVal('12'),
-        rate=FVal('4.00000100'),
-        fee=FVal('10.10000000'),
-        fee_currency=A_BNB,
-        link='28457',
-    ), Trade(
-        timestamp=1624529919,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BTC,
+        amount=FVal('48.0000120000000000'),
+        unique_id='28457',
+    ), SwapEvent(
+        timestamp=TimestampMS(1499865549590),
         location=Location.BINANCE,
-        base_asset=A_LUNA,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BNB,
+        amount=FVal('12.00000000'),
+        unique_id='28457',
+    ), SwapEvent(
+        timestamp=TimestampMS(1499865549590),
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BNB,
+        amount=FVal('10.10000000'),
+        unique_id='28457',
+    ), SwapEvent(
+        timestamp=TimestampMS(1624529919000),
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('19.800000064'),
+        location_label='binance',
+        unique_id='353fca443f06466db0c4dc89f94f027a',
+    ), SwapEvent(
+        timestamp=TimestampMS(1624529919000),
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_LUNA,
         amount=FVal('4.462'),
-        rate=FVal('4.437472'),
-        fee=FVal('0.2'),
-        fee_currency=A_EUR,
-        link='353fca443f06466db0c4dc89f94f027a',
-    ), Trade(
-        timestamp=1628529919,
+        location_label='binance',
+        unique_id='353fca443f06466db0c4dc89f94f027a',
+    ), SwapEvent(
+        timestamp=TimestampMS(1624529919000),
         location=Location.BINANCE,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.SELL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('0.2'),
+        location_label='binance',
+        unique_id='353fca443f06466db0c4dc89f94f027a',
+    ), SwapEvent(
+        timestamp=TimestampMS(1628529919000),
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
         amount=FVal('4.462'),
-        rate=FVal('4.437472'),
-        fee=FVal('0.2'),
-        fee_currency=A_EUR,
-        link='463fca443f06466db0c4dc89f94f027a',
+        location_label='binance',
+        unique_id='463fca443f06466db0c4dc89f94f027a',
+    ), SwapEvent(
+        timestamp=TimestampMS(1628529919000),
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_EUR,
+        amount=FVal('19.800000064'),
+        location_label='binance',
+        unique_id='463fca443f06466db0c4dc89f94f027a',
+    ), SwapEvent(
+        timestamp=TimestampMS(1628529919000),
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('0.2'),
+        location_label='binance',
+        unique_id='463fca443f06466db0c4dc89f94f027a',
     )]
-
-    assert trades == expected_trades
 
 
 def test_binance_query_trade_history_unexpected_data(function_scope_binance):
@@ -323,12 +401,12 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
         )
         binance.selected_pairs = query_specific_markets
         with patch_get, patch_response:
-            trades, _ = binance.query_online_trade_history(
-                start_ts=0,
-                end_ts=1564301134,
+            events = binance.query_online_history_events(
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(1564301134),
             )
 
-        assert len(trades) == 0
+        assert len(events) == 0
 
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"qty": "12.00000000"',
@@ -418,6 +496,8 @@ def test_binance_query_deposits_withdrawals(function_scope_binance: 'Binance') -
                     response_str = '[]'
             else:
                 raise AssertionError('Unexpected binance request in test')
+        elif 'myTrades' in url or 'fiat/payments' in url:
+            response_str = '[]'
         else:
             raise AssertionError('Unexpected binance request in test')
 
@@ -657,7 +737,8 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
                 response_str = next(get_fiat_withdraw_result)
             else:
                 raise AssertionError('Unexpected binance request in test')
-
+        elif 'myTrades' in url or 'fiat/payments' in url:
+            response_str = '[]'
         else:
             raise AssertionError('Unexpected binance request in test')
 
@@ -778,7 +859,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
-        assert mock_api_query_list.call_args_list == expected_calls
+        assert mock_api_query_list.call_args_list[:8] == expected_calls
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 11, 24, 3, 14, 15, tzinfo=datetime.UTC))
@@ -866,7 +947,7 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
 
     def mock_my_trades(url, params, *args, **kwargs):  # pylint: disable=unused-argument
         nonlocal count
-        if '/fiat/payments' not in url:
+        if 'myTrades' in url:
             count += 1
             market = params.get('symbol')
             assert market in markets and market not in seen
@@ -875,7 +956,7 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'request', side_effect=mock_my_trades):
-        binance.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
+        binance.query_online_history_events(start_ts=Timestamp(0), end_ts=Timestamp(1564301134))
 
     assert count == len(markets)
 

@@ -557,8 +557,8 @@ def mock_history_processing(
 
         # TODO: terrible way to check. Figure out something better
         limited_range_test = False
-        expected_trades_num = 4
-        expected_swap_events_num = 9
+        expected_trades_num = 2
+        expected_swap_events_num = 15
         expected_margin_num = 1
         expected_asset_movements_num = 21
         if not limited_range_test:
@@ -566,13 +566,13 @@ def mock_history_processing(
             expected_asset_movements_num = 21
         if end_ts == 1539713238:
             limited_range_test = True
-            expected_trades_num = 3
-            expected_swap_events_num = 9
+            expected_trades_num = 1
+            expected_swap_events_num = 15
             expected_margin_num = 1
             expected_asset_movements_num = 19
         if end_ts == 1601040361:
-            expected_trades_num = 3
-            expected_swap_events_num = 9
+            expected_trades_num = 1
+            expected_swap_events_num = 15
 
         trades = [x for x in events if isinstance(x, Trade)]
         assert len(trades) == expected_trades_num, f'Expected {expected_trades_num} but found {len(trades)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501

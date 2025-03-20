@@ -8,8 +8,9 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import BINANCEUS_BASE_URL, Binance
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_MYTRADES_RESPONSE,
@@ -18,7 +19,7 @@ from rotkehlchen.tests.utils.exchanges import (
 )
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
 def test_name():
@@ -64,23 +65,31 @@ def test_binanceus_trades_location(function_scope_binance):
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'request', side_effect=mock_my_trades):
-        trades = binance.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
-
-    expected_trade = Trade(
-        timestamp=1499865549,
-        location=Location.BINANCEUS,
-        base_asset=A_BNB,
-        quote_asset=A_BTC,
-        trade_type=TradeType.BUY,
-        amount=FVal('12'),
-        rate=FVal('4.00000100'),
-        fee=FVal('10.10000000'),
-        fee_currency=A_BNB,
-        link='28457',
-    )
-
-    assert len(trades) == 1
-    assert trades[0] == expected_trade
+        assert binance.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1564301134),
+        ) == [SwapEvent(
+            timestamp=TimestampMS(1499865549590),
+            location=Location.BINANCEUS,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_BTC,
+            amount=FVal('48.0000120000000000'),
+            unique_id='28457',
+        ), SwapEvent(
+            timestamp=TimestampMS(1499865549590),
+            location=Location.BINANCEUS,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_BNB,
+            amount=FVal('12.00000000'),
+            unique_id='28457',
+        ), SwapEvent(
+            timestamp=TimestampMS(1499865549590),
+            location=Location.BINANCEUS,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BNB,
+            amount=FVal('10.10000000'),
+            unique_id='28457',
+        )]
 
 
 @pytest.mark.parametrize('binance_location', [Location.BINANCEUS])

@@ -27,12 +27,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import (
-    BinancePair,
-    MarginPosition,
-    Trade,
-    TradeType,
-)
+from rotkehlchen.exchanges.data_structures import BinancePair, MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeInterface,
     ExchangeQueryBalances,
@@ -50,6 +45,11 @@ from rotkehlchen.history.events.structures.asset_movement import (
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -59,6 +59,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
     deserialize_timestamp_from_intms,
+    deserialize_timestamp_ms_from_intms,
 )
 from rotkehlchen.types import (
     ApiKey,
@@ -124,9 +125,8 @@ def trade_from_binance(
         binance_trade: dict,
         binance_symbols_to_pair: dict[str, BinancePair],
         location: Location,
-) -> Trade:
-    """Turn a binance trade returned from trade history to our common trade
-    history format
+) -> tuple[str, list[SwapEvent]]:
+    """Convert a trade returned from the Binance API into SwapEvents.
 
     From the official binance api docs (01/09/18):
     https://github.com/binance-exchange/binance-official-api-docs/blob/62ff32d27bb32d9cc74d63d547c286bb3c9707ef/rest-api.md#terminology
@@ -134,57 +134,46 @@ def trade_from_binance(
     base asset refers to the asset that is the quantity of a symbol.
     quote asset refers to the asset that is the price of a symbol.
 
-    Throws:
+    Returns a tuple containing the unique_id and list of SwapEvents for this trade.
+    May raise:
         - UnsupportedAsset due to asset_from_binance
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
-    amount = deserialize_asset_amount(binance_trade['qty'])
-    rate = deserialize_price(binance_trade['price'])
-    if binance_trade['symbol'] not in binance_symbols_to_pair:
+    if (binance_pair := binance_symbols_to_pair.get(binance_trade['symbol'])) is None:
         raise DeserializationError(
             f'Error reading a {location!s} trade. Could not find '
             f'{binance_trade["symbol"]} in binance_symbols_to_pair',
         )
 
-    binance_pair = binance_symbols_to_pair[binance_trade['symbol']]
-    timestamp = deserialize_timestamp_from_intms(binance_trade['time'])
-
-    base_asset = binance_pair.base_asset
-    quote_asset = binance_pair.quote_asset
-
-    if binance_trade['isBuyer']:
-        order_type = TradeType.BUY
-        # e.g. in RDNETH we buy RDN by paying ETH
-    else:
-        order_type = TradeType.SELL
-
-    fee_currency = asset_from_binance(binance_trade['commissionAsset'])
-    fee = deserialize_fee(binance_trade['commission'])
-
-    log.debug(
-        f'Processing {location!s} Trade',
-        amount=amount,
-        rate=rate,
-        timestamp=timestamp,
-        pair=binance_trade['symbol'],
-        base_asset=base_asset,
-        quote=quote_asset,
-        order_type=order_type,
-        commission_asset=binance_trade['commissionAsset'],
-        fee=fee,
+    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        raw_trade_type='buy' if binance_trade['isBuyer'] else 'sell',
+        base_asset=binance_pair.base_asset,
+        quote_asset=binance_pair.quote_asset,
+        amount=deserialize_asset_amount(binance_trade['qty']),
+        rate=deserialize_price(binance_trade['price']),
     )
-    return Trade(
+    log.debug(
+        f'Processing {location!s} Swap',
+        timestamp=(timestamp := deserialize_timestamp_ms_from_intms(binance_trade['time'])),
+        pair=binance_trade['symbol'],
+        spend_asset=spend_asset,
+        spend_amount=spend_amount,
+        receive_asset=receive_asset,
+        receive_amount=receive_amount,
+        fee_currency=(fee_currency := asset_from_binance(binance_trade['commissionAsset'])),
+        fee=(fee := deserialize_fee(binance_trade['commission'])),
+    )
+    return (unique_id := str(binance_trade['id'])), create_swap_events(
         timestamp=timestamp,
         location=location,
-        base_asset=base_asset,
-        quote_asset=quote_asset,
-        trade_type=order_type,
-        amount=amount,
-        rate=rate,
-        fee=fee,
-        fee_currency=fee_currency,
-        link=str(binance_trade['id']),
+        spend_asset=spend_asset,
+        spend_amount=spend_amount,
+        receive_asset=receive_asset,
+        receive_amount=receive_amount,
+        fee_asset=fee_currency,
+        fee_amount=fee,
+        unique_id=unique_id,
     )
 
 
@@ -1126,11 +1115,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         )
         return dict(returned_balances), ''
 
-    def query_online_trade_history(
+    def _query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
+    ) -> list[SwapEvent]:
         """
         For trades coming from api/myTrades this function won't respect the provided range and
         will always query all the trades until now. The reason is that binance forces us to query
@@ -1195,12 +1184,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             raw_data.sort(key=operator.itemgetter('time'))
 
-        trades: list[Trade] = []
-        last_trade_by_pair: dict[str, Trade] = {}
+        events: list[SwapEvent] = []
+        last_pair_to_tradeid: dict[str, str] = {}
         for raw_trade in raw_data:
             try:
                 trade_pair = raw_trade['symbol']
-                trade = trade_from_binance(
+                unique_id, swap_events = trade_from_binance(
                     binance_trade=raw_trade,
                     binance_symbols_to_pair=self.symbols_to_pair,
                     location=self.location,
@@ -1233,19 +1222,15 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 continue
 
             # trades are ordered in asc order by us
-            last_trade_by_pair[trade_pair] = trade
-            trades.append(trade)
+            last_pair_to_tradeid[trade_pair] = unique_id
+            events.extend(swap_events)
 
         with self.db.conn.write_ctx() as write_cursor:
-            for symbol, trade in last_trade_by_pair.items():
-                if trade.link is None:
-                    log.error(f'Missing link field in binance trade {trade}')
-                    continue
-
+            for symbol, unique_id in last_pair_to_tradeid.items():
                 self.db.set_dynamic_cache(
                     write_cursor=write_cursor,
                     name=DBCacheDynamic.BINANCE_PAIR_LAST_ID,
-                    value=int(trade.link),
+                    value=int(unique_id),
                     location=self.location.serialize(),
                     location_name=self.name,
                     queried_pair=symbol,
@@ -1253,12 +1238,16 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
         fiat_payments = self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)
         if fiat_payments:
-            trades += fiat_payments
-            trades.sort(key=lambda x: x.timestamp)
+            events.extend(fiat_payments)
+            events.sort(key=lambda x: x.timestamp)
 
-        return trades, (start_ts, end_ts)
+        return events
 
-    def _query_online_fiat_payments(self, start_ts: Timestamp, end_ts: Timestamp) -> list[Trade]:
+    def _query_online_fiat_payments(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> list[SwapEvent]:
         if self.location == Location.BINANCEUS:
             return []  # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
 
@@ -1281,41 +1270,52 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         )
         log.debug(f'{self.name} fiat sells history result', results_num=len(fiat_sells))
 
-        trades = []
-        for idx, raw_fiat in enumerate(fiat_buys + fiat_sells):
-            trade_type = TradeType.BUY if idx < len(fiat_buys) else TradeType.SELL
-            trade = self._deserialize_fiat_payment(raw_fiat, trade_type=trade_type)
-            if trade:
-                trades.append(trade)
+        events = []
+        for is_buy, fiat_events in (
+            (True, fiat_buys),
+            (False, fiat_sells),
+        ):
+            for raw_fiat in fiat_events:
+                events.extend(self._deserialize_fiat_payment(
+                    raw_data=raw_fiat,
+                    is_buy=is_buy,
+                ))
 
-        return trades
+        return events
 
     def _deserialize_fiat_payment(
             self,
             raw_data: dict[str, Any],
-            trade_type: TradeType,
-    ) -> Trade | None:
+            is_buy: bool,
+    ) -> list[SwapEvent]:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
-        Can log error/warning and return None if something went wrong at deserialization
+        Can log error/warning and return an empty list if something went wrong at deserialization
         """
         try:
             if 'status' not in raw_data or raw_data['status'] != 'Completed':
-                log.error(
-                    f'Found {self.location!s} fiat payment with failed status. Ignoring it.',
-                )
-                return None
+                log.error(f'Found {self.location!s} fiat payment with failed status. Ignoring it.')
+                return []
 
-            fiat_asset = asset_from_binance(raw_data['fiatCurrency'])
-            tx_id = get_key_if_has_val(raw_data, 'orderNo')
-            timestamp = deserialize_timestamp_from_intms(raw_data['createTime'])
-            fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
-            link_str = str(tx_id) if tx_id else ''
-            crypto_asset = asset_from_binance(raw_data['cryptoCurrency'])
-            obtain_amount = deserialize_asset_amount_force_positive(
-                raw_data['obtainAmount'],
+            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+                raw_trade_type='buy' if is_buy else 'sell',
+                base_asset=asset_from_binance(raw_data['cryptoCurrency']),
+                quote_asset=(fiat_asset := asset_from_binance(raw_data['fiatCurrency'])),
+                amount=deserialize_asset_amount_force_positive(raw_data['obtainAmount']),
+                rate=deserialize_price(raw_data['price']),
             )
-            rate = deserialize_price(raw_data['price'])
+            return create_swap_events(
+                timestamp=deserialize_timestamp_ms_from_intms(raw_data['createTime']),
+                location=self.location,
+                spend_asset=spend_asset,
+                spend_amount=spend_amount,
+                receive_asset=receive_asset,
+                receive_amount=receive_amount,
+                fee_asset=fiat_asset,
+                fee_amount=Fee(deserialize_asset_amount(raw_data['totalFee'])),
+                location_label=self.name,
+                unique_id=get_key_if_has_val(raw_data, 'orderNo'),
+            )
         except UnknownAsset as e:
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
@@ -1339,23 +1339,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 asset_movement=raw_data,
                 error=msg,
             )
-        else:
-            base_asset = crypto_asset
-            quote_asset = fiat_asset
-            return Trade(
-                timestamp=timestamp,
-                location=self.location,
-                base_asset=base_asset,
-                quote_asset=quote_asset,
-                trade_type=trade_type,
-                amount=obtain_amount,
-                rate=rate,
-                fee=fee,
-                fee_currency=quote_asset,
-                link=link_str,
-            )
 
-        return None
+        return []
 
     def _deserialize_fiat_movement(
             self,
@@ -1551,6 +1536,27 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         return results
 
     def query_online_history_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> Sequence[HistoryBaseEntry]:
+        events: list[HistoryBaseEntry] = []
+        for query_func in (
+            self._query_online_asset_movements,
+            self._query_online_trade_history,
+        ):
+            try:
+                events.extend(query_func(start_ts=start_ts, end_ts=end_ts))
+            except (RemoteError, BinancePermissionError) as e:
+                log.error(
+                    f'Failed to call {self.name} {query_func.__name__} '
+                    f'between {start_ts} and {end_ts} due to {e!s}',
+                )
+                continue
+
+        return events
+
+    def _query_online_asset_movements(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
