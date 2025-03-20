@@ -17,12 +17,12 @@ class ZeroxDecoder(ZeroxCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
+            ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
-            evm_inquirer=evm_inquirer,
+            evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             router_address=ZEROX_ROUTER,
