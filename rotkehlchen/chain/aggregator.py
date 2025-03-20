@@ -55,6 +55,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBal
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
+from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
@@ -228,6 +229,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         AaveBalances,
         CurveLendBalances,
         UniswapV3Balances,
+        PendleBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,

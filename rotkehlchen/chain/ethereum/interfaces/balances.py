@@ -53,6 +53,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'uniswap-v3',
     'hedgey',
     'hyperliquid',
+    'pendle',
 ]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
 
