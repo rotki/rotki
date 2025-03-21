@@ -2,6 +2,12 @@
 Changelog
 =========
 
+* :bug:`-` Editing an AssetMovement with a reference should now work fine again.
+* :bug:`-` Users will be able to see the address of each account within an xpub.
+* :bug:`-` An exception in the last decoding step will no longer stop transaction decoding in rotki.
+* :bug:`-` Failed paraswap v6 swaps will no longer fail to decode in rotki.
+* :bug:`-` DXDAO orders will no longer fail to decode in rotki.
+* :bug:`-` Users should now be again able to edit the underlying tokens for any pool tokens.
 * :feature:`9600` rotki will now correctly decode swaps going through the rainbow router on all supported chains.
 * :feature:`-` Some more gitcoin rounds are added to rotki. Especially the new retro funding rounds.
 * :feature:`9571` rotki will now correctly decode Curve Savings transactions.

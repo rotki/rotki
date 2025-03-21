@@ -47,14 +47,20 @@ function getUnderlyingTokenErrors(underlyingTokens: string | Record<string, { ad
   return messages;
 }
 
+interface UnderlyingTokensValidationError {
+  underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>;
+}
+
+type SchemaValidationError = {
+  _schema: string[];
+} | {
+  Schema: string[];
+};
+
 function handleError(
   message:
-    | {
-      underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>;
-    }
-    | {
-      _schema: string[];
-    },
+    | UnderlyingTokensValidationError
+    | SchemaValidationError,
 ) {
   if ('underlyingTokens' in message) {
     const messages = getUnderlyingTokenErrors(message.underlyingTokens);
@@ -64,8 +70,9 @@ function handleError(
     });
   }
   else {
+    const schema = '_schema' in message ? message._schema : message.Schema;
     setMessage({
-      description: message._schema[0],
+      description: schema[0],
       title: t('asset_form.underlying_tokens'),
     });
   }
@@ -116,10 +123,10 @@ async function save(): Promise<boolean> {
       });
     }
     else {
-      if (errors.underlyingTokens || errors._schema)
+      if (errors.underlyingTokens || errors._schema || errors.Schema)
         handleError(errors);
 
-      set(errorMessages, omit(errors, ['underlyingTokens', '_schema']));
+      set(errorMessages, omit(errors, ['underlyingTokens', '_schema', 'Schema']));
       formRef?.validate();
     }
   }

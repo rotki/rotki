@@ -682,8 +682,12 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             has_premium=True,
             group_by_event_ids=False,
         )) == 3  # including the fee event.
+        # Check that notes are set properly and that reference is set by the unique_id
+        assert events[0].event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+        assert events[0].extra_data == {'reference': 'BITFINEX-543'}
         assert events[1].event_subtype == HistoryEventSubType.REMOVE_ASSET
         assert events[1].notes == 'Main event note'
+        assert events[1].extra_data == {'reference': 'BITFINEX-344'}
         assert events[2].event_subtype == HistoryEventSubType.FEE
         assert events[2].notes == 'Fee event note'
 
@@ -701,7 +705,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         'entry_type': 'asset movement event',
         'event_identifier': '7e4d3805a88cbbcdc35badc4547044be803724146c7b9f0165cadd62c1616205',
         'sequence_index': 0,
-        'extra_data': None,
+        'extra_data': {'reference': 'BITFINEX-344'},
     }
 
     # test editing unknown fails
