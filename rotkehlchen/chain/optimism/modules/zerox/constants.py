@@ -9,7 +9,7 @@ ZEROX_FLASH_WALLET: Final = string_to_evm_address(
     '0xA3128d9b7Cca7d5Af29780a56abEec12B05a6740',
 )
 
-# Skipped version v1.1, v1.2, v1.3 and v1.5 because these contracts dosn't have transactions
+# Skipped version v1.1, v1.2, v1.3 and v1.5 because these contracts don't have transactions
 SETTLER_ROUTERS: Final = {
     string_to_evm_address('0x7600F49428e551AF89D5C6b8e77B8cF3e198F936'),  # V1.4 commit: 0x336fda7ac33e46626cba703a82a53ad517aa8336000000000000000000000000  # noqa: E501
     string_to_evm_address('0x1a3b48EA0C6e9A52511A196A287fa8371e5Ee7a0'),  # V1.6 commit: 0xa5a3b402765eb2940a6e29efa81a58e222d0ae6a000000000000000000000000  # noqa: E501
