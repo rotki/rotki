@@ -673,12 +673,15 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         entry['identifier'] = result['identifier']
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events(
+        assert len(events := db.get_history_events(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
         )) == 3  # including the fee event.
+        # Check that references are set by the unique_id
+        assert events[0].extra_data == {'reference': 'BITFINEX-543'}
+        assert events[1].extra_data == {'reference': 'BITFINEX-344'}
 
     # test editing unknown fails
     entry = entries[1].copy()
