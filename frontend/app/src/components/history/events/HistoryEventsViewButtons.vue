@@ -13,6 +13,7 @@ const emit = defineEmits<{
   'refresh': [];
   'show:form': [payload: ShowEventForm];
   'show:add-transaction-form': [];
+  'show:repulling-transactions-form': [];
 }>();
 
 const { t } = useI18n();
@@ -106,6 +107,18 @@ const { t } = useI18n();
           <RuiIcon name="lu-plus" />
         </template>
         {{ t('transactions.dialog.add_tx') }}
+      </RuiButton>
+
+      <RuiButton
+        variant="list"
+        data-cy="history-events__repulling-transactions"
+        :disabled="loading"
+        @click="emit('show:repulling-transactions-form')"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-clock-arrow-up" />
+        </template>
+        {{ t('transactions.repulling.title') }}
       </RuiButton>
     </div>
   </RuiMenu>

@@ -7,6 +7,7 @@ import type {
   HistoryEventEntry,
   HistoryEventRequestPayload,
   PullEvmTransactionPayload,
+  RepullingTransactionPayload,
   ShowEventHistoryForm,
 } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
@@ -20,6 +21,7 @@ import HistoryEventsTable from '@/components/history/events/HistoryEventsTable.v
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
 import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
+import RepullingTransactionFormDialog from '@/components/history/events/tx/RepullingTransactionFormDialog.vue';
 import TransactionFormDialog from '@/components/history/events/tx/TransactionFormDialog.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -111,6 +113,7 @@ const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
 
 const addTransactionModelValue = ref<AddTransactionHashPayload>();
+const repullingTransactionModelValue = ref<RepullingTransactionPayload>();
 
 const { useIsTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
@@ -392,6 +395,15 @@ function addTxHash() {
   });
 }
 
+function repullingTransactions() {
+  set(repullingTransactionModelValue, {
+    address: '',
+    evmChain: '',
+    fromTimestamp: 0,
+    toTimestamp: 0,
+  });
+}
+
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -454,6 +466,7 @@ onUnmounted(() => {
         @refresh="refresh(true)"
         @show:form="showForm($event)"
         @show:add-transaction-form="addTxHash()"
+        @show:repulling-transactions-form="repullingTransactions()"
       />
     </template>
 
@@ -549,6 +562,12 @@ onUnmounted(() => {
         v-model="addTransactionModelValue"
         :loading="sectionLoading"
         @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
+      />
+
+      <RepullingTransactionFormDialog
+        v-model="repullingTransactionModelValue"
+        :loading="sectionLoading"
+        @refresh="fetchAndRedecodeEvents()"
       />
 
       <MissingRulesDialog

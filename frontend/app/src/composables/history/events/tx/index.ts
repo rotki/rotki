@@ -5,11 +5,13 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { useSupportedChains } from '@/composables/info/chains';
 import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
+import { displayDateFormatter } from '@/data/date-formatter';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useHistoryStore } from '@/store/history';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
@@ -17,6 +19,8 @@ import {
   type AddTransactionHashPayload,
   type EvmChainAddress,
   OnlineHistoryEventsQueryType,
+  type RepullingTransactionPayload,
+  type RepullingTransactionResponse,
   TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
@@ -28,7 +32,7 @@ import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
-import { type Blockchain, toHumanReadable } from '@rotki/common';
+import { type Blockchain, Severity, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { groupBy, omit } from 'es-toolkit';
 
@@ -42,6 +46,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     fetchTransactionsTask,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
+    repullingTransactions: repullingTransactionsCaller,
   } = useHistoryEventsApi();
 
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
@@ -56,6 +61,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     fetchUndecodedTransactionsStatus,
   } = useHistoryTransactionDecoding();
   const { resetProtocolCacheUpdatesStatus, resetUndecodedTransactionsStatus } = useHistoryStore();
+  const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
   const { addresses } = useAccountAddresses();
 
   queue.setOnCompletion(() => {
@@ -330,8 +336,61 @@ export const useHistoryTransactions = createSharedComposable(() => {
     return { message, success };
   };
 
+  const repullingTransactions = async (payload: RepullingTransactionPayload, refresh: () => void): Promise<void> => {
+    const taskType = TaskType.REPULLING_TXS;
+
+    const { taskId } = await repullingTransactionsCaller(payload);
+
+    const messagePayload = {
+      address: payload.address,
+      chain: payload.evmChain ? toHumanReadable(payload.evmChain) : undefined,
+      from: displayDateFormatter.format(new Date(payload.fromTimestamp * 1000), get(dateDisplayFormat)),
+      to: displayDateFormatter.format(new Date(payload.toTimestamp * 1000), get(dateDisplayFormat)),
+    };
+
+    const isAddressSpecified = payload.address && payload.evmChain;
+
+    const taskMeta = {
+      description: isAddressSpecified
+        ? t('actions.repulling_transaction.task.description', messagePayload)
+        : t('actions.repulling_transaction.task.no_address_or_chain_transaction', messagePayload),
+      title: t('actions.repulling_transaction.task.title'),
+    };
+
+    const taskFunc = async (): Promise<void> => {
+      try {
+        const { result } = await awaitTask<RepullingTransactionResponse, TaskMeta>(taskId, taskType, taskMeta, true);
+        const { newTransactionsCount } = result;
+        notify({
+          display: true,
+          message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
+          severity: Severity.INFO,
+          title: t('actions.repulling_transaction.task.title'),
+        });
+        if (newTransactionsCount) {
+          refresh();
+        }
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
+          logger.error(error);
+          notify({
+            display: true,
+            message: isAddressSpecified
+              ? t('actions.repulling_transaction.error.description', messagePayload)
+              : t('actions.repulling_transaction.error.no_address_or_chain_transaction', messagePayload),
+            title: t('actions.repulling_transaction.task.title'),
+          });
+        }
+      }
+    };
+
+    startPromise(taskFunc());
+  };
+
   return {
     addTransactionHash,
     refreshTransactions,
+    repullingTransactions,
   };
 });

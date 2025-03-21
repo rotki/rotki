@@ -687,6 +687,21 @@
         }
       }
     },
+    "repulling_transaction": {
+      "error": {
+        "description": "Failed to re-pull transactions for {address} ({chain}).",
+        "no_address_or_chain_transaction": "Failed to re-pull transactions"
+      },
+      "success": {
+        "description": "{length} transactions re-pulled",
+        "no_tx_description": "No transactions re-pulled"
+      },
+      "task": {
+        "description": "Re-pulling transactions for {address} ({chain}) from {from} to {to}.",
+        "no_address_or_chain_transaction": "Re-pulling transactions from {from} to {to}",
+        "title": "Re-pulling transactions"
+      }
+    },
     "session": {
       "add_queriable_address": {
         "error": {
@@ -4635,6 +4650,11 @@
       "title": "History Events Query Status"
     },
     "refresh_tooltip": "Fetch latest events",
+    "repulling": {
+      "action": "Re-Pull Transaction",
+      "address_hint": "Leave it empty to re-pull transactions from all addresses",
+      "title": "Re-Pulling Transactions"
+    },
     "title": "History Events",
     "unignore": "Unignore events in Accounting"
   },

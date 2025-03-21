@@ -52,6 +52,15 @@ export const EvmChainAddress = z.object({
 
 export type EvmChainAddress = z.infer<typeof EvmChainAddress>;
 
+export interface RepullingTransactionPayload extends Partial<EvmChainAddress> {
+  readonly fromTimestamp: number;
+  readonly toTimestamp: number;
+}
+
+export interface RepullingTransactionResponse {
+  newTransactionsCount: number;
+}
+
 export const EvmChainLikeAddress = z.object({
   address: z.string(),
   chain: z.string(),
