@@ -217,7 +217,7 @@ defineExpose({
       :data-category="category"
       :category="category"
       class="mt-4"
-      group
+      group="evm"
       :accounts="accounts"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
@@ -236,6 +236,7 @@ defineExpose({
               :chains="getChains(row)"
               :tags="visibleTags"
               :group-id="getGroupId(row)"
+              :group="row.data.type === 'xpub' ? 'xpub' : undefined"
               :category="row.category || ''"
               @edit="emit('edit', $event)"
             />

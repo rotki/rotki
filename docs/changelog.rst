@@ -10,6 +10,12 @@ Changelog
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
+* :bug:`-` Editing an AssetMovement with a reference should now work fine again.
+* :bug:`-` Users will be able to see the address of each account within an xpub.
+* :bug:`-` An exception in the last decoding step will no longer stop transaction decoding in rotki.
+* :bug:`-` Failed paraswap v6 swaps will no longer fail to decode in rotki.
+* :bug:`-` DXDAO orders will no longer fail to decode in rotki.
+* :bug:`-` Users should now be again able to edit the underlying tokens for any pool tokens.
 
 * :release:`1.38.1 <2025-03-14>`
 * :feature:`9385` Users will see the default label using the validator index when exporting validators.

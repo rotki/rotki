@@ -47,7 +47,7 @@ class Paraswapv6CommonDecoder(ParaswapCommonDecoder, ABC):
         """Decode Paraswap v6 swaps in post decoding
         since they don't have any relevant log event.
         """
-        if transaction.input_data[:4] not in PARASWAP_METHODS:
+        if transaction.input_data[:4] not in PARASWAP_METHODS or len(all_logs) == 0:  # length check is to protect due to all_logs[-1] below  # noqa: E501
             return decoded_events
 
         self._decode_swap(
