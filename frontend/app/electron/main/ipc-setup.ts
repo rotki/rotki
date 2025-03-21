@@ -12,7 +12,9 @@ import { selectPort } from '@electron/main/port-utils';
 import { assert, type DebugSettings } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { dialog, ipcMain, nativeTheme, shell } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import electronUpdater from 'electron-updater';
+
+const { autoUpdater } = electronUpdater;
 
 interface Callbacks {
   quit: () => Promise<void>;

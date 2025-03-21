@@ -93,7 +93,7 @@
     "dotenv-cli": "8.0.0",
     "electron": "35.0.3",
     "electron-builder": "25.1.8",
-    "electron-store": "8.2.0",
+    "electron-store": "10.0.1",
     "fake-indexeddb": "6.0.0",
     "flush-promises": "1.0.2",
     "jsdom": "26.0.0",

@@ -19,6 +19,8 @@ export default defineConfig({
     sourcemap: isDevelopment ? 'inline' : false,
     outDir: 'dist',
     assetsDir: '.',
+    target: 'node22',
+    ssr: true,
     minify: !isDevelopment,
     lib: {
       entry: 'electron/preload/index.ts',
@@ -31,5 +33,8 @@ export default defineConfig({
       },
     },
     emptyOutDir: false,
+  },
+  esbuild: {
+    target: 'node22',
   },
 });
