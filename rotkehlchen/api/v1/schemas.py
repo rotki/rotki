@@ -4054,7 +4054,7 @@ class RefetchEvmTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchem
                 query, bindings = 'SELECT COUNT(*) FROM blockchain_accounts WHERE account=?', [address]  # noqa: E501
                 if (evm_chain := data['evm_chain']) is not None:
                     query += ' AND blockchain=?'
-                    bindings.append(evm_chain.serialize_for_db())
+                    bindings.append(evm_chain.to_blockchain().value)
 
                 if cursor.execute(query, bindings).fetchone()[0] == 0:
                     raise ValidationError(
