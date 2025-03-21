@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
 import process from 'node:process';
 import semver from 'semver';
-import pkg from '../package.json' assert { type: 'json' };
+import pkg from '../package.json' with { type: 'json' };
 
 const pnpmVersion = `${execSync('pnpm --version')}`.trim();
 const requiredPnpmVersion = pkg.engines.pnpm;
