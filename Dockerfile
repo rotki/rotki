@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=$BUILDPLATFORM node:20-bookworm AS frontend-build-stage
+FROM --platform=$BUILDPLATFORM node:22-bookworm AS frontend-build-stage
 
 ARG BUILDARCH
 ENV CYPRESS_INSTALL_BINARY=0
