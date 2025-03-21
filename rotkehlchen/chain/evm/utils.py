@@ -1,11 +1,11 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Final
 
 from web3.types import BlockIdentifier
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -47,8 +47,7 @@ FVAL_ERROR_LOCATION: Final = 'uniswap-like pool price query'
 def lp_price_from_uniswaplike_pool_contract(
         evm_inquirer: 'EvmNodeInquirer',
         token: EvmToken,
-        token_price_func: Callable,
-        token_price_func_args: list[Any],
+        price_func: Callable[[Asset], Price],
         block_identifier: BlockIdentifier,
 ) -> Price | None:
     """
@@ -62,6 +61,10 @@ def lp_price_from_uniswaplike_pool_contract(
     - Pooled amount of token 0
     - Pooled amount of token 1
     - Total supply of pool token
+
+    token is the Uniswap V2 pair token and price_func a function to query
+    the price of the assets since this logic can use both current and historical
+    prices.
     """
     if token.protocol is None:
         return None
@@ -177,8 +180,8 @@ def lp_price_from_uniswaplike_pool_contract(
             f'{token.evm_address} with values {decoded!s}. f{e}',
         )
         return None
-    token0_price = token_price_func(token0, *token_price_func_args)
-    token1_price = token_price_func(token1, *token_price_func_args)
+    token0_price = price_func(token0)
+    token1_price = price_func(token1)
 
     if ZERO in (token0_price, token1_price):
         log.debug(

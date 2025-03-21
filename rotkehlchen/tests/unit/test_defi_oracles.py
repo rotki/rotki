@@ -114,7 +114,7 @@ def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylin
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://base.llamarpc.com', owned=True, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='base mainnet', endpoint='https://mainnet.base.org', owned=False, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='polygon', endpoint='https://polygon.drpc.org', owned=True, blockchain=SupportedBlockchain.POLYGON_POS), active=True, weight=ONE),)])  # noqa: E501
 def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
     """Test that Uniswap V2 and V3 oracles return correct prices in evm chains"""
@@ -132,7 +132,7 @@ def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
     assert inquirer_defi._uniswapv2.query_current_price(
         from_asset=A_ETH,
         to_asset=A_ARBITRUM_USDC,
-    ) == Price(FVal('3212.0656284514484'))
+    ) == Price(FVal('2068.8461045351073'))
 
     # v3 historical on polygon
     assert inquirer_defi._uniswapv3.query_historical_price(
@@ -145,13 +145,13 @@ def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
     assert inquirer_defi._uniswapv3.query_current_price(
         from_asset=A_ETH,
         to_asset=A_OPTIMISM_USDT,
-    ) == Price(FVal('3214.5282531850976'))
+    ) == Price(FVal('2072.002613849234'))
 
     # v3 current on bsc
     assert inquirer_defi._uniswapv3.query_current_price(
         from_asset=A_BSC_USDT,
         to_asset=A_BSC_BNB,
-    ) == Price(FVal('0.001433422881060733'))
+    ) == Price(FVal('0.0015756749034228114'))
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

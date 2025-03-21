@@ -552,6 +552,15 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             ):
                 continue
 
+            # If the block_identifier is different from 'latest'
+            # this query should be routed to an archive node
+            if (
+                kwargs.get('block_identifier', 'latest') != 'latest' and
+                web3node is not None and
+                web3node.is_archive is False
+            ):
+                continue
+
             try:
                 web3 = web3node.web3_instance if web3node is not None else None
                 result = method(web3, **kwargs)

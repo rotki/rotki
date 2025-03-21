@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
+from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import (
@@ -26,7 +28,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.types import UNISWAP_PROTOCOL, UNISWAPV3_PROTOCOL, Price, Timestamp
 
 from .types import HistoricalPrice, HistoricalPriceOracle, HistoricalPriceOracleInstance
 
@@ -172,6 +174,18 @@ class PriceHistorian:
                 to_asset=to_asset,
                 timestamp=timestamp,
             )
+
+        if from_asset.is_evm_token() and (pool_token := from_asset.resolve_to_evm_token()).protocol in {UNISWAP_PROTOCOL, UNISWAPV3_PROTOCOL}:  # noqa: E501
+            try:
+                return PriceHistorian.query_uniswap_position_price(
+                    pool_token=pool_token,
+                    pool_token_amount=ONE,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                )
+            except (RemoteError, NoPriceForGivenTimestamp):
+                log.error(f'Could not query uniswap position price for {from_asset.identifier} and time {timestamp}.')  # noqa: E501
+                return None
 
         return None
 
@@ -351,3 +365,38 @@ class PriceHistorian:
         )
 
         return assets_price
+
+    @staticmethod
+    def query_uniswap_position_price(
+            pool_token: EvmToken,
+            pool_token_amount: FVal,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
+        """Return the uniswap position value at the given timestamp. Works both with V2 and V3.
+
+        Note: This function should only be called for a Uniswap liquidity token.
+
+        May raise:
+            RemoteError: If an unexpected response is returned on get_blocknumber_by_time function
+            NoPriceForGivenTimestamp if we can't find a price for the asset in the given timestamp
+        """
+        evm_inquirer = Inquirer.get_evm_manager(chain_id=pool_token.chain_id).node_inquirer
+        block_number = evm_inquirer.get_blocknumber_by_time(timestamp)
+        if pool_token.protocol == UNISWAP_PROTOCOL:
+            if (pool_price := lp_price_from_uniswaplike_pool_contract(
+                evm_inquirer=evm_inquirer,
+                token=pool_token,
+                price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
+                block_identifier=block_number,
+            )) is not None:
+                return Price(pool_token_amount * pool_price)
+
+            return ZERO_PRICE
+
+        return get_uniswap_v3_position_price(
+            token=pool_token,
+            evm_inquirer=evm_inquirer,
+            block_identifier=block_number,
+            price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
+        )

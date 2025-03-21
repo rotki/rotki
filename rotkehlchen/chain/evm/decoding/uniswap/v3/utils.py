@@ -1,11 +1,14 @@
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, Literal
 
 from eth_abi import encode as encode_abi
 from eth_utils import to_checksum_address, to_hex
 from web3 import Web3
 from web3.exceptions import Web3Exception
+from web3.types import BlockIdentifier
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.oracles.constants import UNISWAP_FACTORY_ADDRESSES
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
@@ -23,7 +26,6 @@ from .constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.inquirer import Inquirer
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -103,10 +105,16 @@ def calculate_amount(
 
 def get_uniswap_v3_position_price(
         evm_inquirer: 'EvmNodeInquirer',
-        inquirer: 'Inquirer',
         token: 'EvmToken',
+        price_func: Callable[[Asset], Price],
+        block_identifier: BlockIdentifier = 'latest',
 ) -> Price:
-    """Get the USD price of a Uniswap V3 LP position identified by the token's collectible id."""
+    """
+    Get the price of a Uniswap V3 LP position identified by the token's collectible ID.
+
+    `price_func` is a function to get the price of the asset, allowing this function to be used
+    for both current and historical prices.
+    """
     if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
         log.error(f'Failed to find Uniswap V3 position price for {token} due to missing token ID.')
         return ZERO_PRICE
@@ -123,6 +131,7 @@ def get_uniswap_v3_position_price(
             abi=uniswap_v3_nft_manager.abi,
             method_name='positions',
             arguments=[int(collectible_id)],
+            block_identifier=block_identifier,
         )
     except (RemoteError, ValueError) as e:
         log.error(f'Failed to query Uniswap V3 position information from nft contract for {token} due to {e!s}')  # noqa: E501
@@ -146,6 +155,7 @@ def get_uniswap_v3_position_price(
             contract_address=pool_address,
             abi=uniswap_v3_pool_abi,
             method_name='slot0',
+            block_identifier=block_identifier,
         )
     except RemoteError as e:
         log.error(f'Failed to query Uniswap V3 pool contract slot0 for {token} due to {e!s}')
@@ -188,7 +198,7 @@ def get_uniswap_v3_position_price(
             )
             continue
 
-        asset_usd_price = inquirer.find_usd_price(asset)
+        asset_usd_price = price_func(asset)
         if asset_usd_price == ZERO_PRICE:
             continue
 

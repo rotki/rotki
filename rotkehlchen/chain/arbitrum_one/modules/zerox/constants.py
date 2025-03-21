@@ -2,7 +2,7 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-# Skipped versions v1.1, v1.2, and v1.4 because these contracts dosn't have transactions
+# Skipped versions v1.1, v1.2, and v1.4 because these contracts don't have transactions
 SETTLER_ROUTERS: Final = {
     string_to_evm_address('0x2b6625AAFC65373e5a82A0349F777FA11F7F04d1'),  # V1.3 commit: 0x336fda7ac33e46626cba703a82a53ad517aa8336000000000000000000000000  # noqa: E501
     string_to_evm_address('0xc8e09d4Ac2bf8b83a842068A0A6e79E118414a1d'),  # V1.5 commit: 0xa5a3b402765eb2940a6e29efa81a58e222d0ae6a000000000000000000000000  # noqa: E501

@@ -242,8 +242,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     elif token.protocol == UNISWAPV3_PROTOCOL:
         price = get_uniswap_v3_position_price(
             token=token,
-            inquirer=Inquirer(),
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+            price_func=Inquirer.find_usd_price,
         )
 
     if token == A_FARM_DAI:
@@ -897,8 +897,7 @@ class Inquirer:
         return lp_price_from_uniswaplike_pool_contract(
             evm_inquirer=self.get_evm_manager(token.chain_id).node_inquirer,  # get the inquirer for the chain the token is in  # noqa: E501
             token=token,
-            token_price_func=self.find_usd_price,
-            token_price_func_args=[],
+            price_func=self.find_usd_price,
             block_identifier='latest',
         )
 

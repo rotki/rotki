@@ -4,9 +4,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_USD
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.externalapis.alchemy import Alchemy
@@ -22,12 +25,35 @@ from rotkehlchen.history.types import (
     HistoricalPriceOracle,
 )
 from rotkehlchen.tests.utils.constants import A_GBP
-from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
+from rotkehlchen.types import (
+    UNISWAP_PROTOCOL,
+    UNISWAPV3_PROTOCOL,
+    ChainID,
+    EvmTokenKind,
+    Price,
+    Timestamp,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import FiatAsset
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
+
+mocked_prices = {
+    strethaddress_to_identifier('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'): {
+        'USD': {
+            1742814047: ONE,
+            1742829743: ONE,
+        },
+    },
+    strethaddress_to_identifier('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'): {
+        'USD': {
+            1742814047: FVal('2080'),
+            1742829743: FVal('2085.21'),
+        },
+    },
+}
 
 
 @pytest.fixture(name='fake_price_historian')
@@ -336,3 +362,43 @@ def test_price_priority_order():
     """Test to ensure that we detect changes on the constant value returned"""
     _, priority_value = _prioritize_manual_balances_query()
     assert priority_value == HistoricalPriceOracle.MANUAL.serialize_for_db()
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
+    price = price_historian.query_uniswap_position_price(
+        pool_token=EvmToken.initialize(
+            address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
+            chain_id=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC20,
+            protocol=UNISWAP_PROTOCOL,
+            decimals=18,
+        ),
+        pool_token_amount=FVal('0.015374510179577256'),
+        to_asset=A_USD,
+        timestamp=Timestamp(1742814047),
+    )
+
+    assert price == Price(FVal('3599499.14614648204764245778042706722040502098628449234280700474399384952003946'))  # noqa: E501
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
+    price = price_historian.query_uniswap_position_price(
+        pool_token=EvmToken.initialize(
+            address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            chain_id=ChainID.ETHEREUM,
+            token_kind=EvmTokenKind.ERC721,
+            protocol=UNISWAPV3_PROTOCOL,
+            collectible_id='953465',
+        ),
+        pool_token_amount=ZERO,
+        to_asset=A_USD,
+        timestamp=Timestamp(1742829743),
+    )
+
+    assert price == Price(FVal('91.8899433946849362722178059329153023736079920232915317251968356662350823403461'))  # noqa: E501
