@@ -48,9 +48,6 @@ export default defineConfig({
       '@shared': `${join(PACKAGE_ROOT, 'shared')}/`,
     },
   },
-  optimizeDeps: {
-    include: ['tasklist > csv'],
-  },
   plugins: [binaryDependencyPlugin()],
   ssr: {
     noExternal: true,
@@ -67,7 +64,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['csv', 'electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
+      external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: 'main.js',
         manualChunks(id) {

@@ -3,8 +3,8 @@ import { Buffer } from 'node:buffer';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
+import { type ProcessDescriptor, psList } from '@electron/main/ps-list';
 import { wait } from '@shared/utils';
-import { type Task, tasklist } from 'tasklist';
 
 type OnErrorHandler = (error: Error) => void;
 
@@ -158,10 +158,10 @@ export class ProcessManager {
     // pids and kill them before we close the app
 
     this.log('Starting windows process termination');
-    const tasks: Task[] = await tasklist();
+    const tasks: ProcessDescriptor[] = await psList();
     this.log(`Currently running: ${tasks.length} tasks`);
 
-    const pids = tasks.filter(task => task.imageName === this.command).map(task => task.pid);
+    const pids = tasks.filter(task => task.name === this.command).map(task => task.pid);
     this.log(`Detected the following running rotki-core processes: ${pids.join(', ')}`);
 
     const args = ['/f', '/t'];
@@ -182,23 +182,23 @@ export class ProcessManager {
     }
   }
 
-  private async waitForTermination(tasks: Task[], processes: number[]) {
-    function stillRunning(tasks: Task[]): number {
-      return tasks.filter(({ pid }) => processes.includes(pid)).length;
+  private async waitForTermination(processes: ProcessDescriptor[], processIds: number[]) {
+    function stillRunning(process: ProcessDescriptor[]): number {
+      return process.filter(({ pid }) => processIds.includes(pid)).length;
     }
 
-    const running = stillRunning(tasks);
+    const running = stillRunning(processes);
     if (running === 0) {
-      this.log('The task killed successfully');
+      this.log('The process killed successfully');
       return;
     }
 
     for (let i = 0; i < 10; i++) {
       this.log(`The ${running} processes are still running. Waiting for 2 seconds`);
       await wait(2000);
-      tasks = await tasklist();
-      if (stillRunning(tasks) === 0) {
-        this.log('The task killed successfully');
+      processes = await psList();
+      if (stillRunning(processes) === 0) {
+        this.log('The process killed successfully');
         break;
       }
     }
