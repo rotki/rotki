@@ -3920,12 +3920,12 @@ class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSch
         """Align timestamps to interval boundaries.
 
         - Rounds down `from_timestamp` to nearest multiple of interval
-        - Rounds up `to_timestamp` to nearest multiple of interval
+        - Rounds up `to_timestamp` to nearest multiple of interval but also makes
+        sure it's not in the future
         """
         interval = data['interval']
         data['from_timestamp'] = (data['from_timestamp'] // interval) * interval
-        data['to_timestamp'] = ((data['to_timestamp'] + interval - 1) // interval) * interval
-
+        data['to_timestamp'] = min(((data['to_timestamp'] + interval - 1) // interval) * interval, ts_now())  # noqa: E501
         return data
 
 
