@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Getting historical prices for an asset graph should not fail with RemoteError anymore.
 * :bug:`-` Editing an AssetMovement with a reference should now work fine again.
 * :bug:`-` Users will be able to see the address of each account within an xpub.
 * :bug:`-` An exception in the last decoding step will no longer stop transaction decoding in rotki.

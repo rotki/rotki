@@ -18,6 +18,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -377,10 +378,14 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
         except PriceQueryUnsupportedAsset:
             return False
 
-        return self.is_before_factory_deployment(
-            block_identifier=Inquirer().get_evm_manager(token.chain_id).node_inquirer.get_blocknumber_by_time(timestamp),
-            chain_id=token.chain_id,
-        )
+        try:
+            return self.is_before_factory_deployment(
+                block_identifier=Inquirer().get_evm_manager(token.chain_id).node_inquirer.get_blocknumber_by_time(timestamp),
+                chain_id=token.chain_id,
+            )
+        except RemoteError as e:  # can be raised by get_blocknumber_by_time
+            log.error(f'Couldnt check if uniswap history could be queried due to {e}. Assuming no.')  # noqa: E501
+            return False
 
     def query_historical_price(
             self,
