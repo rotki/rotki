@@ -2,7 +2,7 @@ gevent==24.11.1
 greenlet==3.1.1
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.7  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==7.8.0
+web3==7.9.0
 eth-typing==5.1.0
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.10.1
@@ -21,13 +21,13 @@ substrate-interface==1.7.11
 beautifulsoup4==4.13.3
 maxminddb==2.6.3
 pywin32==306; sys_platform == 'win32'
-miniupnpc==2.3.1
+miniupnpc==2.3.2
 cryptography==44.0.2
 py-machineid==0.6.0
 more-itertools==10.6.0  # for peekable iterators
 regex==2024.11.6  # used for unicode information in detection of spam tokens
 eth-abi==5.2.0
-polars-lts-cpu==1.23.0
+polars-lts-cpu==1.25.2
 
 # For the rest api
 flask-cors==5.0.1
