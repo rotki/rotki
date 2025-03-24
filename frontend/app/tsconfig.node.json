@@ -16,6 +16,7 @@
     "nightwatch.conf.*",
     "playwright.config.*",
     "scripts/**/*",
-    "shared/external-links.ts"
+    "shared/external-links.ts",
+    ".electron-builder.config.*"
   ]
 }
