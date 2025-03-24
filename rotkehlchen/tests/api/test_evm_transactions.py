@@ -268,7 +268,10 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.freeze_time('2022-12-30 06:06:00 GMT')
-def test_force_refetch_evm_transactions_success(rotkehlchen_api_server: 'APIServer') -> None:
+def test_force_refetch_evm_transactions_success(
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
     """Test that force refetching EVM transactions works successfully"""
     now = ts_now()
     four_days_ago = Timestamp(now - 4 * DAY_IN_SECONDS)
@@ -326,6 +329,24 @@ def test_force_refetch_evm_transactions_success(rotkehlchen_api_server: 'APIServ
             'to_timestamp': now,
             'address': ZERO_ADDRESS,
             'evm_chain': ChainID.ETHEREUM.to_name(),
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not tracked by rotki',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'refetchevmtransactionsresource',
+        ), json={
+            'async_query': False,
+            'from_timestamp': four_days_ago,
+            'to_timestamp': now,
+            'address': ethereum_accounts[0],
+            'evm_chain': ChainID.ARBITRUM_ONE.to_name(),
         },
     )
     assert_error_response(
