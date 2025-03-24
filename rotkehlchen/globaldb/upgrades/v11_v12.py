@@ -20,6 +20,9 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
 
     - Reset Curve Lending vaults cache to force a repull.
 
+    - Remove several Curve Lending caches which have been replaced with caches using the
+    crvusd controller address as the second key part instead of the vault address.
+
     This upgrade takes place in v1.39.0"""
     @progress_step('Adding new tables.')
     def _create_new_tables(write_cursor: 'DBCursor') -> None:
@@ -50,5 +53,10 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
             'UPDATE unique_cache SET value=?, last_queried_ts = ? WHERE key = ?',
             ('0', 0, CacheType.CURVE_LENDING_VAULTS.serialize()),
         )
+
+        write_cursor.executemany('DELETE FROM unique_cache WHERE key LIKE ? ESCAPE ?', [
+            ('CURVE\\_LENDING\\_VAULT\\_AMM%', '\\'),
+            ('CURVE\\_LENDING\\_VAULT\\_COLLATERAL\\_TOKEN%', '\\'),
+        ])
 
     perform_globaldb_upgrade_steps(connection, progress_handler)

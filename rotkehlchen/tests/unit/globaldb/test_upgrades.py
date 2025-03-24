@@ -984,6 +984,14 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
             'SELECT value, last_queried_ts FROM unique_cache WHERE key = ?',
             (CacheType.CURVE_LENDING_VAULTS.serialize(),),
         ).fetchone() == ('10000', 1741813725)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ? ESCAPE ?',
+            ('CURVE\\_LENDING\\_VAULT\\_AMM%', '\\'),
+        ).fetchone()[0] == 2
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ? ESCAPE ?',
+            ('CURVE\\_LENDING\\_VAULT\\_COLLATERAL\\_TOKEN%', '\\'),
+        ).fetchone()[0] == 2
         assert table_exists(cursor=cursor, name='counterparty_asset_mappings') is False
 
     with ExitStack() as stack:
@@ -1011,6 +1019,14 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
             'SELECT value, last_queried_ts FROM unique_cache WHERE key = ?',
             (CacheType.CURVE_LENDING_VAULTS.serialize(),),
         ).fetchone() == ('0', 0)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ? ESCAPE ?',
+            ('CURVE\\_LENDING\\_VAULT\\_AMM%', '\\'),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ? ESCAPE ?',
+            ('CURVE\\_LENDING\\_VAULT\\_COLLATERAL\\_TOKEN%', '\\'),
+        ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

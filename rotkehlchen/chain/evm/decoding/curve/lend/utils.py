@@ -101,11 +101,11 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=[CacheType.CURVE_LENDING_VAULT_CONTROLLER, vault_token.evm_address],
-            value=vault['controllerAddress'],
+            value=(controller_address := vault['controllerAddress']),
         )
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
-            key_parts=[CacheType.CURVE_LENDING_VAULT_AMM, vault_token.evm_address],
+            key_parts=[CacheType.CURVE_CRVUSD_AMM, controller_address],
             value=vault['ammAddress'],
         )
         if gauge_address:
