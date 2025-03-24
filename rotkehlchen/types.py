@@ -1176,8 +1176,6 @@ class CacheType(Enum):
     BALANCER_V2_POOLS = auto()
     CURVE_LENDING_VAULTS = auto()
     CURVE_LENDING_VAULT_CONTROLLER = auto()
-    CURVE_LENDING_VAULT_AMM = auto()
-    CURVE_LENDING_VAULT_COLLATERAL_TOKEN = auto()
     CURVE_LENDING_VAULT_BORROWED_TOKEN = auto()
     AURA_POOLS = auto()  # stores count of pools in db + chain_id (stringified)
     BALANCER_GAUGES = auto()  # stores gauges + chain_id + version
@@ -1186,6 +1184,9 @@ class CacheType(Enum):
     AERODROME_GAUGE_FEE_ADDRESS = auto()
     AERODROME_GAUGE_BRIBE_ADDRESS = auto()
     CURVE_LENDING_VAULT_GAUGE = auto()
+    CURVE_CRVUSD_CONTROLLERS = auto()
+    CURVE_CRVUSD_COLLATERAL_TOKEN = auto()
+    CURVE_CRVUSD_AMM = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1236,11 +1237,11 @@ UniqueCacheType = Literal[
     CacheType.MORPHO_VAULTS,
     CacheType.CURVE_LENDING_VAULTS,
     CacheType.CURVE_LENDING_VAULT_CONTROLLER,
-    CacheType.CURVE_LENDING_VAULT_AMM,
-    CacheType.CURVE_LENDING_VAULT_COLLATERAL_TOKEN,
     CacheType.CURVE_LENDING_VAULT_BORROWED_TOKEN,
     CacheType.AURA_POOLS,
     CacheType.CURVE_LENDING_VAULT_GAUGE,
+    CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
+    CacheType.CURVE_CRVUSD_AMM,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1265,6 +1266,7 @@ GeneralCacheType = Literal[
     CacheType.BALANCER_V2_POOLS,
     CacheType.BALANCER_GAUGES,
     CacheType.MORPHO_REWARD_DISTRIBUTORS,
+    CacheType.CURVE_CRVUSD_CONTROLLERS,
 ]
 
 
