@@ -9,6 +9,7 @@ from rotkehlchen.accounting.export.csv import (
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
     dict_to_csv_file,
 )
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
@@ -109,11 +110,15 @@ def reprocess_skipped_external_events(rotki: 'Rotkehlchen') -> tuple[int, int]:
 
         total_num += len(raw_events)
         exchange = cast('Kraken', exchange)
-        _, processed_refids = exchange.process_kraken_raw_events(
+        new_events, processed_refids = exchange.process_kraken_raw_events(
             events=[x[1] for x in raw_events],
             events_source='processing skipped events',
             save_skipped_events=False,
         )
+        if len(new_events) != 0:
+            with rotki.data.db.user_write() as write_cursor:
+                DBHistoryEvents(rotki.data.db).add_history_events(write_cursor=write_cursor, history=new_events)  # noqa: E501
+
         processed_num = 0
         for identifier, raw_data in raw_events:
             try:

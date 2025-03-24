@@ -166,7 +166,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start
         ),
     )
     result = assert_proper_sync_response_with_result(response=response, status_code=HTTPStatus.OK)
-    assert len(result['missing_acquisitions']) == 9 if fees_in_cost_basis is False else 8
+    assert len(result['missing_acquisitions']) == (10 if fees_in_cost_basis is False else 9)
     assert len(result['missing_prices']) == 0
     assert result['report_id'] == 1
 
@@ -205,8 +205,8 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: 'API
     warnings = rotki.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
     errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 2
-    assert all('kraken' in e for e in errors)
+    assert len(errors) == 1
+    assert 'kraken' in errors[0]
     # The history processing is completely mocked away and omitted in this test.
     # because it is only for the history creation not its processing.
     # For history processing tests look at test_accounting.py and

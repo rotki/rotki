@@ -37,10 +37,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
@@ -56,12 +57,11 @@ from rotkehlchen.tests.utils.exchanges import (
     get_exchange_asset_symbols,
     try_get_first_exchange,
 )
-from rotkehlchen.tests.utils.history import TEST_END_TS, prices
+from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import Location, Timestamp, TimestampMS, TradeType
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -168,21 +168,8 @@ def test_querying_balances(kraken):
         assert isinstance(entry, Balance)
 
 
-def test_querying_trade_history(kraken):
-    kraken.random_ledgers_data = False
-    now = ts_now()
-    result = kraken.query_trade_history(
-        start_ts=1451606400,
-        end_ts=now,
-        only_cache=False,
-    )
-    assert isinstance(result, list)
-    assert len(result) != 0
-
-    for kraken_trade in result:
-        assert isinstance(kraken_trade, Trade)
-
-
+# TODO: Add support for partial range queries to all exchanges and re-enable this test
+@pytest.mark.skip('This functionality has been temporarily removed')
 def test_querying_rate_limit_exhaustion(kraken, database):
     """Test that if kraken api rates limit us we don't get stuck in an infinite loop
     and also that we return what we managed to retrieve until rate limit occurred.
@@ -198,7 +185,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         nonlocal count
         if 'Ledgers' in url:
             if count == 0:
-                text = '{"result":{"ledger":{"L1":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4497,"type":"trade","subtype":"","aclass":"currency","asset":"KFEE","amount":"0.00","fee":"1.145","balance":"0.00"},"L2":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4492,"type":"trade","subtype":"","aclass":"currency","asset":"ZEUR","amount":"50","fee":"0.4429","balance":"500"},"L3":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4486,"type":"trade","subtype":"","aclass":"currency","asset":"XETH","amount":"-0.1","fee":"0.0000000000","balance":1.1}},"count":2}}'  # noqa: E501
+                text = '{"result":{"ledger":{"L1":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4497,"type":"trade","subtype":"","aclass":"currency","asset":"KFEE","amount":"0.00","fee":"1.145","balance":"0.00"},"L2":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4492,"type":"trade","subtype":"","aclass":"currency","asset":"ZEUR","amount":"50","fee":"0.4429","balance":"500"},"L3":{"refid":"AOEXXV-61T63-AKPSJ0","time":1609950165.4486,"type":"trade","subtype":"","aclass":"currency","asset":"XETH","amount":"-0.1","fee":"0.0000000000","balance":1.1}},"count":4}}'  # noqa: E501
                 count += 1
                 return MockResponse(200, text)
             # else
@@ -221,13 +208,18 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         stack.enter_context(patch_retries)
         stack.enter_context(patch_dividend)
         stack.enter_context(patch_kraken)
-        trades = kraken.query_trade_history(start_ts=0, end_ts=1638529919, only_cache=False)
+        kraken.query_history_events()
 
-    assert len(trades) == 1
     with database.conn.read_ctx() as cursor:
-        from_ts, to_ts = database.get_used_query_range(cursor, 'kraken_trades_mockkraken')
+        assert len(DBHistoryEvents(database).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            has_premium=True,
+        )) == 3  # spend, receive, and fee
+        from_ts, to_ts = database.get_used_query_range(cursor, 'kraken_history_events_mockkraken')
+
     assert from_ts == 0
-    assert to_ts == 1638529919, 'should have saved only until the last trades timestamp'
+    assert to_ts == 1609950165, 'should have saved only until the last trades timestamp'
 
 
 def test_querying_deposits_withdrawals(kraken):
@@ -394,24 +386,39 @@ def test_kraken_trade_with_spend_receive(kraken):
 
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     with patch(target, new=test_trades):
-        trades, _ = kraken.query_online_trade_history(
-            start_ts=0,
-            end_ts=Timestamp(1637406001),
-        )
+        kraken.query_history_events()
 
-    assert len(trades) == 1
-    trade = trades[0]
-    assert trade.amount == ONE
-    assert trade.trade_type == TradeType.BUY
-    assert trade.rate == FVal(100)
-    assert trade.base_asset == A_ETH
-    assert trade.quote_asset == A_EUR
-    assert trade.fee == FVal(0.45)
-    _check_trade_history_events_order(kraken.db, {
-        0: (0, HistoryEventType.TRADE, HistoryEventSubType.SPEND),
-        1: (1, HistoryEventType.TRADE, HistoryEventSubType.RECEIVE),
-        2: (2, HistoryEventType.SPEND, HistoryEventSubType.FEE),
-    })
+    with kraken.db.conn.read_ctx() as cursor:
+        assert DBHistoryEvents(kraken.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            has_premium=True,
+        ) == [SwapEvent(
+            identifier=1,
+            timestamp=TimestampMS(1636406000865),
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_EUR,
+            amount=FVal('100'),
+            unique_id='11636406000865',
+        ), SwapEvent(
+            identifier=2,
+            timestamp=TimestampMS(1636406000865),
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('1'),
+            unique_id='11636406000865',
+        ), SwapEvent(
+            identifier=3,
+            timestamp=TimestampMS(1636406000865),
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_EUR,
+            amount=FVal('0.4500'),
+            unique_id='11636406000865',
+        )]
+
     errors = kraken.msg_aggregator.consume_errors()
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -455,19 +462,31 @@ def test_kraken_trade_with_adjustment(kraken):
 
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     with patch(target, new=test_trades):
-        trades, _ = kraken.query_online_trade_history(
-            start_ts=0,
-            end_ts=Timestamp(1637406001),
-        )
+        kraken.query_history_events()
 
-    assert len(trades) == 1
-    trade = trades[0]
-    assert trade.amount == FVal('0.0000088548')
-    assert trade.trade_type == TradeType.BUY
-    assert trade.rate == FVal('0.01')
-    assert trade.base_asset == A_ETH
-    assert trade.quote_asset == A_DAO
-    assert trade.fee is None
+        with kraken.db.conn.read_ctx() as cursor:
+            assert DBHistoryEvents(kraken.db).get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+                has_premium=True,
+            ) == [SwapEvent(
+                identifier=1,
+                timestamp=TimestampMS(1636406000855),
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_DAO,
+                amount=FVal('0.0008854800'),
+                unique_id='adjustment12',
+            ), SwapEvent(
+                identifier=2,
+                timestamp=TimestampMS(1636406000855),
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_ETH,
+                amount=FVal('0.0000088548'),
+                unique_id='adjustment12',
+            )]
+
     errors = kraken.msg_aggregator.consume_errors()
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -511,28 +530,47 @@ def test_kraken_trade_no_counterpart(kraken):
 
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     with patch(target, new=test_trades):
-        trades, _ = kraken.query_online_trade_history(
-            start_ts=0,
-            end_ts=Timestamp(1637406001),
-        )
+        kraken.query_history_events()
 
-    assert len(trades) == 2
-    trade = trades[0]
-    assert trade.amount == FVal('0.000001')
-    assert trade.trade_type == TradeType.SELL
-    assert trade.rate == ZERO
-    assert trade.base_asset == A_ETH
-    assert trade.quote_asset == A_USD
-    assert trade.fee is None
-    assert trade.fee_currency is None
-    trade = trades[1]
-    assert trade.amount == FVal('0.0000001')
-    assert trade.trade_type == TradeType.BUY
-    assert trade.rate == ZERO
-    assert trade.base_asset == A_BTC
-    assert trade.quote_asset == A_USD
-    assert trade.fee is None
-    assert trade.fee_currency is None
+        with kraken.db.conn.read_ctx() as cursor:
+            assert DBHistoryEvents(kraken.db).get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+                has_premium=True,
+            ) == [SwapEvent(
+                identifier=1,
+                timestamp=TimestampMS(1636406000855),
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=FVal('0.000001'),
+                unique_id='11636406000855',
+            ), SwapEvent(
+                identifier=2,
+                timestamp=TimestampMS(1636406000855),
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USD,
+                amount=ZERO,
+                unique_id='11636406000855',
+            ), SwapEvent(
+                identifier=3,
+                timestamp=TimestampMS(1636406000865),
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_USD,
+                amount=ZERO,
+                unique_id='21636406000865',
+            ), SwapEvent(
+                identifier=4,
+                timestamp=TimestampMS(1636406000865),
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_BTC,
+                amount=FVal('0.0000001'),
+                unique_id='21636406000865',
+            )]
+
     errors = kraken.msg_aggregator.consume_errors()
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
@@ -637,17 +675,22 @@ def test_trade_from_kraken_unexpected_data(kraken):
             )
 
         with patch(target, new=input_trades):
-            trades, _ = kraken.query_online_trade_history(
-                start_ts=0,
-                end_ts=TEST_END_TS,
+            kraken.query_history_events()
+
+        with kraken.db.conn.read_ctx() as cursor:
+            events = DBHistoryEvents(kraken.db).get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+                has_premium=True,
             )
 
         if expected_warnings_num == 0 and expected_errors_num == 0:
-            assert len(trades) == 1
-            assert trades[0].base_asset == A_BTC
-            assert trades[0].quote_asset == A_EUR
+            assert len(events) == 3
+            assert events[0].asset == A_EUR
+            assert events[1].asset == A_BTC
+            assert events[2].asset == A_EUR
         else:
-            assert len(trades) == 0
+            assert len(events) == 0
         errors = kraken.msg_aggregator.consume_errors()
         warnings = kraken.msg_aggregator.consume_warnings()
         assert len(errors) == expected_errors_num
@@ -819,12 +862,8 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
     kraken.random_ledgers_data = False
-    with patch(target, new=input_ledger), rotki.data.db.conn.read_ctx() as cursor:
-        kraken.query_kraken_ledgers(
-            cursor=cursor,
-            start_ts=1458984441,
-            end_ts=1736738550,
-        )
+    with patch(target, new=input_ledger):
+        kraken.query_history_events()
 
     response = requests.post(
         api_url_for(
@@ -1014,12 +1053,8 @@ def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APISe
 
     target = 'rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE'
     kraken.random_ledgers_data = False
-    with patch(target, new=input_ledger), rotki.data.db.conn.read_ctx() as cursor:
-        kraken.query_kraken_ledgers(
-            cursor=cursor,
-            start_ts=1636737550,
-            end_ts=1636739550,
-        )
+    with patch(target, new=input_ledger):
+        kraken.query_history_events()
 
     with rotki.data.db.conn.read_ctx() as cursor:
         events = DBHistoryEvents(rotki.data.db).get_history_events(
@@ -1055,15 +1090,43 @@ def test_kraken_event_serialization_with_custom_asset(database):
         custom_asset_type='inheritance',
     )
     DBCustomAssets(database).add_custom_asset(custom_asset)
+
+    swap_events = create_swap_events(
+        timestamp=TimestampMS(10000000000),
+        location=Location.KRAKEN,
+        spend_asset=custom_asset,
+        spend_amount=ONE,
+        receive_asset=custom_asset,
+        receive_amount=ONE,
+        fee_asset=custom_asset,
+        fee_amount=ONE,
+    )
+    for idx, expected_notes in enumerate((
+        'Swap 1 Gold Bar in Kraken',
+        'Receive 1 Gold Bar after a swap in Kraken',
+        'Spend 1 Gold Bar as Kraken swap fee',
+    )):
+        assert swap_events[idx].serialize()['description'] == expected_notes
+
+    for event_type in {HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL}:
+        asset_movements = create_asset_movement_with_fee(
+            timestamp=TimestampMS(10000000000),
+            location=Location.KRAKEN,
+            event_type=event_type,
+            asset=custom_asset,
+            amount=ONE,
+            fee_asset=custom_asset,
+            fee=ONE,
+        )
+        if event_type == HistoryEventType.DEPOSIT:
+            assert asset_movements[0].serialize()['description'] == 'Deposit 1 Gold Bar to Kraken'
+        else:
+            assert asset_movements[0].serialize()['description'] == 'Withdraw 1 Gold Bar from Kraken'  # noqa: E501
+        assert asset_movements[1].serialize()['description'] == f'Pay 1 Gold Bar as Kraken {event_type.name.lower()} fee'  # noqa: E501
+
     for event_type, event_subtype, expected_notes in (
-            (HistoryEventType.TRADE, HistoryEventSubType.SPEND, 'Swap 1 Gold Bar in Kraken'),
-            (HistoryEventType.TRADE, HistoryEventSubType.RECEIVE, 'Receive 1 Gold Bar as a result of a Kraken swap'),  # noqa: E501
-            (HistoryEventType.TRADE, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken trading fee'),  # noqa: E501
             (HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Gain 1 Gold Bar from Kraken staking'),  # noqa: E501
             (HistoryEventType.STAKING, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken staking fee'),  # noqa: E501
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, 'Withdraw 1 Gold Bar from Kraken'),  # noqa: E501
-            (HistoryEventType.WITHDRAWAL, HistoryEventSubType.FEE, 'Spend 1 Gold Bar as Kraken withdrawal fee'),  # noqa: E501
-            (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, 'Deposit 1 Gold Bar to Kraken'),  # noqa: E501
     ):
         event = HistoryEvent(
             event_identifier='foo',

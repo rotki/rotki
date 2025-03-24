@@ -20,7 +20,7 @@ from rotkehlchen.premium.premium import has_premium_check
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import timestamp_to_date
+from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
@@ -194,19 +194,12 @@ class HistoryQueryingManager:
             exchange_names = []
             for exchange_instance in exchanges_list:
                 if location == Location.KRAKEN:
-                    with_errors = exchange_instance.query_kraken_ledgers(  # type: ignore
-                        cursor=cursor,
-                        start_ts=filter_query.from_ts,
-                        end_ts=filter_query.to_ts,
-                    )
-                else:
-                    with_errors = exchange_instance.query_lending_interests_history(  # type: ignore
-                        cursor=cursor,
-                        start_ts=filter_query.from_ts,
-                        end_ts=filter_query.to_ts,
-                    )
-
-                if with_errors:
+                    exchange_instance.query_history_events()
+                elif exchange_instance.query_lending_interests_history(  # type: ignore
+                    cursor=cursor,
+                    start_ts=filter_query.from_ts,
+                    end_ts=filter_query.to_ts,
+                ) is True:  # has errors
                     exchange_names.append(exchange_instance.name)
 
             if len(exchange_names) != 0:
@@ -357,10 +350,10 @@ class HistoryQueryingManager:
         history.extend(base_entries)
         self._increase_progress(step, total_steps)
 
-        history.sort(  # sort events first by timestamp and if history base by sequence index
+        history.sort(  # sort events first by timestamp (in milliseconds) and by sequence index if HistoryBaseEntry  # noqa: E501
             key=lambda x: (
-                x.get_timestamp(),
-                x.sequence_index if isinstance(x, HistoryBaseEntry) else 1,
+                (x.timestamp, x.sequence_index) if isinstance(x, HistoryBaseEntry)
+                else (ts_sec_to_ms(x.get_timestamp()), 1)
             ),
         )
         return empty_or_error, history
