@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@rotki/common": "workspace:*",
-    "@rotki/ui-library": "1.12.2",
+    "@rotki/ui-library": "1.12.3",
     "@types/jsdom": "21.1.7",
     "@vuelidate/core": "2.0.3",
     "@vuelidate/validators": "2.0.4",

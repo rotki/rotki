@@ -74,8 +74,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library':
-        specifier: 1.12.2
-        version: 1.12.2(@vueuse/core@12.7.0(typescript@5.6.3))(@vueuse/shared@12.7.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))
+        specifier: 1.12.3
+        version: 1.12.3(@vueuse/core@12.7.0(typescript@5.6.3))(@vueuse/shared@12.7.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))
       '@types/jsdom':
         specifier: 21.1.7
         version: 21.1.7
@@ -1411,20 +1411,16 @@ packages:
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0-0
 
-  '@intlify/message-compiler@11.0.0-rc.1':
-    resolution: {integrity: sha512-TGw2uBfuTFTegZf/BHtUQBEKxl7Q/dVGLoqRIdw8lFsp9g/53sYn5iD+0HxIzdYjbWL6BTJMXCPUHp9PxDTRPw==}
-    engines: {node: '>= 16'}
-
   '@intlify/message-compiler@11.1.1':
     resolution: {integrity: sha512-4iEsUZ3aF7jXY19CJFN5VP+pPyLITD9FVsjB13z9TU1UxaZLlFsmNhvRxlPDSOfHAP5RpNF2QKKdZ3DHVf4Yzw==}
     engines: {node: '>= 16'}
 
-  '@intlify/message-compiler@9.14.2':
-    resolution: {integrity: sha512-YsKKuV4Qv4wrLNsvgWbTf0E40uRv+Qiw1BeLQ0LAxifQuhiMe+hfTIzOMdWj/ZpnTDj4RSZtkXjJM7JDiiB5LQ==}
+  '@intlify/message-compiler@12.0.0-alpha.2':
+    resolution: {integrity: sha512-PD9C+oQbb7BF52hec0+vLnScaFkvnfX+R7zSbODYuRo/E2niAtGmHd0wPvEMsDhf9Z9b8f/qyDsVeZnD/ya9Ug==}
     engines: {node: '>= 16'}
 
-  '@intlify/shared@11.0.0-rc.1':
-    resolution: {integrity: sha512-8tR1xe7ZEbkabTuE/tNhzpolygUn9OaYp9yuYAF4MgDNZg06C3Qny80bes2/e9/Wm3aVkPUlCw6WgU7mQd0yEg==}
+  '@intlify/message-compiler@9.14.2':
+    resolution: {integrity: sha512-YsKKuV4Qv4wrLNsvgWbTf0E40uRv+Qiw1BeLQ0LAxifQuhiMe+hfTIzOMdWj/ZpnTDj4RSZtkXjJM7JDiiB5LQ==}
     engines: {node: '>= 16'}
 
   '@intlify/shared@11.1.1':
@@ -1433,6 +1429,10 @@ packages:
 
   '@intlify/shared@11.1.2':
     resolution: {integrity: sha512-dF2iMMy8P9uKVHV/20LA1ulFLL+MKSbfMiixSmn6fpwqzvix38OIc7ebgnFbBqElvghZCW9ACtzKTGKsTGTWGA==}
+    engines: {node: '>= 16'}
+
+  '@intlify/shared@12.0.0-alpha.2':
+    resolution: {integrity: sha512-P2DULVX9nz3y8zKNqLw9Es1aAgQ1JGC+kgpx5q7yLmrnAKkPR5MybQWoEhxanefNJgUY5ehsgo+GKif59SrncA==}
     engines: {node: '>= 16'}
 
   '@intlify/shared@9.14.2':
@@ -1862,9 +1862,9 @@ packages:
     peerDependencies:
       eslint: ^9.0.0
 
-  '@rotki/ui-library@1.12.2':
-    resolution: {integrity: sha512-jcf97EcUdIZhCBQyVvABG0w2ihNJkEurOJhw8vbVIFFKlu0fm4Eq15+Mx0tJgTC7afOaJOW/Hpg5xpZ0u/akWA==}
-    engines: {node: '>=20 <21', pnpm: '>=10 <11'}
+  '@rotki/ui-library@1.12.3':
+    resolution: {integrity: sha512-3KZuLQPyHBMm1Ry5vcGMZMdt1BNoyaWBhaXmP8K5C5BegZHNCI9v/hC/P4d1egU2xoMAzcaBrSzsu2thlTXrrw==}
+    engines: {node: '>=22 <23', pnpm: '>=10 <11'}
     peerDependencies:
       '@vueuse/core': '>11.0.0'
       '@vueuse/shared': '>11.0.0'
@@ -8677,8 +8677,8 @@ snapshots:
 
   '@intlify/bundle-utils@10.0.0(vue-i18n@11.1.1(vue@3.5.13(typescript@5.6.3)))':
     dependencies:
-      '@intlify/message-compiler': 11.0.0-rc.1
-      '@intlify/shared': 11.0.0-rc.1
+      '@intlify/message-compiler': 12.0.0-alpha.2
+      '@intlify/shared': 12.0.0-alpha.2
       acorn: 8.14.0
       escodegen: 2.1.0
       estree-walker: 2.0.2
@@ -8724,14 +8724,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@intlify/message-compiler@11.0.0-rc.1':
-    dependencies:
-      '@intlify/shared': 11.0.0-rc.1
-      source-map-js: 1.2.1
-
   '@intlify/message-compiler@11.1.1':
     dependencies:
       '@intlify/shared': 11.1.1
+      source-map-js: 1.2.1
+
+  '@intlify/message-compiler@12.0.0-alpha.2':
+    dependencies:
+      '@intlify/shared': 12.0.0-alpha.2
       source-map-js: 1.2.1
 
   '@intlify/message-compiler@9.14.2':
@@ -8739,11 +8739,11 @@ snapshots:
       '@intlify/shared': 9.14.2
       source-map-js: 1.2.1
 
-  '@intlify/shared@11.0.0-rc.1': {}
-
   '@intlify/shared@11.1.1': {}
 
   '@intlify/shared@11.1.2': {}
+
+  '@intlify/shared@12.0.0-alpha.2': {}
 
   '@intlify/shared@9.14.2': {}
 
@@ -9165,7 +9165,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@1.12.2(@vueuse/core@12.7.0(typescript@5.6.3))(@vueuse/shared@12.7.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))':
+  '@rotki/ui-library@1.12.3(@vueuse/core@12.7.0(typescript@5.6.3))(@vueuse/shared@12.7.0(typescript@5.6.3))(vue@3.5.13(typescript@5.6.3))':
     dependencies:
       '@vueuse/core': 12.7.0(typescript@5.6.3)
       '@vueuse/shared': 12.7.0(typescript@5.6.3)

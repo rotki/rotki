@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Fix the issue where pressing Enter while focused on autocomplete doesn't submit the form.
+* :feature:`-` Add the option to refresh profiles if they are somehow not loaded.
 * :bug:`-` Getting historical prices for an asset graph should not fail with RemoteError anymore.
 * :bug:`-` Editing an AssetMovement with a reference should now work fine again.
 * :bug:`-` Users will be able to see the address of each account within an xpub.
