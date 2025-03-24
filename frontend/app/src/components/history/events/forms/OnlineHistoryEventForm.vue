@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
+import type { EventData, NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
@@ -22,22 +22,15 @@ import { isEmpty } from 'es-toolkit/compat';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: OnlineHistoryEvent;
-    nextSequence?: string;
-    groupHeader?: OnlineHistoryEvent;
-  }>(),
-  {
-    editableItem: undefined,
-    groupHeader: undefined,
-    nextSequence: '',
-  },
-);
+const props = withDefaults(defineProps<{
+  data?: EventData<OnlineHistoryEvent>;
+}>(), {
+  data: undefined,
+});
 
 const { t } = useI18n();
 
-const { editableItem, groupHeader, nextSequence } = toRefs(props);
+const { data } = toRefs(props);
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
@@ -121,7 +114,7 @@ const locationLabelSuggestions = computed(() =>
 );
 
 function reset() {
-  set(sequenceIndex, get(nextSequence) || '0');
+  set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(eventIdentifier, '');
   set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, get(lastLocation));
@@ -150,7 +143,7 @@ function applyEditableData(entry: OnlineHistoryEvent) {
 }
 
 function applyGroupHeaderData(entry: OnlineHistoryEvent) {
-  set(sequenceIndex, get(nextSequence) || '0');
+  set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
@@ -164,7 +157,7 @@ async function save(): Promise<boolean> {
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  const editable = get(editableItem);
+  const editable = get(data)?.event;
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
   const payload: NewOnlineHistoryEventPayload = {
@@ -190,12 +183,13 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const editable = get(editableItem);
+  const formData = get(data);
+  const editable = formData?.event;
   if (editable) {
     applyEditableData(editable);
     return;
   }
-  const group = get(groupHeader);
+  const group = formData?.group;
   if (group) {
     applyGroupHeaderData(group);
     return;
@@ -213,7 +207,7 @@ watch(location, (location: string) => {
     set(lastLocation, location);
 });
 
-watch([groupHeader, editableItem], checkPropsData);
+watch(data, checkPropsData);
 
 onMounted(() => {
   checkPropsData();
@@ -240,7 +234,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
-        :disabled="!!(editableItem || groupHeader)"
+        :disabled="!!(data?.event || data?.group)"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"
@@ -252,7 +246,7 @@ defineExpose({
       v-model="eventIdentifier"
       variant="outlined"
       color="primary"
-      :disabled="!!(editableItem || groupHeader)"
+      :disabled="!!(data?.event || data?.group)"
       data-cy="eventIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
       :error-messages="toMessages(v$.eventIdentifier)"

@@ -322,14 +322,16 @@ export interface ShowMissingRuleForm {
   };
 }
 
+export interface EventData<T extends HistoryEvent = HistoryEvent> {
+  group?: T;
+  event?: T;
+  nextSequenceId?: string;
+  eventsInGroup?: T[];
+}
+
 export interface ShowEventForm {
   readonly type: 'event';
-  readonly data: {
-    group?: HistoryEvent;
-    event?: HistoryEvent;
-    nextSequenceId?: string;
-    eventsInGroup?: HistoryEvent[];
-  };
+  readonly data: EventData;
 }
 
 export type ShowEventHistoryForm = ShowEventForm | ShowMissingRuleForm;

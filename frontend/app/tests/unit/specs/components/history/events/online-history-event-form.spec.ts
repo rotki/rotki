@@ -32,7 +32,7 @@ describe('onlineHistoryEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const groupHeader: OnlineHistoryEvent = {
+  const group: OnlineHistoryEvent = {
     identifier: 449,
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventIdentifier: 'STJ6KRHJYGA',
@@ -90,15 +90,17 @@ describe('onlineHistoryEventForm.vue', () => {
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, nextSequence: '10' });
+      await wrapper.setProps({
+        data: { group, nextSequenceId: '10' },
+      });
       vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        groupHeader.eventIdentifier,
+        group.eventIdentifier,
       );
 
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
@@ -113,33 +115,35 @@ describe('onlineHistoryEventForm.vue', () => {
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, editableItem: groupHeader, nextSequence: '10' });
+      await wrapper.setProps({
+        data: { group, event: group, nextSequenceId: '10' },
+      });
       vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        groupHeader.eventIdentifier,
+        group.eventIdentifier,
       );
 
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
+        group.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(
-        groupHeader.sequenceIndex.toString(),
+        group.sequenceIndex.toString(),
       );
 
       expect(
         (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe(groupHeader.notes);
+      ).toBe(group.notes);
     });
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -148,7 +152,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -159,7 +163,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();

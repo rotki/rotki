@@ -8,7 +8,7 @@ import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
@@ -17,7 +17,6 @@ vi.mock('@/store/balances/prices', () => ({
 }));
 
 describe('forms/AssetMovementEventForm.vue', () => {
-  setupDayjs();
   let wrapper: VueWrapper<InstanceType<typeof AssetMovementEventForm>>;
   let pinia: Pinia;
 
@@ -33,7 +32,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const groupHeader: AssetMovementEvent = {
+  const group: AssetMovementEvent = {
     amount: bigNumberify(10),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
@@ -49,10 +48,14 @@ describe('forms/AssetMovementEventForm.vue', () => {
     timestamp: 1696741486185,
   };
 
-  beforeEach(() => {
+  beforeAll(() => {
+    setupDayjs();
     vi.useFakeTimers();
     pinia = createPinia();
     setActivePinia(pinia);
+  });
+
+  beforeEach(() => {
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
@@ -70,41 +73,41 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
 
   describe('prefill the fields based on the props', () => {
-    it('should have empty fields when no `groupEvents` nor `editableItem` are passed', async () => {
+    it('should show the default state when opening the form without any data', async () => {
       wrapper = createWrapper();
-      await nextTick();
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe('');
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe('');
     });
 
-    it('should show the proper data when `groupHeader` and `editableItem` are passed', async () => {
+    it('it should update the fields when all properties in data are updated', async () => {
       wrapper = createWrapper();
-      await nextTick();
-      await wrapper.setProps({ editableItem: groupHeader, groupEvents: [groupHeader] });
-      await nextTick();
+      vi.advanceTimersToNextTimer();
+      await wrapper.setProps({ data: { event: group, eventsInGroup: [group] } });
+      vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        groupHeader.eventIdentifier,
+        group.eventIdentifier,
       );
 
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
+        group.amount.toString(),
       );
 
       expect(
         (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe(groupHeader.notes);
+      ).toBe(group.notes);
     });
   });
 
   it('should show eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupEvents: [groupHeader] } });
-    await nextTick();
+    wrapper = createWrapper({ props: { eventsInGroup: [group] } });
+    vi.advanceTimersToNextTimer();
     await flushPromises();
 
     expect(wrapper.findAll('[data-cy=eventType] .selections span')).toHaveLength(2);

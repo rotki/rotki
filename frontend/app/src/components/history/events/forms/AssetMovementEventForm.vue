@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
+import type { AssetMovementEvent, EventData, NewAssetMovementEventPayload } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -23,20 +23,18 @@ import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface AssetMovementEventFormProps {
-  editableItem?: AssetMovementEvent;
-  groupEvents?: AssetMovementEvent[];
+  data?: EventData<AssetMovementEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = withDefaults(defineProps<AssetMovementEventFormProps>(), {
-  editableItem: undefined,
-  groupEvents: () => [],
+  data: undefined,
 });
 
 const { t } = useI18n();
 
-const { editableItem, groupEvents } = toRefs(props);
+const { data } = toRefs(props);
 
 const historyEventTypesData = [{
   identifier: 'deposit',
@@ -176,7 +174,7 @@ async function save(): Promise<boolean> {
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  const editable = get(editableItem);
+  const editable = get(data)?.event;
 
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -209,8 +207,9 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const editable = get(editableItem);
-  const feeEvent = get(groupEvents).find(event => event.eventSubtype === 'fee');
+  const formData = get(data);
+  const editable = formData?.event;
+  const feeEvent = formData?.eventsInGroup?.find(event => event.eventSubtype === 'fee');
 
   if (editable) {
     applyEditableData(editable, feeEvent);
@@ -219,8 +218,8 @@ function checkPropsData() {
   reset();
 }
 
-watchImmediate([editableItem, groupEvents], ([editableItem, groupEvents], [oldEditableItem, oldGroupEvents]) => {
-  if (isEqual(editableItem, oldEditableItem) && isEqual(groupEvents, oldGroupEvents)) {
+watchImmediate(data, (data, oldData) => {
+  if (isEqual(data, oldData)) {
     return;
   }
   checkPropsData();
@@ -257,7 +256,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
-        :disabled="!!(editableItem)"
+        :disabled="!!data?.event"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"

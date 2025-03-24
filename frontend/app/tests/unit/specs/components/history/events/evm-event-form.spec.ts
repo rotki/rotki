@@ -22,7 +22,7 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
-describe('evmEventForm.vue', () => {
+describe('forms/EvmEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EvmEventForm>>;
   let pinia: Pinia;
 
@@ -38,7 +38,7 @@ describe('evmEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const groupHeader: EvmHistoryEvent = {
+  const group: EvmHistoryEvent = {
     identifier: 14344,
     eventIdentifier: '10x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
     sequenceIndex: 2411,
@@ -90,7 +90,7 @@ describe('evmEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
+    it('should show the default state when opening the form without any data', async () => {
       wrapper = createWrapper();
       await vi.advanceTimersToNextTimerAsync();
 
@@ -103,19 +103,19 @@ describe('evmEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
     });
 
-    it('`groupHeader` and `nextSequence` are passed', async () => {
+    it('should update the proper fields when `group` and `nextSequenceId` are updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, nextSequence: '10' });
+      await wrapper.setProps({ data: { group, nextSequenceId: '10' } });
 
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(groupHeader.txHash);
+      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.address,
+        group.address,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
@@ -127,37 +127,37 @@ describe('evmEventForm.vue', () => {
       ).toBe('');
     });
 
-    it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
+    it('it should update the fields when all properties in data are updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, editableItem: groupHeader, nextSequence: '10' });
+      await wrapper.setProps({ data: { group, event: group, nextSequenceId: '10' } });
 
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(groupHeader.txHash);
+      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.address,
+        group.address,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
+        group.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(
-        groupHeader.sequenceIndex.toString(),
+        group.sequenceIndex.toString(),
       );
 
       expect(
         (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe(groupHeader.notes);
+      ).toBe(group.notes);
     });
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -166,7 +166,7 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -177,7 +177,7 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show all counterparties options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { counterparties } = useHistoryEventCounterpartyMappings();
@@ -186,7 +186,7 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -209,7 +209,7 @@ describe('evmEventForm.vue', () => {
   });
 
   it('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ props: { groupHeader } });
+    wrapper = createWrapper({ props: { groupHeader: group } });
     vi.advanceTimersToNextTimer();
 
     expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe('true');

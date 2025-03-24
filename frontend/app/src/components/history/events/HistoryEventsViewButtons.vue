@@ -10,9 +10,9 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'refresh'): void;
-  (e: 'show:form', payload: ShowEventForm): void;
-  (e: 'show:add-transaction-form'): void;
+  'refresh': [];
+  'show:form': [payload: ShowEventForm];
+  'show:add-transaction-form': [];
 }>();
 
 const { t } = useI18n();

@@ -15,7 +15,7 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
-describe('ethWithdrawalEventForm.vue', () => {
+describe('forms/EthWithdrawalEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthWithdrawalEventForm>>;
   let pinia: Pinia;
 
@@ -31,7 +31,7 @@ describe('ethWithdrawalEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const groupHeader: EthWithdrawalEvent = {
+  const group: EthWithdrawalEvent = {
     identifier: 11343,
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
     eventIdentifier: 'EW_123_19647',
@@ -77,7 +77,7 @@ describe('ethWithdrawalEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('no `groupHeader`, nor `editableItem` are passed', async () => {
+    it('should show the default state when opening the form without any data', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -88,17 +88,17 @@ describe('ethWithdrawalEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('`groupHeader` passed', async () => {
+    it('should update the fields when `group` updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader });
+      await wrapper.setProps({ data: { group } });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
+        group.validatorIndex.toString(),
       );
 
       expect((wrapper.find('[data-cy=withdrawalAddress] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
@@ -106,21 +106,21 @@ describe('ethWithdrawalEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('`groupHeader` and `editableItem` are passed', async () => {
+    it('it should update the fields when all properties in data are updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, editableItem: groupHeader });
+      await wrapper.setProps({ data: { group, event: group } });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
+        group.validatorIndex.toString(),
       );
 
       expect((wrapper.find('[data-cy=withdrawalAddress] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
+        group.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeTruthy();
