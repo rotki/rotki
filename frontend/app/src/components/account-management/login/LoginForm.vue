@@ -225,10 +225,15 @@ async function loadSettings() {
 
 const router = useRouter();
 
-onBeforeMount(async () => {
-  await loadSettings();
+async function loadProfiles() {
   const profiles = await usersApi.getUserProfiles();
   set(savedUsernames, profiles);
+}
+
+onBeforeMount(async () => {
+  await loadSettings();
+  await loadProfiles();
+  const profiles = get(savedUsernames);
   if (profiles.length === 0) {
     const { currentRoute } = router;
     if (!get(currentRoute).query.disableNoUserRedirection)
@@ -366,21 +371,48 @@ function abortLogin() {
                 </div>
               </template>
               <template #no-data>
-                <div class="px-4 py-2 text-body-2 font-medium">
-                  <i18n-t keypath="login.no_profiles_found">
-                    <template #create_account>
-                      <RuiButton
-                        color="primary"
-                        variant="text"
-                        class="text-[1em] py-0 inline px-1"
-                        :disabled="loading"
-                        type="button"
-                        @click="newAccount()"
-                      >
-                        {{ t('login.button_create_account') }}
-                      </RuiButton>
-                    </template>
-                  </i18n-t>
+                <div class="flex flex-col items-center py-3">
+                  <div>{{ t('login.no_profiles_found') }}</div>
+                  <div class="flex items-center gap-1">
+                    <i18n-t keypath="login.no_profiles_found_action">
+                      <template #refresh_profiles>
+                        <RuiButton
+                          color="primary"
+                          variant="text"
+                          class="text-[1em] py-0 px-1"
+                          :disabled="loading"
+                          type="button"
+                          @click="loadProfiles()"
+                        >
+                          <template #prepend>
+                            <RuiIcon
+                              name="lu-refresh-ccw"
+                              size="14"
+                            />
+                          </template>
+                          {{ t('login.button_refresh_profiles') }}
+                        </RuiButton>
+                      </template>
+                      <template #create_account>
+                        <RuiButton
+                          color="primary"
+                          variant="text"
+                          class="text-[1em] py-0 px-1"
+                          :disabled="loading"
+                          type="button"
+                          @click="newAccount()"
+                        >
+                          <template #prepend>
+                            <RuiIcon
+                              name="lu-plus"
+                              size="14"
+                            />
+                          </template>
+                          {{ t('login.button_create_account') }}
+                        </RuiButton>
+                      </template>
+                    </i18n-t>
+                  </div>
                 </div>
               </template>
             </RuiAutoComplete>
