@@ -4062,6 +4062,6 @@ class RefetchEvmTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchem
 
                 if cursor.execute(query, bindings).fetchone()[0] == 0:
                     raise ValidationError(
-                        message=f'Account {address} with {evm_chain=} is not tracked by rotki',
+                        message=f'Account {address} with chain {evm_chain.to_name()} is not tracked by rotki',  # noqa: E501
                         field_name='address',
                     )
