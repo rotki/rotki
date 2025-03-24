@@ -276,29 +276,15 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             'sequence_index': self.sequence_index,
             'extra_data': self.extra_data,
         }
-        if self.location == Location.KRAKEN and not self.notes:
-            if self.event_type == HistoryEventType.TRADE:
-                if self.event_subtype == HistoryEventSubType.SPEND:
-                    serialized_data['notes'] = f'Swap {self.amount} {self.asset.symbol_or_name()} in Kraken'  # noqa: E501
-                elif self.event_subtype == HistoryEventSubType.RECEIVE:
-                    serialized_data['notes'] = f'Receive {self.amount} {self.asset.symbol_or_name()} as a result of a Kraken swap'  # noqa: E501
-                elif self.event_subtype == HistoryEventSubType.FEE:
-                    serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken trading fee'  # noqa: E501
-
-            elif self.event_type == HistoryEventType.STAKING:
-                if self.event_subtype == HistoryEventSubType.REWARD:
-                    serialized_data['notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
-                elif self.event_subtype == HistoryEventSubType.FEE:
-                    serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
-
-            elif self.event_type == HistoryEventType.WITHDRAWAL:
-                if self.event_subtype == HistoryEventSubType.REMOVE_ASSET:
-                    serialized_data['notes'] = f'Withdraw {self.amount} {self.asset.symbol_or_name()} from Kraken'  # noqa: E501
-                elif self.event_subtype == HistoryEventSubType.FEE:
-                    serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken withdrawal fee'  # noqa: E501
-
-            elif self.event_type == HistoryEventType.DEPOSIT and self.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:  # noqa: E501
-                serialized_data['notes'] = f'Deposit {self.amount} {self.asset.symbol_or_name()} to Kraken'  # noqa: E501
+        if (
+            self.location == Location.KRAKEN and
+            self.event_type == HistoryEventType.STAKING and
+            not self.notes
+        ):
+            if self.event_subtype == HistoryEventSubType.REWARD:
+                serialized_data['notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
+            elif self.event_subtype == HistoryEventSubType.FEE:
+                serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
 
         return serialized_data
 
@@ -521,38 +507,29 @@ class HistoryEvent(HistoryBaseEntry):
             accounting: 'AccountingPot',
             events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
     ) -> int:
-        if self.location == Location.KRAKEN:
-            if self.event_type in (  # ignore trades and asset movements to avoid duplicates
-                HistoryEventType.TRADE,
-                HistoryEventType.DEPOSIT,
-                HistoryEventType.WITHDRAWAL,
-            ):
+        if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
+            if self.event_subtype != HistoryEventSubType.REWARD:
+                return 1  # ignore asset movements between spot and staking
+
+            timestamp = self.get_timestamp_in_sec()
+            # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: E501
+            # setting is set to `True` until ETH2 withdrawals were enabled
+            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: E501
                 return 1
 
-            if self.event_type == HistoryEventType.STAKING:
-                if self.event_subtype != HistoryEventSubType.REWARD:
-                    return 1  # ignore asset movements between spot and staking
+            # otherwise it's kraken staking
+            accounting.add_in_event(
+                event_type=AccountingEventType.STAKING,
+                notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
+                location=self.location,
+                timestamp=timestamp,
+                asset=self.asset,
+                amount=self.amount,
+                taxable=True,
+            )
+            return 1
 
-                timestamp = self.get_timestamp_in_sec()
-                # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: E501
-                # setting is set to `True` until ETH2 withdrawals were enabled
-                if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: E501
-                    return 1
-
-                # otherwise it's kraken staking
-                accounting.add_in_event(
-                    event_type=AccountingEventType.STAKING,
-                    notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
-                    location=self.location,
-                    timestamp=timestamp,
-                    asset=self.asset,
-                    amount=self.amount,
-                    taxable=True,
-                )
-                return 1
-
-            # else let the common logic process the events
-
+        # else let the common logic process the events
         return accounting.events_accountant.process(event=self, events_iterator=events_iterator)
 
 

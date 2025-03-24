@@ -10,7 +10,7 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -557,8 +557,7 @@ def mock_history_processing(
 
         # TODO: terrible way to check. Figure out something better
         limited_range_test = False
-        expected_trades_num = 2
-        expected_swap_events_num = 15
+        expected_swap_events_num = 21
         expected_margin_num = 1
         expected_asset_movements_num = 21
         if not limited_range_test:
@@ -566,16 +565,11 @@ def mock_history_processing(
             expected_asset_movements_num = 21
         if end_ts == 1539713238:
             limited_range_test = True
-            expected_trades_num = 1
-            expected_swap_events_num = 15
+            expected_swap_events_num = 18
             expected_margin_num = 1
             expected_asset_movements_num = 19
         if end_ts == 1601040361:
-            expected_trades_num = 1
-            expected_swap_events_num = 15
-
-        trades = [x for x in events if isinstance(x, Trade)]
-        assert len(trades) == expected_trades_num, f'Expected {expected_trades_num} but found {len(trades)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501
+            expected_swap_events_num = 18
 
         swap_events = [x for x in events if isinstance(x, SwapEvent)]
         assert len(swap_events) == expected_swap_events_num, f'Expected {expected_swap_events_num} but found {len(swap_events)} during history creation check from {start_ts} to {end_ts}'  # noqa: E501

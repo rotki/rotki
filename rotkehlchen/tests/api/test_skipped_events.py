@@ -116,12 +116,8 @@ def test_skipped_external_events(
         ))
     assert kraken is not None
     kraken.random_ledgers_data = False
-    with patch(target, new=input_ledger), rotki.data.db.conn.read_ctx() as cursor:
-        kraken.query_kraken_ledgers(
-            cursor=cursor,
-            start_ts=1458984441,
-            end_ts=1736738550,
-        )
+    with patch(target, new=input_ledger):
+        kraken.query_history_events()
 
     # check staking events
     response = requests.post(
