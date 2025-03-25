@@ -4501,7 +4501,8 @@
         "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
         "event_identifier": "Event information",
         "evm_event": "Transaction {txHash}",
-        "history_event": "{location} event"
+        "history_event": "{location} event",
+        "swap_event": "Swap on {location}"
       },
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
