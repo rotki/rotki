@@ -1,20 +1,41 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
-    CPT_STAKEDAO,
     STAKEDAO_CLAIMER1,
     STAKEDAO_CLAIMER2,
     STAKEDAO_CLAIMER_OLD,
 )
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.assets import A_CRV, A_ETH
+from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import CacheType, Location, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import timestamp_to_date
+
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
+
+
+@pytest.fixture(name='stakedao_gauges')
+def _stakedao_gauges(globaldb: 'GlobalDBHandler') -> None:
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.STAKEDAO_GAUGES, '1'),
+            values=[
+                '0x41639ABcA04c22e80326A96C8fE2882C97BaEb6e',
+                '0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3',
+            ],
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -157,3 +178,129 @@ def test_claim_multiple(ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x76d5eb42A854A1cEAfFD99000341d4E4e7a4a70F']])
+def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
+    tx_hex = deserialize_evm_tx_hash('0x0b98f04aeeaa4068b8c8ae0568ed236537c3573b4c3e6fd6b1924741cd5c9ef5')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    gas_amount, deposit_amount, timestamp = '0.000333982538036425', '29741.066052414178579757', TimestampMS(1742908919000)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=800,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x08BfA22bB3e024CDfEB3eca53c0cb93bF59c4147'),
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} eUSDUSDC in StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x3BC2512fAa5074fFdA24DCb4994e264Cb8C64BB8'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=811,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x41639ABcA04c22e80326A96C8fE2882C97BaEb6e'),
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Receive {deposit_amount} sdeUSDUSDC-gauge after depositing in StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x5bAaC7ccda079839C9524b90dF81720834FC039f']])
+def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
+    tx_hex = deserialize_evm_tx_hash('0x1f0b98aa12fb35df17801ddfbbc0c2979ec611b50311535bad92ab5ec54f65f9')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    gas_amount, cvr_reward, cvx_reward, received_amount, timestamp = '0.000731782766782389', '3.396353893656228423', '0.001648465329300485', '248892.018071224099683254', TimestampMS(1742912819000)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3'),
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Return {received_amount} sdalUSDsDOLA-gauge to StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_CRV,
+        amount=FVal(cvr_reward),
+        location_label=user_address,
+        notes=f'Claim {cvr_reward} CRV from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_CVX,
+        amount=FVal(cvx_reward),
+        location_label=user_address,
+        notes=f'Claim {cvx_reward} CVX from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=329,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:1/erc20:0x460638e6F7605B866736e38045C0DE8294d7D87f'),
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Withdraw {received_amount} alUSDsDOLA from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x464A190dc43aD8f706d7d90d2951F700226A47Ef'),
+    )]
