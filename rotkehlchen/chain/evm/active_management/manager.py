@@ -40,9 +40,12 @@ class ActiveManager:
             return cursor.fetchone()[0] > 0
 
     def _query_gas(self, web3: Web3) -> dict[str, int]:
+        base_fee_per_gas = web3.eth.get_block('latest')['baseFeePerGas']
+        max_priority_fee_per_gas = web3.eth.max_priority_fee
+
         return {
-            'maxFeePerGas': web3.eth.get_block('latest')['baseFeePerGas'],
-            'maxPriorityFeePerGas': web3.eth.max_priority_fee,
+            'maxFeePerGas': base_fee_per_gas + max_priority_fee_per_gas,  # Correct formula
+            'maxPriorityFeePerGas': max_priority_fee_per_gas,
         }
 
     def _query_with_nodes(self, func: Callable, **kwargs: Any) -> dict[str, Any]:
