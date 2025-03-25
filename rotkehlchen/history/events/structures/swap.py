@@ -112,16 +112,13 @@ class SwapEvent(HistoryBaseEntry):
         location_name = get_formatted_location_name(self.location)
         asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.SPEND:
-            notes = f'Swap {self.amount} {asset_symbol} in {location_name}.'
+            description = f'Swap {self.amount} {asset_symbol} in {location_name}'
         elif self.event_subtype == HistoryEventSubType.RECEIVE:
-            notes = f'Receive {self.amount} {asset_symbol} after a swap in {location_name}.'
+            description = f'Receive {self.amount} {asset_symbol} after a swap in {location_name}'
         else:  # Fee
-            notes = f'Spend {self.amount} {asset_symbol} as {location_name} swap fee.'
+            description = f'Spend {self.amount} {asset_symbol} as {location_name} swap fee'
 
-        if (user_notes := serialized_data['notes']) is not None:
-            notes += f' {user_notes}'
-
-        serialized_data['notes'] = notes
+        serialized_data['description'] = description
         return serialized_data
 
     @classmethod
