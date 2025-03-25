@@ -154,16 +154,13 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         location_name = get_formatted_location_name(self.location)
         asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.FEE:
-            notes = f'Pay {self.amount} {asset_symbol} as {location_name} {str(self.event_type).lower()} fee.'  # noqa: E501
+            description = f'Pay {self.amount} {asset_symbol} as {location_name} {str(self.event_type).lower()} fee'  # noqa: E501
         elif self.event_type == HistoryEventType.DEPOSIT:
-            notes = f'Deposit {self.amount} {asset_symbol} to {location_name}.'
+            description = f'Deposit {self.amount} {asset_symbol} to {location_name}'
         else:  # withdrawal
-            notes = f'Withdraw {self.amount} {asset_symbol} from {location_name}.'
+            description = f'Withdraw {self.amount} {asset_symbol} from {location_name}'
 
-        if (user_notes := serialized_data['notes']) is not None:
-            notes += f' {user_notes}'
-
-        serialized_data['notes'] = notes
+        serialized_data['description'] = description
         return serialized_data
 
     @classmethod
