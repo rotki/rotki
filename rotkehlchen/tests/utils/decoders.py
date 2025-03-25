@@ -25,6 +25,10 @@ def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> Ex
             new=lambda *args, **kwargs: False,
         ))
         stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
+            target='rotkehlchen.chain.evm.decoding.stakedao.decoder.should_update_protocol_cache',
+            new=lambda *args, **kwargs: False,
+        ))
+        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
             target='rotkehlchen.chain.evm.decoding.curve.lend.decoder.should_update_protocol_cache',
             new=lambda *args, **kwargs: False,
         ))
