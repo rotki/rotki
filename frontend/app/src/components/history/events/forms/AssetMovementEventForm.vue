@@ -38,18 +38,21 @@ const { t } = useI18n();
 
 const { editableItem, groupEvents } = toRefs(props);
 
-const historyEventTypesData = [{
-  identifier: 'deposit',
-  label: t('backend_mappings.events.history_event_type.deposit'),
-}, {
-  identifier: 'withdrawal',
-  label: t('backend_mappings.events.history_event_type.withdrawal'),
-}];
+const historyEventTypesData = [
+  {
+    identifier: 'deposit',
+    label: t('backend_mappings.events.history_event_type.deposit'),
+  },
+  {
+    identifier: 'withdrawal',
+    label: t('backend_mappings.events.history_event_type.withdrawal'),
+  },
+];
 
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const datetime = ref<number | null>(null);
 const location = ref<string>('');
 const locationLabel = ref<string>('');
 const eventType = ref<string>('');
@@ -76,16 +79,10 @@ const rules = {
     required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
   },
   fee: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fee.validation.non_empty'),
-      requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset))),
-    ),
+    required: helpers.withMessage(t('transactions.events.form.fee.validation.non_empty'), requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
   },
   feeAsset: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fee_asset.validation.non_empty'),
-      requiredIf(logicAnd(hasFee, refIsTruthy(fee))),
-    ),
+    required: helpers.withMessage(t('transactions.events.form.fee_asset.validation.non_empty'), requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
   },
   location: {
     required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
@@ -111,14 +108,10 @@ const states = {
   timestamp: datetime,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errorMessages,
+});
 useFormStateWatcher(states, stateUpdated);
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
@@ -137,7 +130,7 @@ const locationLabelSuggestions = computed<string[]>(() => {
 
 function reset() {
   set(eventIdentifier, '');
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, 'deposit');
@@ -151,7 +144,7 @@ function reset() {
 
 function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
   set(location, entry.location);
   set(locationLabel, entry.locationLabel ?? '');
   set(eventType, entry.eventType);
@@ -174,7 +167,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const timestamp = convertToTimestamp(datetime.value !== null ? String(datetime) : '', DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const editable = get(editableItem);
 
@@ -200,12 +193,7 @@ async function save(): Promise<boolean> {
     };
   }
 
-  return await saveHistoryEventHandler(
-    editable ? { ...payload, identifier: editable.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-  );
+  return await saveHistoryEventHandler(editable ? { ...payload, identifier: editable.identifier } : payload, assetPriceForm, errorMessages, reset);
 }
 
 function checkPropsData() {
@@ -257,7 +245,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
-        :disabled="!!(editableItem)"
+        :disabled="!!editableItem"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"
@@ -295,7 +283,7 @@ defineExpose({
       v-model:asset="asset"
       v-model:amount="amount"
       :v$="v$"
-      :datetime="datetime"
+      :datetime="datetime !== null ? String(datetime) : ''"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -353,7 +341,7 @@ defineExpose({
         eager
       >
         <template #header>
-          {{ t('transactions.events.form.advanced') }}
+          {{ t("transactions.events.form.advanced") }}
         </template>
         <div class="py-2">
           <RuiTextField

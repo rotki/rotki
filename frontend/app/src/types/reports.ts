@@ -125,8 +125,8 @@ export interface SelectedReport {
 }
 
 export interface ProfitLossReportPeriod {
-  readonly start: number;
-  readonly end: number;
+  readonly start: number | null;
+  readonly end: number | null;
 }
 
 export interface ProfitLossReportDebugPayload {

@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
 
 interface Props {
   modelValue: { start: number | null; end: number | null };
-  valid: boolean;
+  valid?: boolean;
 }
 
 const props = defineProps<Props>();
