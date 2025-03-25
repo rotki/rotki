@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix the issue where the "Add new event here" button is missing from the "more" menu in the event group.
 * :bug:`-` Fix the issue where pressing Enter while focused on autocomplete doesn't submit the form.
 * :feature:`-` Add the option to refresh profiles if they are somehow not loaded.
 * :bug:`-` Getting historical prices for an asset graph should not fail with RemoteError anymore.

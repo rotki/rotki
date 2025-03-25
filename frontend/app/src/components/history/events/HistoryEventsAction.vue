@@ -64,7 +64,7 @@ function hideAddAction(item: HistoryEventEntry): boolean {
       </template>
       <div class="py-2">
         <RuiButton
-          v-if="!hideAddAction"
+          v-if="!hideAddAction(event)"
           variant="list"
           @click="addEvent(event)"
         >
