@@ -2,11 +2,11 @@ import type { SettingsUpdate } from '@/types/user';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import { useMainStore } from '@/store/main';
 import { ApiValidationError } from '@/types/api/errors';
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { promiseTimeout } from '@vueuse/core';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('@/composables/api/settings/settings-api', async () => {
   const mod = await vi.importActual<typeof import('@/composables/api/settings/settings-api')>(
@@ -34,7 +34,7 @@ vi.mock('@/composables/api/settings/settings-api', async () => {
   };
 });
 
-describe('evmChainsToIgnoreSettings.vue', () => {
+describe('settings/EvmChainsToIgnoreSettings.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EvmChainsToIgnoreSettings>>;
 
   function createWrapper() {
@@ -69,7 +69,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
     const chains = ['eth', 'avax', 'base', 'zksync_lite'];
     const input = wrapper.find('.input-value');
     const inputEl = input.element as HTMLInputElement;
-    await input.trigger('input', { value: chains });
+    await input.setValue(chains);
 
     await nextTick();
     await promiseTimeout(2000); // TODO: figure a way that does not require hardcoding delay in the tests
@@ -83,12 +83,10 @@ describe('evmChainsToIgnoreSettings.vue', () => {
 
   it('displays warning if wrong chain values are passed', async () => {
     const input = wrapper.find('.input-value');
-
-    await input.trigger('input', { value: ['ethereum'] });
+    await input.setValue(['ethereum']);
     await nextTick();
     await promiseTimeout(2000); // TODO: figure a way that does not require hardcoding delay in the tests
     await flushPromises();
-
     expect(wrapper.find('.details').text()).toContain('settings.not_saved');
   });
 });

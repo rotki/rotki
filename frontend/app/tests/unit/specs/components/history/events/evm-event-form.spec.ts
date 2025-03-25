@@ -157,7 +157,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -166,7 +166,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -177,7 +177,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all counterparties options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { counterparties } = useHistoryEventCounterpartyMappings();
@@ -186,7 +186,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -209,24 +209,20 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
-    expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe('true');
+    expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
 
-    // input is still disabled, if the counterparty doesn't have mapped products.
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: '1inch',
-    });
+    // input is still disabled if the counterparty doesn't have mapped products.
+    await wrapper.find('[data-cy=counterparty] input').setValue('1inch');
     vi.advanceTimersToNextTimer();
 
-    expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe('true');
+    expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
 
-    // products options should be showed correctly, if the counterparty have mapped products.
+    // the product options should be displayed correctly if the counterparty has mapped products.
     const selectedCounterparty = 'convex';
-    await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
-      value: selectedCounterparty,
-    });
+    await wrapper.find('[data-cy=counterparty] input').setValue(selectedCounterparty);
     await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventProductsMapping } = useHistoryEventProductMappings();

@@ -2,12 +2,12 @@ import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
-  EditHistoryEventPayload,
+  AddHistoryEventPayload,
   HistoryEventEntry,
   HistoryEventEntryWithMeta,
   HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
-  NewHistoryEventPayload,
+  ModifyHistoryEventPayload,
 } from '@/types/history/events';
 import type { MaybeRef } from '@vueuse/core';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
@@ -23,8 +23,8 @@ import { omit } from 'es-toolkit';
 
 interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventEntry>>;
-  addHistoryEvent: (event: NewHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
-  editHistoryEvent: (event: EditHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
+  addHistoryEvent: (event: AddHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
+  editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
   getEarliestEventTimestamp: () => Promise<number | undefined>;
 }
@@ -96,7 +96,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     }
   };
 
-  const addHistoryEvent = async (event: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
+  const addHistoryEvent = async (event: AddHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {
@@ -112,7 +112,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     return { message, success };
   };
 
-  const editHistoryEvent = async (event: EditHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
+  const editHistoryEvent = async (event: ModifyHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {

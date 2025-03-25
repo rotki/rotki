@@ -147,6 +147,7 @@ export const AssetMovementEvent = CommonHistoryEvent.extend({
 export type AssetMovementEvent = z.infer<typeof AssetMovementEvent>;
 
 export const SwapEventSchema = CommonHistoryEvent.extend({
+  description: z.string(),
   entryType: z.literal(HistoryEventEntryType.SWAP_EVENT),
   extraData: z.unknown().nullable(),
 });
@@ -161,6 +162,25 @@ export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
   .or(SwapEventSchema);
 
 export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | AssetMovementEvent | SwapEvent;
+
+export interface AddSwapEventPayload {
+  entryType: typeof HistoryEventEntryType.SWAP_EVENT;
+  feeAmount?: string;
+  feeAsset?: string;
+  location: string;
+  notes: [string, string, string] | [string, string];
+  receiveAmount: string;
+  receiveAsset: string;
+  spendAmount: string;
+  spendAsset: string;
+  timestamp: number;
+  uniqueId: string;
+}
+
+export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueId'> {
+  eventIdentifier: string;
+  identifier: number;
+}
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
@@ -269,6 +289,10 @@ export type NewHistoryEventPayload =
   | NewEthDepositEventPayload
   | NewEthWithdrawalEventPayload
   | NewAssetMovementEventPayload;
+
+export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload;
+
+export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload;
 
 export enum HistoryEventAccountingRuleStatus {
   HAS_RULE = 'has rule',

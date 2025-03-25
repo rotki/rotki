@@ -4208,6 +4208,17 @@
     "refresh_tooltip": "Refresh {name} balances",
     "title": "{name} balances"
   },
+  "swap_event_form": {
+    "fee_notes": "Fee notes",
+    "receive_amount": "Receive Amount",
+    "receive_asset": "Receive Asset",
+    "receive_notes": "Receive notes",
+    "spend_amount": "Spend Amount",
+    "spend_asset": "Spend Asset",
+    "spend_notes": "Spend notes",
+    "unique_id": "Unique Identifier",
+    "unique_id_hint": "It is combined with the event location to create a unique event identifier"
+  },
   "sync_buttons": {
     "download_tooltip": "Pull the saved data from the server and replace your local database",
     "upload_tooltip": "Push your local database to the server and replace all data there"
