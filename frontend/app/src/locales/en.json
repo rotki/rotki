@@ -3393,7 +3393,8 @@
     "trade": "Trade",
     "trade_sub": {
       "send": "Send"
-    }
+    },
+    "wallet_bridge": "Wallet Bridge"
   },
   "net_worth_chart": {
     "current_balance": "Current balance"
@@ -4343,6 +4344,17 @@
       "sending": "I'm sending"
     },
     "available_balances": "Available Balances",
+    "bridge": {
+      "connect_browser_wallet": "Open Browser Wallet Bridge",
+      "connecting": "Connecting...",
+      "connection_logs": "Connection Logs",
+      "disconnect_session": "Disconnect Session",
+      "hint": "In Electron App, choose \"Wallet Connect\" and then \"Copy link\"",
+      "label": "Paste the Pair URI here",
+      "start_pairing": "Start Pairing",
+      "subtitle": "Paste Wallet Connect Pair URI from Electron App:",
+      "title": "Browser Wallet Bridge"
+    },
     "never_interacted": "You have never interacted with this address before.",
     "recent_transactions": {
       "no_data": "No recent transactions",

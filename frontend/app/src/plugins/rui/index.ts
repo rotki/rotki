@@ -38,6 +38,7 @@ import {
   LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
+  LuChevronsLeftRightEllipsis,
   LuChevronUp,
   LuCircleAlert,
   LuCircleArrowDown,
@@ -438,6 +439,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuSend,
         LuArrowDownUp,
         LuBookUser,
+        LuChevronsLeftRightEllipsis,
         // remaining from prev version of premium components
         RiEqualLine,
         RiMoonLine,

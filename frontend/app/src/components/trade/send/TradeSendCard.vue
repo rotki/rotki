@@ -8,6 +8,7 @@ import TradeConnectedAddressBadge from '@/components/trade/send/TradeConnectedAd
 import TradeHistoryView from '@/components/trade/send/TradeHistoryView.vue';
 import TradeRecipientAddress from '@/components/trade/send/TradeRecipientAddress.vue';
 import { useTradeApi } from '@/composables/api/trade';
+import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useTradeAsset } from '@/composables/trade/asset';
 import { useWalletHelper } from '@/composables/trade/wallet-helper';
@@ -262,6 +263,9 @@ watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
 watch([assetChain, asset], () => {
   set(amount, '');
 });
+
+const { isPackaged } = useInterop();
+const { openWalletConnectBridge } = useInterop();
 </script>
 
 <template>
@@ -310,6 +314,19 @@ watch([assetChain, asset], () => {
         </div>
 
         <div class="flex gap-2">
+          <RuiButton
+            v-if="isPackaged && !connected"
+            color="secondary"
+            @click="openWalletConnectBridge()"
+          >
+            {{ t('trade.bridge.connect_browser_wallet') }}
+            <template #append>
+              <RuiIcon
+                name="lu-arrow-up-right"
+                size="16"
+              />
+            </template>
+          </RuiButton>
           <TradeConnectedAddressBadge />
           <TradeHistoryView />
         </div>

@@ -2,11 +2,12 @@ import type { GasFeeEstimation, RecentTransaction, TransactionError, Transaction
 import { useTradeApi } from '@/composables/api/trade';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useWalletHelper } from '@/composables/trade/wallet-helper';
-import { EthersAdapter } from '@reown/appkit-adapter-ethers';
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
 import { type AppKit, createAppKit, useAppKitProvider } from '@reown/appkit/vue';
 import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { objectOmit } from '@vueuse/shared';
 import { BrowserProvider, formatUnits } from 'ethers';
 
 export const ROTKI_DAPP_METADATA = {
@@ -32,8 +33,14 @@ export const supportedNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
 function buildAppKit(): AppKit {
   const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
 
+  const wagmiAdapter = new WagmiAdapter({
+    networks: supportedNetworks,
+    projectId,
+    ssr: false,
+  });
+
   return createAppKit({
-    adapters: [new EthersAdapter()],
+    adapters: [wagmiAdapter],
     allowUnsupportedChain: true,
     features: {
       analytics: true,
@@ -85,6 +92,10 @@ export const useWalletStore = defineStore('wallet', () => {
       if (account.isConnected && chainId) {
         set(connectedChainId, chainId);
       }
+    });
+
+    kit.subscribeNetwork((newState) => {
+      set(connectedChainId, newState.chainId);
     });
   };
 
@@ -229,7 +240,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
         set(preparing, true);
         const result = await prepareERC20Transfer(payload);
-        tx = await signer.sendTransaction(result);
+        tx = await signer.sendTransaction(objectOmit(result, ['maxPriorityFeePerGas', 'maxFeePerGas']));
         set(preparing, false);
       }
       else {
@@ -243,7 +254,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
         set(preparing, true);
         const result = await prepareNativeTransfer(payload);
-        tx = await signer.sendTransaction(result);
+        tx = await signer.sendTransaction(objectOmit(result, ['maxPriorityFeePerGas', 'maxFeePerGas']));
         set(preparing, false);
       }
 

@@ -49,6 +49,8 @@ if (!hmrEnabled)
 const enableChecker = !(process.env.CI || isTest || process.env.VITEST);
 
 const builtInModulesToNotExternalized = [
+  'buffer',
+  'crypto',
   'events',
 ];
 
@@ -58,7 +60,6 @@ export default defineConfig({
       '@': resolve(PACKAGE_ROOT, 'src'),
       '~@': resolve(PACKAGE_ROOT, 'src'),
       '@shared': `${join(PACKAGE_ROOT, 'shared')}/`,
-      'events': 'events',
     },
     dedupe: ['vue'],
   },
@@ -67,7 +68,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   optimizeDeps: {
-    include: ['imask', 'vanilla-jsoneditor', '@reown/appkit', '@reown/appkit-adapter-ethers'],
+    include: ['imask', 'vanilla-jsoneditor', '@reown/appkit', '@reown/appkit-adapter-wagmi'],
   },
   plugins: [
     VueRouter({
