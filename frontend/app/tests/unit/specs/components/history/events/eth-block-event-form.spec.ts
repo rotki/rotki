@@ -6,6 +6,7 @@ import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -43,8 +44,7 @@ describe('ethBlockEventForm.vue', () => {
     eventType: 'staking',
     eventSubtype: 'mev reward',
     locationLabel: '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa',
-    notes:
-      'Validator 12 produced block 444 with 100 ETH going to 0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa as the mev reward',
+    notes: 'Validator 12 produced block 444 with 100 ETH going to 0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa as the mev reward',
     validatorIndex: 122,
     blockNumber: 444,
   };
@@ -93,20 +93,14 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` are passed', async () => {
       wrapper = createWrapper();
-      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader });
+      await flushPromises();
 
-      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
-        groupHeader.blockNumber.toString(),
-      );
+      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(groupHeader.blockNumber.toString());
 
-      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
-      );
+      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(groupHeader.validatorIndex.toString());
 
-      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
-      );
+      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(groupHeader.locationLabel);
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
 
@@ -115,24 +109,17 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` and `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      vi.advanceTimersToNextTimer();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
+      await nextTick();
+      await flushPromises();
 
-      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
-        groupHeader.blockNumber.toString(),
-      );
+      expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(groupHeader.blockNumber.toString());
 
-      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
-      );
+      expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(groupHeader.validatorIndex.toString());
 
-      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
-      );
+      expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(groupHeader.locationLabel);
 
-      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
-      );
+      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(groupHeader.amount.toString());
 
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeTruthy();
     });

@@ -7,7 +7,6 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
-import { convertFromTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -39,7 +38,7 @@ async function openEditHistoricPriceDialog() {
   set(fetchingPrice, false);
 }
 
-const datetime = computed<string>(() => convertFromTimestamp(get(event).timestamp));
+const datetime = computed<number>(() => get(event).timestamp);
 
 const { t } = useI18n();
 
@@ -105,7 +104,7 @@ async function updatePrice() {
           <template #prepend>
             <RuiIcon name="lu-pencil-line" />
           </template>
-          {{ t('profit_loss_events.edit_historic_price') }}
+          {{ t("profit_loss_events.edit_historic_price") }}
         </RuiButton>
       </div>
     </RuiMenu>
@@ -116,7 +115,7 @@ async function updatePrice() {
     >
       <RuiCard>
         <template #header>
-          {{ t('profit_loss_events.edit_historic_price') }}
+          {{ t("profit_loss_events.edit_historic_price") }}
         </template>
 
         <form class="flex flex-col gap-4">
@@ -151,7 +150,7 @@ async function updatePrice() {
         </form>
 
         <div class="text-body-2 text-rui-text-secondary">
-          {{ t('profit_loss_events.edit_price_warning') }}
+          {{ t("profit_loss_events.edit_price_warning") }}
         </div>
 
         <template #footer>
@@ -161,13 +160,13 @@ async function updatePrice() {
             color="primary"
             @click="showDialog = false"
           >
-            {{ t('common.actions.cancel') }}
+            {{ t("common.actions.cancel") }}
           </RuiButton>
           <RuiButton
             color="primary"
             @click="updatePrice()"
           >
-            {{ t('price_form.update_price') }}
+            {{ t("price_form.update_price") }}
           </RuiButton>
         </template>
       </RuiCard>

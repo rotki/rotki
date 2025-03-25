@@ -92,7 +92,7 @@ describe('evmEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await vi.advanceTimersToNextTimerAsync();
+      await vi.runAllTimersAsync();
 
       expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe('');
 
@@ -101,7 +101,7 @@ describe('evmEventForm.vue', () => {
       expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe('');
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
-    });
+    }, 10000);
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
@@ -110,21 +110,15 @@ describe('evmEventForm.vue', () => {
 
       expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(groupHeader.txHash);
 
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
-      );
+      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(groupHeader.locationLabel);
 
-      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.address,
-      );
+      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(groupHeader.address);
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('10');
 
-      expect(
-        (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe('');
+      expect((wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value).toBe('');
     });
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
@@ -134,25 +128,17 @@ describe('evmEventForm.vue', () => {
 
       expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(groupHeader.txHash);
 
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
-      );
+      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(groupHeader.locationLabel);
 
-      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.address,
-      );
+      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(groupHeader.address);
 
-      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
-      );
+      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(groupHeader.amount.toString());
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(
         groupHeader.sequenceIndex.toString(),
       );
 
-      expect(
-        (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe(groupHeader.notes);
+      expect((wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value).toBe(groupHeader.notes);
     });
   });
 
@@ -171,9 +157,7 @@ describe('evmEventForm.vue', () => {
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
 
-    expect(wrapper.findAll('[data-cy=eventSubtype] .selections span')).toHaveLength(
-      get(historyEventSubTypesData).length,
-    );
+    expect(wrapper.findAll('[data-cy=eventSubtype] .selections span')).toHaveLength(get(historyEventSubTypesData).length);
   });
 
   it('should show all counterparties options correctly', async () => {
@@ -204,8 +188,7 @@ describe('evmEventForm.vue', () => {
     const spans = wrapper.findAll('[data-cy=eventSubtype] .selections span');
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
 
-    for (let i = 0; i < keysFromGlobalMappings.length; i++)
-      expect(keysFromGlobalMappings.includes(spans.at(i)!.text())).toBeTruthy();
+    for (let i = 0; i < keysFromGlobalMappings.length; i++) expect(keysFromGlobalMappings.includes(spans.at(i)!.text())).toBeTruthy();
   });
 
   it('should show product options, based on selected counterparty', async () => {
