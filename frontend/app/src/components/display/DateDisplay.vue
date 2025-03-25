@@ -27,9 +27,7 @@ const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
 const dateFormat = computed<string>(() => {
-  const display = get(showTimezone)
-    ? get(dateDisplayFormat)
-    : get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
+  const display = get(showTimezone) ? get(dateDisplayFormat) : get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
 
   if (get(noTime))
     return display.split(' ')[0];

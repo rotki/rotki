@@ -36,7 +36,7 @@ const { editableItem, groupHeader } = toRefs(props);
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const datetime = ref<number | null>(null);
 const amount = ref<string>('');
 const validatorIndex = ref<string>('');
 const withdrawalAddress = ref<string>('');
@@ -59,8 +59,7 @@ const rules = {
     required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
   },
   withdrawalAddress: {
-    isValid: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.valid'), (value: string) =>
-      isValidEthAddress(value)),
+    isValid: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.valid'), (value: string) => isValidEthAddress(value)),
     required: helpers.withMessage(t('transactions.events.form.withdrawal_address.validation.non_empty'), required),
   },
 };
@@ -78,21 +77,17 @@ const states = {
   withdrawalAddress,
 };
 
-const v$ = useVuelidate(
-  rules,
-  states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+const v$ = useVuelidate(rules, states, {
+  $autoDirty: true,
+  $externalResults: errorMessages,
+});
 useFormStateWatcher(states, stateUpdated);
 
 const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
   set(withdrawalAddress, '');
@@ -104,7 +99,7 @@ function reset() {
 
 function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(withdrawalAddress, entry.locationLabel);
@@ -115,7 +110,7 @@ function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(datetime, Number(convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true)));
 }
 
 watch(errorMessages, (errors) => {
@@ -127,7 +122,7 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
+  const timestamp = convertToTimestamp(datetime.value !== null ? String(datetime) : '', DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthWithdrawalEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -141,12 +136,7 @@ async function save(): Promise<boolean> {
 
   const edit = get(editableItem);
 
-  return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
-    assetPriceForm,
-    errorMessages,
-    reset,
-  );
+  return await saveHistoryEventHandler(edit ? { ...payload, identifier: edit.identifier } : payload, assetPriceForm, errorMessages, reset);
 }
 
 function checkPropsData() {
@@ -206,7 +196,7 @@ defineExpose({
       v-model:amount="amount"
       asset="ETH"
       :v$="v$"
-      :datetime="datetime"
+      :datetime="datetime !== null ? String(datetime) : ''"
       disable-asset
     />
 
@@ -227,7 +217,7 @@ defineExpose({
       color="primary"
       data-cy="isExited"
     >
-      {{ t('transactions.events.form.is_exit.label') }}
+      {{ t("transactions.events.form.is_exit.label") }}
     </RuiCheckbox>
 
     <RuiDivider class="mb-2" />
@@ -239,7 +229,7 @@ defineExpose({
         eager
       >
         <template #header>
-          {{ t('transactions.events.form.advanced') }}
+          {{ t("transactions.events.form.advanced") }}
         </template>
         <div class="py-2">
           <RuiTextField
