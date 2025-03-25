@@ -33,10 +33,15 @@ async function checkLink(rawUrl: string): Promise<void> {
       process.exit(1); // Exit with an error status code
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
+    if (error instanceof Error) {
     console.error(`Error checking link ${url}: ${error.message}`);
-    process.exit(1); // Exit with an error status code
+  } else {
+    console.error(`Unknown error checking link ${url}`);
   }
+    process.exit(1);
+}
+
 }
 
 function getFlattenedValues(obj: Record<string, any>): string[] {
