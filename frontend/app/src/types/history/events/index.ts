@@ -137,13 +137,21 @@ export const AssetMovementEvent = CommonHistoryEvent.extend({
 
 export type AssetMovementEvent = z.infer<typeof AssetMovementEvent>;
 
+export const SwapEventSchema = CommonHistoryEvent.extend({
+  entryType: z.literal(HistoryEventEntryType.SWAP_EVENT),
+  extraData: z.unknown().nullable(),
+});
+
+export type SwapEvent = z.infer<typeof SwapEventSchema>;
+
 export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
   .or(OnlineHistoryEvent)
   .or(EthWithdrawalEvent)
   .or(EthBlockEvent)
-  .or(EthDepositEvent);
+  .or(EthDepositEvent)
+  .or(SwapEventSchema);
 
-export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | AssetMovementEvent;
+export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | AssetMovementEvent | SwapEvent;
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;

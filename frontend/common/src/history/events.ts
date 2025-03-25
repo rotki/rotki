@@ -5,6 +5,7 @@ export const HistoryEventEntryType = {
   ETH_WITHDRAWAL_EVENT: 'eth withdrawal event',
   EVM_EVENT: 'evm event',
   HISTORY_EVENT: 'history event',
+  SWAP_EVENT: 'swap event',
 } as const;
 
 export type HistoryEventEntryType = (typeof HistoryEventEntryType)[keyof typeof HistoryEventEntryType];
