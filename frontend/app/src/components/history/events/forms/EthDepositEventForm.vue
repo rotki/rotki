@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
+import type { EthDepositEvent, EventData, NewEthDepositEventPayload } from '@/types/history/events';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -19,21 +19,17 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthDepositEventFormProps {
-  editableItem?: EthDepositEvent;
-  nextSequence?: string;
-  groupHeader?: EthDepositEvent;
+  data?: EventData<EthDepositEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const props = withDefaults(defineProps<EthDepositEventFormProps>(), {
-  editableItem: undefined,
-  groupHeader: undefined,
-  nextSequence: '',
+  data: undefined,
 });
 
 const { t } = useI18n();
 
-const { editableItem, groupHeader, nextSequence } = toRefs(props);
+const { data } = toRefs(props);
 
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
@@ -60,7 +56,7 @@ const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
       t('transactions.events.form.event_identifier.validation.non_empty'),
-      requiredIf(() => !!get(editableItem)),
+      requiredIf(() => !!get(data)?.event),
     ),
   },
   sequenceIndex: {
@@ -106,7 +102,7 @@ useFormStateWatcher(states, stateUpdated);
 const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
-  set(sequenceIndex, get(nextSequence) || '0');
+  set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(txHash, '');
   set(eventIdentifier, null);
   set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
@@ -131,7 +127,7 @@ function applyEditableData(entry: EthDepositEvent) {
 }
 
 function applyGroupHeaderData(entry: EthDepositEvent) {
-  set(sequenceIndex, get(nextSequence) || '0');
+  set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(eventIdentifier, entry.eventIdentifier);
   set(txHash, entry.txHash);
   set(validatorIndex, entry.validatorIndex.toString());
@@ -162,7 +158,7 @@ async function save(): Promise<boolean> {
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
-  const edit = get(editableItem);
+  const edit = get(data)?.event;
 
   return await saveHistoryEventHandler(
     edit ? { ...payload, identifier: edit.identifier } : payload,
@@ -173,12 +169,13 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const editable = get(editableItem);
+  const formData = get(data);
+  const editable = formData?.event;
   if (editable) {
     applyEditableData(editable);
     return;
   }
-  const group = get(groupHeader);
+  const group = formData?.group;
   if (group) {
     applyGroupHeaderData(group);
     return;
@@ -186,7 +183,7 @@ function checkPropsData() {
   reset();
 }
 
-watch([groupHeader, editableItem], checkPropsData);
+watch(data, checkPropsData);
 
 onMounted(() => {
   checkPropsData();

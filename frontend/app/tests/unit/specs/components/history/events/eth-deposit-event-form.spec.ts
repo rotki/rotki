@@ -35,7 +35,7 @@ describe('ethDepositEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const groupHeader: EthDepositEvent = {
+  const group: EthDepositEvent = {
     identifier: 11344,
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     eventIdentifier: '10x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
@@ -84,7 +84,7 @@ describe('ethDepositEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
+    it('should show the default state when opening the form without any data', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -102,26 +102,26 @@ describe('ethDepositEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
     });
 
-    it('`groupHeader` and `nextSequence` are passed', async () => {
+    it('should update when data contains a `group` and a `nextSequenceId` property', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, nextSequence: '10' });
+      await wrapper.setProps({ data: { group, nextSequenceId: '10' } });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
       vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
+        group.validatorIndex.toString(),
       );
 
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(groupHeader.txHash);
+      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        groupHeader.eventIdentifier,
+        group.eventIdentifier,
       );
 
       expect((wrapper.find('[data-cy=depositor] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
@@ -129,34 +129,34 @@ describe('ethDepositEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('10');
     });
 
-    it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
+    it('it should update the fields when all properties in data are updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, editableItem: groupHeader });
+      await wrapper.setProps({ data: { group, event: group } });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
       vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
+        group.validatorIndex.toString(),
       );
 
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(groupHeader.txHash);
+      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        groupHeader.eventIdentifier,
+        group.eventIdentifier,
       );
 
       expect((wrapper.find('[data-cy=depositor] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
+        group.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(
-        groupHeader.sequenceIndex.toString(),
+        group.sequenceIndex.toString(),
       );
     });
   });

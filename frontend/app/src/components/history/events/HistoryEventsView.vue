@@ -2,6 +2,7 @@
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
+  EventData,
   HistoryEvent,
   HistoryEventEntry,
   HistoryEventRequestPayload,
@@ -27,7 +28,6 @@ import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useConfirmStore } from '@/store/confirm';
@@ -96,9 +96,8 @@ const {
   validators,
 } = toRefs(props);
 
-const nextSequence = ref<string>();
+const formData = ref<EventData>();
 const selectedGroupHeader = ref<HistoryEvent>();
-const selectedGroupEvents = ref<HistoryEvent[]>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
@@ -177,8 +176,6 @@ const highlightedIdentifiers = computed<string[] | undefined>(() => {
 
   return highlightedIdentifier ? [highlightedIdentifier as string] : undefined;
 });
-
-const { editableItem, openDialog } = useCommonTableProps<HistoryEventEntry>();
 
 const {
   fetchData,
@@ -311,18 +308,7 @@ async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<
 
 function showForm(payload: ShowEventHistoryForm): void {
   if (payload.type === 'event') {
-    const {
-      event,
-      eventsInGroup,
-      group,
-      nextSequenceId,
-    } = payload.data;
-
-    set(selectedGroupHeader, group);
-    set(editableItem, event);
-    set(nextSequence, nextSequenceId);
-    set(selectedGroupEvents, eventsInGroup);
-    set(openDialog, true);
+    set(formData, payload.data);
   }
   else {
     const { event, group } = payload.data;
@@ -555,11 +541,7 @@ onUnmounted(() => {
       </HistoryEventsTable>
 
       <HistoryEventFormDialog
-        v-model:open="openDialog"
-        :editable-item="editableItem"
-        :group-header="selectedGroupHeader"
-        :next-sequence="nextSequence"
-        :group-events="selectedGroupEvents"
+        v-model="formData"
         @refresh="fetchAndRedecodeEvents()"
       />
 

@@ -15,7 +15,7 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
-describe('ethBlockEventForm.vue', () => {
+describe('forms/EthBlockEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthBlockEventForm>>;
   let pinia: Pinia;
 
@@ -31,7 +31,7 @@ describe('ethBlockEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const groupHeader: EthBlockEvent = {
+  const group: EthBlockEvent = {
     identifier: 11336,
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
     eventIdentifier: 'BP1_444',
@@ -77,8 +77,8 @@ describe('ethBlockEventForm.vue', () => {
       ...options,
     });
 
-  describe('should prefill the fields based on the props', () => {
-    it('no `groupHeader`, nor `editableItem` are passed', async () => {
+  describe('should prefill the fields based on the prop', () => {
+    it('should show the default state when opening the form without any data', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -91,21 +91,21 @@ describe('ethBlockEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('`groupHeader` are passed', async () => {
+    it('should update the relevant fields when the `group` property is updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader });
+      await wrapper.setProps({ data: { group } });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
-        groupHeader.blockNumber.toString(),
+        group.blockNumber.toString(),
       );
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
+        group.validatorIndex.toString(),
       );
 
       expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
@@ -113,25 +113,25 @@ describe('ethBlockEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('`groupHeader` and `editableItem` are passed', async () => {
+    it('should update the fields when the `group` and `event` properties are updated', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ groupHeader, editableItem: groupHeader });
+      await wrapper.setProps({ data: { group, event: group } });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
-        groupHeader.blockNumber.toString(),
+        group.blockNumber.toString(),
       );
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
-        groupHeader.validatorIndex.toString(),
+        group.validatorIndex.toString(),
       );
 
       expect((wrapper.find('[data-cy=feeRecipient] .input-value').element as HTMLInputElement).value).toBe(
-        groupHeader.locationLabel,
+        group.locationLabel,
       );
 
       expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        groupHeader.amount.toString(),
+        group.amount.toString(),
       );
 
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeTruthy();
