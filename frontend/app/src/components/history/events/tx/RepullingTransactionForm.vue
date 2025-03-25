@@ -1,30 +1,57 @@
 <script lang="ts" setup>
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { AddTransactionHashPayload } from '@/types/history/events';
+import type { RepullingTransactionPayload } from '@/types/history/events';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
+import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { Blockchain, isValidTxHash } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import { required } from '@vuelidate/validators';
 
-const modelValue = defineModel<AddTransactionHashPayload>({ required: true });
+const modelValue = defineModel<RepullingTransactionPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const { t } = useI18n();
 
-const lastChain = useLocalStorage('rotki.history_event.add_by_tx_hash.chain', Blockchain.ETH);
-const txHash = useRefPropVModel(modelValue, 'txHash');
 const evmChain = useRefPropVModel(modelValue, 'evmChain');
-const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
+const address = useRefPropVModel(modelValue, 'address');
+const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
+const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
+
+const fromTimestampModel = computed({
+  get: () => {
+    const timestamp = get(fromTimestamp);
+    if (!timestamp) {
+      return '';
+    }
+    return convertFromTimestamp(timestamp);
+  },
+  set: (value: string) => {
+    set(fromTimestamp, convertToTimestamp(value));
+  },
+});
+
+const toTimestampModel = computed({
+  get: () => {
+    const timestamp = get(toTimestamp);
+    if (!timestamp) {
+      return '';
+    }
+    return convertFromTimestamp(timestamp);
+  },
+  set: (value: string) => {
+    set(toTimestamp, convertToTimestamp(value));
+  },
+});
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { getChain, txEvmChains } = useSupportedChains();
@@ -35,31 +62,19 @@ const chainOptions = computed(() => {
     .filter(([_, accounts]) => accounts.length > 0)
     .map(([chain]) => chain);
 
-  return get(txChains).filter(chain => accountChains.includes(chain));
+  return [
+    'evm',
+    ...get(txChains).filter(chain => accountChains.includes(chain)),
+  ];
 });
 
 const usableChains = computed<string[]>(() => {
   const evmChainVal = get(evmChain);
-  if (!evmChainVal) {
+  if (!evmChainVal || evmChainVal === 'evm') {
     return get(chainOptions);
   }
 
   return [getChain(evmChainVal)];
-});
-
-watch(evmChain, (chain) => {
-  if (chain) {
-    set(lastChain, chain);
-  }
-});
-
-onMounted(() => {
-  const last = get(lastChain);
-  const options = get(chainOptions);
-  if (!options.includes(last) && options.length > 0) {
-    set(lastChain, options[0]);
-  }
-  set(evmChain, get(lastChain));
 });
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({
@@ -70,8 +85,8 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
       .filter(hasAccountAddress)
       .find(
         item =>
-          getAccountAddress(item) === model.associatedAddress
-          && (!model.evmChain || model.evmChain === item.chain),
+          getAccountAddress(item) === model.address
+          && (!model.evmChain || model.evmChain === 'evm' || model.evmChain === item.chain),
       );
 
     if (accountFound) {
@@ -82,35 +97,29 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
   },
   set: (value: BlockchainAccount<AddressData>[]) => {
     const account = value[0];
-    const associatedAddress = account
+    const address = account
       ? getAccountAddress(account)
       : '';
 
     set(modelValue, {
       ...get(modelValue),
-      associatedAddress,
+      address,
     });
   },
 });
 
 const rules = {
-  associatedAddress: {
-    required: helpers.withMessage(
-      t('transactions.form.account.validation.non_empty'),
-      (accounts: BlockchainAccount<AddressData>[]) => accounts.length > 0,
-    ),
-  },
+  address: { externalServerValidation: () => true },
   evmChain: { required },
-  txHash: {
-    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHash),
-    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
-  },
+  fromTimestamp: { required },
+  toTimestamp: { required },
 };
 
 const states = {
-  associatedAddress,
+  address,
   evmChain,
-  txHash,
+  fromTimestamp,
+  toTimestamp,
 };
 
 const v$ = useVuelidate(
@@ -126,6 +135,12 @@ useFormStateWatcher(states, stateUpdated);
 
 onBeforeUnmount(() => {
   set(errors, {});
+});
+
+watchImmediate(evmChain, (chain) => {
+  if (chain === '') {
+    set(evmChain, 'evm');
+  }
 });
 
 defineExpose({
@@ -150,20 +165,31 @@ defineExpose({
         outlined
         show-details
         multichain
-        required
         unique
+        :custom-hint="t('transactions.repulling.address_hint')"
         :label="t('common.address')"
-        :error-messages="toMessages(v$.associatedAddress)"
+        :error-messages="toMessages(v$.address)"
         :no-data-text="t('transactions.form.account.no_address_found')"
       />
     </div>
-
-    <RuiTextField
-      v-model="txHash"
-      :label="t('common.tx_hash')"
-      variant="outlined"
-      color="primary"
-      :error-messages="toMessages(v$.txHash)"
-    />
+    <div class="w-full flex gap-2">
+      <div class="flex-1">
+        <DateTimePicker
+          v-model="fromTimestampModel"
+          :label="t('generate.labels.start_date')"
+          limit-now
+          allow-empty
+          :error-messages="toMessages(v$.fromTimestamp)"
+        />
+      </div>
+      <div class="flex-1">
+        <DateTimePicker
+          v-model="toTimestampModel"
+          :label="t('generate.labels.end_date')"
+          limit-now
+          :error-messages="toMessages(v$.toTimestamp)"
+        />
+      </div>
+    </div>
   </form>
 </template>

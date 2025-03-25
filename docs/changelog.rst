@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9592` Users will now be able to re-pull missed transactions.
 * :feature:`9600` rotki will now correctly decode swaps going through the rainbow router on all supported chains.
 * :feature:`-` Some more gitcoin rounds are added to rotki. Especially the new retro funding rounds.
 * :feature:`9571` rotki will now correctly decode Curve Savings transactions.

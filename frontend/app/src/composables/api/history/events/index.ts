@@ -22,6 +22,7 @@ import {
   type NewHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
   type PullTransactionPayload,
+  type RepullingTransactionPayload,
   TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
@@ -43,6 +44,7 @@ interface UseHistoryEventsApiReturn {
   deleteHistoryEvent: (identifiers: number[], forceDelete?: boolean) => Promise<boolean>;
   getEventDetails: (identifier: number) => Promise<HistoryEventDetail>;
   addTransactionHash: (payload: AddTransactionHashPayload) => Promise<boolean>;
+  repullingTransactions: (payload: RepullingTransactionPayload) => Promise<PendingTask>;
   getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
   getHistoryEventProductsData: () => Promise<HistoryEventProductData>;
@@ -188,6 +190,21 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
+  const repullingTransactions = async (payload: RepullingTransactionPayload): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/blockchains/evm/transactions/refetch',
+      snakeCaseTransformer({
+        ...payload,
+        asyncQuery: true,
+      }),
+      {
+        validateStatus: validTaskStatus,
+      },
+    );
+
+    return handleResponse(response);
+  };
+
   const getTransactionTypeMappings = async (): Promise<HistoryEventTypeData> => {
     const response = await api.instance.get<ActionResult<HistoryEventTypeData>>('/history/events/type_mappings', {
       validateStatus: validStatus,
@@ -303,5 +320,6 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
+    repullingTransactions,
   };
 }
