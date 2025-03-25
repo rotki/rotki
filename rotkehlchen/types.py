@@ -1187,6 +1187,7 @@ class CacheType(Enum):
     CURVE_CRVUSD_CONTROLLERS = auto()
     CURVE_CRVUSD_COLLATERAL_TOKEN = auto()
     CURVE_CRVUSD_AMM = auto()
+    STAKEDAO_GAUGES = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1267,6 +1268,7 @@ GeneralCacheType = Literal[
     CacheType.BALANCER_GAUGES,
     CacheType.MORPHO_REWARD_DISTRIBUTORS,
     CacheType.CURVE_CRVUSD_CONTROLLERS,
+    CacheType.STAKEDAO_GAUGES,
 ]
 
 

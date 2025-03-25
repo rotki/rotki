@@ -94,6 +94,7 @@ def globaldb_get_general_cache_values(
     """Function that reads from the general cache table.
     It returns all the values that are paired with the given key."""
     cursor.execute('SELECT value FROM general_cache WHERE key=?', (compute_cache_key(key_parts),))
+
     return [entry[0] for entry in cursor]
 
 
