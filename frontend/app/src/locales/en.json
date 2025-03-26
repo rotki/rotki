@@ -4475,6 +4475,9 @@
             "valid": "The tx hash is invalid, fill it with valid tx hash"
           }
         },
+        "unique_id": {
+          "label": "Unique Id"
+        },
         "validator_index": {
           "label": "Validator Index",
           "validation": {

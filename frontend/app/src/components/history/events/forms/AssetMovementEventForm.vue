@@ -59,6 +59,7 @@ const notes = ref<string>('');
 const hasFee = ref<boolean>(false);
 const fee = ref<string>('');
 const feeAsset = ref<string>('');
+const uniqueId = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -93,6 +94,7 @@ const rules = {
   locationLabel: { externalServerValidation },
   notes: { externalServerValidation },
   timestamp: { externalServerValidation },
+  uniqueId: { externalServerValidation },
 };
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
@@ -109,6 +111,7 @@ const states = {
   locationLabel,
   notes,
   timestamp: datetime,
+  uniqueId,
 };
 
 const v$ = useVuelidate(
@@ -145,6 +148,7 @@ function reset() {
   set(amount, '0');
   set(notes, '');
   set(errorMessages, {});
+  set(uniqueId, '');
 
   get(assetPriceForm)?.reset();
 }
@@ -166,6 +170,10 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   }
   else {
     set(hasFee, false);
+  }
+
+  if (entry.extraData?.reference) {
+    set(uniqueId, entry.extraData.reference);
   }
 }
 
@@ -190,6 +198,7 @@ async function save(): Promise<boolean> {
     locationLabel: get(locationLabel),
     notes: get(notes),
     timestamp,
+    uniqueId: get(uniqueId),
   };
 
   if (get(hasFee)) {
@@ -296,6 +305,15 @@ defineExpose({
       v-model:amount="amount"
       :v$="v$"
       :datetime="datetime"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <RuiTextField
+      v-model="uniqueId"
+      variant="outlined"
+      color="primary"
+      :label="t('transactions.events.form.unique_id.label')"
     />
 
     <RuiDivider class="mb-6 mt-2" />
