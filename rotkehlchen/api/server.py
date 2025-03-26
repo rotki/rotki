@@ -434,6 +434,7 @@ class APIServer:
             f'start rotki api {request.method} {request.path}',
             view_args=request.view_args,
             query_string=request.query_string,
+            json_data=request.json if request.is_json else None,
         )
 
     @staticmethod

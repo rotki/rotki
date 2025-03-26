@@ -11,6 +11,12 @@ Changelog
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
+
+* :release:`1.38.2 <2025-03-26>`
+* :bug:`-` Fix the issue where the "Add new event here" button is missing from the "more" menu in the event group.
+* :bug:`-` Fix the issue where pressing Enter while focused on autocomplete doesn't submit the form.
+* :feature:`-` Add the option to refresh profiles if they are somehow not loaded.
+* :bug:`-` Getting historical prices for an asset graph should not fail with RemoteError anymore.
 * :bug:`-` Editing an AssetMovement with a reference should now work fine again.
 * :bug:`-` Users will be able to see the address of each account within an xpub.
 * :bug:`-` An exception in the last decoding step will no longer stop transaction decoding in rotki.

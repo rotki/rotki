@@ -2603,7 +2603,8 @@
       "title": "Migration des données",
       "warning": "La migration des données {currentVersion} est en cours. Veuillez ne pas fermer l'application jusqu'à ce qu'elle soit terminée."
     },
-    "no_profiles_found": "Aucun profil n'a été trouvé sur cette machine. {create_account} ",
+    "no_profiles_found": "Aucun profil n'a été trouvé sur cette machine.",
+    "no_profiles_found_action": "{refresh_profiles} {create_account} ",
     "remember_password": "Se souvenir du mot de passe",
     "remember_password_tooltip": "Le mot de passe sera enregistré sur le gestionnaire de mots de passe de votre machine locale (par exemple, Keychain sur MacOS).",
     "remember_username": "Se souvenir du nom de profil",

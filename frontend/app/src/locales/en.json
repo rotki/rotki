@@ -3118,6 +3118,7 @@
   "login": {
     "button_create_account": "Create account",
     "button_no_account": "Don’t have an account?",
+    "button_refresh_profiles": "Refresh Profiles",
     "credential_error": {
       "description": "If you have not yet created an app account, you will need to do so in order to unlock your account.",
       "support": "If you need assistance, please contact us in our support channel on discord.",
@@ -3153,7 +3154,8 @@
       "title": "Data Migration",
       "warning": "Data migration {currentVersion} is running. Please don't close the app until it's finished."
     },
-    "no_profiles_found": "No profiles were found on this machine. {create_account} ",
+    "no_profiles_found": "No profiles were found on this machine.",
+    "no_profiles_found_action": "{refresh_profiles} or {create_account} ",
     "remember_password": "Remember Password",
     "remember_password_tooltip": "The password will be saved on password management tool on your local machine (e.g. Keychain in MacOS)",
     "remember_username": "Remember Profile Name",
@@ -4492,6 +4494,9 @@
             "non_empty": "The tx hash field cannot be empty.",
             "valid": "The tx hash is invalid, fill it with valid tx hash"
           }
+        },
+        "unique_id": {
+          "label": "Unique Id"
         },
         "validator_index": {
           "label": "Validator Index",

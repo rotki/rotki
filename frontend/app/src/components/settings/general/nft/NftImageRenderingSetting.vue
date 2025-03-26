@@ -9,6 +9,8 @@ import { isEqual } from 'es-toolkit';
 
 type RenderOption = 'all' | 'whitelisted';
 
+type RenderOption = 'all' | 'whitelisted';
+
 const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
 
 const { t } = useI18n();

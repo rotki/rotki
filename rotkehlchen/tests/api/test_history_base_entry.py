@@ -782,6 +782,12 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         )
         assert cursor.execute(*query_for_events).fetchone()[0] == 2
 
+        # Check that the event_identifier is set correctly when editing an event with a fee
+        assert cursor.execute(
+            'SELECT event_identifier FROM history_events WHERE identifier=?',
+            (entries[0]['identifier'],),
+        ).fetchone()[0] == 'new_eventid1'
+
         # edit the same event to remove the fee
         response = requests.patch(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
