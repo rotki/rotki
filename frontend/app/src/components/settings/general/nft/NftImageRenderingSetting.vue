@@ -7,6 +7,8 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 
+type RenderOption = 'all' | 'whitelisted';
+
 const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
 
 const { t } = useI18n();
@@ -16,7 +18,7 @@ const frontendStore = useFrontendSettingsStore();
 const { visible } = storeToRefs(confirmStore);
 const { renderAllNftImages: renderAll, whitelistedDomainsForNftImages: whitelist } = storeToRefs(frontendStore);
 
-const renderAllNftImages = ref<'all' | 'whitelisted'>('all');
+const renderAllNftImages = ref<RenderOption>('all');
 const whitelistedDomains = ref('');
 const showUpdateWhitelistConfirmation = ref(false);
 
@@ -35,7 +37,7 @@ const changed = computed(() => !isEqual(get(whitelistedDomainsForNftImages), get
 
 const { show } = confirmStore;
 
-function updateRenderingSetting(value: string, update: (value: any) => void) {
+function updateRenderingSetting(value: RenderOption | undefined, update: (value: any) => void) {
   if (value === 'whitelisted') {
     update(false);
     return;
