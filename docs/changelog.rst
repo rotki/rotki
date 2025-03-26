@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.38.2 <2025-03-26>`
 * :bug:`-` Fix the issue where the "Add new event here" button is missing from the "more" menu in the event group.
 * :bug:`-` Fix the issue where pressing Enter while focused on autocomplete doesn't submit the form.
 * :feature:`-` Add the option to refresh profiles if they are somehow not loaded.
