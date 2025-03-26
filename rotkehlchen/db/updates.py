@@ -61,7 +61,7 @@ class RotkiDataUpdater:
         self.msg_aggregator = msg_aggregator
         self.user_db = user_db
         self.branch = os.getenv('GITHUB_BASE_REF', 'develop')
-        if is_production():
+        if is_production() or self.branch == 'master':
             self.branch = 'main'
         self.update_type_mappings = {  # better than dynamic getattr. More explicit, negligible memory overhead if any  # noqa: E501
             UpdateType.SPAM_ASSETS: self.update_spam_assets,
