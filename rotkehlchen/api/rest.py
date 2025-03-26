@@ -5429,12 +5429,11 @@ class RestAPI:
             self,
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress,
+            blockchain: 'SUPPORTED_EVM_CHAINS_TYPE',
             token: EvmToken,
             amount: FVal,
     ) -> dict[str, Any]:
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
-            blockchain=token.chain_id.to_blockchain(),  # type: ignore  # checked in the validation
-        )
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain=blockchain)
 
         try:
             payload = manager.active_management.create_token_transfer(
@@ -5453,10 +5452,10 @@ class RestAPI:
             self,
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress,
-            blockchain: SupportedBlockchain,
+            chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
             amount: FVal,
     ) -> dict[str, Any]:
-        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore  # checked in the validation
+        manager = self.rotkehlchen.chains_aggregator.get_chain_manager(chain.to_blockchain())  # type: ignore[arg-type]
 
         try:
             payload = manager.active_management.transfer_native_token(

@@ -13642,7 +13642,7 @@ Historical Balance Queries
 
 
 Refetch EVM transactions for a specific time period
-==================================================
+===================================================
 
 .. http:post:: /api/(version)/blockchains/evm/transactions/refetch
 
@@ -13703,7 +13703,7 @@ Active management
 
       .. http:example:: curl wget httpie python-requests
 
-        POST /api/(version)/wallet/transfer/token HTTP/1.1
+        POST /api/1/wallet/transfer/token HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
@@ -13714,10 +13714,10 @@ Active management
           "amount": "0.000000000000000001"
         }
 
-      :reqjsonarr string from_address: The address from which the tokens will be sent
-      :reqjsonarr string to_address: The address to which the tokens will be sent
-      :reqjsonarr string token: The token identifier in the format eip155:{chain_id}/erc20:{contract_address}
-      :reqjsonarr string amount: The amount of tokens to transfer as a string
+    :reqjson string from_address: The address from which the tokens will be sent
+    :reqjson string to_address: The address to which the tokens will be sent
+    :reqjson string token: The token identifier in the format eip155:{chain_id}/erc20:{contract_address}
+    :reqjson string amount: The amount of tokens to transfer as a string
 
     **Example Response:**
 
@@ -13737,15 +13737,15 @@ Active management
           "status_code": 200
         }
 
-      :resjson object result: The transaction data needed for the token transfer
-      :resjson integer chainId: The chain ID of the blockchain network
-      :resjson string from: The sender's address
-      :resjson string to: The token contract address
-      :resjson string data: The encoded transaction data for the token transfer
-      :statuscode 200: Transaction data successfully prepared
-      :statuscode 400: Malformed request
-      :statuscode 409: Error preparing the payload
-      :statuscode 500: Internal Rotki error
+    :resjson object result: The transaction data needed for the token transfer
+    :resjson integer chainId: The chain ID of the blockchain network
+    :resjson string from: The sender's address
+    :resjson string to: The token contract address
+    :resjson string data: The encoded transaction data for the token transfer
+    :statuscode 200: Transaction data successfully prepared
+    :statuscode 400: Malformed request
+    :statuscode 409: Error preparing the payload
+    :statuscode 500: Internal Rotki error
 
   .. http:post:: /api/(version)/wallet/transfer/native
 
@@ -13755,7 +13755,7 @@ Active management
 
       .. http:example:: curl wget httpie python-requests
 
-        POST /api/(version)/wallet/transfer/native HTTP/1.1
+        POST /api/1/wallet/transfer/native HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
@@ -13763,13 +13763,13 @@ Active management
           "from_address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
           "to_address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
           "amount": "0.0003",
-          "blockchain": "ETH"
+          "chain": "ethereum"
         }
 
-      :reqjsonarr string from_address: The address from which the native cryptocurrency will be sent
-      :reqjsonarr string to_address: The address to which the native cryptocurrency will be sent
-      :reqjsonarr string amount: The amount of native cryptocurrency to transfer as a string
-      :reqjsonarr string blockchain: The blockchain identifier (e.g., "ETH" for Ethereum)
+    :reqjson string from_address: The address from which the native cryptocurrency will be sent
+    :reqjson string to_address: The address to which the native cryptocurrency will be sent
+    :reqjson string amount: The amount of native cryptocurrency to transfer as a string
+    :reqjson string chain: The EVM chain name (e.g., "ethereum" for Ethereum)
 
     **Example Response:**
 
@@ -13784,21 +13784,53 @@ Active management
             "from": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
             "to": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
             "value": 300000000000000,
-            "maxFeePerGas": 2000000000,
-            "maxPriorityFeePerGas": 1000000000,
             "nonce": 55
           },
           "status_code": 200
         }
 
-      :resjson object result: The transaction data needed for the native transfer
-      :resjson string from: The sender's address
-      :resjson string to: The recipient's address
-      :resjson integer value: The amount to transfer in the smallest unit of the native cryptocurrency
-      :resjson integer maxFeePerGas: The maximum fee per gas unit the user is willing to pay
-      :resjson integer maxPriorityFeePerGas: The maximum priority fee per gas unit
-      :resjson integer nonce: The transaction nonce
-      :statuscode 200: Transaction data successfully prepared
-      :statuscode 400: Malformed request
-      :statuscode 409: Error preparing the payload
-      :statuscode 500: Internal Rotki error
+    :resjson object result: The transaction data needed for the native transfer
+    :resjson string from: The sender's address
+    :resjson string to: The recipient's address
+    :resjson integer value: The amount to transfer in the smallest unit of the native cryptocurrency
+    :resjson integer nonce: The transaction nonce
+    :statuscode 200: Transaction data successfully prepared
+    :statuscode 400: Malformed request
+    :statuscode 409: Error preparing the payload
+    :statuscode 500: Internal Rotki error
+
+
+  .. http:post:: /api/(version)/wallet/interacted
+
+    Checks if the address in the `from` interacted with the address in the `to`. This interaction check is unidirectional, meaning it only verifies if `from_address` has interacted with `to_address`, not the other way around.
+
+    **Example Request:**
+        .. http:example:: curl wget httpie python-requests
+
+          POST /api/1/wallet/interacted HTTP/1.1
+          Host: localhost:5042
+          Content-Type: application/json;charset=UTF-8
+
+          {
+              "from_address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+              "to_address": "0x9531C059098e3d194fF87FebB587aB07B30B1306"
+          }
+
+      :reqjson string from_address: The address from which the interaction is being checked.
+      :reqjson string to_address: The address with which the interaction is being checked.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true
+        }
+
+    :resjson boolean result: Indicates whether the `from_address` has interacted with the `to_address`.
+    :statuscode 200: Interaction check successful.
+    :statuscode 400: Malformed request.
+    :statuscode 500: Internal Rotki error.

@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
 
 
-# @pytest.mark.vcr(allow_playback_repeats=False)
+@pytest.mark.vcr(match_on=['match_rpc_calls'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(WeightedNode(
     node_info=NodeName(  # set the node to make it deterministic
@@ -33,8 +33,7 @@ def test_transfers(
         ethereum_manager_connect_at_start: list[WeightedNode],
 ):
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
-    from_address = ethereum_accounts[0]
-    to_address = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')
+    from_address, to_address = ethereum_accounts[0], string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')  # noqa: E501
 
     with db.user_write() as write_cursor:
         DBHistoryEvents(db).add_history_event(
@@ -59,10 +58,7 @@ def test_transfers(
 
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'addressesinteractedresource'),
-        json={
-            'from_address': from_address,
-            'to_address': to_address,
-        },
+        json={'from_address': from_address, 'to_address': to_address},
     )
     assert assert_proper_sync_response_with_result(response) is True
 
@@ -87,13 +83,11 @@ def test_transfers(
             'from_address': from_address,
             'to_address': string_to_evm_address('0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2'),
             'amount': '0.0003',
-            'blockchain': 'ETH',
+            'chain': 'ethereum',
         },
     )
 
     payload = assert_proper_sync_response_with_result(response)
-    payload.pop('maxFeePerGas')
-    payload.pop('maxPriorityFeePerGas')
     assert payload == {
         'from': '0xc37b40ABdB939635068d3c5f13E7faF686F03B65',
         'to': '0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2',

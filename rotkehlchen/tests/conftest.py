@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import os
 import re
@@ -9,7 +10,6 @@ import warnings as test_warnings
 from contextlib import suppress
 from enum import auto
 from http import HTTPStatus
-from json import JSONDecodeError
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output  # noqa: S404
 from typing import TYPE_CHECKING, Any
@@ -179,7 +179,7 @@ def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
     """Checks if etherscan is rate limited.
     Suppression is for errors parsing when response does not match etherscan"""
     rate_limited = False
-    with suppress(JSONDecodeError, KeyError, UnicodeDecodeError, ValueError):
+    with suppress(json.JSONDecodeError, KeyError, UnicodeDecodeError, ValueError):
         body = jsonloads_dict(response['body']['string'])
         rate_limited = (
             int(body.get('status', 0)) == 0 and
@@ -242,9 +242,20 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
             return path1[1:] == path2[1:] and r1.method == r2.method
         return r1.uri == r2.uri and r1.method == r2.method
 
+    def match_rpc_calls(r1, r2):
+        """Match rpc calls ignoring the call id"""
+        b1, b2 = json.loads(r1.body), json.loads(r2.body)
+        if 'id' in b1:
+            b1.pop('id')
+        if 'id' in b2:
+            b2.pop('id')
+
+        return r1.uri == r2.uri and b1 == b2
+
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
     vcr.register_matcher('github_branch_matcher', github_branch_matcher)
+    vcr.register_matcher('match_rpc_calls', match_rpc_calls)
     return vcr
 
 
