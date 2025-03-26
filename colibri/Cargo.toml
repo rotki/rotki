@@ -8,8 +8,8 @@ edition = "2021"
 log = "0.4.22"
 simplelog = "0.12.2"
 # For the asynchronous Rest API
-reqwest = { version = "0.12.2", features = ["json"]}
-tokio = { version = "1.43.0", features = ["rt-multi-thread", "fs"]}
+reqwest = { version = "0.12.2", features = ["json"] }
+tokio = { version = "1.43.0", features = ["rt-multi-thread", "fs"] }
 axum = "0.7"
 # for serialization of structs via the API
 serde = { version = "1.0.217", features = ["derive"] }
@@ -22,26 +22,26 @@ dirs = "6.0.0"
 # for CLI args parsing
 clap = { version = "4.5.26", features = ["string"] }
 # for globalDB and other sqlite operations
-rusqlite = { version = "0.32.1", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
-async-sqlite = {version = "0.4.0" }
+rusqlite = { version = "0.32.1", features = ["bundled", "bundled-sqlcipher"] }
+async-sqlite = { version = "0.4.0" }
 # for cors and network
-tower-http = {version = "0.6.2", features = ["cors", "trace"]}
+tower-http = { version = "0.6.2", features = ["cors", "trace"] }
 http = "1.0"
 # for detailed logs when requests happen. Tracing in maintained by the tokio team and it helps
 # to log events in multithread environments. It is used by axum (also by tokio) to signal when
 # a request happens and keeps information about it. We use tracing to extract those events and
 # log them.
 tracing = "0.1.37"
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"]}
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 # Used to keep log files that rotate when they reach certain size. Is not available in tracing
 # directly (they have a PR but not merged)
 file-rotate = "0.7.6"
 # used when parsing cors. It is from rust itself
 glob = "0.3.2"
 # used for smart contract interaction
-alloy = {version = "0.12.3", features = ["contract"]}
+alloy = { version = "0.12.3", features = ["contract"] }
 base64 = "0.22.1"
 
 [dev-dependencies]
 mockito = "1.6.1"
-tokio = { version = "*", features = ["test-util"]}
+tokio = { version = "*", features = ["test-util"] }
