@@ -4,7 +4,12 @@ import generated from '@rotki/ui-library/theme';
 export default {
   mode: 'jit',
   darkMode: 'class',
-  content: ['./src/components/**/*.vue', './src/layouts/**/*.vue', './src/pages/**/*.vue'],
+  content: [
+    './src/components/**/*.vue',
+    './src/layouts/**/*.vue',
+    './src/modules/**/*.vue',
+    './src/pages/**/*.vue',
+  ],
   theme: {
     container: {
       center: true,
