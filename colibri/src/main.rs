@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         coingecko,
         userdb: Arc::new(RwLock::new(DBHandler::new())),
         active_tasks: Arc::new(Mutex::new(HashSet::<String>::new())),
-        evm_manager: Arc::new(EvmInquirerManager::new(globaldb.clone())),
+        evm_manager,
     });
 
     let stateless_routes = Router::new().route("/health", routing::get(api::health::status));
