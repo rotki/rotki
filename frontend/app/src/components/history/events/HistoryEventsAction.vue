@@ -1,21 +1,22 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends HistoryEventEntry = HistoryEventEntry">
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isAssetMovementEvent, isEvmEventRef } from '@/utils/history/events';
+import { isEvmEventRef } from '@/utils/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 
 const props = defineProps<{
-  event: HistoryEventEntry;
+  event: T;
   loading: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'add-event', event: HistoryEventEntry): void;
-  (e: 'toggle-ignore', event: HistoryEventEntry): void;
-  (e: 'redecode', data: EvmChainAndTxHash): void;
-  (e: 'delete-tx', data: EvmChainAndTxHash): void;
+  'add-event': [event: T];
+  'toggle-ignore': [event: T];
+  'redecode': [data: EvmChainAndTxHash];
+  'delete-tx': [data: EvmChainAndTxHash];
 }>();
 
 const { useIsTaskRunning } = useTaskStore();
@@ -28,16 +29,20 @@ const { getChain } = useSupportedChains();
 
 const { t } = useI18n();
 
-const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
-const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
+const addEvent = (event: T) => emit('add-event', event);
+const toggleIgnore = (event: T) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 
 function deleteTxAndEvents({ location, txHash }: EvmHistoryEvent) {
   return emit('delete-tx', { evmChain: getChain(location), txHash });
 }
 
-function hideAddAction(item: HistoryEventEntry): boolean {
-  return isAssetMovementEvent(item) && item.eventSubtype === 'fee';
+function hideAddAction(item: T): boolean {
+  const eventTypes: HistoryEventEntryType[] = [
+    HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
+    HistoryEventEntryType.SWAP_EVENT,
+  ];
+  return eventTypes.includes(item.entryType);
 }
 </script>
 
