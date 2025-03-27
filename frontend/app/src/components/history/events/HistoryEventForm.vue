@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { EventData } from '@/types/history/events';
+import type {
+  DependentEventData,
+  IndependentEventData,
+} from '@/modules/history/management/forms/form-types';
 import AssetMovementEventForm from '@/components/history/events/forms/AssetMovementEventForm.vue';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
@@ -16,7 +19,7 @@ interface FormComponent {
 }
 
 interface HistoryEventFormProps {
-  data: EventData;
+  data: DependentEventData | IndependentEventData;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -51,9 +54,11 @@ watchImmediate(data, (data) => {
   if (!data) {
     return;
   }
-  if (data.event)
+  if (data.type === 'edit')
     set(entryType, data.event.entryType);
-  else if (data.group)
+  else if (data.type === 'edit-group')
+    set(entryType, data.eventsInGroup[0].entryType);
+  else if (data.type === 'group-add')
     set(entryType, data.group.entryType);
 });
 
@@ -68,7 +73,7 @@ defineExpose({
       v-model="entryType"
       data-cy="entry-type"
       :options="historyEventEntryTypes"
-      :disabled="!!data?.group"
+      :disabled="data.type !== 'add'"
       :label="t('common.entry_type')"
       hide-details
       variant="outlined"

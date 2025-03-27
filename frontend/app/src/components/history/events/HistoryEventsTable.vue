@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import type { ShowEventHistoryForm } from '@/modules/history/management/forms/form-types';
 import type { Collection } from '@/types/collection';
 import type {
   EvmChainAndTxHash,
   HistoryEventEntry,
   PullEvmTransactionPayload,
-  ShowEventHistoryForm,
+
 } from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -324,7 +325,8 @@ function forceRedecode(): void {
               @add-event="emit('show:form', {
                 type: 'event',
                 data: {
-                  group: row,
+                  type: 'group-add',
+                  group: $event,
                   nextSequenceId: suggestNextSequenceId(row),
                 },
               })"
@@ -347,17 +349,16 @@ function forceRedecode(): void {
             @edit-event="emit('show:form', {
               type: 'event',
               data: {
-                group: row,
-                nextSequenceId: suggestNextSequenceId(row),
                 ...$event,
+                nextSequenceId: suggestNextSequenceId(row),
               },
             })"
             @delete-event="confirmDelete($event)"
             @show:missing-rule-action="emit('show:form', {
               type: 'missingRule',
               data: {
-                group: row,
-                event: $event,
+                ...$event,
+                nextSequenceId: suggestNextSequenceId(row),
               },
             })"
           />

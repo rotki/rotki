@@ -70,7 +70,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthWithdrawalEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }) =>
     mount(EthWithdrawalEventForm, {
@@ -81,7 +81,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -92,10 +92,10 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('should update the fields when `group` updated', async () => {
+    it('should update the fields when adding an event in an existing group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group } });
+      await wrapper.setProps({ data: { group, type: 'group-add', nextSequenceId: '1' } });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
         group.validatorIndex.toString(),
@@ -110,10 +110,10 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('it should update the fields when all properties in data are updated', async () => {
+    it('it should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group } });
+      await wrapper.setProps({ data: { event: group, type: 'edit', nextSequenceId: '1' } });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
         group.validatorIndex.toString(),

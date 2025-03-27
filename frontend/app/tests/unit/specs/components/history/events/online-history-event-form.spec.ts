@@ -16,7 +16,7 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
-describe('onlineHistoryEventForm.vue', () => {
+describe('forms/OnlineHistoryEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof OnlineHistoryEventForm>>;
   let pinia: Pinia;
 
@@ -69,7 +69,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof OnlineHistoryEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }) =>
     mount(OnlineHistoryEventForm, {
@@ -80,7 +80,7 @@ describe('onlineHistoryEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       await vi.advanceTimersToNextTimerAsync();
 
@@ -91,11 +91,11 @@ describe('onlineHistoryEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
     });
 
-    it('`groupHeader` and `nextSequence` are passed', async () => {
+    it('should update the fields when adding an event in an existing group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
       await wrapper.setProps({
-        data: { group, nextSequenceId: '10' },
+        data: { group, nextSequenceId: '10', type: 'group-add' },
       });
       vi.advanceTimersToNextTimer();
 
@@ -116,11 +116,11 @@ describe('onlineHistoryEventForm.vue', () => {
       ).toBe('');
     });
 
-    it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
+    it('should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
       await wrapper.setProps({
-        data: { group, event: group, nextSequenceId: '10' },
+        data: { event: group, nextSequenceId: '10', type: 'edit' },
       });
       vi.advanceTimersToNextTimer();
 
@@ -147,7 +147,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -156,7 +156,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -167,7 +167,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();

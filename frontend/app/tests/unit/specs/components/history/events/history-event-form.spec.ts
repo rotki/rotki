@@ -26,7 +26,7 @@ describe('component/HistoryEventForm.vue', () => {
     setActivePinia(pinia);
     return mount(HistoryEventForm, {
       props: {
-        data: { nextSequenceId: '0' },
+        data: { nextSequenceId: '0', type: 'add' },
       },
       global: {
         plugins: [pinia],

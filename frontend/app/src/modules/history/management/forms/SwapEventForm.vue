@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { DependentEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddSwapEventPayload, EventData, SwapEvent } from '@/types/history/events';
+import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -22,7 +23,7 @@ type FormData = Required<AddSwapEventPayload>;
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: EventData<SwapEvent> }>();
+const props = defineProps<{ data: DependentEventData<SwapEvent> }>();
 
 function emptyEvent(): FormData {
   return {
@@ -153,7 +154,7 @@ function getNotes(event?: SwapEvent): string {
 }
 
 watchImmediate(() => props.data, (data) => {
-  if (!data?.eventsInGroup)
+  if (data.type !== 'edit-group')
     return;
 
   const spend = data.eventsInGroup.find(item => item.eventSubtype === 'spend');
@@ -230,7 +231,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="states.location"
-        :disabled="data?.eventsInGroup !== undefined"
+        :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"
@@ -279,7 +280,7 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-if="data?.eventsInGroup === undefined"
+      v-if="data.type !== 'edit-group'"
       v-model="states.uniqueId"
       variant="outlined"
       color="primary"

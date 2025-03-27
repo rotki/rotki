@@ -1,56 +1,62 @@
 <script setup lang="ts">
-import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import type { EvmChainAndTxHash } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { isEvmEvent } from '@/utils/history/events';
 
-const modelValue = defineModel<HistoryEventEntry | undefined>({ required: true });
+const modelValue = defineModel<HistoryEventEditData | undefined>({ required: true });
 
 const emit = defineEmits<{
   'redecode': [data: EvmChainAndTxHash];
-  'edit-event': [event: HistoryEventEntry];
+  'edit-event': [event: HistoryEventEditData];
   'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
   'dismiss': [];
 }>();
 
 const { t } = useI18n();
 
-const options = computed(() => [
-  {
-    action: onRedecode,
-    icon: 'lu-rotate-ccw',
-    label: t('actions.history_events.missing_rule.re_decode'),
-    show: isDefined(modelValue) ? isEvmEvent(get(modelValue)) : false,
-  },
-  {
-    action: onEdit,
-    icon: 'lu-pencil',
-    label: t('actions.history_events.missing_rule.edit'),
-    show: true,
-  },
-  {
-    action: onAddRule,
-    icon: 'lu-plus',
-    label: t('actions.history_events.missing_rule.add_rule'),
-    show: true,
-  },
-] as const);
+function canRedecode(data?: HistoryEventEditData): boolean {
+  if (!data || data.type === 'edit-group') {
+    return false;
+  }
+  return isEvmEvent(data.event);
+}
+
+const options = computed(() => [{
+  action: onRedecode,
+  icon: 'lu-rotate-ccw',
+  label: t('actions.history_events.missing_rule.re_decode'),
+  show: canRedecode(get(modelValue)),
+}, {
+  action: onEdit,
+  icon: 'lu-pencil',
+  label: t('actions.history_events.missing_rule.edit'),
+  show: true,
+}, {
+  action: onAddRule,
+  icon: 'lu-plus',
+  label: t('actions.history_events.missing_rule.add_rule'),
+  show: true,
+}] as const);
 
 function close() {
   emit('dismiss');
 }
 
-function onRedecode(event: HistoryEventEntry) {
+function onRedecode(data: HistoryEventEditData) {
+  const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
   emit('redecode', toEvmChainAndTxHash(event));
   close();
 }
 
-function onEdit(event: HistoryEventEntry) {
-  emit('edit-event', event);
+function onEdit(data: HistoryEventEditData) {
+  emit('edit-event', data);
   close();
 }
 
-function onAddRule(event: HistoryEventEntry) {
+function onAddRule(data: HistoryEventEditData) {
+  const event = data.type === 'edit' ? data.event : data.eventsInGroup[0];
   const { eventSubtype, eventType } = event;
 
   emit('add', {

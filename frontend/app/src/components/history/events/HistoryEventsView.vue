@@ -1,14 +1,17 @@
 <script setup lang="ts">
+import type {
+  DependentEventData,
+  HistoryEventEditData,
+  IndependentEventData,
+  ShowEventHistoryForm,
+} from '@/modules/history/management/forms/form-types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
-  EventData,
-  HistoryEvent,
   HistoryEventEntry,
   HistoryEventRequestPayload,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
-  ShowEventHistoryForm,
 } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
@@ -98,9 +101,8 @@ const {
   validators,
 } = toRefs(props);
 
-const formData = ref<EventData>();
-const selectedGroupHeader = ref<HistoryEvent>();
-const eventWithMissingRules = ref<HistoryEventEntry>();
+const formData = ref<DependentEventData | IndependentEventData>();
+const missingRuleData = ref<HistoryEventEditData>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
 const toggles = ref<{ customizedEventsOnly: boolean; showIgnoredAssets: boolean }>({
@@ -314,9 +316,7 @@ function showForm(payload: ShowEventHistoryForm): void {
     set(formData, payload.data);
   }
   else {
-    const { event, group } = payload.data;
-    set(eventWithMissingRules, event);
-    set(selectedGroupHeader, group);
+    set(missingRuleData, payload.data);
   }
 }
 
@@ -331,11 +331,9 @@ function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSu
   });
 }
 
-function editMissingRulesEntry(event: HistoryEventEntry): void {
-  const group = get(selectedGroupHeader);
-
+function editMissingRulesEntry(data: DependentEventData | IndependentEventData): void {
   startPromise(nextTick(() => {
-    showForm({ data: { event, group }, type: 'event' });
+    showForm({ data, type: 'event' });
   }));
 }
 
@@ -571,11 +569,11 @@ onUnmounted(() => {
       />
 
       <MissingRulesDialog
-        v-model="eventWithMissingRules"
+        v-model="missingRuleData"
         @edit-event="editMissingRulesEntry($event)"
         @redecode="forceRedecodeEvmEvents({ transactions: [$event] })"
         @add="onAddMissingRule($event)"
-        @dismiss="eventWithMissingRules = undefined"
+        @dismiss="missingRuleData = undefined"
       />
     </RuiCard>
 

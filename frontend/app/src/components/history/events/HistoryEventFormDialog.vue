@@ -1,11 +1,14 @@
 <script lang="ts" setup>
-import type { EventData } from '@/types/history/events';
+import type {
+  DependentEventData,
+  IndependentEventData,
+} from '@/modules/history/management/forms/form-types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useTemplateRef } from 'vue';
 
-const modelValue = defineModel<EventData | undefined>({ required: true });
+const modelValue = defineModel<DependentEventData | IndependentEventData | undefined>({ required: true });
 
 withDefaults(defineProps<HistoryEventFormDialogProps>(), {
   loading: false,
@@ -34,11 +37,10 @@ const title = computed<string>(() =>
 );
 
 watchImmediate(modelValue, (data) => {
-  const event = data?.event;
-  if (!event || !('defaultNotes' in event)) {
+  if (data?.type !== 'edit' || !('defaultNotes' in data.event)) {
     return;
   }
-  set(defaultNotes, event.defaultNotes);
+  set(defaultNotes, data.event.defaultNotes);
 });
 
 async function save() {
