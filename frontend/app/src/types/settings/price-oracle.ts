@@ -11,6 +11,7 @@ export enum PriceOracle {
   UNISWAP3 = 'uniswapv3',
   DEFILLAMA = 'defillama',
   ALCHEMY = 'alchemy',
+  YAHOOFINANCE = 'yahoofinance',
 }
 
 export const PriceOracleEnum = z.nativeEnum(PriceOracle);

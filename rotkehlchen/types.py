@@ -151,6 +151,7 @@ class ExternalService(SerializableEnumNameMixin):
     DEFILLAMA = auto()
     COINGECKO = auto()
     ALCHEMY = auto()
+    YAHOO_FINANCE = auto()
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
