@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type Web3WalletType from '@reown/walletkit';
 import type { SessionTypes } from '@walletconnect/types';
 import type { TransactionRequest, TransactionResponse } from 'ethers';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useWalletHelper } from '@/composables/trade/wallet-helper';
 import { EIP155, ROTKI_DAPP_METADATA, useWalletStore } from '@/store/trade/wallet';
-import { WalletKit, type WalletKitTypes } from '@reown/walletkit';
+import { type IWalletKit, WalletKit, type WalletKitTypes } from '@reown/walletkit';
 import { assert } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { Core } from '@walletconnect/core';
@@ -34,12 +35,12 @@ const core = new Core({
 const pairUri = ref('');
 const logs = ref<LogEntry[]>([]);
 const isConnecting = ref(false);
-const walletKit = ref<Web3WalletType | null>(null);
+const walletKit = ref<IWalletKit | null>(null);
 const activeSessions = ref<SessionTypes.Struct[]>([]);
 
-const walletStore = useWalletStore();
-const { supportedChainsIdForConnectedAccount } = storeToRefs(walletStore);
-const { getBrowserProvider } = walletStore;
+const { getBrowserProvider } = useWalletStore();
+const { getChainFromChainId, getEip155ChainId } = useWalletHelper();
+const { getChainName } = useSupportedChains();
 
 function addLog(message: string, type: 'info' | 'success' | 'error' = 'info') {
   const timestamp = new Date().toLocaleTimeString();
@@ -82,7 +83,7 @@ async function pair() {
 
     // Connect using the URI
     await kit.core.pairing.pair({ uri: pairUriVal });
-    addLog('Successfully paired with the Electron app', 'success');
+    addLog('Successfully paired with the Electron app, you can do transaction there.', 'success');
 
     set(pairUri, '');
   }
@@ -101,10 +102,6 @@ function getActiveSessions(): SessionTypes.Struct[] {
 
   const sessionsMap = kit.getActiveSessions() || {};
   return Object.values(sessionsMap);
-}
-
-function getEip155ChainId(chainId: string | number): string {
-  return `${EIP155}:${chainId}`;
 }
 
 async function chainChanged(topic: string, chainId: string) {
@@ -153,10 +150,12 @@ async function triggerTransaction(request: TransactionRequest): Promise<Transact
 async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal) {
   const kit = get(walletKit);
   const addressVal = get(address);
+  const chainId = get(connectedChainId);
+
   if (!kit || !addressVal)
     return;
 
-  const chainIds = get(supportedChainsIdForConnectedAccount);
+  const chainIds = [chainId];
   try {
     // ------- namespaces builder util ------------ //
     const approvedNamespaces = buildApprovedNamespaces({
@@ -192,6 +191,8 @@ async function onSessionRequest(event: WalletKitTypes.SessionRequest) {
   try {
     const request = params.request.params[0];
     const result = await triggerTransaction(request);
+    const chainName = get(getChainName(getChainFromChainId(Number(result.chainId))));
+    addLog(`Transaction initialized in ${chainName}: ${result.hash}`, 'success');
     const response = { id, jsonrpc: '2.0', result: result.hash };
     await kit.respondSessionRequest({ response, topic });
   }
@@ -219,15 +220,14 @@ async function updateSession(session: SessionTypes.Struct, chainId: string, addr
   const newEip155ChainId = getEip155ChainId(chainId);
   const newEip155Account = `${newEip155ChainId}:${address}`;
 
-  const isNewSessionSafe = !currentEip155Accounts.includes(newEip155Account);
+  const isNewSession = !currentEip155Accounts.includes(newEip155Account);
 
-  // Add new Safe to the session namespace
-  if (isNewSessionSafe) {
+  if (isNewSession) {
     const namespaces: SessionTypes.Namespaces = {
       [EIP155]: {
         ...session.namespaces[EIP155],
         accounts: [newEip155Account, ...currentEip155Accounts],
-        chains: currentEip155ChainIds,
+        chains: [newEip155ChainId, ...currentEip155ChainIds],
       },
     };
 

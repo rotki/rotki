@@ -10,6 +10,7 @@ interface UseWalletHelperReturn {
   getChainIdFromChain: (chain: string) => number;
   getChainIdFromNamespace: (namespace: string) => number;
   updateStatePostTransaction: (tx?: RecentTransaction) => Promise<void>;
+  getEip155ChainId: (chainId: string | number) => string;
 }
 
 export function useWalletHelper(): UseWalletHelperReturn {
@@ -23,6 +24,8 @@ export function useWalletHelper(): UseWalletHelperReturn {
   }
 
   const getChainIdFromChain = (chain: string): number => get(allEvmChains).find(item => item.name === chain)?.id || 1;
+
+  const getEip155ChainId = (chainId: string | number): string => `${EIP155}:${chainId}`;
 
   const getChainIdFromNamespace = (namespace: string): number => Number(namespace.replace(`${EIP155}:`, ''));
 
@@ -51,6 +54,7 @@ export function useWalletHelper(): UseWalletHelperReturn {
     getChainFromChainId,
     getChainIdFromChain,
     getChainIdFromNamespace,
+    getEip155ChainId,
     updateStatePostTransaction,
   };
 }

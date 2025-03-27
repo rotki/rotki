@@ -145,13 +145,22 @@ watch([searchDebounced, openDialog], ([search, openDialog]) => {
             :label="t('common.actions.search')"
           />
         </div>
-        <TradeAddressDisplay
-          v-for="address in addressBookAddresses"
-          :key="address"
-          :address="address"
-          :chain="chain"
-          @click="select(address)"
-        />
+
+        <div
+          v-if="addressBookAddresses.length === 0"
+          class="p-4 pt-0 text-rui-text-secondary"
+        >
+          {{ t('trade.recipient.no_addresses_found') }}
+        </div>
+        <template v-else>
+          <TradeAddressDisplay
+            v-for="address in addressBookAddresses"
+            :key="address"
+            :address="address"
+            :chain="chain"
+            @click="select(address)"
+          />
+        </template>
       </div>
     </RuiCard>
   </RuiDialog>

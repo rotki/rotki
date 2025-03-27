@@ -3,21 +3,16 @@ import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
 import type { BackendOptions, Credentials, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { ProgressInfo } from 'electron-builder';
-import fs from 'node:fs';
-import http from 'node:http';
-import path from 'node:path';
 import process from 'node:process';
 import { IpcCommands } from '@electron/ipc-commands';
 import { loadConfig } from '@electron/main/config';
-import { createProtocol } from '@electron/main/create-protocol';
-import { startHttp, stopHttp } from '@electron/main/http';
+import { startHttp, startWalletConnectBridgeServer, stopHttp } from '@electron/main/http';
 import { PasswordManager } from '@electron/main/password-manager';
 import { selectPort } from '@electron/main/port-utils';
 import { assert, type DebugSettings } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { dialog, ipcMain, nativeTheme, shell } from 'electron';
 import electronUpdater from 'electron-updater';
-import * as httpProxy from 'http-proxy';
 
 const { autoUpdater } = electronUpdater;
 
@@ -29,23 +24,6 @@ interface Callbacks {
   terminateSubprocesses: (update?: boolean) => Promise<void>;
   getRunningCorePIDs: () => Promise<number[]>;
   updateDownloadProgress: (progress: number) => void;
-}
-
-// Helper function to return correct MIME types
-function getMimeType(filePath: string): string {
-  if (filePath.endsWith('.html'))
-    return 'text/html';
-  if (filePath.endsWith('.js'))
-    return 'application/javascript';
-  if (filePath.endsWith('.css'))
-    return 'text/css';
-  if (filePath.endsWith('.json'))
-    return 'application/json';
-  if (filePath.endsWith('.png'))
-    return 'image/png';
-  if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg'))
-    return 'image/jpeg';
-  return 'application/octet-stream';
 }
 
 export class IpcManager {
@@ -218,78 +196,10 @@ export class IpcManager {
         return;
       }
 
-      // Select an available port for the proxy/server
       const portNumber = await selectPort(40010);
       this.walletConnectBridgePort = portNumber; // Store the port
 
-      const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
-      const isDev = !!devServerUrl;
-
-      if (isDev) {
-        // 💻 **Development Mode** → Proxy Electron requests to Vite (http://localhost:8080)
-        // @ts-ignore
-        const proxy = httpProxy.createProxyServer({
-          target: devServerUrl,
-          changeOrigin: true,
-        });
-
-        // Create a reverse proxy HTTP server
-        const server = http.createServer((req, res) => {
-          if (req && req.url && (req.url === '/' || req.url.startsWith('/#/'))) {
-            req.url = '/#/wallet-bridge'; // Ensure main app loads wallet-bridge
-          }
-
-          // Proxy request to Vite server
-          proxy.web(req, res, {}, (err: any) => {
-            console.error('Proxy error:', err);
-            res.writeHead(500, { 'Content-Type': 'text/plain' });
-            res.end('Proxy error');
-          });
-        });
-
-        server.listen(portNumber, () => {
-          this.logger.log(`Dev Proxy Server started at http://localhost:${portNumber}`);
-        });
-      }
-      else {
-        // 🏷 **Production Mode** → Serve app's UI files locally
-
-        // Ensure `app://./` protocol is correctly registered
-        createProtocol('app');
-
-        // 📌 Serve `dist/` from the packaged Electron app
-        const distPath = path.join(process.resourcesPath, 'app.asar', 'dist');
-        const indexPath = path.join(distPath, 'index.html');
-
-        // Local HTTP server to serve static frontend assets
-        const server = http.createServer((req, res) => {
-          let requestFile = req.url?.split('?')[0] ?? '/'; // Ignore query params
-
-          if (requestFile === '/' || requestFile.startsWith('/#/')) {
-            requestFile = '/index.html'; // Always serve `index.html`
-          }
-
-          const filePath = path.join(distPath, requestFile);
-
-          // Determine MIME type
-          const mimeType = getMimeType(filePath);
-          fs.readFile(fs.existsSync(filePath) ? filePath : indexPath, (err, data) => {
-            if (err) {
-              console.error(`Error loading file: ${filePath}`, err);
-              res.writeHead(500, { 'Content-Type': 'text/plain' });
-              res.end(`500 Internal Server Error: Failed to load ${filePath}\nError: ${err.message}`);
-            }
-            else {
-              res.writeHead(200, { 'Content-Type': mimeType });
-              res.end(data);
-            }
-          });
-        });
-
-        server.listen(portNumber, () => {
-          this.logger.log(`Static Server started at http://localhost:${portNumber}`);
-        });
-      }
+      startWalletConnectBridgeServer(portNumber, this.logger);
 
       // Open the Wallet Connect Bridge in Electron (same URL in dev/prod)
       await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);

@@ -1,6 +1,7 @@
 import type { GasFeeEstimation, RecentTransaction, TransactionError, TransactionParams } from '@/types/trade';
-import { useTradeApi } from '@/composables/api/trade';
+import { type PrepareERC20TransferResponse, type PrepareNativeTransferResponse, useTradeApi } from '@/composables/api/trade';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/composables/trade/wallet-helper';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
@@ -8,7 +9,7 @@ import { type AppKit, createAppKit, useAppKitProvider } from '@reown/appkit/vue'
 import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { objectOmit } from '@vueuse/shared';
-import { BrowserProvider, formatUnits } from 'ethers';
+import { BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
 
 export const ROTKI_DAPP_METADATA = {
   description: 'Rotki Dapp',
@@ -68,6 +69,7 @@ export const useWalletStore = defineStore('wallet', () => {
   const { assetSymbol } = useAssetInfoRetrieval();
   const { getChainFromChainId, getChainIdFromNamespace, updateStatePostTransaction } = useWalletHelper();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
+  const { getEvmChainName } = useSupportedChains();
 
   const supportedChainsIdForConnectedAccount = computed<number[]>(() => {
     const supportedChainIdsVal = get(supportedChainIds);
@@ -79,22 +81,32 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
 
-  const setupAppKitListener = (): void => {
-    const kit = appKit;
-    assert(kit);
+  const updateApprovedChainIds = (): void => {
+    assert(appKit);
 
-    kit.subscribeAccount((account) => {
+    // @ts-expect-error accessing protected method to get approved chain IDs
+    const data = appKit.getApprovedCaipNetworksData();
+    if (data) {
+      const approvedCaipNetworkIds = data.approvedCaipNetworkIds;
+      set(supportedChainIds, approvedCaipNetworkIds);
+    }
+  };
+
+  const setupAppKitListener = (): void => {
+    assert(appKit);
+
+    appKit.subscribeAccount((account) => {
       set(connected, account.isConnected);
       set(connectedAddress, account.isConnected ? account.address : undefined);
-      set(supportedChainIds, kit.getApprovedCaipNetworkIds());
 
-      const chainId = kit.getCaipNetworkId();
+      const chainId = appKit!.getCaipNetworkId();
       if (account.isConnected && chainId) {
         set(connectedChainId, chainId);
       }
+      updateApprovedChainIds();
     });
 
-    kit.subscribeNetwork((newState) => {
+    appKit.subscribeNetwork((newState) => {
       set(connectedChainId, newState.chainId);
     });
   };
@@ -103,31 +115,30 @@ export const useWalletStore = defineStore('wallet', () => {
   setupAppKitListener();
 
   const open = async (): Promise<void> => {
-    const kit = appKit;
-    assert(kit);
-    await kit.open();
+    assert(appKit);
+    await appKit.open();
   };
 
   const resetState = (): void => {
     set(connected, false);
+    set(preparing, false);
     set(connectedAddress, undefined);
     set(supportedChainIds, []);
   };
 
   const disconnect = async (): Promise<void> => {
-    const kit = appKit;
-    assert(kit);
-    await kit.disconnect();
+    assert(appKit);
+    await appKit.disconnect();
+
     resetState();
   };
 
   const switchNetwork = async (chainId: bigint): Promise<void> => {
-    const kit = appKit;
-    assert(kit);
+    assert(appKit);
 
     const network = supportedNetworks.find(item => BigInt(item.id) === chainId);
     if (network) {
-      await kit.switchNetwork(network);
+      await appKit.switchNetwork(network);
     }
   };
 
@@ -212,20 +223,26 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const getRecentTransactionByTxHash = (hash: string): RecentTransaction | undefined => get(recentTransactions).find(item => item.hash === hash);
 
-  const sendTransaction = async (params: TransactionParams): Promise<any> => {
+  const sendTransaction = async (params: TransactionParams): Promise<TransactionResponse> => {
+    assert(appKit);
+
     try {
       const fromAddress = get(connectedAddress);
       const provider = getBrowserProvider();
       const signer = await provider.getSigner();
       const chainId = get(connectedChainId);
+      const evmChain = getEvmChainName(params.chain);
 
-      if (!chainId) {
+      if (!chainId || !evmChain) {
         throw new Error('No chain ID available');
       }
 
       assert(fromAddress);
 
       let tx;
+      let backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse | undefined;
+      set(preparing, true);
+
       if (!params.native) {
         // ERC20 transfer
         const token = params.assetIdentifier;
@@ -237,31 +254,32 @@ export const useWalletStore = defineStore('wallet', () => {
           toAddress: params.to,
           token,
         };
-
-        set(preparing, true);
-        const result = await prepareERC20Transfer(payload);
-        tx = await signer.sendTransaction(objectOmit(result, ['maxPriorityFeePerGas', 'maxFeePerGas']));
-        set(preparing, false);
+        backendPayload = await prepareERC20Transfer(payload);
       }
       else {
         // Native token transfer
         const payload = {
           amount: params.amount,
-          blockchain: params.chain,
+          chainId: evmChain,
           fromAddress,
           toAddress: params.to,
         };
-
-        set(preparing, true);
-        const result = await prepareNativeTransfer(payload);
-        tx = await signer.sendTransaction(objectOmit(result, ['maxPriorityFeePerGas', 'maxFeePerGas']));
-        set(preparing, false);
+        backendPayload = await prepareNativeTransfer(payload);
       }
 
-      addRecentTransaction(tx.hash, getChainFromChainId(chainId), params);
-      await tx.wait();
-      updateTransactionStatus(tx.hash, 'completed');
-      startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
+      set(preparing, false);
+
+      if (backendPayload) {
+        tx = await signer.sendTransaction(objectOmit(backendPayload, ['maxPriorityFeePerGas', 'maxFeePerGas']));
+        addRecentTransaction(tx.hash, getChainFromChainId(chainId), params);
+        await tx.wait();
+        updateTransactionStatus(tx.hash, 'completed');
+        startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
+      }
+      else {
+        set(preparing, false);
+        throw new Error('Failed to load the payload from backend');
+      }
 
       return tx;
     }

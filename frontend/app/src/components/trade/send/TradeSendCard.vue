@@ -41,7 +41,7 @@ const { getChainFromChainId, getChainIdFromChain } = useWalletHelper();
 const { getNativeAsset } = useSupportedChains();
 
 const walletStore = useWalletStore();
-const { connected, connectedAddress, connectedChainId, preparing, supportedChainsForConnectedAccount } = storeToRefs(walletStore);
+const { connected, connectedAddress, connectedChainId, preparing, supportedChainIds, supportedChainsForConnectedAccount } = storeToRefs(walletStore);
 const { getGasFeeForChain, open, sendTransaction, switchNetwork } = walletStore;
 
 const { useIsTaskRunning } = useTaskStore();
@@ -51,6 +51,7 @@ const { addresses } = useAccountAddresses();
 const { getAccountList } = useBlockchainAccountData();
 const { getAssetDetail } = useTradeAsset(connectedAddress);
 const { getIsInteractedBefore } = useTradeApi();
+const { isPackaged, openWalletConnectBridge } = useInterop();
 
 const queryingBalances = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const queryingBalancesDebounced = refDebounced(queryingBalances, 200);
@@ -58,6 +59,13 @@ const usedQueryingBalances = logicOr(queryingBalances, queryingBalancesDebounced
 
 function resetMax() {
   set(max, '0');
+}
+
+function resetInput() {
+  set(asset, '');
+  set(toAddress, '');
+  set(amount, '');
+  resetMax();
 }
 
 const isNativeAsset = computed(() => {
@@ -239,6 +247,8 @@ async function send() {
   }
 }
 
+const isConnectWalletSupportAllChains = computed(() => get(supportedChainIds).length === 0);
+
 watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOptions]) => {
   if (!chainOptions.includes(currentChain)) {
     set(assetChain, chainOptions[0]);
@@ -264,8 +274,11 @@ watch([assetChain, asset], () => {
   set(amount, '');
 });
 
-const { isPackaged } = useInterop();
-const { openWalletConnectBridge } = useInterop();
+watch(preparing, (curr, prev) => {
+  if (!curr && prev) {
+    resetInput();
+  }
+});
 </script>
 
 <template>
@@ -379,9 +392,10 @@ const { openWalletConnectBridge } = useInterop();
         color="primary"
         size="lg"
         class="!w-full"
+        :disabled="!isConnectWalletSupportAllChains"
         @click="switchToDesireNetwork()"
       >
-        {{ t('trade.actions.change_network') }}
+        {{ isConnectWalletSupportAllChains ? t('trade.actions.change_network') : t('trade.actions.change_network_in_your_wallet') }}
       </RuiButton>
       <RuiButton
         v-else

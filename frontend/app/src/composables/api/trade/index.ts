@@ -32,10 +32,10 @@ const PrepareERC20TransferResponse = z.object({
   value: z.number().transform(arg => BigInt(arg)),
 });
 
-type PrepareERC20TransferResponse = z.infer<typeof PrepareERC20TransferResponse>;
+export type PrepareERC20TransferResponse = z.infer<typeof PrepareERC20TransferResponse>;
 
 interface PrepareNativeTransferPayload extends PrepareTransferPayload {
-  blockchain: string;
+  chainId: string;
 }
 
 const PrepareNativeTransferResponse = z.object({
@@ -47,7 +47,7 @@ const PrepareNativeTransferResponse = z.object({
   value: z.number().transform(arg => BigInt(arg)),
 });
 
-type PrepareNativeTransferResponse = z.infer<typeof PrepareNativeTransferResponse>;
+export type PrepareNativeTransferResponse = z.infer<typeof PrepareNativeTransferResponse>;
 
 export function useTradeApi(): UseTradeApiReturn {
   const prepareERC20Transfer = async (payload: PrepareERC20TransferPayload): Promise<PrepareERC20TransferResponse> => {

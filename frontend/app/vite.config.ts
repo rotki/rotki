@@ -68,7 +68,13 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
   },
   optimizeDeps: {
-    include: ['imask', 'vanilla-jsoneditor', '@reown/appkit', '@reown/appkit-adapter-wagmi'],
+    include: [
+      'imask',
+      'vanilla-jsoneditor',
+      '@reown/appkit',
+      '@reown/appkit-adapter-wagmi',
+      '@walletconnect/core',
+    ],
   },
   plugins: [
     VueRouter({
@@ -182,6 +188,11 @@ export default defineConfig({
             'dayjs',
             'consola',
             'zod',
+          ],
+          'wallet-connect': [
+            '@reown/appkit',
+            '@reown/appkit-adapter-wagmi',
+            '@walletconnect/core',
           ],
         },
       },

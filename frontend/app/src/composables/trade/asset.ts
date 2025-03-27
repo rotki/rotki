@@ -20,6 +20,7 @@ export function useTradeAsset(address: MaybeRef<string | undefined>): UseTradeAs
   const { balances } = storeToRefs(useBalancesStore());
   const { assetPrice, exchangeRate, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { isEvm } = useSupportedChains();
 
   function priceInCurrentCurrency(asset: string): ComputedRef<BigNumber> {
@@ -39,8 +40,6 @@ export function useTradeAsset(address: MaybeRef<string | undefined>): UseTradeAs
       return price.multipliedBy(currentExchangeRate || One);
     });
   }
-
-  const { supportedChainsForConnectedAccount } = useWalletStore();
 
   const allOwnedAssets = computed<TradableAsset[]>(() => {
     const addressVal = get(address);
