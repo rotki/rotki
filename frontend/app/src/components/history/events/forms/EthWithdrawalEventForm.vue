@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { EthWithdrawalEvent, EventData, NewEthWithdrawalEventPayload } from '@/types/history/events';
+import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
+import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/types/history/events';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -18,7 +19,7 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthWithdrawalEventFormProps {
-  data: EventData<EthWithdrawalEvent>;
+  data: IndependentEventData<EthWithdrawalEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -47,7 +48,7 @@ const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
       t('transactions.events.form.event_identifier.validation.non_empty'),
-      requiredIf(() => !!get(data)?.event),
+      requiredIf(() => get(data).type === 'edit'),
     ),
   },
   timestamp: { externalServerValidation: () => true },
@@ -135,7 +136,8 @@ async function save(): Promise<boolean> {
     withdrawalAddress: get(withdrawalAddress),
   };
 
-  const edit = get(data)?.event;
+  const eventData = get(data);
+  const edit = eventData.type === 'edit' ? eventData.event : undefined;
 
   return await saveHistoryEventHandler(
     edit ? { ...payload, identifier: edit.identifier } : payload,
@@ -147,14 +149,12 @@ async function save(): Promise<boolean> {
 
 function checkPropsData() {
   const formData = get(data);
-  const editable = formData?.event;
-  if (editable) {
-    applyEditableData(editable);
+  if (formData.type === 'edit') {
+    applyEditableData(formData.event);
     return;
   }
-  const group = formData?.group;
-  if (group) {
-    applyGroupHeaderData(group);
+  if (formData.type === 'group-add') {
+    applyGroupHeaderData(formData.group);
     return;
   }
   reset();

@@ -1,4 +1,5 @@
-import type { AddSwapEventPayload, EventData, SwapEvent } from '@/types/history/events';
+import type { DependentEventData } from '@/modules/history/management/forms/form-types';
+import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { Pinia } from 'pinia';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
@@ -35,7 +36,7 @@ describe('forms/SwapEventForm', () => {
   let setMessageMock: ReturnType<typeof vi.fn>;
   let pinia: Pinia;
 
-  const data: EventData<SwapEvent> = {
+  const data: DependentEventData<SwapEvent> = {
     eventsInGroup: [{
       amount: bigNumberify('0.01'),
       asset: 'ETH',
@@ -82,6 +83,7 @@ describe('forms/SwapEventForm', () => {
       sequenceIndex: 2,
       timestamp: 1742901211000,
     }],
+    type: 'edit-group',
   };
 
   beforeAll(() => {
@@ -123,7 +125,7 @@ describe('forms/SwapEventForm', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof SwapEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }): VueWrapper<InstanceType<typeof SwapEventForm>> => mount(SwapEventForm, {
     global: {
@@ -232,7 +234,7 @@ describe('forms/SwapEventForm', () => {
     expect(wrapper.find('[data-cy="fee-notes"]').exists()).toBe(true);
   });
 
-  it('calls editHistoryEvent when identifiers are defined', async () => {
+  it('calls editHistoryEvent when editing an event', async () => {
     const wrapper = createWrapper({
       props: {
         data,

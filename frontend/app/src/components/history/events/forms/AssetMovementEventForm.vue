@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { AssetMovementEvent, EventData, NewAssetMovementEventPayload } from '@/types/history/events';
+import type { DependentEventData } from '@/modules/history/management/forms/form-types';
+import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -23,7 +24,7 @@ import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface AssetMovementEventFormProps {
-  data: EventData<AssetMovementEvent>;
+  data: DependentEventData<AssetMovementEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -180,7 +181,8 @@ async function save(): Promise<boolean> {
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  const editable = get(data)?.event;
+  const eventData = get(data);
+  const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
 
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -215,10 +217,10 @@ async function save(): Promise<boolean> {
 
 function checkPropsData() {
   const formData = get(data);
-  const editable = formData?.event;
-  const feeEvent = formData?.eventsInGroup?.find(event => event.eventSubtype === 'fee');
 
-  if (editable) {
+  if (formData.type === 'edit-group') {
+    const editable = formData.eventsInGroup[0];
+    const feeEvent = formData.eventsInGroup.find(event => event.eventSubtype === 'fee');
     applyEditableData(editable, feeEvent);
     return;
   }
@@ -263,7 +265,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
-        :disabled="!!data?.event"
+        :disabled="data.type === 'edit-group'"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"

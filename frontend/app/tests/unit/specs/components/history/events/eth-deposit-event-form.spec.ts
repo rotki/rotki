@@ -19,7 +19,7 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
-describe('ethDepositEventForm.vue', () => {
+describe('form/EthDepositEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthDepositEventForm>>;
   let pinia: Pinia;
 
@@ -77,7 +77,7 @@ describe('ethDepositEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthDepositEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }) =>
     mount(EthDepositEventForm, {
@@ -88,7 +88,7 @@ describe('ethDepositEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -106,10 +106,10 @@ describe('ethDepositEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
     });
 
-    it('should update when data contains a `group` and a `nextSequenceId` property', async () => {
+    it('should update when data adding a new event in a group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, nextSequenceId: '10' } });
+      await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
       vi.advanceTimersToNextTimer();
@@ -133,10 +133,10 @@ describe('ethDepositEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('10');
     });
 
-    it('it should update the fields when all properties in data are updated', async () => {
+    it('it should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group } });
+      await wrapper.setProps({ data: { event: group, type: 'edit', nextSequenceId: '1' } });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
       vi.advanceTimersToNextTimer();

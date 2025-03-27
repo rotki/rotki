@@ -66,7 +66,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof AssetMovementEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }): VueWrapper<InstanceType<typeof AssetMovementEventForm>> =>
     mount(AssetMovementEventForm, {
@@ -77,7 +77,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     });
 
   describe('prefill the fields based on the props', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -85,10 +85,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
       expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe('');
     });
 
-    it('it should update the fields when all properties in data are updated', async () => {
+    it('it should update the fields when all editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { event: group, eventsInGroup: [group] } });
+      await wrapper.setProps({ data: { eventsInGroup: [group], type: 'edit-group' } });
       vi.advanceTimersToNextTimer();
 
       expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
@@ -110,7 +110,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
   });
 
   it('should show eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { eventsInGroup: [group] } } });
+    wrapper = createWrapper({ props: { data: { eventsInGroup: [group], type: 'edit-group' } } });
     vi.advanceTimersToNextTimer();
     await flushPromises();
 

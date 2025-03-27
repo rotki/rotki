@@ -71,7 +71,7 @@ describe('forms/EthBlockEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }) =>
     mount(EthBlockEventForm, {
@@ -82,7 +82,7 @@ describe('forms/EthBlockEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the prop', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -95,10 +95,10 @@ describe('forms/EthBlockEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('should update the relevant fields when the `group` property is updated', async () => {
+    it('should update the relevant fields when adding an event to a group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group } });
+      await wrapper.setProps({ data: { group, type: 'group-add', nextSequenceId: '1' } });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
         group.blockNumber.toString(),
@@ -117,10 +117,10 @@ describe('forms/EthBlockEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('should update the fields when the `group` and `event` properties are updated', async () => {
+    it('should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group } });
+      await wrapper.setProps({ data: { event: group, type: 'edit', nextSequenceId: '1' } });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
         group.blockNumber.toString(),

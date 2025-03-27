@@ -80,7 +80,7 @@ describe('forms/EvmEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EvmEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
   }) =>
     mount(EvmEventForm, {
@@ -107,10 +107,10 @@ describe('forms/EvmEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
     });
 
-    it('should update the proper fields when `group` and `nextSequenceId` are updated', async () => {
+    it('should update the proper fields adding an event to a group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, nextSequenceId: '10' } });
+      await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
       expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
@@ -131,10 +131,10 @@ describe('forms/EvmEventForm.vue', () => {
       ).toBe('');
     });
 
-    it('it should update the fields when all properties in data are updated', async () => {
+    it('it should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group, nextSequenceId: '10' } });
+      await wrapper.setProps({ data: { type: 'edit', event: group, nextSequenceId: '10' } });
 
       expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
@@ -161,7 +161,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -170,7 +170,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -181,7 +181,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all counterparties options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { counterparties } = useHistoryEventCounterpartyMappings();
@@ -190,7 +190,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -213,7 +213,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ props: { data: { group } } });
+    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
     vi.advanceTimersToNextTimer();
 
     expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
