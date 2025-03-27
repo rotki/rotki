@@ -22,6 +22,10 @@ from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
 from rotkehlchen.chain.evm.decoding.open_ocean.decoder import OpenOceanDecoder
+from rotkehlchen.chain.evm.decoding.pendle.constants import (
+    PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM,
+)
+from rotkehlchen.chain.evm.decoding.pendle.decoder import PendleCommonDecoder
 from rotkehlchen.chain.evm.decoding.rainbow.constants import RAINBOW_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.rainbow.decoder import RainbowDecoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
@@ -276,6 +280,13 @@ class EVMTransactionDecoder(ABC):
             self._add_single_decoder(
                 class_name='RainbowDecoder',
                 decoder_class=RainbowDecoder,
+                rules=rules,
+            )
+
+        if self.evm_inquirer.chain_id in PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM:
+            self._add_single_decoder(
+                class_name='Pendle',
+                decoder_class=PendleCommonDecoder,
                 rules=rules,
             )
 
