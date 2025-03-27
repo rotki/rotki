@@ -1,5 +1,6 @@
 import type { AddSwapEventPayload, EventData, SwapEvent } from '@/types/history/events';
 import type { TradeLocationData } from '@/types/history/trade/location';
+import type { Pinia } from 'pinia';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
@@ -7,7 +8,7 @@ import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue'
 import { useMessageStore } from '@/store/message';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
-import { mount } from '@vue/test-utils';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick } from 'vue';
@@ -32,6 +33,7 @@ describe('forms/SwapEventForm', () => {
   let addHistoryEventMock: ReturnType<typeof vi.fn>;
   let editHistoryEventMock: ReturnType<typeof vi.fn>;
   let setMessageMock: ReturnType<typeof vi.fn>;
+  let pinia: Pinia;
 
   const data: EventData<SwapEvent> = {
     eventsInGroup: [{
@@ -84,7 +86,8 @@ describe('forms/SwapEventForm', () => {
 
   beforeAll(() => {
     setupDayjs();
-    setActivePinia(createPinia());
+    pinia = createPinia();
+    setActivePinia(pinia);
   });
 
   beforeEach(() => {
@@ -118,8 +121,19 @@ describe('forms/SwapEventForm', () => {
     vi.useRealTimers();
   });
 
+  const createWrapper = (options: ComponentMountingOptions<typeof SwapEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }): VueWrapper<InstanceType<typeof SwapEventForm>> => mount(SwapEventForm, {
+    global: {
+      plugins: [pinia],
+    },
+    ...options,
+  });
+
   it('should render the form correctly', () => {
-    const wrapper = mount(SwapEventForm);
+    const wrapper = createWrapper();
     expect(wrapper.exists()).toBe(true);
     expect(wrapper.find('[data-cy="datetime"]').exists()).toBe(true);
     expect(wrapper.find('[data-cy="location"]').exists()).toBe(true);
@@ -145,7 +159,7 @@ describe('forms/SwapEventForm', () => {
 
   it('should validate the form and call addHistoryEvent on save', async () => {
     vi.useFakeTimers();
-    const wrapper = mount(SwapEventForm);
+    const wrapper = createWrapper();
     vi.advanceTimersToNextTimer();
     const datetimePicker = wrapper.find('[data-cy="datetime"] input');
     const locationField = wrapper.find('[data-cy="location"] input');
@@ -189,7 +203,7 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should display validation errors when the form is invalid', async () => {
-    const wrapper = mount(SwapEventForm);
+    const wrapper = createWrapper();
     const saveMethod = wrapper.vm.save;
 
     await saveMethod();
@@ -201,7 +215,7 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
-    const wrapper = mount(SwapEventForm);
+    const wrapper = createWrapper();
 
     const feeAmount = wrapper.find('[data-cy="fee-amount"] input');
     const feeAsset = wrapper.find('[data-cy="fee-asset"] input');
@@ -219,7 +233,7 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('calls editHistoryEvent when identifiers are defined', async () => {
-    const wrapper = mount(SwapEventForm, {
+    const wrapper = createWrapper({
       props: {
         data,
       },
@@ -262,7 +276,7 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should handle server validation errors', async () => {
-    const wrapper = mount(SwapEventForm, {
+    const wrapper = createWrapper({
       props: {
         data,
       },

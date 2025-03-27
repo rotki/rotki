@@ -78,7 +78,11 @@ describe('forms/EvmEventForm.vue', () => {
     vi.useRealTimers();
   });
 
-  const createWrapper = (options: ComponentMountingOptions<typeof EvmEventForm> = {}) =>
+  const createWrapper = (options: ComponentMountingOptions<typeof EvmEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }) =>
     mount(EvmEventForm, {
       global: {
         plugins: [pinia],

@@ -18,14 +18,12 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthWithdrawalEventFormProps {
-  data?: EventData<EthWithdrawalEvent>;
+  data: EventData<EthWithdrawalEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(defineProps<EthWithdrawalEventFormProps>(), {
-  data: undefined,
-});
+const props = defineProps<EthWithdrawalEventFormProps>();
 
 const { t } = useI18n();
 

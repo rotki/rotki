@@ -16,14 +16,12 @@ interface FormComponent {
 }
 
 interface HistoryEventFormProps {
-  data?: EventData;
+  data: EventData;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(defineProps<HistoryEventFormProps>(), {
-  data: undefined,
-});
+const props = defineProps<HistoryEventFormProps>();
 
 const { t } = useI18n();
 const { data } = toRefs(props);

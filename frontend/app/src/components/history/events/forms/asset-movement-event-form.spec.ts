@@ -64,7 +64,11 @@ describe('forms/AssetMovementEventForm.vue', () => {
     wrapper.unmount();
   });
 
-  const createWrapper = (options: ComponentMountingOptions<typeof AssetMovementEventForm> = {}): VueWrapper<InstanceType<typeof AssetMovementEventForm>> =>
+  const createWrapper = (options: ComponentMountingOptions<typeof AssetMovementEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }): VueWrapper<InstanceType<typeof AssetMovementEventForm>> =>
     mount(AssetMovementEventForm, {
       global: {
         plugins: [pinia],
@@ -106,7 +110,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
   });
 
   it('should show eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { eventsInGroup: [group] } });
+    wrapper = createWrapper({ props: { data: { eventsInGroup: [group] } } });
     vi.advanceTimersToNextTimer();
     await flushPromises();
 

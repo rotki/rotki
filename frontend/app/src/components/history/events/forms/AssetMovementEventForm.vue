@@ -23,14 +23,12 @@ import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface AssetMovementEventFormProps {
-  data?: EventData<AssetMovementEvent>;
+  data: EventData<AssetMovementEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(defineProps<AssetMovementEventFormProps>(), {
-  data: undefined,
-});
+const props = defineProps<AssetMovementEventFormProps>();
 
 const { t } = useI18n();
 

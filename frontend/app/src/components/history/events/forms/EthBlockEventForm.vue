@@ -18,13 +18,11 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthBlockEventFormProps {
-  data?: EventData<EthBlockEvent>;
+  data: EventData<EthBlockEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
-const props = withDefaults(defineProps<EthBlockEventFormProps>(), {
-  data: undefined,
-});
+const props = defineProps<EthBlockEventFormProps>();
 
 const { t } = useI18n();
 
