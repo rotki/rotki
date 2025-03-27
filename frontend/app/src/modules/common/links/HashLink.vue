@@ -180,7 +180,7 @@ const tags = useAccountTags(text);
 
 <template>
   <div
-    class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6"
+    class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px]"
     :class="{
       'pl-2': !showIcon && !hideText,
     }"
