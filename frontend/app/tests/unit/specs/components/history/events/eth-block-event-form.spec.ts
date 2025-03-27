@@ -69,7 +69,11 @@ describe('forms/EthBlockEventForm.vue', () => {
     vi.useRealTimers();
   });
 
-  const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {}) =>
+  const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }) =>
     mount(EthBlockEventForm, {
       global: {
         plugins: [pinia],

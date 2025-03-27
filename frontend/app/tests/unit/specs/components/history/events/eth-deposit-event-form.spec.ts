@@ -75,7 +75,11 @@ describe('ethDepositEventForm.vue', () => {
     vi.useRealTimers();
   });
 
-  const createWrapper = (options: ComponentMountingOptions<typeof EthDepositEventForm> = {}) =>
+  const createWrapper = (options: ComponentMountingOptions<typeof EthDepositEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }) =>
     mount(EthDepositEventForm, {
       global: {
         plugins: [pinia],

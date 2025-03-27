@@ -19,13 +19,11 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthDepositEventFormProps {
-  data?: EventData<EthDepositEvent>;
+  data: EventData<EthDepositEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
-const props = withDefaults(defineProps<EthDepositEventFormProps>(), {
-  data: undefined,
-});
+const props = defineProps<EthDepositEventFormProps>();
 
 const { t } = useI18n();
 

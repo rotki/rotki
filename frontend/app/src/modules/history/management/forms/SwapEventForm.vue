@@ -22,11 +22,7 @@ type FormData = Required<AddSwapEventPayload>;
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(defineProps<{
-  data?: EventData<SwapEvent>;
-}>(), {
-  data: undefined,
-});
+const props = defineProps<{ data: EventData<SwapEvent> }>();
 
 function emptyEvent(): FormData {
   return {

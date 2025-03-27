@@ -68,7 +68,11 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     vi.useRealTimers();
   });
 
-  const createWrapper = (options: ComponentMountingOptions<typeof EthWithdrawalEventForm> = {}) =>
+  const createWrapper = (options: ComponentMountingOptions<typeof EthWithdrawalEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }) =>
     mount(EthWithdrawalEventForm, {
       global: {
         plugins: [pinia],

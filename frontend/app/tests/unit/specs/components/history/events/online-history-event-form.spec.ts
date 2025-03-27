@@ -67,7 +67,11 @@ describe('onlineHistoryEventForm.vue', () => {
     vi.useRealTimers();
   });
 
-  const createWrapper = (options: ComponentMountingOptions<typeof OnlineHistoryEventForm> = {}) =>
+  const createWrapper = (options: ComponentMountingOptions<typeof OnlineHistoryEventForm> = {
+    props: {
+      data: { nextSequenceId: '0' },
+    },
+  }) =>
     mount(OnlineHistoryEventForm, {
       global: {
         plugins: [pinia],
@@ -143,7 +147,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -152,7 +156,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -163,7 +167,7 @@ describe('onlineHistoryEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
-    wrapper = createWrapper({ props: { groupHeader: group } });
+    wrapper = createWrapper({ props: { data: { group } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();

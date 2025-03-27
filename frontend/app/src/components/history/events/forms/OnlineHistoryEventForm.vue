@@ -22,11 +22,7 @@ import { isEmpty } from 'es-toolkit/compat';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(defineProps<{
-  data?: EventData<OnlineHistoryEvent>;
-}>(), {
-  data: undefined,
-});
+const props = defineProps<{ data: EventData<OnlineHistoryEvent> }>();
 
 const { t } = useI18n();
 
