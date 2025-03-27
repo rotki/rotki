@@ -1,33 +1,31 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="">
 import type { HistoryEventEntry } from '@/types/history/events';
 import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
 
-const props = withDefaults(
-  defineProps<{
-    eventGroup: HistoryEventEntry;
-    allEvents: HistoryEventEntry[];
-    hasIgnoredEvent?: boolean;
-    loading?: boolean;
-    highlightedIdentifiers?: string[];
-  }>(),
-  {
-    loading: false,
-  },
-);
+interface DeleteData {
+  canDelete: boolean;
+  item: HistoryEventEntry;
+}
+
+interface EditData<T extends HistoryEventEntry = HistoryEventEntry> {
+  event: T;
+  eventsInGroup: T[];
+}
+
+const props = withDefaults(defineProps<{
+  eventGroup: HistoryEventEntry;
+  allEvents: HistoryEventEntry[];
+  hasIgnoredEvent?: boolean;
+  loading?: boolean;
+  highlightedIdentifiers?: string[];
+}>(), {
+  loading: false,
+});
 
 const emit = defineEmits<{
-  (e: 'edit-event', data: {
-    event: HistoryEventEntry;
-    eventsInGroup: HistoryEventEntry[];
-  }): void;
-  (
-    e: 'delete-event',
-    data: {
-      canDelete: boolean;
-      item: HistoryEventEntry;
-    },
-  ): void;
-  (e: 'show:missing-rule-action', data: HistoryEventEntry): void;
+  'edit-event': [data: EditData];
+  'delete-event': [data: DeleteData];
+  'show:missing-rule-action': [data: EditData];
 }>();
 
 const PER_BATCH = 6;
@@ -110,7 +108,10 @@ const buttonText = computed(() => {
       :loading="loading"
       :highlighted-identifiers="highlightedIdentifiers"
       @delete-event="emit('delete-event', $event)"
-      @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+      @show:missing-rule-action="emit('show:missing-rule-action', {
+        event: $event,
+        eventsInGroup: limitedEvents,
+      })"
       @edit-event="emit('edit-event', {
         event: $event,
         eventsInGroup: limitedEvents,

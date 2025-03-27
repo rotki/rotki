@@ -51,9 +51,9 @@ watchImmediate(data, (data) => {
   if (!data) {
     return;
   }
-  if (data.event)
+  if (data.type === 'edit')
     set(entryType, data.event.entryType);
-  else if (data.group)
+  else if (data.type === 'group-add')
     set(entryType, data.group.entryType);
 });
 
@@ -68,7 +68,7 @@ defineExpose({
       v-model="entryType"
       data-cy="entry-type"
       :options="historyEventEntryTypes"
-      :disabled="!!data?.group"
+      :disabled="data.type !== 'add'"
       :label="t('common.entry_type')"
       hide-details
       variant="outlined"

@@ -324,6 +324,7 @@ function forceRedecode(): void {
               @add-event="emit('show:form', {
                 type: 'event',
                 data: {
+                  type: 'group-add',
                   group: row,
                   nextSequenceId: suggestNextSequenceId(row),
                 },
@@ -347,6 +348,7 @@ function forceRedecode(): void {
             @edit-event="emit('show:form', {
               type: 'event',
               data: {
+                type: 'edit',
                 group: row,
                 nextSequenceId: suggestNextSequenceId(row),
                 ...$event,
@@ -357,7 +359,8 @@ function forceRedecode(): void {
               type: 'missingRule',
               data: {
                 group: row,
-                event: $event,
+                nextSequenceId: suggestNextSequenceId(row),
+                ...$event,
               },
             })"
           />

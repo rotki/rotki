@@ -153,7 +153,7 @@ function getNotes(event?: SwapEvent): string {
 }
 
 watchImmediate(() => props.data, (data) => {
-  if (!data?.eventsInGroup)
+  if (data.type !== 'edit')
     return;
 
   const spend = data.eventsInGroup.find(item => item.eventSubtype === 'spend');
@@ -230,7 +230,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="states.location"
-        :disabled="data?.eventsInGroup !== undefined"
+        :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"
@@ -279,7 +279,7 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-if="data?.eventsInGroup === undefined"
+      v-if="data.type !== 'edit'"
       v-model="states.uniqueId"
       variant="outlined"
       color="primary"

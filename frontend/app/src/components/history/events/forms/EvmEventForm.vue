@@ -98,7 +98,7 @@ const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
       t('transactions.events.form.event_identifier.validation.non_empty'),
-      requiredIf(() => !!get(data)?.event),
+      requiredIf(() => get(data).type === 'edit'),
     ),
   },
   eventSubtype: {
@@ -225,7 +225,8 @@ async function save(): Promise<boolean> {
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  const editable = get(data)?.event;
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
   const payload: NewEvmHistoryEventPayload = {
@@ -257,14 +258,13 @@ async function save(): Promise<boolean> {
 
 function checkPropsData() {
   const formData = get(data);
-  const editable = formData?.event;
-  if (editable) {
-    applyEditableData(editable);
+  if (formData.type === 'edit') {
+    applyEditableData(formData.event);
     return;
   }
-  const group = formData?.group;
-  if (group) {
-    applyGroupHeaderData(group);
+
+  if (formData.type !== 'add') {
+    applyGroupHeaderData(formData.group);
     return;
   }
   reset();
@@ -309,7 +309,7 @@ defineExpose({
       <LocationSelector
         v-model="location"
         :items="txChainsToLocation"
-        :disabled="!!(data?.event || data?.group)"
+        :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"
@@ -321,7 +321,7 @@ defineExpose({
       v-model="txHash"
       variant="outlined"
       color="primary"
-      :disabled="!!(data?.event || data?.group)"
+      :disabled="data.type !== 'add'"
       data-cy="txHash"
       :label="t('common.tx_hash')"
       :error-messages="toMessages(v$.txHash)"

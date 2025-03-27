@@ -34,11 +34,10 @@ const title = computed<string>(() =>
 );
 
 watchImmediate(modelValue, (data) => {
-  const event = data?.event;
-  if (!event || !('defaultNotes' in event)) {
+  if (data?.type !== 'edit' || !('defaultNotes' in data.event)) {
     return;
   }
-  set(defaultNotes, event.defaultNotes);
+  set(defaultNotes, data.event.defaultNotes);
 });
 
 async function save() {

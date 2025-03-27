@@ -54,7 +54,7 @@ const rules = {
   eventIdentifier: {
     required: helpers.withMessage(
       t('transactions.events.form.event_identifier.validation.non_empty'),
-      requiredIf(() => !!get(data)?.event),
+      requiredIf(() => get(data).type === 'edit'),
     ),
   },
   sequenceIndex: {
@@ -156,7 +156,8 @@ async function save(): Promise<boolean> {
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
-  const edit = get(data)?.event;
+  const eventData = get(data);
+  const edit = eventData.type === 'edit' ? eventData.event : undefined;
 
   return await saveHistoryEventHandler(
     edit ? { ...payload, identifier: edit.identifier } : payload,
@@ -168,14 +169,12 @@ async function save(): Promise<boolean> {
 
 function checkPropsData() {
   const formData = get(data);
-  const editable = formData?.event;
-  if (editable) {
-    applyEditableData(editable);
+  if (formData.type === 'edit') {
+    applyEditableData(formData.event);
     return;
   }
-  const group = formData?.group;
-  if (group) {
-    applyGroupHeaderData(group);
+  if (formData.type !== 'add') {
+    applyGroupHeaderData(formData.group);
     return;
   }
   reset();

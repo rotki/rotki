@@ -180,7 +180,8 @@ async function save(): Promise<boolean> {
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  const editable = get(data)?.event;
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
 
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -215,10 +216,10 @@ async function save(): Promise<boolean> {
 
 function checkPropsData() {
   const formData = get(data);
-  const editable = formData?.event;
-  const feeEvent = formData?.eventsInGroup?.find(event => event.eventSubtype === 'fee');
 
-  if (editable) {
+  if (formData.type === 'edit') {
+    const editable = formData.event;
+    const feeEvent = formData.eventsInGroup.find(event => event.eventSubtype === 'fee');
     applyEditableData(editable, feeEvent);
     return;
   }
@@ -263,7 +264,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
-        :disabled="!!data?.event"
+        :disabled="data.type === 'edit'"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"

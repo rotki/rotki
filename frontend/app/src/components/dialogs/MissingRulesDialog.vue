@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/events';
+import type { EvmChainAndTxHash, MissingRuleData } from '@/types/history/events';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { isEvmEvent } from '@/utils/history/events';
 
-const modelValue = defineModel<HistoryEventEntry | undefined>({ required: true });
+const modelValue = defineModel<MissingRuleData | undefined>({ required: true });
 
 const emit = defineEmits<{
   'redecode': [data: EvmChainAndTxHash];
-  'edit-event': [event: HistoryEventEntry];
+  'edit-event': [event: MissingRuleData];
   'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
   'dismiss': [];
 }>();
@@ -20,7 +20,7 @@ const options = computed(() => [
     action: onRedecode,
     icon: 'lu-rotate-ccw',
     label: t('actions.history_events.missing_rule.re_decode'),
-    show: isDefined(modelValue) ? isEvmEvent(get(modelValue)) : false,
+    show: isDefined(modelValue) ? isEvmEvent(get(modelValue).event) : false,
   },
   {
     action: onEdit,
@@ -40,17 +40,18 @@ function close() {
   emit('dismiss');
 }
 
-function onRedecode(event: HistoryEventEntry) {
-  emit('redecode', toEvmChainAndTxHash(event));
+function onRedecode(data: MissingRuleData) {
+  emit('redecode', toEvmChainAndTxHash(data.event));
   close();
 }
 
-function onEdit(event: HistoryEventEntry) {
-  emit('edit-event', event);
+function onEdit(data: MissingRuleData) {
+  emit('edit-event', data);
   close();
 }
 
-function onAddRule(event: HistoryEventEntry) {
+function onAddRule(data: MissingRuleData) {
+  const event = data.event;
   const { eventSubtype, eventType } = event;
 
   emit('add', {

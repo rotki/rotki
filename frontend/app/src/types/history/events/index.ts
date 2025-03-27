@@ -356,20 +356,38 @@ export const ProcessSkippedHistoryEventsResponse = z.object({
 
 export type ProcessSkippedHistoryEventsResponse = z.infer<typeof ProcessSkippedHistoryEventsResponse>;
 
-export interface ShowMissingRuleForm {
-  readonly type: 'missingRule';
-  readonly data: {
-    group: HistoryEventEntry;
-    event: HistoryEventEntry;
-  };
+export interface MissingRuleData<T extends HistoryEvent = HistoryEvent> {
+  group: T;
+  event: T;
+  eventsInGroup: T[];
+  nextSequenceId: string;
 }
 
-export interface EventData<T extends HistoryEvent = HistoryEvent> {
-  group?: T;
-  event?: T;
-  nextSequenceId?: string;
-  eventsInGroup?: T[];
+export interface ShowMissingRuleForm {
+  readonly type: 'missingRule';
+  readonly data: MissingRuleData;
 }
+
+export interface AddEventData {
+  type: 'add';
+  nextSequenceId: string;
+}
+
+export interface GroupAddEventData<T extends HistoryEvent = HistoryEvent> {
+  type: 'group-add';
+  nextSequenceId: string;
+  group: T;
+}
+
+export interface EditEventData<T extends HistoryEvent = HistoryEvent> {
+  type: 'edit';
+  event: T;
+  nextSequenceId: string;
+  group: T;
+  eventsInGroup: T[];
+}
+
+export type EventData<T extends HistoryEvent = HistoryEvent> = AddEventData | GroupAddEventData<T> | EditEventData<T>;
 
 export interface ShowEventForm {
   readonly type: 'event';
