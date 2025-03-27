@@ -26,6 +26,7 @@ import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
 import { isTaskCancelled } from '@/utils';
 import { isAssetMovementEvent } from '@/utils/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 import { groupBy } from 'es-toolkit';
 
 interface DeleteOrIgnoreEvent {
@@ -175,7 +176,7 @@ async function onConfirmDelete(): Promise<void> {
   }
   else {
     const ids = [];
-    if (isAssetMovementEvent(event)) {
+    if (isAssetMovementEvent(event) || event.entryType === HistoryEventEntryType.SWAP_EVENT) {
       ids.push(...(get(eventsGroupedByEventIdentifier)[event.eventIdentifier] || []).map(item => item.identifier));
     }
     else {

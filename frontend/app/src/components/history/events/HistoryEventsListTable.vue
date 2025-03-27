@@ -36,9 +36,9 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'edit-event', data: HistoryEventEntry): void;
-  (e: 'delete-event', data: DeleteEvent): void;
-  (e: 'show:missing-rule-action', data: HistoryEventEntry): void;
+  'edit-event': [data: HistoryEventEntry];
+  'delete-event': [data: DeleteEvent];
+  'show:missing-rule-action': [data: HistoryEventEntry];
 }>();
 
 const { t } = useI18n();
@@ -62,6 +62,15 @@ function deleteEvent(item: HistoryEventEntry) {
   });
 }
 
+function getNotes(description: string | undefined, notes: string | undefined | null): string | undefined {
+  if (description) {
+    return notes ? `${description}. ${notes}` : description;
+  }
+  else {
+    return notes || undefined;
+  }
+}
+
 function getEventNoteAttrs(event: HistoryEventEntry) {
   const data: {
     validatorIndex?: number;
@@ -82,16 +91,19 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 
   // todo: validate optional or nullable state of schema
   const { asset, notes } = pick(event, ['notes', 'asset']);
+  const description = 'description' in event ? event.description : undefined;
 
   return {
     asset,
-    notes: notes || undefined,
+    notes: getNotes(description, notes),
     ...data,
   };
 }
 
-function hideEventAction(item: HistoryEventEntry): boolean {
-  return isAssetMovementEvent(item) && item.eventSubtype === 'fee';
+function hideActions(item: HistoryEventEntry, index: number): boolean {
+  const isSwapButNotSpend = item.entryType === HistoryEventEntryType.SWAP_EVENT && index !== 0;
+  const isAssetMovementFee = isAssetMovementEvent(item) && item.eventSubtype === 'fee';
+  return isAssetMovementFee || isSwapButNotSpend;
 }
 </script>
 
@@ -129,8 +141,8 @@ function hideEventAction(item: HistoryEventEntry): boolean {
           align="end"
           :delete-tooltip="t('transactions.events.actions.delete')"
           :edit-tooltip="t('transactions.events.actions.edit')"
-          :no-delete="hideEventAction(item)"
-          :no-edit="hideEventAction(item)"
+          :no-delete="hideActions(item, index)"
+          :no-edit="hideActions(item, index)"
           @edit-click="editEvent(item)"
           @delete-click="deleteEvent(item)"
         >

@@ -6,7 +6,7 @@ import EthDepositEventForm from '@/components/history/events/forms/EthDepositEve
 import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
-import SwapEventForm from '@/components/history/events/forms/SwapEventForm.vue';
+import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 import { HistoryEventEntryType } from '@rotki/common';
 import { kebabCase } from 'es-toolkit';
 import { useTemplateRef } from 'vue';

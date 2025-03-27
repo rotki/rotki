@@ -193,7 +193,7 @@ describe('components/DateTimePicker.vue', () => {
 
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe('12/12/2021 12:12:12');
 
-      await wrapper.find('.input-value').trigger('input', { value: 'Etc/GMT-7' });
+      await wrapper.find('.input-value').setValue('Etc/GMT-7');
       await nextTick();
       await flushPromises();
 
@@ -220,7 +220,7 @@ describe('components/DateTimePicker.vue', () => {
       });
       await nextTick();
 
-      await wrapper.find('.input-value').trigger('input', { value: 'Etc/GMT-1' });
+      await wrapper.find('.input-value').setValue('Etc/GMT-1');
       await nextTick();
 
       await wrapper.find('input').setValue('01/01/2023 00:00:00');
@@ -250,7 +250,7 @@ describe('components/DateTimePicker.vue', () => {
       });
       await nextTick();
 
-      await wrapper.find('.input-value').trigger('input', { value: 'Etc/GMT-1' });
+      await wrapper.find('.input-value').setValue('Etc/GMT-1');
       await nextTick();
 
       await wrapper.find('[data-cy=date-time-picker__set-now-button]').trigger('click');

@@ -13,13 +13,13 @@ import {
   validWithParamsSessionAndExternalService,
 } from '@/services/utils';
 import {
+  type AddHistoryEventPayload,
   type AddTransactionHashPayload,
-  type EditHistoryEventPayload,
   HistoryEventDetail,
   type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
-  type NewHistoryEventPayload,
+  type ModifyHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
   type PullTransactionPayload,
   type RepullingTransactionPayload,
@@ -39,8 +39,8 @@ interface UseHistoryEventsApiReturn {
   pullAndRecodeTransactionRequest: (payload: PullTransactionPayload, type?: TransactionChainType) => Promise<PendingTask>;
   getUndecodedTransactionsBreakdown: (type?: TransactionChainType) => Promise<PendingTask>;
   decodeTransactions: (chains: string[], type?: TransactionChainType, ignoreCache?: boolean) => Promise<PendingTask>;
-  addHistoryEvent: (event: NewHistoryEventPayload) => Promise<{ identifier: number }>;
-  editHistoryEvent: (event: EditHistoryEventPayload) => Promise<boolean>;
+  addHistoryEvent: (event: AddHistoryEventPayload) => Promise<{ identifier: number }>;
+  editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<boolean>;
   deleteHistoryEvent: (identifiers: number[], forceDelete?: boolean) => Promise<boolean>;
   getEventDetails: (identifier: number) => Promise<HistoryEventDetail>;
   addTransactionHash: (payload: AddTransactionHashPayload) => Promise<boolean>;
@@ -142,7 +142,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
-  const addHistoryEvent = async (event: NewHistoryEventPayload): Promise<{ identifier: number }> => {
+  const addHistoryEvent = async (event: AddHistoryEventPayload): Promise<{ identifier: number }> => {
     const response = await api.instance.put<ActionResult<{ identifier: number }>>(
       '/history/events',
       snakeCaseTransformer(event),
@@ -154,7 +154,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
-  const editHistoryEvent = async (event: EditHistoryEventPayload): Promise<boolean> => {
+  const editHistoryEvent = async (event: ModifyHistoryEventPayload): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>('/history/events', snakeCaseTransformer(event), {
       validateStatus: validStatus,
     });
