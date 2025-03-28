@@ -21,13 +21,10 @@ vi.mock('json-editor-vue', () => ({
 describe('component/HistoryEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof HistoryEventForm>>;
 
-  const createWrapper = () => {
+  const createWrapper = (): VueWrapper<InstanceType<typeof HistoryEventForm>> => {
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(HistoryEventForm, {
-      props: {
-        data: { nextSequenceId: '0', type: 'add' },
-      },
       global: {
         plugins: [pinia],
         stubs: {
@@ -35,6 +32,9 @@ describe('component/HistoryEventForm.vue', () => {
           Teleport: true,
           TransitionGroup: false,
         },
+      },
+      props: {
+        data: { nextSequenceId: '0', type: 'add' },
       },
     });
   };

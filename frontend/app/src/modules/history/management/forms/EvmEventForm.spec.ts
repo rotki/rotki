@@ -1,10 +1,10 @@
 import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
-import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
@@ -27,10 +27,10 @@ describe('forms/EvmEventForm.vue', () => {
   let pinia: Pinia;
 
   const asset = {
-    name: 'Ethereum',
-    symbol: 'eip155:1/erc20:0xA3Ee8CEB67906492287FFD256A9422313B5796d4',
     assetType: 'own chain',
     isCustomAsset: false,
+    name: 'Ethereum',
+    symbol: 'eip155:1/erc20:0xA3Ee8CEB67906492287FFD256A9422313B5796d4',
   };
 
   const mapping: AssetMap = {
@@ -39,22 +39,22 @@ describe('forms/EvmEventForm.vue', () => {
   };
 
   const group: EvmHistoryEvent = {
-    identifier: 14344,
-    eventIdentifier: '10x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
-    sequenceIndex: 2411,
-    timestamp: 1686495083,
-    location: 'ethereum',
-    asset: asset.symbol,
+    address: '0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C',
     amount: bigNumberify(610),
-    eventType: 'receive',
+    asset: asset.symbol,
+    counterparty: null,
+    entryType: HistoryEventEntryType.EVM_EVENT,
+    eventIdentifier: '10x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
     eventSubtype: '',
+    eventType: 'receive',
+    identifier: 14344,
+    location: 'ethereum',
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
     notes:
       'Receive 610 Visit https://rafts.cc to claim rewards. from 0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C to 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
-    entryType: HistoryEventEntryType.EVM_EVENT,
-    address: '0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C',
-    counterparty: null,
     product: null,
+    sequenceIndex: 2411,
+    timestamp: 1686495083,
     txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
   };
 
@@ -82,7 +82,7 @@ describe('forms/EvmEventForm.vue', () => {
     props: {
       data: { nextSequenceId: '0', type: 'add' },
     },
-  }) =>
+  }): VueWrapper<InstanceType<typeof EvmEventForm>> =>
     mount(EvmEventForm, {
       global: {
         plugins: [pinia],
@@ -134,7 +134,7 @@ describe('forms/EvmEventForm.vue', () => {
     it('it should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { type: 'edit', event: group, nextSequenceId: '10' } });
+      await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
       expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
 
@@ -161,7 +161,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -170,7 +170,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -181,7 +181,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show all counterparties options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { counterparties } = useHistoryEventCounterpartyMappings();
@@ -190,7 +190,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -213,7 +213,7 @@ describe('forms/EvmEventForm.vue', () => {
   });
 
   it('should show product options, based on selected counterparty', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');

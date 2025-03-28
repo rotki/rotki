@@ -1,38 +1,51 @@
 <script setup lang="ts">
 import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
-import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
+import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import JsonInput from '@/components/inputs/JsonInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
+import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useSupportedChains } from '@/composables/info/chains';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
-import { HistoryEventEntryType, Zero } from '@rotki/common';
+import { Blockchain, HistoryEventEntryType, isValidEthAddress, isValidTxHash, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
+interface HistoryEventFormProps {
+  data: IndependentEventData<EvmHistoryEvent>;
+}
+
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: IndependentEventData<OnlineHistoryEvent> }>();
+const props = defineProps<HistoryEventFormProps>();
 
 const { t } = useI18n();
 
 const { data } = toRefs(props);
 
+const { historyEventProductsMapping } = useHistoryEventProductMappings();
+const { counterparties } = useHistoryEventCounterpartyMappings();
+
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
-const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
+const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
+const txHash = ref<string>('');
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const datetime = ref<string>('');
@@ -41,22 +54,53 @@ const eventType = ref<string>('');
 const eventSubtype = ref<string>('none');
 const asset = ref<string>('');
 const amount = ref<string>('');
+const address = ref<string>('');
 const locationLabel = ref<string>('');
 const notes = ref<string>('');
+const counterparty = ref<string>('');
+const product = ref<string>('');
+const extraData = ref<object>({});
 
 const errorMessages = ref<Record<string, string[]>>({});
 
 const externalServerValidation = () => true;
 
+const isInformationalEvent = computed(() => get(eventType) === 'informational');
+
+const historyEventLimitedProducts = computed<string[]>(() => {
+  const counterpartyVal = get(counterparty);
+  const mapping = get(historyEventProductsMapping);
+
+  if (!counterpartyVal)
+    return [];
+
+  return mapping[counterpartyVal] ?? [];
+});
+
 const rules = {
+  address: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.address.validation.valid'),
+      (value: string) => !value || isValidEthAddress(value),
+    ),
+  },
   amount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
   asset: {
     required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
   },
+  counterparty: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.counterparty.validation.valid'),
+      (value: string) => !value || get(counterparties).includes(value) || isValidEthAddress(value),
+    ),
+  },
   eventIdentifier: {
-    required: helpers.withMessage(t('transactions.events.form.event_identifier.validation.non_empty'), required),
+    required: helpers.withMessage(
+      t('transactions.events.form.event_identifier.validation.non_empty'),
+      requiredIf(() => get(data).type === 'edit'),
+    ),
   },
   eventSubtype: {
     required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
@@ -69,28 +113,44 @@ const rules = {
   },
   locationLabel: { externalServerValidation },
   notes: { externalServerValidation },
+  product: {
+    isValid: helpers.withMessage(
+      t('transactions.events.form.product.validation.valid'),
+      (value: string) => !value || get(historyEventLimitedProducts).includes(value),
+    ),
+  },
   sequenceIndex: {
     required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
   },
   timestamp: { externalServerValidation },
+  txHash: {
+    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
+      isValidTxHash(value)),
+    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
+  },
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { getAddresses } = useAccountAddresses();
+const { txChainsToLocation } = useSupportedChains();
 
 const states = {
+  address,
   amount,
   asset,
+  counterparty,
   eventIdentifier,
   eventSubtype,
   eventType,
   location,
   locationLabel,
   notes,
+  product,
   sequenceIndex,
   timestamp: datetime,
+  txHash,
 };
 
 const v$ = useVuelidate(
@@ -101,33 +161,34 @@ const v$ = useVuelidate(
     $externalResults: errorMessages,
   },
 );
-
 useFormStateWatcher(states, stateUpdated);
 
-const locationLabelSuggestions = computed(() =>
-  get(connectedExchanges)
-    .map(item => item.name)
-    .filter(item => !!item),
-);
+const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(eventIdentifier, '');
+  set(txHash, '');
+  set(eventIdentifier, null);
   set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, get(lastLocation));
+  set(address, '');
   set(locationLabel, '');
   set(eventType, '');
   set(eventSubtype, 'none');
   set(asset, '');
   set(amount, '0');
   set(notes, '');
+  set(counterparty, '');
+  set(product, '');
+  set(extraData, {});
   set(errorMessages, {});
 
   get(assetPriceForm)?.reset();
 }
 
-function applyEditableData(entry: OnlineHistoryEvent) {
+function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
+  set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, entry.location);
@@ -135,17 +196,28 @@ function applyEditableData(entry: OnlineHistoryEvent) {
   set(eventSubtype, entry.eventSubtype || 'none');
   set(asset, entry.asset);
   set(amount, entry.amount.toFixed());
+  set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.notes ?? '');
+  set(counterparty, entry.counterparty ?? '');
+  set(product, entry.product ?? '');
+  set(extraData, entry.extraData || {});
 }
 
-function applyGroupHeaderData(entry: OnlineHistoryEvent) {
+function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
-  set(location, entry.location || get(lastLocation));
-  set(locationLabel, entry.locationLabel ?? '');
   set(eventIdentifier, entry.eventIdentifier);
+  set(location, entry.location || get(lastLocation));
+  set(address, entry.address ?? '');
+  set(locationLabel, entry.locationLabel ?? '');
+  set(txHash, entry.txHash);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
 }
+
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
+    get(v$).$validate();
+});
 
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
@@ -158,18 +230,23 @@ async function save(): Promise<boolean> {
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
-  const payload: NewOnlineHistoryEventPayload = {
+  const payload: NewEvmHistoryEventPayload = {
+    address: get(address) || null,
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
-    entryType: HistoryEventEntryType.HISTORY_EVENT,
-    eventIdentifier: get(eventIdentifier),
+    counterparty: get(counterparty) || null,
+    entryType: HistoryEventEntryType.EVM_EVENT,
+    eventIdentifier: get(eventIdentifier) ?? null,
     eventSubtype: get(eventSubtype),
     eventType: get(eventType),
+    extraData: get(extraData) || null,
     location: get(location),
     locationLabel: get(locationLabel) || null,
     notes: usedNotes ? usedNotes.trim() : undefined,
+    product: get(product) || null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
+    txHash: get(txHash),
   };
 
   return await saveHistoryEventHandler(
@@ -186,6 +263,7 @@ function checkPropsData() {
     applyEditableData(formData.event);
     return;
   }
+
   if (formData.type === 'group-add') {
     applyGroupHeaderData(formData.group);
     return;
@@ -193,17 +271,18 @@ function checkPropsData() {
   reset();
 }
 
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
-
 watch(location, (location: string) => {
   if (location)
     set(lastLocation, location);
 });
 
 watch(data, checkPropsData);
+
+watch(historyEventLimitedProducts, (products) => {
+  const selected = get(product);
+  if (!products.includes(selected))
+    set(product, '');
+});
 
 onMounted(() => {
   checkPropsData();
@@ -230,6 +309,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
+        :items="txChainsToLocation"
         :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
@@ -239,14 +319,14 @@ defineExpose({
     </div>
 
     <RuiTextField
-      v-model="eventIdentifier"
+      v-model="txHash"
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="eventIdentifier"
-      :label="t('transactions.events.form.event_identifier.label')"
-      :error-messages="toMessages(v$.eventIdentifier)"
-      @blur="v$.eventIdentifier.$touch()"
+      data-cy="txHash"
+      :label="t('common.tx_hash')"
+      :error-messages="toMessages(v$.txHash)"
+      @blur="v$.txHash.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -254,7 +334,7 @@ defineExpose({
     <HistoryEventTypeForm
       v-model:event-type="eventType"
       v-model:event-subtype="eventSubtype"
-      :location="location"
+      :counterparty="counterparty"
       :v$="v$"
     />
 
@@ -266,6 +346,7 @@ defineExpose({
       v-model:amount="amount"
       :v$="v$"
       :datetime="datetime"
+      :hide-price-fields="isInformationalEvent"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -273,7 +354,7 @@ defineExpose({
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync
         v-model="locationLabel"
-        :items="locationLabelSuggestions"
+        :items="addressSuggestions"
         clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
@@ -281,6 +362,19 @@ defineExpose({
         auto-select-first
         @blur="v$.locationLabel.$touch()"
       />
+
+      <AutoCompleteWithSearchSync
+        v-model="address"
+        :items="addressSuggestions"
+        clearable
+        data-cy="address"
+        :label="t('transactions.events.form.address.label')"
+        :error-messages="toMessages(v$.address)"
+        auto-select-first
+        @blur="v$.address.$touch()"
+      />
+    </div>
+    <div class="grid md:grid-cols-3 gap-4">
       <AmountInput
         v-model="sequenceIndex"
         variant="outlined"
@@ -289,6 +383,25 @@ defineExpose({
         :label="t('transactions.events.form.sequence_index.label')"
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
+      />
+      <CounterpartyInput
+        v-model="counterparty"
+        :label="t('common.counterparty')"
+        data-cy="counterparty"
+        :error-messages="toMessages(v$.counterparty)"
+        @blur="v$.counterparty.$touch()"
+      />
+      <RuiAutoComplete
+        v-model="product"
+        clearable
+        variant="outlined"
+        auto-select-first
+        :disabled="historyEventLimitedProducts.length === 0"
+        :label="t('transactions.events.form.product.label')"
+        :options="historyEventLimitedProducts"
+        data-cy="product"
+        :error-messages="toMessages(v$.product)"
+        @blur="v$.product.$touch()"
       />
     </div>
 
@@ -308,5 +421,35 @@ defineExpose({
       :error-messages="toMessages(v$.notes)"
       @blur="v$.notes.$touch()"
     />
+
+    <RuiDivider class="mb-2 mt-6" />
+
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="evm-event-form__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
+          {{ t('transactions.events.form.advanced') }}
+        </template>
+        <div class="py-2">
+          <RuiTextField
+            v-model="eventIdentifier"
+            variant="outlined"
+            color="primary"
+            data-cy="eventIdentifier"
+            :label="t('transactions.events.form.event_identifier.label')"
+            :error-messages="toMessages(v$.eventIdentifier)"
+            @blur="v$.eventIdentifier.$touch()"
+          />
+
+          <JsonInput
+            v-model="extraData"
+            :label="t('transactions.events.form.extra_data.label')"
+          />
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

@@ -2,7 +2,6 @@
 import type { DependentEventData } from '@/modules/history/management/forms/form-types';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -11,6 +10,7 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -43,7 +43,7 @@ const historyEventTypesData = [{
   label: t('backend_mappings.events.history_event_type.withdrawal'),
 }];
 
-const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
+const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const eventIdentifier = ref<string>('');
 const datetime = ref<string>('');

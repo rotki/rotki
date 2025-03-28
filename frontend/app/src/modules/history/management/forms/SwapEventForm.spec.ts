@@ -256,6 +256,7 @@ describe('forms/SwapEventForm', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoryEventMock.mockResolvedValueOnce({ success: false });
 
     const saveResult = await saveMethod();
     expect(saveResult).toBe(true);
@@ -275,6 +276,7 @@ describe('forms/SwapEventForm', () => {
         timestamp: 1742901211000,
       }),
     );
+    expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
   });
 
   it('should handle server validation errors', async () => {
