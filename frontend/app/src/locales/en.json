@@ -4374,7 +4374,14 @@
       "select_token": "Select a token",
       "title": "Select Asset"
     },
-    "to_address": "To address",
+    "to_address": {
+      "error": "Please input valid ETH address",
+      "label": "To address"
+    },
+    "waiting_for_confirmation": {
+      "wallet_connect": "Check your browser / wallet to sign the transaction",
+      "not_wallet_connect": "Check your wallet to sign the transaction"
+    },
     "warning": {
       "not_tracked": "This wallet address is not tracked in rotki, so you can't see your tokens.",
       "query_on_progress": "The balance query is still in progress, you may not see all of your tokens yet."

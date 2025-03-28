@@ -15,7 +15,6 @@ import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, pol
 import { type AppKit, createAppKit, useAppKitProvider } from '@reown/appkit/vue';
 import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { objectOmit } from '@vueuse/shared';
 import { BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
 
 export const ROTKI_DAPP_METADATA = {
@@ -70,6 +69,8 @@ export const useWalletStore = defineStore('wallet', () => {
   const supportedChainIds = ref<string[]>([]);
   const recentTransactions = ref<RecentTransaction[]>([]);
   const preparing = ref<boolean>(false);
+  const waitingForWalletConfirmation = ref<boolean>(false);
+  const isWalletConnect = ref<boolean>(false);
 
   let appKit: AppKit | undefined;
 
@@ -106,10 +107,16 @@ export const useWalletStore = defineStore('wallet', () => {
       set(connected, account.isConnected);
       set(connectedAddress, account.isConnected ? account.address : undefined);
 
-      const chainId = appKit!.getCaipNetworkId();
-      if (account.isConnected && chainId) {
-        set(connectedChainId, chainId);
+      if (account.isConnected) {
+        const provider: any = appKit!.getProvider(EIP155);
+        set(isWalletConnect, provider && 'isWalletConnect' in provider && provider.isWalletConnect);
+
+        const chainId = appKit!.getCaipNetworkId();
+        if (chainId) {
+          set(connectedChainId, chainId);
+        }
       }
+
       updateApprovedChainIds();
     });
 
@@ -131,6 +138,7 @@ export const useWalletStore = defineStore('wallet', () => {
     set(preparing, false);
     set(connectedAddress, undefined);
     set(supportedChainIds, []);
+    set(isWalletConnect, false);
   };
 
   const disconnect = async (): Promise<void> => {
@@ -277,14 +285,15 @@ export const useWalletStore = defineStore('wallet', () => {
       set(preparing, false);
 
       if (backendPayload) {
-        tx = await signer.sendTransaction(objectOmit(backendPayload, ['maxPriorityFeePerGas', 'maxFeePerGas']));
+        set(waitingForWalletConfirmation, true);
+        tx = await signer.sendTransaction(backendPayload);
+        set(waitingForWalletConfirmation, false);
         addRecentTransaction(tx.hash, getChainFromChainId(chainId), params);
         await tx.wait();
         updateTransactionStatus(tx.hash, 'completed');
         startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
       }
       else {
-        set(preparing, false);
         throw new Error('Failed to load the payload from backend');
       }
 
@@ -292,6 +301,7 @@ export const useWalletStore = defineStore('wallet', () => {
     }
     catch (error) {
       set(preparing, false);
+      set(waitingForWalletConfirmation, false);
       const txError = error as TransactionError;
       // If we have a transaction hash, update its status to failed
       if (txError.transaction?.hash) {
@@ -310,6 +320,7 @@ export const useWalletStore = defineStore('wallet', () => {
     disconnect,
     getBrowserProvider,
     getGasFeeForChain,
+    isWalletConnect,
     open,
     preparing,
     recentTransactions,
@@ -318,5 +329,6 @@ export const useWalletStore = defineStore('wallet', () => {
     supportedChainsForConnectedAccount,
     supportedChainsIdForConnectedAccount,
     switchNetwork,
+    waitingForWalletConfirmation,
   };
 });

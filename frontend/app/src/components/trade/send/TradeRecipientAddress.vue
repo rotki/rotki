@@ -52,14 +52,41 @@ watch([searchDebounced, openDialog], ([search, openDialog]) => {
     fetchAddressBookData(search);
   }
 });
+
+const valid = computed(() => {
+  const value = get(model);
+  return !value || isValidEthAddress(value);
+});
 </script>
 
 <template>
-  <div class="flex items-center bg-rui-grey-50 dark:bg-rui-grey-900 rounded-lg border border-default mt-1">
+  <div
+    class="flex items-center bg-rui-grey-50 dark:bg-rui-grey-900 rounded-lg border border-default mt-1 duration-50"
+    :class="{
+      '!border-rui-error': !valid,
+    }"
+  >
     <label class="flex-1 p-3 block">
-      <span class="text-sm text-rui-grey-500 font-medium">
-        {{ t('trade.to_address') }}
-      </span>
+      <Transition
+        mode="out-in"
+        enter-active-class="transition-all duration-50"
+        leave-active-class="transition-all duration-50"
+        enter-from-class="opacity-0 -translate-x-1"
+        leave-to-class="opacity-0 translate-x-1"
+      >
+        <span
+          v-if="!model || valid"
+          class="text-sm text-rui-grey-500 font-medium block"
+        >
+          {{ t('trade.to_address.label') }}
+        </span>
+        <span
+          v-else
+          class="text-sm text-rui-error font-medium block"
+        >
+          {{ t('trade.to_address.error') }}
+        </span>
+      </Transition>
       <input
         v-model="model"
         type="text"

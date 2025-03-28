@@ -41,7 +41,7 @@ const { getChainFromChainId, getChainIdFromChain } = useWalletHelper();
 const { getNativeAsset } = useSupportedChains();
 
 const walletStore = useWalletStore();
-const { connected, connectedAddress, connectedChainId, preparing, supportedChainIds, supportedChainsForConnectedAccount } = storeToRefs(walletStore);
+const { connected, connectedAddress, connectedChainId, isWalletConnect, preparing, supportedChainIds, supportedChainsForConnectedAccount, waitingForWalletConfirmation } = storeToRefs(walletStore);
 const { getGasFeeForChain, open, sendTransaction, switchNetwork } = walletStore;
 
 const { useIsTaskRunning } = useTaskStore();
@@ -241,6 +241,7 @@ async function send() {
 
   try {
     await sendTransaction(params);
+    resetInput();
   }
   catch (error) {
     set(errorMessage, error);
@@ -256,7 +257,7 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
 });
 
 watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
-  if (!fromAddress || !toAddress) {
+  if (!fromAddress || !toAddress || !isValidEthAddress(toAddress)) {
     return;
   }
 
@@ -272,12 +273,6 @@ watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
 
 watch([assetChain, asset], () => {
   set(amount, '');
-});
-
-watch(preparing, (curr, prev) => {
-  if (!curr && prev) {
-    resetInput();
-  }
 });
 </script>
 
@@ -336,7 +331,7 @@ watch(preparing, (curr, prev) => {
             <template #append>
               <RuiIcon
                 name="lu-arrow-up-right"
-                size="16"
+                size="18"
               />
             </template>
           </RuiButton>
@@ -420,5 +415,16 @@ watch(preparing, (curr, prev) => {
     <div class="overflow-hidden">
       {{ errorMessage }}
     </div>
+  </RuiAlert>
+  <RuiAlert
+    v-if="waitingForWalletConfirmation"
+    type="info"
+    class="mt-4"
+  >
+    {{
+      isWalletConnect
+        ? t('trade.waiting_for_confirmation.wallet_connect')
+        : t('trade.waiting_for_confirmation.not_wallet_connect')
+    }}
   </RuiAlert>
 </template>

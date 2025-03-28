@@ -57,8 +57,6 @@ export const PrepareERC20TransferResponse = z.object({
   data: z.string(),
   from: z.string(),
   gas: z.number(),
-  maxFeePerGas: z.number(),
-  maxPriorityFeePerGas: z.number(),
   nonce: z.number(),
   to: z.string(),
   value: z.number().transform(arg => BigInt(arg)),
@@ -72,8 +70,6 @@ export interface PrepareNativeTransferPayload extends PrepareTransferPayload {
 
 export const PrepareNativeTransferResponse = z.object({
   from: z.string(),
-  maxFeePerGas: z.number().transform(arg => arg.toString()),
-  maxPriorityFeePerGas: z.number().transform(arg => arg.toString()),
   nonce: z.number(),
   to: z.string(),
   value: z.number().transform(arg => BigInt(arg)),
