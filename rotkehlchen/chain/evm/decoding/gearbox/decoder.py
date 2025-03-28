@@ -134,8 +134,8 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
         """
         Decode the deposit event done via Gearbox protocol. The ActionItem handles both the
-        lp tokens (providing liqudity) and the farming pool (staking) token/event. The note for the
-        event is different depending on the asset being deposited. Gearbox pools can have
+        lp tokens (providing liquidity) and the farming pool (staking) token/event. The note for
+        the event is different depending on the asset being deposited. Gearbox pools can have
         multiple lp tokens, they include their old lp tokens with the newer ones.
         """
         if (lp_data := self._decode_common(context)) is None:
