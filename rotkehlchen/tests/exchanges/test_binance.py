@@ -294,7 +294,7 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'request', side_effect=mock_my_trades):
-        events = binance.query_online_history_events(
+        events, _ = binance.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(1638529919),
         )
@@ -401,7 +401,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
         )
         binance.selected_pairs = query_specific_markets
         with patch_get, patch_response:
-            events = binance.query_online_history_events(
+            events, _ = binance.query_online_history_events(
                 start_ts=Timestamp(0),
                 end_ts=Timestamp(1564301134),
             )
@@ -504,7 +504,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance: 'Binance') -
         return MockResponse(200, response_str)
 
     with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
-        movements = binance.query_online_history_events(
+        movements, _ = binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )
@@ -541,7 +541,7 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
             return MockResponse(200, response_str)
 
         with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
-            movements = binance.query_online_history_events(
+            movements, _ = binance.query_online_history_events(
                 start_ts=Timestamp(start_ts),
                 end_ts=Timestamp(end_ts),
             )
@@ -750,7 +750,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     get_fiat_withdraw_result = get_fiat_withdraw_result()
 
     with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
-        movements = binance.query_online_history_events(
+        movements, _ = binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )

@@ -1084,10 +1084,10 @@ class Coinbase(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list['HistoryBaseEntry']:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Make sure latest transactions are queried and saved in the DB. Since all history comes from one endpoint and can't be queried by time range this doesn't follow the same logic as another exchanges"""  # noqa: E501
         self._query_transactions()
-        return []
+        return [], end_ts
 
     def _deserialize_history_event(self, raw_data: dict[str, Any]) -> HistoryEvent | None:
         """Processes a single transaction from coinbase and deserializes it

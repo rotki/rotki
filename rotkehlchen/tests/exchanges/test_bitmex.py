@@ -146,7 +146,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex: 'Bitmex'
             return MockResponse(200, input_str)
 
         with patch.object(sandbox_bitmex.session, 'get', side_effect=mock_get_history_events):
-            movements = sandbox_bitmex.query_online_history_events(
+            movements, _ = sandbox_bitmex.query_online_history_events(
                 start_ts=Timestamp(0),
                 end_ts=now,
             )
@@ -201,7 +201,7 @@ def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex: 'Bitmex') -> 
         return MockResponse(200, TEST_BITMEX_WITHDRAWAL.replace('"XBt"', '"dadsdsa"'))
 
     with patch.object(mock_bitmex.session, 'request', side_effect=mock_get_response):
-        movements = mock_bitmex.query_online_history_events(
+        movements, _ = mock_bitmex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=ts_now(),
         )

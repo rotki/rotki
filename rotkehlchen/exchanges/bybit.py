@@ -30,7 +30,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -53,6 +52,7 @@ from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_i
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -626,7 +626,7 @@ class Bybit(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Query deposits and withdrawals sequentially"""
         new_movements = self._query_deposits_withdrawals(
             start_ts=start_ts,
@@ -640,7 +640,7 @@ class Bybit(ExchangeInterface):
                 query_for=HistoryEventType.WITHDRAWAL,
             ),
         )
-        return new_movements
+        return new_movements, end_ts
 
     def query_online_margin_history(
             self,

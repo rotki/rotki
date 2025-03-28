@@ -26,7 +26,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
@@ -51,6 +50,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -307,7 +307,7 @@ class Okx(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-deposit-history
         https://www.okx.com/docs-v5/en/#rest-api-funding-get-withdrawal-history
@@ -355,7 +355,7 @@ class Okx(ExchangeInterface):
         for raw_trade in trades:
             events.extend(self.swap_events_from_okx(raw_trade))
 
-        return events
+        return events, end_ts
 
     def swap_events_from_okx(self, raw_trade: dict[str, Any]) -> list[SwapEvent]:
         """Converts a raw trade from OKX into SwapEvents.

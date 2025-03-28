@@ -256,7 +256,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
         ],
     })
     with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
-        movements = bybit_exchange.query_online_history_events(
+        movements, _ = bybit_exchange.query_online_history_events(
             start_ts=Timestamp(1701200010),
             end_ts=Timestamp(1701300880),
         )

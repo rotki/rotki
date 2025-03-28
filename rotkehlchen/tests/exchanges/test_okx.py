@@ -531,10 +531,11 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
         return MockResponse(200, data)
 
     with patch.object(mock_okx.session, 'request', side_effect=mock_okx_trades):
-        assert mock_okx.query_online_history_events(
+        events, _ = mock_okx.query_online_history_events(
             Timestamp(1609103082),
             Timestamp(1672175105),
-        ) == [SwapEvent(
+        )
+        assert events == [SwapEvent(
             timestamp=TimestampMS(1665846604080),
             location=Location.OKX,
             event_subtype=HistoryEventSubType.SPEND,
@@ -820,7 +821,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
             'request',
             side_effect=mock_okx_deposits_withdrawals,
     ):
-        asset_movements = mock_okx.query_online_history_events(
+        asset_movements, _ = mock_okx.query_online_history_events(
             Timestamp(1609103082),
             Timestamp(1672175105),
         )

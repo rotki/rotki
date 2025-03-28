@@ -26,7 +26,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -50,6 +49,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.data_structures import MarginPosition
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -341,7 +341,7 @@ class Htx(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Query deposits and withdrawals sequentially
 
         This method sequentially queries for 'deposit' and 'withdrawal' types. Each type
@@ -362,7 +362,7 @@ class Htx(ExchangeInterface):
                 query_for='withdraw',
             ),
         )
-        return new_movements
+        return new_movements, end_ts
 
     def query_online_margin_history(
             self,

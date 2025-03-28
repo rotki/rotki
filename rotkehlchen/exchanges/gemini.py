@@ -507,7 +507,7 @@ class Gemini(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> 'Sequence[HistoryBaseEntry]':
+    ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
         result = self._get_paginated_query(
             endpoint='transfers',
             start_ts=start_ts,
@@ -562,7 +562,7 @@ class Gemini(ExchangeInterface):
 
             movements.append(movement)
 
-        return movements
+        return movements, end_ts
 
     def query_online_margin_history(
             self,

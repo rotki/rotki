@@ -65,10 +65,11 @@ def test_binanceus_trades_location(function_scope_binance):
         return MockResponse(200, text)
 
     with patch.object(binance.session, 'request', side_effect=mock_my_trades):
-        assert binance.query_online_history_events(
+        events, _ = binance.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(1564301134),
-        ) == [SwapEvent(
+        )
+        assert events == [SwapEvent(
             timestamp=TimestampMS(1499865549590),
             location=Location.BINANCEUS,
             event_subtype=HistoryEventSubType.SPEND,
@@ -111,7 +112,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
         return MockResponse(200, response_str)
 
     with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
-        movements = binance.query_online_history_events(
+        movements, _ = binance.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),
         )

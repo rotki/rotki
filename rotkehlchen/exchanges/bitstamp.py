@@ -56,6 +56,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -233,7 +234,7 @@ class Bitstamp(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[AssetMovement]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Return the account asset movements on Bitstamp.
 
         NB: when `since_id` is used, the Bitstamp API v2 will return by default
@@ -341,7 +342,7 @@ class Bitstamp(ExchangeInterface):
             del crypto_asset_movements[idx]  # remove the crypto asset movements whose data we matched in the DB  # noqa: E501
 
         log.debug(f'Remaining Bitstamp unmatched {crypto_asset_movements=}')
-        return asset_movements
+        return asset_movements, end_ts
 
     def _query_crypto_transactions(self, offset: int) -> list[AssetMovement]:
         """Query crypto transactions to get address and transaction id.

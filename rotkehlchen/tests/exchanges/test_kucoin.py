@@ -810,7 +810,7 @@ def test_query_asset_movements_sandbox(
     with ExitStack() as stack:
         stack.enter_context(months_in_seconds_patch)
         stack.enter_context(api_query_patch)
-        asset_movements = sandbox_kucoin.query_online_history_events(
+        asset_movements, _ = sandbox_kucoin.query_online_history_events(
             start_ts=Timestamp(1612556651),
             end_ts=Timestamp(1612556654),
         )
