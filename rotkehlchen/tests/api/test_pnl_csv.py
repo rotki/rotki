@@ -328,7 +328,7 @@ def test_encoding(
 
         events = debug_data['events']
         assert len(events) == 1, 'Should have one event'
-        assert unicode_notes in events[0]['notes'], 'Should have exported the unicode notes'
+        assert unicode_notes in events[0]['user_notes'], 'Should have exported the unicode notes'
 
 
 @pytest.mark.parametrize('have_decoders', [True])

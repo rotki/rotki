@@ -269,22 +269,20 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             'location_label': self.location_label,
             'asset': self.asset.identifier,
             'amount': str(self.amount),
-            'notes': self.notes,
             'identifier': self.identifier,
             'entry_type': self.entry_type.serialize(),
             'event_identifier': self.event_identifier,
             'sequence_index': self.sequence_index,
             'extra_data': self.extra_data,
         }
-        if (
-            self.location == Location.KRAKEN and
-            self.event_type == HistoryEventType.STAKING and
-            not self.notes
-        ):
+        if self.notes is not None:
+            serialized_data['user_notes'] = self.notes
+
+        if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
             if self.event_subtype == HistoryEventSubType.REWARD:
-                serialized_data['notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
+                serialized_data['auto_notes'] = f'Gain {self.amount} {self.asset.symbol_or_name()} from Kraken staking'  # noqa: E501
             elif self.event_subtype == HistoryEventSubType.FEE:
-                serialized_data['notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
+                serialized_data['auto_notes'] = f'Spend {self.amount} {self.asset.symbol_or_name()} as Kraken staking fee'  # noqa: E501
 
         return serialized_data
 
@@ -327,8 +325,6 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
-        if result['entry']['notes'] and not self.notes:
-            result['default_notes'] = True
 
         result['event_accounting_rule_status'] = event_accounting_rule_status.serialize()
 
@@ -368,7 +364,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
                 event_type=HistoryEventType.deserialize(data['event_type']),
                 event_subtype=HistoryEventSubType.deserialize(data['event_subtype']) if data['event_subtype'] is not None else HistoryEventSubType.NONE,  # noqa: E501
                 location_label=deserialize_optional(data['location_label'], str),
-                notes=deserialize_optional(data['notes'], str),
+                notes=deserialize_optional(data.get('user_notes'), str),
                 identifier=deserialize_optional(data['identifier'], int),
                 asset=Asset(data['asset']).check_existence(),
                 amount=deserialize_fval(

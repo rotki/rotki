@@ -60,7 +60,6 @@ def test_serialize_with_invalid_type_subtype():
             'identifier': None,
             'location': 'kraken',
             'location_label': None,
-            'notes': None,
             'sequence_index': 1,
             'timestamp': 1,
         },
