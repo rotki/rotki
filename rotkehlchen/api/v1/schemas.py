@@ -845,7 +845,7 @@ class CreateHistoryEventSchema(Schema):
             required=True,
         )
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-        notes = fields.String(load_default=None)
+        user_notes = fields.String(load_default=None)
         sequence_index = fields.Integer(required=True)
         location_label = fields.String(load_default=None)
 
@@ -859,6 +859,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
+            data['notes'] = data.pop('user_notes')
             return {'events': [HistoryEvent(**data)]}
 
     class CreateEvmEventSchema(BaseEventSchema):
@@ -877,6 +878,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
+            data['notes'] = data.pop('user_notes')
             return {'events': [EvmEvent(**data)]}
 
     class CreateEthBlockEventEventSchema(BaseSchema):
@@ -968,7 +970,7 @@ class CreateHistoryEventSchema(Schema):
         event_identifier = fields.String(required=False, load_default=None)
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
         fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        notes = fields.List(fields.String(), required=False, validate=validate.Length(min=1, max=2))  # noqa: E501
+        user_notes = fields.List(fields.String(), required=False, validate=validate.Length(min=1, max=2))  # noqa: E501
 
         @post_load
         def make_history_base_entry(
@@ -976,7 +978,7 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            if (notes := data.get('notes')) is None:
+            if (notes := data.get('user_notes')) is None:
                 movement_notes, fee_notes = None, None
             elif len(notes) == 1:
                 movement_notes, fee_notes = notes[0], None
@@ -1055,12 +1057,12 @@ class CreateHistoryEventSchema(Schema):
         fee_asset = AssetField(required=False, load_default=None, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
         location_label = fields.String(required=False, load_default=None)
         unique_id = fields.String(required=False, load_default=None)
-        notes = fields.List(fields.String(), required=False, validate=validate.Length(min=2, max=3))  # noqa: E501
+        user_notes = fields.List(fields.String(), required=False, validate=validate.Length(min=2, max=3))  # noqa: E501
         event_identifier = fields.String(required=False, load_default=None)
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
-            if (notes := data.get('notes')) is None:
+            if (notes := data.get('user_notes')) is None:
                 spend_notes, receive_notes, fee_notes = None, None, None
             elif len(notes) == 2:
                 spend_notes, receive_notes = notes

@@ -815,7 +815,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Burn 0.00863351371344 ETH for gas',
+            'user_notes': 'Burn 0.00863351371344 ETH for gas',
             'product': None,
             'sequence_index': 0,
             'timestamp': 1642802807000,
@@ -836,7 +836,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',
+            'user_notes': 'Send 0.096809163374771208 ETH to 0xA090e606E30bD747d4E6245a1517EbE430F0057e',  # noqa: E501
             'product': None,
             'sequence_index': 1,
             'timestamp': 1642802807000,
@@ -859,7 +859,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Burn 0.017690836625228792 ETH for gas',
+            'user_notes': 'Burn 0.017690836625228792 ETH for gas',
             'product': None,
             'sequence_index': 0,
             'timestamp': 1642802735000,
@@ -880,7 +880,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'spend',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
+            'user_notes': 'Send 1166 USDT from 0x6e15887E2CEC81434C16D587709f64603b39b545 to 0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',  # noqa: E501
             'product': None,
             'sequence_index': 308,
             'timestamp': 1642802735000,
@@ -903,7 +903,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'receive',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
+            'user_notes': 'Receive 0.125 ETH from 0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
             'product': None,
             'sequence_index': 0,
             'timestamp': 1642802651000,
@@ -926,7 +926,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'receive',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
+            'user_notes': 'Receive 1166 USDT from 0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5 to 0x6e15887E2CEC81434C16D587709f64603b39b545',  # noqa: E501
             'product': None,
             'sequence_index': 385,
             'timestamp': 1642802286000,
@@ -943,7 +943,7 @@ def test_query_transactions_check_decoded_events(
     event['amount'] = '2500'
     event['event_type'] = 'spend'
     event['event_subtype'] = 'payback debt'
-    event['notes'] = 'Edited event'
+    event['user_notes'] = 'Edited event'
     tx2_events[1]['customized'] = True
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -963,7 +963,7 @@ def test_query_transactions_check_decoded_events(
             'event_type': 'deposit',
             'location': 'ethereum',
             'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
-            'notes': 'Some kind of deposit',
+            'user_notes': 'Some kind of deposit',
             'product': 'pool',
             'sequence_index': 1,
             'timestamp': 1642802286000,

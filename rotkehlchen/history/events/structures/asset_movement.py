@@ -145,8 +145,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         )
 
     def serialize(self) -> dict[str, Any]:
-        """Serialize the event for api.
-        Autogenerates the event notes, appending any notes added by the user in a second sentence.
+        """Serialize the event for api, and generate the auto_notes.
         May raise UnknownAsset, but this would be an edge case as the asset should already have
         been checked for existence when it was deserialized from an API or from the database.
         """
@@ -154,13 +153,13 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         location_name = get_formatted_location_name(self.location)
         asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.FEE:
-            description = f'Pay {self.amount} {asset_symbol} as {location_name} {str(self.event_type).lower()} fee'  # noqa: E501
+            auto_notes = f'Pay {self.amount} {asset_symbol} as {location_name} {str(self.event_type).lower()} fee'  # noqa: E501
         elif self.event_type == HistoryEventType.DEPOSIT:
-            description = f'Deposit {self.amount} {asset_symbol} to {location_name}'
+            auto_notes = f'Deposit {self.amount} {asset_symbol} to {location_name}'
         else:  # withdrawal
-            description = f'Withdraw {self.amount} {asset_symbol} from {location_name}'
+            auto_notes = f'Withdraw {self.amount} {asset_symbol} from {location_name}'
 
-        serialized_data['description'] = description
+        serialized_data['auto_notes'] = auto_notes
         return serialized_data
 
     @classmethod
