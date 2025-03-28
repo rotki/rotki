@@ -700,6 +700,9 @@ def test_compound_v3_token_balances_liabilities(
             target='rotkehlchen.chain.evm.decoding.morpho.decoder.should_update_protocol_cache',
         ),
         patch(
+            target='rotkehlchen.chain.evm.decoding.stakedao.decoder.should_update_protocol_cache',
+        ),
+        patch(
             target='rotkehlchen.chain.evm.decoding.curve.lend.decoder.should_update_protocol_cache',
         ),
         patch(
