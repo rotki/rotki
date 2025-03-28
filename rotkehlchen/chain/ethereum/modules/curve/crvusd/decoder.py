@@ -3,7 +3,12 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.curve.crvusd.constants import CURVE_CRVUSD_CONTROLLER_ABI
+from rotkehlchen.chain.ethereum.modules.curve.crvusd.constants import (
+    CRVUSD_PEG_KEEPERS_AND_POOLS,
+    CURVE_CRVUSD_CONTROLLER_ABI,
+    PEG_KEEPER_PROVIDE_TOPIC,
+    PEG_KEEPER_WITHDRAW_TOPIC,
+)
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.utils import query_crvusd_controllers
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -12,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.curve.lend.common import CurveBorrowRepayCom
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     DecodingOutput,
 )
@@ -170,3 +176,52 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 break
 
         return DEFAULT_DECODING_OUTPUT
+
+    def _decode_peg_keeper_update(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] not in {PEG_KEEPER_PROVIDE_TOPIC, PEG_KEEPER_WITHDRAW_TOPIC}:
+            return DEFAULT_DECODING_OUTPUT
+
+        # Get the pool address for this peg keeper (tx_log.address will be a valid key since this
+        # function is called via the CRVUSD_PEG_KEEPERS_AND_POOLS mapping in addresses_to_decoders)
+        pool_token_address = CRVUSD_PEG_KEEPERS_AND_POOLS[context.tx_log.address]
+
+        # Unfortunately the peg keeper provide/withdraw event doesn't give much information,
+        # so we have to find the transfer of the pool token from the peg keeper to the
+        # tracked address and retrieve the raw reward amount from there.
+        for tx_log in context.all_logs:
+            if (
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                tx_log.address == pool_token_address and
+                bytes_to_address(tx_log.topics[1]) == context.tx_log.address and
+                self.base.is_tracked(bytes_to_address(tx_log.topics[2]))
+            ):
+                reward_raw_amount = int.from_bytes(tx_log.data[:32])
+                break
+        else:
+            log.error(f'Failed to find reward amount for curve peg keeper update transaction {context.transaction!s}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        return DecodingOutput(action_items=[
+            ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                to_event_subtype=HistoryEventSubType.REWARD,
+                asset=(reward_token := self.base.get_or_create_evm_token(address=pool_token_address)),  # noqa: E501
+                amount=(reward_amount := token_normalized_value(
+                    token_amount=reward_raw_amount,
+                    token=reward_token,
+                )),
+                address=context.tx_log.address,
+                to_counterparty=CPT_CURVE,
+                to_notes=f'Receive {reward_amount} {reward_token.symbol} from Curve peg keeper update',  # noqa: E501
+            ),
+        ])
+
+    # -- DecoderInterface methods
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return (
+            super().addresses_to_decoders() |
+            dict.fromkeys(CRVUSD_PEG_KEEPERS_AND_POOLS, (self._decode_peg_keeper_update,))
+        )

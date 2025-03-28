@@ -285,3 +285,77 @@ def test_borrow_extended(
         address=string_to_evm_address('0xE0438Eb3703bF871E31Ce639bd351109c88666ea'),
         extra_data={'vault_controller': '0x4e59541306910aD6dC1daC0AC9dFB29bD9F15c67'},
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0E7e679C659Ee55b8cfA9B6D855faFE68B2F79Ab']])
+def test_peg_keeper_update_provide(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xb557deee6fcf5fcbb03b539f81413a32e5ac40ccbc4915bcab291136b2049461')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, user_address, gas_amount, reward_amount = TimestampMS(1742991251000), ethereum_accounts[0], '0.00040529528116216', '0.263578930549885631'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=145,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:1/erc20:0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E'),
+        amount=FVal(reward_amount),
+        location_label=user_address,
+        notes=f'Receive {reward_amount} crvUSDUSDC-f from Curve peg keeper update',
+        counterparty=CPT_CURVE,
+        address=string_to_evm_address('0x9201da0D97CaAAff53f01B2fB56767C7072dE340'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xd740F5932F59d221a51ACa4891Cb79Cdf48e189C']])
+def test_peg_keeper_update_withdraw(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x26ef0b958dcfe3bb3d27232a90cac132d4387e7e5b2f40f48b0e32080c154b32')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, user_address, gas_amount, reward_amount = TimestampMS(1742617019000), ethereum_accounts[0], '0.0002972191728', '0.801175881145139442'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=189,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:1/erc20:0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E'),
+        amount=FVal(reward_amount),
+        location_label=user_address,
+        notes=f'Receive {reward_amount} crvUSDUSDC-f from Curve peg keeper update',
+        counterparty=CPT_CURVE,
+        address=string_to_evm_address('0x9201da0D97CaAAff53f01B2fB56767C7072dE340'),
+    )]
