@@ -1,5 +1,12 @@
-import type { GasFeeEstimation, RecentTransaction, TransactionError, TransactionParams } from '@/types/trade';
-import { type PrepareERC20TransferResponse, type PrepareNativeTransferResponse, useTradeApi } from '@/composables/api/trade';
+import type {
+  GasFeeEstimation,
+  PrepareERC20TransferResponse,
+  PrepareNativeTransferResponse,
+  RecentTransaction,
+  TransactionError,
+  TransactionParams,
+} from '@/types/trade';
+import { useTradeApi } from '@/composables/api/trade';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/composables/trade/wallet-helper';
@@ -260,7 +267,7 @@ export const useWalletStore = defineStore('wallet', () => {
         // Native token transfer
         const payload = {
           amount: params.amount,
-          chainId: evmChain,
+          chain: evmChain,
           fromAddress,
           toAddress: params.to,
         };

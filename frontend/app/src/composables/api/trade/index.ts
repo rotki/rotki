@@ -2,52 +2,18 @@ import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { z } from 'zod';
+import {
+  type PrepareERC20TransferPayload,
+  PrepareERC20TransferResponse,
+  type PrepareNativeTransferPayload,
+  PrepareNativeTransferResponse,
+} from '@/types/trade';
 
 interface UseTradeApiReturn {
   prepareERC20Transfer: (payload: PrepareERC20TransferPayload) => Promise<PrepareERC20TransferResponse>;
   prepareNativeTransfer: (payload: PrepareNativeTransferPayload) => Promise<PrepareNativeTransferResponse>;
   getIsInteractedBefore: (fromAddress: string, toAddress: string) => Promise<boolean>;
 }
-
-interface PrepareTransferPayload {
-  fromAddress: string;
-  toAddress: string;
-  amount: string;
-}
-
-interface PrepareERC20TransferPayload extends PrepareTransferPayload {
-  token: string;
-}
-
-const PrepareERC20TransferResponse = z.object({
-  chainId: z.number(),
-  data: z.string(),
-  from: z.string(),
-  gas: z.number(),
-  maxFeePerGas: z.number(),
-  maxPriorityFeePerGas: z.number(),
-  nonce: z.number(),
-  to: z.string(),
-  value: z.number().transform(arg => BigInt(arg)),
-});
-
-export type PrepareERC20TransferResponse = z.infer<typeof PrepareERC20TransferResponse>;
-
-interface PrepareNativeTransferPayload extends PrepareTransferPayload {
-  chainId: string;
-}
-
-const PrepareNativeTransferResponse = z.object({
-  from: z.string(),
-  maxFeePerGas: z.number().transform(arg => arg.toString()),
-  maxPriorityFeePerGas: z.number().transform(arg => arg.toString()),
-  nonce: z.number(),
-  to: z.string(),
-  value: z.number().transform(arg => BigInt(arg)),
-});
-
-export type PrepareNativeTransferResponse = z.infer<typeof PrepareNativeTransferResponse>;
 
 export function useTradeApi(): UseTradeApiReturn {
   const prepareERC20Transfer = async (payload: PrepareERC20TransferPayload): Promise<PrepareERC20TransferResponse> => {

@@ -1,4 +1,5 @@
 import type { BigNumber } from '@rotki/common';
+import { z } from 'zod';
 
 export interface TradableAssetWithoutValue {
   asset: string;
@@ -40,3 +41,42 @@ export interface GasFeeEstimation {
   formatted: string;
   maxAmount: string;
 }
+
+export interface PrepareTransferPayload {
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+}
+
+export interface PrepareERC20TransferPayload extends PrepareTransferPayload {
+  token: string;
+}
+
+export const PrepareERC20TransferResponse = z.object({
+  chainId: z.number(),
+  data: z.string(),
+  from: z.string(),
+  gas: z.number(),
+  maxFeePerGas: z.number(),
+  maxPriorityFeePerGas: z.number(),
+  nonce: z.number(),
+  to: z.string(),
+  value: z.number().transform(arg => BigInt(arg)),
+});
+
+export type PrepareERC20TransferResponse = z.infer<typeof PrepareERC20TransferResponse>;
+
+export interface PrepareNativeTransferPayload extends PrepareTransferPayload {
+  chain: string;
+}
+
+export const PrepareNativeTransferResponse = z.object({
+  from: z.string(),
+  maxFeePerGas: z.number().transform(arg => arg.toString()),
+  maxPriorityFeePerGas: z.number().transform(arg => arg.toString()),
+  nonce: z.number(),
+  to: z.string(),
+  value: z.number().transform(arg => BigInt(arg)),
+});
+
+export type PrepareNativeTransferResponse = z.infer<typeof PrepareNativeTransferResponse>;
