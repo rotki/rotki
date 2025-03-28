@@ -26,6 +26,8 @@ const name = computed(() => {
 
   return get(getChainName(chain));
 });
+
+const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockchain.BASE, Blockchain.OPTIMISM];
 </script>
 
 <template>
@@ -40,7 +42,7 @@ const name = computed(() => {
       <AdaptiveWrapper v-if="chain === 'evm'">
         <div class="grid grid-cols-2 gap-0.5">
           <ChainIcon
-            v-for="item in [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockchain.BASE, Blockchain.OPTIMISM]"
+            v-for="item in evmChainsRepresentative"
             :key="item"
             :size="dense ? '9px' : '13px'"
             class="!p-0"

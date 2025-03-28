@@ -73,6 +73,7 @@ export default defineConfig({
       'vanilla-jsoneditor',
       '@reown/appkit',
       '@reown/appkit-adapter-wagmi',
+      '@reown/walletkit',
       '@walletconnect/core',
     ],
   },
@@ -192,6 +193,7 @@ export default defineConfig({
           'wallet-connect': [
             '@reown/appkit',
             '@reown/appkit-adapter-wagmi',
+            '@reown/walletkit',
             '@walletconnect/core',
           ],
         },

@@ -9,7 +9,7 @@ export function getMimeType(pathName: string): string {
   const extension = path.extname(pathName).toLowerCase();
 
   if (extension === '.js')
-    return 'text/javascript';
+    return 'application/javascript';
   else if (extension === '.html')
     return 'text/html';
   else if (extension === '.css')
@@ -25,7 +25,7 @@ export function getMimeType(pathName: string): string {
   else if (extension === '.wasm')
     return 'application/wasm';
 
-  return '';
+  return 'application/octet-stream';
 }
 
 export function createProtocol(scheme: string, customProtocol?: Protocol) {
