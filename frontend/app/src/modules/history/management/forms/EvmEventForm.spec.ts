@@ -1,16 +1,21 @@
 import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
+import type { TradeLocationData } from '@/types/history/trade/location';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useLocations } from '@/composables/locations';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
@@ -22,8 +27,18 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
+vi.mock('@/composables/history/events', () => ({
+  useHistoryEvents: vi.fn(),
+}));
+
+vi.mock('@/composables/locations', () => ({
+  useLocations: vi.fn(),
+}));
+
 describe('forms/EvmEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EvmEventForm>>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn>;
   let pinia: Pinia;
 
   const asset = {
@@ -62,19 +77,28 @@ describe('forms/EvmEventForm.vue', () => {
     setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
-    vi.useFakeTimers();
   });
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    addHistoryEventMock = vi.fn();
+    editHistoryEventMock = vi.fn();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+    (useLocations as Mock).mockReturnValue({
+      tradeLocations: computed<TradeLocationData[]>(() => [{
+        identifier: 'ethereum',
+        name: 'Ethereum',
+      }]),
+    });
+    (useHistoryEvents as Mock).mockReturnValue({
+      addHistoryEvent: addHistoryEventMock,
+      editHistoryEvent: editHistoryEventMock,
+    });
   });
 
   afterEach(() => {
     wrapper.unmount();
-  });
-
-  afterAll(() => {
     vi.useRealTimers();
   });
 
@@ -93,76 +117,64 @@ describe('forms/EvmEventForm.vue', () => {
       ...options,
     });
 
-  describe('should prefill the fields based on the props', () => {
-    it('should show the default state when opening the form without any data', async () => {
-      wrapper = createWrapper();
-      await vi.advanceTimersToNextTimerAsync();
+  it('should show the default state when opening the form without any data', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
 
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe('');
+    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=txHash] input');
+    const locationInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
 
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe('');
+    expect(txHashInput.element.value).toBe('');
+    expect(locationInput.element.value).toBe('');
+    expect(addressInput.element.value).toBe('');
+    expect(sequenceIndexInput.element.value).toBe('0');
+  });
 
-      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe('');
+  it('should update the proper fields adding an event to a group', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+    await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
-      expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
-    });
+    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=txHash] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-    it('should update the proper fields adding an event to a group', async () => {
-      wrapper = createWrapper();
-      vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
+    expect(txHashInput.element.value).toBe(group.txHash);
+    expect(locationLabelInput.element.value).toBe(group.locationLabel);
+    expect(addressInput.element.value).toBe(group.address);
+    expect(amountInput.element.value).toBe('0');
+    expect(sequenceIndexInput.element.value).toBe('10');
+    expect(noteTextArea.element.value).toBe('');
+  });
 
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
+  it('it should update the fields when editing an event', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+    await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        group.locationLabel,
-      );
+    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=txHash] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(
-        group.address,
-      );
-
-      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
-
-      expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('10');
-
-      expect(
-        (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe('');
-    });
-
-    it('it should update the fields when editing an event', async () => {
-      wrapper = createWrapper();
-      vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
-
-      expect((wrapper.find('[data-cy=txHash] input').element as HTMLInputElement).value).toBe(group.txHash);
-
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        group.locationLabel,
-      );
-
-      expect((wrapper.find('[data-cy=address] .input-value').element as HTMLInputElement).value).toBe(
-        group.address,
-      );
-
-      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        group.amount.toString(),
-      );
-
-      expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(
-        group.sequenceIndex.toString(),
-      );
-
-      expect(
-        (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe(group.notes);
-    });
+    expect(txHashInput.element.value).toBe(group.txHash);
+    expect(locationLabelInput.element.value).toBe(group.locationLabel);
+    expect(addressInput.element.value).toBe(group.address);
+    expect(amountInput.element.value).toBe(group.amount.toString());
+    expect(sequenceIndexInput.element.value.replace(',', '')).toBe(group.sequenceIndex.toString());
+    expect(notesTextArea.element.value).toBe(group.notes);
   });
 
   it('should show all eventTypes options correctly', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventTypesData } = useHistoryEventMappings();
 
@@ -171,7 +183,7 @@ describe('forms/EvmEventForm.vue', () => {
 
   it('should show all eventSubTypes options correctly', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
 
@@ -182,7 +194,7 @@ describe('forms/EvmEventForm.vue', () => {
 
   it('should show all counterparties options correctly', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const { counterparties } = useHistoryEventCounterpartyMappings();
 
@@ -191,7 +203,7 @@ describe('forms/EvmEventForm.vue', () => {
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
 
@@ -201,7 +213,7 @@ describe('forms/EvmEventForm.vue', () => {
       value: selectedEventType,
     });
 
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const keysFromGlobalMappings = Object.keys(get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {});
 
@@ -214,13 +226,13 @@ describe('forms/EvmEventForm.vue', () => {
 
   it('should show product options, based on selected counterparty', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
 
     // input is still disabled if the counterparty doesn't have mapped products.
     await wrapper.find('[data-cy=counterparty] input').setValue('1inch');
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-cy=product] input').attributes('disabled')).toBe('');
 
@@ -237,5 +249,144 @@ describe('forms/EvmEventForm.vue', () => {
     expect(spans).toHaveLength(products.length);
 
     for (let i = 0; i < products.length; i++) expect(products.includes(spans.at(i)!.text())).toBeTruthy();
+  });
+
+  it('should add a new evm event when form is submitted', async () => {
+    wrapper = createWrapper();
+    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=txHash] input').setValue(group.txHash);
+    await wrapper.find('[data-cy=location] input').setValue(group.location);
+    await wrapper.find('[data-cy=locationLabel] input').setValue(group.locationLabel);
+    await wrapper.find('[data-cy=eventType] input').setValue(group.eventType);
+    await wrapper.find('[data-cy=asset] input').setValue(group.asset);
+    await wrapper.find('[data-cy=amount] input').setValue('610'); // Using the numeric value from group.amount
+    await wrapper.find('[data-cy=address] input').setValue(group.address);
+    await wrapper.find('[data-cy=sequenceIndex] input').setValue(group.sequenceIndex);
+    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.notes);
+    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
+
+    if (group.counterparty) {
+      await wrapper.find('[data-cy=counterparty] input').setValue(group.counterparty);
+    }
+
+    if (group.product) {
+      await wrapper.find('[data-cy=product] input').setValue(group.product);
+    }
+
+    if (group.eventSubtype) {
+      await wrapper.find('[data-cy=eventSubtype] input').setValue(group.eventSubtype);
+    }
+
+    const saveMethod = wrapper.vm.save;
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+
+    expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
+
+    expect(addHistoryEventMock).toHaveBeenCalledWith({
+      address: group.address,
+      amount: group.amount,
+      asset: group.asset,
+      counterparty: group.counterparty,
+      entryType: HistoryEventEntryType.EVM_EVENT,
+      eventIdentifier: null,
+      eventSubtype: 'none',
+      eventType: group.eventType,
+      extraData: {},
+      location: group.location,
+      locationLabel: group.locationLabel,
+      notes: group.notes,
+      product: group.product,
+      sequenceIndex: group.sequenceIndex.toString(),
+      timestamp: group.timestamp,
+      txHash: group.txHash,
+    });
+  });
+
+  it('should edit an existing evm event when form is submitted', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event: group,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=amount] input').setValue('650'); // Using the numeric value from group.amount
+    await wrapper.find('[data-cy=sequenceIndex] input').setValue('2111');
+    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('user note');
+
+    const saveMethod = wrapper.vm.save;
+
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+
+    expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
+
+    expect(editHistoryEventMock).toHaveBeenCalledWith({
+      address: group.address,
+      amount: bigNumberify('650'),
+      asset: group.asset,
+      counterparty: group.counterparty,
+      entryType: HistoryEventEntryType.EVM_EVENT,
+      eventIdentifier: group.eventIdentifier,
+      eventSubtype: 'none',
+      eventType: group.eventType,
+      extraData: {},
+      identifier: group.identifier,
+      location: group.location,
+      locationLabel: group.locationLabel,
+      notes: 'user note',
+      product: group.product,
+      sequenceIndex: '2111',
+      timestamp: group.timestamp,
+      txHash: group.txHash,
+    });
+  });
+
+  it('should handle server validation errors', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event: group,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+
+    editHistoryEventMock.mockResolvedValueOnce({
+      message: { location: ['invalid location'] },
+      success: false,
+    });
+
+    const saveMethod = wrapper.vm.save;
+
+    const saveResult = await saveMethod();
+    await nextTick();
+
+    expect(saveResult).toBe(false);
+    expect(wrapper.find('[data-cy=location] .details').text()).toBe('invalid location');
+  });
+
+  it('should display validation errors when the form is invalid', async () => {
+    wrapper = createWrapper();
+    const saveMethod = wrapper.vm.save;
+
+    await saveMethod();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
   });
 });

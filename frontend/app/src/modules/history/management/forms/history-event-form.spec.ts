@@ -62,7 +62,7 @@ describe('component/HistoryEventForm.vue', () => {
   it('should default to history event form', () => {
     expect.assertions(2);
 
-    const entryTypeInput = wrapper.find('[data-cy="entry-type"] input');
+    const entryTypeInput = wrapper.find('[data-cy=entry-type] input');
     const entryTypeElement = entryTypeInput.element as HTMLInputElement;
 
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
@@ -70,7 +70,7 @@ describe('component/HistoryEventForm.vue', () => {
   });
 
   it.each(Object.values(HistoryEventEntryType))('changes to proper form %s', async (value: string) => {
-    await wrapper.find('[data-cy="entry-type"] [data-id="activator"]').trigger('click');
+    await wrapper.find('[data-cy=entry-type] [data-id=activator]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
     const options = wrapper.find('[role="menu-content"]').findAll('button');

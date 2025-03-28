@@ -222,7 +222,7 @@ defineExpose({
     <RuiCheckbox
       v-model="isExit"
       color="primary"
-      data-cy="isExited"
+      data-cy="is-exit"
     >
       {{ t('transactions.events.form.is_exit.label') }}
     </RuiCheckbox>

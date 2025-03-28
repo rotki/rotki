@@ -1,14 +1,19 @@
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';
+import type { TradeLocationData } from '@/types/history/trade/location';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { useLocations } from '@/composables/locations';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn().mockReturnValue({
@@ -16,8 +21,18 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
+vi.mock('@/composables/history/events', () => ({
+  useHistoryEvents: vi.fn(),
+}));
+
+vi.mock('@/composables/locations', () => ({
+  useLocations: vi.fn(),
+}));
+
 describe('forms/OnlineHistoryEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof OnlineHistoryEventForm>>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn>;
   let pinia: Pinia;
 
   const asset = {
@@ -32,7 +47,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     assets: { [asset.symbol]: asset },
   };
 
-  const group: OnlineHistoryEvent = {
+  const event: OnlineHistoryEvent = {
     amount: bigNumberify(10),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.HISTORY_EVENT,
@@ -51,19 +66,28 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     setupDayjs();
     pinia = createPinia();
     setActivePinia(pinia);
-    vi.useFakeTimers();
   });
 
   beforeEach(() => {
+    vi.useFakeTimers();
+    addHistoryEventMock = vi.fn();
+    editHistoryEventMock = vi.fn();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+    (useHistoryEvents as Mock).mockReturnValue({
+      addHistoryEvent: addHistoryEventMock,
+      editHistoryEvent: editHistoryEventMock,
+    });
+    (useLocations as Mock).mockReturnValue({
+      tradeLocations: computed<TradeLocationData[]>(() => [{
+        identifier: 'kraken',
+        name: 'Kraken',
+      }]),
+    });
   });
 
   afterEach(() => {
     wrapper.unmount();
-  });
-
-  afterAll(() => {
     vi.useRealTimers();
   });
 
@@ -78,76 +102,64 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     ...options,
   });
 
-  describe('should prefill the fields based on the props', () => {
-    it('should show the default state when adding a new event', async () => {
-      wrapper = createWrapper();
-      await vi.advanceTimersToNextTimerAsync();
+  it('should show the default state when adding a new event', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
 
-      expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe('');
+    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const locationLabel = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
 
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe('');
+    expect(eventIdentifierInput.element.value).toBe('');
+    expect(locationLabel.element.value).toBe('');
+    expect(sequenceIndexInput.element.value).toBe('0');
+  });
 
-      expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
+  it('should update the fields when adding an event in an existing group', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+    await wrapper.setProps({
+      data: { group: event, nextSequenceId: '10', type: 'group-add' },
     });
+    await vi.advanceTimersToNextTimerAsync();
 
-    it('should update the fields when adding an event in an existing group', async () => {
-      wrapper = createWrapper();
-      vi.advanceTimersToNextTimer();
-      await wrapper.setProps({
-        data: { group, nextSequenceId: '10', type: 'group-add' },
-      });
-      vi.advanceTimersToNextTimer();
+    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-      expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        group.eventIdentifier,
-      );
+    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(locationLabelInput.element.value).toBe(event.locationLabel);
+    expect(amountInput.element.value).toBe('0');
+    expect(sequenceIndexInput.element.value).toBe('10');
+    expect(noteTextArea.element.value).toBe('');
+  });
 
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        group.locationLabel,
-      );
-
-      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe('0');
-
-      expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('10');
-
-      expect(
-        (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe('');
+  it('should update the fields when editing an event', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+    await wrapper.setProps({
+      data: { event, nextSequenceId: '10', type: 'edit' },
     });
+    await vi.advanceTimersToNextTimerAsync();
 
-    it('should update the fields when editing an event', async () => {
-      wrapper = createWrapper();
-      vi.advanceTimersToNextTimer();
-      await wrapper.setProps({
-        data: { event: group, nextSequenceId: '10', type: 'edit' },
-      });
-      vi.advanceTimersToNextTimer();
+    const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
-      expect((wrapper.find('[data-cy=eventIdentifier] input').element as HTMLInputElement).value).toBe(
-        group.eventIdentifier,
-      );
-
-      expect((wrapper.find('[data-cy=locationLabel] .input-value').element as HTMLInputElement).value).toBe(
-        group.locationLabel,
-      );
-
-      expect((wrapper.find('[data-cy=amount] input').element as HTMLInputElement).value).toBe(
-        group.amount.toString(),
-      );
-
-      expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value.replace(',', '')).toBe(
-        group.sequenceIndex.toString(),
-      );
-
-      expect(
-        (wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').element as HTMLTextAreaElement).value,
-      ).toBe(group.notes);
-    });
+    expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
+    expect(locationLabelInput.element.value).toBe(event.locationLabel);
+    expect(amountInput.element.value).toBe(event.amount.toString());
+    expect(sequenceIndexInput.element.value.replace(',', '')).toBe(event.sequenceIndex.toString());
+    expect(noteTextArea.element.value).toBe(event.notes);
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    wrapper = createWrapper({ props: { data: { group: event, nextSequenceId: '1', type: 'group-add' } } });
+    await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventTypesData } = useHistoryEventMappings();
 
@@ -155,8 +167,8 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    wrapper = createWrapper({ props: { data: { group: event, nextSequenceId: '1', type: 'group-add' } } });
+    await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
 
@@ -166,8 +178,8 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    vi.advanceTimersToNextTimer();
+    wrapper = createWrapper({ props: { data: { group: event, nextSequenceId: '1', type: 'group-add' } } });
+    await vi.advanceTimersToNextTimerAsync();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
 
@@ -177,7 +189,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       value: selectedEventType,
     });
 
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const keysFromGlobalMappings = Object.keys(get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {});
 
@@ -186,5 +198,116 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
 
     for (let i = 0; i < keysFromGlobalMappings.length; i++)
       expect(keysFromGlobalMappings.includes(spans.at(i)!.text())).toBeTruthy();
+  });
+
+  it('should add a new online event', async () => {
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=eventIdentifier] input').setValue(event.eventIdentifier);
+    await wrapper.find('[data-cy=location] input').setValue(event.location);
+    await wrapper.find('[data-cy=locationLabel] input').setValue(event.locationLabel);
+    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-cy=eventType] input').setValue(event.eventType);
+    await wrapper.find('[data-cy=eventSubtype] input').setValue(event.eventSubtype);
+    await wrapper.find('[data-cy=asset] input').setValue(asset.symbol);
+    await wrapper.find('[data-cy=amount] input').setValue(event.amount.toString());
+    await wrapper.find('[data-cy=sequenceIndex] input').setValue(event.sequenceIndex.toString());
+    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(event.notes);
+
+    const saveMethod = wrapper.vm.save;
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+
+    expect(addHistoryEventMock).toHaveBeenCalledTimes(1);
+
+    expect(addHistoryEventMock).toHaveBeenCalledWith({
+      amount: event.amount,
+      asset: event.asset,
+      entryType: HistoryEventEntryType.HISTORY_EVENT,
+      eventIdentifier: event.eventIdentifier,
+      eventSubtype: event.eventSubtype,
+      eventType: event.eventType,
+      location: event.location,
+      locationLabel: event.locationLabel,
+      notes: event.notes,
+      sequenceIndex: event.sequenceIndex.toString(),
+      timestamp: event.timestamp,
+    });
+  });
+
+  it('should edit an existing online event', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: { event, nextSequenceId: '1', type: 'edit' },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=asset] input').setValue('USD');
+    await wrapper.find('[data-cy=amount] input').setValue('50');
+
+    const saveMethod = wrapper.vm.save;
+
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+
+    expect(editHistoryEventMock).toHaveBeenCalledTimes(1);
+
+    expect(editHistoryEventMock).toHaveBeenCalledWith({
+      amount: bigNumberify(50),
+      asset: 'USD',
+      entryType: HistoryEventEntryType.HISTORY_EVENT,
+      eventIdentifier: event.eventIdentifier,
+      eventSubtype: event.eventSubtype,
+      eventType: event.eventType,
+      identifier: event.identifier,
+      location: event.location,
+      locationLabel: event.locationLabel,
+      notes: event.notes,
+      sequenceIndex: event.sequenceIndex.toString(),
+      timestamp: event.timestamp,
+    });
+  });
+
+  it('should handle server validation errors', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+
+    editHistoryEventMock.mockResolvedValueOnce({
+      message: { location: ['invalid location'] },
+      success: false,
+    });
+
+    const saveMethod = wrapper.vm.save;
+
+    const saveResult = await saveMethod();
+    await nextTick();
+
+    expect(saveResult).toBe(false);
+    expect(wrapper.find('[data-cy=location] .details').text()).toBe('invalid location');
+  });
+
+  it('should display validation errors when the form is invalid', async () => {
+    wrapper = createWrapper();
+    const saveMethod = wrapper.vm.save;
+
+    await saveMethod();
+    await vi.advanceTimersToNextTimerAsync();
+
+    expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
   });
 });

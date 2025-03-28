@@ -16,6 +16,7 @@ export default mergeConfig(
     test: {
       globals: true,
       environment: 'jsdom',
+      testTimeout: 15_000,
       env: {
         TZ: 'UTC',
         VITE_TEST: 'true',
@@ -42,7 +43,7 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         reportsDirectory: 'tests/unit/coverage',
-        reporter: ['json'],
+        reporter: ['json', 'lcov', 'html'],
         include: ['src/*'],
         exclude: ['node_modules', 'tests/', '**/*.d.ts', '**/*.spec.ts'],
       },

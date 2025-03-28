@@ -34,6 +34,7 @@ describe('forms/SwapEventForm', () => {
   let addHistoryEventMock: ReturnType<typeof vi.fn>;
   let editHistoryEventMock: ReturnType<typeof vi.fn>;
   let setMessageMock: ReturnType<typeof vi.fn>;
+  let wrapper: VueWrapper<InstanceType<typeof SwapEventForm>>;
   let pinia: Pinia;
 
   const data: DependentEventData<SwapEvent> = {
@@ -120,6 +121,7 @@ describe('forms/SwapEventForm', () => {
   });
 
   afterEach(() => {
+    wrapper.unmount();
     vi.useRealTimers();
   });
 
@@ -135,41 +137,40 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should render the form correctly', () => {
-    const wrapper = createWrapper();
+    wrapper = createWrapper();
     expect(wrapper.exists()).toBe(true);
-    expect(wrapper.find('[data-cy="datetime"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="location"]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=datetime]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=location]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy="spend-amount"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="spend-asset"]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=spend-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=spend-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy="received-amount"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="received-asset"]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=received-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=received-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy="unique-id"]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=unique-id]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy="has-fee"]').exists()).toBe(true);
-    expect((wrapper.find('[data-cy="has-fee"]').element as HTMLInputElement).checked).toBeUndefined();
-    expect(wrapper.find('[data-cy="fee-amount"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="fee-asset"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="advanced-accordion"]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=has-fee]').exists()).toBe(true);
+    expect((wrapper.find('[data-cy=has-fee]').element as HTMLInputElement).checked).toBeUndefined();
+    expect(wrapper.find('[data-cy=fee-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=fee-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=advanced-accordion]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy="spend-notes"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="receive-notes"]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="fee-notes"]').exists()).toBe(false);
+    expect(wrapper.find('[data-cy=spend-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=receive-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(false);
   });
 
   it('should validate the form and call addHistoryEvent on save', async () => {
-    vi.useFakeTimers();
-    const wrapper = createWrapper();
-    vi.advanceTimersToNextTimer();
-    const datetimePicker = wrapper.find('[data-cy="datetime"] input');
-    const locationField = wrapper.find('[data-cy="location"] input');
-    const spendAmountField = wrapper.find('[data-cy="spend-amount"] input');
-    const spendAssetField = wrapper.find('[data-cy="spend-asset"] input');
-    const receiveAmountField = wrapper.find('[data-cy="received-amount"] input');
-    const receiveAssetField = wrapper.find('[data-cy="received-asset"] input');
-    const uniqueIdField = wrapper.find('[data-cy="unique-id"] input');
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+    const datetimePicker = wrapper.find('[data-cy=datetime] input');
+    const locationField = wrapper.find('[data-cy=location] input');
+    const spendAmountField = wrapper.find('[data-cy=spend-amount] input');
+    const spendAssetField = wrapper.find('[data-cy=spend-asset] input');
+    const receiveAmountField = wrapper.find('[data-cy=received-amount] input');
+    const receiveAssetField = wrapper.find('[data-cy=received-asset] input');
+    const uniqueIdField = wrapper.find('[data-cy=unique-id] input');
 
     const now = dayjs();
     const nowInMs = now.valueOf();
@@ -181,7 +182,7 @@ describe('forms/SwapEventForm', () => {
     await receiveAssetField.setValue('BTC');
     await uniqueIdField.setValue('abcd');
 
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const saveMethod = wrapper.vm.save;
 
@@ -205,53 +206,53 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should display validation errors when the form is invalid', async () => {
-    const wrapper = createWrapper();
+    wrapper = createWrapper();
     const saveMethod = wrapper.vm.save;
 
     await saveMethod();
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy="location"] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="spend-amount"] .details').exists()).toBe(true);
-    expect(wrapper.find('[data-cy="spend-asset"] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=location] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=spend-amount] .details').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=spend-asset] .details').exists()).toBe(true);
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
-    const wrapper = createWrapper();
+    wrapper = createWrapper();
 
-    const feeAmount = wrapper.find('[data-cy="fee-amount"] input');
-    const feeAsset = wrapper.find('[data-cy="fee-asset"] input');
-    const feeToggle = wrapper.find('[data-cy="has-fee"] input');
+    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
+    const feeAsset = wrapper.find('[data-cy=fee-asset] input');
+    const feeToggle = wrapper.find('[data-cy=has-fee] input');
 
     expect(feeAmount.attributes('disabled')).toBe('');
     expect(feeAsset.attributes('disabled')).toBe('');
 
     await feeToggle.setValue(true);
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(feeAmount.attributes('disabled')).toBeUndefined();
     expect(feeAsset.attributes('disabled')).toBeUndefined();
-    expect(wrapper.find('[data-cy="fee-notes"]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
   });
 
   it('calls editHistoryEvent when editing an event', async () => {
-    const wrapper = createWrapper({
+    wrapper = createWrapper({
       props: {
         data,
       },
     });
 
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
-    const feeAmount = wrapper.find('[data-cy="fee-amount"] input');
+    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
     await feeAmount.setValue('2');
 
-    const receiveNotes = wrapper.find('[data-cy="receive-notes"] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-cy="fee-notes"] textarea:not([aria-hidden="true"])');
+    const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-cy=fee-notes] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('receive');
     await feeNotes.setValue('fee');
 
-    vi.advanceTimersToNextTimer();
+    await vi.advanceTimersToNextTimerAsync();
 
     const saveMethod = wrapper.vm.save;
 
@@ -280,7 +281,7 @@ describe('forms/SwapEventForm', () => {
   });
 
   it('should handle server validation errors', async () => {
-    const wrapper = createWrapper({
+    wrapper = createWrapper({
       props: {
         data,
       },
@@ -297,6 +298,6 @@ describe('forms/SwapEventForm', () => {
     await nextTick();
 
     expect(saveResult).toBe(false);
-    expect(wrapper.find('[data-cy="location"] .details').text()).toBe('Location is required');
+    expect(wrapper.find('[data-cy=location] .details').text()).toBe('Location is required');
   });
 });
