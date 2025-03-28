@@ -18,6 +18,7 @@ const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath || '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
+const isCypress = !!process.env.VITE_CYPRESS;
 const isTest = !!process.env.VITE_TEST;
 const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
 
@@ -45,7 +46,7 @@ if (envPath)
 if (!hmrEnabled)
   console.info('HMR is disabled');
 
-const enableChecker = !(process.env.CI || process.env.VITE_TEST || process.env.VITEST);
+const enableChecker = !(process.env.CI || isTest || process.env.VITEST);
 
 export default defineConfig({
   resolve: {
@@ -116,7 +117,7 @@ export default defineConfig({
       include: [path.resolve(__dirname, './src/locales/**')],
     }),
     ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
-    ...(isTest
+    ...(isCypress
       ? [
           istanbul({
             include: 'src/*',
