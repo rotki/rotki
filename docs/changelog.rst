@@ -11,6 +11,7 @@ Changelog
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
+* :bug:`-` Fix a rare issue calling RPC nodes when there is an error connecting to them.
 
 * :release:`1.38.2 <2025-03-26>`
 * :bug:`-` Fix the issue where the "Add new event here" button is missing from the "more" menu in the event group.
