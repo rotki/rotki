@@ -1104,7 +1104,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
         'Receive 1 Gold Bar after a swap in Kraken',
         'Spend 1 Gold Bar as Kraken swap fee',
     )):
-        assert swap_events[idx].serialize()['description'] == expected_notes
+        assert swap_events[idx].serialize()['auto_notes'] == expected_notes
 
     for event_type in {HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL}:
         asset_movements = create_asset_movement_with_fee(
@@ -1117,10 +1117,10 @@ def test_kraken_event_serialization_with_custom_asset(database):
             fee=ONE,
         )
         if event_type == HistoryEventType.DEPOSIT:
-            assert asset_movements[0].serialize()['description'] == 'Deposit 1 Gold Bar to Kraken'
+            assert asset_movements[0].serialize()['auto_notes'] == 'Deposit 1 Gold Bar to Kraken'
         else:
-            assert asset_movements[0].serialize()['description'] == 'Withdraw 1 Gold Bar from Kraken'  # noqa: E501
-        assert asset_movements[1].serialize()['description'] == f'Pay 1 Gold Bar as Kraken {event_type.name.lower()} fee'  # noqa: E501
+            assert asset_movements[0].serialize()['auto_notes'] == 'Withdraw 1 Gold Bar from Kraken'  # noqa: E501
+        assert asset_movements[1].serialize()['auto_notes'] == f'Pay 1 Gold Bar as Kraken {event_type.name.lower()} fee'  # noqa: E501
 
     for event_type, event_subtype, expected_notes in (
             (HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Gain 1 Gold Bar from Kraken staking'),  # noqa: E501
@@ -1137,4 +1137,4 @@ def test_kraken_event_serialization_with_custom_asset(database):
             amount=ONE,
             location_label='my kraken',
         )
-        assert event.serialize()['notes'] == expected_notes
+        assert event.serialize()['auto_notes'] == expected_notes
