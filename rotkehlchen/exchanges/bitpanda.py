@@ -1,6 +1,7 @@
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
@@ -52,6 +53,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -554,7 +556,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[AssetMovement]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         self.first_connection()
         # Should probably also query wallets/transactions for crypto deposits/withdrawals
         # but it does not seem as if they contain them
@@ -569,7 +571,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             to_ts=end_ts,
         )
         movements.extend(crypto_movements)
-        return movements
+        return movements, end_ts
 
     def query_online_margin_history(
             self,

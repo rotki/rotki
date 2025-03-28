@@ -101,7 +101,7 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements = mock_bitstamp.query_online_history_events(0, 1)
+        movements, _ = mock_bitstamp.query_online_history_events(0, 1)
         assert movements == []
         errors = mock_bitstamp.msg_aggregator.consume_errors()
         assert len(errors) == 2  # since we do 2 queries underneath

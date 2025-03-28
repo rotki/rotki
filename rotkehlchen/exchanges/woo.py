@@ -201,7 +201,7 @@ class Woo(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence['HistoryBaseEntry']:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Return deposits/withdrawals history on Woo in a range of time."""
         movements: list[AssetMovement] = self._api_query_paginated(
             endpoint='v1/asset/history',
@@ -216,7 +216,7 @@ class Woo(ExchangeInterface):
             deserialization_method=self._deserialize_asset_movement,
             entries_key='rows',
         )
-        return movements
+        return movements, end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Woo API key is good for usage in rotki"""

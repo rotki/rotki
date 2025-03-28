@@ -351,7 +351,7 @@ class Bitmex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence['HistoryBaseEntry']:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         self.first_connection()
         resp = self._api_query('user/walletHistory', {'currency': 'all'})
 
@@ -436,7 +436,7 @@ class Bitmex(ExchangeInterface):
                     f'asset_movement {movement}. Error was: {msg}',
                 )
                 continue
-        return movements
+        return movements, end_ts
 
     def query_online_trade_history(
             self,

@@ -168,8 +168,6 @@ def test_querying_balances(kraken):
         assert isinstance(entry, Balance)
 
 
-# TODO: Add support for partial range queries to all exchanges and re-enable this test
-@pytest.mark.skip('This functionality has been temporarily removed')
 def test_querying_rate_limit_exhaustion(kraken, database):
     """Test that if kraken api rates limit us we don't get stuck in an infinite loop
     and also that we return what we managed to retrieve until rate limit occurred.

@@ -168,7 +168,7 @@ def test_api_key_err_auth_nonce(mock_bitfinex: 'Bitfinex') -> None:
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
+        movements, _ = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
         assert movements == []
         errors = mock_bitfinex.msg_aggregator.consume_errors()
         assert len(errors) == 1
@@ -1166,7 +1166,7 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> 
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         api_query_mock = stack.enter_context(api_query_patch)
-        asset_movements = mock_bitfinex.query_online_history_events(
+        asset_movements, _ = mock_bitfinex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp())),
         )
@@ -1398,7 +1398,7 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> 
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         stack.enter_context(api_query_patch)
-        asset_movements = mock_bitfinex.query_online_history_events(
+        asset_movements, _ = mock_bitfinex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp())),
         )

@@ -115,7 +115,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         ],
     })
     with patch.object(htx_exchange, '_query', side_effect=mock_fn):
-        movements = htx_exchange.query_online_history_events(
+        movements, _ = htx_exchange.query_online_history_events(
             start_ts=Timestamp(1612492580),
             end_ts=Timestamp(1714746851),
         )

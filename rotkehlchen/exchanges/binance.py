@@ -1539,7 +1539,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         events: list[HistoryBaseEntry] = []
         for query_func in (
             self._query_online_asset_movements,
@@ -1554,7 +1554,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 )
                 continue
 
-        return events
+        return events, end_ts
 
     def _query_online_asset_movements(
             self,

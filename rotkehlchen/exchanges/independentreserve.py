@@ -26,7 +26,6 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -49,6 +48,7 @@ from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -406,7 +406,7 @@ class Independentreserve(ExchangeInterface):
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         if self.account_guids is None:
             self.query_balances()  # do a balance query to populate the account guids
         movements = []
@@ -427,7 +427,7 @@ class Independentreserve(ExchangeInterface):
                     f'Error processing IndependentReserve transactions response. '
                     f'Missing key: {e!s}.',
                 )
-                return []
+                return [], start_ts
 
             for entry in resp:
                 entry_type = entry.get('Type')
@@ -465,7 +465,7 @@ class Independentreserve(ExchangeInterface):
                     )
                     continue
 
-        return movements
+        return movements, end_ts
 
     def query_online_margin_history(
             self,

@@ -29,7 +29,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
@@ -64,6 +63,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -551,7 +551,7 @@ class Poloniex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         result = self.api_query_dict(
             '/wallets/activity',
             {'start': start_ts, 'end': end_ts},
@@ -586,7 +586,7 @@ class Poloniex(ExchangeInterface):
                 end_ts=end_ts,
             ))
 
-        return events
+        return events, end_ts
 
     def query_online_margin_history(
             self,

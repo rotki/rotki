@@ -203,14 +203,16 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence['HistoryBaseEntry']:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Queries the exchange's API for history events of the user
 
         Should be implemented in subclasses, unless query_history_events is reimplemented with
         custom logic.
-        Returns events based on HistoryBaseEntry, such as HistoryEvent, AssetMovement, etc.
+        Returns a tuple of HistoryBaseEntry events (HistoryEvent, AssetMovement, etc.) and the
+        last successfully queried timestamp. The timestamp should only differ from end_ts if
+        an error occurred preventing the full range from being queried.
         """
-        return []
+        return [], end_ts
 
     @protect_with_lock()
     def query_trade_history(
@@ -373,7 +375,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
                 step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
                 period=[query_start_ts, query_end_ts],
             )
-            new_events = self.query_online_history_events(
+            new_events, actual_end_ts = self.query_online_history_events(
                 start_ts=query_start_ts,
                 end_ts=query_end_ts,
             )
@@ -383,8 +385,16 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
                 ranges.update_used_query_range(
                     write_cursor=write_cursor,
                     location_string=location_string,
-                    queried_ranges=[(query_start_ts, query_end_ts)],
+                    queried_ranges=[(query_start_ts, actual_end_ts)],
                 )
+
+            if actual_end_ts != query_end_ts:
+                log.error(
+                    f'Failed to query all {self.name} history events between {query_start_ts} '
+                    f'and {query_end_ts}. Last successfully queried timestamp: {actual_end_ts}',
+                )
+                break  # There were errors preventing the full range from being queried. Stop any further queries.  # noqa: E501
+
         self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
 
     def query_history_with_callbacks(

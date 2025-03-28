@@ -31,7 +31,6 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -60,6 +59,7 @@ from rotkehlchen.utils.serialization import jsonloads_list
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -966,7 +966,7 @@ class Bitfinex(ExchangeInterface):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence[HistoryBaseEntry]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Return the account deposits and withdrawals on Bitfinex.
 
         Endpoint documentation:
@@ -983,7 +983,7 @@ class Bitfinex(ExchangeInterface):
             options=options,
             case='asset_movements',
         )
-        return asset_movements
+        return asset_movements, end_ts
 
     def query_online_trade_history(
             self,

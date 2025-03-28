@@ -142,10 +142,11 @@ def test_query_trade_history(poloniex: 'Poloniex'):
         return MockResponse(200, '{"withdrawals": [], "deposits": []}')
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-        assert poloniex.query_online_history_events(
+        events, _ = poloniex.query_online_history_events(
             start_ts=Timestamp(1500000000),
             end_ts=Timestamp(1565732120),
-        ) == [SwapEvent(
+        )
+        assert events == [SwapEvent(
             timestamp=TimestampMS(1539713117000),
             location=Location.POLONIEX,
             event_subtype=HistoryEventSubType.SPEND,
@@ -203,7 +204,7 @@ def test_query_trade_history_unexpected_data(poloniex):
             return MockResponse(200, '{"withdrawals": [], "deposits": []}')
 
         with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-            events = poloniex.query_online_history_events(
+            events, _ = poloniex.query_online_history_events(
                 start_ts=Timestamp(1500000000),
                 end_ts=Timestamp(1565732120),
             )
@@ -320,7 +321,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
         # Test that after querying the api only ETH and BTC assets are there
-        asset_movements = poloniex.query_online_history_events(
+        asset_movements, _ = poloniex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(1488994442),
         )
@@ -419,7 +420,7 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex: 'Poloniex'):
         )
 
     with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-        asset_movements = poloniex.query_online_history_events(
+        asset_movements, _ = poloniex.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=Timestamp(1488994442),
         )
@@ -450,7 +451,7 @@ def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
             return MockResponse(200, given_movements)
 
         with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
-            asset_movements = poloniex.query_online_history_events(
+            asset_movements, _ = poloniex.query_online_history_events(
                 start_ts=0,
                 end_ts=1488994442,
             )

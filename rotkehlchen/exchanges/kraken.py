@@ -790,14 +790,15 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> Sequence['HistoryBaseEntry']:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Query Kraken's ledger to retrieve events and transform them to our
         internal representation of history events.
 
         May raise:
         - RemoteError if request to kraken fails for whatever reason
 
-        Returns the events found or an empty list on error.
+        Returns a tuple containing a list of events found
+        and the last successfully queried timestamp.
         """
         log.debug(f'Querying kraken ledger entries from {start_ts} to {end_ts}')
         try:
@@ -813,10 +814,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 f'Failed to query kraken ledger between {start_ts} and '
                 f'{end_ts}. {e!s}',
             )
-            return []
-
-        if with_errors is True:  # TODO: remove this when support for partial querying is added
-            return []  # Errors have already been logged in query_until_finished
+            return [], start_ts
 
         new_events, _ = self.process_kraken_raw_events(
             events=response,
@@ -837,9 +835,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             else:
                 final_events.append(event)
 
-        swap_events, _ = self.process_kraken_trades(trade_events)
+        swap_events, max_ts = self.process_kraken_trades(trade_events)
         final_events.extend(swap_events)
-        return final_events  # TODO: also return `Timestamp(max_ts) if with_errors else end_ts` when support for partial querying is added  # noqa: E501
+        return final_events, Timestamp(max_ts) if with_errors else end_ts
 
     def history_event_from_kraken(
             self,
