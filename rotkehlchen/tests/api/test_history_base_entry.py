@@ -703,13 +703,13 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         'location_label': None,
         'asset': 'ETH',
         'amount': '0.0569',
-        'notes': 'Main event note',
+        'user_notes': 'Main event note',
         'identifier': 2,
         'entry_type': 'asset movement event',
         'event_identifier': '7e4d3805a88cbbcdc35badc4547044be803724146c7b9f0165cadd62c1616205',
         'sequence_index': 0,
         'extra_data': {'reference': 'BITFINEX-344'},
-        'description': 'Withdraw 0.0569 ETH from Bitfinex',
+        'auto_notes': 'Withdraw 0.0569 ETH from Bitfinex',
     }
 
     # test editing unknown fails
@@ -745,7 +745,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         fields_to_exclude = {
             'notes', 'extra_data', 'event_subtype', 'sequence_index',
             'location_label', 'unique_id', 'event_identifier',
-            'fee', 'fee_asset', 'timestamp', 'description',
+            'fee', 'fee_asset', 'timestamp', 'user_notes', 'auto_notes',
         }
         for idx, event in enumerate(saved_events):
             serialized_event = event.serialize()
@@ -913,11 +913,11 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'location_label': None,
         'asset': 'ETH',
         'amount': '0.01',
-        'notes': 'Example note',
+        'user_notes': 'Example note',
         'identifier': 3,
         'entry_type': 'swap event',
         'event_identifier': '4074f41ac078988b05b7058775f111a3119888fc968f94ee9ed6a132918a3b83',
         'sequence_index': 0,
         'extra_data': None,
-        'description': 'Swap 0.01 ETH in Bitfinex',
+        'auto_notes': 'Swap 0.01 ETH in Bitfinex',
     }

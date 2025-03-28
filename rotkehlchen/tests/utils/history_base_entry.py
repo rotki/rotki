@@ -84,6 +84,10 @@ def entries_to_input_dict(
         serialized['identifier'] = entry.identifier
     else:
         serialized.pop('identifier')  # there is `identifier`: `None` which we have to remove
+
+    if 'user_notes' in serialized:
+        serialized['notes'] = serialized.pop('user_notes')
+
     pop_multiple_keys(serialized, entry.entry_type)
     if entry.entry_type == HistoryBaseEntryType.EVM_EVENT:
         serialized.pop('event_identifier')
