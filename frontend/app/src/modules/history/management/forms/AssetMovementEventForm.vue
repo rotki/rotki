@@ -311,6 +311,7 @@ defineExpose({
     <RuiTextField
       v-model="uniqueId"
       variant="outlined"
+      data-cy="unique-id"
       color="primary"
       :label="t('transactions.events.form.unique_id.label')"
     />
@@ -319,6 +320,7 @@ defineExpose({
 
     <RuiCheckbox
       v-model="hasFee"
+      data-cy="has-fee"
       label="Has Fee"
       color="primary"
     />
@@ -329,7 +331,7 @@ defineExpose({
         :disabled="!hasFee"
         clearable
         variant="outlined"
-        data-cy="amount"
+        data-cy="fee-amount"
         :label="t('common.fee')"
         :error-messages="toMessages(v$.fee)"
       />
@@ -338,7 +340,7 @@ defineExpose({
         :disabled="!hasFee"
         outlined
         clearable
-        data-cy="feeAsset"
+        data-cy="fee-asset"
         :label="t('transactions.events.form.fee_asset.label')"
         :error-messages="toMessages(v$.feeAsset)"
       />
