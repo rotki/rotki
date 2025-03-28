@@ -2,13 +2,15 @@
 import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
 import type { BigNumber } from '@rotki/common';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useBalancePricesStore } from '@/store/balances/prices';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
+import { useTemplateRef } from 'vue';
 
 const props = defineProps<{
   items: MissingPrice[];
@@ -23,22 +25,26 @@ const { t } = useI18n();
 const { isPinned, items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
+const refreshing = ref<boolean>(false);
+
+const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
+const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
+
+const tableRef = useTemplateRef<ComponentPublicInstance<typeof RuiDataTable>>('tableRef');
+
+const tableContainer = computed(() => get(tableRef)?.$el);
+
+const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
+const { getHistoricPrice } = useBalancePricesStore();
 
 function createKey(item: MissingPrice) {
   return item.fromAsset + item.toAsset + item.time;
 }
 
-async function getHistoricalPrices() {
+async function getHistoricalPrices(): Promise<void> {
   set(prices, await fetchHistoricalPrices());
 }
-
-onMounted(async () => {
-  await getHistoricalPrices();
-});
-
-const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
-const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
 
 const formattedItems = computed<EditableMissingPrice[]>(() =>
   get(items).map((item) => {
@@ -101,12 +107,9 @@ async function updatePrice(item: EditableMissingPrice) {
     });
   }
 
+  resetHistoricalPricesData([payload]);
   await getHistoricalPrices();
 }
-
-const tableRef = ref();
-
-const tableContainer = computed(() => get(tableRef)?.$el);
 
 const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
   {
@@ -134,10 +137,6 @@ const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
   },
 ]);
 
-const { getHistoricPrice } = useBalancePricesStore();
-
-const refreshing = ref<boolean>(false);
-
 async function refreshHistoricalPrice(item: EditableMissingPrice) {
   set(refreshing, true);
   const rateFromHistoricPrice = await getHistoricPrice({
@@ -160,6 +159,10 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
   }
   set(refreshing, false);
 }
+
+onMounted(async () => {
+  await getHistoricalPrices();
+});
 </script>
 
 <template>

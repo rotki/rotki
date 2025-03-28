@@ -8,12 +8,14 @@ import { useTaskStore } from '@/store/tasks';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { type BigNumber, type CommonQueryStatusData, NoPrice } from '@rotki/common';
+import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
   const statsPriceQueryStatus = ref<Record<string, StatsPriceQueryData>>({});
   const historicalPriceStatus = ref<CommonQueryStatusData>();
   const historicalDailyPriceStatus = ref<CommonQueryStatusData>();
+  const failedDailyPrices = ref<Record<string, FailedHistoricalAssetPriceResponse>>({});
+  const resolvedFailedDailyPrices = ref<Record<string, number[]>>({});
 
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryHistoricalRates } = usePriceApi();
@@ -105,6 +107,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
 
     items.forEach((item) => {
       const targetTime = item.timestamp;
+      const fromAsset = item.fromAsset;
       const lowerBound = targetTime - oneHourInMs;
       const upperBound = targetTime + oneHourInMs;
 
@@ -113,7 +116,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
         const [cacheAsset, cacheTimestamp] = cacheKey.split('#');
         const cacheTime = parseInt(cacheTimestamp, 10);
 
-        if (cacheAsset === item.fromAsset && cacheTime >= lowerBound && cacheTime <= upperBound)
+        if (cacheAsset === fromAsset && cacheTime >= lowerBound && cacheTime <= upperBound)
           keysToBeDeleted.add(cacheKey);
       });
     });
@@ -125,6 +128,8 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
 
   watch(currencySymbol, async () => {
     await cancelTaskByTaskType([TaskType.FETCH_HISTORIC_PRICE, TaskType.FETCH_DAILY_HISTORIC_PRICE]);
+    set(failedDailyPrices, {});
+    set(resolvedFailedDailyPrices, {});
     reset();
   });
 
@@ -161,6 +166,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
   return {
     cache,
     createKey,
+    failedDailyPrices,
     getProtocolStatsPriceQueryStatus,
     historicalDailyPriceStatus,
     historicalPriceStatus,
@@ -169,6 +175,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     reset,
     resetHistoricalPricesData,
     resetProtocolStatsPriceQueryStatus,
+    resolvedFailedDailyPrices,
     retrieve,
     setHistoricalDailyPriceStatus,
     setHistoricalPriceStatus,
