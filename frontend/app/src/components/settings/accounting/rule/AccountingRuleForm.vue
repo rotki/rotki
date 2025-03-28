@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
-import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import AccountingRuleWithLinkedSetting from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';

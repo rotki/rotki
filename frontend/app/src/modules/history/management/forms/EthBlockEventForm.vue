@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
 import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
@@ -29,7 +29,7 @@ const { t } = useI18n();
 
 const { data } = toRefs(props);
 
-const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
+const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const eventIdentifier = ref<string>('');
 const datetime = ref<string>('');

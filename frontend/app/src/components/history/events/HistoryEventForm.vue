@@ -3,12 +3,12 @@ import type {
   DependentEventData,
   IndependentEventData,
 } from '@/modules/history/management/forms/form-types';
-import AssetMovementEventForm from '@/components/history/events/forms/AssetMovementEventForm.vue';
-import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
-import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
-import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
-import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
-import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
+import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
+import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
+import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
+import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
+import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
+import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 import { HistoryEventEntryType } from '@rotki/common';
 import { kebabCase } from 'es-toolkit';

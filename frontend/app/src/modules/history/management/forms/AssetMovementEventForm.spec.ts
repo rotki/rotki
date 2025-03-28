@@ -1,7 +1,7 @@
 import type { AssetMap } from '@/types/asset';
 import type { AssetMovementEvent } from '@/types/history/events';
-import AssetMovementEventForm from '@/components/history/events/forms/AssetMovementEventForm.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';

@@ -1,8 +1,8 @@
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';
-import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
@@ -21,10 +21,10 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   let pinia: Pinia;
 
   const asset = {
-    name: 'Ethereum',
-    symbol: 'ETH',
     assetType: 'own chain',
     isCustomAsset: false,
+    name: 'Ethereum',
+    symbol: 'ETH',
   };
 
   const mapping: AssetMap = {
@@ -33,18 +33,18 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   };
 
   const group: OnlineHistoryEvent = {
-    identifier: 449,
+    amount: bigNumberify(10),
+    asset: asset.symbol,
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventIdentifier: 'STJ6KRHJYGA',
-    sequenceIndex: 20,
-    timestamp: 1696741486185,
-    location: 'kraken',
-    asset: asset.symbol,
-    amount: bigNumberify(10),
-    eventType: 'staking',
     eventSubtype: 'reward',
+    eventType: 'staking',
+    identifier: 449,
+    location: 'kraken',
     locationLabel: 'Kraken 1',
     notes: 'History event notes',
+    sequenceIndex: 20,
+    timestamp: 1696741486185,
   };
 
   beforeAll(() => {
@@ -71,13 +71,12 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     props: {
       data: { nextSequenceId: '0', type: 'add' },
     },
-  }) =>
-    mount(OnlineHistoryEventForm, {
-      global: {
-        plugins: [pinia],
-      },
-      ...options,
-    });
+  }): VueWrapper<InstanceType<typeof OnlineHistoryEventForm>> => mount(OnlineHistoryEventForm, {
+    global: {
+      plugins: [pinia],
+    },
+    ...options,
+  });
 
   describe('should prefill the fields based on the props', () => {
     it('should show the default state when adding a new event', async () => {
@@ -147,7 +146,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -156,7 +155,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   });
 
   it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -167,7 +166,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
   });
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
-    wrapper = createWrapper({ props: { data: { group, type: 'group-add', nextSequenceId: '1' } } });
+    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     vi.advanceTimersToNextTimer();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
