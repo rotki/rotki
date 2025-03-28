@@ -161,7 +161,11 @@ export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
   .or(EthDepositEvent)
   .or(SwapEventSchema);
 
-export type HistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | AssetMovementEvent | SwapEvent;
+export type DependentHistoryEvent = AssetMovementEvent | SwapEvent;
+
+export type IndependentHistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent;
+
+export type HistoryEvent = IndependentHistoryEvent | DependentHistoryEvent;
 
 export interface AddSwapEventPayload {
   entryType: typeof HistoryEventEntryType.SWAP_EVENT;
@@ -355,25 +359,3 @@ export const ProcessSkippedHistoryEventsResponse = z.object({
 });
 
 export type ProcessSkippedHistoryEventsResponse = z.infer<typeof ProcessSkippedHistoryEventsResponse>;
-
-export interface ShowMissingRuleForm {
-  readonly type: 'missingRule';
-  readonly data: {
-    group: HistoryEventEntry;
-    event: HistoryEventEntry;
-  };
-}
-
-export interface EventData<T extends HistoryEvent = HistoryEvent> {
-  group?: T;
-  event?: T;
-  nextSequenceId?: string;
-  eventsInGroup?: T[];
-}
-
-export interface ShowEventForm {
-  readonly type: 'event';
-  readonly data: EventData;
-}
-
-export type ShowEventHistoryForm = ShowEventForm | ShowMissingRuleForm;

@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { EventData, NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
+import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
+import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
-import HistoryEventTypeForm from '@/components/history/events/forms/HistoryEventTypeForm.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -22,7 +23,7 @@ import { isEmpty } from 'es-toolkit/compat';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: EventData<OnlineHistoryEvent> }>();
+const props = defineProps<{ data: IndependentEventData<OnlineHistoryEvent> }>();
 
 const { t } = useI18n();
 
@@ -30,7 +31,7 @@ const { data } = toRefs(props);
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
-const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
+const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
@@ -153,7 +154,8 @@ async function save(): Promise<boolean> {
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
-  const editable = get(data)?.event;
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const usedNotes = getPayloadNotes(get(notes), editable?.notes);
 
   const payload: NewOnlineHistoryEventPayload = {
@@ -180,14 +182,12 @@ async function save(): Promise<boolean> {
 
 function checkPropsData() {
   const formData = get(data);
-  const editable = formData?.event;
-  if (editable) {
-    applyEditableData(editable);
+  if (formData.type === 'edit') {
+    applyEditableData(formData.event);
     return;
   }
-  const group = formData?.group;
-  if (group) {
-    applyGroupHeaderData(group);
+  if (formData.type === 'group-add') {
+    applyGroupHeaderData(formData.group);
     return;
   }
   reset();
@@ -230,7 +230,7 @@ defineExpose({
       />
       <LocationSelector
         v-model="location"
-        :disabled="!!(data?.event || data?.group)"
+        :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
         :error-messages="toMessages(v$.location)"
@@ -242,7 +242,7 @@ defineExpose({
       v-model="eventIdentifier"
       variant="outlined"
       color="primary"
-      :disabled="!!(data?.event || data?.group)"
+      :disabled="data.type !== 'add'"
       data-cy="eventIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
       :error-messages="toMessages(v$.eventIdentifier)"

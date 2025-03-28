@@ -1,7 +1,7 @@
 import type { AssetMap } from '@/types/asset';
 import type { EthBlockEvent } from '@/types/history/events';
-import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
@@ -20,10 +20,10 @@ describe('forms/EthBlockEventForm.vue', () => {
   let pinia: Pinia;
 
   const asset = {
-    name: 'Ethereum',
-    symbol: 'ETH',
     assetType: 'own chain',
     isCustomAsset: false,
+    name: 'Ethereum',
+    symbol: 'ETH',
   };
 
   const mapping: AssetMap = {
@@ -32,21 +32,21 @@ describe('forms/EthBlockEventForm.vue', () => {
   };
 
   const group: EthBlockEvent = {
-    identifier: 11336,
+    amount: bigNumberify('100'),
+    asset: asset.symbol,
+    blockNumber: 444,
     entryType: HistoryEventEntryType.ETH_BLOCK_EVENT,
     eventIdentifier: 'BP1_444',
-    sequenceIndex: 0,
-    timestamp: 1697442021000,
-    location: 'ethereum',
-    asset: asset.symbol,
-    amount: bigNumberify('100'),
-    eventType: 'staking',
     eventSubtype: 'mev reward',
+    eventType: 'staking',
+    identifier: 11336,
+    location: 'ethereum',
     locationLabel: '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa',
     notes:
       'Validator 12 produced block 444 with 100 ETH going to 0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa as the mev reward',
+    sequenceIndex: 0,
+    timestamp: 1697442021000,
     validatorIndex: 122,
-    blockNumber: 444,
   };
 
   beforeAll(() => {
@@ -71,9 +71,9 @@ describe('forms/EthBlockEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthBlockEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
-  }) =>
+  }): VueWrapper<InstanceType<typeof EthBlockEventForm>> =>
     mount(EthBlockEventForm, {
       global: {
         plugins: [pinia],
@@ -82,7 +82,7 @@ describe('forms/EthBlockEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the prop', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -95,10 +95,10 @@ describe('forms/EthBlockEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('should update the relevant fields when the `group` property is updated', async () => {
+    it('should update the relevant fields when adding an event to a group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group } });
+      await wrapper.setProps({ data: { group, nextSequenceId: '1', type: 'group-add' } });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
         group.blockNumber.toString(),
@@ -117,10 +117,10 @@ describe('forms/EthBlockEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isMevReward] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('should update the fields when the `group` and `event` properties are updated', async () => {
+    it('should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group } });
+      await wrapper.setProps({ data: { event: group, nextSequenceId: '1', type: 'edit' } });
 
       expect((wrapper.find('[data-cy=blockNumber] input').element as HTMLInputElement).value).toBe(
         group.blockNumber.toString(),

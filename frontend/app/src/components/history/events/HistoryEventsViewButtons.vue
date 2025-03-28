@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShowEventForm } from '@/types/history/events';
+import type { ShowEventForm } from '@/modules/history/management/forms/form-types';
 
 const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
 
@@ -40,7 +40,7 @@ const { t } = useI18n();
   <RuiButton
     color="primary"
     data-cy="history-events__add"
-    @click="emit('show:form', { type: 'event', data: { nextSequenceId: '0' } })"
+    @click="emit('show:form', { type: 'event', data: { type: 'add', nextSequenceId: '0' } })"
   >
     <template #prepend>
       <RuiIcon name="lu-plus" />

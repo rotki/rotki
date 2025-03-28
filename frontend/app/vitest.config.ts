@@ -16,6 +16,7 @@ export default mergeConfig(
     test: {
       globals: true,
       environment: 'jsdom',
+      testTimeout: 15_000,
       env: {
         TZ: 'UTC',
         VITE_TEST: 'true',

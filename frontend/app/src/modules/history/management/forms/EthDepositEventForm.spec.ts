@@ -1,7 +1,7 @@
 import type { AssetMap } from '@/types/asset';
 import type { EthDepositEvent } from '@/types/history/events';
-import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
@@ -19,15 +19,15 @@ vi.mock('@/store/balances/prices', () => ({
   }),
 }));
 
-describe('ethDepositEventForm.vue', () => {
+describe('form/EthDepositEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthDepositEventForm>>;
   let pinia: Pinia;
 
   const asset = {
-    name: 'Ethereum',
-    symbol: 'ETH',
     assetType: 'own chain',
     isCustomAsset: false,
+    name: 'Ethereum',
+    symbol: 'ETH',
   };
 
   const mapping: AssetMap = {
@@ -36,22 +36,22 @@ describe('ethDepositEventForm.vue', () => {
   };
 
   const group: EthDepositEvent = {
-    identifier: 11344,
+    address: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
+    amount: bigNumberify('3.2'),
+    asset: asset.symbol,
+    counterparty: 'eth2',
     entryType: HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     eventIdentifier: '10x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
-    sequenceIndex: 12,
-    timestamp: 1697522243000,
-    location: 'ethereum',
-    asset: asset.symbol,
-    amount: bigNumberify('3.2'),
-    eventType: 'staking',
     eventSubtype: 'deposit asset',
+    eventType: 'staking',
+    identifier: 11344,
+    location: 'ethereum',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
     notes: 'Deposit 3.2 ETH to validator 223',
-    txHash: '0x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
-    counterparty: 'eth2',
     product: 'staking',
-    address: '0x00000000219ab540356cBB839Cbe05303d7705Fa',
+    sequenceIndex: 12,
+    timestamp: 1697522243000,
+    txHash: '0x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
     validatorIndex: 223,
   };
 
@@ -77,9 +77,9 @@ describe('ethDepositEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthDepositEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
-  }) =>
+  }): VueWrapper<InstanceType<typeof EthDepositEventForm>> =>
     mount(EthDepositEventForm, {
       global: {
         plugins: [pinia],
@@ -88,7 +88,7 @@ describe('ethDepositEventForm.vue', () => {
     });
 
   describe('should prefill the fields based on the props', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -106,10 +106,10 @@ describe('ethDepositEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('0');
     });
 
-    it('should update when data contains a `group` and a `nextSequenceId` property', async () => {
+    it('should update when data adding a new event in a group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, nextSequenceId: '10' } });
+      await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
       vi.advanceTimersToNextTimer();
@@ -133,10 +133,10 @@ describe('ethDepositEventForm.vue', () => {
       expect((wrapper.find('[data-cy=sequenceIndex] input').element as HTMLInputElement).value).toBe('10');
     });
 
-    it('it should update the fields when all properties in data are updated', async () => {
+    it('it should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group } });
+      await wrapper.setProps({ data: { event: group, nextSequenceId: '1', type: 'edit' } });
 
       await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
       vi.advanceTimersToNextTimer();

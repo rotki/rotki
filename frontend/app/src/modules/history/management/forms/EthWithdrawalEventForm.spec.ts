@@ -1,7 +1,7 @@
 import type { AssetMap } from '@/types/asset';
 import type { EthWithdrawalEvent } from '@/types/history/events';
-import EthWithdrawalEventForm from '@/components/history/events/forms/EthWithdrawalEventForm.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
@@ -20,10 +20,10 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
   let pinia: Pinia;
 
   const asset = {
-    name: 'Ethereum',
-    symbol: 'ETH',
     assetType: 'own chain',
     isCustomAsset: false,
+    name: 'Ethereum',
+    symbol: 'ETH',
   };
 
   const mapping: AssetMap = {
@@ -32,20 +32,20 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
   };
 
   const group: EthWithdrawalEvent = {
-    identifier: 11343,
+    amount: bigNumberify('2.5'),
+    asset: asset.symbol,
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
     eventIdentifier: 'EW_123_19647',
-    sequenceIndex: 0,
-    timestamp: 1697517629000,
-    location: 'ethereum',
-    asset: asset.symbol,
-    amount: bigNumberify('2.5'),
-    eventType: 'staking',
     eventSubtype: 'remove asset',
+    eventType: 'staking',
+    identifier: 11343,
+    isExit: true,
+    location: 'ethereum',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
     notes: 'Exit validator 123 with 2.5 ETH',
+    sequenceIndex: 0,
+    timestamp: 1697517629000,
     validatorIndex: 123,
-    isExit: true,
   };
 
   beforeAll(() => {
@@ -70,18 +70,17 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
 
   const createWrapper = (options: ComponentMountingOptions<typeof EthWithdrawalEventForm> = {
     props: {
-      data: { nextSequenceId: '0' },
+      data: { nextSequenceId: '0', type: 'add' },
     },
-  }) =>
-    mount(EthWithdrawalEventForm, {
-      global: {
-        plugins: [pinia],
-      },
-      ...options,
-    });
+  }): VueWrapper<InstanceType<typeof EthWithdrawalEventForm>> => mount(EthWithdrawalEventForm, {
+    global: {
+      plugins: [pinia],
+    },
+    ...options,
+  });
 
   describe('should prefill the fields based on the props', () => {
-    it('should show the default state when opening the form without any data', async () => {
+    it('should show the default state when adding a new event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
 
@@ -92,10 +91,10 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('should update the fields when `group` updated', async () => {
+    it('should update the fields when adding an event in an existing group', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group } });
+      await wrapper.setProps({ data: { group, nextSequenceId: '1', type: 'group-add' } });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
         group.validatorIndex.toString(),
@@ -110,10 +109,10 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
       expect((wrapper.find('[data-cy=isExited] input').element as HTMLInputElement).checked).toBeFalsy();
     });
 
-    it('it should update the fields when all properties in data are updated', async () => {
+    it('it should update the fields when editing an event', async () => {
       wrapper = createWrapper();
       vi.advanceTimersToNextTimer();
-      await wrapper.setProps({ data: { group, event: group } });
+      await wrapper.setProps({ data: { event: group, nextSequenceId: '1', type: 'edit' } });
 
       expect((wrapper.find('[data-cy=validatorIndex] input').element as HTMLInputElement).value).toBe(
         group.validatorIndex.toString(),
