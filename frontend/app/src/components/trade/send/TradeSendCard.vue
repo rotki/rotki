@@ -79,8 +79,10 @@ const isNativeAsset = computed(() => {
   return assetVal === native;
 });
 
-watchImmediate([asset, assetChain, connectedChainId], async ([asset, chain, connectedChainId]) => {
-  if (!get(connected) || !chain || !asset) {
+const assetDetail = getAssetDetail(asset, assetChain);
+
+watchImmediate([asset, assetChain, connectedChainId, assetDetail], async ([asset, chain, connectedChainId, assetDetail]) => {
+  if (!get(connected) || !chain || !asset || !assetDetail) {
     resetMax();
     return;
   }
@@ -91,14 +93,9 @@ watchImmediate([asset, assetChain, connectedChainId], async ([asset, chain, conn
     controller.abort();
   }
 
-  const detail = get(getAssetDetail(asset, chain));
-
   if (!get(isNativeAsset)) {
-    if (detail) {
-      set(max, detail.amount.toFixed());
-    }
-    else {
-      resetMax();
+    if (assetDetail) {
+      set(max, assetDetail.amount.toFixed());
     }
     return;
   }
@@ -127,8 +124,8 @@ watchImmediate([asset, assetChain, connectedChainId], async ([asset, chain, conn
       }
     }
 
-    if (detail) {
-      set(max, detail.amount.toFixed());
+    if (assetDetail) {
+      set(max, assetDetail.amount.toFixed());
     }
     else {
       resetMax();
@@ -136,7 +133,12 @@ watchImmediate([asset, assetChain, connectedChainId], async ([asset, chain, conn
   }
   catch (error: any) {
     if (error.message !== 'Gas estimation cancelled') {
-      resetMax();
+      if (assetDetail) {
+        set(max, assetDetail.amount.toFixed());
+      }
+      else {
+        resetMax();
+      }
       logger.error(error);
     }
   }
