@@ -5,6 +5,29 @@ import { type Protocol, protocol } from 'electron';
 
 const currentDir = import.meta.dirname;
 
+export function getMimeType(pathName: string): string {
+  const extension = path.extname(pathName).toLowerCase();
+
+  if (extension === '.js')
+    return 'application/javascript';
+  else if (extension === '.html')
+    return 'text/html';
+  else if (extension === '.css')
+    return 'text/css';
+  else if (extension === '.svg' || extension === '.svgz')
+    return 'image/svg+xml';
+  else if (extension === '.png')
+    return 'image/png';
+  else if (extension === '.jpg' || extension === '.jpeg')
+    return 'image/jpeg';
+  else if (extension === '.json')
+    return 'application/json';
+  else if (extension === '.wasm')
+    return 'application/wasm';
+
+  return 'application/octet-stream';
+}
+
 export function createProtocol(scheme: string, customProtocol?: Protocol) {
   (customProtocol || protocol).registerBufferProtocol(scheme, (request, respond) => {
     let pathName = new URL(request.url).pathname;
@@ -14,22 +37,7 @@ export function createProtocol(scheme: string, customProtocol?: Protocol) {
       if (error)
         console.error(`Failed to read ${pathName} on ${scheme} protocol`, error);
 
-      const extension = path.extname(pathName).toLowerCase();
-      let mimeType = '';
-
-      if (extension === '.js')
-        mimeType = 'text/javascript';
-      else if (extension === '.html')
-        mimeType = 'text/html';
-      else if (extension === '.css')
-        mimeType = 'text/css';
-      else if (extension === '.svg' || extension === '.svgz')
-        mimeType = 'image/svg+xml';
-      else if (extension === '.json')
-        mimeType = 'application/json';
-      else if (extension === '.wasm')
-        mimeType = 'application/wasm';
-
+      const mimeType = getMimeType(pathName);
       respond({ mimeType, data });
     });
   });

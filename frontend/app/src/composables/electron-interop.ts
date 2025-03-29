@@ -17,6 +17,7 @@ interface UseInteropReturn {
   premiumUserLoggedIn: (premiumUser: boolean) => void;
   closeApp: () => Promise<void>;
   metamaskImport: () => Promise<string[]>;
+  openWalletConnectBridge: () => Promise<void>;
   restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   version: () => Promise<SystemVersion | WebVersion>;
@@ -137,6 +138,10 @@ const interop: UseInteropReturn = {
     else {
       window.open(url, '_blank');
     }
+  },
+
+  openWalletConnectBridge: async (): Promise<void> => {
+    await window.interop?.openWalletConnectBridge();
   },
 
   premiumUserLoggedIn: (premiumUser: boolean): void => {

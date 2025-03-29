@@ -59,8 +59,11 @@ export const Routes = {
   STATISTICS_GRAPHS: ensureRoute('/statistics/graphs'),
   STATISTICS_HISTORY_EVENTS: ensureRoute('/statistics/history-events'),
   TAG_MANAGER: ensureRoute('/tag-manager'),
+  TRADE: ensureRoute('/trade'),
+  TRADE_SEND: ensureRoute('/trade/send'),
   USER_CREATE: ensureRoute('/user/create'),
   USER_LOGIN: ensureRoute('/user/login'),
+  WALLET_BRIDGE: ensureRoute('/wallet-bridge'),
 } as const;
 
 export const useAppRoutes = createSharedComposable(() => {
@@ -313,6 +316,21 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-tag-manager' as const,
       route: Routes.TAG_MANAGER,
       text: t('navigation_menu.tag_manager'),
+    },
+    TRADE: {
+      icon: 'lu-coins' as const,
+      route: Routes.TRADE,
+      text: t('navigation_menu.trade'),
+    },
+    TRADE_SEND: {
+      icon: 'lu-send' as const,
+      route: Routes.TRADE_SEND,
+      text: t('navigation_menu.trade_sub.send'),
+    },
+    WALLET_BRIDGE: {
+      icon: 'lu-chevrons-left-right-ellipsis',
+      route: Routes.WALLET_BRIDGE,
+      text: t('navigation_menu.wallet_bridge'),
     },
   } as const));
 

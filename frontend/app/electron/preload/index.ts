@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('interop', {
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
   apiUrls: (): ApiUrls => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),
   metamaskImport: async () => ipcRenderer.invoke(IpcCommands.INVOKE_WALLET_IMPORT),
+  openWalletConnectBridge: async () => ipcRenderer.invoke(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE),
   restartBackend: async options => ipcRenderer.invoke(IpcCommands.INVOKE_SUBPROCESS_START, options),
   checkForUpdates: async () => ipcRenderer.invoke(IpcCommands.INVOKE_UPDATE_CHECK),
   downloadUpdate: async (progress) => {

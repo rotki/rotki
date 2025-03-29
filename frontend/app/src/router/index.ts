@@ -50,7 +50,7 @@ router.beforeEach((to, from, next) => {
 
     next();
   }
-  else if (to.path.startsWith('/user')) {
+  else if (to.path.startsWith('/user') || to.path === '/wallet-bridge') {
     next();
   }
   else {

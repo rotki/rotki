@@ -80,6 +80,7 @@ export interface Interop {
   debugSettings?: () => DebugSettings | undefined;
   apiUrls: () => ApiUrls;
   metamaskImport: () => Promise<MetamaskImport>;
+  openWalletConnectBridge: () => Promise<void>;
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;

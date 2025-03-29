@@ -3,6 +3,7 @@ import ListItem from '@/components/common/ListItem.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { Blockchain } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{
@@ -25,6 +26,8 @@ const name = computed(() => {
 
   return get(getChainName(chain));
 });
+
+const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockchain.BASE, Blockchain.OPTIMISM];
 </script>
 
 <template>
@@ -37,10 +40,15 @@ const name = computed(() => {
   >
     <template #avatar>
       <AdaptiveWrapper v-if="chain === 'evm'">
-        <RuiIcon
-          name="lu-link"
-          color="primary"
-        />
+        <div class="grid grid-cols-2 gap-0.5">
+          <ChainIcon
+            v-for="item in evmChainsRepresentative"
+            :key="item"
+            :size="dense ? '9px' : '13px'"
+            class="!p-0"
+            :chain="item"
+          />
+        </div>
       </AdaptiveWrapper>
 
       <ChainIcon
