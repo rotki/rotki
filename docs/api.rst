@@ -11056,6 +11056,55 @@ Get ENS names
    :statuscode 500: Internal rotki error.
 
 
+Get address from ENS name
+=============================================
+
+.. http:post:: /api/(version)/names/ens/resolve
+
+   Doing a POST on the ENS resolution endpoint will return the address for the given ENS name
+   if it exists. And null if it does not.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+    .. http:example:: curl wget httpie python-requests
+
+          POST /api/1/naminens/reverse HTTP/1.1
+          Host: localhost:5042
+          Content-Type: application/json;charset=UTF-8
+
+          {
+              "name": "lefteris.eth",
+              "ignore_cache": true
+          }
+
+   :reqjson str name: The name to resolve to an address
+   :reqjson bool[optional] ignore_cache: If true, then cache checking will be skipped. Off by default.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": "0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12",
+          "message": "",
+      }
+
+   :resjson str result: An evm address if resolution succeeds or null if not.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Name was resolved successfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: Name not found.
+   :statuscode 409: Failed to resolve name or addresses have incorrect format.
+   :statuscode 500: Internal rotki error.
+
+
 Get mappings from addressbook
 ==============================
 

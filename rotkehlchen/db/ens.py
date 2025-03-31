@@ -66,6 +66,17 @@ class DBEns:
 
         return result
 
+    def get_address_for_name(
+            self,
+            cursor: 'DBCursor',
+            name: str,
+    ) -> ChecksumEvmAddress | None:
+        """Returns the address for the given name if cached"""
+        cursor.execute('SELECT address FROM ens_mappings WHERE ens_name=?', (name,))
+        if (result := cursor.fetchone()) is None:
+            return None
+        return result[0]
+
     def update_values(
             self,
             write_cursor: 'DBCursor',

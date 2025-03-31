@@ -2060,6 +2060,30 @@ def _transform_btc_or_bch_address(
     return address
 
 
+def _resolve_ens_name(
+        ethereum_inquirer: EthereumInquirer,
+        name: str,
+        field_name: str,
+) -> ChecksumEvmAddress:
+    try:
+        resolved_address = ethereum_inquirer.ens_lookup(name)
+    except (RemoteError, InputError) as e:
+        raise ValidationError(
+            f'Given ENS name {name} could not be resolved for Ethereum'
+            f' due to: {e!s}',
+            field_name=field_name,
+        ) from None
+
+    if resolved_address is None:
+        raise ValidationError(
+            f'Given ENS name {name} could not be resolved for Ethereum',
+            field_name=field_name,
+        ) from None
+
+    log.info(f'Resolved ENS {name} to {(address := to_checksum_address(resolved_address))}')
+    return address
+
+
 def _transform_evm_address(
         ethereum_inquirer: EthereumInquirer,
         given_address: str,
@@ -2067,25 +2091,12 @@ def _transform_evm_address(
     try:
         address = to_checksum_address(given_address)
     except ValueError:
-        # Validation will only let .eth names come here.
-        # So let's see if it resolves to anything
-        try:
-            resolved_address = ethereum_inquirer.ens_lookup(given_address)
-        except (RemoteError, InputError) as e:
-            raise ValidationError(
-                f'Given ENS address {given_address} could not be resolved for Ethereum'
-                f' due to: {e!s}',
-                field_name='address',
-            ) from None
-
-        if resolved_address is None:
-            raise ValidationError(
-                f'Given ENS address {given_address} could not be resolved for Ethereum',
-                field_name='address',
-            ) from None
-
-        address = to_checksum_address(resolved_address)
-        log.info(f'Resolved ENS {given_address} to {address}')
+        # Validation will only let .eth names come here. Let's see if it resolves to anything
+        address = _resolve_ens_name(
+            ethereum_inquirer=ethereum_inquirer,
+            name=given_address,
+            field_name='address',
+        )
 
     return address
 
@@ -3003,6 +3014,10 @@ class AssetsImportingFromFormSchema(AsyncQueryArgumentSchema):
 
 class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
     ethereum_addresses = fields.List(EvmAddressField(), required=True)
+
+
+class ResolveEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
+    name = fields.String(required=True)
 
 
 class OptionalAddressesListSchema(Schema):

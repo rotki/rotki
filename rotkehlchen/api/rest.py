@@ -91,7 +91,11 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
-from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
+from rotkehlchen.chain.evm.names import (
+    find_ens_mappings,
+    maybe_resolve_name,
+    search_for_addresses_names,
+)
 from rotkehlchen.chain.evm.types import ChainID, EvmlikeAccount, NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
@@ -4011,6 +4015,19 @@ class RestAPI:
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
 
         return {'result': mappings_to_send, 'message': '', 'status_code': HTTPStatus.OK}
+
+    @async_api_call()
+    def resolve_ens_name(
+            self,
+            name: str,
+            ignore_cache: bool,
+    ) -> dict[str, Any]:
+        address = maybe_resolve_name(
+            ethereum_inquirer=self.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            name=name,
+            ignore_cache=ignore_cache,
+        )
+        return {'result': address, 'message': '', 'status_code': HTTPStatus.OK if address else HTTPStatus.NOT_FOUND}  # noqa: E501
 
     def import_user_snapshot(
             self,

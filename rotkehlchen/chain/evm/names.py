@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, cast
 
@@ -7,8 +8,9 @@ from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
+from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
@@ -24,6 +26,9 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 def find_ens_mappings(
@@ -86,6 +91,39 @@ def search_for_addresses_names(
         prioritized_name_source=CachedSettings().get_entry('address_name_priority'),  # type: ignore  # mypy doesn't detect correctly the type of the cached setting
         chain_addresses=chain_addresses,
     )
+
+
+def maybe_resolve_name(
+        ethereum_inquirer: 'EthereumInquirer',
+        name: str,
+        ignore_cache: bool,
+) -> ChecksumEvmAddress | None:
+    """Resolve name by either checking the DB or asking the chain"""
+    dbens = DBEns(ethereum_inquirer.database)
+    if not ignore_cache:
+        with dbens.db.conn.read_ctx() as cursor:
+            if (resolved_name := dbens.get_address_for_name(
+                cursor=cursor,
+                name=name,
+            )) is not None:
+                return resolved_name
+
+    try:
+        resolved_address = ethereum_inquirer.ens_lookup(name)
+    except (RemoteError, InputError) as e:
+        log.debug(f'Could not resolve ENS {name} to an address due to {e}')
+        resolved_address = None
+
+    if resolved_address is None:
+        return None
+
+    with dbens.db.user_write() as write_cursor:
+        dbens.update_values(  # update cache if needed
+            write_cursor=write_cursor,
+            ens_lookup_results={resolved_address: name},
+            mappings_to_send={},
+        )
+    return resolved_address
 
 
 FetcherFunc = Callable[[DBHandler, OptionalChainAddress], str | None]

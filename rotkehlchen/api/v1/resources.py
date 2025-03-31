@@ -143,6 +143,7 @@ from rotkehlchen.api.v1.schemas import (
     QueryCalendarSchema,
     RefetchEvmTransactionsSchema,
     RefreshProtocolDataSchema,
+    ResolveEnsSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -2757,6 +2758,24 @@ class ReverseEnsResource(BaseMethodView):
     ) -> Response:
         return self.rest_api.get_ens_mappings(
             addresses=ethereum_addresses,
+            ignore_cache=ignore_cache,
+            async_query=async_query,
+        )
+
+
+class ResolveEnsResource(BaseMethodView):
+    post_schema = ResolveEnsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            name: str,
+            ignore_cache: bool,
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.resolve_ens_name(
+            name=name,
             ignore_cache=ignore_cache,
             async_query=async_query,
         )

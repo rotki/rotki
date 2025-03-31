@@ -125,7 +125,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server: 'APIServer') -> None
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='Given ENS address ishouldnotexistforrealz.eth could not be resolved',
+        contained_in_msg='Given ENS name ishouldnotexistforrealz.eth could not be resolved',
     )
 
 
@@ -182,7 +182,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server: 'APIServer') -
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='Given ENS address ishouldnotexistforrealz.eth could not be resolved',
+        contained_in_msg='Given ENS name ishouldnotexistforrealz.eth could not be resolved',
     )
 
     # Edit the resolvable account
@@ -208,7 +208,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server: 'APIServer') -
     assert_error_response(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='Given ENS address ishouldnotexistforrealz.eth could not be resolved',
+        contained_in_msg='Given ENS name ishouldnotexistforrealz.eth could not be resolved',
     )
 
 
@@ -549,7 +549,7 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert outcome['result'] is None
         assert outcome['status_code'] == HTTPStatus.BAD_REQUEST
-        assert 'Given ENS address rotki.ethe could not be resolved for Ethereum' in outcome['message']  # noqa: E501
+        assert 'Given ENS name rotki.ethe could not be resolved for Ethereum' in outcome['message']
 
         # add an address that should be correctly added
         label = 'rotki account'
