@@ -55,7 +55,7 @@ function goToTab(tab: string | number) {
 watchImmediate(route, (route) => {
   const { params } = route;
 
-  if (!params.tab)
+  if (!params.tab || params.tab === '0')
     router.push('/balances/manual/assets');
 }, { deep: true });
 
