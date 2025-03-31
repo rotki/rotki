@@ -10,7 +10,6 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
@@ -26,32 +25,6 @@ const evmChain = useRefPropVModel(modelValue, 'evmChain');
 const address = useRefPropVModel(modelValue, 'address');
 const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
 const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
-
-const fromTimestampModel = computed({
-  get: () => {
-    const timestamp = get(fromTimestamp);
-    if (!timestamp) {
-      return '';
-    }
-    return convertFromTimestamp(timestamp);
-  },
-  set: (value: string) => {
-    set(fromTimestamp, convertToTimestamp(value));
-  },
-});
-
-const toTimestampModel = computed({
-  get: () => {
-    const timestamp = get(toTimestamp);
-    if (!timestamp) {
-      return '';
-    }
-    return convertFromTimestamp(timestamp);
-  },
-  set: (value: string) => {
-    set(toTimestamp, convertToTimestamp(value));
-  },
-});
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { getChain, txEvmChains } = useSupportedChains();
@@ -175,17 +148,18 @@ defineExpose({
     <div class="w-full flex gap-2">
       <div class="flex-1">
         <DateTimePicker
-          v-model="fromTimestampModel"
+          v-model="fromTimestamp"
           :label="t('generate.labels.start_date')"
-          limit-now
+          :max-value="toTimestamp"
           allow-empty
           :error-messages="toMessages(v$.fromTimestamp)"
         />
       </div>
       <div class="flex-1">
         <DateTimePicker
-          v-model="toTimestampModel"
+          v-model="toTimestamp"
           :label="t('generate.labels.end_date')"
+          :min-value="fromTimestamp"
           limit-now
           :error-messages="toMessages(v$.toTimestamp)"
         />

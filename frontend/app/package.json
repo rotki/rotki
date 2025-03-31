@@ -44,7 +44,7 @@
     "@reown/appkit-adapter-wagmi": "1.7.2",
     "@reown/walletkit": "1.2.3",
     "@rotki/common": "workspace:*",
-    "@rotki/ui-library": "1.12.3",
+    "@rotki/ui-library": "file:/Users/lukicenturi/Sites/ui-library",
     "@types/jsdom": "21.1.7",
     "@vuelidate/core": "2.0.3",
     "@vuelidate/validators": "2.0.4",

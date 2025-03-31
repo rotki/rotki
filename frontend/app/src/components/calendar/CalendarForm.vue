@@ -12,7 +12,6 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { isBlockchain } from '@/types/blockchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
@@ -35,13 +34,6 @@ const counterparty = useRefPropVModel(modelValue, 'counterparty');
 const color = useRefPropVModel(modelValue, 'color');
 const autoDelete = useRefPropVModel(modelValue, 'autoDelete');
 const timestamp = useRefPropVModel(modelValue, 'timestamp');
-
-const datetime = computed({
-  get: () => convertFromTimestamp(get(timestamp)),
-  set: (value: string) => {
-    set(timestamp, convertToTimestamp(value));
-  },
-});
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 
@@ -97,7 +89,7 @@ const states = {
   counterparty,
   description,
   name,
-  timestamp: datetime,
+  timestamp,
 };
 
 const v$ = useVuelidate(
@@ -122,7 +114,7 @@ defineExpose({
   <div class="flex flex-col gap-4">
     <div>
       <DateTimePicker
-        v-model="datetime"
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
         data-cy="datetime"

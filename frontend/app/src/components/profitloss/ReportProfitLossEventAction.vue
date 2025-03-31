@@ -7,7 +7,6 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useMessageStore } from '@/store/message';
-import { convertFromTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -38,8 +37,6 @@ async function openEditHistoricPriceDialog() {
   set(price, historicPrice.isPositive() ? historicPrice.toFixed() : '0');
   set(fetchingPrice, false);
 }
-
-const datetime = computed<string>(() => convertFromTimestamp(get(event).timestamp));
 
 const { t } = useI18n();
 
@@ -135,7 +132,7 @@ async function updatePrice() {
             outlined
           />
           <DateTimePicker
-            :model-value="datetime"
+            :model-value="event.timestamp"
             disabled
             hide-details
             :label="t('common.datetime')"

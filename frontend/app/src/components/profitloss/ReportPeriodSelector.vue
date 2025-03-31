@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
 import { Quarter } from '@/types/settings/frontend-settings';
+import { convertToTimestamp } from '@/utils/date';
 import dayjs from 'dayjs';
 
 const props = defineProps<{
@@ -41,21 +42,21 @@ function updateSelection(change: SelectionChangedEvent) {
   emit('update:selection', change);
 }
 
-function startDateTime(selection: Quarter): string {
+function startDateTime(selection: Quarter): number {
   const startDate = QUARTER_STARTS[selection];
-  return `${startDate}/${get(year)} 00:00`;
+  return convertToTimestamp(`${startDate}/${get(year)} 00:00`);
 }
 
 function isStartAfterNow(selection: Quarter) {
   const start = startDateTime(selection);
-  return dayjs(start, 'DD/MM/YYYY HH:mm').isAfter(dayjs());
+  return start > dayjs().unix();
 }
 
-const start = computed(() => startDateTime(get(quarter)));
+const start = computed<number>(() => startDateTime(get(quarter)));
 const isCustom = computed(() => get(year) === 'custom');
-const end = computed(() => {
+const end = computed<number>(() => {
   const endDate = QUARTER_ENDS[get(quarter)];
-  return `${endDate}/${get(year)} 23:59:59`;
+  return convertToTimestamp(`${endDate}/${get(year)} 23:59:59`);
 });
 
 const periodEventPayload = computed<PeriodChangedEvent>(() => ({

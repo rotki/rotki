@@ -14,7 +14,6 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
@@ -56,7 +55,7 @@ const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
 const protocol = refOptional(useRefPropVModel(modelValue, 'protocol'), '');
 const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
 const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
-const started = useRefPropVModel(modelValue, 'started');
+const started = refOptional(useRefPropVModel(modelValue, 'started'), 0);
 
 function parseDecimals(value?: string): number | null {
   if (!value)
@@ -65,16 +64,6 @@ function parseDecimals(value?: string): number | null {
   const parsedValue = Number.parseInt(value);
   return Number.isNaN(parsedValue) ? null : parsedValue;
 }
-
-const startedModel = computed({
-  get: () => {
-    const startedVal = get(started);
-    return startedVal ? convertFromTimestamp(startedVal) : '';
-  },
-  set: (value?: string) => {
-    set(started, value ? convertToTimestamp(value) : undefined);
-  },
-});
 
 const decimalsModel = computed({
   get() {
@@ -465,7 +454,7 @@ defineExpose({
           <template #default>
             <div class="p-4">
               <DateTimePicker
-                v-model="startedModel"
+                v-model="started"
                 :label="t('asset_form.labels.started')"
                 :error-messages="toMessages(v$.started)"
                 :disabled="loading"

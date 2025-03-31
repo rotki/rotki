@@ -30,23 +30,6 @@ export function getDateInputISOFormat(format: DateFormat): string {
   }[format];
 }
 
-export function changeDateFormat(
-  date: string,
-  fromFormat: DateFormat,
-  toFormat: DateFormat,
-  milliseconds: boolean = false,
-): string {
-  if (!date)
-    return '';
-
-  if (fromFormat === toFormat)
-    return date;
-
-  const timestamp = convertToTimestamp(date, fromFormat, milliseconds);
-
-  return convertFromTimestamp(timestamp, toFormat, milliseconds);
-}
-
 export function convertToTimestamp(
   date: string,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
@@ -101,40 +84,35 @@ export function convertFromTimestamp(
   return time.format(format);
 }
 
-export function convertDateByTimezone(
-  date: string,
-  dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
+export function convertTimestampByTimezone(
+  timestamp: number,
   fromTimezone: string,
   toTimezone: string,
   milliseconds: boolean = false,
-): string {
-  if (!date)
-    return date;
-
+): number {
   fromTimezone = fromTimezone || guessTimezone();
   toTimezone = toTimezone || guessTimezone();
 
   if (fromTimezone === toTimezone)
-    return date;
+    return timestamp;
 
-  let format: string = getDateInputISOFormat(dateFormat);
-  const firstSplit = date.split(' ');
-  if (firstSplit.length === 2) {
-    format += ' HH:mm';
+  const timestampMs = milliseconds ? timestamp : timestamp * 1000;
 
-    const secondSplit = firstSplit[1].split(':');
-    if (secondSplit.length === 3) {
-      format += ':ss';
+  // Create dayjs objects for both timezones at the given timestamp
+  const fromDate = dayjs(timestampMs).tz(fromTimezone);
+  const toDate = dayjs(timestampMs).tz(toTimezone);
 
-      if (milliseconds) {
-        const thirdSplit = secondSplit[2].split('.');
-        if (thirdSplit.length === 2)
-          format += '.SSS';
-      }
-    }
-  }
+  // Get the timezone offsets in minutes
+  const fromOffset = fromDate.utcOffset();
+  const toOffset = toDate.utcOffset();
 
-  return dayjs.tz(date, format, fromTimezone).tz(toTimezone).format(format);
+  // Calculate the difference in milliseconds
+  const offsetDiff = (toOffset - fromOffset) * 60 * 1000;
+
+  // Apply the adjustment
+  const adjustedTimestampMs = timestampMs + offsetDiff;
+
+  return milliseconds ? adjustedTimestampMs : Math.floor(adjustedTimestampMs / 1000);
 }
 
 export function isValidDate(date: string, dateFormat: string): boolean {

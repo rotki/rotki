@@ -156,8 +156,8 @@ export const ReportActionableItem = z.object({
 export type ReportActionableItem = z.infer<typeof ReportActionableItem>;
 
 export interface PeriodChangedEvent {
-  start: string;
-  end: string;
+  start: number;
+  end: number;
 }
 
 export interface SelectionChangedEvent {

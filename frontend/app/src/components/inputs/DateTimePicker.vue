@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { timezones } from '@/data/timezones';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { DateFormat } from '@/types/date-format';
-import { changeDateFormat, convertDateByTimezone, getDateInputISOFormat, guessTimezone, isValidDate } from '@/utils/date';
+import {
+  convertFromTimestamp,
+  convertTimestampByTimezone,
+  convertToTimestamp,
+  getDateInputISOFormat,
+  guessTimezone,
+  isValidDate,
+} from '@/utils/date';
 import { toMessages } from '@/utils/validation';
+import { RuiAutoComplete, RuiCalendar, RuiTextField } from '@rotki/ui-library';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 import IMask, { type InputMask, MaskedRange } from 'imask';
 
@@ -22,11 +29,12 @@ interface DateTimePickerProps {
   hideDetails?: boolean;
   dateOnly?: boolean;
   inputOnly?: boolean;
-  hideTimezoneSelector?: boolean;
   dense?: boolean;
+  minValue?: number;
+  maxValue?: number;
 }
 
-const modelValue = defineModel<string>({ required: true });
+const rawModelValue = defineModel<number>({ required: true });
 
 const props = withDefaults(defineProps<DateTimePickerProps>(), {
   allowEmpty: false,
@@ -35,7 +43,6 @@ const props = withDefaults(defineProps<DateTimePickerProps>(), {
   disabled: false,
   errorMessages: () => [],
   hideDetails: false,
-  hideTimezoneSelector: false,
   hint: '',
   inputOnly: false,
   label: '',
@@ -44,7 +51,7 @@ const props = withDefaults(defineProps<DateTimePickerProps>(), {
   persistentHint: false,
 });
 
-const { allowEmpty, dateOnly, errorMessages, limitNow, milliseconds } = toRefs(props);
+const { allowEmpty, dateOnly, errorMessages, limitNow, maxValue, milliseconds, minValue } = toRefs(props);
 const iMask = ref<InputMask<any>>();
 
 const { t } = useI18n();
@@ -52,16 +59,79 @@ const { t } = useI18n();
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
 const dateOnlyFormat = computed<string>(() => getDateInputISOFormat(get(dateInputFormat)));
-
 const dateTimeFormat = computed<string>(() => `${get(dateOnlyFormat)} HH:mm`);
-
 const dateTimeFormatWithSecond = computed<string>(() => `${get(dateTimeFormat)}:ss`);
-
 const dateTimeFormatWithMilliseconds = computed<string>(() => `${get(dateTimeFormatWithSecond)}.SSS`);
 
 const currentValue = ref<string>('');
 const selectedTimezone = ref<string>(guessTimezone());
-const inputField = ref();
+const inputFieldRef = useTemplateRef<InstanceType<typeof RuiTextField>>('inputFieldRef');
+const datePickerRef = useTemplateRef<InstanceType<typeof RuiCalendar>>('datePickerRef');
+const menuContainerRef = useTemplateRef<InstanceType<typeof HTMLDivElement>>('menuContainerRef');
+const timeZoneAutoCompleteRef = ref();
+
+const open = ref<boolean>(false);
+const timezoneMenu = ref<boolean>(false);
+const lastPageUpdate = ref<number>(0);
+const lastPageTitle = ref<string>('');
+const now = ref<Dayjs>(dayjs());
+
+const inputElement = computed(() => get(inputFieldRef)?.$el);
+const { focused: inputFocused } = useFocusWithin(inputElement);
+const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
+const { focused: menuFocused } = useFocus(menuContainerRef);
+
+const anyFocused = computed(() => get(inputFocused) || get(menuFocusedWithin) || (get(timezoneMenu)));
+const debouncedAnyFocused = debouncedRef(anyFocused, 100);
+const usedAnyFocused = logicOr(anyFocused, debouncedAnyFocused);
+
+function normalizeTimestamp(timestamp: number, multiply = false) {
+  const ms = get(milliseconds);
+  if (ms) {
+    return timestamp;
+  }
+  if (multiply) {
+    return timestamp * 1000;
+  }
+  return Math.floor(timestamp / 1000);
+}
+
+// Model value adjusted to the timezone
+const modelValue = computed({
+  get() {
+    const value = get(rawModelValue);
+    if (!value) {
+      return value;
+    }
+
+    return convertTimestampByTimezone(value, guessTimezone(), get(selectedTimezone), get(milliseconds));
+  },
+  set(value: number) {
+    if (!value) {
+      set(rawModelValue, value);
+    }
+
+    set(rawModelValue, convertTimestampByTimezone(value, get(selectedTimezone), guessTimezone(), get(milliseconds)));
+  },
+});
+
+const dateModel = computed({
+  get() {
+    const val = get(modelValue);
+    if (!val) {
+      return undefined;
+    }
+    return new Date(normalizeTimestamp(val, true));
+  },
+  set(value: Date | null) {
+    if (!value) {
+      set(modelValue, 0);
+    }
+    else {
+      set(modelValue, normalizeTimestamp(value.getTime()));
+    }
+  },
+});
 
 const dateFormatErrorMessage = computed<string>(() => {
   const dateFormat = get(dateOnlyFormat);
@@ -122,7 +192,7 @@ function isDateOnLimit(date: string): boolean {
   if (!get(limitNow) || !isValidFormat(date))
     return true;
 
-  const now = dayjs();
+  set(now, dayjs());
   let format: string = get(dateOnlyFormat);
   if (date.includes(' ')) {
     format += ' HH:mm';
@@ -131,10 +201,8 @@ function isDateOnLimit(date: string): boolean {
   }
 
   const timezone = get(selectedTimezone);
-
   const dateStringToDate = dayjs.tz(date, format, timezone).tz(guessTimezone());
-
-  return !dateStringToDate.isAfter(now);
+  return !dateStringToDate.isAfter(get(now));
 }
 
 function isValid(date: string): boolean {
@@ -150,67 +218,56 @@ function updateIMaskValue(value: string) {
   });
 }
 
-function convertToUserDateFormat(value: string) {
-  const millisecondsVal = get(milliseconds);
-  const changedDateTimezone = convertDateByTimezone(
-    value,
-    DateFormat.DateMonthYearHourMinuteSecond,
-    guessTimezone(),
-    get(selectedTimezone),
-    millisecondsVal,
-  );
-
-  return changeDateFormat(
-    changedDateTimezone,
-    DateFormat.DateMonthYearHourMinuteSecond,
-    get(dateInputFormat),
-    millisecondsVal,
-  );
-}
-
-function onValueChange(value: string) {
-  if (!value && isDefined(iMask)) {
-    updateIMaskValue('');
-  }
-  const newValue = convertToUserDateFormat(value);
-
-  if (isDefined(iMask)) {
-    updateIMaskValue(newValue);
-    set(currentValue, newValue);
-  }
+function onValueChange() {
+  const value = get(modelValue);
+  const newValue = value ? convertFromTimestamp(value, get(dateInputFormat), get(milliseconds)) : '';
+  updateIMaskValue(newValue);
+  set(currentValue, newValue);
 }
 
 function emitIfValid(value: string) {
   if (!isValid(value)) {
     return;
   }
-  const changedDateTimezone = convertDateByTimezone(
-    value,
-    get(dateInputFormat),
-    get(selectedTimezone),
-    guessTimezone(),
-    get(milliseconds),
-  );
-  const formattedValue = changeDateFormat(
-    changedDateTimezone,
-    get(dateInputFormat),
-    DateFormat.DateMonthYearHourMinuteSecond,
-    get(milliseconds),
-  );
-  set(modelValue, formattedValue);
+
+  const timestamp = convertToTimestamp(value, get(dateInputFormat), get(milliseconds));
+  set(modelValue, timestamp);
 }
 
 function setNow() {
-  const now = dayjs().tz(get(selectedTimezone));
+  set(now, dayjs());
+  const timestamp = get(now).tz(get(selectedTimezone));
   const format = get(milliseconds) ? get(dateTimeFormatWithMilliseconds) : get(dateTimeFormatWithSecond);
-  const nowInString = now.format(format);
+  const nowInString = timestamp.format(format);
   set(currentValue, nowInString);
   emitIfValid(nowInString);
 }
 
+const maxDate = computed(() => {
+  const nowVal = get(now);
+  const propMaxValue = get(maxValue);
+  const max = propMaxValue ? normalizeTimestamp(propMaxValue, true) : Infinity;
+  const nowValue = get(limitNow) && nowVal ? nowVal.valueOf() : Infinity;
+
+  const compared = Math.min(max, nowValue);
+  return compared === Infinity ? undefined : compared;
+});
+
+const minDate = computed(() => {
+  const min = get(minValue);
+  if (min) {
+    return normalizeTimestamp(min, true);
+  }
+  return undefined;
+});
+
+function resetTimezone() {
+  set(selectedTimezone, guessTimezone());
+}
+
 function initIMask() {
-  const inputWrapper = get(inputField)!;
-  const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
+  const inputWrapper = get(inputElement)!;
+  const input = inputWrapper.querySelector('input') as HTMLInputElement;
 
   const createBlock = (from: number, to: number) => ({
     from,
@@ -296,9 +353,7 @@ function initIMask() {
 
   if (isDefined(modelValue)) {
     nextTick(() => {
-      const value = convertToUserDateFormat(get(modelValue));
-      newIMask.value = value;
-      set(currentValue, value);
+      onValueChange();
     });
   }
 
@@ -307,7 +362,7 @@ function initIMask() {
     const value = get(iMask)?.value;
     const prev = get(currentValue);
     set(currentValue, value);
-    if (prev === undefined) {
+    if (!isDefined(prev)) {
       // Reset validation when iMask just created
       get(v$).$reset();
     }
@@ -318,27 +373,57 @@ function initIMask() {
   set(iMask, newIMask);
 }
 
-function focus() {
-  const inputWrapper = get(inputField)!;
-  const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
+function openMenu() {
+  set(open, true);
+}
 
-  nextTick(() => {
-    const formattedValue = get(iMask)!.value;
-    input.value = formattedValue;
-    set(currentValue, formattedValue);
-  });
+function updatePages(event: { title: string }[]) {
+  const title = event[0]?.title;
+  if (title && title !== get(lastPageTitle)) {
+    set(lastPageTitle, title);
+    set(lastPageUpdate, dayjs().valueOf());
+  }
 }
 
 watch(modelValue, onValueChange);
-watch(selectedTimezone, () => onValueChange(get(modelValue)));
+
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
 });
 
-onMounted(() => {
-  initIMask();
+watch([dateModel, open], ([model, open]) => {
+  if (open) {
+    get(datePickerRef)?.move(model || new Date());
+  }
 });
+
+watch(timezoneMenu, (curr) => {
+  if (!curr) {
+    set(menuFocused, true);
+  }
+});
+
+watch(usedAnyFocused, (curr, prev) => {
+  if (prev && !curr) {
+    const last = get(lastPageUpdate);
+    if (last) {
+      const now = dayjs().valueOf();
+      if (now - last >= 800) {
+        set(open, false);
+      }
+      else {
+        set(lastPageUpdate, 0);
+        set(menuFocused, true);
+      }
+    }
+    else {
+      set(open, false);
+    }
+  }
+});
+
+onMounted(initIMask);
 
 onBeforeUnmount(() => {
   get(iMask)?.destroy();
@@ -346,71 +431,234 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
+  open,
   valid: computed(() => !get(v$).$invalid),
 });
 </script>
 
 <template>
-  <RuiTextField
-    ref="inputField"
-    :model-value="currentValue"
-    :label="label"
-    :hint="hint"
+  <RuiMenu
+    :model-value="open"
+    persist-on-activator-click
+    wrapper-class="w-full"
     :disabled="disabled"
-    :hide-details="hideDetails"
-    prepend-icon="lu-calendar-days"
-    :persistent-hint="persistentHint"
-    variant="outlined"
-    color="primary"
-    :error-messages="toMessages(v$.date)"
-    :dense="dense"
-    @focus="focus()"
+    persistent
+    :popper="{
+      offsetDistance: 8 - (!hideDetails ? 24 : 0),
+    }"
   >
-    <template
-      v-if="!inputOnly"
-      #append
-    >
-      <RuiMenu
-        v-if="!hideTimezoneSelector"
-        :popper="{ placement: 'bottom-end' }"
-        menu-class="date-time-picker w-[20rem]"
+    <template #activator="{ attrs }">
+      <RuiTextField
+        v-bind="attrs"
+        ref="inputFieldRef"
+        class="w-full"
+        :model-value="currentValue"
+        :label="label"
+        :hint="hint"
+        :disabled="disabled"
+        :hide-details="hideDetails"
+        prepend-icon="lu-calendar-days"
+        :persistent-hint="persistentHint"
+        variant="outlined"
+        color="primary"
+        :error-messages="toMessages(v$.date)"
+        :dense="dense"
+        @update:model-value="openMenu()"
+        @focus="openMenu()"
       >
-        <template #activator="{ attrs }">
+        <template #append>
           <RuiButton
             variant="text"
-            type="button"
-            :disabled="disabled"
             icon
             size="sm"
-            class="!p-1.5"
-            v-bind="{ ...attrs, tabIndex: -1 }"
+            class="transition-all"
+            :class="{ 'rotate-180': open }"
+            @click="open = !open"
           >
-            <RuiIcon name="lu-earth" />
+            <RuiIcon name="lu-chevron-down" />
           </RuiButton>
         </template>
-
-        <RuiAutoComplete
-          v-model="selectedTimezone"
-          :label="t('date_time_picker.select_timezone')"
-          class="!p-4 pb-0"
-          variant="outlined"
-          :error-messages="toMessages(v$.timezone)"
-          :options="timezones"
-        />
-      </RuiMenu>
-      <RuiButton
-        data-cy="date-time-picker__set-now-button"
-        variant="text"
-        type="button"
-        :disabled="disabled"
-        :tabindex="-1"
-        icon
-        size="sm"
-        class="!p-1.5"
-        @click="setNow()"
-      >
-        <RuiIcon name="lu-map-pin-check-inside" />
-      </RuiButton>
+      </RuiTextField>
     </template>
-  </RuiTextField>
+    <div
+      ref="menuContainerRef"
+      class="flex"
+      tabindex="-1"
+    >
+      <RuiCalendar
+        ref="datePickerRef"
+        v-model="dateModel"
+        borderless
+        :max-date="maxDate"
+        :min-date="minDate"
+        :allow-empty="allowEmpty"
+        @update:pages="updatePages($event)"
+      />
+      <RuiTimePicker
+        v-model="dateModel"
+        class="border-l border-default"
+        borderless
+        :accuracy="milliseconds ? 'millisecond' : 'second'"
+      />
+      <div class="border-l border-default">
+        <div class="flex border-b border-default gap-1 p-2">
+          <RuiTooltip
+            :open-delay="200"
+            :popper="{ placement: 'top' }"
+          >
+            <template #activator>
+              <RuiButton
+                icon
+                variant="text"
+                type="button"
+                size="sm"
+                class="!p-1.5"
+                @click="open = false"
+              >
+                <RuiIcon name="lu-chevron-up" />
+              </RuiButton>
+            </template>
+            {{ t('date_time_picker.close') }}
+          </RuiTooltip>
+
+          <RuiTooltip
+            v-if="allowEmpty"
+            :open-delay="200"
+            :popper="{ placement: 'top' }"
+          >
+            <template #activator>
+              <RuiButton
+                icon
+                variant="text"
+                color="error"
+                type="button"
+                size="sm"
+                class="!p-1.5"
+                @click="modelValue = 0"
+              >
+                <RuiIcon name="lu-delete" />
+              </RuiButton>
+            </template>
+            {{ t('date_time_picker.clear_value') }}
+          </RuiTooltip>
+
+          <template v-if="!inputOnly">
+            <RuiMenu
+              v-model="timezoneMenu"
+              :popper="{ placement: 'top' }"
+              menu-class="date-time-picker w-[20rem]"
+            >
+              <template #activator="{ attrs }">
+                <RuiTooltip
+                  :open-delay="200"
+                  :popper="{ placement: 'top' }"
+                >
+                  <template #activator>
+                    <RuiButton
+                      variant="text"
+                      icon
+                      size="sm"
+                      class="!p-1.5"
+                      v-bind="{ ...attrs, tabIndex: -1 }"
+                    >
+                      <RuiIcon name="lu-globe" />
+                    </RuiButton>
+                  </template>
+                  {{ t('date_time_picker.select_timezone') }}
+                </RuiTooltip>
+              </template>
+
+              <div
+                class="flex p-4 gap-2"
+                tabindex="-1"
+              >
+                <RuiAutoComplete
+                  ref="timeZoneAutoCompleteRef"
+                  v-model="selectedTimezone"
+                  :label="t('date_time_picker.select_timezone')"
+                  variant="outlined"
+                  hide-details
+                  dense
+                  :error-messages="toMessages(v$.timezone)"
+                  :options="timezones"
+                />
+
+                <RuiButton
+                  variant="text"
+                  color="primary"
+                  size="sm"
+                  class="!px-2"
+                  @click="resetTimezone()"
+                >
+                  <RuiIcon
+                    name="lu-refresh-ccw"
+                    size="16"
+                  />
+                </RuiButton>
+              </div>
+            </RuiMenu>
+
+            <RuiTooltip
+              :open-delay="200"
+              :popper="{ placement: 'top' }"
+            >
+              <template #activator>
+                <RuiButton
+                  data-cy="date-time-picker__set-now-button"
+                  variant="text"
+                  type="button"
+                  :tabindex="-1"
+                  icon
+                  size="sm"
+                  class="!p-1.5"
+                  @click="setNow()"
+                >
+                  <RuiIcon name="lu-map-pin-check-inside" />
+                </RuiButton>
+              </template>
+              {{ t('date_time_picker.set_to_current_time') }}
+            </RuiTooltip>
+          </template>
+        </div>
+        <div class="pt-2">
+          <RuiButton
+            variant="list"
+            class="w-full !py-2 !px-4"
+          >
+            Today
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            class="w-full !py-2 !px-4"
+          >
+            Yesterday
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            class="w-full !py-2 !px-4"
+          >
+            Last Week
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            class="w-full !py-2 !px-4"
+          >
+            Last Month
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            class="w-full !py-2 !px-4"
+          >
+            Last 6 Months
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            class="w-full !py-2 !px-4"
+          >
+            Last Year
+          </RuiButton>
+        </div>
+      </div>
+    </div>
+  </RuiMenu>
 </template>

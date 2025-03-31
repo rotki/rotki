@@ -3,39 +3,39 @@ import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports'
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { convertToTimestamp } from '@/utils/date';
-import { useSimplePropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 
-const props = defineProps<{ modelValue: { start: string; end: string } }>();
+const modelValue = defineModel<{ start: number; end: number }>({ required: true });
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: { start: string; end: string }): void;
   (e: 'update:valid', valid: boolean): void;
 }>();
 
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
 const invalidRange = computed(
-  () =>
-    !!props.modelValue
-    && !!props.modelValue.start
-    && !!props.modelValue.end
-    && convertToTimestamp(props.modelValue.start) > convertToTimestamp(props.modelValue.end),
+  () => {
+    const model = get(modelValue);
+    return !!model
+      && !!model.start
+      && !!model.end
+      && model.start > model.end;
+  },
 );
 
 const year = computed(() => get(profitLossReportPeriod).year);
 const quarter = computed(() => get(profitLossReportPeriod).quarter);
 const custom = computed(() => get(year) === 'custom');
 
-const start = useSimplePropVModel(props, 'start', emit);
-const end = useSimplePropVModel(props, 'end', emit);
+const start = useRefPropVModel(modelValue, 'start');
+const end = useRefPropVModel(modelValue, 'end');
 
-function input(data: { start: string; end: string }) {
-  emit('update:model-value', data);
+function input(data: { start: number; end: number }) {
+  set(modelValue, data);
 }
 
 function updateValid(valid: boolean) {
@@ -44,7 +44,7 @@ function updateValid(valid: boolean) {
 
 async function onChanged(event: SelectionChangedEvent) {
   if (event.year === 'custom')
-    input({ end: '', start: '' });
+    input({ end: 0, start: 0 });
 
   await store.updateSetting({
     profitLossReportPeriod: event,
@@ -53,15 +53,14 @@ async function onChanged(event: SelectionChangedEvent) {
 
 function onPeriodChange(period: PeriodChangedEvent | null) {
   if (period === null) {
-    input({ end: '', start: '' });
+    input({ end: 0, start: 0 });
     return;
   }
 
   const start = period.start;
   let end = period.end;
-  if (convertToTimestamp(period.end) > dayjs().unix())
-    end = dayjs().format('DD/MM/YYYY HH:mm:ss');
-
+  const now = dayjs().unix();
+  end = Math.min(end, now);
   input({ end, start });
 }
 
@@ -108,12 +107,14 @@ watchImmediate(v$, ({ $invalid }) => {
           :label="t('generate.labels.start_date')"
           limit-now
           allow-empty
+          :max-value="end"
           :error-messages="toMessages(v$.start)"
         />
       </div>
       <div>
         <DateTimePicker
           v-model="end"
+          :min-value="start"
           :label="t('generate.labels.end_date')"
           limit-now
           :error-messages="toMessages(v$.end)"

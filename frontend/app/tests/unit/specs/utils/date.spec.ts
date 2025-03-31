@@ -1,5 +1,13 @@
 import { DateFormat } from '@/types/date-format';
-import { changeDateFormat, convertDateByTimezone, convertFromTimestamp, convertToTimestamp, getDayNames, guessTimezone, isValidDate, setupDayjs } from '@/utils/date';
+import {
+  convertFromTimestamp,
+  convertTimestampByTimezone,
+  convertToTimestamp,
+  getDayNames,
+  guessTimezone,
+  isValidDate,
+  setupDayjs,
+} from '@/utils/date';
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
 
@@ -15,75 +23,6 @@ describe('utils/date', () => {
       const utcDate = dayjs.utc('2013-11-18 11:55:20').tz(guessTimezone()).toString();
       const utcTzDate = dayjs.utc('2013-11-18 11:55:20').toString();
       expect(utcDate).toEqual(utcTzDate);
-    });
-  });
-
-  describe('changeDateFormat', () => {
-    // Basic functionality: correct conversion between formats
-    it('converts between date formats correctly', () => {
-      const date = '01/02/2023 12:34:56.789';
-      expect(
-        changeDateFormat(
-          date,
-          DateFormat.DateMonthYearHourMinuteSecond,
-          DateFormat.YearMonthDateHourMinuteSecond,
-          true,
-        ),
-      ).toBe('2023/02/01 12:34:56.789');
-      // Additional basic functionality tests...
-    });
-
-    // Edge case: Leap year
-    it('handles leap year dates correctly', () => {
-      const leapYearDate = '29/02/2020';
-      expect(
-        changeDateFormat(
-          leapYearDate,
-          DateFormat.DateMonthYearHourMinuteSecond,
-          DateFormat.YearMonthDateHourMinuteSecond,
-        ),
-      ).toBe('2020/02/29');
-    });
-
-    // Test with milliseconds flag
-    it('handles milliseconds correctly when enabled', () => {
-      const dateWithMilliseconds = '01/02/2023 12:34:56.123';
-      expect(
-        changeDateFormat(
-          dateWithMilliseconds,
-          DateFormat.DateMonthYearHourMinuteSecond,
-          DateFormat.YearMonthDateHourMinuteSecond,
-          true,
-        ),
-      ).toBe('2023/02/01 12:34:56.123');
-    });
-
-    // Test without milliseconds flag
-    it('ignores milliseconds when disabled', () => {
-      const dateWithoutMilliseconds = '01/02/2023 12:34:56.123';
-      expect(
-        changeDateFormat(
-          dateWithoutMilliseconds,
-          DateFormat.DateMonthYearHourMinuteSecond,
-          DateFormat.YearMonthDateHourMinuteSecond,
-          false,
-        ),
-      ).toBe('2023/02/01 12:34:56');
-    });
-
-    // Handling empty date input
-    it('returns an empty string for null or empty date input', () => {
-      expect(
-        changeDateFormat('', DateFormat.DateMonthYearHourMinuteSecond, DateFormat.YearMonthDateHourMinuteSecond),
-      ).toBe('');
-    });
-
-    // Test conversion that doesn't change the format (i.e., from and to formats are the same)
-    it('returns the same date when from and to formats are the same', () => {
-      const date = '2023/01/02 12:34:56';
-      expect(
-        changeDateFormat(date, DateFormat.YearMonthDateHourMinuteSecond, DateFormat.YearMonthDateHourMinuteSecond),
-      ).toBe('2023/01/02 12:34:56');
     });
   });
 
@@ -178,67 +117,83 @@ describe('utils/date', () => {
     });
   });
 
-  describe('convertDateByTimezone', () => {
+  describe('convertTimestampByTimezone', () => {
     // Basic functionality: Time zone conversion
-    it('converts dates between time zones correctly', () => {
-      const date = '01/01/2023 00:00:00';
+    it('converts timestamps between time zones correctly', () => {
+      const timestamp = 1672531200; // 01/01/2023 00:00:00 UTC
       const fromTimezone = 'UTC';
       const toTimezone = 'America/New_York'; // UTC-5 typically
-      const convertedDate = convertDateByTimezone(
-        date,
-        DateFormat.DateMonthYearHourMinuteSecond,
+      const convertedTimestamp = convertTimestampByTimezone(
+        timestamp,
         fromTimezone,
         toTimezone,
       );
-      // Expect the time to be 5 hours earlier
-      expect(convertedDate).toBe('31/12/2022 19:00:00');
+      // Expect the timestamp to be adjusted by 5 hours (18000 seconds)
+      expect(convertedTimestamp).toBe(1672531200 - 18000);
     });
 
     // Handling Daylight Saving Time start (Spring forward)
     it('adjusts correctly for the start of Daylight Saving Time', () => {
-      const dstStartDate = '14/03/2021 02:30:00';
+      const timestamp = 1615698600; // 14/03/2021 02:30:00 UTC
       const fromTimezone = 'UTC';
       const toTimezone = 'America/New_York'; // UTC-4 during DST
-      const convertedDate = convertDateByTimezone(
-        dstStartDate,
-        DateFormat.DateMonthYearHourMinuteSecond,
+      const convertedTimestamp = convertTimestampByTimezone(
+        timestamp,
         fromTimezone,
         toTimezone,
       );
-      expect(convertedDate).toBe('13/03/2021 21:30:00'); // Adjust based on expected behavior
+      // Adjusted by 4 hours (14400 seconds) due to DST
+      expect(convertedTimestamp).toBe(1615698600 - 14400);
     });
 
     // Handling Daylight Saving Time end (Fall back)
     it('adjusts correctly for the end of Daylight Saving Time', () => {
-      const dstEndDate = '07/11/2021 01:30:00';
+      const timestamp = 1636247400; // 07/11/2021 01:30:00 UTC
       const fromTimezone = 'UTC';
       const toTimezone = 'America/New_York';
-      const convertedDate = convertDateByTimezone(
-        dstEndDate,
-        DateFormat.DateMonthYearHourMinuteSecond,
+      const convertedTimestamp = convertTimestampByTimezone(
+        timestamp,
         fromTimezone,
         toTimezone,
       );
-      expect(convertedDate).toBe('06/11/2021 21:30:00');
+      // Adjusted by 4 hours (14400 seconds) as still in DST
+      expect(convertedTimestamp).toBe(1636247400 - 14400);
+    });
+
+    // Test with milliseconds parameter enabled
+    it('handles timestamps with milliseconds correctly', () => {
+      const timestampMs = 1672531200123; // Timestamp with milliseconds
+      const fromTimezone = 'UTC';
+      const toTimezone = 'America/New_York';
+      const convertedTimestamp = convertTimestampByTimezone(
+        timestampMs,
+        fromTimezone,
+        toTimezone,
+        true,
+      );
+      // Adjusted by 5 hours (18000000 milliseconds)
+      expect(convertedTimestamp).toBe(1672531200123 - 18000000);
+    });
+
+    // Test with same source and destination timezone
+    it('returns the original timestamp when timezones are the same', () => {
+      const timestamp = 1672531200;
+      const timezone = 'UTC';
+      const convertedTimestamp = convertTimestampByTimezone(
+        timestamp,
+        timezone,
+        timezone,
+      );
+      expect(convertedTimestamp).toBe(timestamp);
     });
 
     // Invalid input: Unsupported or incorrect time zone identifiers
-    it('handles invalid time zone inputs gracefully', () => {
-      const date = '01/01/2023 12:00:00';
+    it('throws an error for invalid timezone identifiers', () => {
+      const timestamp = 1672531200;
       const fromTimezone = 'Invalid/Timezone';
       const toTimezone = 'Also/Invalid';
       expect(() =>
-        convertDateByTimezone(date, DateFormat.DateMonthYearHourMinuteSecond, fromTimezone, toTimezone),
-      ).toThrow();
-    });
-
-    // Invalid input: Incorrect date format
-    it('returns the original date for incorrectly formatted dates', () => {
-      const incorrectFormatDate = '2023/01/01 12:00:00';
-      const fromTimezone = 'UTC';
-      const toTimezone = 'America/New_York';
-      expect(() =>
-        convertDateByTimezone(incorrectFormatDate, DateFormat.DateMonthYearHourMinuteSecond, fromTimezone, toTimezone),
+        convertTimestampByTimezone(timestamp, fromTimezone, toTimezone),
       ).toThrow();
     });
   });

@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { RuiButton } from '@rotki/ui-library';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import dayjs, { type Dayjs } from 'dayjs';
+import { useTemplateRef } from 'vue';
 
 const model = defineModel<Dayjs>({ required: true });
 
@@ -17,24 +17,40 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const datePicker = ref();
-const datetime = ref<string>('0');
+const datetime = ref<number>(0);
+const open = ref(false);
+
+const activatorRef = ref();
+const menuContainerRef = useTemplateRef<InstanceType<typeof HTMLDivElement>>('menuContainerRef');
+const datePickerRef = useTemplateRef<InstanceType<typeof DateTimePicker>>('datePickerRef');
+
+const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
+const { focused: activatorFocusedWithin } = useFocusWithin(activatorRef);
+
+const anyFocused = computed(() => get(activatorFocusedWithin) || get(menuFocusedWithin) || get(datePickerRef)?.open);
+const debouncedAnyFocused = debouncedRef(anyFocused, 100);
+const usedAnyFocused = logicOr(anyFocused, debouncedAnyFocused);
+
+function goToSelectedDate() {
+  set(model, dayjs(get(datetime) * 1000));
+  set(open, false);
+}
 
 watch(
   model,
   (model) => {
-    set(datetime, convertFromTimestamp(get(model).unix()));
+    set(datetime, get(model).unix());
   },
   {
     immediate: true,
   },
 );
 
-function goToSelectedDate() {
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
-
-  set(model, dayjs(timestamp));
-}
+watch(usedAnyFocused, (curr, prev) => {
+  if (prev && !curr) {
+    set(open, false);
+  }
+});
 </script>
 
 <template>
@@ -48,9 +64,14 @@ function goToSelectedDate() {
     >
       {{ t('calendar.today') }}
     </RuiButton>
-    <RuiMenu wrapper-class="h-full">
+    <RuiMenu
+      v-model="open"
+      persistent
+      wrapper-class="h-full"
+    >
       <template #activator="{ attrs }">
         <RuiButton
+          ref="activatorRef"
           size="sm"
           class="!p-2 !outline-none h-full"
           color="primary"
@@ -63,9 +84,13 @@ function goToSelectedDate() {
           />
         </RuiButton>
       </template>
-      <div class="p-4 flex items-start">
+      <div
+        ref="menuContainerRef"
+        class="p-4 flex items-start"
+        tabindex="-1"
+      >
         <DateTimePicker
-          ref="datePicker"
+          ref="datePickerRef"
           v-model="datetime"
           class="w-[12rem] [&_fieldset]:!rounded-r-none"
           dense
@@ -76,7 +101,7 @@ function goToSelectedDate() {
         />
         <RuiButton
           color="primary"
-          :disabled="!datePicker?.valid"
+          :disabled="!datePickerRef?.valid"
           class="!rounded-l-none !p-2 !py-2.5"
           @click="goToSelectedDate()"
         >

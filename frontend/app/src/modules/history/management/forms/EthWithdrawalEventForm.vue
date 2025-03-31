@@ -9,9 +9,7 @@ import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -33,7 +31,7 @@ const { data } = toRefs(props);
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const validatorIndex = ref<string>('');
 const withdrawalAddress = ref<string>('');
@@ -60,7 +58,7 @@ const { getAddresses } = useAccountAddresses();
 const states = {
   amount,
   eventIdentifier,
-  timestamp: datetime,
+  timestamp,
   validatorIndex,
   withdrawalAddress,
 };
@@ -79,7 +77,7 @@ const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH)
 
 function reset() {
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
   set(withdrawalAddress, '');
@@ -91,7 +89,7 @@ function reset() {
 
 function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
   set(withdrawalAddress, entry.locationLabel);
@@ -102,7 +100,7 @@ function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
 }
 
 watch(errorMessages, (errors) => {
@@ -114,14 +112,12 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
-
   const payload: NewEthWithdrawalEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
     eventIdentifier: get(eventIdentifier),
     isExit: get(isExit),
-    timestamp,
+    timestamp: get(timestamp),
     validatorIndex: parseInt(get(validatorIndex)),
     withdrawalAddress: get(withdrawalAddress),
   };
@@ -164,7 +160,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
-        v-model="datetime"
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
         limit-now
@@ -193,7 +189,7 @@ defineExpose({
       v-model:amount="amount"
       asset="ETH"
       :v$="v$"
-      :datetime="datetime"
+      :timestamp="timestamp"
       disable-asset
     />
 

@@ -3,7 +3,6 @@ import type { ProfitLossReportPeriod } from '@/types/reports';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { Routes } from '@/router/routes';
-import { convertToTimestamp } from '@/utils/date';
 
 const emit = defineEmits<{
   (e: 'generate', data: ProfitLossReportPeriod): void;
@@ -13,25 +12,15 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const range = ref({ end: '', start: '' });
+const range = ref({ end: 0, start: 0 });
 const valid = ref<boolean>(false);
 
-const startTimestamp = computed<number>(() => convertToTimestamp(get(range).start));
-
-const endTimestamp = computed<number>(() => convertToTimestamp(get(range).end));
-
 function generate() {
-  emit('generate', {
-    end: get(endTimestamp),
-    start: get(startTimestamp),
-  });
+  emit('generate', get(range));
 }
 
 function exportReportData() {
-  emit('export-data', {
-    end: get(endTimestamp),
-    start: get(startTimestamp),
-  });
+  emit('export-data', get(range));
 }
 
 function importReportData() {

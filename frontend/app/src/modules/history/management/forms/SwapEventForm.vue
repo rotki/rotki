@@ -10,8 +10,6 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useMessageStore } from '@/store/message';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -46,14 +44,12 @@ const hasFee = ref<boolean>(false);
 const identifiers = ref<{ eventIdentifier: string; identifier: number }>();
 const errorMessages = ref<Record<string, string[]>>({});
 
-const datetime = computed<string>({
+const timestamp = computed<number>({
   get() {
-    return convertFromTimestamp(get(states, 'timestamp'), DateFormat.DateMonthYearHourMinuteSecond, true);
+    return get(states, 'timestamp');
   },
-  set(value?: string) {
-    const timestamp = !value
-      ? dayjs().valueOf()
-      : convertToTimestamp(value, DateFormat.DateMonthYearHourMinuteSecond, true);
+  set(value?: number) {
+    const timestamp = value || dayjs().valueOf();
     set(states, { ...get(states), timestamp });
   },
 });
@@ -210,7 +206,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
-        v-model="datetime"
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
         limit-now

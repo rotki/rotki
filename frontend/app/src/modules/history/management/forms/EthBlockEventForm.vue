@@ -9,9 +9,7 @@ import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -32,7 +30,7 @@ const { data } = toRefs(props);
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const blockNumber = ref<string>('');
 const validatorIndex = ref<string>('');
@@ -62,7 +60,7 @@ const states = {
   blockNumber,
   eventIdentifier,
   feeRecipient,
-  timestamp: datetime,
+  timestamp,
   validatorIndex,
 };
 
@@ -78,7 +76,7 @@ useFormStateWatcher(states, stateUpdated);
 
 function reset() {
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(blockNumber, '');
   set(validatorIndex, '');
@@ -91,7 +89,7 @@ function reset() {
 
 function applyEditableData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -104,7 +102,7 @@ function applyGroupHeaderData(entry: EthBlockEvent) {
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
   set(validatorIndex, entry.validatorIndex.toString());
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
 }
 
 watch(errorMessages, (errors) => {
@@ -117,8 +115,6 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
-
   const payload: NewEthBlockEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     blockNumber: parseInt(get(blockNumber)),
@@ -126,7 +122,7 @@ async function save(): Promise<boolean> {
     eventIdentifier: get(eventIdentifier),
     feeRecipient: get(feeRecipient),
     isMevReward: get(isMevReward),
-    timestamp,
+    timestamp: get(timestamp),
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
@@ -172,7 +168,7 @@ defineExpose({
   <div>
     <div class="grid md:grid-cols-4 gap-4 mb-4">
       <DateTimePicker
-        v-model="datetime"
+        v-model="timestamp"
         class="md:col-span-2"
         :label="t('common.datetime')"
         persistent-hint
@@ -210,7 +206,7 @@ defineExpose({
       v-model:amount="amount"
       asset="ETH"
       :v$="v$"
-      :datetime="datetime"
+      :timestamp="timestamp"
       disable-asset
     />
 
