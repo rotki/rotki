@@ -25,7 +25,10 @@ export function useUserNotesApi(): UseUserNotesApiReturn {
   };
 
   const addUserNote = async (payload: Partial<UserNote>): Promise<number> => {
-    const response = await api.instance.put<ActionResult<number>>('/notes', snakeCaseTransformer(payload));
+    const response = await api.instance.put<ActionResult<number>>('/notes', snakeCaseTransformer({
+      ...payload,
+      location: null,
+    }));
 
     return handleResponse(response);
   };

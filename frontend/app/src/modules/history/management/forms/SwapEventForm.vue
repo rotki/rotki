@@ -9,8 +9,8 @@ import SwapEventAssetAmount from '@/modules/history/management/forms/swap/SwapEv
 import SwapEventFee from '@/modules/history/management/forms/swap/SwapEventFee.vue';
 import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { useDateTime } from '@/modules/history/management/forms/utils';
 import { useMessageStore } from '@/store/message';
+import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -45,7 +45,7 @@ const hasFee = ref<boolean>(false);
 const identifiers = ref<{ eventIdentifier: string; identifier: number }>();
 const errorMessages = ref<Record<string, string[]>>({});
 
-const datetime = useDateTime(states);
+const timestamp = useRefPropVModel(states, 'timestamp');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -198,12 +198,12 @@ defineExpose({
 <template>
   <div>
     <EventDateLocation
-      v-model:datetime="datetime"
+      v-model:timestamp="timestamp"
       v-model:location="states.location"
       :location-disabled="data.type !== 'add'"
       :error-messages="{
         location: toMessages(v$.location),
-        datetime: toMessages(v$.timestamp),
+        timestamp: toMessages(v$.timestamp),
       }"
       @blur="v$[$event].$touch()"
     />

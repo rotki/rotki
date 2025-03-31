@@ -5,7 +5,6 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
@@ -13,9 +12,7 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -47,7 +44,7 @@ const historyEventTypesData = [{
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const eventIdentifier = ref<string>('');
-const datetime = ref<string>('');
+const timestamp = ref<number>(0);
 const location = ref<string>('');
 const locationLabel = ref<string>('');
 const eventType = ref<string>('');
@@ -91,7 +88,7 @@ const states = {
   location,
   locationLabel,
   notes,
-  timestamp: datetime,
+  timestamp,
   uniqueId,
 };
 
@@ -121,7 +118,7 @@ const locationLabelSuggestions = computed<string[]>(() => {
 
 function reset() {
   set(eventIdentifier, '');
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
   set(eventType, 'deposit');
@@ -138,7 +135,7 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   const eventNotes = entry.userNotes ?? '';
 
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(locationLabel, entry.locationLabel ?? '');
   set(eventType, entry.eventType);
@@ -166,8 +163,6 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
-
   const eventData = get(data);
   const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
 
@@ -181,7 +176,7 @@ async function save(): Promise<boolean> {
     feeAsset: null,
     location: get(location),
     locationLabel: get(locationLabel),
-    timestamp,
+    timestamp: get(timestamp),
     uniqueId: get(uniqueId),
     userNotes: get(notes),
   };
@@ -250,12 +245,15 @@ defineExpose({
 <template>
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
-      <DateTimePicker
-        v-model="datetime"
+      <RuiDateTimePicker
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
-        limit-now
-        milliseconds
+        max-date="now"
+        color="primary"
+        variant="outlined"
+        type="epoch-ms"
+        accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="toMessages(v$.timestamp)"
@@ -302,7 +300,7 @@ defineExpose({
       v-model:amount="amount"
       :location="location"
       :v$="v$"
-      :datetime="datetime"
+      :timestamp="timestamp"
     />
 
     <RuiDivider class="mb-6 mt-2" />

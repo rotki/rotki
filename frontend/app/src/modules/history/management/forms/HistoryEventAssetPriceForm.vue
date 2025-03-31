@@ -13,15 +13,13 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { DateFormat } from '@/types/date-format';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { assert, type BigNumber } from '@rotki/common';
 
 interface HistoryEventAssetPriceFormProps {
-  datetime: string;
+  timestamp: number;
   disableAsset?: boolean;
   v$: Validation;
   hidePriceFields?: boolean;
@@ -36,7 +34,7 @@ const props = withDefaults(defineProps<HistoryEventAssetPriceFormProps>(), {
   hidePriceFields: false,
 });
 
-const { datetime, disableAsset, hidePriceFields } = toRefs(props);
+const { disableAsset, hidePriceFields, timestamp } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -74,16 +72,14 @@ function onFiatValueChange() {
 }
 
 async function fetchHistoricPrices() {
-  const datetimeVal = get(datetime);
+  const time = get(timestamp);
   const assetVal = get(asset);
-  if (!datetimeVal || !assetVal)
+  if (!time || !assetVal)
     return;
-
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
   const price: BigNumber = await getHistoricPrice({
     fromAsset: assetVal,
-    timestamp,
+    timestamp: time,
     toAsset: get(currencySymbol),
   });
 
@@ -92,9 +88,9 @@ async function fetchHistoricPrices() {
 }
 
 watchImmediate(
-  [datetime, asset, hidePriceFields],
-  async ([datetime, asset, hidePriceFields], [oldDatetime, oldAsset, oldHidePriceFields]) => {
-    if (datetime !== oldDatetime || asset !== oldAsset || (oldHidePriceFields && !hidePriceFields))
+  [timestamp, asset, hidePriceFields],
+  async ([timestamp, asset, hidePriceFields], [oldTimestamp, oldAsset, oldHidePriceFields]) => {
+    if (timestamp !== oldTimestamp || asset !== oldAsset || (oldHidePriceFields && !hidePriceFields))
       await fetchHistoricPrices();
   },
 );
@@ -123,7 +119,6 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
 
   const assetVal = get(asset);
   assert(assetVal);
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
   try {
     const currency = get(currencySymbol);
@@ -131,7 +126,7 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
       await savePrice({
         fromAsset: assetVal,
         price: get(assetToFiatPrice),
-        timestamp,
+        timestamp: get(timestamp),
         toAsset: currency,
       });
     }
