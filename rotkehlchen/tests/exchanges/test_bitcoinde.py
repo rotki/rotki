@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -11,8 +10,10 @@ from rotkehlchen.exchanges.bitcoinde import (
     bitcoinde_pair_to_world,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 BITCOINDE_BALANCES_RESPONSE = """{"data":{"balances":{"btc":{"total_amount":"0.5","available_amount":"0.5","reserved_amount":"0"},"bch":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"},"btg":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"},"eth":{"total_amount":"32.0","available_amount":"32.0","reserved_amount":"0"},"bsv":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"},"ltc":{"total_amount":"0.00000000000000000000","available_amount":"0","reserved_amount":"0"}},"encrypted_information":{"uid":"X","bic_short":"Y","bic_full":"Z"}},"errors":[],"credits":23}"""  # noqa: E501
 
@@ -73,34 +74,60 @@ def test_query_trade_history(function_scope_bitcoinde):
         return MockResponse(200, BITCOINDE_TRADES_RESPONSE)
 
     with patch.object(bitcoinde.session, 'get', side_effect=mock_api_return):
-        trades = bitcoinde.query_trade_history(
-            start_ts=0,
-            end_ts=1565732120,
-            only_cache=False,
+        events, _ = bitcoinde.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1565732120),
         )
 
-    assert len(trades) == 2
-    assert trades[0].timestamp == 1502439199
-    assert trades[0].location == Location.BITCOINDE
-    assert trades[0].base_asset == A_BTC
-    assert trades[0].quote_asset == A_EUR
-    assert trades[0].trade_type == TradeType.BUY
-    assert trades[0].amount == FVal('241.214')
-    assert trades[0].rate.is_close(FVal('17.09736582453754757186564627'))
-    assert trades[0].fee.is_close(FVal('0.93452135'))
-    assert isinstance(trades[0].fee_currency, Asset)
-    assert trades[0].fee_currency == A_EUR
-
-    assert trades[1].timestamp == 1512531092
-    assert trades[1].location == Location.BITCOINDE
-    assert trades[1].base_asset == A_BTC
-    assert trades[1].quote_asset == A_EUR
-    assert trades[1].trade_type == TradeType.BUY
-    assert trades[1].amount == FVal('10')
-    assert trades[1].rate.is_close(FVal('234.121'))
-    assert trades[1].fee.is_close(FVal('1.5214'))
-    assert isinstance(trades[1].fee_currency, Asset)
-    assert trades[1].fee_currency == A_EUR
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1512531092000),
+        location=Location.BITCOINDE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('2341.21'),
+        unique_id='X1',
+        location_label='bitcoinde',
+    ), SwapEvent(
+        timestamp=TimestampMS(1512531092000),
+        location=Location.BITCOINDE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('10'),
+        unique_id='X1',
+        location_label='bitcoinde',
+    ), SwapEvent(
+        timestamp=TimestampMS(1512531092000),
+        location=Location.BITCOINDE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('1.5214'),
+        unique_id='X1',
+        location_label='bitcoinde',
+    ), SwapEvent(
+        timestamp=TimestampMS(1502439199000),
+        location=Location.BITCOINDE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('4124.124'),
+        unique_id='X2',
+        location_label='bitcoinde',
+    ), SwapEvent(
+        timestamp=TimestampMS(1502439199000),
+        location=Location.BITCOINDE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('241.214'),
+        unique_id='X2',
+        location_label='bitcoinde',
+    ), SwapEvent(
+        timestamp=TimestampMS(1502439199000),
+        location=Location.BITCOINDE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('0.93452135'),
+        unique_id='X2',
+        location_label='bitcoinde',
+    )]
 
 
 def test_bitcoinde_trading_pairs():
