@@ -154,3 +154,33 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
     db_changes_after = db_conn.total_changes
     # Check that we have 5 updates because we have 5 rows in ens_mappings table
     assert db_changes_after == 5 + db_changes_before
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2025-03-31 12:00:00 GMT')
+def test_resolve_ens(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that we can resolve ENS names"""
+    dbens = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'resolveensresource',
+        ),
+        json={'name': 'lefteris.eth'},
+    )
+    with dbens.db.conn.read_ctx() as cursor:  # make sure it's also in the DB
+        assert dbens.get_address_for_name(cursor, 'lefteris.eth') == '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # noqa: E501
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'resolveensresource',
+        ),
+        json={'name': 'isurelydontexistbecauseifid1drotkitestswouldbreak.eth'},
+    )
+    result = assert_error_response(response, status_code=HTTPStatus.NOT_FOUND, result_exists=False)
+    assert result is None
+    with dbens.db.conn.read_ctx() as cursor:  # make sure it's also NOT in the DB
+        assert dbens.get_address_for_name(cursor, 'isurelydontexistbecauseifid1drotkitestswouldbreak.eth') is None  # noqa: E501
