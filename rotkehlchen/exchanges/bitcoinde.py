@@ -3,6 +3,7 @@ import hmac
 import json
 import logging
 import time
+from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -16,8 +17,9 @@ from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Price, Trade
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -25,12 +27,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Timestamp, TradeType
+from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp
+from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -49,52 +52,6 @@ def bitcoinde_pair_to_world(pair: str) -> tuple[AssetWithOracles, AssetWithOracl
     else:
         raise DeserializationError(f'Could not parse pair: {pair}')
     return tx_asset, native_asset
-
-
-def trade_from_bitcoinde(raw_trade: dict) -> Trade:
-    """Convert bitcoin.de raw data to a trade
-
-    May raise:
-    - DeserializationError
-    - UnknownAsset
-    - KeyError
-    """
-
-    try:
-        timestamp = deserialize_timestamp_from_date(
-            raw_trade['successfully_finished_at'],
-            'iso8601',
-            'bitcoinde',
-        )
-    except KeyError:
-        # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
-        timestamp = deserialize_timestamp_from_date(
-            raw_trade['trade_marked_as_paid_at'],
-            'iso8601',
-            'bitcoinde',
-        )
-
-    trade_type = TradeType.deserialize(raw_trade['type'])
-    tx_amount = deserialize_asset_amount(raw_trade['amount_currency_to_trade'])
-    native_amount = deserialize_asset_amount(raw_trade['volume_currency_to_pay'])
-    tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
-    amount = tx_amount
-    rate = Price(native_amount / tx_amount)
-    fee_amount = deserialize_fee(raw_trade['fee_currency_to_pay'])
-    fee_asset = A_EUR
-
-    return Trade(
-        timestamp=timestamp,
-        location=Location.BITCOINDE,
-        base_asset=tx_asset,
-        quote_asset=native_asset,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee_amount,
-        fee_currency=fee_asset,
-        link=str(raw_trade['trade_id']),
-    )
 
 
 class Bitcoinde(ExchangeInterface):
@@ -266,11 +223,46 @@ class Bitcoinde(ExchangeInterface):
 
         return assets_balance, ''
 
-    def query_online_trade_history(
+    def _deserialize_trade(self, raw_trade: dict) -> list[SwapEvent]:
+        """Convert bitcoin.de raw trade data to a list of SwapEvents.
+
+        May raise:
+        - DeserializationError
+        - UnknownAsset
+        - KeyError
+        """
+        # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
+        raw_timestamp = raw_trade.get('successfully_finished_at', raw_trade['trade_marked_as_paid_at'])  # noqa: E501
+        tx_amount = deserialize_asset_amount(raw_trade['amount_currency_to_trade'])
+        native_amount = deserialize_asset_amount(raw_trade['volume_currency_to_pay'])
+        tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
+        if raw_trade['type'] == 'buy':
+            spend_asset, spend_amount, receive_asset, receive_amount = native_asset, native_amount, tx_asset, tx_amount  # noqa: E501
+        else:  # sell
+            spend_asset, spend_amount, receive_asset, receive_amount = tx_asset, tx_amount, native_asset, native_amount  # noqa: E501
+
+        return create_swap_events(
+            timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
+                date=raw_timestamp,
+                formatstr='iso8601',
+                location='bitcoinde',
+            )),
+            location=self.location,
+            spend_asset=spend_asset,
+            spend_amount=spend_amount,
+            receive_asset=receive_asset,
+            receive_amount=receive_amount,
+            fee_asset=A_EUR,
+            fee_amount=deserialize_fee(raw_trade['fee_currency_to_pay']),
+            location_label=self.name,
+            unique_id=raw_trade['trade_id'],
+        )
+
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
 
         page = 1
         resp_trades = []
@@ -288,7 +280,7 @@ class Bitcoinde(ExchangeInterface):
             page = resp['page']['current'] + 1
 
         log.debug('Bitcoin.de trade history query', results_num=len(resp_trades))
-        trades = []
+        events = []
         for tx in resp_trades:
             log.debug(f'Processing raw Bitcoin.de trade: {tx}')
             try:
@@ -302,9 +294,8 @@ class Bitcoinde(ExchangeInterface):
             if timestamp < start_ts or timestamp > end_ts:
                 continue
             try:
-                converted_trade = trade_from_bitcoinde(tx)
-                log.debug(f'Deserialized trade from Bitcoin.de: {converted_trade}')
-                trades.append(converted_trade)
+                events.extend(swap_events := self._deserialize_trade(raw_trade=tx))
+                log.debug(f'Deserialized swap events from Bitcoin.de: {swap_events}')
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -326,7 +317,7 @@ class Bitcoinde(ExchangeInterface):
                 )
                 continue
 
-        return trades, (start_ts, end_ts)
+        return events, end_ts
 
     def query_online_margin_history(
             self,
