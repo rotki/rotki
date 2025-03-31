@@ -10,8 +10,9 @@ import { useHistoryEvents } from '@/composables/history/events';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { toSubEvent, useDateTime } from '@/modules/history/management/forms/utils';
+import { toSubEvent } from '@/modules/history/management/forms/utils';
 import { useMessageStore } from '@/store/message';
+import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -49,7 +50,7 @@ const hasFee = ref<boolean>(false);
 const identifiers = ref<number[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
 
-const datetime = useDateTime(states);
+const timestamp = useRefPropVModel(states, 'timestamp');
 
 const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
@@ -186,12 +187,12 @@ defineExpose({
 <template>
   <div>
     <EventDateLocation
-      v-model:datetime="datetime"
+      v-model:timestamp="timestamp"
       v-model:location="states.location"
       location-disabled
       :error-messages="{
         location: toMessages(v$.location),
-        datetime: toMessages(v$.timestamp),
+        timestamp: toMessages(v$.timestamp),
       }"
       @blur="v$[$event].$touch()"
     />

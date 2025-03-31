@@ -14,7 +14,6 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
@@ -56,13 +55,13 @@ const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
 const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
 const started = useRefPropVModel(modelValue, 'started');
 
-const startedModel = computed({
+const startedModel = computed<number>({
   get: () => {
     const startedVal = get(started);
-    return startedVal ? convertFromTimestamp(startedVal) : '';
+    return startedVal || 0;
   },
-  set: (value?: string) => {
-    set(started, value ? convertToTimestamp(value) : undefined);
+  set: (value?: number) => {
+    set(started, value || 0);
   },
 });
 

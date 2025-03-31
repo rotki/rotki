@@ -1731,12 +1731,7 @@
     "title": "Format de date"
   },
   "date_time_picker": {
-    "default_format": "La date doit être au format {dateFormat} [HH:mm:[ss]]",
-    "limit_now": "Impossible d'utiliser une date future",
-    "milliseconds_format": "La date doit être au format {dateFormat} [HH:mm[:ss[.SSS]]]",
-    "timezone_field": {
-      "non_empty": "Le fuseau horaire doit être spécifié"
-    }
+    "limit_now": "Impossible d'utiliser une date future"
   },
   "docker_warning": {
     "action": "Oui, je comprends",

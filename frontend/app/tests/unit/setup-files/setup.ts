@@ -1,4 +1,5 @@
 import type { DatabaseInfo } from '@/types/backup';
+import { RuiDateTimePickerStub } from '@test/specs/stubs/RuiDateTimePicker';
 import { config } from '@vue/test-utils';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { mockT } from '../i18n';
@@ -119,4 +120,5 @@ vi.delay = delay;
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
 config.global.stubs.RuiAutoComplete = RuiAutoCompleteStub;
+config.global.stubs.RuiDateTimePicker = RuiDateTimePickerStub;
 config.global.stubs.I18nT = true;
