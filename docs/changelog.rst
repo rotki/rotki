@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix a rare issue where the manual balance page becomes empty.
 * :bug:`-` Fix a rare issue calling RPC nodes when there is an error connecting to them.
 
 * :release:`1.38.2 <2025-03-26>`
