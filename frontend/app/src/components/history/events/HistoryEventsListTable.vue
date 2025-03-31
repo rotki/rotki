@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import type { DependentHistoryEvent, HistoryEvent, HistoryEventEntry } from '@/types/history/events';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
@@ -7,6 +8,7 @@ import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { isDependentHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import {
   isAssetMovementEvent,
   isEventAccountingRuleProcessed,
@@ -21,24 +23,23 @@ interface DeleteEvent {
   item: HistoryEventEntry;
 }
 
-const props = withDefaults(
-  defineProps<{
-    events: HistoryEventEntry[];
-    eventGroup: HistoryEventEntry;
-    loading?: boolean;
-    total?: number;
-    highlightedIdentifiers?: string[];
-  }>(),
-  {
-    loading: false,
-    total: 0,
-  },
-);
+interface HistoryEventsListTableProps {
+  events: HistoryEventEntry[];
+  eventGroup: HistoryEventEntry;
+  loading?: boolean;
+  total?: number;
+  highlightedIdentifiers?: string[];
+}
+
+const props = withDefaults(defineProps<HistoryEventsListTableProps>(), {
+  loading: false,
+  total: 0,
+});
 
 const emit = defineEmits<{
-  'edit-event': [data: HistoryEventEntry];
+  'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: DeleteEvent];
-  'show:missing-rule-action': [data: HistoryEventEntry];
+  'show:missing-rule-action': [data: HistoryEventEditData];
 }>();
 
 const { t } = useI18n();
@@ -53,7 +54,26 @@ function isNoTxHash(item: HistoryEventEntry) {
   );
 }
 
-const editEvent = (item: HistoryEventEntry) => emit('edit-event', item);
+function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
+  if (isDependentHistoryEvent(item)) {
+    const events = props.events;
+    return {
+      eventsInGroup: events as DependentHistoryEvent[],
+      type: 'edit-group',
+    };
+  }
+  else {
+    return {
+      event: item,
+      nextSequenceId: '',
+      type: 'edit',
+    };
+  }
+}
+
+function editEvent(item: HistoryEvent) {
+  emit('edit-event', getEmittedEvent(item));
+}
 
 function deleteEvent(item: HistoryEventEntry) {
   return emit('delete-event', {
@@ -156,7 +176,7 @@ function hideActions(item: HistoryEventEntry, index: number): boolean {
                 variant="text"
                 color="warning"
                 icon
-                @click="emit('show:missing-rule-action', item)"
+                @click="emit('show:missing-rule-action', getEmittedEvent(item))"
               >
                 <RuiIcon
                   size="16"

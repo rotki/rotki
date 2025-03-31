@@ -1,5 +1,6 @@
-import type HistoryEventAssetPriceForm from '@/components/history/events/forms/HistoryEventAssetPriceForm.vue';
+import type HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events';
+import type { ShallowRef } from 'vue';
 import { useHistoryEvents } from '@/composables/history/events/index';
 import { useMessageStore } from '@/store/message';
 
@@ -17,7 +18,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
 
   const saveHistoryEventHandler = async (
     payload: NewHistoryEventPayload | EditHistoryEventPayload,
-    assetPriceForm: Ref<InstanceType<typeof HistoryEventAssetPriceForm> | undefined>,
+    assetPriceForm: Readonly<ShallowRef<InstanceType<typeof HistoryEventAssetPriceForm> | null>>,
     errorMessages: Ref<Record<string, string[]>>,
     reset: () => any,
   ): Promise<boolean> => {

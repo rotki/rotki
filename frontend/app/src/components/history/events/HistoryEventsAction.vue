@@ -1,20 +1,26 @@
-<script setup lang="ts" generic="T extends HistoryEventEntry = HistoryEventEntry">
-import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
+<script setup lang="ts">
+import type {
+  EvmChainAndTxHash,
+  EvmHistoryEvent,
+  HistoryEvent,
+  HistoryEventEntry,
+  IndependentHistoryEvent,
+} from '@/types/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { isDependentHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { isEvmEventRef } from '@/utils/history/events';
-import { HistoryEventEntryType } from '@rotki/common';
 
 const props = defineProps<{
-  event: T;
+  event: HistoryEventEntry;
   loading: boolean;
 }>();
 
 const emit = defineEmits<{
-  'add-event': [event: T];
-  'toggle-ignore': [event: T];
+  'add-event': [event: IndependentHistoryEvent];
+  'toggle-ignore': [event: HistoryEventEntry];
   'redecode': [data: EvmChainAndTxHash];
   'delete-tx': [data: EvmChainAndTxHash];
 }>();
@@ -29,20 +35,21 @@ const { getChain } = useSupportedChains();
 
 const { t } = useI18n();
 
-const addEvent = (event: T) => emit('add-event', event);
-const toggleIgnore = (event: T) => emit('toggle-ignore', event);
+function addEvent(event: HistoryEvent) {
+  if (isDependentHistoryEvent(event)) {
+    return;
+  }
+  emit('add-event', event);
+}
+const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 
 function deleteTxAndEvents({ location, txHash }: EvmHistoryEvent) {
   return emit('delete-tx', { evmChain: getChain(location), txHash });
 }
 
-function hideAddAction(item: T): boolean {
-  const eventTypes: HistoryEventEntryType[] = [
-    HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    HistoryEventEntryType.SWAP_EVENT,
-  ];
-  return eventTypes.includes(item.entryType);
+function hideAddAction(item: HistoryEvent): boolean {
+  return isDependentHistoryEvent(item);
 }
 </script>
 
