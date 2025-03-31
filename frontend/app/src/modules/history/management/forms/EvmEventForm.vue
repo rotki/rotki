@@ -16,13 +16,13 @@ import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
-import { Blockchain, HistoryEventEntryType, isValidEthAddress, isValidTxHash, Zero } from '@rotki/common';
+import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
@@ -63,7 +63,8 @@ const extraData = ref<object>({});
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const externalServerValidation = () => true;
+const { createCommonRules } = useEventFormValidation();
+const commonRules = createCommonRules();
 
 const isInformationalEvent = computed(() => get(eventType) === 'informational');
 
@@ -78,56 +79,20 @@ const historyEventLimitedProducts = computed<string[]>(() => {
 });
 
 const rules = {
-  address: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.address.validation.valid'),
-      (value: string) => !value || isValidEthAddress(value),
-    ),
-  },
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
-  asset: {
-    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
-  },
-  counterparty: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.counterparty.validation.valid'),
-      (value: string) => !value || get(counterparties).includes(value) || isValidEthAddress(value),
-    ),
-  },
-  eventIdentifier: {
-    required: helpers.withMessage(
-      t('transactions.events.form.event_identifier.validation.non_empty'),
-      requiredIf(() => get(data).type === 'edit'),
-    ),
-  },
-  eventSubtype: {
-    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
-  },
-  eventType: {
-    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
-  },
-  location: {
-    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
-  },
-  locationLabel: { externalServerValidation },
-  notes: { externalServerValidation },
-  product: {
-    isValid: helpers.withMessage(
-      t('transactions.events.form.product.validation.valid'),
-      (value: string) => !value || get(historyEventLimitedProducts).includes(value),
-    ),
-  },
-  sequenceIndex: {
-    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
-  },
-  timestamp: { externalServerValidation },
-  txHash: {
-    isValid: helpers.withMessage(t('transactions.events.form.tx_hash.validation.valid'), (value: string) =>
-      isValidTxHash(value)),
-    required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
-  },
+  address: commonRules.createValidEthAddressRule(),
+  amount: commonRules.createRequiredAmountRule(),
+  asset: commonRules.createRequiredAssetRule(),
+  counterparty: commonRules.createValidCounterpartyRule(counterparties),
+  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
+  eventSubtype: commonRules.createRequiredEventSubtypeRule(),
+  eventType: commonRules.createRequiredEventTypeRule(),
+  location: commonRules.createRequiredLocationRule(),
+  locationLabel: commonRules.createExternalValidationRule(),
+  notes: commonRules.createExternalValidationRule(),
+  product: commonRules.createValidProductRule(historyEventLimitedProducts),
+  sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+  timestamp: commonRules.createExternalValidationRule(),
+  txHash: commonRules.createValidTxHashRule(),
 };
 
 const numericAmount = bigNumberifyFromRef(amount);

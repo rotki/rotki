@@ -11,6 +11,7 @@ import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -18,7 +19,7 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
@@ -60,38 +61,21 @@ const uniqueId = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const externalServerValidation = () => true;
+const { createCommonRules } = useEventFormValidation();
+const commonRules = createCommonRules();
 
 const rules = {
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
-  asset: {
-    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
-  },
-  eventIdentifier: { externalServerValidation },
-  eventType: {
-    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
-  },
-  fee: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fee.validation.non_empty'),
-      requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset))),
-    ),
-  },
-  feeAsset: {
-    required: helpers.withMessage(
-      t('transactions.events.form.fee_asset.validation.non_empty'),
-      requiredIf(logicAnd(hasFee, refIsTruthy(fee))),
-    ),
-  },
-  location: {
-    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
-  },
-  locationLabel: { externalServerValidation },
-  notes: { externalServerValidation },
-  timestamp: { externalServerValidation },
-  uniqueId: { externalServerValidation },
+  amount: commonRules.createRequiredAmountRule(),
+  asset: commonRules.createRequiredAssetRule(),
+  eventIdentifier: commonRules.createExternalValidationRule(),
+  eventType: commonRules.createRequiredEventTypeRule(),
+  fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
+  feeAsset: commonRules.createRequiredFeeAssetRule(requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
+  location: commonRules.createRequiredLocationRule(),
+  locationLabel: commonRules.createExternalValidationRule(),
+  notes: commonRules.createExternalValidationRule(),
+  timestamp: commonRules.createExternalValidationRule(),
+  uniqueId: commonRules.createExternalValidationRule(),
 };
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());

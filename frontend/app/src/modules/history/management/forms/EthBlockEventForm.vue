@@ -8,13 +8,13 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
-import { Blockchain, HistoryEventEntryType, isValidEthAddress, Zero } from '@rotki/common';
+import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
@@ -41,28 +41,16 @@ const isMevReward = ref<boolean>(false);
 
 const errorMessages = ref<Record<string, string[]>>({});
 
+const { createCommonRules } = useEventFormValidation();
+const commonRules = createCommonRules();
+
 const rules = {
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
-  blockNumber: {
-    required: helpers.withMessage(t('transactions.events.form.block_number.validation.non_empty'), required),
-  },
-  eventIdentifier: {
-    required: helpers.withMessage(
-      t('transactions.events.form.event_identifier.validation.non_empty'),
-      requiredIf(() => get(data).type === 'edit'),
-    ),
-  },
-  feeRecipient: {
-    isValid: helpers.withMessage(t('transactions.events.form.fee_recipient.validation.valid'), (value: string) =>
-      isValidEthAddress(value)),
-    required: helpers.withMessage(t('transactions.events.form.fee_recipient.validation.non_empty'), required),
-  },
-  timestamp: { externalServerValidation: () => true },
-  validatorIndex: {
-    required: helpers.withMessage(t('transactions.events.form.validator_index.validation.non_empty'), required),
-  },
+  amount: commonRules.createRequiredAmountRule(),
+  blockNumber: commonRules.createRequiredBlockNumberRule(),
+  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
+  feeRecipient: commonRules.createRequiredValidFeeRecipientRule(),
+  timestamp: commonRules.createExternalValidationRule(),
+  validatorIndex: commonRules.createRequiredValidatorIndexRule(),
 };
 
 const numericAmount = bigNumberifyFromRef(amount);

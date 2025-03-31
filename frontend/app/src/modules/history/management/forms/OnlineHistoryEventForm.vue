@@ -10,6 +10,7 @@ import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -17,7 +18,6 @@ import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
@@ -46,33 +46,20 @@ const notes = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const externalServerValidation = () => true;
+const { createCommonRules } = useEventFormValidation();
+const commonRules = createCommonRules();
 
 const rules = {
-  amount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
-  asset: {
-    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
-  },
-  eventIdentifier: {
-    required: helpers.withMessage(t('transactions.events.form.event_identifier.validation.non_empty'), required),
-  },
-  eventSubtype: {
-    required: helpers.withMessage(t('transactions.events.form.event_subtype.validation.non_empty'), required),
-  },
-  eventType: {
-    required: helpers.withMessage(t('transactions.events.form.event_type.validation.non_empty'), required),
-  },
-  location: {
-    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
-  },
-  locationLabel: { externalServerValidation },
-  notes: { externalServerValidation },
-  sequenceIndex: {
-    required: helpers.withMessage(t('transactions.events.form.sequence_index.validation.non_empty'), required),
-  },
-  timestamp: { externalServerValidation },
+  amount: commonRules.createRequiredAmountRule(),
+  asset: commonRules.createRequiredAssetRule(),
+  eventIdentifier: commonRules.createRequiredEventIdentifierRule(),
+  eventSubtype: commonRules.createRequiredEventSubtypeRule(),
+  eventType: commonRules.createRequiredEventTypeRule(),
+  location: commonRules.createRequiredLocationRule(),
+  locationLabel: commonRules.createExternalValidationRule(),
+  notes: commonRules.createExternalValidationRule(),
+  sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+  timestamp: commonRules.createExternalValidationRule(),
 };
 
 const numericAmount = bigNumberifyFromRef(amount);
