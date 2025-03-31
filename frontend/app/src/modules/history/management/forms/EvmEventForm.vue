@@ -4,7 +4,6 @@ import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
@@ -16,9 +15,7 @@ import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.v
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -47,7 +44,7 @@ const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPrice
 const txHash = ref<string>('');
 const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
-const datetime = ref<string>('');
+const timestamp = ref<number>(0);
 const location = ref<string>('');
 const eventType = ref<string>('');
 const eventSubtype = ref<string>('none');
@@ -112,7 +109,7 @@ const states = {
   notes,
   product,
   sequenceIndex,
-  timestamp: datetime,
+  timestamp,
   txHash,
 };
 
@@ -130,7 +127,7 @@ function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(txHash, '');
   set(eventIdentifier, null);
-  set(datetime, convertFromTimestamp(dayjs().valueOf(), DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(address, '');
   set(locationLabel, '');
@@ -151,7 +148,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(eventType, entry.eventType);
   set(eventSubtype, entry.eventSubtype || 'none');
@@ -172,7 +169,7 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
   set(txHash, entry.txHash);
-  set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
+  set(timestamp, entry.timestamp);
 }
 
 watch(errorMessages, (errors) => {
@@ -184,8 +181,6 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
     return false;
   }
-
-  const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const eventData = get(data);
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
@@ -205,7 +200,7 @@ async function save(): Promise<boolean> {
     locationLabel: get(locationLabel) || null,
     product: get(product) || null,
     sequenceIndex: get(sequenceIndex) || '0',
-    timestamp,
+    timestamp: get(timestamp),
     txHash: get(txHash),
     userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
@@ -257,12 +252,15 @@ defineExpose({
 <template>
   <div>
     <div class="grid md:grid-cols-2 gap-4 mb-4">
-      <DateTimePicker
-        v-model="datetime"
+      <RuiDateTimePicker
+        v-model="timestamp"
         :label="t('common.datetime')"
         persistent-hint
-        limit-now
-        milliseconds
+        max-date="now"
+        color="primary"
+        variant="outlined"
+        type="epoch-ms"
+        accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"
         :error-messages="toMessages(v$.timestamp)"
@@ -307,7 +305,7 @@ defineExpose({
       v-model:amount="amount"
       :location="location"
       :v$="v$"
-      :datetime="datetime"
+      :timestamp="timestamp"
       :hide-price-fields="isInformationalEvent"
     />
 

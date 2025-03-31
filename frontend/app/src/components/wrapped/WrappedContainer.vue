@@ -7,7 +7,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import WrappedCard from '@/components/wrapped/WrappedCard.vue';
 import { useWrapStatisticsApi, type WrapStatisticsResult } from '@/composables/api/statistics/wrap';
 import { useHistoryEvents } from '@/composables/history/events';
@@ -22,7 +21,6 @@ import { useCurrencies } from '@/types/currencies';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { sortDesc } from '@/utils/bignumbers';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
 import dayjs from 'dayjs';
 
@@ -42,8 +40,8 @@ const gnosisPayKey = computed(() => apiKey('gnosis_pay'));
 const showGnosisData = computed(() => get(premium) && get(gnosisPayKey));
 
 const loading = ref(false);
-const end = ref('');
-const start = ref('');
+const end = ref(0);
+const start = ref(0);
 const summary = ref<WrapStatisticsResult>();
 
 const { isMdAndDown } = useBreakpoint();
@@ -62,11 +60,11 @@ const debouncedHistoryEventsReady = debouncedRef(historyEventsReady, 500);
 const usedHistoryEventsReady = logicAnd(historyEventsReady, debouncedHistoryEventsReady);
 
 watchImmediate(usedHistoryEventsReady, async (curr, old) => {
-  if (curr && !old && get(start) === '') {
+  if (curr && !old && get(start) === 0) {
     const earliestEventTimestamp = await getEarliestEventTimestamp();
 
     if (earliestEventTimestamp) {
-      set(start, convertFromTimestamp(earliestEventTimestamp));
+      set(start, earliestEventTimestamp);
     }
   }
 });
@@ -114,19 +112,18 @@ async function fetchData() {
     return;
 
   try {
-    let endVal = get(end);
+    const endVal = get(end);
     const startVal = get(start);
 
     if (!endVal) {
-      endVal = convertFromTimestamp(dayjs().unix());
-      set(end, endVal);
+      set(end, dayjs().unix());
     }
 
     set(loading, true);
     const response = await fetchWrapStatistics(
       {
-        end: convertToTimestamp(endVal),
-        start: startVal ? convertToTimestamp(startVal) : 0,
+        end: endVal,
+        start: startVal,
       },
     );
     set(summary, response);
@@ -160,14 +157,13 @@ function calculateFontSize(symbol: string) {
 const invalidRange = computed(
   () =>
     !!get(start)
-    && !!get(end)
-    && convertToTimestamp(get(start)) > convertToTimestamp(get(end)),
+    && !!get(end) && get(start) > get(end),
 );
 
-function getYearRange(year: number) {
+function getYearRange(year: number): { start: number; end: number } {
   return {
-    end: convertFromTimestamp(dayjs().year(year).endOf('year').unix()),
-    start: convertFromTimestamp(dayjs().year(year).startOf('year').unix()),
+    end: dayjs().year(year).endOf('year').unix(),
+    start: dayjs().year(year).startOf('year').unix(),
   };
 }
 
@@ -264,22 +260,26 @@ defineExpose({
       <div class="my-2 mr-4 font-semibold">
         {{ t('wrapped.filter_by_date') }}
       </div>
-      <DateTimePicker
+      <RuiDateTimePicker
         v-model="start"
         dense
-        hide-timezone-selector
         :disabled="loading"
         class="flex-1"
+        color="primary"
+        variant="outlined"
+        :max-date="end"
         :label="t('generate.labels.start_date')"
         allow-empty
       />
-      <DateTimePicker
+      <RuiDateTimePicker
         v-model="end"
+        :min-date="start"
         dense
-        hide-timezone-selector
         :disabled="loading"
         class="flex-1"
         allow-empty
+        color="primary"
+        variant="outlined"
         :label="t('generate.labels.end_date')"
       />
       <RuiButton

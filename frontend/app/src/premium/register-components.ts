@@ -40,6 +40,7 @@ import {
   RuiChip,
   RuiColorPicker,
   RuiDataTable,
+  RuiDateTimePicker,
   RuiDialog,
   RuiDivider,
   RuiIcon,
@@ -68,6 +69,7 @@ function ruiRegister(app: App): void {
   app.component('RuiProgress', RuiProgress);
   app.component('RuiAccordions', RuiAccordions);
   app.component('RuiAccordion', RuiAccordion);
+  app.component('RuiDateTimePicker', RuiDateTimePicker);
 }
 
 export function registerComponents(app: App): void {

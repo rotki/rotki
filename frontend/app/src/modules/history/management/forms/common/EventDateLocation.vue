@@ -1,15 +1,14 @@
 <script setup lang="ts">
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 
-const datetime = defineModel<string>('datetime', { required: true });
+const timestamp = defineModel<number>('timestamp', { required: true });
 const location = defineModel<string>('location', { required: true });
 
 withDefaults(defineProps<{
   locationDisabled?: boolean;
   dateDisabled?: boolean;
   errorMessages: {
-    datetime: string[];
+    timestamp: string[];
     location: string[];
   };
 }>(), {
@@ -18,7 +17,7 @@ withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  blur: [source: 'location' | 'datetime'];
+  blur: [source: 'location' | 'timestamp'];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -26,17 +25,20 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div class="grid md:grid-cols-2 gap-4 mb-4">
-    <DateTimePicker
-      v-model="datetime"
+    <RuiDateTimePicker
+      v-model="timestamp"
       :label="t('common.datetime')"
       persistent-hint
-      limit-now
-      milliseconds
+      max-date="now"
+      color="primary"
+      variant="outlined"
+      type="epoch-ms"
+      accuracy="millisecond"
       :disabled="dateDisabled"
       data-cy="datetime"
       :hint="t('transactions.events.form.datetime.hint')"
-      :error-messages="errorMessages.datetime"
-      @blur="emit('blur', 'datetime')"
+      :error-messages="errorMessages.timestamp"
+      @blur="emit('blur', 'timestamp')"
     />
     <LocationSelector
       v-model="location"
