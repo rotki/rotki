@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
+    ZERO_ADDRESS,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -25,12 +26,17 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import (
     ADD_LIQUIDITY_TOPIC,
     CPT_PENDLE,
+    EXIT_POST_EXP_TO_TOKEN_TOPIC,
     KYBERSWAP_SWAPPED_TOPIC,
+    MINT_PT_YT_FROM_TOKEN_TOPIC,
+    MINT_SY_FROM_TOKEN_TOPIC,
     ODOS_SWAP_TOPIC,
     OKX_ORDER_RECORD_TOPIC,
     PENDLE_ROUTER_ABI,
     PENDLE_ROUTER_ADDRESS,
     PENDLE_SWAP_ADDRESS,
+    REDEEM_PT_YT_TO_TOKEN_TOPIC,
+    REDEEM_SY_TO_TOKEN_TOPIC,
     REMOVE_LIQUIDITY_TOPIC,
     SWAP_SINGLE_TOPIC,
     SWAP_TOKEN_FOR_PT_TOPIC,
@@ -45,16 +51,26 @@ class PendleCommonDecoder(DecoderInterface):
 
     def _decode_pendle_events(self, context: DecoderContext) -> DecodingOutput:
         """This method decodes the following pendle events:
-        1. Buy or sell principal token(PT) with/for yield token (e.g. sUSDe, LBTC)
-        2. Buy or sell yield token(YT) with/for yield token (e.g. sUSDe, LBTC)
-        3. Adding or removing liquidity.
-        """
+        1. Swapping tokens for Principal Tokens (PT) or Yield Tokens (YT), and vice versa.
+            - PT: Represents the principal portion of a yield-bearing asset.
+            - YT: Represents the future yield of the asset, decoupled from the principal.
+        2. Minting or redeeming Standardized Yield Tokens(SY), PT, or YT tokens from/to an underlying token.
+           - SY tokens wrap yield-bearing assets into a standardized ERC-20 format used within Pendle ecosystem.
+        3. Adding or removing liquidity from a Pendle liquidity pool.
+        4. Exiting a Pendle pool post-expiration, redeeming expired positions into the underlying asset.
+        """  # noqa: E501
         if context.tx_log.topics[0] in (SWAP_TOKEN_FOR_PT_TOPIC, SWAP_TOKEN_FOR_YT_TOPIC):
             return self._decode_pt_yt_events(context)
         elif context.tx_log.topics[0] == ADD_LIQUIDITY_TOPIC:
             return self._decode_add_liquidity_event(context)
         elif context.tx_log.topics[0] == REMOVE_LIQUIDITY_TOPIC:
             return self._decode_remove_liquidity_event(context)
+        elif context.tx_log.topics[0] in (MINT_PT_YT_FROM_TOKEN_TOPIC, MINT_SY_FROM_TOKEN_TOPIC):
+            return self._decode_mint_sy_pt_yt_from_token(context)
+        elif context.tx_log.topics[0] in (REDEEM_PT_YT_TO_TOKEN_TOPIC, REDEEM_SY_TO_TOKEN_TOPIC):
+            return self._decode_redeem_sy_pt_yt_to_token(context)
+        elif context.tx_log.topics[0] == EXIT_POST_EXP_TO_TOKEN_TOPIC:
+            return self._decode_exit_post_exp_to_token(context)
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -109,7 +125,7 @@ class PendleCommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_pt_yt_events(self, context: DecoderContext) -> DecodingOutput:
-        """Decode Pendle market events for buying or selling Principal (PT) or Yield (YT) tokens.
+        """Decode Pendle market events for buying or selling PT/YT.
 
         This method handles two primary scenarios:
         - Buying PT/YT: token_0 is spent, token_1 is received
@@ -192,8 +208,6 @@ class PendleCommonDecoder(DecoderInterface):
         elif swap_type == 4:
             expected_log_topic = OKX_ORDER_RECORD_TOPIC
         else:
-            # TODO: Check for transactions for swap_type=5 (1inch).
-            # Currently skipped — see note: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=104045988
             log.debug(f'Found an unsupported swap type {swap_type} in transaction {context.transaction}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -279,6 +293,102 @@ class PendleCommonDecoder(DecoderInterface):
             events_list=context.decoded_events,
         )
         return DecodingOutput(action_items=action_items)
+
+    def _decode_sy_pt_yt_events(
+            self,
+            context: DecoderContext,
+            input_token_log_idx: int,
+            output_token_log_idx: int,
+            direction: Literal['mint', 'redeem', 'exit'],
+    ) -> DecodingOutput:
+        """Decodes Pendle SY/PT/YT mint, redeem, or post-expiry exit events"""
+        amount_in = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[64:96]),
+            asset=(token_in := self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[input_token_log_idx]))),  # noqa: E501
+        )
+        amount_out = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+            asset=(token_out := self.base.get_token_or_native(token_out_address := bytes_to_address(context.tx_log.topics[output_token_log_idx]))),  # noqa: E501
+        )
+        out_events, in_events = [], []
+        for event in context.decoded_events:
+            if (
+                    # Pendle emits one SPEND per output token (SY, PT, YT),
+                    # each with the same amount.
+                    event.amount == amount_out and
+                    (event.address == token_out_address or event.asset == token_out) and
+                    event.event_type in (HistoryEventType.SPEND, HistoryEventType.TRADE) and
+                    event.event_subtype in (HistoryEventSubType.NONE, HistoryEventSubType.SPEND)
+            ):
+                out_events.append(event)
+                event.counterparty = CPT_PENDLE
+                if direction == 'mint':
+                    event.event_type = HistoryEventType.DEPOSIT
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                    event.notes = f'Deposit {event.amount} {token_out.symbol} to Pendle'
+                else:
+                    event.event_type = HistoryEventType.SPEND
+                    event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    event.notes = f'Return {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} to Pendle'  # noqa: E501
+
+            elif (
+                    # Pendle emits one RECEIVE per output token (SY, PT, YT),
+                    # each with the same amount.
+                    event.amount == amount_in and
+                    (event.address == ZERO_ADDRESS or event.asset == token_in) and
+                    event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.TRADE) and
+                    event.event_subtype in (HistoryEventSubType.NONE, HistoryEventSubType.RECEIVE)
+            ):
+                in_events.append(event)
+                event.counterparty = CPT_PENDLE
+                if direction == 'mint':
+                    event.event_type = HistoryEventType.RECEIVE
+                    event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                    event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from depositing into Pendle'  # noqa: E501
+                else:
+                    event.event_type = HistoryEventType.WITHDRAWAL
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                    if direction == 'exit':
+                        event.notes = f'Withdraw {event.amount} {token_in.symbol} from a Pendle pool'  # noqa: E501
+                    else:
+                        event.notes = f'Withdraw {event.amount} {token_in.symbol} from Pendle'
+
+        if len(in_events) == 0 or len(out_events) == 0:
+            log.error(f'Could not retrieve either out events or in events in pendle {direction} transaction {context.transaction}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            ordered_events=out_events + in_events,
+            events_list=context.decoded_events,
+        )
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_mint_sy_pt_yt_from_token(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes Pendle deposits where an underlying token is converted into SY, PT, or YT."""
+        return self._decode_sy_pt_yt_events(
+            context=context,
+            direction='mint',
+            input_token_log_idx=3,
+            output_token_log_idx=2,
+        )
+
+    def _decode_redeem_sy_pt_yt_to_token(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes Pendle redemptions where SY, PT, or YT are converted back to the underlying token."""  # noqa: E501
+        return self._decode_sy_pt_yt_events(
+            context=context,
+            direction='redeem',
+            input_token_log_idx=2,
+            output_token_log_idx=3,
+        )
+
+    def _decode_exit_post_exp_to_token(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes Pendle pool exits after maturity are redeemed for the underlying asset."""
+        return self._decode_sy_pt_yt_events(
+            context=context,
+            direction='exit',
+            input_token_log_idx=3,
+            output_token_log_idx=2,
+        )
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
