@@ -1,5 +1,5 @@
 import type { DependentEventData } from '@/modules/history/management/forms/form-types';
-import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events';
+import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/types/history/events';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { Pinia } from 'pinia';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
@@ -41,7 +41,7 @@ describe('forms/SwapEventForm', () => {
     eventsInGroup: [{
       amount: bigNumberify('0.01'),
       asset: 'ETH',
-      description: 'Swap 0.01 ETH in Binance',
+      autoNotes: 'Swap 0.01 ETH in Binance',
       entryType: 'swap event',
       eventIdentifier: '24bf5c3b2031b1224d7f0e642fde058ac8316039969762b67981372229fe1a7f',
       eventSubtype: 'spend',
@@ -50,13 +50,13 @@ describe('forms/SwapEventForm', () => {
       identifier: 2737,
       location: 'binance',
       locationLabel: null,
-      notes: 'note',
       sequenceIndex: 0,
       timestamp: 1742901211000,
+      userNotes: 'note',
     }, {
       amount: bigNumberify('20'),
       asset: 'USD',
-      description: 'Receive 20 USD after a swap in Binance',
+      autoNotes: 'Receive 20 USD after a swap in Binance',
       entryType: 'swap event',
       eventIdentifier: '24bf5c3b2031b1224d7f0e642fde058ac8316039969762b67981372229fe1a7f',
       eventSubtype: 'receive',
@@ -65,13 +65,13 @@ describe('forms/SwapEventForm', () => {
       identifier: 2738,
       location: 'binance',
       locationLabel: null,
-      notes: '',
       sequenceIndex: 1,
       timestamp: 1742901211000,
+      userNotes: '',
     }, {
       amount: bigNumberify('1'),
       asset: 'USD',
-      description: 'Spend 1 USD as Binance swap fee',
+      autoNotes: 'Spend 1 USD as Binance swap fee',
       entryType: 'swap event',
       eventIdentifier: '24bf5c3b2031b1224d7f0e642fde058ac8316039969762b67981372229fe1a7f',
       eventSubtype: 'fee',
@@ -80,9 +80,9 @@ describe('forms/SwapEventForm', () => {
       identifier: 2739,
       location: 'binance',
       locationLabel: null,
-      notes: '',
       sequenceIndex: 2,
       timestamp: 1742901211000,
+      userNotes: '',
     }],
     type: 'edit-group',
   };
@@ -194,13 +194,13 @@ describe('forms/SwapEventForm', () => {
     expect(addHistoryEventMock).toHaveBeenCalledWith({
       entryType: HistoryEventEntryType.SWAP_EVENT,
       location: 'kraken',
-      notes: ['', ''],
       receiveAmount: '0.05',
       receiveAsset: 'BTC',
       spendAmount: '100',
       spendAsset: 'ETH',
       timestamp: nowInMs,
       uniqueId: 'abcd',
+      userNotes: ['', ''],
     } satisfies AddSwapEventPayload);
     vi.useRealTimers();
   });
@@ -269,13 +269,13 @@ describe('forms/SwapEventForm', () => {
         feeAsset: 'USD',
         identifier: 2737,
         location: 'binance',
-        notes: ['note', 'receive', 'fee'],
         receiveAmount: '20',
         receiveAsset: 'USD',
         spendAmount: '0.01',
         spendAsset: 'ETH',
         timestamp: 1742901211000,
-      }),
+        userNotes: ['note', 'receive', 'fee'],
+      } satisfies EditSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
   });

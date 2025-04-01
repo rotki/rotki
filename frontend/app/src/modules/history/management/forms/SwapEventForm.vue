@@ -31,13 +31,13 @@ function emptyEvent(): FormData {
     feeAmount: '',
     feeAsset: '',
     location: '',
-    notes: ['', '', ''],
     receiveAmount: '0',
     receiveAsset: '',
     spendAmount: '0',
     spendAsset: '',
     timestamp: dayjs().valueOf(),
     uniqueId: '',
+    userNotes: ['', '', ''],
   };
 }
 
@@ -68,7 +68,6 @@ const rules = {
   location: {
     required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
   },
-  notes: { externalServerValidation },
   receiveAmount: {
     required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
   },
@@ -83,6 +82,7 @@ const rules = {
   },
   timestamp: { externalServerValidation },
   uniqueId: { externalServerValidation },
+  userNotes: { externalServerValidation },
 };
 
 const v$ = useVuelidate(
@@ -121,7 +121,7 @@ async function save(): Promise<boolean> {
   }
   else {
     payload = omit(model, ['feeAmount', 'feeAsset']);
-    payload.notes = [model.notes[0], model.notes[1]];
+    payload.userNotes = [model.userNotes[0], model.userNotes[1]];
   }
 
   const result = isDefined(identifiers)
@@ -147,10 +147,10 @@ async function save(): Promise<boolean> {
 }
 
 function getNotes(event?: SwapEvent): string {
-  if (!event || !event.notes || 'defaultNotes' in event) {
+  if (!event || !event.userNotes) {
     return '';
   }
-  return event.notes;
+  return event.userNotes;
 }
 
 watchImmediate(() => props.data, (data) => {
@@ -167,7 +167,7 @@ watchImmediate(() => props.data, (data) => {
   set(hasFee, fee !== undefined);
   set(identifiers, pick(spend, ['eventIdentifier', 'identifier']));
 
-  const notes: [string, string, string] | [string, string] = fee !== undefined
+  const userNotes: [string, string, string] | [string, string] = fee !== undefined
     ? [
         getNotes(spend),
         getNotes(receive),
@@ -182,13 +182,13 @@ watchImmediate(() => props.data, (data) => {
     feeAmount: fee?.amount?.toString() ?? '',
     feeAsset: fee?.asset ?? '',
     location: spend.location,
-    notes,
     receiveAmount: receive.amount.toString(),
     receiveAsset: receive.asset,
     spendAmount: spend.amount.toString(),
     spendAsset: spend.asset,
     timestamp: spend.timestamp,
     uniqueId: '',
+    userNotes,
   });
 });
 
@@ -201,7 +201,7 @@ watch(hasFee, (hasFee) => {
     ...oldStates,
     feeAmount: '',
     feeAsset: '',
-    notes: [oldStates.notes[0], oldStates.notes[1]],
+    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1]],
   });
 });
 
@@ -332,7 +332,7 @@ defineExpose({
 
         <div class="py-2">
           <RuiTextArea
-            v-model="states.notes[0]"
+            v-model="states.userNotes[0]"
             prepend-icon="lu-sticky-note"
             data-cy="spend-notes"
             variant="outlined"
@@ -341,11 +341,11 @@ defineExpose({
             min-rows="3"
             auto-grow
             :label="t('swap_event_form.spend_notes')"
-            :error-messages="toMessages(v$.notes)"
-            @blur="v$.notes.$touch()"
+            :error-messages="toMessages(v$.userNotes)"
+            @blur="v$.userNotes.$touch()"
           />
           <RuiTextArea
-            v-model="states.notes[1]"
+            v-model="states.userNotes[1]"
             prepend-icon="lu-sticky-note"
             data-cy="receive-notes"
             variant="outlined"
@@ -354,12 +354,12 @@ defineExpose({
             min-rows="3"
             auto-grow
             :label="t('swap_event_form.receive_notes')"
-            :error-messages="toMessages(v$.notes)"
-            @blur="v$.notes.$touch()"
+            :error-messages="toMessages(v$.userNotes)"
+            @blur="v$.userNotes.$touch()"
           />
           <RuiTextArea
-            v-if="hasFee && states.notes.length === 3"
-            v-model="states.notes[2]"
+            v-if="hasFee && states.userNotes.length === 3"
+            v-model="states.userNotes[2]"
             prepend-icon="lu-sticky-note"
             data-cy="fee-notes"
             :disabled="!hasFee"
@@ -369,8 +369,8 @@ defineExpose({
             min-rows="3"
             auto-grow
             :label="t('swap_event_form.fee_notes')"
-            :error-messages="toMessages(v$.notes)"
-            @blur="v$.notes.$touch()"
+            :error-messages="toMessages(v$.userNotes)"
+            @blur="v$.userNotes.$touch()"
           />
         </div>
       </RuiAccordion>

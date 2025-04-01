@@ -79,15 +79,16 @@ export type HistoryEventDetail = z.infer<typeof HistoryEventDetail>;
 export const CommonHistoryEvent = z.object({
   amount: NumericString,
   asset: z.string(),
+  autoNotes: z.string().optional(),
   eventIdentifier: z.string(),
   eventSubtype: z.string(),
   eventType: z.string(),
   identifier: z.number(),
   location: z.string(),
   locationLabel: z.string().nullable(),
-  notes: z.string().nullable().optional(),
   sequenceIndex: z.number().or(z.string()),
   timestamp: z.number(),
+  userNotes: z.string().optional(),
 });
 
 export const EvmHistoryEvent = CommonHistoryEvent.extend({
@@ -147,7 +148,6 @@ export const AssetMovementEvent = CommonHistoryEvent.extend({
 export type AssetMovementEvent = z.infer<typeof AssetMovementEvent>;
 
 export const SwapEventSchema = CommonHistoryEvent.extend({
-  description: z.string(),
   entryType: z.literal(HistoryEventEntryType.SWAP_EVENT),
   extraData: z.unknown().nullable(),
 });
@@ -172,7 +172,7 @@ export interface AddSwapEventPayload {
   feeAmount?: string;
   feeAsset?: string;
   location: string;
-  notes: [string, string, string] | [string, string];
+  userNotes: [string, string, string] | [string, string];
   receiveAmount: string;
   receiveAsset: string;
   spendAmount: string;
@@ -273,7 +273,7 @@ export interface EditAssetMovementEventPayload {
   asset: string;
   fee: string | null;
   feeAsset: string | null;
-  notes: string | null;
+  userNotes: string | null;
   uniqueId: string;
 }
 
@@ -310,7 +310,6 @@ export const HistoryEventAccountingRuleStatusEnum = z.nativeEnum(HistoryEventAcc
 export const HistoryEventMeta = EntryMeta.merge(
   z.object({
     customized: z.boolean().optional(),
-    defaultNotes: z.boolean().optional(),
     eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
     groupedEventsNum: z.number().nullish(),
     hasDetails: z.boolean().optional(),

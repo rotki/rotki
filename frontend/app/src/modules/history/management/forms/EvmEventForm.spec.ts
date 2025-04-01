@@ -65,12 +65,12 @@ describe('forms/EvmEventForm.vue', () => {
     identifier: 14344,
     location: 'ethereum',
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
-    notes:
-      'Receive 610 Visit https://rafts.cc to claim rewards. from 0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C to 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
     product: null,
     sequenceIndex: 2411,
     timestamp: 1686495083,
     txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
+    userNotes:
+      'Receive 610 Visit https://rafts.cc to claim rewards. from 0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C to 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
   };
 
   beforeAll(() => {
@@ -169,7 +169,7 @@ describe('forms/EvmEventForm.vue', () => {
     expect(addressInput.element.value).toBe(group.address);
     expect(amountInput.element.value).toBe(group.amount.toString());
     expect(sequenceIndexInput.element.value.replace(',', '')).toBe(group.sequenceIndex.toString());
-    expect(notesTextArea.element.value).toBe(group.notes);
+    expect(notesTextArea.element.value).toBe(group.userNotes);
   });
 
   it('should show all eventTypes options correctly', async () => {
@@ -264,7 +264,7 @@ describe('forms/EvmEventForm.vue', () => {
     await wrapper.find('[data-cy=amount] input').setValue('610'); // Using the numeric value from group.amount
     await wrapper.find('[data-cy=address] input').setValue(group.address);
     await wrapper.find('[data-cy=sequenceIndex] input').setValue(group.sequenceIndex);
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.notes);
+    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
 
     if (group.counterparty) {
@@ -300,11 +300,11 @@ describe('forms/EvmEventForm.vue', () => {
       extraData: {},
       location: group.location,
       locationLabel: group.locationLabel,
-      notes: group.notes,
       product: group.product,
       sequenceIndex: group.sequenceIndex.toString(),
       timestamp: group.timestamp,
       txHash: group.txHash,
+      userNotes: group.userNotes,
     });
   });
 
@@ -346,11 +346,11 @@ describe('forms/EvmEventForm.vue', () => {
       identifier: group.identifier,
       location: group.location,
       locationLabel: group.locationLabel,
-      notes: 'user note',
       product: group.product,
       sequenceIndex: '2111',
       timestamp: group.timestamp,
       txHash: group.txHash,
+      userNotes: 'user note',
     });
   });
 

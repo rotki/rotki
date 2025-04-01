@@ -10,7 +10,7 @@ describe('useAccountDelete', () => {
     setActivePinia(createPinia());
   });
 
-  it('should remove any accounts and and balances from state', () => {
+  it('should remove any accounts and balances from state', () => {
     const accountStore = useBlockchainAccountsStore();
     const store = useBalancesStore();
     const { removeAccounts } = useAccountDelete();

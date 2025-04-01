@@ -158,7 +158,7 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   set(eventType, entry.eventType);
   set(asset, entry.asset ?? '');
   set(amount, entry.amount.toFixed());
-  set(notes, entry.notes ?? '');
+  set(notes, entry.userNotes ?? '');
 
   if (feeEvent) {
     set(fee, feeEvent.amount.toFixed());
@@ -183,6 +183,7 @@ async function save(): Promise<boolean> {
 
   const eventData = get(data);
   const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
+  const userNotes = get(notes).trim();
 
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -194,9 +195,9 @@ async function save(): Promise<boolean> {
     feeAsset: null,
     location: get(location),
     locationLabel: get(locationLabel),
-    notes: get(notes),
     timestamp,
     uniqueId: get(uniqueId),
+    userNotes: userNotes.length > 0 ? userNotes : null,
   };
 
   if (get(hasFee)) {

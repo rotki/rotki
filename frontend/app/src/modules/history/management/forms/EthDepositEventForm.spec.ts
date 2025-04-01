@@ -56,11 +56,11 @@ describe('form/EthDepositEventForm.vue', () => {
     identifier: 11344,
     location: 'ethereum',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-    notes: 'Deposit 3.2 ETH to validator 223',
     product: 'staking',
     sequenceIndex: 12,
     timestamp: 1697522243000,
     txHash: '0x3849ac4b278cac18f0e52a7d1a1dc1c14b1b4f50d6c11087e9a6591fd7b62d08',
+    userNotes: 'Deposit 3.2 ETH to validator 223',
     validatorIndex: 223,
   };
 

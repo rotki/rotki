@@ -53,9 +53,9 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     isExit: true,
     location: 'ethereum',
     locationLabel: '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-    notes: 'Exit validator 123 with 2.5 ETH',
     sequenceIndex: 0,
     timestamp: 1697517629000,
+    userNotes: 'Exit validator 123 with 2.5 ETH',
     validatorIndex: 123,
   };
 
