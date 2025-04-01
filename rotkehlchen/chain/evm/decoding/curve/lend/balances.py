@@ -1,6 +1,7 @@
 import logging
+from abc import ABC, abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token
@@ -13,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_VAULT_CONT
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -29,12 +31,18 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CurveLendBalances(ProtocolWithBalance):
+class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
+
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
             tx_decoder: 'EVMTransactionDecoder',
+            evm_product: Literal[EvmProduct.LENDING, EvmProduct.MINTING],
     ):
+        """Common balances class for both curve lend and crvusd controllers.
+        `evm_product` is used with addresses_with_deposits to get addresses and events for the
+        correct type of controller.
+        """
         super().__init__(
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
@@ -44,18 +52,27 @@ class CurveLendBalances(ProtocolWithBalance):
                 (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
             },
         )
+        self.evm_product = evm_product
+
+    @abstractmethod
+    def get_collateral_and_borrowed_tokens(
+            self,
+            controller_address: 'ChecksumEvmAddress',
+            controller_contract: EvmContract,
+    ) -> tuple['EvmToken', 'EvmToken'] | None:
+        """Retrieve the collateral and borrowed tokens for the specified controller."""
 
     def _get_controllers_with_balances(self) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
-        """Get addresses of controllers for vaults that the user may have balances on.
+        """Get addresses of controllers that the user may have balances on.
         Returns a dict of controller addresses -> set of user addresses with possible balances.
         """
         controllers: dict[ChecksumEvmAddress, set[ChecksumEvmAddress]] = defaultdict(set)
-        for address, events in self.addresses_with_deposits(products=None).items():
+        for address, events in self.addresses_with_deposits(products=[self.evm_product]).items():
             for event in events:
-                if event.extra_data is None or 'vault_controller' not in event.extra_data:
-                    continue  # skip any vault deposits
+                if event.extra_data is None or 'controller_address' not in event.extra_data:
+                    continue  # skip any deposits without a controller address
 
-                controllers[event.extra_data['vault_controller']].add(address)
+                controllers[event.extra_data['controller_address']].add(address)
 
         return controllers
 
@@ -88,7 +105,7 @@ class CurveLendBalances(ProtocolWithBalance):
             return balances
 
         calls: list[tuple[ChecksumEvmAddress, str]] = []
-        token_contract = EvmContract(
+        controller_contract = EvmContract(
             address=ZERO_ADDRESS,  # not used here
             abi=CURVE_VAULT_CONTROLLER_ABI,
             deployed_block=0,  # not used here
@@ -101,7 +118,7 @@ class CurveLendBalances(ProtocolWithBalance):
                 user_address_list.append(user_address)
                 calls.append((
                     controller_address,
-                    token_contract.encode(
+                    controller_contract.encode(
                         method_name='user_state',
                         arguments=[user_address],
                     ),
@@ -117,7 +134,7 @@ class CurveLendBalances(ProtocolWithBalance):
         assets: list[tuple[ChecksumEvmAddress, EvmToken, int]] = []
         liabilities: list[tuple[ChecksumEvmAddress, EvmToken, int]] = []
         for idx, result in enumerate(call_output):
-            user_state_data = token_contract.decode(
+            user_state_data = controller_contract.decode(
                 result=result,
                 method_name='user_state',
                 arguments=[user_address := user_address_list[idx]],
@@ -126,35 +143,17 @@ class CurveLendBalances(ProtocolWithBalance):
             borrowable_collateral_amount = user_state_data[1]
             debt_amount = user_state_data[2]
             if collateral_amount == 0 and borrowable_collateral_amount == 0 and debt_amount == 0:
-                continue  # user no longer has balances on this vault
+                continue  # user no longer has balances on this controller
 
-            # Get collateral and borrowed tokens for this vault
+            # Get collateral and borrowed tokens for this controller
             controller_address = controller_list[idx]
-            try:
-                call_output = self.evm_inquirer.multicall(calls=[
-                    (controller_address, token_contract.encode(method_name='collateral_token')),
-                    (controller_address, token_contract.encode(method_name='borrowed_token')),
-                ])
-                collateral_token = get_or_create_evm_token(
-                    userdb=self.evm_inquirer.database,
-                    evm_address=deserialize_evm_address(token_contract.decode(
-                        result=call_output[0],
-                        method_name='collateral_token',
-                    )[0]),
-                    chain_id=self.evm_inquirer.chain_id,
-                )
-                borrowed_token = get_or_create_evm_token(
-                    userdb=self.evm_inquirer.database,
-                    evm_address=deserialize_evm_address(token_contract.decode(
-                        result=call_output[1],
-                        method_name='borrowed_token',
-                    )[0]),
-                    chain_id=self.evm_inquirer.chain_id,
-                )
-            except (RemoteError, DeserializationError, NotERC20Conformant, NotERC721Conformant) as e:  # noqa: E501
-                log.error(f'Failed to load tokens for Curve lending controller {controller_address} due to {e!s}')  # noqa: E501
+            if (tokens := self.get_collateral_and_borrowed_tokens(
+                controller_address=controller_address,
+                controller_contract=controller_contract,
+            )) is None:
                 return balances
 
+            collateral_token, borrowed_token = tokens
             if collateral_amount != 0:
                 assets.append((user_address, collateral_token, collateral_amount))
                 unique_tokens.add(collateral_token)
@@ -191,3 +190,55 @@ class CurveLendBalances(ProtocolWithBalance):
                 balances[user_address].liabilities[token] += balance
 
         return balances
+
+
+class CurveLendBalances(CurveControllerCommonBalances):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            tx_decoder: 'EVMTransactionDecoder',
+    ):
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
+            evm_product=EvmProduct.LENDING,
+        )
+
+    def get_collateral_and_borrowed_tokens(
+            self,
+            controller_address: 'ChecksumEvmAddress',
+            controller_contract: EvmContract,
+    ) -> tuple['EvmToken', 'EvmToken'] | None:
+        """Retrieve the collateral and borrowed tokens for the specified controller.
+        Both tokens must be retrieved from the controller contract for lend controllers.
+        """
+        try:
+            call_output = self.evm_inquirer.multicall(calls=[
+                (controller_address, controller_contract.encode(method_name='collateral_token')),
+                (controller_address, controller_contract.encode(method_name='borrowed_token')),
+            ])
+            return (
+                get_or_create_evm_token(
+                    userdb=self.evm_inquirer.database,
+                    evm_address=deserialize_evm_address(controller_contract.decode(
+                        result=call_output[0],
+                        method_name='collateral_token',
+                    )[0]),
+                    chain_id=self.evm_inquirer.chain_id,
+                ),
+                get_or_create_evm_token(
+                    userdb=self.evm_inquirer.database,
+                    evm_address=deserialize_evm_address(controller_contract.decode(
+                        result=call_output[1],
+                        method_name='borrowed_token',
+                    )[0]),
+                    chain_id=self.evm_inquirer.chain_id,
+                ),
+            )
+        except (RemoteError, DeserializationError, NotERC20Conformant, NotERC721Conformant) as e:
+            log.error(
+                f'Failed to load tokens for Curve lending controller {controller_address} '
+                f'on {self.evm_inquirer.chain_name} due to {e!s}',
+            )
+            return None

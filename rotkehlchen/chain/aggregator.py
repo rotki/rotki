@@ -123,6 +123,7 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 from .balances import BlockchainBalances, BlockchainBalancesUpdate
+from .ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
@@ -230,6 +231,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         CurveLendBalances,
         UniswapV3Balances,
         PendleBalances,
+        CurveCrvusdBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,

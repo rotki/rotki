@@ -1207,6 +1207,8 @@ class EVMTransactionDecoder(ABC):
 
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
+                if action_item.to_product is not None:
+                    transfer.product = action_item.to_product
                 if action_item.extra_data is not None:
                     transfer.extra_data = action_item.extra_data
                 if action_item.to_address is not None:

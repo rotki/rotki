@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9570` rotki will now support Curve loans from crvUSD markets, correctly decoding associated events and detecting balances. CrvUSD peg keeper updates will also be decoded correctly.
 * :feature:`9592` Users will now be able to re-pull missed transactions.
 * :feature:`9600` rotki will now correctly decode swaps going through the rainbow router on all supported chains.
 * :feature:`-` Some more gitcoin rounds are added to rotki. Especially the new retro funding rounds.
