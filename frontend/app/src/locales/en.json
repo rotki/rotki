@@ -1679,6 +1679,7 @@
     "default": "Connect to default",
     "message": "A connection to the rotki backend was not possible, would you like to retry again?",
     "retry": "Retry",
+    "retry_with_debug": "Retry with debug",
     "title": "Connection failure"
   },
   "connection_loading": {
