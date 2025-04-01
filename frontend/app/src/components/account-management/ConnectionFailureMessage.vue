@@ -1,15 +1,29 @@
 <script setup lang="ts">
+import { LogLevel } from '@shared/log-level';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
 import { useInterop } from '@/composables/electron-interop';
+import { useBackendManagement } from '@/composables/backend';
+
+const restarting = ref(false);
 
 const { t } = useI18n();
 
 const { connect } = useMainStore();
+const { restartBackend, saveOptions } = useBackendManagement();
 const interop = useInterop();
 
 const defaultBackend = api.defaultBackend;
-const retry = () => connect(api.serverUrl);
+
+async function retry(enableDebug = false) {
+  if (enableDebug) {
+    set(restarting, true);
+    await saveOptions({ loglevel: LogLevel.DEBUG });
+    await restartBackend();
+    set(restarting, false);
+  }
+  connect(api.serverUrl);
+}
 const toDefault = () => connect();
 const terminate = () => interop.closeApp();
 </script>
@@ -38,6 +52,14 @@ const terminate = () => interop.closeApp();
         @click="terminate()"
       >
         {{ t('common.actions.terminate') }}
+      </RuiButton>
+      <RuiButton
+        class="ml-4"
+        variant="text"
+        :loading="restarting"
+        @click="retry(true)"
+      >
+        {{ t('connection_failure.retry_with_debug') }}
       </RuiButton>
       <RuiButton
         class="ml-4"
