@@ -71,6 +71,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            evm_product=EvmProduct.LENDING,
             leverage_zap=leverage_zap,
         )
         self.vaults: set[ChecksumEvmAddress] = set()
@@ -357,7 +358,8 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Deposit {event.amount} {borrowed_token.symbol} into a leveraged Curve position'  # noqa: E501
                 event.counterparty = CPT_CURVE
-                event.extra_data = {'vault_controller': controller_address}
+                event.product = self.evm_product
+                event.extra_data = {'controller_address': controller_address}
                 break
 
         return DecodingOutput(action_items=[ActionItem(
@@ -370,7 +372,8 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             to_notes=f'Deposit {collateral_amount} {collateral_token.symbol} into a leveraged Curve position',  # noqa: E501
             to_counterparty=CPT_CURVE,
-            extra_data={'vault_controller': controller_address},
+            to_product=self.evm_product,
+            extra_data={'controller_address': controller_address},
         )])
 
     def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:

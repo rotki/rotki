@@ -27,6 +27,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -53,9 +54,13 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
             evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
+            evm_product: Literal[EvmProduct.LENDING, EvmProduct.MINTING],
             leverage_zap: 'ChecksumEvmAddress | None' = None,
     ) -> None:
-        """Decoder for Curve borrow/repay events."""
+        """Decoder for Curve borrow/repay events.
+        `evm_product` is used by the balances logic to differentiate between events for
+        lending vault controllers and crvUSD minting market controllers.
+        """
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -63,6 +68,7 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
         )
         self.controllers: set[ChecksumEvmAddress] = set()  # populated via reload_data in subclasses  # noqa: E501
         self.leverage_zap = leverage_zap
+        self.evm_product = evm_product
 
     def _maybe_get_cached_address_from_contract(
             self,
@@ -195,7 +201,8 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.notes = f'Borrow {borrowed_amount} {borrowed_token.symbol} from Curve'
                 event.counterparty = CPT_CURVE
-                event.extra_data = {'vault_controller': context.tx_log.address}
+                event.product = self.evm_product
+                event.extra_data = {'controller_address': context.tx_log.address}
                 in_event = event
 
                 if out_event is not None and in_event is not None:
@@ -227,7 +234,8 @@ class CurveBorrowRepayCommonDecoder(DecoderInterface, ABC):
                 to_event_subtype=HistoryEventSubType.GENERATE_DEBT,
                 to_notes=f'Borrow {borrowed_amount} {borrowed_token.symbol} from Curve',
                 to_counterparty=CPT_CURVE,
-                extra_data={'vault_controller': context.tx_log.address},
+                to_product=self.evm_product,
+                extra_data={'controller_address': context.tx_log.address},
             ),
         ])
 

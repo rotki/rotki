@@ -319,8 +319,9 @@ def test_create_loan(
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
+            product=EvmProduct.LENDING,
             address=string_to_evm_address('0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'),
-            extra_data={'vault_controller': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
+            extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ),
     ]
 
@@ -374,8 +375,9 @@ def test_borrow_more(
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
+            product=EvmProduct.LENDING,
             address=string_to_evm_address('0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'),
-            extra_data={'vault_controller': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
+            extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ),
     ]
 
@@ -415,8 +417,9 @@ def test_create_leveraged_position_with_collateral_asset(
             location_label=user_address,
             notes=f'Deposit {deposit_amount} WBTC into a leveraged Curve position',
             counterparty=CPT_CURVE,
+            product=EvmProduct.LENDING,
             address=string_to_evm_address('0x8eeDE294459EFaFf55d580bc95C98306Ab03F0C8'),
-            extra_data={'vault_controller': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
+            extra_data={'controller_address': '0xcaD85b7fe52B1939DCEebEe9bCf0b2a5Aa0cE617'},
         ),
     ]
 
@@ -457,8 +460,9 @@ def test_create_leveraged_position_with_borrowed_asset(
             location_label=user_address,
             notes=f'Deposit {deposit_amount} crvUSD into a leveraged Curve position',
             counterparty=CPT_CURVE,
+            product=EvmProduct.LENDING,
             address=string_to_evm_address('0x61C404B60ee9c5fB09F70F9A645DD38fE5b3A956'),
-            extra_data={'vault_controller': '0xB5c6082d3307088C98dA8D79991501E113e6365d'},
+            extra_data={'controller_address': '0xB5c6082d3307088C98dA8D79991501E113e6365d'},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=37,

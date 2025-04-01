@@ -31,6 +31,7 @@ from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER
 from rotkehlchen.chain.ethereum.modules.convex.balances import CPT_CONVEX, ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_IDENTIFIER
@@ -75,6 +76,7 @@ from rotkehlchen.constants.assets import (
     A_GRT_ARB,
     A_STETH,
     A_USDC,
+    A_WBTC,
     A_WETH_ARB,
 )
 from rotkehlchen.constants.misc import ONE
@@ -84,6 +86,9 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tests.unit.decoders.test_curve_crvusd import (
+    fixture_crvusd_controller,  # noqa: F401
+)
 from rotkehlchen.tests.unit.decoders.test_curve_lend import (
     fixture_arbitrum_vault_token,  # noqa: F401
     fixture_arbitrum_vault_underlying_token,  # noqa: F401
@@ -1145,6 +1150,38 @@ def test_curve_lend_balances(
     assert user_balance.liabilities[Asset('eip155:42161/erc20:0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5')] == Balance(  # noqa: E501
         amount=FVal('30.100455885544052449'),
         usd_value=FVal('30.055997512201103883532827'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0x494FBCf6AB69609732B4c97462FAc7f7cb717015']])
+@pytest.mark.parametrize('crvusd_controller', ['0x4e59541306910aD6dC1daC0AC9dFB29bD9F15c67'], indirect=True)  # noqa: E501
+def test_curve_crvusd_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+        crvusd_controller: 'ChecksumEvmAddress',
+) -> None:
+    """Check that Curve lending collateral and debt balances are properly detected."""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x7acdf5d10091405762dc3f2658e6da0fdd9cb42a74c55b944c2e88b089eb15cc'),
+    )
+    protocol_balances_inquirer = CurveCrvusdBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[ethereum_accounts[0]]
+
+    assert user_balance.assets[A_WBTC] == Balance(
+        amount=FVal('0.04999999'),
+        usd_value=FVal('4251.14914977'),
+    )
+    assert user_balance.liabilities[Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')] == Balance(  # noqa: E501
+        amount=FVal('3591.07534296748961703'),
+        usd_value=FVal('3591.04302328940290962344673'),
     )
 
 

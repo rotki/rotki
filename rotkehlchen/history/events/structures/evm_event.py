@@ -59,6 +59,8 @@ class EvmProduct(SerializableEnumNameMixin):
     STAKING = auto()
     GAUGE = auto()
     BRIBE = auto()
+    LENDING = auto()
+    MINTING = auto()
 
 
 class EvmEvent(HistoryBaseEntry):  # hash in superclass
