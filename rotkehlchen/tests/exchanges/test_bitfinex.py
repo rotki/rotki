@@ -3,7 +3,7 @@ import warnings as test_warnings
 from collections.abc import Generator
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import MagicMock, call, patch
 
 import pytest
@@ -23,22 +23,19 @@ from rotkehlchen.exchanges.bitfinex import (
     API_RATE_LIMITS_ERROR_MESSAGE,
     Bitfinex,
 )
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_NEO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
-    AssetAmount,
     ChainID,
     EvmTokenKind,
-    Fee,
     Location,
     LocationAssetMappingUpdateEntry,
-    Price,
     Timestamp,
     TimestampMS,
 )
@@ -46,6 +43,86 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
+
+
+# Deposit WBTC
+MOVEMENT_1: Final = """
+    [
+        1,
+        "WBT",
+        "Wrapped Bitcoin",
+        null,
+        null,
+        1606899600000,
+        1606899700000,
+        null,
+        null,
+        "COMPLETED",
+        null,
+        null,
+        0.26300954,
+        -0.00135,
+        null,
+        null,
+        "DESTINATION_ADDRESS",
+        null,
+        null,
+        null,
+        "TRANSACTION_ID",
+        null
+    ]
+    """
+
+# Buy ETH with USDT
+TRADE_1: Final = """
+    [
+        1,
+        "tETH:UST",
+        1606899600000,
+        10,
+        0.26334268,
+        187.37,
+        "LIMIT",
+        null,
+        -1,
+        -0.09868591,
+        "USD"
+    ]
+    """
+
+# Sell ETH for USDT
+TRADE_2: Final = """
+    [
+        2,
+        "tETH:UST",
+        1606901400000,
+        20,
+        -0.26334268,
+        187.37,
+        "LIMIT",
+        null,
+        -1,
+        -0.09868591,
+        "ETH"
+    ]
+    """
+
+# Buy WBTC for USD
+TRADE_3: Final = """
+[
+    3,
+    "tWBTUSD",
+    1606932000000,
+    30,
+    10000.00000000,
+    0.00005000,
+    "LIMIT",
+    null,
+    -1,
+    -20.00000000,
+    "USD"
+]
+"""
 
 
 def test_name():
@@ -168,14 +245,8 @@ def test_api_key_err_auth_nonce(mock_bitfinex: 'Bitfinex') -> None:
         assert result is False
         assert msg == API_ERR_AUTH_NONCE_MESSAGE
 
-        movements, _ = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
-        assert movements == []
-        errors = mock_bitfinex.msg_aggregator.consume_errors()
-        assert len(errors) == 1
-        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
-
-        trades, _ = mock_bitfinex.query_online_trade_history(Timestamp(0), Timestamp(1))
-        assert trades == []
+        events, _ = mock_bitfinex.query_online_history_events(Timestamp(0), Timestamp(1))
+        assert events == []
         errors = mock_bitfinex.msg_aggregator.consume_errors()
         assert len(errors) == 1
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
@@ -307,11 +378,12 @@ def test_api_query_paginated_stops_requesting(mock_bitfinex: 'Bitfinex') -> None
         stack.enter_context(api_request_retry_times_patch)
         stack.enter_context(api_request_retry_after_seconds_patch)
         stack.enter_context(api_query_patch)
-        result = mock_bitfinex._api_query_paginated(
+        result, with_errors = mock_bitfinex._api_query_paginated(
             options={'limit': 2},
             case='trades',
         )
         assert result == []
+        assert with_errors is True
 
 
 def test_api_query_paginated_retries_request(mock_bitfinex: 'Bitfinex') -> None:
@@ -349,11 +421,12 @@ def test_api_query_paginated_retries_request(mock_bitfinex: 'Bitfinex') -> None:
         stack.enter_context(api_request_retry_times_patch)
         stack.enter_context(api_request_retry_after_seconds_patch)
         stack.enter_context(api_query_patch)
-        result = mock_bitfinex._api_query_paginated(
+        result, with_errors = mock_bitfinex._api_query_paginated(
             options={'limit': 2},
             case='trades',
         )
         assert result == []
+        assert with_errors is True
 
 
 def test_deserialize_trade_buy(mock_bitfinex):
@@ -371,21 +444,31 @@ def test_deserialize_trade_buy(mock_bitfinex):
         -0.09868591,
         'USD',
     ]
-    expected_trade = [Trade(
-        timestamp=Timestamp(1573485493),
+    assert mock_bitfinex._deserialize_trade(raw_result=raw_result) == [SwapEvent(
+        timestamp=TimestampMS(1573485493000),
         location=Location.BITFINEX,
-        base_asset=A_WBTC,
-        quote_asset=A_USDT,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('0.26334268')),
-        rate=Price(FVal('187.37')),
-        fee=Fee(FVal('0.09868591')),
-        fee_currency=A_USD,
-        link='399251013',
-        notes='',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('49.3425179516'),
+        unique_id='399251013',
+        location_label='bitfinex',
+    ), SwapEvent(
+        timestamp=TimestampMS(1573485493000),
+        location=Location.BITFINEX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_WBTC,
+        amount=FVal('0.26334268'),
+        unique_id='399251013',
+        location_label='bitfinex',
+    ), SwapEvent(
+        timestamp=TimestampMS(1573485493000),
+        location=Location.BITFINEX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.09868591'),
+        unique_id='399251013',
+        location_label='bitfinex',
     )]
-    trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
-    assert trade == expected_trade
 
 
 def test_deserialize_trade_sell(mock_bitfinex):
@@ -403,21 +486,31 @@ def test_deserialize_trade_sell(mock_bitfinex):
         -0.09868591,
         'USD',
     ]
-    expected_trade = [Trade(
-        timestamp=Timestamp(1573485493),
+    assert mock_bitfinex._deserialize_trade(raw_result=raw_result) == [SwapEvent(
+        timestamp=TimestampMS(1573485493000),
         location=Location.BITFINEX,
-        base_asset=A_ETH,
-        quote_asset=A_USDT,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('0.26334268')),
-        rate=Price(FVal('187.37')),
-        fee=Fee(FVal('0.09868591')),
-        fee_currency=A_USD,
-        link='399251013',
-        notes='',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('0.26334268'),
+        unique_id='399251013',
+        location_label='bitfinex',
+    ), SwapEvent(
+        timestamp=TimestampMS(1573485493000),
+        location=Location.BITFINEX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('49.3425179516'),
+        unique_id='399251013',
+        location_label='bitfinex',
+    ), SwapEvent(
+        timestamp=TimestampMS(1573485493000),
+        location=Location.BITFINEX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.09868591'),
+        unique_id='399251013',
+        location_label='bitfinex',
     )]
-    trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
-    assert trade == expected_trade
 
 
 def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
@@ -446,21 +539,31 @@ def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
         -0.09868591,
         'RLC',
     ]
-    expected_trade = [Trade(
-        timestamp=Timestamp(1573485493),
+    assert mock_bitfinex._deserialize_trade(raw_result=raw_result) == [SwapEvent(
+        timestamp=TimestampMS(1573485493000),
         location=Location.BITFINEX,
-        base_asset=rlc,
-        quote_asset=A_ETH,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('0.26334268')),
-        rate=Price(FVal('187.37')),
-        fee=Fee(FVal('0.09868591')),
-        fee_currency=rlc,
-        link='399251013',
-        notes='',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=rlc,
+        amount=FVal('0.26334268'),
+        unique_id='399251013',
+        location_label='bitfinex',
+    ), SwapEvent(
+        timestamp=TimestampMS(1573485493000),
+        location=Location.BITFINEX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('49.3425179516'),
+        unique_id='399251013',
+        location_label='bitfinex',
+    ), SwapEvent(
+        timestamp=TimestampMS(1573485493000),
+        location=Location.BITFINEX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=rlc,
+        amount=FVal('0.09868591'),
+        unique_id='399251013',
+        location_label='bitfinex',
     )]
-    trade = mock_bitfinex._deserialize_trade(raw_result=raw_result)
-    assert trade == expected_trade
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
@@ -486,54 +589,6 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
         'WBTUSD': ('WBT', 'USD'),
         'ETHEUR': ('ETH', 'EUR'),
     }
-    # Buy ETH with USDT
-    trade_1 = """
-    [
-        1,
-        "tETH:UST",
-        1606899600000,
-        10,
-        0.26334268,
-        187.37,
-        "LIMIT",
-        null,
-        -1,
-        -0.09868591,
-        "USD"
-    ]
-    """
-    # Sell ETH for USDT
-    trade_2 = """
-    [
-        2,
-        "tETH:UST",
-        1606901400000,
-        20,
-        -0.26334268,
-        187.37,
-        "LIMIT",
-        null,
-        -1,
-        -0.09868591,
-        "ETH"
-    ]
-    """
-    # Buy WBTC for USD
-    trade_3 = """
-    [
-        3,
-        "tWBTUSD",
-        1606932000000,
-        30,
-        10000.00000000,
-        0.00005000,
-        "LIMIT",
-        null,
-        -1,
-        -20.00000000,
-        "USD"
-    ]
-    """
     # Sell WBTC for USD
     trade_4 = """
     [
@@ -568,6 +623,14 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
     """
     expected_calls = [
         call(
+            endpoint='movements',
+            options={
+                'start': 0,
+                'end': 1606996800000,
+                'limit': 1000,
+            },
+        ),
+        call(
             endpoint='trades',
             options={
                 'start': 0,
@@ -598,14 +661,17 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
 
     def get_paginated_response() -> Generator[str, None, None]:
         results = [
-            f'[{trade_1},{trade_2}]',
-            f'[{trade_3},{trade_4}]',
+            f'[{TRADE_1},{TRADE_2}]',
+            f'[{TRADE_3},{trade_4}]',
             f'[{trade_5}]',
         ]
         yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.OK, next(get_response))
+        if endpoint == 'trades':
+            return MockResponse(HTTPStatus.OK, next(get_response))
+
+        return MockResponse(HTTPStatus.OK, '[]')
 
     get_response = get_paginated_response()
     api_limit_patch = patch(
@@ -620,66 +686,109 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         api_query_mock = stack.enter_context(api_query_patch)
-        trades, _ = mock_bitfinex.query_online_trade_history(
+        events, actual_end_ts = mock_bitfinex.query_online_history_events(
             start_ts=Timestamp(0),
-            end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp())),
+            end_ts=(end_ts := Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp()))),
         )
         assert api_query_mock.call_args_list == expected_calls
-        expected_trades = [
-            Trade(
-                timestamp=Timestamp(1606899600),
-                location=Location.BITFINEX,
-                base_asset=A_ETH,
-                quote_asset=A_USDT,
-                trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('0.26334268')),
-                rate=Price(FVal('187.37')),
-                fee=Fee(FVal('0.09868591')),
-                fee_currency=A_USD,
-                link='1',
-                notes='',
-            ),
-            Trade(
-                timestamp=Timestamp(1606901400),
-                location=Location.BITFINEX,
-                base_asset=A_ETH,
-                quote_asset=A_USDT,
-                trade_type=TradeType.SELL,
-                amount=AssetAmount(FVal('0.26334268')),
-                rate=Price(FVal('187.37')),
-                fee=Fee(FVal('0.09868591')),
-                fee_currency=A_ETH,
-                link='2',
-                notes='',
-            ),
-            Trade(
-                timestamp=Timestamp(1606932000),
-                location=Location.BITFINEX,
-                base_asset=A_WBTC,
-                quote_asset=A_USD,
-                trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('10000.0')),
-                rate=Price(FVal('0.00005')),
-                fee=Fee(FVal('20.0')),
-                fee_currency=A_USD,
-                link='3',
-                notes='',
-            ),
-            Trade(
-                timestamp=Timestamp(1606986000),
-                location=Location.BITFINEX,
-                base_asset=A_WBTC,
-                quote_asset=A_USD,
-                trade_type=TradeType.SELL,
-                amount=AssetAmount(FVal('10000.0')),
-                rate=Price(FVal('0.00005')),
-                fee=Fee(FVal('20.0')),
-                fee_currency=A_BTC,
-                link='4',
-                notes='',
-            ),
-        ]
-        assert trades == expected_trades
+        assert end_ts == actual_end_ts
+        assert events == [SwapEvent(
+            timestamp=TimestampMS(1606899600000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('49.3425179516'),
+            unique_id='1',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606899600000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('0.26334268'),
+            unique_id='1',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606899600000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('0.09868591'),
+            unique_id='1',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606901400000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.26334268'),
+            unique_id='2',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606901400000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('49.3425179516'),
+            unique_id='2',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606901400000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.09868591'),
+            unique_id='2',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606932000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USD,
+            amount=FVal('0.500000'),
+            unique_id='3',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606932000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_WBTC,
+            amount=FVal('10000.0'),
+            unique_id='3',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606932000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('20.0'),
+            unique_id='3',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606986000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_WBTC,
+            amount=FVal('10000.0'),
+            unique_id='4',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606986000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USD,
+            amount=FVal('0.500000'),
+            unique_id='4',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606986000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BTC,
+            amount=FVal('20.0'),
+            unique_id='4',
+            location_label='bitfinex',
+        )]
 
 
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
@@ -720,38 +829,6 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
         "UST"
     ]
     """
-    # Sell ETH for USDT
-    trade_2 = """
-    [
-        2,
-        "tETH:UST",
-        1606901400000,
-        20,
-        -0.26334268,
-        187.37,
-        "LIMIT",
-        null,
-        -1,
-        -0.09868591,
-        "ETH"
-    ]
-    """
-    # Buy WBTC for USD
-    trade_3 = """
-    [
-        3,
-        "tWBTUSD",
-        1606932000000,
-        30,
-        10000.00000000,
-        0.00005000,
-        "LIMIT",
-        null,
-        -1,
-        -20.00000000,
-        "USD"
-    ]
-    """
     # Sell WBTC for USD
     trade_4 = """
     [
@@ -771,15 +848,18 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
 
     def get_paginated_response():
         results = [
-            f'[{trade_1},{trade_2}]',
-            f'[{trade_1},{trade_2}]',  # repeated line
-            f'[{trade_2},{trade_3}]',  # contains repeated
+            f'[{trade_1},{TRADE_2}]',
+            f'[{trade_1},{TRADE_2}]',  # repeated line
+            f'[{TRADE_2},{TRADE_3}]',  # contains repeated
             f'[{trade_4}]',
         ]
         yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.OK, next(get_response))
+        if endpoint == 'trades':
+            return MockResponse(HTTPStatus.OK, next(get_response))
+
+        return MockResponse(HTTPStatus.OK, '[]')
 
     get_response = get_paginated_response()
     api_limit_patch = patch(
@@ -794,65 +874,108 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     with ExitStack() as stack:
         stack.enter_context(api_limit_patch)
         stack.enter_context(api_query_patch)
-        trades, _ = mock_bitfinex.query_online_trade_history(
+        events, actual_end_ts = mock_bitfinex.query_online_history_events(
             start_ts=Timestamp(0),
-            end_ts=Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp())),
+            end_ts=(end_ts := Timestamp(int(datetime.datetime.now(tz=datetime.UTC).timestamp()))),
         )
-        expected_trades = [
-            Trade(
-                timestamp=Timestamp(1606899600),
-                location=Location.BITFINEX,
-                base_asset=A_ETH,
-                quote_asset=A_USDT,
-                trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('0.26334268')),
-                rate=Price(FVal('187.37')),
-                fee=Fee(FVal('0.09868591')),
-                fee_currency=A_USDT,
-                link='1',
-                notes='',
-            ),
-            Trade(
-                timestamp=Timestamp(1606901400),
-                location=Location.BITFINEX,
-                base_asset=A_ETH,
-                quote_asset=A_USDT,
-                trade_type=TradeType.SELL,
-                amount=AssetAmount(FVal('0.26334268')),
-                rate=Price(FVal('187.37')),
-                fee=Fee(FVal('0.09868591')),
-                fee_currency=A_ETH,
-                link='2',
-                notes='',
-            ),
-            Trade(
-                timestamp=Timestamp(1606932000),
-                location=Location.BITFINEX,
-                base_asset=A_WBTC,
-                quote_asset=A_USD,
-                trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('10000.0')),
-                rate=Price(FVal('0.00005')),
-                fee=Fee(FVal('20.0')),
-                fee_currency=A_USD,
-                link='3',
-                notes='',
-            ),
-            Trade(
-                timestamp=Timestamp(1606986000),
-                location=Location.BITFINEX,
-                base_asset=A_WBTC,
-                quote_asset=A_USD,
-                trade_type=TradeType.SELL,
-                amount=AssetAmount(FVal('10000.0')),
-                rate=Price(FVal('0.00005')),
-                fee=Fee(FVal('20.0')),
-                fee_currency=A_WBTC,
-                link='4',
-                notes='',
-            ),
-        ]
-        assert trades == expected_trades
+        assert end_ts == actual_end_ts
+        assert events == [SwapEvent(
+            timestamp=TimestampMS(1606899600000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('49.3425179516'),
+            unique_id='1',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606899600000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('0.26334268'),
+            unique_id='1',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606899600000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USDT,
+            amount=FVal('0.09868591'),
+            unique_id='1',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606901400000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.26334268'),
+            unique_id='2',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606901400000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USDT,
+            amount=FVal('49.3425179516'),
+            unique_id='2',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606901400000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.09868591'),
+            unique_id='2',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606932000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USD,
+            amount=FVal('0.500000'),
+            unique_id='3',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606932000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_WBTC,
+            amount=FVal('10000.0'),
+            unique_id='3',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606932000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('20.0'),
+            unique_id='3',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606986000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_WBTC,
+            amount=FVal('10000.0'),
+            unique_id='4',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606986000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USD,
+            amount=FVal('0.500000'),
+            unique_id='4',
+            location_label='bitfinex',
+        ), SwapEvent(
+            timestamp=TimestampMS(1606986000000),
+            location=Location.BITFINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_WBTC,
+            amount=FVal('20.0'),
+            unique_id='4',
+            location_label='bitfinex',
+        )]
 
 
 def test_deserialize_asset_movement_deposit(mock_bitfinex: 'Bitfinex') -> None:
@@ -1140,6 +1263,15 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> 
                 'limit': 2,
             },
         ),
+        call(
+            endpoint='trades',
+            options={
+                'start': 0,
+                'end': 1606996800000,
+                'limit': 2500,
+                'sort': 1,
+            },
+        ),
     ]
 
     def get_paginated_response() -> Generator[str, None, None]:
@@ -1151,7 +1283,10 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> 
         yield from results
 
     def mock_api_query_response(endpoint: str, options: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.OK, next(get_response))
+        if endpoint == 'movements':
+            return MockResponse(HTTPStatus.OK, next(get_response))
+
+        return MockResponse(HTTPStatus.OK, '[]')
 
     get_response = get_paginated_response()
     api_limit_patch = patch(
@@ -1383,7 +1518,10 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> 
         yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.OK, next(get_response))
+        if endpoint == 'movements':
+            return MockResponse(HTTPStatus.OK, next(get_response))
+
+        return MockResponse(HTTPStatus.OK, '[]')
 
     get_response = get_paginated_response()
     api_limit_patch = patch(
@@ -1499,3 +1637,76 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> 
             ),
         ]
         assert asset_movements == expected_asset_movements
+
+
+def test_partial_query_online_history_events(mock_bitfinex: 'Bitfinex') -> None:
+    """Test that the logic for history events works as expected when there is an error
+    causing only part of the range to be queried.
+    """
+    api_limit = 2
+    mock_bitfinex.first_connection = MagicMock()  # type: ignore
+    mock_bitfinex.pair_bfx_symbols_map = {'ETHUST': ('ETH', 'UST')}
+    expected_calls = [
+        call(
+            endpoint='movements',
+            options={
+                'start': 0,
+                'end': 1743533561000,
+                'limit': 2,
+            },
+        ),
+        call(
+            endpoint='trades',
+            options={
+                'start': 0,
+                'end': 1743533561000,
+                'limit': 2,
+                'sort': 1,
+            },
+        ),
+        call(
+            endpoint='trades',
+            options={
+                'start': 1606901400000,
+                'end': 1743533561000,
+                'limit': 2,
+                'sort': 1,
+            },
+        ),
+    ]
+
+    def get_paginated_response() -> Generator[tuple[HTTPStatus, str], None, None]:
+        results = [
+            (HTTPStatus.OK, f'[{MOVEMENT_1}]'),
+            (HTTPStatus.OK, f'[{TRADE_1},{TRADE_2}]'),
+            (HTTPStatus.INTERNAL_SERVER_ERROR, 'xxxxxxx'),
+        ]
+        yield from results
+
+    def mock_api_query_response(endpoint: str, options: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
+        status, text = next(get_response)
+        return MockResponse(status, text)
+
+    get_response = get_paginated_response()
+    with ExitStack() as stack:
+        stack.enter_context(patch(
+            target='rotkehlchen.exchanges.bitfinex.API_MOVEMENTS_MAX_LIMIT',
+            new=api_limit,
+        ))
+        stack.enter_context(patch(
+            target='rotkehlchen.exchanges.bitfinex.API_TRADES_MAX_LIMIT',
+            new=api_limit,
+        ))
+        api_query_mock = stack.enter_context(patch.object(
+            target=mock_bitfinex,
+            attribute='_api_query',
+            side_effect=mock_api_query_response,
+        ))
+        events, actual_end_ts = mock_bitfinex.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=(end_ts := Timestamp(1743533561)),
+        )
+        assert api_query_mock.call_args_list == expected_calls
+        assert len(events) == 8  # withdrawal/fee from one movement, and spend/receive/fee from two trades.  # noqa: E501
+        assert actual_end_ts == events[-1].timestamp / 1000
+        assert actual_end_ts != end_ts  # There were errors and only part of the range was queried.
