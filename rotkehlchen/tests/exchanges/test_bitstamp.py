@@ -470,7 +470,7 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
 ])
 def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
     """Test an error code unrelated with the system clock not synced one
-    returns a an empty list.
+    returns an empty list.
     """
     options = {
         'since_id': USER_TRANSACTION_MIN_SINCE_ID,
