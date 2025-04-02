@@ -3796,12 +3796,6 @@
       "text_hint": "Manage colors for the app theme",
       "title": "Theme"
     },
-    "theme_switch": {
-      "auto": "Auto (Detect Device Theme)",
-      "dark": "Dark",
-      "light": "Light",
-      "tooltip": "Switch to {mode} mode"
-    },
     "unsupported_app_version": {
       "minimum_supported": "The minimum supported version is v{v}",
       "subtitle": "This version of rotki is no longer supported by the premium components.",
@@ -4316,13 +4310,12 @@
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
   },
-  "theme_manager_lock": {
-    "description": "Theme customization is only available with a premium subscription",
-    "subtitle": "Manage colors for the app theme",
-    "title": "Theme"
-  },
-  "theme_switch_lock": {
-    "tooltip": "Switching to dark mode is only available under a premium subscription"
+  "theme_manager_lock": "The theme manager is not included in the FREE version",
+  "theme_switch": {
+    "auto": "Auto (Detect Device Theme)",
+    "dark": "Dark",
+    "light": "Light",
+    "tooltip": "Switch to {mode} mode"
   },
   "timeframe_settings": {
     "default_timeframe": "Dashboard graph default timeframe",

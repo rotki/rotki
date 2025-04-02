@@ -12,11 +12,9 @@ function getFullPath(fileName: string) {
 
 <template>
   <div class="relative">
-    <GetPremiumPlaceholder
-      class="absolute z-1 pt-40 top-0 left-1/2 transform -translate-x-1/2"
-      :title="t('premium_settings.chart_limit.statistic')"
-    />
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+    <div
+      class="grid grid-cols-1 lg:grid-cols-2 gap-2 dark:invert-[0.9] dark:hue-rotate-[180deg]"
+    >
       <AppImage
         class="lg:col-span-2"
         :src="isMdAndDown ? getFullPath('net_value_graph_placeholder_small.png') : getFullPath('net_value_graph_placeholder.png')"
@@ -28,5 +26,10 @@ function getFullPath(fileName: string) {
       <AppImage :src="getFullPath('asset_distribution_by_location.png')" />
       <AppImage :src="getFullPath('asset_distribution_by_asset.png')" />
     </div>
+
+    <GetPremiumPlaceholder
+      class="absolute z-1 pt-40 top-0 left-1/2 transform -translate-x-1/2"
+      :title="t('premium_settings.chart_limit.statistic')"
+    />
   </div>
 </template>

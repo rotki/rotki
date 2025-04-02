@@ -1,7 +1,7 @@
 import type { WebVersion } from '@/types';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import { getBackendUrl } from '@/utils/account-management';
-import { assert } from '@rotki/common';
+import { assert, type Theme } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 
 interface UseInteropReturn {
@@ -38,6 +38,7 @@ interface UseInteropReturn {
    * @param file The file we want to get the path.
    */
   getPath: (file: File) => string | undefined;
+  setSelectedTheme: (selectedTheme: Theme) => Promise<void>;
 }
 
 const electronApp = !!window.interop;
@@ -157,6 +158,10 @@ const interop: UseInteropReturn = {
     return window.interop.restartBackend(options);
   },
 
+  setSelectedTheme: async (selectedTheme: Theme): Promise<void> => {
+    await window.interop?.setSelectedTheme(selectedTheme);
+  },
+
   setupListeners: (listeners: Listeners): void => {
     window.interop?.setListeners(listeners);
   },
@@ -169,7 +174,6 @@ const interop: UseInteropReturn = {
   updateTray: (update: TrayUpdate): void => {
     window.interop?.updateTray(update);
   },
-
   version: async (): Promise<SystemVersion | WebVersion> => {
     if (!window.interop) {
       return Promise.resolve({

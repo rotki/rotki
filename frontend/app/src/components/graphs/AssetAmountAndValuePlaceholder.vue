@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/graphs/GetPremiumPlaceholder.vue';
 
 const { t } = useI18n();
@@ -11,12 +12,16 @@ const { t } = useI18n();
         {{ t('premium_components.statistics.asset_amount_and_value_over_time') }}
       </div>
     </template>
-    <GetPremiumPlaceholder
-      :title="t('premium_settings.chart_limit.title')"
-      class="flex flex-col items-center justify-center text-center bg-contain bg-no-repeat bg-center aspect-[25/9]"
-      :style="{
-        backgroundImage: `url('./assets/images/placeholder/asset_amount_and_value_partial.png')`,
-      }"
-    />
+    <div class="relative">
+      <AppImage
+        class="dark:invert-[0.88] dark:hue-rotate-[180deg]"
+        src="./assets/images/placeholder/asset_amount_and_value_partial.png"
+      />
+
+      <GetPremiumPlaceholder
+        :title="t('premium_settings.chart_limit.title')"
+        class="absolute z-1 pt-20 top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center text-center"
+      />
+    </div>
   </RuiCard>
 </template>

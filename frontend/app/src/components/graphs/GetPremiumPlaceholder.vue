@@ -20,7 +20,7 @@ const { t } = useI18n();
       </div>
     </div>
     <div class="pb-6">
-      <div class="text-h6">
+      <div class="text-h6 !leading-7 mb-1">
         {{ title }}
       </div>
       <div class="text-rui-text-secondary">

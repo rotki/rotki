@@ -3,14 +3,11 @@ import About from '@/components/About.vue';
 import AppHost from '@/components/app/AppHost.vue';
 import AppMessages from '@/components/app/AppMessages.vue';
 import FrontendUpdateNotifier from '@/components/status/FrontendUpdateNotifier.vue';
-import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/composables/electron-interop';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { isPackaged } = useInterop();
-const { updateDarkMode } = useDarkMode();
-updateDarkMode(false);
 </script>
 
 <template>
@@ -38,6 +35,12 @@ updateDarkMode(false);
 
   &__scroll {
     @apply flex flex-col-reverse lg:flex-row w-full lg:h-screen min-h-screen;
+  }
+}
+
+:global(.dark) {
+  .overlay {
+    @apply bg-[#1E1E1E];
   }
 }
 </style>
