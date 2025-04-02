@@ -1,15 +1,18 @@
 import logging
-from typing import Any, Literal
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
+    asset_raw_value,
+    should_update_protocol_cache,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
     ZERO_ADDRESS,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -18,9 +21,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -36,18 +41,39 @@ from .constants import (
     PENDLE_ROUTER_ADDRESS,
     PENDLE_SWAP_ADDRESS,
     REDEEM_PT_YT_TO_TOKEN_TOPIC,
+    REDEEM_REWARDS_TOPIC,
     REDEEM_SY_TO_TOKEN_TOPIC,
+    REDEEM_TOPIC,
     REMOVE_LIQUIDITY_TOPIC,
     SWAP_SINGLE_TOPIC,
     SWAP_TOKEN_FOR_PT_TOPIC,
     SWAP_TOKEN_FOR_YT_TOPIC,
 )
+from .utils import query_pendle_markets
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class PendleCommonDecoder(DecoderInterface):
+class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.pools: set[ChecksumEvmAddress] = set()
+        self.sy_tokens: set[ChecksumEvmAddress] = set()
 
     def _decode_pendle_events(self, context: DecoderContext) -> DecodingOutput:
         """This method decodes the following pendle events:
@@ -390,11 +416,109 @@ class PendleCommonDecoder(DecoderInterface):
             output_token_log_idx=2,
         )
 
+    def _decode_claim_rewards(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != REDEEM_REWARDS_TOPIC:
+            return DEFAULT_DECODING_OUTPUT
+
+        raw_rewards_amount = int.from_bytes(context.tx_log.data[64:])
+        for event in context.decoded_events:
+            if (
+                    event.address in self.pools and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    asset_raw_value(
+                        asset=(crypto_asset := event.asset.resolve_to_crypto_asset()),
+                        amount=event.amount,
+                    ) == raw_rewards_amount
+            ):
+                event.counterparty = CPT_PENDLE
+                event.event_type = HistoryEventType.RECEIVE
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from Pendle'
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_redeem_interests(self, context: DecoderContext) -> DecodingOutput:
+        """Decode a Pendle redeem interests transaction."""
+        if context.tx_log.topics[0] != REDEEM_TOPIC:
+            return DEFAULT_DECODING_OUTPUT
+
+        amount_in = asset_normalized_value(
+            asset=(token_in := self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[3]))),  # noqa: E501
+            amount=int.from_bytes(context.tx_log.data[:32]),
+        )
+        amount_out = asset_normalized_value(
+            asset=(token_out := self.base.get_or_create_evm_token(context.tx_log.address)),
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+        )
+        sy_in_event, sy_out_event = None, None
+        for event in context.decoded_events:
+            if (
+                    event.asset == token_out and
+                    event.amount == amount_out and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE
+            ):
+                sy_in_event = event
+
+            if (
+                    event.asset == token_out and
+                    event.amount == amount_out and
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE
+            ):
+                sy_out_event = event
+
+            elif (
+                    event.asset == token_in and
+                    event.amount == amount_in and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.counterparty = CPT_PENDLE
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.notes = f'Withdraw {event.amount} {token_in.symbol} from Pendle'
+
+        if not sy_in_event or not sy_out_event:
+            log.error(f'Failed to in & out events of sy token for Pendle redeem interests transaction {context.transaction}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        # these SY receive/spend events cancel each other out, so we remove them.
+        context.decoded_events.remove(sy_in_event)
+        context.decoded_events.remove(sy_out_event)
+        return DEFAULT_DECODING_OUTPUT
+
+    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+        if should_update_protocol_cache(
+            cache_key=CacheType.PENDLE_POOLS,
+            args=(str(self.evm_inquirer.chain_id.value),),
+        ) is True or should_update_protocol_cache(
+            cache_key=CacheType.PENDLE_SY_TOKENS,
+            args=(str(self.evm_inquirer.chain_id.value),),
+        ) is True:
+            query_pendle_markets(self.evm_inquirer.chain_id)
+        elif len(self.pools) != 0 and len(self.sy_tokens) == 0:
+            return None  # we didn't update the globaldb cache, and we have the data already
+
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            self.pools = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
+                cursor=cursor,
+                key_parts=(CacheType.PENDLE_POOLS, str(self.evm_inquirer.chain_id.value)),
+            ))
+            self.sy_tokens = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
+                cursor=cursor,
+                key_parts=(CacheType.PENDLE_SY_TOKENS, str(self.evm_inquirer.chain_id.value)),
+            ))
+
+        return self.addresses_to_decoders()
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
+        return ({
             PENDLE_ROUTER_ADDRESS: (self._decode_pendle_events,),
             PENDLE_SWAP_ADDRESS: (self._decode_pendle_swap,),
-        }
+        } | dict.fromkeys(self.pools, (self._decode_claim_rewards,))
+        | dict.fromkeys(self.sy_tokens, (self._decode_redeem_interests,)))
 
     @staticmethod
     def counterparties() -> tuple['CounterpartyDetails', ...]:
