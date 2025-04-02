@@ -39,6 +39,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -1708,5 +1709,5 @@ def test_partial_query_online_history_events(mock_bitfinex: 'Bitfinex') -> None:
         )
         assert api_query_mock.call_args_list == expected_calls
         assert len(events) == 8  # withdrawal/fee from one movement, and spend/receive/fee from two trades.  # noqa: E501
-        assert actual_end_ts == events[-1].timestamp / 1000
+        assert actual_end_ts == ts_ms_to_sec(events[-1].timestamp)
         assert actual_end_ts != end_ts  # There were errors and only part of the range was queried.

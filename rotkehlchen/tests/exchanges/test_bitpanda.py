@@ -1,19 +1,19 @@
 from http import HTTPStatus
+from typing import Final
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ADA, A_BEST, A_ETH, A_EUR, A_LTC, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_AXS, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 WALLETS_RESPONSE = """{"data":[
@@ -136,14 +136,19 @@ TRADES_RESPONSE = """{"data":[
 {"type":"trade","attributes":{"status":"finished","type":"sell","cryptocoin_id":"22","fiat_id":"1","amount_fiat":"12.93","amount_cryptocoin":"5.37267451","fiat_to_eur_rate":"1.00000000","wallet_id":"foo","fiat_wallet_id":"foo","payment_option_id":"12","time":{"date_iso8601":"2021-08-20T08:26:07+02:00","unix":"1629440767"},"price":"2.4079","is_swap":false,"is_savings":false,"tags":[],"bfc_used":false,"is_card":false},"id":"tradeid2"}],
 "meta":{"total_count":2,"page":1,"page_size":100},"links":{"self":"?page=1&page_size=100"}}
 """
+EMPTY_RESPONSE: Final = '{"data":[],"meta":{"total_count":0}}'
 
 
 def test_trades(mock_bitpanda):
     """Test that trades are correctly queried"""
 
     def mock_bitpanda_query(url: str, **kwargs):  # pylint: disable=unused-argument
+        if '/wallets/transactions' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=EMPTY_RESPONSE)
         if '/wallets' in url:
             return MockResponse(status_code=HTTPStatus.OK, text=WALLETS_RESPONSE)
+        if '/fiatwallets/transactions' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=EMPTY_RESPONSE)
         if '/fiatwallets' in url:
             return MockResponse(status_code=HTTPStatus.OK, text=FIAT_WALLETS_RESPONSE)
         if '/trades' in url:
@@ -153,37 +158,61 @@ def test_trades(mock_bitpanda):
         raise AssertionError(f'Unexpected url {url} in bitpanda test')
 
     with patch.object(mock_bitpanda.session, 'get', side_effect=mock_bitpanda_query):
-        trades = mock_bitpanda.query_trade_history(start_ts=0, end_ts=ts_now(), only_cache=False)
+        events, _ = mock_bitpanda.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+        )
 
     warnings = mock_bitpanda.msg_aggregator.consume_warnings()
     errors = mock_bitpanda.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
 
-    expected_trades = [Trade(
-        timestamp=1629440767,
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1634963958000),
         location=Location.BITPANDA,
-        base_asset=A_ADA,
-        quote_asset=A_EUR,
-        trade_type=TradeType.SELL,
-        amount=FVal('5.37267451'),
-        rate=FVal('2.4079'),
-        fee=ZERO,
-        fee_currency=A_BEST,
-        link='tradeid2',
-    ), Trade(
-        timestamp=1634963958,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('1.6599986395'),
+        location_label='bitpanda',
+        unique_id='tradeid1',
+    ),
+    SwapEvent(
+        timestamp=TimestampMS(1634963958000),
         location=Location.BITPANDA,
-        base_asset=A_LTC,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_LTC,
         amount=FVal('0.00917887'),
-        rate=FVal('180.85'),
-        fee=FVal('1.71800028'),
-        fee_currency=A_BEST,
-        link='tradeid1',
+        location_label='bitpanda',
+        unique_id='tradeid1',
+    ),
+    SwapEvent(
+        timestamp=TimestampMS(1634963958000),
+        location=Location.BITPANDA,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BEST,
+        amount=FVal('1.71800028'),
+        location_label='bitpanda',
+        unique_id='tradeid1',
+    ),
+    SwapEvent(
+        timestamp=TimestampMS(1629440767000),
+        location=Location.BITPANDA,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ADA,
+        amount=FVal('5.37267451'),
+        location_label='bitpanda',
+        unique_id='tradeid2',
+    ),
+    SwapEvent(
+        timestamp=TimestampMS(1629440767000),
+        location=Location.BITPANDA,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_EUR,
+        amount=FVal('12.936862952629'),
+        location_label='bitpanda',
+        unique_id='tradeid2',
     )]
-    assert expected_trades == trades
 
 
 FIATWALLETS_TX_RESPONSE = """{"data":[
@@ -207,6 +236,8 @@ def test_asset_movements(database, mock_bitpanda):
             return MockResponse(status_code=HTTPStatus.OK, text=FIATWALLETS_TX_RESPONSE)
         if '/fiatwallets' in url:
             return MockResponse(status_code=HTTPStatus.OK, text=FIAT_WALLETS_RESPONSE)
+        if '/trades' in url:
+            return MockResponse(status_code=HTTPStatus.OK, text=EMPTY_RESPONSE)
 
         # else
         raise AssertionError(f'Unexpected url {url} in bitpanda test')
