@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
@@ -203,7 +204,9 @@ def create_swap_events(
         fee_identifier: int | None = None,
         event_identifier: str | None = None,
 ) -> list[SwapEvent]:
-    """Overload for creating swap events with a fee."""
+    """Overload for creating swap events with a fee.
+    The fee will still be omitted if the fee_amount is zero.
+    """
 
 
 def create_swap_events(
@@ -251,7 +254,7 @@ def create_swap_events(
         identifier=receive_identifier,
         event_identifier=event_identifier,
     )]
-    if fee_asset is not None:
+    if fee_asset is not None and fee_amount != ZERO:
         events.append(SwapEvent(
             timestamp=timestamp,
             location=location,

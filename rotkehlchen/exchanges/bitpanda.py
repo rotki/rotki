@@ -18,7 +18,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeQueryBalances,
     ExchangeWithoutApiSecret,
@@ -28,6 +28,11 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -36,14 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_int_from_str,
 )
-from rotkehlchen.types import (
-    ApiKey,
-    ExchangeAuthCredentials,
-    Fee,
-    Location,
-    Timestamp,
-    TradeType,
-)
+from rotkehlchen.types import ApiKey, ExchangeAuthCredentials, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -155,7 +153,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> list[AssetMovement] | None:
+    ) -> list[AssetMovement]:
         """Deserializes a bitpanda fiatwallets/transactions or wallets/transactions
         entry to a deposit/withdrawal
 
@@ -168,7 +166,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 transaction_type not in {'fiat_wallet_transaction', 'wallet_transaction'} or
                 entry['attributes']['status'] != 'finished'
             ):
-                return None
+                return []
             time = Timestamp(deserialize_int_from_str(
                 symbol=entry['attributes']['time']['unix'],
                 location='bitpanda wallet transaction',
@@ -177,12 +175,12 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 # should we also stop querying from calling method?
                 # Probably yes but docs don't mention anything about results
                 # being ordered by time so let's be conservative
-                return None
+                return []
 
             try:
                 event_type = deserialize_asset_movement_event_type(entry['attributes']['type'])
             except DeserializationError:
-                return None  # not a deposit/withdrawal
+                return []  # not a deposit/withdrawal
 
             if transaction_type == 'fiat_wallet_transaction':
                 asset_id = entry['attributes']['fiat_id']
@@ -195,7 +193,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'While deserializing Bitpanda fiat transaction, could not find '
                     f'bitpanda asset with id {asset_id} in the mapping',
                 )
-                return None
+                return []
             amount = deserialize_asset_amount(entry['attributes']['amount'])
             fee = deserialize_fee(entry['attributes']['fee'])
             tx_id = entry['id']
@@ -213,7 +211,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 error=msg,
                 entry=entry,
             )
-            return None
+            return []
 
         return create_asset_movement_with_fee(
             location=self.location,
@@ -236,15 +234,15 @@ class Bitpanda(ExchangeWithoutApiSecret):
             entry: dict[str, Any],
             from_ts: Timestamp,
             to_ts: Timestamp,
-    ) -> Trade | None:
-        """Deserializes a bitpanda trades result entry to a Trade
+    ) -> list[SwapEvent]:
+        """Deserializes a bitpanda trades result entry to a list of SwapEvents.
 
-        Returns None and logs error is there is a problem or simply None if
-        it's not a type of trade we are interested in
+        Returns an empty list and logs an error if there is a problem or simply returns an
+        empty list if it's not a type of trade we are interested in.
         """
         try:
             if entry['type'] != 'trade' or entry['attributes']['status'] != 'finished':
-                return None
+                return []
             time = Timestamp(deserialize_int_from_str(
                 symbol=entry['attributes']['time']['unix'],
                 location='bitpanda trade',
@@ -253,7 +251,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 # should we also stop querying from calling method?
                 # Probably yes but docs don't mention anything about results
                 # being ordered by time so let's be conservative
-                return None
+                return []
 
             cryptocoin_id = entry['attributes']['cryptocoin_id']
             crypto_asset = self.cryptocoin_map.get(cryptocoin_id)
@@ -262,7 +260,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'While deserializing a trade, could not find bitpanda cryptocoin '
                     f'with id {cryptocoin_id} in the mapping. Skipping trade.',
                 )
-                return None
+                return []
 
             fiat_id = entry['attributes']['fiat_id']
             fiat_asset = self.fiat_map.get(fiat_id)
@@ -271,27 +269,33 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'While deserializing a trade, could not find bitpanda fiat '
                     f'with id {fiat_id} in the mapping. Skipping trade.',
                 )
-                return None
+                return []
 
-            trade_type = TradeType.deserialize(entry['attributes']['type'])
-            if trade_type in (TradeType.BUY, TradeType.SELL):
-                # you buy crypto with fiat and sell it for fiat
-                base_asset = crypto_asset
-                quote_asset = fiat_asset
-                amount = deserialize_asset_amount(entry['attributes']['amount_cryptocoin'])
-                price = deserialize_price(entry['attributes']['price'])
-            else:
-                self.msg_aggregator.add_error(f'Found bitpanda trade with unknown trade type {trade_type}')  # noqa: E501
-                return None
-
-            trade_id = entry['id']
-            fee = Fee(ZERO)
-            fee_asset = A_BEST
+            fee = ZERO
             if entry['attributes']['bfc_used'] is True:
                 fee = deserialize_fee(
                     entry['attributes']['best_fee_collection']['attributes']['wallet_transaction']['attributes']['fee'],
                 )
 
+            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+                raw_trade_type=entry['attributes']['type'],
+                base_asset=crypto_asset,
+                quote_asset=fiat_asset,
+                amount=deserialize_asset_amount(entry['attributes']['amount_cryptocoin']),
+                rate=deserialize_price(entry['attributes']['price']),
+            )
+            return create_swap_events(
+                timestamp=ts_sec_to_ms(time),
+                location=self.location,
+                spend_asset=spend_asset,
+                spend_amount=spend_amount,
+                receive_asset=receive_asset,
+                receive_amount=receive_amount,
+                fee_asset=A_BEST,
+                fee_amount=fee,
+                location_label=self.name,
+                unique_id=entry['id'],
+            )
         except (DeserializationError, KeyError) as e:
             msg = str(e)
             if isinstance(e, KeyError):
@@ -303,20 +307,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 error=msg,
                 entry=entry,
             )
-            return None
-
-        return Trade(
-            timestamp=time,
-            location=Location.BITPANDA,
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            trade_type=trade_type,
-            amount=amount,
-            rate=price,
-            fee=fee,
-            fee_currency=fee_asset,
-            link=trade_id,
-        )
+            return []
 
     @overload
     def _api_query(
@@ -407,33 +398,13 @@ class Bitpanda(ExchangeWithoutApiSecret):
         log.debug(f'Got Bitpanda response: {decoded_json}')
         return decoded_json['data'], decoded_json.get('meta'), decoded_json.get('links')
 
-    @overload
-    def _query_endpoint_until_end(
-            self,
-            endpoint: Literal['trades'],
-            from_ts: Timestamp | None,
-            to_ts: Timestamp | None,
-            options: dict[str, Any] | None = None,
-    ) -> list[Trade]:
-        ...
-
-    @overload
-    def _query_endpoint_until_end(
-            self,
-            endpoint: Literal['fiatwallets/transactions', 'wallets/transactions'],
-            from_ts: Timestamp | None,
-            to_ts: Timestamp | None,
-            options: dict[str, Any] | None = None,
-    ) -> list[AssetMovement]:
-        ...
-
     def _query_endpoint_until_end(
             self,
             endpoint: Literal['trades', 'fiatwallets/transactions', 'wallets/transactions'],
             from_ts: Timestamp | None,
             to_ts: Timestamp | None,
             options: dict[str, Any] | None = None,
-    ) -> list[Trade] | list[AssetMovement]:
+    ) -> list['HistoryBaseEntry']:
         """Query a paginated endpoint until all pages are read
 
         May raise RemoteError
@@ -443,7 +414,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
         given_options = options.copy() if options else {}
         page = 1
         count_so_far = 0
-        result: list[AssetMovement | Trade] = []
+        result: list[HistoryBaseEntry] = []
         deserialize_fn = self._deserialize_trade if endpoint == 'trades' else self._deserialize_wallettx  # noqa: E501
 
         while True:
@@ -453,16 +424,8 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 endpoint=endpoint,
                 options=given_options,
             )
-
             for entry in data:
-                decoded_entry = deserialize_fn(entry, from_timestamp, to_timestamp)
-                if decoded_entry is not None:
-                    # TODO: use only extend here after trades are also converted to history events
-                    # and have their fee in a separate event.
-                    if isinstance(decoded_entry, list):
-                        result.extend(decoded_entry)  # AssetMovements - fee in separate event
-                    else:
-                        result.append(decoded_entry)  # Trades - no separate event for fee
+                result.extend(deserialize_fn(entry, from_timestamp, to_timestamp))
 
             count_so_far += len(data)
             if meta is None or meta.get('total_count') is None:
@@ -475,7 +438,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
             page += 1
 
-        return result  # type: ignore
+        return result
 
     # ---- General exchanges interface ----
     @protect_with_lock()
@@ -539,19 +502,6 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
         return dict(assets_balance), ''
 
-    def query_online_trade_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        self.first_connection()
-        trades = self._query_endpoint_until_end(
-            endpoint='trades',
-            from_ts=start_ts,
-            to_ts=end_ts,
-        )
-        return trades, (start_ts, end_ts)
-
     def query_online_history_events(
             self,
             start_ts: Timestamp,
@@ -560,18 +510,22 @@ class Bitpanda(ExchangeWithoutApiSecret):
         self.first_connection()
         # Should probably also query wallets/transactions for crypto deposits/withdrawals
         # but it does not seem as if they contain them
-        movements = self._query_endpoint_until_end(
+        events = self._query_endpoint_until_end(
             endpoint='fiatwallets/transactions',
             from_ts=start_ts,
             to_ts=end_ts,
         )
-        crypto_movements = self._query_endpoint_until_end(
+        events.extend(self._query_endpoint_until_end(
             endpoint='wallets/transactions',
             from_ts=start_ts,
             to_ts=end_ts,
-        )
-        movements.extend(crypto_movements)
-        return movements, end_ts
+        ))
+        events.extend(self._query_endpoint_until_end(
+            endpoint='trades',
+            from_ts=start_ts,
+            to_ts=end_ts,
+        ))
+        return events, end_ts
 
     def query_online_margin_history(
             self,
