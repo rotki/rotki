@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { assert } from '../assertions';
 import { TimeUnit } from './frontend';
 
 export enum TimeFramePeriod {
@@ -35,9 +36,7 @@ export interface Timeframe {
   readonly timestampRange: number;
 }
 
-export type Timeframes = {
-  readonly [timeframe in TimeFramePeriod]: Timeframe;
-};
+export type Timeframes = Record<TimeFramePeriod, Timeframe>;
 
 type TimeframeDefaults = Pick<Timeframe, 'xAxisLabelDisplayFormat' | 'xAxisTimeUnit'>;
 
@@ -108,16 +107,52 @@ function createTimeframe(
 
 type StartingDateCalculator = (unit: TimeUnit, amount: number) => number;
 
-export const timeframes: (startingDate: StartingDateCalculator) => Timeframes = startingDate => ({
-  [TimeFramePeriod.ALL]: createTimeframe(startingDate, TimeFramePeriod.ALL, TimeUnit.MONTH),
-  [TimeFramePeriod.MONTH]: createTimeframe(startingDate, TimeFramePeriod.MONTH, TimeUnit.WEEK),
-  [TimeFramePeriod.SIX_MONTHS]: createTimeframe(startingDate, TimeFramePeriod.SIX_MONTHS, TimeUnit.MONTH, 6),
-  [TimeFramePeriod.THREE_MONTHS]: createTimeframe(startingDate, TimeFramePeriod.THREE_MONTHS, TimeUnit.WEEK, 3),
-  [TimeFramePeriod.TWO_WEEKS]: createTimeframe(startingDate, TimeFramePeriod.TWO_WEEKS, TimeUnit.DAY, 2),
-  [TimeFramePeriod.TWO_YEARS]: createTimeframe(startingDate, TimeFramePeriod.TWO_YEARS, TimeUnit.MONTH, 2),
-  [TimeFramePeriod.WEEK]: createTimeframe(startingDate, TimeFramePeriod.WEEK, TimeUnit.DAY),
-  [TimeFramePeriod.YEAR]: createTimeframe(startingDate, TimeFramePeriod.YEAR, TimeUnit.MONTH),
-});
+const timeframePeriods = [
+  TimeFramePeriod.ALL,
+  TimeFramePeriod.TWO_YEARS,
+  TimeFramePeriod.YEAR,
+  TimeFramePeriod.SIX_MONTHS,
+  TimeFramePeriod.THREE_MONTHS,
+  TimeFramePeriod.MONTH,
+  TimeFramePeriod.TWO_WEEKS,
+  TimeFramePeriod.WEEK,
+] as const;
+
+const timeframeMap: Record<TimeFramePeriod, [TimeUnit, number?]> = {
+  [TimeFramePeriod.ALL]: [TimeUnit.MONTH],
+  [TimeFramePeriod.MONTH]: [TimeUnit.WEEK],
+  [TimeFramePeriod.SIX_MONTHS]: [TimeUnit.MONTH, 6],
+  [TimeFramePeriod.THREE_MONTHS]: [TimeUnit.WEEK, 3],
+  [TimeFramePeriod.TWO_WEEKS]: [TimeUnit.DAY, 2],
+  [TimeFramePeriod.TWO_YEARS]: [TimeUnit.MONTH, 2],
+  [TimeFramePeriod.WEEK]: [TimeUnit.DAY],
+  [TimeFramePeriod.YEAR]: [TimeUnit.MONTH],
+};
+
+function isComplete(timeframes: Partial<Record<TimeFramePeriod, Timeframe>>): timeframes is Timeframes {
+  const hasAllRequiredKeys = timeframePeriods.every(period => period in timeframes);
+  const hasNoExtraKeys = Object.keys(timeframes).every(key =>
+    timeframePeriods.includes(key as TimeFramePeriod),
+  );
+
+  return hasAllRequiredKeys && hasNoExtraKeys;
+}
+
+export const timeframes: (startingDate: StartingDateCalculator) => Timeframes = (startingDate) => {
+  const timeframes: Partial<Record<TimeFramePeriod, Timeframe>> = {};
+
+  timeframePeriods.forEach((period) => {
+    const periodData = timeframeMap[period];
+    if (!periodData) {
+      return;
+    }
+    timeframes[period] = createTimeframe(startingDate, period, periodData[0], periodData[1]);
+  });
+
+  assert(isComplete(timeframes));
+
+  return timeframes;
+};
 
 export const TIMEFRAME_CUSTOM = 'CUSTOM';
 
