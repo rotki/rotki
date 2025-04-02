@@ -57,9 +57,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     identifier: 449,
     location: 'kraken',
     locationLabel: 'Kraken 1',
-    notes: 'History event notes',
     sequenceIndex: 20,
     timestamp: 1696741486185,
+    userNotes: 'History event notes',
   };
 
   beforeAll(() => {
@@ -154,7 +154,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     expect(locationLabelInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
     expect(sequenceIndexInput.element.value.replace(',', '')).toBe(event.sequenceIndex.toString());
-    expect(noteTextArea.element.value).toBe(event.notes);
+    expect(noteTextArea.element.value).toBe(event.userNotes);
   });
 
   it('should show all eventTypes options correctly', async () => {
@@ -213,7 +213,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     await wrapper.find('[data-cy=asset] input').setValue(asset.symbol);
     await wrapper.find('[data-cy=amount] input').setValue(event.amount.toString());
     await wrapper.find('[data-cy=sequenceIndex] input').setValue(event.sequenceIndex.toString());
-    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(event.notes);
+    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(event.userNotes);
 
     const saveMethod = wrapper.vm.save;
 
@@ -233,9 +233,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       eventType: event.eventType,
       location: event.location,
       locationLabel: event.locationLabel,
-      notes: event.notes,
       sequenceIndex: event.sequenceIndex.toString(),
       timestamp: event.timestamp,
+      userNotes: event.userNotes,
     });
   });
 
@@ -269,9 +269,9 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
       identifier: event.identifier,
       location: event.location,
       locationLabel: event.locationLabel,
-      notes: event.notes,
       sequenceIndex: event.sequenceIndex.toString(),
       timestamp: event.timestamp,
+      userNotes: event.userNotes,
     });
   });
 

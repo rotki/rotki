@@ -132,7 +132,7 @@ const rules = {
 
 const numericAmount = bigNumberifyFromRef(amount);
 
-const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
+const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { getAddresses } = useAccountAddresses();
 const { txChainsToLocation } = useSupportedChains();
 
@@ -198,7 +198,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(amount, entry.amount.toFixed());
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
-  set(notes, entry.notes ?? '');
+  set(notes, entry.userNotes ?? '');
   set(counterparty, entry.counterparty ?? '');
   set(product, entry.product ?? '');
   set(extraData, entry.extraData || {});
@@ -228,7 +228,7 @@ async function save(): Promise<boolean> {
 
   const eventData = get(data);
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
-  const usedNotes = getPayloadNotes(get(notes), editable?.notes);
+  const userNotes = get(notes).trim();
 
   const payload: NewEvmHistoryEventPayload = {
     address: get(address) || null,
@@ -242,11 +242,11 @@ async function save(): Promise<boolean> {
     extraData: get(extraData) || null,
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: usedNotes ? usedNotes.trim() : undefined,
     product: get(product) || null,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
     txHash: get(txHash),
+    userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
 
   return await saveHistoryEventHandler(

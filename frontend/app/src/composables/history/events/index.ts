@@ -59,8 +59,17 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       const mappedData = data.map((event: HistoryEventEntryWithMeta) => {
         const { entry, ...entriesMeta } = event;
 
-        if (!get(payload).groupByEventIds && entry.notes) {
-          const addresses = getEthAddressesFromText(entry.notes);
+        if (!get(payload).groupByEventIds) {
+          const addresses: string[] = [];
+
+          if (entry.userNotes) {
+            addresses.push(...getEthAddressesFromText(entry.userNotes));
+          }
+
+          if (entry.autoNotes) {
+            addresses.push(...getEthAddressesFromText(entry.autoNotes));
+          }
+
           addressesNamesPayload.push(
             ...addresses.map(address => ({
               address,

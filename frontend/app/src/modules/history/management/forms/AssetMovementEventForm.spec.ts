@@ -59,9 +59,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     identifier: 449,
     location: 'kraken',
     locationLabel: 'Kraken 1',
-    notes: 'History event notes',
     sequenceIndex: 0,
     timestamp: 1696741486185,
+    userNotes: 'History event notes',
   };
 
   const fee: AssetMovementEvent = {
@@ -77,9 +77,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     identifier: 450,
     location: 'kraken',
     locationLabel: 'Kraken 1',
-    notes: 'History event notes',
     sequenceIndex: 1,
     timestamp: 1696741486185,
+    userNotes: 'History event notes',
   };
 
   beforeAll(() => {
@@ -178,9 +178,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
       feeAsset,
       location: 'kraken',
       locationLabel: 'Kraken 1',
-      notes: 'Test deposit transaction',
       timestamp: nowInMs,
       uniqueId: '1234567890',
+      userNotes: 'Test deposit transaction',
     });
   });
 
@@ -209,7 +209,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
     expect(locationLabelInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
-    expect(notesTextArea.element.value).toBe(event.notes);
+    expect(notesTextArea.element.value).toBe(event.userNotes);
   });
 
   it('should call editHistoryEvent when editing an event', async () => {
@@ -239,9 +239,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
         identifier: event.identifier,
         location: event.location,
         locationLabel: event.locationLabel,
-        notes: 'Test deposit transaction',
         timestamp: event.timestamp,
         uniqueId: 'TEST123',
+        userNotes: 'Test deposit transaction',
       }),
     );
   });
@@ -274,9 +274,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
       identifier: event.identifier,
       location: event.location,
       locationLabel: event.locationLabel,
-      notes: 'History event notes',
       timestamp: event.timestamp,
       uniqueId: 'TEST123',
+      userNotes: 'History event notes',
     });
   });
 
@@ -306,9 +306,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
         identifier: event.identifier,
         location: event.location,
         locationLabel: event.locationLabel,
-        notes: 'History event notes',
         timestamp: event.timestamp,
         uniqueId: 'TEST123',
+        userNotes: 'History event notes',
       }),
     );
   });

@@ -51,10 +51,10 @@ describe('forms/EthBlockEventForm.vue', () => {
     identifier: 11336,
     location: 'ethereum',
     locationLabel: '0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa',
-    notes:
-      'Validator 12 produced block 444 with 100 ETH going to 0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa as the mev reward',
     sequenceIndex: 0,
     timestamp: 1697442021000,
+    userNotes:
+      'Validator 12 produced block 444 with 100 ETH going to 0x106B62Fdd27B748CF2Da3BacAB91a2CaBaeE6dCa as the mev reward',
     validatorIndex: 122,
   };
 

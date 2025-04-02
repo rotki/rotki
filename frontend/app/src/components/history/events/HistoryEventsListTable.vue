@@ -110,12 +110,11 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     data.counterparty = event.counterparty;
 
   // todo: validate optional or nullable state of schema
-  const { asset, notes } = pick(event, ['notes', 'asset']);
-  const description = 'description' in event ? event.description : undefined;
+  const { asset, autoNotes, userNotes } = pick(event, ['userNotes', 'autoNotes', 'asset']);
 
   return {
     asset,
-    notes: getNotes(description, notes),
+    notes: getNotes(autoNotes, userNotes),
     ...data,
   };
 }

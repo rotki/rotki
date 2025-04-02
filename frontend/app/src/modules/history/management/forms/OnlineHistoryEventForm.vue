@@ -77,7 +77,7 @@ const rules = {
 
 const numericAmount = bigNumberifyFromRef(amount);
 
-const { getPayloadNotes, saveHistoryEventHandler } = useHistoryEventsForm();
+const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
 const states = {
@@ -136,7 +136,7 @@ function applyEditableData(entry: OnlineHistoryEvent) {
   set(asset, entry.asset);
   set(amount, entry.amount.toFixed());
   set(locationLabel, entry.locationLabel ?? '');
-  set(notes, entry.notes ?? '');
+  set(notes, entry.userNotes ?? '');
 }
 
 function applyGroupHeaderData(entry: OnlineHistoryEvent) {
@@ -153,10 +153,9 @@ async function save(): Promise<boolean> {
   }
 
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
-
   const eventData = get(data);
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
-  const usedNotes = getPayloadNotes(get(notes), editable?.notes);
+  const userNotes = get(notes).trim();
 
   const payload: NewOnlineHistoryEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -167,9 +166,9 @@ async function save(): Promise<boolean> {
     eventType: get(eventType),
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: usedNotes ? usedNotes.trim() : undefined,
     sequenceIndex: get(sequenceIndex) || '0',
     timestamp,
+    userNotes: userNotes.length > 0 ? userNotes : undefined,
   };
 
   return await saveHistoryEventHandler(
