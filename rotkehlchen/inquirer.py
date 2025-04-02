@@ -34,6 +34,8 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     read_gearbox_data_from_cache,
 )
 from rotkehlchen.chain.evm.decoding.morpho.utils import get_morpho_vault_token_price
+from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
+from rotkehlchen.chain.evm.decoding.pendle.utils import query_pendle_price
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
@@ -245,6 +247,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
             price_func=Inquirer.find_usd_price,
         )
+    elif token.protocol == CPT_PENDLE:
+        price = query_pendle_price(token)
 
     if token == A_FARM_DAI:
         price, oracle = Inquirer.find_usd_price_and_oracle(A_DAI)

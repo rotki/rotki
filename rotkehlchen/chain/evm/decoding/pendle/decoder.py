@@ -435,6 +435,9 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from Pendle'
+                break
+        else:
+            log.error(f'Could not find the pendle claim transfer for transaction {context.transaction}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -453,21 +456,18 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )
         sy_in_event, sy_out_event = None, None
         for event in context.decoded_events:
-            if (
-                    event.asset == token_out and
-                    event.amount == amount_out and
-                    event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.NONE
-            ):
-                sy_in_event = event
+            if event.asset == token_out and event.amount == amount_out:
+                if (
+                        event.event_type == HistoryEventType.RECEIVE and
+                        event.event_subtype == HistoryEventSubType.NONE
+                ):
+                    sy_in_event = event
 
-            if (
-                    event.asset == token_out and
-                    event.amount == amount_out and
-                    event.event_type == HistoryEventType.SPEND and
-                    event.event_subtype == HistoryEventSubType.NONE
-            ):
-                sy_out_event = event
+                elif (
+                        event.event_type == HistoryEventType.SPEND and
+                        event.event_subtype == HistoryEventSubType.NONE
+                ):
+                    sy_out_event = event
 
             elif (
                     event.asset == token_in and
@@ -492,11 +492,11 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         if should_update_protocol_cache(
             cache_key=CacheType.PENDLE_POOLS,
-            args=(str(self.evm_inquirer.chain_id.value),),
-        ) is True or should_update_protocol_cache(
+            args=(str(self.evm_inquirer.chain_id.serialize()),),
+        ) or should_update_protocol_cache(
             cache_key=CacheType.PENDLE_SY_TOKENS,
-            args=(str(self.evm_inquirer.chain_id.value),),
-        ) is True:
+            args=(str(self.evm_inquirer.chain_id.serialize()),),
+        ):
             query_pendle_markets(self.evm_inquirer.chain_id)
         elif len(self.pools) != 0 and len(self.sy_tokens) == 0:
             return None  # we didn't update the globaldb cache, and we have the data already
@@ -504,11 +504,11 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         with GlobalDBHandler().conn.read_ctx() as cursor:
             self.pools = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
                 cursor=cursor,
-                key_parts=(CacheType.PENDLE_POOLS, str(self.evm_inquirer.chain_id.value)),
+                key_parts=(CacheType.PENDLE_POOLS, str(self.evm_inquirer.chain_id.serialize())),
             ))
             self.sy_tokens = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
                 cursor=cursor,
-                key_parts=(CacheType.PENDLE_SY_TOKENS, str(self.evm_inquirer.chain_id.value)),
+                key_parts=(CacheType.PENDLE_SY_TOKENS, str(self.evm_inquirer.chain_id.serialize())),  # noqa: E501
             ))
 
         return self.addresses_to_decoders()

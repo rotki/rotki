@@ -90,6 +90,7 @@ GEARBOX_PROTOCOL = 'gearbox'
 HOP_PROTOCOL_LP = 'hop_lp'
 MORPHO_VAULT_PROTOCOL: Final = 'morpho_vaults'
 CURVE_LENDING_VAULTS_PROTOCOL = 'curve_lending_vaults'
+PENDLE_PROTOCOL = 'pendle'
 
 
 # The protocols for which we know how to calculate their prices
@@ -101,6 +102,7 @@ ProtocolsWithPriceLogic = (
     HOP_PROTOCOL_LP,
     UNISWAPV3_PROTOCOL,
     AERODROME_POOL_PROTOCOL,
+    PENDLE_PROTOCOL,
 )
 
 LP_TOKEN_AS_POOL_PROTOCOLS = (  # In these protocols the LP token of a pool and the pool itself are the same contract  # noqa: E501
@@ -1190,6 +1192,7 @@ class CacheType(Enum):
     STAKEDAO_GAUGES = auto()
     PENDLE_POOLS = auto()
     PENDLE_SY_TOKENS = auto()
+    PENDLE_YIELD_TOKENS = auto()  # store the count of all SYs, PTs, YTs & LP tokens per chain
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1245,6 +1248,7 @@ UniqueCacheType = Literal[
     CacheType.CURVE_LENDING_VAULT_GAUGE,
     CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
     CacheType.CURVE_CRVUSD_AMM,
+    CacheType.PENDLE_YIELD_TOKENS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
