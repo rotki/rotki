@@ -23,6 +23,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     _query_curve_data_from_api,
     query_curve_data,
 )
+from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
@@ -1023,6 +1024,65 @@ def test_find_savings_crvusd_price(inquirer_defi: 'Inquirer') -> None:
     """Test that we get the correct price for scrvUSD token"""
     price = inquirer_defi.find_usd_price(asset=Asset('eip155:1/erc20:0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'))  # noqa: E501
     assert price == FVal('1.041968030723485250')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    """Test that we get the correct prices for Pendle yield tokens"""
+    sy_lbtc = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xaee0844A089d4De3677CDB1d0AE4595a89963E78'),
+        chain_id=ChainID.BASE,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='SY-LBTC',
+        name='SY-LBTC',
+        decimals=8,
+        protocol=CPT_PENDLE,
+    )
+    pt_frax_usdc = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x5fe30Ac5cb1aBB0e44CdffB2916c254AEb368650'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='PT-FRAX-USDC',
+        name='PT FRAX-USDC',
+        decimals=18,
+        protocol=CPT_PENDLE,
+    )
+    yt_wsteth = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x1DFe41cc7F7860BA7f1076ca6d0fedD707c87A00'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='YT-wstETH',
+        name='YT-wstETH',
+        decimals=18,
+        protocol=CPT_PENDLE,
+    )
+    wbeth_lpt = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x080f52A881ba96EEE2268682733C857c560e5dd4'),
+        chain_id=ChainID.BINANCE_SC,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='PENDLE-LPT',
+        name='LP wBETH',
+        decimals=18,
+        protocol=CPT_PENDLE,
+    )
+
+    price = inquirer_defi.find_usd_price(asset=wbeth_lpt)
+    assert price == FVal('3924.2561187168935')
+
+    price = inquirer_defi.find_usd_price(asset=yt_wsteth)
+    assert price == ZERO_PRICE
+
+    price = inquirer_defi.find_usd_price(asset=pt_frax_usdc)
+    assert price == FVal('0.9995812288525858')
+
+    price = inquirer_defi.find_usd_price(asset=sy_lbtc)
+    assert price == FVal('86045.28028742706')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

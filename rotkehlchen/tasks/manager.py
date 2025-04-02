@@ -74,6 +74,8 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+from ..chain.evm.decoding.pendle.constants import PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM
+from ..chain.evm.decoding.pendle.utils import query_pendle_yield_tokens
 from .events import process_events
 
 if TYPE_CHECKING:
@@ -150,6 +152,7 @@ class TaskManager:
         self.last_balance_query_ts = Timestamp(0)
         self.query_yearn_vaults = query_yearn_vaults
         self.query_morpho_vaults = query_morpho_vaults
+        self.query_pendle_yield_tokens = query_pendle_yield_tokens
         self.query_morpho_reward_distributors = query_morpho_reward_distributors
         self.query_aura_pools = query_aura_pools
         self.last_premium_status_check = ts_now()
@@ -189,6 +192,7 @@ class TaskManager:
             self._maybe_delete_past_calendar_events,
             self._maybe_query_graph_delegated_tokens,
             self._maybe_query_gnosispay,
+            self._maybe_update_pendle_cache,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -664,9 +668,10 @@ class TaskManager:
 
     def _maybe_update_morpho_cache(self) -> Optional[list[gevent.Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
+            account_data = self.database.get_blockchain_accounts(cursor)
             if (
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0 and  # noqa: E501
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.BASE)) == 0  # noqa: E501
+                len(account_data.get(SupportedBlockchain.ETHEREUM)) == 0 and
+                len(account_data.get(SupportedBlockchain.BASE)) == 0
             ):
                 return None
 
@@ -696,15 +701,40 @@ class TaskManager:
 
         return greenlets if len(greenlets) > 0 else None
 
+    def _maybe_update_pendle_cache(self) -> Optional[list[gevent.Greenlet]]:
+        with self.database.conn.read_ctx() as cursor:
+            account_data = self.database.get_blockchain_accounts(cursor)
+            if (
+                len(account_data.get(SupportedBlockchain.ARBITRUM_ONE)) == 0 and
+                len(account_data.get(SupportedBlockchain.ETHEREUM)) == 0 and
+                len(account_data.get(SupportedBlockchain.BASE)) == 0 and
+                len(account_data.get(SupportedBlockchain.BINANCE_SC)) == 0 and
+                len(account_data.get(SupportedBlockchain.OPTIMISM)) == 0
+            ):
+                return None
+
+        return [
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name=f'Update Pendle yield tokens for {chain.to_name()}',
+                exception_is_error=False,
+                method=self.query_pendle_yield_tokens,
+                database=self.chains_aggregator.get_chain_manager(chain.to_blockchain()),  # type: ignore[arg-type]  # chain is supported
+            )
+            for chain in PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM | {ChainID.ETHEREUM}
+            if should_update_protocol_cache(CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
+        ]
+
     def _maybe_update_aura_pools(self) -> Optional[list[gevent.Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
+            account_data = self.database.get_blockchain_accounts(cursor)
             if (
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0 and  # noqa: E501
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.BASE)) == 0 and  # noqa: E501
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.OPTIMISM)) == 0 and  # noqa: E501
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.POLYGON_POS)) == 0 and  # noqa: E501
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ARBITRUM_ONE)) == 0 and  # noqa: E501
-                len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.GNOSIS)) == 0  # noqa: E501
+                len(account_data.get(SupportedBlockchain.ETHEREUM)) == 0 and
+                len(account_data.get(SupportedBlockchain.BASE)) == 0 and
+                len(account_data.get(SupportedBlockchain.OPTIMISM)) == 0 and
+                len(account_data.get(SupportedBlockchain.POLYGON_POS)) == 0 and
+                len(account_data.get(SupportedBlockchain.ARBITRUM_ONE)) == 0 and
+                len(account_data.get(SupportedBlockchain.GNOSIS)) == 0
             ):
                 return None
 
