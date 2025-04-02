@@ -21,6 +21,8 @@ MINT_SY_FROM_TOKEN_TOPIC: Final = b'q\xc7\xa4Aa\xeb2\xe4d\x0fl\x8f\x05\x86\xdb_\
 REDEEM_SY_TO_TOKEN_TOPIC: Final = b'\xcd4\xb6\xac~Kr\xab0\x84VI\xae\xf2\xf4\xfdA\x94Z\xe2\xdc\x08\xf6%\xbeis\x8b\xbd\x0f\x9a\xa9'  # noqa: E501
 REDEEM_PT_YT_TO_TOKEN_TOPIC: Final = b'_.\x04\x99\xa3\xb6\xa2\x1f\xd5\xe1\xfa\xc4J\xc4|\x9a\xa7\xc3\xaf\xa3\x90v\xd6qb\xa4\x994\x11\xd4\x96\xda'  # noqa: E501
 EXIT_POST_EXP_TO_TOKEN_TOPIC: Final = b'jT3 \x9d5\xfdKH\x9a\x9eC\xd2\xbc\x02\xe9\xd1\xa2D0\xd3\x9b\xe6\xff\xf1;K\xb5*r\xa7\xe0'  # noqa: E501
+REDEEM_REWARDS_TOPIC: Final = b'x\xd6\x1a\x0c\'\xb1?C\x91\x10\x95\xf9\xf3V\xf1M\xaa<\xd8\xb1%\xee\xa1\xaa"B\x12E\xe9\x0e\x81='  # noqa: E501
+REDEEM_TOPIC: Final = b'\xae\xe4|\xdf\x92\\\xf5%\xfd\xae\x94\xf9w~\xe5\xa0l\xac7\xe1\xc4\x12 \xd0\xa8\xa8\x9e\xd1T\xf6-\x1c'  # noqa: E501
 PENDLE_ROUTER_ABI: Final[ABI] = [{'inputs': [], 'name': 'readTokens', 'outputs': [{'name': '_SY', 'type': 'address'}, {'name': '_PT', 'type': 'address'}, {'name': '_YT', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 # Ethereum is handled via a separate subclass,
 # this is for L2s and EVM chains using the shared decoder.
