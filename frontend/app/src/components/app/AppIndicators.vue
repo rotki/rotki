@@ -6,13 +6,12 @@ import BackButton from '@/components/helper/BackButton.vue';
 import UserNotesIndicator from '@/components/notes/UserNotesIndicator.vue';
 import PinnedIndicator from '@/components/PinnedIndicator.vue';
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
-import ThemeControl from '@/components/premium/ThemeControl.vue';
 import PrivacyModeDropdown from '@/components/PrivacyModeDropdown.vue';
 import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
-import { useDarkMode } from '@/composables/dark-mode';
+import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@shared/utils';
 
@@ -21,7 +20,7 @@ const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
 
 const { isSmAndUp } = useBreakpoint();
 
-const { darkModeEnabled } = useDarkMode();
+const { isDark } = useRotkiTheme();
 const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = storeToRefs(useAreaVisibilityStore());
 </script>
 
@@ -50,7 +49,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
     <PinnedIndicator v-model:visible="showPinned" />
     <ThemeControl
       v-if="isSmAndUp"
-      :dark-mode-enabled="darkModeEnabled"
+      :dark-mode-enabled="isDark"
     />
     <NotificationIndicator
       :visible="showNotificationBar"

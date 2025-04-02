@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import ThemeControl from '@/components/premium/ThemeControl.vue';
-import { useDarkMode } from '@/composables/dark-mode';
 import { useInterop } from '@/composables/electron-interop';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useLogout } from '@/modules/account/use-logout';
+import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
 
@@ -38,7 +37,7 @@ function showConfirmation() {
   );
 }
 
-const { darkModeEnabled } = useDarkMode();
+const { isDark } = useRotkiTheme();
 </script>
 
 <template>
@@ -99,7 +98,7 @@ const { darkModeEnabled } = useDarkMode();
         </RuiButton>
         <ThemeControl
           v-if="isXs"
-          :dark-mode-enabled="darkModeEnabled"
+          :dark-mode-enabled="isDark"
           menu
           data-cy="theme-control"
         >

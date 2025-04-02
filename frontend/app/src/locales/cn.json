@@ -2836,12 +2836,6 @@
       "subtitle": "管理应用主题的颜色",
       "title": "主题"
     },
-    "theme_switch": {
-      "auto": "自动（检测设备主题）",
-      "dark": "暗",
-      "light": "亮",
-      "tooltip": "切换到 {mode} 模式"
-    },
     "unsupported_app_version": {
       "minimum_supported": "最低支持版本为 v{v}",
       "subtitle": "高级组件不再支持此版本的 rotki。",
@@ -3296,13 +3290,11 @@
   "task_manager": {
     "error": "处理任务 [{taskId}] '{title}' 时出错：{error}"
   },
-  "theme_manager_lock": {
-    "description": "主题定制仅适用于高级订阅",
-    "subtitle": "管理应用主题的颜色",
-    "title": "主题"
-  },
-  "theme_switch_lock": {
-    "tooltip": "切换到黑暗模式仅在高级订阅下可用"
+  "theme_switch": {
+    "auto": "自动（检测设备主题）",
+    "dark": "暗",
+    "light": "亮",
+    "tooltip": "切换到 {mode} 模式"
   },
   "timeframe_settings": {
     "default_timeframe": "仪表板图形默认时间范围",

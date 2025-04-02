@@ -3107,12 +3107,6 @@
       "subtitle": "Gérer les couleurs du thème de l'application",
       "title": "Thème"
     },
-    "theme_switch": {
-      "auto": "Auto (Détecter le thème de l'appareil)",
-      "dark": "Sombre",
-      "light": "Clair",
-      "tooltip": "Passer en mode {mode}"
-    },
     "unsupported_app_version": {
       "minimum_supported": "La version minimale prise en charge est v{v}",
       "subtitle": "Cette version de rotki n'est plus prise en charge par les composants premium.",
@@ -3571,13 +3565,11 @@
   "task_manager": {
     "error": "Une erreur s'est produite lors du traitement de la tâche [{taskId}] '{title}': {error}"
   },
-  "theme_manager_lock": {
-    "description": "La personnalisation du thème n'est disponible que sous un abonnement premium",
-    "subtitle": "Gérer les couleurs du thème de l'application",
-    "title": "Thème"
-  },
-  "theme_switch_lock": {
-    "tooltip": "Le passage en mode sombre n'est disponible que sous un abonnement premium"
+  "theme_switch": {
+    "auto": "Auto (Détecter le thème de l'appareil)",
+    "dark": "Sombre",
+    "light": "Clair",
+    "tooltip": "Passer en mode {mode}"
   },
   "timeframe_settings": {
     "default_timeframe": "Intervalle de temps par défaut du graphique de la tableau de bord",

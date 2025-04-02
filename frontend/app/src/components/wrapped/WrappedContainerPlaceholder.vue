@@ -22,12 +22,15 @@ const { t } = useI18n();
     </div>
 
     <div class="relative">
+      <AppImage
+        class="dark:invert-[0.89] dark:hue-rotate-[180deg]"
+        src="./assets/images/placeholder/history_events_wrapped.png"
+      />
+
       <GetPremiumPlaceholder
         class="absolute w-full pt-20 z-1 top-0 left-1/2 transform -translate-x-1/2"
         :title="t('wrapped.free_limit')"
       />
     </div>
-
-    <AppImage src="./assets/images/placeholder/history_events_wrapped.png" />
   </div>
 </template>

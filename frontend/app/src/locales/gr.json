@@ -3176,14 +3176,6 @@
   "task_manager": {
     "error": "An error occurred while processing task [{taskId}] '{title}': {error}"
   },
-  "theme_manager_lock": {
-    "description": "Theme customization is only available with a premium subscription",
-    "subtitle": "Manage colors for the app theme",
-    "title": "Theme"
-  },
-  "theme_switch_lock": {
-    "tooltip": "Switching to dark mode is only available under a premium subscription"
-  },
   "timeframe_settings": {
     "default_timeframe": "Dashboard graph default timeframe",
     "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.",

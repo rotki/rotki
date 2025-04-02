@@ -107,7 +107,6 @@ async function load(name: string): Promise<Component> {
 
 const PremiumLoading = defineAsyncComponent(async () => import('@/components/premium/PremiumLoading.vue'));
 const PremiumLoadingError = defineAsyncComponent(async () => import('@/components/premium/PremiumLoadingError.vue'));
-const ThemeSwitchLock = defineAsyncComponent(async () => import('@/components/premium/ThemeSwitchLock.vue'));
 
 function createFactory(component: string, options?: { loading?: Component; error?: Component }): Component {
   return defineAsyncComponent({
@@ -124,13 +123,6 @@ export const PremiumStatistics = createFactory('PremiumStatistics');
 export const EthStaking = createFactory('EthStaking');
 
 export const AssetAmountAndValueOverTime = createFactory('AssetAmountAndValueOverTime');
-
-export const ThemeChecker = createFactory('ThemeChecker');
-
-export const ThemeSwitch = createFactory('ThemeSwitch', {
-  error: ThemeSwitchLock,
-  loading: ThemeSwitchLock,
-});
 
 export const ThemeManager = createFactory('ThemeManager');
 

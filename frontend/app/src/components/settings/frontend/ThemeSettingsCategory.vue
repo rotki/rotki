@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import ThemeManagerLock from '@/components/premium/ThemeManagerLock.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { usePremium } from '@/composables/premium';
+import ThemeManagerPlaceholder from '@/modules/theme/ThemeManagerPlaceholder.vue';
 import { ThemeManager } from '@/premium/premium';
 
 const { t } = useI18n();
@@ -20,9 +20,9 @@ const premium = usePremium();
     <SettingsItem>
       <ThemeManager
         v-if="premium"
-        class="pt-4"
+        class="pt-4 "
       />
-      <ThemeManagerLock
+      <ThemeManagerPlaceholder
         v-else
         class="pt-4"
       />

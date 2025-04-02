@@ -80,7 +80,7 @@ onMounted(() => {
           >
             <div
               v-if="!logged"
-              class="fixed top-0 left-0 w-full h-full bg-white z-[999] flex items-center justify-center"
+              class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-[999] flex items-center justify-center"
             >
               <RuiProgress
                 thickness="2"
