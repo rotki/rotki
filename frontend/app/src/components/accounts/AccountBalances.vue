@@ -18,6 +18,7 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useConfirmStore } from '@/store/confirm';
 import type { LocationQuery } from '@/types/route';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type {
@@ -122,6 +123,18 @@ function getChains(row: BlockchainAccountGroupWithBalance): string[] {
   return excludedChains ? chains.filter(chain => !excludedChains.includes(chain)) : chains;
 }
 
+const { show } = useConfirmStore();
+
+function redetectAllClicked() {
+  show({
+    message: t('account_balances.detect_tokens.confirmation.message'),
+    title: t('account_balances.detect_tokens.confirmation.title'),
+    type: 'info',
+  }, () => {
+    handleBlockchainRefresh(undefined, true);
+  });
+}
+
 watchImmediate(groups, async () => {
   await fetchData();
 });
@@ -176,7 +189,7 @@ defineExpose({
                   color="primary"
                   :loading="isDetectingTokens"
                   :disabled="refreshDisabled"
-                  @click="handleBlockchainRefresh(undefined, true)"
+                  @click="redetectAllClicked()"
                 >
                   <template #prepend>
                     <RuiIcon name="lu-refresh-ccw" />
@@ -188,7 +201,7 @@ defineExpose({
               {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
             </RuiTooltip>
 
-            <DetectTokenChainsSelection />
+            <DetectTokenChainsSelection @redetect:all="redetectAllClicked()" />
           </RuiButtonGroup>
 
           <DetectEvmAccounts />
