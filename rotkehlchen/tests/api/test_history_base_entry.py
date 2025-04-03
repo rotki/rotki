@@ -859,6 +859,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             amount=FVal('50'),
             notes='Note1',
             event_identifier='test_id',
+            extra_data={'reference': 'TRADE1'},
         ), SwapEvent(
             identifier=2,
             timestamp=TimestampMS(1569924575000),
@@ -886,6 +887,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             amount=FVal('0.01'),
             unique_id='TRADE2',
             notes='Example note',
+            extra_data={'reference': 'TRADE2'},
         ), SwapEvent(
             identifier=4,
             timestamp=TimestampMS(1569924576000),
@@ -918,6 +920,6 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'entry_type': 'swap event',
         'event_identifier': '4074f41ac078988b05b7058775f111a3119888fc968f94ee9ed6a132918a3b83',
         'sequence_index': 0,
-        'extra_data': None,
+        'extra_data': {'reference': 'TRADE2'},
         'auto_notes': 'Swap 0.01 ETH in Bitfinex',
     }

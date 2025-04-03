@@ -99,7 +99,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
-from rotkehlchen.history.events.structures.swap import create_swap_events
+from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
@@ -1081,6 +1081,10 @@ class CreateHistoryEventSchema(Schema):
                     field_name='fee_notes',
                 )
 
+            extra_data: SwapEventExtraData = {}
+            if (unique_id := data['unique_id']) is not None:
+                extra_data['reference'] = unique_id
+
             context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
             events = create_swap_events(
                 timestamp=data['timestamp'],
@@ -1106,6 +1110,7 @@ class CreateHistoryEventSchema(Schema):
                     data=data,
                     subtype=HistoryEventSubType.FEE,
                 ),
+                extra_data=extra_data,
             )
             return {'events': events}
 

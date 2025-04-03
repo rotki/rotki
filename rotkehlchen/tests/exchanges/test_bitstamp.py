@@ -22,10 +22,10 @@ from rotkehlchen.exchanges.bitstamp import (
     USER_TRANSACTION_SORTING_MODE,
     Bitstamp,
 )
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Fee, Location, Timestamp, TimestampMS
@@ -104,13 +104,7 @@ def test_validate_api_key_err_auth_nonce(mock_bitstamp):
         movements, _ = mock_bitstamp.query_online_history_events(0, 1)
         assert movements == []
         errors = mock_bitstamp.msg_aggregator.consume_errors()
-        assert len(errors) == 2  # since we do 2 queries underneath
-        assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
-
-        trades, _ = mock_bitstamp.query_online_trade_history(0, 1)
-        assert trades == []
-        errors = mock_bitstamp.msg_aggregator.consume_errors()
-        assert len(errors) == 1
+        assert len(errors) == 3  # since we do 2 queries for movements and 1 for trades
         assert API_ERR_AUTH_NONCE_MESSAGE in errors[0]
 
 
@@ -263,7 +257,7 @@ def test_query_balances_asset_balance(mock_bitstamp, inquirer):  # pylint: disab
 
 
 def test_deserialize_trade_buy(mock_bitstamp):
-    raw_trade = {
+    assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 2,
         'type': 2,
         'datetime': '2020-12-02 09:30:00',
@@ -272,24 +266,34 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'btc_usd': '0.00005000',
         'fee': '20.00000000',
         'order_id': 2,
-    }
-    expected_trade = [Trade(
-        timestamp=1606901400,
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
-        base_asset=A_BTC,
-        quote_asset=A_USD,
-        trade_type=TradeType.BUY,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('0.0000250000000000'),
+        location_label='bitstamp',
+        unique_id='2',
+        extra_data={'reference': '2'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
         amount=FVal('0.50000000'),
-        rate=FVal('0.00005000'),
-        fee=FVal('20.00000000'),
-        fee_currency=A_USD,
-        link='2',
-        notes='',
+        location_label='bitstamp',
+        unique_id='2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('20.00000000'),
+        location_label='bitstamp',
+        unique_id='2',
     )]
-    trade = mock_bitstamp._deserialize_trade(raw_trade)
-    assert trade == expected_trade
 
-    raw_trade = {
+    assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 2,
         'type': 2,
         'datetime': '2019-04-16 08:09:05.149343',
@@ -299,24 +303,34 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'eur': '-5.02',
         'fee': '0.02',
         'order_id': 2,
-    }
-    expected_trade = [Trade(
-        timestamp=1555402145,
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1555402145000),
         location=Location.BITSTAMP,
-        base_asset=A_BTC,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('0.0006'),
-        rate=FVal('8364.0'),
-        fee=FVal('0.02'),
-        fee_currency=A_EUR,
-        link='2',
-        notes='',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('5.018400000'),
+        location_label='bitstamp',
+        unique_id='2',
+        extra_data={'reference': '2'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1555402145000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.00060000'),
+        location_label='bitstamp',
+        unique_id='2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1555402145000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('0.02'),
+        location_label='bitstamp',
+        unique_id='2',
     )]
-    trade = mock_bitstamp._deserialize_trade(raw_trade)
-    assert trade == expected_trade
 
-    raw_trade = {
+    assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 15,
         'type': 2,
         'datetime': '2019-04-15 16:19:14.826000',
@@ -326,26 +340,36 @@ def test_deserialize_trade_buy(mock_bitstamp):
         'eur': '6.87630',
         'fee': '0.02',
         'order_id': 15,
-    }
-    expected_trade = [Trade(
-        timestamp=1555345154,
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1555345154000),
         location=Location.BITSTAMP,
-        base_asset=A_EUR,
-        quote_asset=A_USD,
-        trade_type=TradeType.BUY,
-        amount=FVal('6.8763'),
-        rate=FVal('1.12124'),
-        fee=FVal('0.02'),
-        fee_currency=A_USD,
-        link='15',
-        notes='',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('7.7099826120'),
+        location_label='bitstamp',
+        unique_id='15',
+        extra_data={'reference': '15'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1555345154000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_EUR,
+        amount=FVal('6.87630'),
+        location_label='bitstamp',
+        unique_id='15',
+    ), SwapEvent(
+        timestamp=TimestampMS(1555345154000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.02'),
+        location_label='bitstamp',
+        unique_id='15',
     )]
-    trade = mock_bitstamp._deserialize_trade(raw_trade)
-    assert trade == expected_trade
 
 
 def test_deserialize_trade_sell(mock_bitstamp):
-    raw_trade = {
+    assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 5,
         'type': 2,
         'datetime': '2020-12-03 11:30:00',
@@ -354,24 +378,34 @@ def test_deserialize_trade_sell(mock_bitstamp):
         'eur_usd': '0.81967213',
         'fee': '0.00610000',
         'order_id': 3,
-    }
-    expected_trade = [Trade(
-        timestamp=1606995000,
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
-        base_asset=A_EUR,
-        quote_asset=A_USD,
-        trade_type=TradeType.SELL,
-        amount=FVal('1'),
-        rate=FVal('0.81967213'),
-        fee=FVal('0.00610000'),
-        fee_currency=A_USD,
-        link='5',
-        notes='',
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('1.00000000'),
+        location_label='bitstamp',
+        unique_id='5',
+        extra_data={'reference': '5'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USD,
+        amount=FVal('0.8196721300000000'),
+        location_label='bitstamp',
+        unique_id='5',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.00610000'),
+        location_label='bitstamp',
+        unique_id='5',
     )]
-    trade = mock_bitstamp._deserialize_trade(raw_trade)
-    assert trade == expected_trade
 
-    raw_trade = {
+    assert mock_bitstamp._deserialize_trade(raw_trade={
         'id': 10,
         'type': 2,
         'datetime': '2019-06-25 21:41:08.802256',
@@ -381,22 +415,32 @@ def test_deserialize_trade_sell(mock_bitstamp):
         'eur': '18338.45',
         'fee': '40.35000',
         'order_id': 3,
-    }
-    expected_trade = [Trade(
-        timestamp=1561498868,
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1561498868000),
         location=Location.BITSTAMP,
-        base_asset=A_BTC,
-        quote_asset=A_EUR,
-        trade_type=TradeType.SELL,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BTC,
         amount=FVal('1.81213214'),
-        rate=FVal('10119.82'),
-        fee=FVal('40.35'),
-        fee_currency=A_EUR,
-        link='10',
-        notes='',
+        location_label='bitstamp',
+        unique_id='10',
+        extra_data={'reference': '10'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1561498868000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_EUR,
+        amount=FVal('18338.4510730148'),
+        location_label='bitstamp',
+        unique_id='10',
+    ), SwapEvent(
+        timestamp=TimestampMS(1561498868000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('40.35000'),
+        location_label='bitstamp',
+        unique_id='10',
     )]
-    trade = mock_bitstamp._deserialize_trade(raw_trade)
-    assert trade == expected_trade
 
 
 @pytest.mark.parametrize('option', ['limit', 'since_id', 'sort', 'offset'])
@@ -413,7 +457,6 @@ def test_api_query_paginated_user_transactions_required_options(mock_bitstamp, o
     del options[option]
     with pytest.raises(KeyError):
         mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(1),
             options=options,
             case='trades',
@@ -434,7 +477,6 @@ def test_api_query_paginated_user_transactions_required_options_values(mock_bits
     options[option] = -1
     with pytest.raises(AssertionError):
         mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(1),
             options=options,
             case='trades',
@@ -456,7 +498,6 @@ def test_api_query_paginated_invalid_json(mock_bitstamp):
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         result = mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(1),
             options=options,
             case='trades',
@@ -484,7 +525,6 @@ def test_api_query_paginated_non_related_error_code(mock_bitstamp, response):
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         result = mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(1),
             options=options,
             case='trades',
@@ -511,7 +551,6 @@ def test_api_query_paginated_skips_different_type_result(mock_bitstamp):
 
     with patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):
         result = mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(1),
             options=options,
             case='trades',
@@ -565,7 +604,6 @@ def test_api_query_paginated_stops_timestamp_gt_end_ts(mock_bitstamp):
     )
     with limit_patch, api_query_patch as mock_api_query:
         result = mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(now_ts),
             options=options,
             case='trades',
@@ -713,83 +751,129 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     )
     with limit_patch, api_query_patch as mock_api_query:
         result = mock_bitstamp._api_query_paginated(
-            start_ts=Timestamp(0),
             end_ts=Timestamp(now_ts),
             options=options,
             case='trades',
         )
         assert mock_api_query.call_args_list == expected_calls
 
-    expected_result = [
-        Trade(
-            timestamp=1606901400,
-            location=Location.BITSTAMP,
-            base_asset=A_BTC,
-            quote_asset=A_USD,
-            trade_type=TradeType.BUY,
-            amount=FVal('0.50000000'),
-            rate=FVal('0.00005000'),
-            fee=FVal('20.00000000'),
-            fee_currency=A_USD,
-            link='2',
-            notes='',
-        ),
-        Trade(
-            timestamp=1606995000,
-            location=Location.BITSTAMP,
-            base_asset=A_EUR,
-            quote_asset=A_USD,
-            trade_type=TradeType.SELL,
-            amount=FVal('1'),
-            rate=FVal('0.81967213'),
-            fee=FVal('0.00610000'),
-            fee_currency=A_USD,
-            link='5',
-            notes='',
-        ),
-    ]
-    assert result == expected_result
+    assert result == [SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('0.0000250000000000'),
+        location_label='bitstamp',
+        unique_id='2',
+        extra_data={'reference': '2'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.50000000'),
+        location_label='bitstamp',
+        unique_id='2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('20.00000000'),
+        location_label='bitstamp',
+        unique_id='2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('1.00000000'),
+        location_label='bitstamp',
+        unique_id='5',
+        extra_data={'reference': '5'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USD,
+        amount=FVal('0.8196721300000000'),
+        location_label='bitstamp',
+        unique_id='5',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.00610000'),
+        location_label='bitstamp',
+        unique_id='5',
+    )]
 
 
 @pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606995001, 6)])
 def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
     """Test `since_id` value will change depending on `start_ts` value.
-    Also tests `db_trades` are sorted by `link` (as int) in ascending mode.
+    Also tests that the swap events are sorted by `reference` (as int) in ascending mode.
     """
-    trades = [
-        Trade(
-            timestamp=1606995000,
-            location=Location.BITSTAMP,
-            base_asset=A_EUR,
-            quote_asset=A_USD,
-            trade_type=TradeType.SELL,
-            amount=FVal('1.22000000'),
-            rate=FVal('0.81967213'),
-            fee=FVal('0.00610000'),
-            fee_currency=A_EUR,
-            link='5',
-            notes='',
-        ),
-        Trade(
-            timestamp=1606901400,
-            location=Location.BITSTAMP,
-            base_asset=A_BTC,
-            quote_asset=A_USD,
-            trade_type=TradeType.BUY,
-            amount=FVal('0.50000000'),
-            rate=FVal('0.00005000'),
-            fee=FVal('20.00000000'),
-            fee_currency=A_USD,
-            link='2',
-            notes='',
-        ),
-    ]
-    with mock_bitstamp.db.user_write() as cursor:
-        mock_bitstamp.db.add_trades(cursor, trades)
+    events = [SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('1.22000000'),
+        location_label='bitstamp',
+        unique_id='5',
+        extra_data={'reference': '5'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USD,
+        amount=FVal('0.9999999986'),
+        location_label='bitstamp',
+        unique_id='5',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606995000000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        amount=FVal('0.00610000'),
+        location_label='bitstamp',
+        unique_id='5',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('0.000025'),
+        location_label='bitstamp',
+        unique_id='2',
+        extra_data={'reference': '2'},
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.50000000'),
+        location_label='bitstamp',
+        unique_id='2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1606901400000),
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('20.00000000'),
+        location_label='bitstamp',
+        unique_id='2',
+    )]
+    with mock_bitstamp.db.user_write() as write_cursor:
+        DBHistoryEvents(mock_bitstamp.db).add_history_events(
+            write_cursor=write_cursor,
+            history=events,
+        )
 
     end_ts = Timestamp(1606995000)
     expected_call = call(
-        start_ts=start_ts,
         end_ts=end_ts,
         options={
             'since_id': since_id,
@@ -799,8 +883,11 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         },
         case='trades',
     )
-    with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
-        mock_bitstamp.query_online_trade_history(
+    with (
+        patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated,
+        patch.object(mock_bitstamp, '_query_asset_movements'),
+    ):
+        mock_bitstamp.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=end_ts,
         )
@@ -999,8 +1086,7 @@ def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> Non
 @pytest.mark.parametrize(('start_ts', 'since_id'), [(0, 1), (1606901401, 6)])
 def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
     """Test `since_id` value will change depending on `start_ts` value.
-    Also tests `db_asset_movements` are sorted by `link` (as int) in ascending
-    mode.
+    Also tests that the asset movements are sorted by `reference` (as int) in ascending mode.
     """
     asset_btc = A_BTC
     asset_usd = A_USD
@@ -1045,7 +1131,6 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
 
     end_ts = Timestamp(1606901401)
     expected_call = call(
-        start_ts=start_ts,
         end_ts=end_ts,
         options={
             'since_id': since_id,
@@ -1055,7 +1140,10 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         },
         case='asset_movements',
     )
-    with patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated:
+    with (
+        patch.object(mock_bitstamp, '_api_query_paginated') as mock_api_query_paginated,
+        patch.object(mock_bitstamp, '_query_trades'),
+    ):
         mock_bitstamp.query_online_history_events(
             start_ts=Timestamp(start_ts),
             end_ts=end_ts,
