@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_CRV, A_CVX, A_ETH
+from rotkehlchen.constants.assets import A_BSC_BNB, A_CRV, A_CVX, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
@@ -35,6 +35,16 @@ def _stakedao_gauges(globaldb: 'GlobalDBHandler') -> None:
                 '0x41639ABcA04c22e80326A96C8fE2882C97BaEb6e',
                 '0xf0A20878e03FF47Dc32E5c67D97c41cD3fd173B3',
             ],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.STAKEDAO_GAUGES, '42161'),
+            values=['0x0B31dA9ff8b35106B86B6203cebf94603131c75c'],
+        )
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.STAKEDAO_GAUGES, '56'),
+            values=['0xE36c375AD28C0822ab476Bd62A8BEAd88d9a4e34'],
         )
 
 
@@ -303,4 +313,116 @@ def test_withdraw(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         notes=f'Withdraw {received_amount} alUSDsDOLA from StakeDAO',
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x464A190dc43aD8f706d7d90d2951F700226A47Ef'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x65387326f9b8C3B6a83C1B3dFB43061F3ff3E508']])
+def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gauges):
+    tx_hex = deserialize_evm_tx_hash('0x433171926de6f818765b125e259244f6965993a4bc0eb055a03ee007f9e8a1e8')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = arbitrum_one_accounts[0]
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hex)  # noqa: E501
+    gas_amount, deposit_amount, timestamp = '0.00000485501', '0.000420669270502585', TimestampMS(1738238320000)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=9,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0x186cF879186986A20aADFb7eAD50e3C20cb26CeC'),
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} 2BTC-ng in StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xfc072ead21DdA7260008aa4165907Bc27cC59329'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=15,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0x0B31dA9ff8b35106B86B6203cebf94603131c75c'),
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Receive {deposit_amount} sd2BTC-ng-vault-gauge after depositing in StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('binance_sc_accounts', [['0xa99345367044C80D8f01d0618c44B752C4C29Bdb']])
+def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges):
+    tx_hex = deserialize_evm_tx_hash('0x0e8556a645758a6747072673fa713f98a5b3dae090b940257e5ef7c86dc73d49')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = binance_sc_accounts[0]
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hex)
+    gas_amount, cake_reward, received_amount, timestamp = '0.000358695', '1.156230303623121164', '2000', TimestampMS(1743674447000)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BSC_BNB,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} BNB for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:56/erc20:0xE36c375AD28C0822ab476Bd62A8BEAd88d9a4e34'),
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Return {received_amount} PCS-ERC20-gauge to StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xE36c375AD28C0822ab476Bd62A8BEAd88d9a4e34'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:56/erc20:0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82'),
+        amount=FVal(cake_reward),
+        location_label=user_address,
+        notes=f'Claim {cake_reward} Cake from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xE36c375AD28C0822ab476Bd62A8BEAd88d9a4e34'),
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=665,
+        timestamp=timestamp,
+        location=Location.BINANCE_SC,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:56/erc20:0xb9dC6396AcFFD24E0f69Dfd3231fDaeB31514D02'),
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Withdraw {received_amount} Stable-LP from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x64F19930f0250E8313D0D8b47901F377B868Cf47'),
     )]

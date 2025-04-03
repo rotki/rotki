@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9495` rotki now supports Stakedao across all supported EVM chains, including balance tracking.
 * :feature:`-` Now free users can change the theme to dark mode too.
 * :feature:`8012` rotki will now support Pendle Finance, with related historical events properly decoded and correct prices and balances shown.
 * :feature:`9570` rotki will now support Curve loans from crvUSD markets, correctly decoding associated events and detecting balances. CrvUSD peg keeper updates will also be decoded correctly.
