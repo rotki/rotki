@@ -142,7 +142,7 @@
     "add_eth2_validator": {
       "error": {
         "description": "Hubo un error al agregar el validador de ETH {id}: {message}",
-        "title": "Agregando validador de staking de ETH"
+        "title": "Agregando validador de ETH"
       },
       "task": {
         "description": "Agregando validador de ETH",
