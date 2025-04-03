@@ -9,25 +9,16 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_SOL, A_USDC
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_SOL, A_USDC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bybit import Bybit, bybit_symbol_to_base_quote
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
-from rotkehlchen.types import (
-    AssetAmount,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TimestampMS,
-    TradeType,
-)
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -194,6 +185,8 @@ def test_query_balances(bybit_exchange: Bybit):
 @pytest.mark.freeze_time('2023-12-15 10:45:45 GMT')
 def test_trades(bybit_exchange: Bybit) -> None:
     mock_fn = bybit_account_mock(is_unified=True, calls={
+        'asset/deposit/query-record': [{'rows': []}],
+        'asset/withdraw/query-record': [{'rows': []}],
         'order/history': [
             json.loads('{"nextPageCursor":"1573377285745286144%3A1702297188428%2C1573376610655280128%3A1702297107951","category":"spot","list":[{"symbol":"SOLUSDC","orderType":"Limit","orderLinkId":"1702297","orderId":"1573377285745286144","cancelType":"UNKNOWN","avgPrice":"69.71","stopOrderType":"","lastPriceOnCreated":"","orderStatus":"Filled","takeProfit":"0","cumExecValue":"8.29549","smpType":"None","triggerDirection":0,"blockTradeId":"","rejectReason":"EC_NoError","isLeverage":"0","price":"69.71","orderIv":"","createdTime":"1702297188428","tpTriggerBy":"","positionIdx":0,"timeInForce":"GTC","leavesValue":"0.00000","updatedTime":"1702297236826","side":"Buy","smpGroup":0,"triggerPrice":"0.00","cumExecFee":"0","slTriggerBy":"","leavesQty":"0.000","closeOnTrigger":false,"placeType":"","cumExecQty":"0.119","reduceOnly":false,"qty":"0.119","stopLoss":"0","smpOrderId":"","triggerBy":""},{"symbol":"SOLUSDC","orderType":"Limit","orderLinkId":"1702297166844","orderId":"1573377106254240768","cancelType":"CancelByUser","avgPrice":"","stopOrderType":"","lastPriceOnCreated":"","orderStatus":"Cancelled","takeProfit":"0","cumExecValue":"0.00000","smpType":"None","triggerDirection":0,"blockTradeId":"","rejectReason":"EC_PerCancelRequest","isLeverage":"0","price":"69.76","orderIv":"","createdTime":"1702297167031","tpTriggerBy":"","positionIdx":0,"timeInForce":"GTC","leavesValue":"0","updatedTime":"1702297176364","side":"Buy","smpGroup":0,"triggerPrice":"0.00","cumExecFee":"0","slTriggerBy":"","leavesQty":"0","closeOnTrigger":false,"placeType":"","cumExecQty":"0.000","reduceOnly":false,"qty":"0.120","stopLoss":"0","smpOrderId":"","triggerBy":""},{"symbol":"MATICUSDC","orderType":"Limit","orderLinkId":"1702297","orderId":"1573376610655280128","cancelType":"UNKNOWN","avgPrice":"0.8736","stopOrderType":"","lastPriceOnCreated":"","orderStatus":"Filled","takeProfit":"0","cumExecValue":"17.472000","smpType":"None","triggerDirection":0,"blockTradeId":"","rejectReason":"EC_NoError","isLeverage":"0","price":"0.8741","orderIv":"","createdTime":"1702297107951","tpTriggerBy":"","positionIdx":0,"timeInForce":"GTC","leavesValue":"0.010000","updatedTime":"1702297107954","side":"Buy","smpGroup":0,"triggerPrice":"0.0000","cumExecFee":"0","slTriggerBy":"","leavesQty":"0.00","closeOnTrigger":false,"placeType":"","cumExecQty":"20.00","reduceOnly":false,"qty":"20.00","stopLoss":"0","smpOrderId":"","triggerBy":""}]}'),
             json.loads('{"nextPageCursor":"","category":"spot","list":[]}'),
@@ -202,47 +195,60 @@ def test_trades(bybit_exchange: Bybit) -> None:
     })
 
     with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
-        trades, _ = bybit_exchange.query_online_trade_history(
+        events, _ = bybit_exchange.query_online_history_events(
             start_ts=Timestamp(ts_now() - DAY_IN_SECONDS * 365),
             end_ts=ts_now(),
         )
 
-    assert trades == [
-        Trade(
-            timestamp=Timestamp(1702297236),
-            location=Location.BYBIT,
-            base_asset=A_SOL,
-            quote_asset=A_USDC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.119')),
-            rate=Price(FVal('69.71')),
-            fee=Fee(ZERO),
-            fee_currency=None,
-            link='1702297',
-        ), Trade(
-            timestamp=Timestamp(1702297107),
-            location=Location.BYBIT,
-            base_asset=Asset('eip155:1/erc20:0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),
-            quote_asset=A_USDC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('20')),
-            rate=Price(FVal('0.8741')),
-            fee=Fee(ZERO),
-            fee_currency=None,
-            link='1702297',
-        ), Trade(
-            timestamp=Timestamp(1701201377),
-            location=Location.BYBIT,
-            base_asset=A_ETH,
-            quote_asset=A_USDC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.00250')),
-            rate=Price(FVal('2062.93')),
-            fee=Fee(ZERO),
-            fee_currency=None,
-            link='17012013',
-        ),
-    ]
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1702297236826),
+        location=Location.BYBIT,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal('8.29549'),
+        location_label='bybit',
+        unique_id='1573377285745286144',
+    ), SwapEvent(
+        timestamp=TimestampMS(1702297236826),
+        location=Location.BYBIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_SOL,
+        amount=FVal('0.119'),
+        location_label='bybit',
+        unique_id='1573377285745286144',
+    ), SwapEvent(
+        timestamp=TimestampMS(1702297107954),
+        location=Location.BYBIT,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal('17.482000'),
+        location_label='bybit',
+        unique_id='1573376610655280128',
+    ), SwapEvent(
+        timestamp=TimestampMS(1702297107954),
+        location=Location.BYBIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH_MATIC,
+        amount=FVal('20.00'),
+        location_label='bybit',
+        unique_id='1573376610655280128',
+    ), SwapEvent(
+        timestamp=TimestampMS(1701201377325),
+        location=Location.BYBIT,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal('5.1573250'),
+        location_label='bybit',
+        unique_id='1564184955935005696',
+    ), SwapEvent(
+        timestamp=TimestampMS(1701201377325),
+        location=Location.BYBIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('0.00250'),
+        location_label='bybit',
+        unique_id='1564184955935005696',
+    )]
 
 
 def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
@@ -254,6 +260,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
         'asset/withdraw/query-record': [
             json.loads('{"rows":[{"coin":"ETH","chain":"ARBI","amount":"0.0024","txID":"0xce631ee0a52326d16cea9a2f666f02be55ebbf9f93641d42a488c3c1fc2ebc8c","status":"success","toAddress":"0xDeEB02ADA5B089F851f2A1C0301d46631514D312","tag":"","withdrawFee":"0.0001","createTime":"1702628620000","updateTime":"1702628676000","withdrawId":"29848227","withdrawType":0}],"nextPageCursor":"eyJtaW5JRCI6Mjk4NDgyMjcsIm1heElEIjoyOTg0ODIyN30="}'),
         ],
+        'order/history': [json.loads('{"nextPageCursor":"","category":"spot","list":[]}')],
     })
     with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
         movements, _ = bybit_exchange.query_online_history_events(
@@ -328,8 +335,11 @@ def test_query_trades_range(bybit_exchange: Bybit) -> None:
         return json.loads('{"nextPageCursor":"","category":"spot","list":[]}')
 
     bybit_exchange.is_unified_account = True
-    with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
-        bybit_exchange.query_online_trade_history(
+    with (
+        patch.object(bybit_exchange, '_api_query', side_effect=mock_fn),
+        patch.object(bybit_exchange, '_query_deposits_withdrawals'),
+    ):
+        bybit_exchange.query_online_history_events(
             start_ts=Timestamp(0),
             end_ts=(end_ts := Timestamp((now := ts_now()) - DAY_IN_SECONDS * 365)),
         )  # remoteError is raised if we don't properly query the logic
