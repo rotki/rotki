@@ -33,5 +33,5 @@ class HarvestFinanceDecoder(MerkleClaimDecoderInterface):
         return (CounterpartyDetails(
             identifier=CPT_HARVEST_FINANCE,
             label='Harve Finance',
-            image='harvest.gif',
+            image='harvest.svg',
         ),)
