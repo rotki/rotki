@@ -40,6 +40,7 @@ from .constants import (
     CLAIMED_WITH_BRIBE,
     CPT_STAKEDAO,
     STAKEDAO_DEPOSIT,
+    STAKEDAO_DEPOSIT_OTHER_CHAINS,
     STAKEDAO_GAUGE_ABI,
     STAKEDAO_VAULT_ABI,
     STAKEDAO_WITHDRAW,
@@ -262,7 +263,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )])
 
     def _decode_deposit_withdrawal_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == STAKEDAO_DEPOSIT:
+        if context.tx_log.topics[0] in (STAKEDAO_DEPOSIT, STAKEDAO_DEPOSIT_OTHER_CHAINS):
             return self._decode_deposit(context)
         elif context.tx_log.topics[0] == STAKEDAO_WITHDRAW:
             return self._decode_withdraw(context)
