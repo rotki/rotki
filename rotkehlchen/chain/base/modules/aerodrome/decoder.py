@@ -54,4 +54,4 @@ class AerodromeDecoder(VelodromeLikeDecoder):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_AERODROME, label='Aerodrome Finance', image='aerodrome.svg'),)  # noqa: E501
+        return (CounterpartyDetails(identifier=CPT_AERODROME, label='Aerodrome Finance', image='aerodrome.png'),)  # noqa: E501
