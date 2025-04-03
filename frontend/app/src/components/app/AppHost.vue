@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { useBackendManagement } from '@/composables/backend';
+import { useSessionStateCleaner } from '@/composables/session/logout';
 import { useLocale } from '@/composables/session/use-locale';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { checkIfDevelopment } from '@shared/utils';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
 const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
+const { setupBackend } = useBackendManagement();
 const route = useRoute();
+useSessionStateCleaner();
 
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => isDevelopment && get(route).path === '/playground');
@@ -14,6 +18,7 @@ const isPlayground = computed(() => isDevelopment && get(route).path === '/playg
 const { adaptiveLanguage, setLanguage } = useLocale();
 
 onBeforeMount(() => {
+  startPromise(setupBackend());
   setLanguage(get(adaptiveLanguage));
 });
 

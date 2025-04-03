@@ -7,7 +7,7 @@ import { onUnmounted } from 'vue';
 
 definePage({
   meta: {
-    layout: 'auth',
+    layout: 'plain',
   },
 });
 
