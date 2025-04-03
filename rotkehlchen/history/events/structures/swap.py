@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict, overload
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.assets.asset import Asset
@@ -22,6 +22,12 @@ if TYPE_CHECKING:
     from rotkehlchen.types import Price
 
 
+class SwapEventExtraData(TypedDict):
+    """Typed dict with all the valid fields used in extra_data for SwapEvents"""
+    # Internal reference used in exchanges.
+    reference: NotRequired[str]
+
+
 class SwapEvent(HistoryBaseEntry):
     """Swap event representing trades on exchanges, defi, and more."""
 
@@ -41,6 +47,7 @@ class SwapEvent(HistoryBaseEntry):
             unique_id: str | None = None,
             location_label: str | None = None,
             notes: str | None = None,
+            extra_data: SwapEventExtraData | None = None,
     ):
         """An event representing part of a swap (spend/receive/fee).
 
@@ -71,6 +78,7 @@ class SwapEvent(HistoryBaseEntry):
             location_label=location_label,
             notes=notes,
             identifier=identifier,
+            extra_data=extra_data,
         )
 
     @property
@@ -99,6 +107,7 @@ class SwapEvent(HistoryBaseEntry):
             event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore  # should always be correct from the DB
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
+            extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
             notes=entry[8] or None,
         )
 
@@ -142,6 +151,7 @@ class SwapEvent(HistoryBaseEntry):
             event_subtype=event_subtype,  # type: ignore  # just confirmed it's a SPEND, RECEIVE or FEE above
             asset=base_data['asset'],
             amount=base_data['amount'],
+            extra_data=base_data['extra_data'],
         )
 
     def __repr__(self) -> str:
@@ -180,6 +190,7 @@ def create_swap_events(
         receive_identifier: int | None = None,
         fee_identifier: int | None = None,
         event_identifier: str | None = None,
+        extra_data: SwapEventExtraData | None = None,
 ) -> list[SwapEvent]:
     """Overload for creating swap events with no fee."""
 
@@ -203,6 +214,7 @@ def create_swap_events(
         receive_identifier: int | None = None,
         fee_identifier: int | None = None,
         event_identifier: str | None = None,
+        extra_data: SwapEventExtraData | None = None,
 ) -> list[SwapEvent]:
     """Overload for creating swap events with a fee.
     The fee will still be omitted if the fee_amount is zero.
@@ -227,6 +239,7 @@ def create_swap_events(
         receive_identifier: int | None = None,
         fee_identifier: int | None = None,
         event_identifier: str | None = None,
+        extra_data: SwapEventExtraData | None = None,
 ) -> list[SwapEvent]:
     """Create spend, receive, and optionally fee SwapEvents for a single trade.
     Returns the new SwapEvents in a list.
@@ -242,6 +255,7 @@ def create_swap_events(
         notes=spend_notes,
         identifier=identifier,
         event_identifier=event_identifier,
+        extra_data=extra_data,
     ), SwapEvent(
         timestamp=timestamp,
         location=location,
