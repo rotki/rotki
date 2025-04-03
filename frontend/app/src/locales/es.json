@@ -129,34 +129,34 @@
         "calculate_past_cost_basis": "Calcular el coste base pasado al crear el informe",
         "cost_basis_method": "Método para calcular el coste base",
         "eth_staking_taxable_after_withdrawal_enabled": "Debemos omitir los eventos de staking de ETH en la contabilidad hasta que los retiros estén habilitados",
-        "include_crypto2crypto": "Tenga en cuenta la contabilidad los intercambios de cripto a cripto.",
-        "include_fees_in_cost_basis": "Tenga en cuenta las tarifas en el coste base.",
-        "include_gas_costs": "Tenga en cuenta los costos de gas de Ethereum",
-        "tax_free": "¿Hay un periodo libre de tarifas?",
-        "taxfree_after_period": "Libre de tarifas después de cuántos días"
+        "include_crypto2crypto": "Tener en cuenta los intercambios de cripto a cripto.",
+        "include_fees_in_cost_basis": "Tener en cuenta las tarifas en el coste base.",
+        "include_gas_costs": "Tener en cuenta los costos de gas de Ethereum",
+        "tax_free": "¿Hay un periodo libre de impuestos?",
+        "taxfree_after_period": "Libre de impuestos después de cuántos días"
       },
-      "title": "Configuraciones de Trade"
+      "title": "Configuraciones de intercambios"
     }
   },
   "actions": {
     "add_eth2_validator": {
       "error": {
-        "description": "Hubo un error al agregar el validador de staking de ETH {id}: {message}",
+        "description": "Hubo un error al agregar el validador de ETH {id}: {message}",
         "title": "Agregando validador de staking de ETH"
       },
       "task": {
-        "description": "Agregando validador de staking de ETH",
+        "description": "Agregando validador de ETH",
         "title": "Agregando validador: {id}"
       }
     },
     "assets": {
       "erc20": {
         "error": {
-          "description": "Hubo un error al recuperar los detalles del token: {message}",
-          "title": "Recuperando detalles del token para {address} ({evmChain})"
+          "description": "Hubo un error al consultar los detalles del token: {message}",
+          "title": "Consultando detalles del token para {address} ({evmChain})"
         },
         "task": {
-          "title": "Recuperando detalles del token para {address} ({evmChain})"
+          "title": "Consultando detalles del token para {address} ({evmChain})"
         }
       },
       "update": {
@@ -179,8 +179,8 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Error al recuperar todos los saldos: {message}",
-          "title": "Consultar todos los Saldos"
+          "message": "Error al recuperar todos los balances: {message}",
+          "title": "Consultar todos los balances"
         },
         "task": {
           "title": "Consultar todos los balances"
