@@ -153,10 +153,10 @@
       "erc20": {
         "error": {
           "description": "Hubo un error al consultar los detalles del token: {message}",
-          "title": "Consultando detalles del token para {address} ({evmChain})"
+          "title": "Consultando detalles del token {address} ({evmChain})"
         },
         "task": {
-          "title": "Consultando detalles del token para {address} ({evmChain})"
+          "title": "Consultando detalles del token {address} ({evmChain})"
         }
       },
       "update": {
@@ -202,7 +202,7 @@
         },
         "task": {
           "description": "{count} cuentas están siendo eliminadas",
-          "title": "Eliminando cuente de {blockchain}"
+          "title": "Eliminando cuenta de {blockchain}"
         }
       },
       "blockchain_accounts_add": {
