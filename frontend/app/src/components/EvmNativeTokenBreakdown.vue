@@ -8,6 +8,7 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { groupAssetBreakdown } from '@/utils/balances';
@@ -114,6 +115,8 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
 
   return cols;
 });
+
+useRememberTableSorting<AssetBreakdown>(TableId.EVM_NATIVE_TOKEN_BREAKDOWN, sort, cols);
 
 function percentage(value: BigNumber) {
   const totalVal = get(total);

@@ -5,6 +5,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useBackupApi } from '@/composables/api/backup';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getFilepath } from '@/utils/backups';
@@ -73,6 +74,8 @@ const tableHeaders = computed<DataTableColumn<UserDbBackupWithId>[]>(() => [
     sortable: false,
   },
 ]);
+
+useRememberTableSorting<UserDbBackupWithId>(TableId.USER_DB_BACKUP, sort, tableHeaders);
 
 const { directory, items } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());

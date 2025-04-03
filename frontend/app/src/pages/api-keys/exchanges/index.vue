@@ -9,6 +9,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import { useLocations } from '@/composables/locations';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useLocationStore } from '@/store/locations';
 import { useNotificationsStore } from '@/store/notifications';
@@ -41,9 +42,11 @@ const cols = computed<DataTableColumn<Exchange>[]>(() => [{
   cellClass: 'py-0 w-32',
   key: 'location',
   label: t('common.location'),
+  sortable: true,
 }, {
   key: 'name',
   label: t('common.name'),
+  sortable: true,
 }, {
   cellClass: 'w-32',
   key: 'syncEnabled',
@@ -54,6 +57,8 @@ const cols = computed<DataTableColumn<Exchange>[]>(() => [{
   key: 'actions',
   label: t('common.actions_text'),
 }]);
+
+useRememberTableSorting<Exchange>(TableId.EXCHANGE, sort, cols);
 
 function createNewExchange(): ExchangeFormData {
   return {
@@ -197,12 +202,12 @@ onMounted(async () => {
       </div>
 
       <RuiDataTable
+        v-model:sort="sort"
         outlined
         row-attr="name"
         data-cy="exchange-table"
         :rows="rows"
         :cols="cols"
-        :sort="sort"
       >
         <template #item.location="{ row }">
           <LocationDisplay :identifier="row.location" />

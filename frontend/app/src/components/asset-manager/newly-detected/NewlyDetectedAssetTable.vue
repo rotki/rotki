@@ -7,6 +7,7 @@ import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-toke
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useSupportedChains } from '@/composables/info/chains';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
@@ -67,6 +68,8 @@ const cols = computed<DataTableColumn<Token>[]>(() => [
     label: t('common.actions_text'),
   },
 ]);
+
+useRememberTableSorting<Token>(TableId.NEWLY_DETECTED_ASSETS, sort, cols);
 
 const allSelected = computed<boolean>(() => {
   const selectionLength = get(selected).length;
@@ -184,9 +187,9 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
 
     <RuiDataTable
       v-model="selected"
+      v-model:sort="sort"
       :cols="cols"
       :rows="rows"
-      :sort="sort"
       outlined
       dense
       row-attr="tokenIdentifier"

@@ -8,6 +8,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreAction.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
@@ -93,6 +94,8 @@ const sort = ref<DataTableSortColumn<ReportData>>({
   column: 'timestamp',
   direction: 'desc',
 });
+
+useRememberTableSorting<ReportData>(TableId.REPORTS, sort, tableHeaders);
 </script>
 
 <template>

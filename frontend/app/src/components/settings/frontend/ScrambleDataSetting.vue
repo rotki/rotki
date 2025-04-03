@@ -33,7 +33,7 @@ watch([enabled, multiplier], setData);
     </template>
 
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, updateImmediate }"
       setting="scrambleData"
       session-setting
       :error-message="t('frontend_settings.scramble.validation.error')"
@@ -45,7 +45,7 @@ watch([enabled, multiplier], setData);
         :label="t('frontend_settings.scramble.label')"
         :success-messages="success"
         :error-messages="error"
-        @update:model-value="update($event)"
+        @update:model-value="updateImmediate($event)"
       />
     </SettingsOption>
     <SettingsOption

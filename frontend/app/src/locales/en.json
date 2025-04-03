@@ -447,6 +447,15 @@
       }
     },
     "defi": {
+      "airdrops": {
+        "error": {
+          "description": "Failed to retrieve airdrops: {error}",
+          "title": "Airdrops"
+        },
+        "task": {
+          "title": "Querying airdrops"
+        }
+      },
       "liquity": {
         "task": {
           "title": "Querying Liquity Balances"
@@ -2396,6 +2405,13 @@
         "error": "Error setting query period",
         "invalid_period": "Period must be between {start} and {end}",
         "non_empty": "Please enter the number of seconds"
+      }
+    },
+    "persist_table_sorting": {
+      "subtitle": "Save your sorting preferences so they're still there when you come back to the page.",
+      "title": "Keep table sorting",
+      "validation": {
+        "error": "Error setting table sorting persistence: {message}"
       }
     },
     "refresh_balance": {

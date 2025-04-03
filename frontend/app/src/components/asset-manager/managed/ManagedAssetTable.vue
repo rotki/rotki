@@ -16,10 +16,16 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useMessageStore } from '@/store/message';
-import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
+import {
+  CUSTOM_ASSET,
+  EVM_TOKEN,
+  IgnoredAssetHandlingType,
+  type IgnoredAssetsHandlingType,
+} from '@/types/asset';
 import { uniqueStrings } from '@/utils/data';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
 import { some } from 'es-toolkit/compat';
@@ -99,6 +105,8 @@ const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<SupportedAsset>(TableId.SUPPORTED_ASSET, sortModel, cols);
 
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);

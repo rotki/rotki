@@ -12,6 +12,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -179,6 +180,8 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
 
   return headers;
 });
+
+useRememberTableSorting<AssetBalanceWithPrice>(TableId.DASHBOARD_ASSET, sort, tableHeaders);
 
 function redirectToManualBalance(item: AssetBalanceWithPrice) {
   const tableType = props.tableType;

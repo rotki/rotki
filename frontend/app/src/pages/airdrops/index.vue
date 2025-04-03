@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -10,6 +10,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useDefiApi } from '@/composables/api/defi';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import {
@@ -34,6 +35,8 @@ const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
+
+const sort = ref<DataTableSortData<AirdropWithIndex>>([]);
 
 const airdrops = ref<Airdrops>({});
 const expanded = ref<AirdropWithIndex[]>([]);
@@ -94,22 +97,27 @@ const cols = computed<DataTableColumn<AirdropWithIndex>[]>(() => [
   {
     key: 'source',
     label: t('airdrops.headers.source'),
+    sortable: true,
     width: '200px',
   },
   {
     key: 'address',
     label: t('common.address'),
+    sortable: true,
   },
   {
     align: 'end',
     key: 'amount',
     label: t('common.amount'),
+    sortable: true,
   },
   {
     key: 'claimed',
     label: t('common.status'),
   },
 ]);
+
+useRememberTableSorting<AirdropWithIndex>(TableId.AIRDROP, sort, cols);
 
 function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
   const result: Airdrop[] = [];
@@ -241,6 +249,7 @@ watch([status, selectedAccounts], () => {
       <RuiDataTable
         v-model:pagination="pagination"
         v-model:expanded="expanded"
+        v-model:sort="sort"
         outlined
         :rows="rows"
         :cols="cols"

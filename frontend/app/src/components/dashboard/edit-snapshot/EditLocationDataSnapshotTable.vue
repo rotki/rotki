@@ -6,6 +6,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -65,6 +66,8 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
     label: '',
   },
 ]);
+
+useRememberTableSorting<LocationDataSnapshot>(TableId.EDIT_LOCATION_DATA_SNAPSHOT, sort, tableHeaders);
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(() => get(exchangeRate(get(currencySymbol))) ?? One);

@@ -7,6 +7,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { ApiValidationError } from '@/types/api/errors';
 
@@ -133,6 +134,8 @@ const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
     label: t('common.price'),
   },
 ]);
+
+useRememberTableSorting<EditableMissingPrice>(TableId.REPORTS_MISSING_PRICES, sort, headers);
 
 const { getHistoricPrice } = useBalancePricesStore();
 

@@ -55,6 +55,7 @@ describe('settings:utils', () => {
       ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
+      persistTableSorting: false,
       renderAllNftImages: true,
       whitelistedDomainsForNftImages: [],
       enableAliasNames: true,

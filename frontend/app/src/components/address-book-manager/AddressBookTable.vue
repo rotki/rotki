@@ -5,6 +5,7 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
@@ -45,6 +46,8 @@ const cols = computed<DataTableColumn<AddressBookEntry>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<AddressBookEntry>(TableId.ADDRESS_BOOK, sortModel, cols);
 
 function refresh() {
   emit('refresh');

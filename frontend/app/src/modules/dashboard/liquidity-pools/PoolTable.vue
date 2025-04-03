@@ -10,6 +10,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -48,6 +49,7 @@ const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
     }),
+    sortable: true,
   }];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
@@ -72,6 +74,8 @@ const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
 
   return headers;
 });
+
+useRememberTableSorting<PoolLiquidityBalance>(TableId.POOL_LIQUIDITY_BALANCE, sort, tableHeaders);
 
 const getAssets = (assets: PoolAsset[]) => assets.map(({ asset }) => asset);
 
@@ -117,11 +121,11 @@ onBeforeMount(async () => {
 
     <RuiDataTable
       v-model:expanded="expanded"
+      v-model:sort="sort"
       outlined
       dense
       :cols="tableHeaders"
       :rows="balances"
-      :sort="sort"
       :loading="loading"
       row-attr="id"
       single-expand

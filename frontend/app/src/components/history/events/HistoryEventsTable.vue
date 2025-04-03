@@ -20,6 +20,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { useStatusStore } from '@/store/status';
@@ -109,6 +110,8 @@ const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [{
   key: 'expand',
   label: '',
 }]);
+
+useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
 
 const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
   const data = get(groups, 'data');

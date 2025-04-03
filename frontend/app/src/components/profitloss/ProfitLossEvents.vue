@@ -15,6 +15,7 @@ import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLos
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
 import { getCollectionData } from '@/utils/collection';
 import { isTransactionEvent } from '@/utils/report';
@@ -144,6 +145,8 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
     label: t('common.actions_text'),
   },
 ]);
+
+useRememberTableSorting<PnLItem>(TableId.REPORT_EVENTS, sort, tableHeaders);
 
 const { data } = getCollectionData<ProfitLossEvent>(state);
 

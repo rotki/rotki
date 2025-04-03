@@ -6,8 +6,8 @@ import CustomAssetTable from '@/components/asset-manager/custom/CustomAssetTable
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { type Filters, type Matcher, useCustomAssetFilter } from '@/composables/filters/custom-assets';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 

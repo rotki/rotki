@@ -14,6 +14,7 @@ import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/comp
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -110,6 +111,8 @@ const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
     },
   ];
 });
+
+useRememberTableSorting<EthereumValidator>(TableId.ETH_STAKING_VALIDATORS, sort, cols);
 
 const { useIsTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();

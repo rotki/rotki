@@ -8,6 +8,7 @@ import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
@@ -49,6 +50,8 @@ const columns = computed<DataTableColumn<OracleCacheEntry>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<OracleCacheEntry>(TableId.ORACLE_CACHE_MANAGEMENT, sort, columns);
 
 const { useIsTaskRunning } = useTaskStore();
 const { createOracleCache, deletePriceCache, getPriceCache } = useBalancePricesStore();

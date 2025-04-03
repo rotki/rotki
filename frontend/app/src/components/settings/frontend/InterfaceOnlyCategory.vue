@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Explorers from '@/components/settings/explorers/Explorers.vue';
 import AnimationsEnabledSetting from '@/components/settings/frontend/AnimationsEnabledSetting.vue';
+import PersistTableSortingSetting from '@/components/settings/frontend/PersistTableSortingSetting.vue';
 import ScrambleDataSetting from '@/components/settings/frontend/ScrambleDataSetting.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting.vue';
@@ -17,6 +18,7 @@ const { t } = useI18n();
     </template>
     <LanguageSetting />
     <AnimationsEnabledSetting />
+    <PersistTableSortingSetting />
     <ScrambleDataSetting />
     <RefreshSetting />
     <QueryPeriodSetting />

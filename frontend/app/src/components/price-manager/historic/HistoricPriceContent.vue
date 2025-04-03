@@ -9,6 +9,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HistoricPriceFormDialog from '@/components/price-manager/historic/HistoricPriceFormDialog.vue';
 import { useHistoricPrices } from '@/composables/price-manager/historic';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useRefPropVModel } from '@/utils/model';
 import dayjs from 'dayjs';
@@ -60,6 +61,8 @@ const headers = computed<DataTableColumn<HistoricalPrice>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<HistoricalPrice>(TableId.HISTORIC_PRICES, sort, headers);
 
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
