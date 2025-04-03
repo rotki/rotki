@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import AuthLayout from '@/layouts/auth.vue';
 import DefaultLayout from '@/layouts/default.vue';
+import PlainLayout from '@/layouts/plain.vue';
 
 const layouts = {
   auth: AuthLayout,
   default: DefaultLayout,
+  plain: PlainLayout,
 };
 
 const route = useRoute();

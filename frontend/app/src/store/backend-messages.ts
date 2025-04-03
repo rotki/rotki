@@ -1,6 +1,5 @@
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
-import { useMainStore } from '@/store/main';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
@@ -18,7 +17,6 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const { restartBackend } = useBackendManagement();
   const { t } = useI18n();
   const { start } = useMonitorStore();
-  const { connect } = useMainStore();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
 
@@ -52,14 +50,8 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
       },
     });
 
-    connect();
     if (isDevelopment && get(logged))
       start();
-
-    const search = window.location.search;
-    const skipUpdate = search.includes('skip_update');
-    if (skipUpdate)
-      sessionStorage.setItem('skip_update', '1');
   });
 
   return {

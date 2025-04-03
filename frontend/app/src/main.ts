@@ -40,6 +40,11 @@ const rui = createRuiPlugin({
   table: { globalItemsPerPage: true, itemsPerPage, limits: [10, 25, 50, 100], stickyOffset: computed(() => get(isMdAndDown) ? 56 : 64) },
 });
 
+const search = window.location.search;
+const skipUpdate = search.includes('skip_update');
+if (skipUpdate)
+  sessionStorage.setItem('skip_update', '1');
+
 const app = createApp(App);
 
 app.directive('blur', {

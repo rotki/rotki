@@ -131,7 +131,11 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     const { sessionOnly, url } = getBackendUrl();
     if (!!url && !sessionOnly)
       await backendChanged(url);
-    else await restartBackend();
+    else
+      await restartBackend();
+
+    if (!interop.isPackaged)
+      connect();
   };
 
   onMounted(() => {
