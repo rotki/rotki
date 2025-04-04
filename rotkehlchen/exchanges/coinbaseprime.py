@@ -4,22 +4,19 @@ import hmac
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlparse
 
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
-from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Fee, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import Fee, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -30,7 +27,8 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
-from rotkehlchen.inquirer import Inquirer, Price
+from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -45,7 +43,6 @@ from rotkehlchen.types import (
     ExchangeAuthCredentials,
     Location,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
@@ -60,6 +57,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 PRIME_BASE_URL: Final = 'https://api.prime.coinbase.com/v1'
@@ -71,62 +69,52 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _process_trade(trade_data: dict[str, Any]) -> Trade | None:
-    """Process trade from coinbase prime. Returns None if the order can't be processed
+def _process_trade(trade_data: dict[str, Any]) -> list[SwapEvent]:
+    """Process trade from coinbase prime. Returns an empty list if the order can't be processed.
     May raise:
     - DeserializationError
     """
     try:
         if trade_data['status'] != 'FILLED':
-            return None
+            return []
 
-        if not isinstance(trade_data['product_id'], str) and '-' not in trade_data['product_id']:
+        if (
+            (not isinstance((product_id := trade_data['product_id']), str)) or
+            len(pair_data := product_id.split('-')) != 2
+        ):
             raise DeserializationError(
-                f'Found a not valid product_id {trade_data["product_data"]}',
+                f'Invalid product id {product_id} in Coinbase Prime trade {trade_data}',
             )
 
-        if len(pair_data := trade_data['product_id'].split('-')) != 2:
-            raise DeserializationError(f'Non valid product found in trade {trade_data}')
-
-        try:
-            base_asset = asset_from_coinbase(pair_data[0])
-            quote_asset = asset_from_coinbase(pair_data[1])
-            trade_type = TradeType.deserialize(trade_data['side'])
-        except UnknownAsset as e:
-            raise DeserializationError(
-                f'Unknown asset {e.identifier} seen in coinbase prime trade',
-            ) from e
-
-        if trade_type == TradeType.BUY:
-            amount = deserialize_asset_amount(trade_data['filled_quantity'])
-            rate = deserialize_fval(
-                value=trade_data['net_average_filled_price'],
-                name='rate',
-                location='coinbase prime',
-            )  # filled_quantity * rate == quote_value
+        base_asset = asset_from_coinbase(pair_data[0])
+        quote_asset = asset_from_coinbase(pair_data[1])
+        if (order_side := trade_data['side']) == 'BUY':
+            spend_asset, receive_asset, = quote_asset, base_asset
+        elif order_side == 'SELL':
+            spend_asset, receive_asset, = base_asset, quote_asset
         else:
-            amount = deserialize_asset_amount(trade_data['filled_value'])
-            rate = deserialize_fval(
-                value=trade_data['average_filled_price'],
-                name='rate',
-                location='coinbase prime',
-            )  # filled_quantity * average_filled_price == filled_value
+            raise DeserializationError(
+                f'Unknown order side {order_side} in coinbase prime trade {trade_data}',
+            )
 
-        return Trade(
-            timestamp=iso8601ts_to_timestamp(trade_data['created_at']),
+        return create_swap_events(
+            timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(trade_data['created_at'])),
             location=Location.COINBASEPRIME,
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            trade_type=trade_type,
-            amount=amount,
-            rate=Price(rate),
-            fee=deserialize_fee(trade_data['commission']) if len(trade_data['commission']) != 0 else Fee(ZERO),  # noqa: E501
-            fee_currency=quote_asset,
-            link=str(trade_data['id']),
+            spend_asset=spend_asset,
+            spend_amount=deserialize_asset_amount(trade_data['filled_value']),
+            receive_asset=receive_asset,
+            receive_amount=deserialize_asset_amount(trade_data['filled_quantity']),
+            fee_asset=quote_asset,
+            fee_amount=deserialize_fee(trade_data['commission']) if len(trade_data['commission']) != 0 else Fee(ZERO),  # noqa: E501
+            unique_id=str(trade_data['id']),
         )
     except KeyError as e:
         raise DeserializationError(
-            f'Missing key {e} in trade information for Coinbase Prime',
+            f'Missing key {e} in Coinbase Prime trade {trade_data}',
+        ) from e
+    except UnknownAsset as e:
+        raise DeserializationError(
+            f'Unknown asset {e.identifier} in Coinbase Prime trade {trade_data}',
         ) from e
 
 
@@ -371,36 +359,13 @@ class Coinbaseprime(ExchangeInterface):
         log.error(f'Unknown tx_type in {raw_data} at coinbase prime')
         raise DeserializationError(f'Unknown transaction type in coinbase prime {tx_type}')
 
-    @overload
-    def _query_paginated_endpoint(
-            self,
-            query_params: dict[str, Any],
-            portfolio_id: str,
-            method: Literal['orders'],
-            decoding_logic: Callable[[dict[str, Any]], Trade | None],
-    ) -> list[Trade]:
-        ...
-
-    @overload
-    def _query_paginated_endpoint(
-            self,
-            query_params: dict[str, Any],
-            portfolio_id: str,
-            method: Literal['transactions'],
-            decoding_logic: Callable[[dict[str, Any]], Sequence[HistoryEvent | AssetMovement]],
-    ) -> list[Sequence[HistoryEvent | AssetMovement]]:
-        ...
-
     def _query_paginated_endpoint(
             self,
             query_params: dict[str, Any],
             portfolio_id: str,
             method: Literal['orders', 'transactions'],
-            decoding_logic: (
-                Callable[[dict[str, Any]], Trade | None] |
-                Callable[[dict[str, Any]], Sequence[HistoryEvent | AssetMovement]]
-            ),
-    ) -> list[Trade] | list[Sequence[HistoryEvent | AssetMovement]]:
+            decoding_logic: Callable[[dict[str, Any]], Sequence[HistoryEvent | AssetMovement | SwapEvent]],  # noqa: E501
+    ) -> Sequence[HistoryEvent | AssetMovement | SwapEvent]:
         """Abstraction to consume all the events in the selected queries.
         It uses the `decoding_logic` to process the different events and returns a list
         whose contents depend on the function's called arguments.
@@ -408,7 +373,7 @@ class Coinbaseprime(ExchangeInterface):
         This function may raise:
         - RemoteError
         """
-        result = []
+        result: list[HistoryEvent | AssetMovement | SwapEvent] = []
         while True:
             response = self._api_query(
                 module='portfolios',
@@ -418,12 +383,12 @@ class Coinbaseprime(ExchangeInterface):
 
             for raw_event in response[method]:
                 try:
-                    if (event := decoding_logic(raw_event)) is None:
+                    if len(events := decoding_logic(raw_event)) == 0:
                         log.warning(
                             f'Wont process event {raw_event} from coinbase prime. Skipping',
                         )
                     else:
-                        result.append(event)
+                        result.extend(events)
                 except DeserializationError as e:
                     self.msg_aggregator.add_error(
                         f'Failed to process coinbase prime event due to {e}. Skipping entry...',
@@ -437,7 +402,7 @@ class Coinbaseprime(ExchangeInterface):
             else:
                 break
 
-        return result  # type: ignore  # mypy doesn't detect that the return type here is defined by the function used
+        return result
 
     def _get_portfolio_ids(self) -> list[str]:
         """
@@ -538,64 +503,37 @@ class Coinbaseprime(ExchangeInterface):
 
         return dict(returned_balances), ''
 
-    def query_history_events(self) -> None:
-        """Query history events from the current exchange
-        instance and store them in the database
-        """
-        ranges = DBQueryRanges(self.db)
-        history_events_db = DBHistoryEvents(self.db)
-        portfolio_ids = self._get_portfolio_ids()
-        for idx, portfolio_id in enumerate(portfolio_ids):
-            self.send_history_events_status_msg(
-                step=HistoryEventsStep.QUERYING_EVENTS_STARTED,
-                name=(status_msg_name := f'{self.name} Portfolio {idx}'),
-            )
-            range_query_name = f'{self.location}_history_events_{self.name}_{portfolio_id}'
-            with self.db.conn.read_ctx() as cursor:
-                ranges_to_query = ranges.get_location_query_ranges(
-                    cursor=cursor,
-                    location_string=range_query_name,
-                    start_ts=Timestamp(0),
-                    end_ts=ts_now(),
-                )
-
-            for start_ts, end_ts in ranges_to_query:
-                self.send_history_events_status_msg(
-                    step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
-                    period=[start_ts, end_ts],
-                    name=status_msg_name,
-                )
-                history_events = []
-                query_params = {
+    def query_online_history_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+        events: list[HistoryEvent | AssetMovement | SwapEvent] = []
+        for portfolio_id in self._get_portfolio_ids():
+            events.extend(self._query_paginated_endpoint(
+                query_params={
                     'sort_direction': 'ASC',
                     'start_time': timestamp_to_iso8601(start_ts),
                     'end_time': timestamp_to_iso8601(end_ts),
                     'types': ['CONVERSION', 'REWARD', 'DEPOSIT', 'WITHDRAWAL', 'COINBASE_DEPOSIT'],
-                }
-                new_events_list: list[Sequence[HistoryEvent | AssetMovement]] = self._query_paginated_endpoint(  # noqa: E501
-                    query_params=query_params,
-                    portfolio_id=portfolio_id,
-                    method='transactions',
-                    decoding_logic=self._decode_history_events,
-                )
-                history_events.extend(
-                    [event for sublist in new_events_list for event in sublist],
-                )
-                with self.db.conn.write_ctx() as write_cursor:
-                    history_events_db.add_history_events(
-                        write_cursor=write_cursor,
-                        history=history_events,
-                    )
-                    ranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=range_query_name,
-                        queried_ranges=[(start_ts, end_ts)],
-                    )
+                },
+                portfolio_id=portfolio_id,
+                method='transactions',
+                decoding_logic=self._decode_history_events,
+            ))
+            events.extend(self._query_paginated_endpoint(
+                query_params={
+                    'sort_direction': 'ASC',
+                    'order_statuses': ['FILLED'],
+                    'start_date': timestamp_to_iso8601(start_ts),
+                    'end_date': timestamp_to_iso8601(end_ts),
+                },
+                portfolio_id=portfolio_id,
+                method='orders',
+                decoding_logic=_process_trade,
+            ))
 
-            self.send_history_events_status_msg(
-                step=HistoryEventsStep.QUERYING_EVENTS_FINISHED,
-                name=status_msg_name,
-            )
+        return events, end_ts
 
     def query_online_margin_history(
             self,
@@ -603,35 +541,3 @@ class Coinbaseprime(ExchangeInterface):
             end_ts: Timestamp,
     ) -> list[MarginPosition]:
         return []
-
-    def query_online_trade_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """
-        May raise:
-        - RemoteError: if we can't query coinbase
-        """
-        portfolio_ids = self._get_portfolio_ids()
-        trades = []
-        for portfolio_id in portfolio_ids:
-            query_params = {
-                'sort_direction': 'ASC',
-                'order_statuses': ['FILLED'],
-                'start_date': timestamp_to_iso8601(start_ts),
-                'end_date': timestamp_to_iso8601(end_ts),
-            }
-            trades.extend(
-                self._query_paginated_endpoint(
-                    query_params=query_params,
-                    portfolio_id=portfolio_id,
-                    method='orders',
-                    decoding_logic=_process_trade,
-                ),
-            )
-
-        return trades, (start_ts, end_ts)
-
-    def first_connection(self) -> None:
-        return None
