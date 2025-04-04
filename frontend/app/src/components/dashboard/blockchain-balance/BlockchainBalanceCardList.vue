@@ -29,7 +29,7 @@ const navTarget = computed<RouteLocationRaw>(() => {
   const balanceChain = get(chain);
   if (balanceChain === Blockchain.ETH2) {
     return {
-      path: `${Routes.STAKING}/eth`,
+      path: '/staking/eth2',
     };
   }
 
