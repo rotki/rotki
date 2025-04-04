@@ -50,7 +50,7 @@ def test_account_for_coinbase_income_expense(rotkehlchen_api_server_with_exchang
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         report, events = accounting_create_and_process_history(rotki=rotki, start_ts=0, end_ts=1611426233)  # noqa: E501
 
-    expected_total_actions = 8
+    expected_total_actions = 10
     assert report['total_actions'] == expected_total_actions
     events_map = defaultdict(int)
     for event in events:
