@@ -1,9 +1,10 @@
 import { execSync } from 'node:child_process';
 import process from 'node:process';
 import semver from 'semver';
-import pkg from '../package.json' with { type: 'json' };
+import fs from 'node:fs';
 
-const pnpmVersion = `${execSync('pnpm --version')}`.trim();
+const pnpmVersion = execSync('pnpm --version').toString().trim();
+const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const requiredPnpmVersion = pkg.engines.pnpm;
 const requiredNodeVersion = pkg.engines.node;
 
