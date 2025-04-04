@@ -300,7 +300,7 @@ onBeforeMount(initializeWalletKit);
       <RuiButton
         :disabled="!pairUri.trim() || isConnecting"
         class="disabled:cursor-not-allowed"
-        color="success"
+        color="primary"
         @click="pair()"
       >
         {{ isConnecting ? t('trade.bridge.connecting') : t('trade.bridge.start_pairing') }}
