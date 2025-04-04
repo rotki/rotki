@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`9730` Fix the issue where the app breaks when the user clicks on "Ethereum Staking" in the blockchain balance summary on the dashboard.
 * :bug:`-` Fix a rare issue where the manual balance page becomes empty.
 * :bug:`-` Fix a rare issue calling RPC nodes when there is an error connecting to them.
 
