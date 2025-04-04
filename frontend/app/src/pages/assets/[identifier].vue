@@ -55,6 +55,8 @@ const { getChain } = useSupportedChains();
 const premium = usePremium();
 const { balances } = useAggregatedBalances();
 
+const aggregatedBalances = balances();
+
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
 
@@ -101,7 +103,7 @@ const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
   if (!get(isCollectionParent))
     return [];
 
-  return get(balances()).find(data => data.asset === get(identifier))?.breakdown || [];
+  return get(aggregatedBalances).find(data => data.asset === get(identifier))?.breakdown || [];
 });
 
 const isSpam = computed(() => get(asset)?.isSpam || false);
@@ -293,7 +295,10 @@ async function toggleWhitelistAsset() {
         {{ t('assets.multi_chain_assets') }}
       </template>
 
-      <AssetBalances :balances="collectionBalance" />
+      <AssetBalances
+        :balances="collectionBalance"
+        all-breakdown
+      />
     </RuiCard>
   </TablePageLayout>
 </template>
