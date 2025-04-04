@@ -19,6 +19,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.inquirer import A_ETH, A_USD
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -98,7 +99,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
 
 def test_process_trade():
     user_id, portfolio_id = uuid.uuid4(), uuid.uuid4()
-    buy_trade = _process_trade(trade_data={
+    assert _process_trade(trade_data={
         'average_filled_price': '2.143375433810637',
         'base_quantity': '',
         'client_order_id': uuid.uuid4(),
@@ -109,7 +110,7 @@ def test_process_trade():
         'filled_quantity': '23304.3',
         'filled_value': '49950.06',
         'historical_pov': '',
-        'id': uuid.uuid4(),
+        'id': (unique_id_1 := uuid.uuid4()),
         'limit_price': '',
         'net_average_filled_price': '2.1455267911930416',
         'portfolio_id': portfolio_id,
@@ -122,8 +123,30 @@ def test_process_trade():
         'time_in_force': 'IMMEDIATE_OR_CANCEL',
         'type': 'MARKET',
         'user_id': user_id,
-    })
-    sell_trade = _process_trade(trade_data={
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1728997300000),
+        location=Location.COINBASEPRIME,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('49950.06'),
+        unique_id=str(unique_id_1),
+    ), SwapEvent(
+        timestamp=TimestampMS(1728997300000),
+        location=Location.COINBASEPRIME,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('SUI'),
+        amount=FVal('23304.3'),
+        unique_id=str(unique_id_1),
+    ), SwapEvent(
+        timestamp=TimestampMS(1728997300000),
+        location=Location.COINBASEPRIME,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('49.94'),
+        unique_id=str(unique_id_1),
+    )]
+
+    assert _process_trade(trade_data={
         'average_filled_price': '1.0123003094731783',
         'base_quantity': '247.96947',
         'client_order_id': uuid.uuid4(),
@@ -134,7 +157,7 @@ def test_process_trade():
         'filled_quantity': '247.96947',
         'filled_value': '251.0195712209',
         'historical_pov': '',
-        'id': uuid.uuid4(),
+        'id': (unique_id_2 := uuid.uuid4()),
         'limit_price': '1.0123',
         'net_average_filled_price': '1.0112880091637051',
         'portfolio_id': portfolio_id,
@@ -147,18 +170,28 @@ def test_process_trade():
         'time_in_force': 'GOOD_UNTIL_CANCELLED',
         'type': 'LIMIT',
         'user_id': user_id,
-    })
-
-    assert sell_trade.quote_asset == A_ETH
-    assert sell_trade.base_asset == 'eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'  # cbETH  # noqa: E501
-    assert sell_trade.rate == FVal('1.0123003094731783')
-    assert sell_trade.amount == FVal('251.0195712209')
-
-    assert buy_trade.quote_asset == A_USD
-    assert buy_trade.base_asset == 'SUI'
-    assert buy_trade.rate == FVal('2.1455267911930416')
-    assert buy_trade.fee_currency == A_USD
-    assert buy_trade.fee == FVal('49.94')
+    }) == [SwapEvent(
+        timestamp=TimestampMS(1679777345000),
+        location=Location.COINBASEPRIME,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),  # cbETH
+        amount=FVal('251.0195712209'),
+        unique_id=str(unique_id_2),
+    ), SwapEvent(
+        timestamp=TimestampMS(1679777345000),
+        location=Location.COINBASEPRIME,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('247.96947'),
+        unique_id=str(unique_id_2),
+    ), SwapEvent(
+        timestamp=TimestampMS(1679777345000),
+        location=Location.COINBASEPRIME,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.2510195712209'),
+        unique_id=str(unique_id_2),
+    )]
 
 
 def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
@@ -254,7 +287,7 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
     This test checks the logic for _query_paginated_endpoint by returning
     a mocked pagination from _api_query and the logic of query_history_events
     """
-    first_id, second_id, third_id, fourth_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())  # noqa: E501
+    first_id, second_id, third_id, fourth_id, fifth_id = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())  # noqa: E501
     movement_address = make_evm_address()
     movement_tx_hash = make_evm_tx_hash().hex()  # pylint: disable=no-member
     raw_data = [{
@@ -350,6 +383,31 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
         'type': 'DEPOSIT',
         'wallet_id': uuid.uuid4(),
     }]
+    order_entry = {
+        'average_filled_price': '2.143375433810637',
+        'base_quantity': '',
+        'client_order_id': uuid.uuid4(),
+        'commission': '49.94',
+        'created_at': '2024-10-15T13:01:39.939144Z',
+        'exchange_fee': '',
+        'expiry_time': None,
+        'filled_quantity': '23304.3',
+        'filled_value': '49950.06',
+        'historical_pov': '',
+        'id': fifth_id,
+        'limit_price': '',
+        'net_average_filled_price': '2.1455267911930416',
+        'portfolio_id': uuid.uuid4(),
+        'product_id': 'SUI-USD',
+        'quote_value': '50000',
+        'side': 'BUY',
+        'start_time': None,
+        'status': 'FILLED',
+        'stop_price': '',
+        'time_in_force': 'IMMEDIATE_OR_CANCEL',
+        'type': 'MARKET',
+        'user_id': uuid.uuid4(),
+    }
 
     raw_data_iter = iter(enumerate(raw_data))
 
@@ -359,6 +417,11 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             return {
                 'transactions': [raw_entry],
                 'pagination': {'has_next': idx < len(raw_data) - 1, 'next_cursor': 'any_string'},
+            }
+        elif 'orders' in path:
+            return {
+                'orders': [order_entry],
+                'pagination': {'has_next': False, 'next_cursor': 'any_string'},
             }
         elif path == '':
             return {'portfolios': [{'id': uuid.uuid4()}]}
@@ -460,6 +523,30 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             amount=FVal(20),
             asset=A_ETH,
             notes='Receive 20 ETH as Coinbase Prime staking reward',
+        ), SwapEvent(
+            identifier=8,
+            timestamp=TimestampMS(1728997300000),
+            location=Location.COINBASEPRIME,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USD,
+            amount=FVal('49950.06'),
+            unique_id=fifth_id,
+        ), SwapEvent(
+            identifier=9,
+            timestamp=TimestampMS(1728997300000),
+            location=Location.COINBASEPRIME,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('SUI'),
+            amount=FVal('23304.3'),
+            unique_id=fifth_id,
+        ), SwapEvent(
+            identifier=10,
+            timestamp=TimestampMS(1728997300000),
+            location=Location.COINBASEPRIME,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('49.94'),
+            unique_id=fifth_id,
         ),
     ]
 
