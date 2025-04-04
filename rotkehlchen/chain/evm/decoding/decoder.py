@@ -30,6 +30,10 @@ from rotkehlchen.chain.evm.decoding.rainbow.constants import RAINBOW_SUPPORTED_C
 from rotkehlchen.chain.evm.decoding.rainbow.decoder import RainbowDecoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.socket_bridge.decoder import SocketBridgeDecoder
+from rotkehlchen.chain.evm.decoding.stakedao.constants import (
+    STAKEDAO_SUPPORTED_CHAINS_WITHOUT_CLAIMS,
+)
+from rotkehlchen.chain.evm.decoding.stakedao.decoder import StakedaoCommonDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITH_SPECIAL_WETH,
@@ -287,6 +291,13 @@ class EVMTransactionDecoder(ABC):
             self._add_single_decoder(
                 class_name='Pendle',
                 decoder_class=PendleCommonDecoder,
+                rules=rules,
+            )
+
+        if self.evm_inquirer.chain_id in STAKEDAO_SUPPORTED_CHAINS_WITHOUT_CLAIMS:
+            self._add_single_decoder(
+                class_name='Stakedao',
+                decoder_class=StakedaoCommonDecoder,
                 rules=rules,
             )
 

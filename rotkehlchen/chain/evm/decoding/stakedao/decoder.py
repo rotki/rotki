@@ -40,7 +40,6 @@ from .constants import (
     CLAIMED_WITH_BRIBE,
     CPT_STAKEDAO,
     STAKEDAO_DEPOSIT,
-    STAKEDAO_DEPOSIT_OTHER_CHAINS,
     STAKEDAO_GAUGE_ABI,
     STAKEDAO_VAULT_ABI,
     STAKEDAO_WITHDRAW,
@@ -56,6 +55,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
+    """Base decoder for Stake DAO protocol.
+
+    Note: There is no claim contract deployed on Binance or Base chains,
+    so claim-related decoding is unavailable there.
+    """
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -75,9 +79,9 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         """
         if should_update_protocol_cache(
             cache_key=CacheType.STAKEDAO_GAUGES,
-            args=(str(self.evm_inquirer.chain_id.value),),
+            args=(str(self.evm_inquirer.chain_id.serialize()),),
         ) is True:
-            query_stakedao_gauges()
+            query_stakedao_gauges(self.evm_inquirer)
 
         if len(self.gauges) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
@@ -85,7 +89,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         with GlobalDBHandler().conn.read_ctx() as cursor:
             self.gauges = set(globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
                 cursor=cursor,
-                key_parts=(CacheType.STAKEDAO_GAUGES, str(self.evm_inquirer.chain_id.value)),
+                key_parts=(CacheType.STAKEDAO_GAUGES, str(self.evm_inquirer.chain_id.serialize())),
             ))
 
         return self.addresses_to_decoders()
@@ -256,6 +260,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             from_event_type=HistoryEventType.RECEIVE,
             from_event_subtype=HistoryEventSubType.NONE,
             to_event_type=HistoryEventType.WITHDRAWAL,
+            paired_events_data=(claim_events, False),
             to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             to_counterparty=CPT_STAKEDAO,
             to_notes=f'Withdraw {received_amount} {received_token.symbol} from StakeDAO',
@@ -263,7 +268,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         )])
 
     def _decode_deposit_withdrawal_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] in (STAKEDAO_DEPOSIT, STAKEDAO_DEPOSIT_OTHER_CHAINS):
+        if context.tx_log.topics[0] == STAKEDAO_DEPOSIT:
             return self._decode_deposit(context)
         elif context.tx_log.topics[0] == STAKEDAO_WITHDRAW:
             return self._decode_withdraw(context)

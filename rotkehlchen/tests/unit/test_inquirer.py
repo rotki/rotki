@@ -24,6 +24,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
 )
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
+from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
@@ -1083,6 +1084,41 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
 
     price = inquirer_defi.find_usd_price(asset=sy_lbtc)
     assert price == FVal('86045.28028742706')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_stakedao_gauge_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+    """Test that we get the correct prices for StakeDAO gauges"""
+    sdcrv_gauge = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x7f50786A0b15723D741727882ee99a0BF34e3466'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='sdCRV-gauge',
+        name='Stake DAO sdCRV Gauge',
+        decimals=18,
+        protocol=CPT_STAKEDAO,
+        underlying_tokens=[
+            UnderlyingToken(
+                address=get_or_create_evm_token(
+                    userdb=database,
+                    evm_address=string_to_evm_address('0xD1b5651E55D4CeeD36251c61c50C889B36F6abB5'),
+                    chain_id=ChainID.ETHEREUM,
+                    token_kind=EvmTokenKind.ERC20,
+                    symbol='sdCRV',
+                    name='Stake DAO CRV',
+                    decimals=18,
+                ).evm_address,
+                token_kind=EvmTokenKind.ERC20,
+                weight=ONE,
+            ),
+        ],
+    )
+
+    price = inquirer_defi.find_usd_price(asset=sdcrv_gauge)
+    assert price == FVal('0.359282')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
