@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import NoPremiumPlaceholder from '@/components/premium/NoPremiumPlaceholder.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
+import LiquityStakingPagePlaceholder from '@/components/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
 import { useBalancePricesStore } from '@/store/balances/prices';
@@ -69,7 +69,7 @@ const { t } = useI18n();
 
 <template>
   <div>
-    <NoPremiumPlaceholder
+    <LiquityStakingPagePlaceholder
       v-if="!premium"
       :text="t('liquity_page.no_premium')"
     />

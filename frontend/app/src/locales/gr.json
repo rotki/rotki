@@ -1202,7 +1202,6 @@
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
-    "available_to_premium": "only available to premium users.",
     "balance": "Balance",
     "category": "Category",
     "claimed": "Διεκδικήθηκε",
@@ -1218,7 +1217,6 @@
     "location": "Location",
     "name": "Name",
     "never": "Ποτέ",
-    "no_premium": "No premium subscription detected. ",
     "notes": "σημειώσεις",
     "of": "από",
     "optional": "Optional",
@@ -1236,8 +1234,7 @@
     "unclaimed": "αδιεκδίκητος",
     "unknown": "Άγνωστος",
     "validator_index": "Validator Index",
-    "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}."
+    "value_in_symbol": "{symbol} Value"
   },
   "conflict_dialog": {
     "action": {
@@ -2248,9 +2245,6 @@
     },
     "title": "Earned Per Asset"
   },
-  "liquity_page": {
-    "no_premium": "Liquity Staking"
-  },
   "liquity_pools": {
     "liquidation_gains": "Unclaimed iquidation gains",
     "no_lusd_deposited": "No LUSD deposited",
@@ -2504,11 +2498,6 @@
       "collection": "Collection"
     },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
-  },
-  "no_premium_placeholder": {
-    "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium",
-    "premium_only": " {text} @:common.available_to_premium"
   },
   "no_task_running": {
     "description": "No Pending tasks"

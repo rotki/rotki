@@ -468,153 +468,155 @@ onUnmounted(() => {
       />
     </template>
 
-    <RuiCard>
-      <template
-        v-if="!mainPage"
-        #header
-      >
-        <CardTitle>
-          <RefreshButton
-            :disabled="refreshing"
-            :tooltip="t('transactions.refresh_tooltip')"
-            @refresh="refresh(true)"
-          />
-          {{ usedTitle }}
-        </CardTitle>
-      </template>
-
-      <HistoryEventsTableActions
-        v-model:filters="filters"
-        v-model:toggles="toggles"
-        :accounts="accounts"
-        :processing="processing"
-        :matchers="matchers"
-        :export-params="pageParams"
-        :hide-account-selector="useExternalAccountFilter"
-        @update:accounts="onFilterAccountsChanged($event)"
-        @redecode="redecodeAllEvents()"
-        @redecode-page="redecodePageTransactions()"
-      />
-
-      <div
-        v-if="route.query.identifiers"
-        class="mb-4"
-      >
-        <RuiChip
-          closeable
-          color="primary"
-          size="sm"
-          variant="outlined"
-          @click:close="removeIdentifierParam()"
+    <div>
+      <RuiCard>
+        <template
+          v-if="!mainPage"
+          #header
         >
-          {{ t('transactions.events.show_missing_acquisition') }}
-        </RuiChip>
-      </div>
-
-      <div
-        v-if="route.query.eventIdentifiers"
-        class="mb-4"
-      >
-        <RuiChip
-          closeable
-          color="primary"
-          size="sm"
-          variant="outlined"
-          @click:close="removeEventIdentifierParam()"
-        >
-          {{ t('transactions.events.show_negative_balance') }}
-        </RuiChip>
-      </div>
-      <HistoryEventsTable
-        v-model:sort="sort"
-        v-model:pagination="pagination"
-        :group-loading="groupLoading"
-        :groups="groups"
-        :exclude-ignored="!toggles.showIgnoredAssets"
-        :identifiers="identifiers"
-        :highlighted-identifiers="highlightedIdentifiers"
-        @show:form="showForm($event)"
-        @refresh="fetchAndRedecodeEvents($event)"
-        @set-page="setPage($event)"
-      >
-        <template #query-status="{ colspan }">
-          <HistoryQueryStatus
-            v-model:current-action="currentAction"
-            :only-chains="onlyChains"
-            :locations="locations"
-            :decoding-status="decodingStatus"
-            :decoding="eventTaskLoading"
-            :colspan="colspan"
-            :loading="processing"
-            @show:dialog="onShowDialog($event)"
-          />
+          <CardTitle>
+            <RefreshButton
+              :disabled="refreshing"
+              :tooltip="t('transactions.refresh_tooltip')"
+              @refresh="refresh(true)"
+            />
+            {{ usedTitle }}
+          </CardTitle>
         </template>
-      </HistoryEventsTable>
 
-      <HistoryEventFormDialog
-        v-model="formData"
-        @refresh="fetchAndRedecodeEvents()"
-      />
+        <HistoryEventsTableActions
+          v-model:filters="filters"
+          v-model:toggles="toggles"
+          :accounts="accounts"
+          :processing="processing"
+          :matchers="matchers"
+          :export-params="pageParams"
+          :hide-account-selector="useExternalAccountFilter"
+          @update:accounts="onFilterAccountsChanged($event)"
+          @redecode="redecodeAllEvents()"
+          @redecode-page="redecodePageTransactions()"
+        />
 
-      <TransactionFormDialog
-        v-model="addTransactionModelValue"
-        :loading="sectionLoading"
-        @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
-      />
-
-      <RepullingTransactionFormDialog
-        v-model="repullingTransactionModelValue"
-        :loading="sectionLoading"
-        @refresh="fetchAndRedecodeEvents()"
-      />
-
-      <MissingRulesDialog
-        v-model="missingRuleData"
-        @edit-event="editMissingRulesEntry($event)"
-        @redecode="forceRedecodeEvmEvents({ transactions: [$event] })"
-        @add="onAddMissingRule($event)"
-        @dismiss="missingRuleData = undefined"
-      />
-    </RuiCard>
-
-    <RuiDialog
-      v-model="decodingStatusDialogOpen"
-      max-width="600"
-      :persistent="decodingStatusDialogPersistent"
-    >
-      <HistoryEventsDecodingStatus
-        v-if="decodingStatusDialogOpen"
-        :refreshing="refreshing"
-        :decoding-status="decodingStatus"
-        @redecode-all-events="redecodeAllEvents()"
-        @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
-      >
-        <RuiButton
-          variant="text"
-          icon
-          @click="decodingStatusDialogOpen = false"
+        <div
+          v-if="route.query.identifiers"
+          class="mb-4"
         >
-          <RuiIcon name="lu-x" />
-        </RuiButton>
-      </HistoryEventsDecodingStatus>
-    </RuiDialog>
+          <RuiChip
+            closeable
+            color="primary"
+            size="sm"
+            variant="outlined"
+            @click:close="removeIdentifierParam()"
+          >
+            {{ t('transactions.events.show_missing_acquisition') }}
+          </RuiChip>
+        </div>
 
-    <RuiDialog
-      v-model="protocolCacheStatusDialogOpen"
-      max-width="600"
-    >
-      <HistoryEventsProtocolCacheUpdateStatus
-        v-if="protocolCacheStatusDialogOpen"
-        :refreshing="refreshing"
-      >
-        <RuiButton
-          variant="text"
-          icon
-          @click="protocolCacheStatusDialogOpen = false"
+        <div
+          v-if="route.query.eventIdentifiers"
+          class="mb-4"
         >
-          <RuiIcon name="lu-x" />
-        </RuiButton>
-      </HistoryEventsProtocolCacheUpdateStatus>
-    </RuiDialog>
+          <RuiChip
+            closeable
+            color="primary"
+            size="sm"
+            variant="outlined"
+            @click:close="removeEventIdentifierParam()"
+          >
+            {{ t('transactions.events.show_negative_balance') }}
+          </RuiChip>
+        </div>
+        <HistoryEventsTable
+          v-model:sort="sort"
+          v-model:pagination="pagination"
+          :group-loading="groupLoading"
+          :groups="groups"
+          :exclude-ignored="!toggles.showIgnoredAssets"
+          :identifiers="identifiers"
+          :highlighted-identifiers="highlightedIdentifiers"
+          @show:form="showForm($event)"
+          @refresh="fetchAndRedecodeEvents($event)"
+          @set-page="setPage($event)"
+        >
+          <template #query-status="{ colspan }">
+            <HistoryQueryStatus
+              v-model:current-action="currentAction"
+              :only-chains="onlyChains"
+              :locations="locations"
+              :decoding-status="decodingStatus"
+              :decoding="eventTaskLoading"
+              :colspan="colspan"
+              :loading="processing"
+              @show:dialog="onShowDialog($event)"
+            />
+          </template>
+        </HistoryEventsTable>
+
+        <HistoryEventFormDialog
+          v-model="formData"
+          @refresh="fetchAndRedecodeEvents()"
+        />
+
+        <TransactionFormDialog
+          v-model="addTransactionModelValue"
+          :loading="sectionLoading"
+          @reload="fetchAndRedecodeEvents({ transactions: [$event] })"
+        />
+
+        <RepullingTransactionFormDialog
+          v-model="repullingTransactionModelValue"
+          :loading="sectionLoading"
+          @refresh="fetchAndRedecodeEvents()"
+        />
+
+        <MissingRulesDialog
+          v-model="missingRuleData"
+          @edit-event="editMissingRulesEntry($event)"
+          @redecode="forceRedecodeEvmEvents({ transactions: [$event] })"
+          @add="onAddMissingRule($event)"
+          @dismiss="missingRuleData = undefined"
+        />
+      </RuiCard>
+
+      <RuiDialog
+        v-model="decodingStatusDialogOpen"
+        max-width="600"
+        :persistent="decodingStatusDialogPersistent"
+      >
+        <HistoryEventsDecodingStatus
+          v-if="decodingStatusDialogOpen"
+          :refreshing="refreshing"
+          :decoding-status="decodingStatus"
+          @redecode-all-events="redecodeAllEvents()"
+          @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
+        >
+          <RuiButton
+            variant="text"
+            icon
+            @click="decodingStatusDialogOpen = false"
+          >
+            <RuiIcon name="lu-x" />
+          </RuiButton>
+        </HistoryEventsDecodingStatus>
+      </RuiDialog>
+
+      <RuiDialog
+        v-model="protocolCacheStatusDialogOpen"
+        max-width="600"
+      >
+        <HistoryEventsProtocolCacheUpdateStatus
+          v-if="protocolCacheStatusDialogOpen"
+          :refreshing="refreshing"
+        >
+          <RuiButton
+            variant="text"
+            icon
+            @click="protocolCacheStatusDialogOpen = false"
+          >
+            <RuiIcon name="lu-x" />
+          </RuiButton>
+        </HistoryEventsProtocolCacheUpdateStatus>
+      </RuiDialog>
+    </div>
   </TablePageLayout>
 </template>

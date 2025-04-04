@@ -1218,7 +1218,6 @@
     "amount": "金额",
     "asset": "资产",
     "assets": "资产",
-    "available_to_premium": "仅对高级用户可用。",
     "balance": "余额",
     "category": "类别",
     "claimed": "声称",
@@ -1241,7 +1240,6 @@
     "multi_chain": "多链",
     "name": "姓名",
     "never": "从不",
-    "no_premium": "未检测到高级订阅。",
     "notes": "备注",
     "of": "of",
     "optional": "可选",
@@ -1260,8 +1258,7 @@
     "unclaimed": "无人认领",
     "unknown": "未知",
     "validator_index": "验证器索引",
-    "value_in_symbol": "{symbol} 值",
-    "visit_website": "要获得高级订阅，请访问我们的 {0}."
+    "value_in_symbol": "{symbol} 值"
   },
   "conflict_dialog": {
     "action": {
@@ -2292,9 +2289,6 @@
     },
     "title": "每项资产赚取"
   },
-  "liquity_page": {
-    "no_premium": "流动性质押"
-  },
   "liquity_pools": {
     "liquidation_gains": "无人认领的清算收益",
     "no_lusd_deposited": "没有存入 LUSD",
@@ -2579,11 +2573,6 @@
       "collection": "收藏"
     },
     "upgrade": "显示 {limit} 个 NFT。要查看更多,请升级到 {link}"
-  },
-  "no_premium_placeholder": {
-    "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium",
-    "premium_only": " {text} @:common.available_to_premium"
   },
   "no_task_running": {
     "description": "没有待处理的任务"
