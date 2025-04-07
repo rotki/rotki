@@ -3,12 +3,16 @@ import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useBalances } from '@/composables/balances';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useStatusStore } from '@/store/status';
+import { Section } from '@/types/status';
 import { One } from '@rotki/common';
 
 const props = withDefaults(
@@ -23,6 +27,10 @@ const { identifier, isCollectionParent } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalances();
 
 const { assetName } = useAssetInfoRetrieval();
+const { refreshPrice } = useBalances();
+const { isLoading } = useStatusStore();
+
+const refreshingPrices = isLoading(Section.PRICES);
 
 const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
 
@@ -75,8 +83,27 @@ function showDeleteConfirmation() {
       no-padding
       class="[&>div:first-child]:pb-3"
     >
-      <template #header>
-        {{ t('common.price') }}
+      <template #custom-header>
+        <div class="px-4 pt-3 flex justify-between items-start">
+          <CardTitle>{{ t('common.price') }}</CardTitle>
+          <RuiTooltip :open-delay="200">
+            <template #activator>
+              <RuiButton
+                variant="text"
+                icon
+                class="!p-2"
+                :loading="refreshingPrices"
+                @click="refreshPrice(identifier)"
+              >
+                <RuiIcon
+                  name="lu-refresh-ccw"
+                  size="18"
+                />
+              </RuiButton>
+            </template>
+            {{ t('assets.refresh_price') }}
+          </RuiTooltip>
+        </div>
       </template>
       <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
         <AmountDisplay
@@ -87,7 +114,7 @@ function showDeleteConfirmation() {
           :price-of-asset="info.usdPrice"
           fiat-currency="USD"
           :value="info.usdPrice"
-          no-scramble
+          is-asset-price
         />
 
         <RowActions
@@ -98,6 +125,14 @@ function showDeleteConfirmation() {
           @edit-click="setPriceForm()"
         />
       </div>
+
+      <LatestPriceFormDialog
+        v-model:open="openPriceDialog"
+        :editable-item="customPrice"
+        :edit-mode="isManualPrice"
+        disable-from-asset
+        @refresh="refreshCurrentPrices()"
+      />
     </RuiCard>
     <RuiCard no-padding>
       <template #header>
@@ -125,13 +160,5 @@ function showDeleteConfirmation() {
         :value="info.usdValue"
       />
     </RuiCard>
-
-    <LatestPriceFormDialog
-      v-model:open="openPriceDialog"
-      :editable-item="customPrice"
-      :edit-mode="isManualPrice"
-      disable-from-asset
-      @refresh="refreshCurrentPrices()"
-    />
   </div>
 </template>

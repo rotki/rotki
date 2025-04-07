@@ -7,6 +7,7 @@ export const AssetPriceInput = z.tuple([NumericString, z.number()]);
 
 export const AssetPrice = z.object({
   isManualPrice: z.boolean(),
+  oracle: z.string(),
   usdPrice: NumericString.nullish(),
   value: NumericString,
 });
@@ -22,10 +23,14 @@ export const AssetPriceResponse = z.object({
 }).transform((response) => {
   const mappedAssets: AssetPrices = {};
   const assets = response.assets;
+
   forEach(assets, (val, asset) => {
     const [value, oracle] = val;
+    const oracleKey = Object.entries(response.oracles).find(([_, value]) => value === oracle)?.[0] ?? '';
+
     mappedAssets[asset] = {
       isManualPrice: oracle === response.oracles.manualcurrent,
+      oracle: oracleKey,
       value,
     };
   });

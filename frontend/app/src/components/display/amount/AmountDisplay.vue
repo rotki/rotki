@@ -11,38 +11,41 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
+import { PriceOracle } from '@/types/settings/price-oracle';
 import { BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import { or } from '@vueuse/math';
 
+export interface AmountInputProps {
+  value: BigNumber | undefined;
+  loading?: boolean;
+  amount?: BigNumber;
+  // This is what the fiat currency is `value` in. If it is null, it means we want to show it the way it is, no conversion, e.g. amount of an asset.
+  fiatCurrency?: string | null;
+  showCurrency?: ShownCurrency;
+  forceCurrency?: boolean;
+  asset?: string;
+  // This is price of `priceAsset`
+  priceOfAsset?: BigNumber | null;
+  // This is asset we want to calculate the value from, instead get it directly from `value`
+  priceAsset?: string;
+  integer?: boolean;
+  assetPadding?: number;
+  // This prop to give color to the text based on the value
+  pnl?: boolean;
+  isAssetPrice?: boolean;
+  noTruncate?: boolean;
+  timestamp?: number;
+  // Whether the `timestamp` prop is presented with `milliseconds` value or not
+  milliseconds?: boolean;
+  /**
+   * Amount display text is really large
+   */
+  xl?: boolean;
+  resolutionOptions?: AssetResolutionOptions;
+}
+
 const props = withDefaults(
-  defineProps<{
-    value: BigNumber | undefined;
-    loading?: boolean;
-    amount?: BigNumber;
-    // This is what the fiat currency is `value` in. If it is null, it means we want to show it the way it is, no conversion, e.g. amount of an asset.
-    fiatCurrency?: string | null;
-    showCurrency?: ShownCurrency;
-    forceCurrency?: boolean;
-    asset?: string;
-    // This is price of `priceAsset`
-    priceOfAsset?: BigNumber | null;
-    // This is asset we want to calculate the value from, instead get it directly from `value`
-    priceAsset?: string;
-    integer?: boolean;
-    assetPadding?: number;
-    // This prop to give color to the text based on the value
-    pnl?: boolean;
-    noScramble?: boolean;
-    noTruncate?: boolean;
-    timestamp?: number;
-    // Whether the `timestamp` prop is presented with `milliseconds` value or not
-    milliseconds?: boolean;
-    /**
-     * Amount display text is really large
-     */
-    xl?: boolean;
-    resolutionOptions?: AssetResolutionOptions;
-  }>(),
+  defineProps<AmountInputProps>(),
   {
     amount: () => One,
     asset: '',
@@ -50,9 +53,9 @@ const props = withDefaults(
     fiatCurrency: null,
     forceCurrency: false,
     integer: false,
+    isAssetPrice: false,
     loading: false,
     milliseconds: false,
-    noScramble: false,
     noTruncate: false,
     pnl: false,
     priceAsset: '',
@@ -70,9 +73,9 @@ const {
   fiatCurrency: sourceCurrency,
   forceCurrency,
   integer,
+  isAssetPrice,
   loading,
   milliseconds,
-  noScramble,
   priceAsset,
   priceOfAsset,
   resolutionOptions,
@@ -186,7 +189,7 @@ const internalValue = computed<BigNumber>(() => {
 });
 
 const displayValue: ComputedRef<BigNumber> = useNumberScrambler({
-  enabled: computed(() => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))),
+  enabled: computed(() => !get(isAssetPrice) && (get(scrambleData) || !get(shouldShowAmount))),
   multiplier: scrambleMultiplier,
   value: internalValue,
 });
@@ -372,8 +375,21 @@ const { copied, copy } = useCopy(copyValue);
 
 const anyLoading = logicOr(loading, evaluating);
 const info = assetInfo(asset, resolutionOptions);
-const { isManualAssetPrice } = useBalancePricesStore();
+const { getAssetPriceOracle, isManualAssetPrice } = useBalancePricesStore();
 const isManualPrice = isManualAssetPrice(priceAsset);
+
+const assetOracle = computed<string | undefined>(() => {
+  if (!get(isAssetPrice) || !get(priceAsset))
+    return undefined;
+  const oracleKey = get(getAssetPriceOracle(priceAsset));
+  const mapping: Record<string, string> = {
+    [PriceOracle.MANUALCURRENT]: t('oracles.manual_current'),
+    [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2'),
+    [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3'),
+  };
+
+  return mapping[oracleKey] || oracleKey;
+});
 
 const displayAsset = computed(() => {
   const assetInfo = get(info);
@@ -469,6 +485,25 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
             <span>
               {{ numberParts.significantDigits }}
             </span>
+          </template>
+          <template #tooltip>
+            <RuiChip
+              v-if="assetOracle"
+              color="warning"
+              class="[&_span]:!text-[10px] font-bold leading-3 uppercase !p-0.5 mb-0.5 mt-0.5"
+              size="sm"
+            >
+              <div class="flex gap-1">
+                <RuiIcon
+                  name="lu-info"
+                  size="12"
+                />
+                {{ assetOracle }}
+              </div>
+            </RuiChip>
+            <div v-if="tooltip">
+              {{ tooltip }}
+            </div>
           </template>
         </CopyTooltip>
         <ReuseSymbol

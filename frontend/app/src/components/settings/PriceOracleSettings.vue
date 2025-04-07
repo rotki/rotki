@@ -11,7 +11,6 @@ import {
   COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
-  MANUAL_PRIO_LIST_ITEM,
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
@@ -35,17 +34,8 @@ const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId
   UNISWAP3_PRIO_LIST_ITEM,
 ];
 
-function availableCurrentOracles(): PrioritizedListData<PrioritizedListId> {
+function availableOracles(): PrioritizedListData<PrioritizedListId> {
   return new PrioritizedListData([...baseAvailableOraclesTyped]);
-}
-
-function availableHistoricOracles(): PrioritizedListData<PrioritizedListId> {
-  const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
-    ...baseAvailableOraclesTyped,
-    MANUAL_PRIO_LIST_ITEM,
-  ];
-
-  return new PrioritizedListData(itemData);
 }
 
 const { reset: resetCachedHistoricalPrices } = useHistoricCachePriceStore();
@@ -95,7 +85,7 @@ const { t } = useI18n();
       >
         <PrioritizedList
           :model-value="currentOracles"
-          :all-items="availableCurrentOracles()"
+          :all-items="availableOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
           @update:model-value="updateImmediate($event)"
@@ -113,7 +103,7 @@ const { t } = useI18n();
       >
         <PrioritizedList
           :model-value="historicOracles"
-          :all-items="availableHistoricOracles()"
+          :all-items="availableOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
           @update:model-value="updateImmediate($event)"

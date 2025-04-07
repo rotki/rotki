@@ -94,7 +94,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     <template #item.usdPrice="{ row }">
       <AmountDisplay
         v-if="row.usdPrice && row.usdPrice.gte(0)"
-        no-scramble
+        is-asset-price
         show-currency="symbol"
         :price-asset="row.asset"
         :price-of-asset="row.usdPrice"

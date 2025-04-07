@@ -1204,6 +1204,7 @@
     },
     "ignore": "Ignore Asset",
     "multi_chain_assets": "Multi Chain Assets",
+    "refresh_price": "Refresh price",
     "value": "Value"
   },
   "back_button": {
@@ -3499,6 +3500,7 @@
     "to_asset": "To Asset"
   },
   "oracles": {
+    "manual_current": "Custom price",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },

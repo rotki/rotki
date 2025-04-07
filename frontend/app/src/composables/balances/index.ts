@@ -59,6 +59,17 @@ export const useBalances = createSharedComposable(() => {
     setStatus(Status.LOADED);
   };
 
+  const refreshPrice = async (asset: string): Promise<void> => {
+    const { setStatus } = useStatusUpdater(Section.PRICES);
+    setStatus(Status.LOADING);
+    await fetchPrices({
+      ignoreCache: true,
+      selectedAssets: [asset],
+    });
+    adjustPrices(get(prices));
+    setStatus(Status.LOADED);
+  };
+
   const pendingAssets = ref<string[]>([]);
   const noPriceAssets = useArrayFilter(assets(), asset => !get(assetPrice(asset)));
 
@@ -127,6 +138,7 @@ export const useBalances = createSharedComposable(() => {
     autoRefresh,
     fetch,
     fetchBalances,
+    refreshPrice,
     refreshPrices,
   };
 });

@@ -7,6 +7,7 @@ defineProps<{
 
 defineSlots<{
   default: () => any;
+  tooltip: () => any;
 }>();
 
 const { t } = useI18n();
@@ -28,9 +29,11 @@ const { t } = useI18n();
       class="text-center"
       data-cy="display-full-value"
     >
-      <template v-if="tooltip">
-        {{ tooltip }}
-      </template>
+      <slot name="tooltip">
+        <div v-if="tooltip">
+          {{ tooltip }}
+        </div>
+      </slot>
       <div class="uppercase font-bold text-caption overflow-hidden h-5 transition-all duration-200">
         <div
           :class="{

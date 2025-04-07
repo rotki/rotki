@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will show the oracle used to display the asset price.
 * :feature:`8928` Users will now have the option to keep the table sorting preference.
 * :feature:`9495` rotki now supports Stake DAO across all supported EVM chains, including balance tracking.
 * :feature:`-` Now free users can change the theme to dark mode too.

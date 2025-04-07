@@ -300,7 +300,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 :price-asset="row.priceAsset"
                 :amount="row.priceInAsset"
                 :value="row.usdPrice"
-                no-scramble
+                is-asset-price
                 show-currency="symbol"
                 fiat-currency="USD"
               />

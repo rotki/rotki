@@ -200,7 +200,7 @@ watch(loading, async (isLoading, wasLoading) => {
           </template>
           <template #item.usdPrice="{ row }">
             <AmountDisplay
-              no-scramble
+              is-asset-price
               :price-asset="row.priceAsset"
               :amount="row.priceInAsset"
               :value="row.usdPrice"

@@ -242,7 +242,7 @@ watchDebounced(
         <AmountDisplay
           v-if="!row.assetIsMissing"
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          no-scramble
+          is-asset-price
           show-currency="symbol"
           :price-asset="row.asset"
           :price-of-asset="row.usdPrice"

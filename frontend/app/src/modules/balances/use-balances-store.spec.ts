@@ -17,6 +17,7 @@ describe('useBalancesStore', () => {
     const assetPrices: AssetPrices = {
       ETH: {
         isManualPrice: false,
+        oracle: 'coingecko',
         usdPrice: null,
         value: bigNumberify(2500),
       },

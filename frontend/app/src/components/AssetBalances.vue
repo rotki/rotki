@@ -183,7 +183,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
     <template #item.usdPrice="{ row }">
       <AmountDisplay
         :loading="!row.usdPrice || row.usdPrice.lt(0)"
-        no-scramble
+        is-asset-price
         show-currency="symbol"
         :price-asset="row.asset"
         :price-of-asset="row.usdPrice"
