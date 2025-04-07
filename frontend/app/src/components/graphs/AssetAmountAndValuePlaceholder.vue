@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
-import GetPremiumPlaceholder from '@/components/graphs/GetPremiumPlaceholder.vue';
+import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard content-class="-mx-3">
+  <RuiCard content-class="-mx-3 !pt-0">
     <template #header>
       <div class="pt-2">
         {{ t('premium_components.statistics.asset_amount_and_value_over_time') }}
@@ -14,7 +14,7 @@ const { t } = useI18n();
     </template>
     <div class="relative">
       <AppImage
-        class="dark:invert-[0.88] dark:hue-rotate-[180deg]"
+        class="dark:invert-[0.88] dark:hue-rotate-[180deg] -m-2"
         src="./assets/images/placeholder/asset_amount_and_value_partial.png"
       />
 

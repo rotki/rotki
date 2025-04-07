@@ -1312,7 +1312,6 @@
     "amount": "Montant",
     "asset": "Actif",
     "assets": "Actifs",
-    "available_to_premium": "réservé aux utilisateurs premium.",
     "balance": "Solde",
     "category": "Catégorie",
     "claimed": "Réclamé",
@@ -1335,7 +1334,6 @@
     "multi_chain": "Multi Chaîne",
     "name": "Nom",
     "never": "Jamais",
-    "no_premium": "Aucun abonnement premium détecté. ",
     "notes": "Notes",
     "of": "de",
     "optional": "Facultatif",
@@ -1354,9 +1352,7 @@
     "unclaimed": "Non réclamé",
     "unknown": "Inconnu",
     "validator_index": "Index de validateur",
-    "value_in_symbol": "{symbol} Valeur",
-    "visit_website": "Pour obtenir un abonnement premium, veuillez visiter notre {0}.",
-    "website": "site web"
+    "value_in_symbol": "{symbol} Valeur"
   },
   "conflict_dialog": {
     "action": {
@@ -2404,9 +2400,6 @@
     },
     "title": "Gagné par actif"
   },
-  "liquity_page": {
-    "no_premium": "Participation à Liquity"
-  },
   "liquity_pools": {
     "liquidation_gains": "Gains de liquidation non réclamés",
     "no_lusd_deposited": "Aucun LUSD déposé",
@@ -2723,11 +2716,6 @@
       "collection": "Collection"
     },
     "upgrade": "Affichage de {limit} NFT. Pour en voir plus, veuillez passer à {link}"
-  },
-  "no_premium_placeholder": {
-    "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium",
-    "premium_only": " {text} @:common.available_to_premium"
   },
   "no_task_running": {
     "description": "Aucune tâche en attente"

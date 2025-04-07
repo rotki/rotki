@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
-import GetPremiumPlaceholder from '@/components/graphs/GetPremiumPlaceholder.vue';
+import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
 
 const { t } = useI18n();
 </script>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
+import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import GetPremiumPlaceholder from '@/components/graphs/GetPremiumPlaceholder.vue';
 
 const { t } = useI18n();
 </script>
@@ -23,7 +23,7 @@ const { t } = useI18n();
 
     <div class="relative">
       <AppImage
-        class="dark:invert-[0.89] dark:hue-rotate-[180deg]"
+        class="dark:invert-[0.89] dark:hue-rotate-[180deg] -m-4"
         src="./assets/images/placeholder/history_events_wrapped.png"
       />
 

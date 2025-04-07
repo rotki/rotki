@@ -1551,7 +1551,6 @@
     "amount": "Amount",
     "asset": "Asset",
     "assets": "Assets",
-    "available_to_premium": "only available to premium users.",
     "balance": "Balance",
     "category": "Category",
     "chain": "Chains",
@@ -1578,7 +1577,6 @@
     "multi_chain": "Multi Chain",
     "name": "Name",
     "never": "Never",
-    "no_premium": "No premium subscription detected. ",
     "notes": "Notes",
     "of": "of",
     "optional": "Optional",
@@ -1601,8 +1599,6 @@
     "unknown": "Unknown",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}.",
-    "website": "website",
     "xpub": "XPUB"
   },
   "conflict_dialog": {
@@ -2075,7 +2071,7 @@
     }
   },
   "eth2_page": {
-    "no_premium": "ETH Staking statistic is",
+    "no_premium": "The ETH staking statistic page is not included in the FREE version",
     "setting": {
       "refresh_validator_daily_stats_on_load": {
         "hint": "Disable this setting to avoid getting rate limited. rotki will only show cached data.",
@@ -2952,7 +2948,7 @@
     "title": "Earned Per Asset"
   },
   "liquity_page": {
-    "no_premium": "Liquity Staking"
+    "no_premium": "The Liquity staking statistic page is not included in the FREE version"
   },
   "liquity_pools": {
     "liquidation_gains": "Unclaimed liquidation gains",
@@ -3307,11 +3303,6 @@
       "collection": "Collection"
     },
     "upgrade": "Displaying {limit} NFTs. To view more please upgrade to {link}"
-  },
-  "no_premium_placeholder": {
-    "get_premium": "@:common.visit_website",
-    "no_premium": "@:common.no_premium",
-    "premium_only": " {text} @:common.available_to_premium"
   },
   "no_task_running": {
     "description": "No Pending tasks"
