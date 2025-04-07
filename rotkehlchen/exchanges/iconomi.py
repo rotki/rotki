@@ -17,14 +17,9 @@ from rotkehlchen.constants.assets import A_AUST
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import (
-    Location,
-    MarginPosition,
-    Price,
-    Trade,
-    TradeType,
-)
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -34,58 +29,17 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def trade_from_iconomi(raw_trade: dict) -> Trade:
-    """Turn an iconomi trade entry to our own trade format
-
-    May raise:
-    - UnknownAsset
-    - DeserializationError
-    - KeyError
-    """
-
-    timestamp = raw_trade['timestamp']
-
-    if raw_trade['type'] == 'buy_asset':
-        trade_type = TradeType.BUY
-        tx_asset = asset_from_iconomi(raw_trade['target_ticker'])
-        tx_amount = deserialize_asset_amount(raw_trade['target_amount'])
-        native_asset = asset_from_iconomi(raw_trade['source_ticker'])
-        native_amount = deserialize_asset_amount(raw_trade['source_amount'])
-    elif raw_trade['type'] == 'sell_asset':
-        trade_type = TradeType.SELL
-        tx_asset = asset_from_iconomi(raw_trade['source_ticker'])
-        tx_amount = deserialize_asset_amount(raw_trade['source_amount'])
-        native_amount = deserialize_asset_amount(raw_trade['target_amount'])
-        native_asset = asset_from_iconomi(raw_trade['target_ticker'])
-    else:
-        raise DeserializationError(f'Unexpected Iconomi trade type {raw_trade["type"]}')
-
-    amount = tx_amount
-    rate = Price(native_amount / tx_amount)
-    fee_amount = deserialize_fee(raw_trade['fee_amount'])
-    fee_asset = asset_from_iconomi(raw_trade['fee_ticker'])
-    return Trade(
-        timestamp=timestamp,
-        location=Location.ICONOMI,
-        base_asset=tx_asset,
-        quote_asset=native_asset,
-        trade_type=trade_type,
-        amount=amount,
-        rate=rate,
-        fee=fee_amount,
-        fee_currency=fee_asset,
-        link=str(raw_trade['transactionId']),
-    )
 
 
 class Iconomi(ExchangeInterface):
@@ -307,18 +261,14 @@ class Iconomi(ExchangeInterface):
 
         return assets_balance, ''
 
-    def query_online_trade_history(
+    def query_online_history_events(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-
-        page = 0
-        all_transactions = []
-
+    ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
+        page, all_transactions, events = 0, [], []
         while True:
             resp = self._api_query('get', 'user/activity', {'pageNumber': str(page)})
-
             if len(resp['transactions']) == 0:
                 break
 
@@ -326,38 +276,42 @@ class Iconomi(ExchangeInterface):
             page += 1
 
         log.debug('ICONOMI trade history query', results_num=len(all_transactions))
-
-        trades = []
         for tx in all_transactions:
-            timestamp = tx['timestamp']
-            if timestamp < start_ts:
-                continue
-            if timestamp > end_ts:
-                continue
+            try:
+                if (
+                    tx['type'] not in {'buy_asset', 'sell_asset'} or
+                    not (start_ts <= (timestamp := tx['timestamp']) <= end_ts)
+                ):
+                    continue
 
-            if tx['type'] in {'buy_asset', 'sell_asset'}:
-                try:
-                    trades.append(trade_from_iconomi(tx))
-                except UnknownAsset as e:
-                    self.send_unknown_asset_message(
-                        asset_identifier=e.identifier,
-                        details='transaction',
-                    )
-                except (DeserializationError, KeyError) as e:
-                    msg = str(e)
-                    if isinstance(e, KeyError):
-                        msg = f'Missing key entry for {msg}.'
-                    self.msg_aggregator.add_error(
-                        'Error processing an iconomi transaction. Check logs '
-                        'for details. Ignoring it.',
-                    )
-                    log.error(
-                        'Error processing an iconomi transaction',
-                        error=msg,
-                        trade=tx,
-                    )
+                events.extend(create_swap_events(
+                    timestamp=ts_sec_to_ms(timestamp),
+                    location=self.location,
+                    spend_asset=asset_from_iconomi(tx['source_ticker']),
+                    spend_amount=deserialize_asset_amount(tx['source_amount']),
+                    receive_asset=asset_from_iconomi(tx['target_ticker']),
+                    receive_amount=deserialize_asset_amount(tx['target_amount']),
+                    fee_asset=asset_from_iconomi(tx['fee_ticker']),
+                    fee_amount=deserialize_fee(tx['fee_amount']),
+                    location_label=self.name,
+                    unique_id=str(tx['transactionId']),
+                ))
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='transaction',
+                )
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key entry for {msg}.'
+                self.msg_aggregator.add_error(
+                    'Error processing an iconomi transaction. Check logs '
+                    'for details. Ignoring it.',
+                )
+                log.error(msg='Error processing an iconomi transaction', error=msg, trade=tx)
 
-        return trades, (start_ts, end_ts)
+        return events, end_ts
 
     def query_online_margin_history(
             self,

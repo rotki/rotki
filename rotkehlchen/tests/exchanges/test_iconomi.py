@@ -1,17 +1,18 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_REP
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.user_messages import MessagesAggregator
 
 ICONOMI_BALANCES_RESPONSE = """{"currency":"USD","daaList":[{"name":"CARUS-AR","ticker":"CAR","balance":"100.0","value":"1000.0"},{"name":"Strategy 2","ticker":"SCND","balance":"80.00000000","value":"0"}],"assetList":[{"name":"Aragon","ticker":"ANT","balance":"1000","value":"200.0"},{"name":"Ethereum","ticker":"ETH","balance":"32","value":"10000.031241234"},{"name":"Augur","ticker":"REP","balance":"0.5314532451","value":"0.8349030710000"}]}"""  # noqa: E501
@@ -64,34 +65,44 @@ def test_query_trade_history(function_scope_iconomi):
         return MockResponse(200, ICONOMI_TRADES_EMPTY_RESPONSE)
 
     with patch.object(iconomi.session, 'get', side_effect=mock_api_return):
-        trades = iconomi.query_trade_history(
-            start_ts=0,
-            end_ts=1565732120,
-            only_cache=False,
+        events, _ = iconomi.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1565732120),
         )
 
-    assert len(trades) == 2
-    assert trades[0].timestamp == 1539713117
-    assert trades[0].location == Location.ICONOMI
-    assert trades[0].base_asset == A_REP
-    assert trades[0].quote_asset == A_EUR
-    assert trades[0].trade_type == TradeType.SELL
-    assert trades[0].amount == FVal('1000.23')
-    assert trades[0].rate.is_close(FVal('1.50528378472'))
-    assert trades[0].fee.is_close(FVal('0.0'))
-    assert isinstance(trades[0].fee_currency, Asset)
-    assert trades[0].fee_currency == A_EUR
-
-    assert trades[1].timestamp == 1539713118
-    assert trades[1].location == Location.ICONOMI
-    assert trades[1].base_asset == A_REP
-    assert trades[1].quote_asset == A_EUR
-    assert trades[1].trade_type == TradeType.BUY
-    assert trades[1].amount == FVal('1234')
-    assert trades[1].rate.is_close(FVal('0.8102917341977309562398703404'))
-    assert trades[1].fee.is_close(FVal('0.0'))
-    assert isinstance(trades[1].fee_currency, Asset)
-    assert trades[1].fee_currency == A_EUR
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1539713117000),
+        location=Location.ICONOMI,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_REP,
+        amount=FVal('1000.23'),
+        location_label='iconomi',
+        unique_id='8362abff-12fd-4f6e-a152-590295d89bd2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1539713117000),
+        location=Location.ICONOMI,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_EUR,
+        amount=FVal('1505.63'),
+        location_label='iconomi',
+        unique_id='8362abff-12fd-4f6e-a152-590295d89bd2',
+    ), SwapEvent(
+        timestamp=TimestampMS(1539713118000),
+        location=Location.ICONOMI,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        amount=FVal('999.9'),
+        location_label='iconomi',
+        unique_id='e8c2c522-e43a-4cd9-b73b-812903bc85ca',
+    ), SwapEvent(
+        timestamp=TimestampMS(1539713118000),
+        location=Location.ICONOMI,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_REP,
+        amount=FVal('1234'),
+        location_label='iconomi',
+        unique_id='e8c2c522-e43a-4cd9-b73b-812903bc85ca',
+    )]
 
 
 def test_iconomi_assets_are_known(
