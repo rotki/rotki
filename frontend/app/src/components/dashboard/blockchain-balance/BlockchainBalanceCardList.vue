@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
-import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
@@ -18,26 +17,16 @@ const props = defineProps<{
 
 const { total } = toRefs(props);
 
-const { getChainAccountType, getChainName } = useSupportedChains();
+const { getBlockchainRedirectLink, getChainName } = useSupportedChains();
 
 const amount = useRefMap(total, ({ usdValue }) => usdValue);
 const loading = useRefMap(total, ({ loading }) => loading);
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
-const navTarget = computed<RouteLocationRaw>(() => {
-  const balanceChain = get(chain);
-  if (balanceChain === Blockchain.ETH2) {
-    return {
-      path: '/staking/eth2',
-    };
-  }
-
-  const target = getChainAccountType(balanceChain) ?? 'evm';
-  return {
-    path: `${Routes.ACCOUNTS}/${target}`,
-  };
-});
+const navTarget = computed<RouteLocationRaw>(() => ({
+  path: getBlockchainRedirectLink(get(chain)),
+}));
 
 function childData(identifier: string): ActionDataEntry | null {
   return SupportedSubBlockchainProtocolData.find(item => item.identifier === identifier) || null;
