@@ -48,7 +48,7 @@ const summary = ref<WrapStatisticsResult>();
 
 const { getEarliestEventTimestamp } = useHistoryEvents();
 
-const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY_EVENT);
+const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY);
 const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
@@ -219,7 +219,7 @@ defineExpose({
       >
         <template #link>
           <RouterLink
-            :to="Routes.HISTORY_EVENTS"
+            :to="Routes.HISTORY"
           >
             <span class="underline">{{ t('transactions.title') }}</span>
           </RouterLink>

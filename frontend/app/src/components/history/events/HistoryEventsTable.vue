@@ -78,7 +78,7 @@ const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
   emit('refresh');
 });
 
-const sectionLoading = isLoading(Section.HISTORY_EVENT);
+const sectionLoading = isLoading(Section.HISTORY);
 
 const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [{
   cellClass: '!p-0 w-px',

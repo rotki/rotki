@@ -1,23 +1,15 @@
 import type { ActionStatus } from '@/types/action';
+import type {
+  IgnoreActionType,
+  IgnorePayload,
+} from '@/types/history/ignored';
 import type { EntryMeta } from '@/types/history/meta';
 import type { Ref } from 'vue';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 import { useMessageStore } from '@/store/message';
-import {
-  type CommonIgnorePayload,
-  type EvmTransaction,
-  type EvmTxIgnorePayload,
-  IgnoreActionType,
-  type IgnorePayload,
-} from '@/types/history/ignored';
-
-interface EvmTxIgnoreAction<T extends EntryMeta> {
-  actionType: IgnoreActionType.EVM_TRANSACTIONS;
-  toData: (t: T) => EvmTransaction;
-}
 
 interface CommonIgnoreAction<T extends EntryMeta> {
-  actionType: Exclude<IgnoreActionType, IgnoreActionType.EVM_TRANSACTIONS>;
+  actionType: IgnoreActionType.HISTORY_EVENTS;
   toData: (t: T) => string;
 }
 
@@ -28,7 +20,7 @@ interface UseIgnoreReturn<T extends EntryMeta> {
 }
 
 export function useIgnore<T extends EntryMeta>(
-  { actionType, toData }: EvmTxIgnoreAction<T> | CommonIgnoreAction<T>,
+  { actionType, toData }: CommonIgnoreAction<T>,
   selected: Ref<T[]>,
   refresh: () => any,
 ): UseIgnoreReturn<T> {
@@ -80,25 +72,15 @@ export function useIgnore<T extends EntryMeta>(
     ignoreInAccounting(payload, false);
 
   const ignore = async (ignored: boolean): Promise<void> => {
-    let payload: IgnorePayload;
-
     const data = get(selected).filter((item) => {
       const { ignoredInAccounting } = item;
       return ignored ? !ignoredInAccounting : ignoredInAccounting;
     });
 
-    if (actionType === IgnoreActionType.EVM_TRANSACTIONS) {
-      payload = {
-        actionType,
-        data: data.map(toData),
-      } satisfies EvmTxIgnorePayload;
-    }
-    else {
-      payload = {
-        actionType,
-        data: data.map(toData),
-      } satisfies CommonIgnorePayload;
-    }
+    const payload: IgnorePayload = {
+      actionType,
+      data: data.map(toData),
+    };
 
     let status: ActionStatus;
 

@@ -595,16 +595,6 @@
         }
       }
     },
-    "trades": {
-      "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Trades for {exchange}"
-      },
-      "task": {
-        "description": "Retrieving trades for {exchange}",
-        "title": "Trades"
-      }
-    },
     "transactions": {
       "error": {
         "description": "Failed query for {address} ({chain}): {error}",
@@ -1092,52 +1082,6 @@
       "empty_password": "Please provide a password",
       "password_mismatch": "The password confirmation does not match the provided password"
     }
-  },
-  "closed_trades": {
-    "confirmation": {
-      "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}",
-      "multiple_message": "Are you sure you want to delete these {length} trades?",
-      "title": "Delete Trade"
-    },
-    "delete_tooltip": "Delete trade",
-    "description": {
-      "for": "for",
-      "with": "with"
-    },
-    "details": {
-      "link": "Link",
-      "title": "Trade Details"
-    },
-    "dialog": {
-      "add": {
-        "title": "Add an external trade"
-      },
-      "edit": {
-        "subtitle": "Edit an existing trade",
-        "title": "Edit External Trade"
-      }
-    },
-    "edit_tooltip": "Edit trade",
-    "filter": {
-      "base_asset": "filter by the base asset of the trade",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the trade period",
-      "location": "filter by the trade location",
-      "quote_asset": "filter by the quote asset of the trade",
-      "start_date": "filter by the start date of the trade period",
-      "trade_type": "filter by the trade action (buy or sell)"
-    },
-    "headers": {
-      "action": "Action",
-      "base": "Base",
-      "quote": "Quote",
-      "rate": "Rate"
-    },
-    "hide_ignored_trades": "Hide ignored trades",
-    "label": "Intercambios",
-    "refresh_tooltip": "Refrescar intercambios",
-    "selected": "{count} interambio(s) seleccionados",
-    "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
     "cancel_task": "Cancelar tarea",
@@ -1782,64 +1726,6 @@
     },
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key."
   },
-  "external_trade_form": {
-    "amount": {
-      "hint": "Amount bought/sold"
-    },
-    "base_asset": {
-      "hint": "The base asset of the trade",
-      "label": "Base Asset"
-    },
-    "buy_quote": "With",
-    "date": {
-      "hint": "Time the trade took place"
-    },
-    "fee": {
-      "hint": "[Optional] Fee if any of the trade that occurred"
-    },
-    "fee_currency": {
-      "hint": "[Optional] The currency used for the fee",
-      "label": "Fee Currency"
-    },
-    "link": {
-      "hint": "[Optional] A link to the trade. e.g. in an explorer",
-      "label": "Link"
-    },
-    "notes": {
-      "hint": "[Optional] Additional notes to store for the trade",
-      "label": "Additional notes"
-    },
-    "quote_amount": {
-      "label": "Quote amount bought/sold"
-    },
-    "quote_asset": {
-      "hint": "The quote asset of the trade",
-      "label": "Quote Asset"
-    },
-    "rate": {
-      "label": "Rate of the trade"
-    },
-    "rate_not_found": "We could not find a rate for the specified pair.",
-    "sell_quote": "For",
-    "summary": {
-      "buy": "{label}: Buy {amount} {base} with {quote} for {rate} {quote} per {base}",
-      "label": "Summary",
-      "sell": "{label}: Sell {amount} {base} for {quote} for {rate} {quote} per {base}"
-    },
-    "trade_type": {
-      "buy": "Buy",
-      "label": "Trade type",
-      "sell": "Sell"
-    },
-    "validation": {
-      "non_empty_amount": "The amount cannot be empty",
-      "non_empty_base": "The base asset cannot be empty",
-      "non_empty_fee": "The fee cannot be empty when fee currency is inputted",
-      "non_empty_fee_currency": "The fee currency cannot be empty when fee is inputted",
-      "non_empty_quote": "The quote asset cannot be empty",
-      "non_empty_rate": "The rate cannot be empty"
-    }
-  },
   "file_upload": {
     "date_input_format": {
       "hint": "Use this if date format in your file is: {format}",
@@ -2439,10 +2325,6 @@
       "airdrops": "Airdrops"
     },
     "history": "Historial",
-    "history_sub": {
-      "history_events": "Historia Eventos",
-      "trades": "Intercambios en Exch."
-    },
     "import_data": "Import Data",
     "locations": "Locations",
     "manage_address_book": "Manage Address Book",
@@ -3159,9 +3041,6 @@
     "default_timeframe_description": "Set the default time frame for the dashboard graph. This timeframe will be pre-selected upon login. By default it will remember the previous session's selection.",
     "inactive_timeframes": "Inactive Timeframes",
     "visible_timeframes": "Visible Timeframes"
-  },
-  "trade_history": {
-    "loading": "Please wait while your trades are getting loaded..."
   },
   "transactions": {
     "actions": {

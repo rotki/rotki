@@ -54,7 +54,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { updateSetting } = useFrontendSettingsStore();
   const { getChainName, getEvmChainName, isEvmLikeChains, supportsTransactions } = useSupportedChains();
-  const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY_EVENT);
+  const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const {
     decodeTransactionsTask,
     fetchUndecodedTransactionsBreakdown,

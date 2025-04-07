@@ -600,16 +600,6 @@
         }
       }
     },
-    "trades": {
-      "error": {
-        "description": "{exchange} 查询失败：{error}",
-        "title": "交易 {exchange}"
-      },
-      "task": {
-        "description": "检索{exchange}的交易",
-        "title": "交易"
-      }
-    },
     "transactions": {
       "error": {
         "description": "{address} ({chain}) 查询失败：{error}",
@@ -1125,52 +1115,6 @@
       "empty_password": "请提供密码",
       "password_mismatch": "密码确认与提供的密码不匹配"
     }
-  },
-  "closed_trades": {
-    "confirmation": {
-      "message": "您确定要删除以下交易：{action} of {amount} {pair}",
-      "multiple_message": "您确定要删除这些 {length} 笔交易吗？",
-      "title": "删除交易"
-    },
-    "delete_tooltip": "删除交易",
-    "description": {
-      "for": "为了",
-      "with": "与"
-    },
-    "details": {
-      "link": "链接",
-      "title": "交易详情"
-    },
-    "dialog": {
-      "add": {
-        "title": "添加对外贸易"
-      },
-      "edit": {
-        "subtitle": "编辑现有交易",
-        "title": "编辑对外交易"
-      }
-    },
-    "edit_tooltip": "编辑交易",
-    "filter": {
-      "base_asset": "按交易基础资产筛选",
-      "date_hint": "格式 {format} HH:mm:ss(时间/秒可选)",
-      "end_date": "按交易期结束日期过滤",
-      "location": "按交易地点过滤",
-      "quote_asset": "按交易的报价资产过滤",
-      "start_date": "按交易周期的开始日期筛选",
-      "trade_type": "按交易行为过滤（买入或卖出）"
-    },
-    "headers": {
-      "action": "动作",
-      "base": "基地",
-      "quote": "引用",
-      "rate": "率"
-    },
-    "hide_ignored_trades": "隐藏忽略的交易",
-    "label": "交易",
-    "refresh_tooltip": "刷新交易",
-    "selected": "{count} 笔交易已选择",
-    "title": "关闭订单"
   },
   "collapsed_pending_tasks": {
     "cancel_task": "取消任务",
@@ -1837,64 +1781,6 @@
     },
     "subtitle": "rotki 连接到各种服务提供商,以获取历史价格或区块链数据等信息。在某些情况下,rotki 依赖这些 API 获取基本信息，在这种情况下，您需要提供 API 密钥。"
   },
-  "external_trade_form": {
-    "amount": {
-      "hint": "买入/卖出金额"
-    },
-    "base_asset": {
-      "hint": "交易的基础资产",
-      "label": "基础资产"
-    },
-    "buy_quote": "与",
-    "date": {
-      "hint": "交易发生的时间"
-    },
-    "fee": {
-      "hint": "[可选]如果发生任何交易则收取费用"
-    },
-    "fee_currency": {
-      "hint": "[可选] 费用使用的货币",
-      "label": "手续费币种"
-    },
-    "link": {
-      "hint": "[可选] 交易链接。例如在浏览器中",
-      "label": "链接"
-    },
-    "notes": {
-      "hint": "[可选] 为交易存储的附加说明",
-      "label": "补充说明"
-    },
-    "quote_amount": {
-      "label": "报价买入/卖出金额"
-    },
-    "quote_asset": {
-      "hint": "交易的报价资产",
-      "label": "报价资产"
-    },
-    "rate": {
-      "label": "交易费率"
-    },
-    "rate_not_found": "我们找不到指定货币对的汇率。",
-    "sell_quote": "对于",
-    "summary": {
-      "buy": "{label}: 用 {quote} 以每 {base} {rate} {quote} 的价格购买 {amount} {base}",
-      "label": "总结",
-      "sell": "{label}：以每 {base} 的 {rate} {quote} 价格以 {quote} 价格出售 {amount} {base}"
-    },
-    "trade_type": {
-      "buy": "买",
-      "label": "交易类型",
-      "sell": "卖"
-    },
-    "validation": {
-      "non_empty_amount": "金额不能为空",
-      "non_empty_base": "基础资产不能为空",
-      "non_empty_fee": "输入费用币种时费用不能为空",
-      "non_empty_fee_currency": "输入费用时费用货币不能为空",
-      "non_empty_quote": "报价资产不能为空",
-      "non_empty_rate": "费率不能为空"
-    }
-  },
   "file_upload": {
     "date_input_format": {
       "hint": "如果文件中的日期格式为：{format}，请使用此选项",
@@ -2526,10 +2412,6 @@
       "airdrops": "空投"
     },
     "history": "历史",
-    "history_sub": {
-      "history_events": "历史事件",
-      "trades": "交换。行业"
-    },
     "import_data": "导入数据",
     "locations": "地点",
     "manage_address_book": "管理地址簿",
@@ -3301,9 +3183,6 @@
     "default_timeframe_description": "设置仪表板图表的默认时间范围。此时间范围将在登录时预先选择。默认情况下，它将记住上一个会话的选择。",
     "inactive_timeframes": "非活动时间帧",
     "visible_timeframes": "可见时间框架"
-  },
-  "trade_history": {
-    "loading": "正在加载您的交易，请稍候..."
   },
   "transactions": {
     "actions": {

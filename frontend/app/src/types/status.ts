@@ -8,9 +8,7 @@ export enum Status {
 
 export enum Section {
   NONE,
-  ASSET_MOVEMENT,
-  TRADES,
-  HISTORY_EVENT,
+  HISTORY,
   BLOCKCHAIN,
   STAKING_ETH2,
   STAKING_ETH2_DEPOSITS,

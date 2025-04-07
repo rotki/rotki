@@ -113,20 +113,8 @@ const navItems: MenuItem[] = [
   },
   {
     class: 'history',
-    type: 'group',
+    type: 'item',
     ...Routes.HISTORY,
-    items: [
-      {
-        class: 'history-trades',
-        type: 'item',
-        ...Routes.HISTORY_TRADES,
-      },
-      {
-        class: 'history-events',
-        type: 'item',
-        ...Routes.HISTORY_EVENTS,
-      },
-    ],
   },
   {
     class: 'airdrops',

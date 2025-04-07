@@ -132,7 +132,7 @@ const { refreshTransactions } = useHistoryTransactions();
 const { fetchUndecodedTransactionsStatus, pullAndRedecodeTransactions, redecodeTransactions } = useHistoryTransactionDecoding();
 const historyEventMappings = useHistoryEventMappings();
 
-const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
+const sectionLoading = isSectionLoading(Section.HISTORY);
 const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);

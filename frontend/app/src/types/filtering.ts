@@ -73,7 +73,6 @@ export const Suggestion = BaseSuggestion.extend({
 export type Suggestion = z.infer<typeof Suggestion>;
 
 export enum SavedFilterLocation {
-  HISTORY_TRADES = 'historyTrades',
   HISTORY_EVENTS = 'historyEvents',
   BLOCKCHAIN_ACCOUNTS = 'blockchainAccounts',
   ETH_VALIDATORS = 'ethValidators',
