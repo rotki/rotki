@@ -3,7 +3,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, cast
 from urllib import request
 from warnings import warn
 
@@ -457,7 +457,9 @@ def test_remote_updates_consistency_with_packaged_db(
 ):
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
-    - Location unsupported assets"""
+    - Counterparty asset mappings
+    - Location unsupported assets
+    """
     temp_data_dir = Path(tmpdir_factory.mktemp(GLOBALDIR_NAME))
     (old_db_dir := temp_data_dir / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
     request.urlretrieve(  # location_asset_mappings and location_unsupported_assets were added since v1.33.0  # noqa: E501
@@ -473,6 +475,7 @@ def test_remote_updates_consistency_with_packaged_db(
     data_updater.check_for_updates(updates=[
         UpdateType.LOCATION_ASSET_MAPPINGS,
         UpdateType.LOCATION_UNSUPPORTED_ASSETS,
+        UpdateType.COUNTERPARTY_ASSET_MAPPINGS,
     ])
 
     with (
@@ -480,14 +483,20 @@ def test_remote_updates_consistency_with_packaged_db(
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
         (
-            (updated_location_asset_mappings, updated_location_unsupported_assets),
-            (packaged_location_asset_mappings, packaged_location_unsupported_assets),
+            (updated_location_asset_mappings, updated_counterparty_asset_mappings, updated_location_unsupported_assets),  # noqa: E501
+            (packaged_location_asset_mappings, packaged_counterparty_asset_mappings, packaged_location_unsupported_assets),  # noqa: E501
         ) = (
             (
                 {
                     (location, symbol): identifier
                     for location, symbol, identifier in cursor.execute(
                         'SELECT location, exchange_symbol, local_id FROM location_asset_mappings',
+                    )
+                },
+                {
+                    (counterparty, symbol): identifier
+                    for counterparty, symbol, identifier in cursor.execute(
+                        'SELECT counterparty, symbol, local_id FROM counterparty_asset_mappings',
                     )
                 }, set(cursor.execute(
                     'SELECT location, exchange_symbol FROM location_unsupported_assets',
@@ -496,30 +505,64 @@ def test_remote_updates_consistency_with_packaged_db(
             for cursor in (old_db_cursor, packaged_db_cursor)
         )
 
-    # find all the location_asset_mappings that are present in remote updates but not in packaged db  # noqa: E501
-    missing_in_packaged_db = [
-        f"INSERT INTO location_asset_mappings(local_id, location, exchange_symbol) VALUES('{identifier}', '{location}', '{symbol}');"  # noqa: E501
-        for (location, symbol), identifier in updated_location_asset_mappings.items()
-        if (location, symbol) not in packaged_location_asset_mappings
-    ]
+    missing_in_packaged_db: list[Any] = []
+    missing_in_remote_updates: list[Any] = []
+    for mapping_type, table_details in [
+        (
+            'location',
+            {
+                'updated_mappings': updated_location_asset_mappings,
+                'packaged_mappings': packaged_location_asset_mappings,
+                'table_name': 'location_asset_mappings',
+                'id_field': 'local_id',
+                'field1_name': 'location',
+                'field2_name': 'exchange_symbol',
+            },
+        ),
+        (
+            'counterparty',
+            {
+                'updated_mappings': updated_counterparty_asset_mappings,
+                'packaged_mappings': packaged_counterparty_asset_mappings,
+                'table_name': 'counterparty_asset_mappings',
+                'id_field': 'local_id',
+                'field1_name': 'counterparty',
+                'field2_name': 'symbol',
+            },
+        ),
+    ]:
+        updated_mappings = cast('dict[tuple[Any, Any], Any]', table_details['updated_mappings'])
+        packaged_mappings = cast('dict[tuple[Any, Any], Any]', table_details['packaged_mappings'])
+        table_name = table_details['table_name']
+        id_field = table_details['id_field']
+        field1_name = table_details['field1_name']
+        field2_name = table_details['field2_name']
 
-    # find all the location_asset_mappings that are present in packaged db but not in remote updates  # noqa: E501
-    missing_in_remote_updates = [
-        {
-            'asset': identifier,
-            'location': None if location is None else Location.deserialize_from_db(location).serialize(),  # noqa: E501
-            'location_symbol': symbol,
-        }
-        for (location, symbol), identifier in packaged_location_asset_mappings.items()
-        if (location, symbol) not in updated_location_asset_mappings
-    ]
+        # find entries in remote updates but not in packaged db
+        missing_in_packaged_db.extend([
+            f"INSERT INTO {table_name}({id_field}, {field1_name}, {field2_name}) VALUES('{identifier}', '{field1}', '{field2}');"  # noqa: E501
+            for (field1, field2), identifier in updated_mappings.items()
+            if (field1, field2) not in packaged_mappings
+        ])
 
-    # find all the location_asset_mappings that are present in both but have different values  # noqa: E501
-    missing_in_packaged_db.extend([
-        f'UPDATE location_asset_mappings SET local_id = "{updated_location_asset_mappings[location, symbol]}" WHERE location = "{location}" AND exchange_symbol = "{symbol}";'  # noqa: E501
-        for (location, symbol), identifier in packaged_location_asset_mappings.items()
-        if (location, symbol) in updated_location_asset_mappings and updated_location_asset_mappings[location, symbol] != identifier  # noqa: E501
-    ])
+        # find entries in packaged db but not in remote updates
+        missing_in_remote_updates.extend([
+            {
+                'asset': identifier,
+                field1_name: None if field1 is None else Location.deserialize_from_db(
+                    field1).serialize() if mapping_type == 'location' else field1,
+                f'{field1_name}_symbol': field2,
+            }
+            for (field1, field2), identifier in packaged_mappings.items()
+            if (field1, field2) not in updated_mappings
+        ])
+
+        # find entries in both but with different values
+        missing_in_packaged_db.extend([
+            f'UPDATE {table_name} SET {id_field} = "{updated_mappings[field1, field2]}" WHERE {field1_name} = "{field1}" AND {field2_name} = "{field2}";'  # noqa: E501
+            for (field1, field2), identifier in packaged_mappings.items()
+            if (field1, field2) in updated_mappings and updated_mappings[field1, field2] != identifier  # noqa: E501
+        ])
 
     # find all the location_unsupported_assets that are present in remote updates but not in packaged db  # noqa: E501
     missing_in_packaged_db.extend([

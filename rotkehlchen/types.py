@@ -1031,6 +1031,12 @@ class LocationAssetMappingDeleteEntry:
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e
 
+    def serialize_for_db(self) -> tuple[Any, ...]:
+        return self.location_symbol, None if self.location is None else self.location.serialize_for_db()  # noqa: E501
+
+    def __str__(self) -> str:
+        return f'{self.location_symbol} in {self.location}'
+
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
 class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
@@ -1049,6 +1055,52 @@ class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
             )
         except KeyError as e:
             raise DeserializationError(f'Missing key {e!s}') from e
+
+    def serialize_for_db(self) -> tuple[Any, ...]:
+        return self.asset.serialize(), *super().serialize_for_db()
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class CounterpartyAssetMappingDeleteEntry:
+    """A counterparty asset mapping delete entry"""
+    counterparty: str
+    counterparty_symbol: str
+
+    @classmethod
+    def deserialize(cls: type['CounterpartyAssetMappingDeleteEntry'], data: dict[str, Any]) -> 'CounterpartyAssetMappingDeleteEntry':  # noqa: E501
+        try:
+            return cls(
+                counterparty=data['counterparty'],
+                counterparty_symbol=data['counterparty_symbol'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {e!s}') from e
+
+    def serialize_for_db(self) -> tuple[str, ...]:
+        return self.counterparty_symbol, self.counterparty
+
+    def __str__(self) -> str:
+        return f'{self.counterparty_symbol} for {self.counterparty}'
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class CounterpartyAssetMappingUpdateEntry(CounterpartyAssetMappingDeleteEntry):
+    """A counterparty asset mapping update entry"""
+    asset: 'Asset'
+
+    @classmethod
+    def deserialize(cls: type['CounterpartyAssetMappingUpdateEntry'], data: dict[str, Any]) -> 'CounterpartyAssetMappingUpdateEntry':  # noqa: E501
+        try:
+            return cls(
+                asset=data['asset'],
+                counterparty=data['counterparty'],
+                counterparty_symbol=data['counterparty_symbol'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {e!s}') from e
+
+    def serialize_for_db(self) -> tuple[str, ...]:
+        return self.asset.serialize(), *super().serialize_for_db()
 
 
 T = TypeVar('T')
