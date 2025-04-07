@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import ClosedTrades from '@/components/history/trades/ClosedTrades.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
@@ -49,7 +48,6 @@ const location = locationData(identifier);
       </div>
       <LocationValueRow :identifier="identifier" />
       <LocationAssets :identifier="identifier" />
-      <ClosedTrades :location-overview="identifier" />
     </div>
   </TablePageLayout>
 </template>

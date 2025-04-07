@@ -819,16 +819,6 @@
         }
       }
     },
-    "trades": {
-      "error": {
-        "description": "Failed query for {exchange}: {error}",
-        "title": "Trades for {exchange}"
-      },
-      "task": {
-        "description": "Retrieving trades for {exchange}",
-        "title": "Trades"
-      }
-    },
     "transactions": {
       "error": {
         "description": "Failed query for {address} ({chain}): {error}",
@@ -1512,53 +1502,6 @@
       "empty_password": "Please provide a password",
       "password_mismatch": "The password confirmation does not match the provided password"
     }
-  },
-  "closed_trades": {
-    "confirmation": {
-      "message": "Are you sure you want to delete the following trade: {action} of {amount} {pair}",
-      "multiple_message": "Are you sure you want to delete these {length} trades?",
-      "title": "Delete Trade"
-    },
-    "delete_tooltip": "Delete trade",
-    "description": {
-      "for": "for",
-      "with": "with"
-    },
-    "details": {
-      "link": "Link",
-      "title": "Trade Details"
-    },
-    "dialog": {
-      "add": {
-        "title": "Add an external trade"
-      },
-      "edit": {
-        "subtitle": "Edit an existing trade",
-        "title": "Edit External Trade"
-      }
-    },
-    "edit_tooltip": "Edit trade",
-    "filter": {
-      "base_asset": "filter by the base asset of the trade",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the end date of the trade period",
-      "location": "filter by the trade location",
-      "quote_asset": "filter by the quote asset of the trade",
-      "start_date": "filter by the start date of the trade period",
-      "trade_type": "filter by the trade action (buy or sell)"
-    },
-    "headers": {
-      "action": "Action",
-      "base": "Base",
-      "quote": "Quote",
-      "quote_amount": "Quote Amount",
-      "rate": "Rate"
-    },
-    "hide_ignored_trades": "Hide ignored trades",
-    "label": "trades",
-    "refresh_tooltip": "Refresh trades",
-    "selected": "{count} trade(s) selected",
-    "title": "Exchange Trades"
   },
   "collapsed_pending_tasks": {
     "cancel_task": "Cancel task",
@@ -2398,64 +2341,6 @@
       "description": "rotki uses the Graph to obtain a variety of information such as balancer balances and ENS data",
       "hint": "Enter your The Graph API key",
       "title": "The Graph"
-    }
-  },
-  "external_trade_form": {
-    "amount": {
-      "hint": "Amount bought/sold"
-    },
-    "base_asset": {
-      "hint": "The base asset of the trade",
-      "label": "Base Asset"
-    },
-    "buy_quote": "With",
-    "date": {
-      "hint": "Time the trade took place"
-    },
-    "fee": {
-      "hint": "[Optional] Fee if any of the trade that occurred"
-    },
-    "fee_currency": {
-      "hint": "[Optional] The currency used for the fee",
-      "label": "Fee Currency"
-    },
-    "link": {
-      "hint": "[Optional] A link to the trade. e.g. in an explorer",
-      "label": "Link"
-    },
-    "notes": {
-      "hint": "[Optional] Additional notes to store for the trade",
-      "label": "Additional notes"
-    },
-    "quote_amount": {
-      "label": "Quote amount bought/sold"
-    },
-    "quote_asset": {
-      "hint": "The quote asset of the trade",
-      "label": "Quote Asset"
-    },
-    "rate": {
-      "label": "Rate of the trade"
-    },
-    "rate_not_found": "We could not find a rate for the specified pair.",
-    "sell_quote": "For",
-    "summary": {
-      "buy": "{label}: Buy {amount} {base} with {quote} for {rate} {quote} per {base}",
-      "label": "Summary",
-      "sell": "{label}: Sell {amount} {base} for {quote} for {rate} {quote} per {base}"
-    },
-    "trade_type": {
-      "buy": "Buy",
-      "label": "Trade type",
-      "sell": "Sell"
-    },
-    "validation": {
-      "non_empty_amount": "The amount cannot be empty",
-      "non_empty_base": "The base asset cannot be empty",
-      "non_empty_fee": "The fee cannot be empty when fee currency is inputted",
-      "non_empty_fee_currency": "The fee currency cannot be empty when fee is inputted",
-      "non_empty_quote": "The quote asset cannot be empty",
-      "non_empty_rate": "The rate cannot be empty"
     }
   },
   "file_upload": {
@@ -3349,10 +3234,6 @@
       "airdrops": "Airdrops"
     },
     "history": "History",
-    "history_sub": {
-      "history_events": "History Events",
-      "trades": "Exch. Trades"
-    },
     "import_data": "Import Data",
     "locations": "Locations",
     "manage_address_book": "Manage Address Book",
@@ -4379,9 +4260,6 @@
       "not_tracked": "This wallet address is not tracked in rotki, so you can't see your tokens.",
       "query_on_progress": "The balance query is still in progress, you may not see all of your tokens yet."
     }
-  },
-  "trade_history": {
-    "loading": "Please wait while your trades are getting loaded..."
   },
   "trade_history_view": {
     "labels": {

@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [ app, balances, history ]
+        group: [ app, balances ]
     permissions:
       actions: write
       contents: read

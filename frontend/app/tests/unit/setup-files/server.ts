@@ -13,11 +13,9 @@ import {
   skippedExternalEventsHandlers,
   stakingHandlers,
   supportedChainsHandlers,
-  tradesHandlers,
 } from './handlers';
 
 const server = setupServer(
-  ...tradesHandlers,
   ...historyEventsHandlers,
   ...nftsHandlers,
   ...binanceSavingsHandlers,

@@ -721,16 +721,6 @@
         }
       }
     },
-    "trades": {
-      "error": {
-        "description": "Échec de la requête pour {exchange} : {error}",
-        "title": "Échanges pour {exchange}"
-      },
-      "task": {
-        "description": "Récupération des échanges pour {exchange}",
-        "title": "Échanges"
-      }
-    },
     "transactions": {
       "error": {
         "description": "Échec de la requête pour {address} ({chain}) : {error}",
@@ -1274,52 +1264,6 @@
       "empty_password": "Veuillez fournir un mot de passe",
       "password_mismatch": "La confirmation de mot de passe ne correspond pas au mot de passe fourni"
     }
-  },
-  "closed_trades": {
-    "confirmation": {
-      "message": "Voulez-vous vraiment supprimer la suivante {action} de {amount} {pair} ?",
-      "multiple_message": "Voulez-vous vraiment supprimer ces {length} transactions ?",
-      "title": "Supprimer la transaction"
-    },
-    "delete_tooltip": "Supprimer la transaction",
-    "description": {
-      "for": "pour",
-      "with": "avec"
-    },
-    "details": {
-      "link": "Lien",
-      "title": "Détails de la transaction"
-    },
-    "dialog": {
-      "add": {
-        "title": "Ajouter une transaction externe"
-      },
-      "edit": {
-        "subtitle": "Modifier une transaction existante",
-        "title": "Modifier la transaction externe"
-      }
-    },
-    "edit_tooltip": "Modifier la transaction",
-    "filter": {
-      "base_asset": "Filtrer par l'actif de base de la transaction",
-      "date_hint": "format {format} HH:mm:ss (les secondes sont optionnelles)",
-      "end_date": "Filtrer par la date de fin de la période de transaction",
-      "location": "Filtrer par l'emplacement de la transaction",
-      "quote_asset": "Filtrer par l'actif de la citation de la transaction",
-      "start_date": "Filtrer par la date de début de la période de transaction",
-      "trade_type": "Filtrer par l'action de transaction (acheter ou vendre)"
-    },
-    "headers": {
-      "action": "Action",
-      "base": "Base",
-      "quote": "Citation",
-      "rate": "Taux"
-    },
-    "hide_ignored_trades": "Masquer les transactions ignorées",
-    "label": "transactions",
-    "refresh_tooltip": "Rafraîchir les transactions",
-    "selected": "{count} transaction(s) sélectionnée(s)",
-    "title": "Transactions Exchange"
   },
   "collapsed_pending_tasks": {
     "cancel_task": "Annuler tâche",
@@ -2027,64 +1971,6 @@
     },
     "subtitle": "rotki se connecte à divers fournisseurs de services pour obtenir des informations tels que des prix historiques ou des données de blockchain. Dans certains cas, rotki dépend de ces API pour des informations de base, auquel cas vous devrez fournir une clé API."
   },
-  "external_trade_form": {
-    "amount": {
-      "hint": "Montant acheté/vendu"
-    },
-    "base_asset": {
-      "hint": "L'actif de base de la transaction",
-      "label": "Actif de Base"
-    },
-    "buy_quote": "Avec",
-    "date": {
-      "hint": "Heure à laquelle la transaction a eu lieu"
-    },
-    "fee": {
-      "hint": "[Facultatif] Frais, le cas échéant, de la transaction"
-    },
-    "fee_currency": {
-      "hint": "[Facultatif] L'actif utilisé pour les frais",
-      "label": "Devise des Frais"
-    },
-    "link": {
-      "hint": "[Facultatif] Un lien vers la transaction. Par exemple, dans un explorateur",
-      "label": "Lien"
-    },
-    "notes": {
-      "hint": "[Facultatif] Notes supplémentaires à stocker pour la transaction",
-      "label": "Notes supplémentaires"
-    },
-    "quote_amount": {
-      "label": "Montant de l'actif de cotation acheté/vendu"
-    },
-    "quote_asset": {
-      "hint": "L'actif de cotation de la transaction",
-      "label": "Actif de Cotation"
-    },
-    "rate": {
-      "label": "Taux de la transaction"
-    },
-    "rate_not_found": "Nous n'avons pas pu trouver de taux pour la paire spécifiée.",
-    "sell_quote": "Pour",
-    "summary": {
-      "buy": "{label}: Acheter {amount} {base} avec {quote} pour {rate} {quote} par {base}",
-      "label": "Résumé",
-      "sell": "{label}: Vendre {amount} {base} pour {quote} pour {rate} {quote} par {base}"
-    },
-    "trade_type": {
-      "buy": "Achat",
-      "label": "Type de Transaction",
-      "sell": "Vente"
-    },
-    "validation": {
-      "non_empty_amount": "Le montant ne peut être vide",
-      "non_empty_base": "L'actif de base ne peut être vide",
-      "non_empty_fee": "Les frais ne peuvent être vides lorsque la devise des frais est entrée",
-      "non_empty_fee_currency": "La devise des frais ne peut être vide lorsque les frais sont entrés",
-      "non_empty_quote": "L'actif de cotation ne peut être vide",
-      "non_empty_rate": "Le taux ne peut être vide"
-    }
-  },
   "file_upload": {
     "date_input_format": {
       "hint": "Utilisez ce format si le format de date dans votre fichier est : {format}",
@@ -2783,10 +2669,6 @@
       "airdrops": "Airdrops"
     },
     "history": "Historique",
-    "history_sub": {
-      "history_events": "Événements historiques",
-      "trades": "Échanges d'échange"
-    },
     "import_data": "Importer des données",
     "locations": "Emplacements",
     "manage_address_book": "Gérer le carnet d'adresses",
@@ -3576,9 +3458,6 @@
     "default_timeframe_description": "Définir l'intervalle de temps par défaut pour le graphique du tableau de bord. Cet intervalle sera pré-sélectionné lors de la connexion. Par défaut, il se souviendra de la sélection de la session précédente.",
     "inactive_timeframes": "Intervalles de temps inactifs",
     "visible_timeframes": "Intervalles de temps visibles"
-  },
-  "trade_history": {
-    "loading": "Veuillez patienter pendant le chargement de vos transactions..."
   },
   "transactions": {
     "actions": {

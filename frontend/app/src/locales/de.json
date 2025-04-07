@@ -76,9 +76,6 @@
       }
     }
   },
-  "closed_trades": {
-    "title": "Börsengeschäften"
-  },
   "common": {
     "never": "Niemals",
     "refresh": "Αktualisieren"

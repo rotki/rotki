@@ -22,22 +22,9 @@ export function useSessionPurge(): UseSessionPurge {
   const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
   const { t } = useI18n();
 
-  const purgeExchange = (): void => {
-    resetStatus(Section.TRADES);
-    resetStatus(Section.ASSET_MOVEMENT);
-  };
-
-  const purgeTransactions = (): void => {
-    resetStatus(Section.HISTORY_EVENT);
-  };
-
-  const purgeCache = (purgeable: Purgeable, value: string): void => {
-    if (purgeable === Purgeable.CENTRALIZED_EXCHANGES) {
-      if (!value)
-        purgeExchange();
-    }
-    else if (purgeable === Purgeable.TRANSACTIONS) {
-      purgeTransactions();
+  const purgeCache = (purgeable: Purgeable): void => {
+    if (purgeable === Purgeable.CENTRALIZED_EXCHANGES || purgeable === Purgeable.TRANSACTIONS) {
+      resetStatus(Section.HISTORY);
     }
   };
 

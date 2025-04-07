@@ -38,7 +38,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const { getChain, getChainName, getEvmChainName, isEvmLikeChains, txChains } = useSupportedChains();
 
-  const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
+  const { resetStatus } = useStatusUpdater(Section.HISTORY);
 
   const fetchUndecodedTransactionsBreakdown = async (type: TransactionChainType): Promise<void> => {
     const isEvm = type === TransactionChainType.EVM;

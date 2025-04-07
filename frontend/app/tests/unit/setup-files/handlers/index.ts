@@ -23,5 +23,3 @@ export * from './skipped-external-events';
 export * from './staking';
 
 export * from './supported-chains';
-
-export * from './trades';

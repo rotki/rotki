@@ -123,14 +123,7 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       texts: [Routes.ONCHAIN.text, Routes.ONCHAIN_SEND.text],
     },
     { ...Routes.NFTS },
-    {
-      ...Routes.HISTORY_TRADES,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_TRADES.text],
-    },
-    {
-      ...Routes.HISTORY_EVENTS,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text],
-    },
+    { ...Routes.HISTORY },
     { ...Routes.AIRDROPS },
     { ...Routes.STATISTICS },
     { ...Routes.STAKING },
@@ -243,10 +236,6 @@ function getActions(keyword: string): SearchItemWithoutValue[] {
     {
       route: `${Routes.BALANCES_MANUAL.route}?add=true`,
       text: t('manual_balances.dialog.add.title'),
-    },
-    {
-      route: `${Routes.HISTORY_TRADES.route}?add=true`,
-      text: t('closed_trades.dialog.add.title'),
     },
     {
       route: `${Routes.ASSET_MANAGER.route}?add=true`,

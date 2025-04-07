@@ -23,7 +23,7 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... });
-import type { ExternalTrade, FieldMessage } from './types';
+import type { FieldMessage } from './types';
 
 const backendUrl = Cypress.env('BACKEND_URL');
 
@@ -157,26 +157,6 @@ function createAccount(username: string, password = '1234') {
   }).its('body').then(checkForTaskCompletion);
 }
 
-function addExternalTrade(trade: ExternalTrade) {
-  return cy.request({
-    url: `${backendUrl}/api/1/trades`,
-    method: 'PUT',
-    body: {
-      timestamp: new Date(trade.time).getTime() / 1000,
-      location: trade.location || 'external',
-      base_asset: trade.base_id,
-      quote_asset: trade.quote_id,
-      trade_type: trade.trade_type,
-      amount: trade.amount,
-      rate: trade.rate,
-      fee: trade.fee,
-      fee_currency: trade.fee_id,
-      link: trade.link,
-      notes: trade.notes,
-    },
-  }).its('body');
-}
-
 function addEtherscanKey(key: string) {
   return cy.request({
     url: `${backendUrl}/api/1/external_services`,
@@ -241,7 +221,6 @@ Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
 Cypress.Commands.add('createAccount', createAccount);
-Cypress.Commands.add('addExternalTrade', addExternalTrade);
 Cypress.Commands.add('addEtherscanKey', addEtherscanKey);
 Cypress.Commands.add('assertNoRunningTasks', assertNoRunningTasks);
 Cypress.Commands.add('confirmFieldMessage', confirmFieldMessage);
