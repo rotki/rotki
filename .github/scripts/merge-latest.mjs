@@ -24,7 +24,7 @@ function exitIfNotExists(file) {
 exitIfNotExists(file1);
 exitIfNotExists(file2);
 
-consola.info(`merging ${file1} and ${file3} to ${file3}`);
+consola.info(`merging ${file1} and ${file2} to ${file3}`);
 
 consola.info(`reading file: ${file1}`);
 const yaml1 = yaml.load(fs.readFileSync(file1, 'utf8'));
