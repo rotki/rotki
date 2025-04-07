@@ -54,7 +54,6 @@ from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.filtering import EVM_EVENT_JOIN
-from rotkehlchen.db.history_events import filter_ignore_asset_query
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -441,7 +440,8 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
         for event_data in cursor.execute(
             # events that are the earliest events of distinct assets after last_save_time
             f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, '
-            f'{EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} {filter_ignore_asset_query()} '
+            f'{EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} LEFT JOIN multisettings ms ON '
+            'asset = ms.value AND ms.name = "ignored_asset" '
             'AND timestamp >= ? GROUP BY asset, location_label;',
             (ts_sec_to_ms(last_save_time),),
         ):
