@@ -199,6 +199,22 @@ LOCATION_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
     },
 }
 
+COUNTERPARTY_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
+    'counterparty_asset_mappings': {
+        'additions': [
+            {
+                'asset': 'HYPE',
+                'counterparty': 'hyperliquid',
+                'counterparty_symbol': 'HYPE',
+            }, {
+                'asset': 'eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+                'counterparty': 'hyperliquid',
+                'counterparty_symbol': 'USDC',
+            },
+        ],
+    },
+}
+
 LOCATION_UNSUPPORTED_ASSETS_DATA: dict[str, dict[str, dict[str, list[str]]]] = {
     'location_unsupported_assets': {
         'insert': {
@@ -224,6 +240,7 @@ def make_single_mock_github_data_response(target: UpdateType):
                 'global_addressbook': {'latest': 1 if target == UpdateType.GLOBAL_ADDRESSBOOK else 0},  # noqa: E501
                 'accounting_rules': {'latest': 1 if target == UpdateType.ACCOUNTING_RULES else 0},
                 'location_asset_mappings': {'latest': 1 if target == UpdateType.LOCATION_ASSET_MAPPINGS else 0},  # noqa: E501
+                'counterparty_asset_mappings': {'latest': 1 if target == UpdateType.COUNTERPARTY_ASSET_MAPPINGS else 0},  # noqa: E501
                 'location_unsupported_assets': {'latest': 1 if target == UpdateType.LOCATION_UNSUPPORTED_ASSETS else 0},  # noqa: E501
             }
         elif 'spam_assets/v' in url:
@@ -240,6 +257,8 @@ def make_single_mock_github_data_response(target: UpdateType):
             data = LOCATION_ASSET_MAPPINGS_DATA
         elif 'location_unsupported_assets/v' in url:
             data = LOCATION_UNSUPPORTED_ASSETS_DATA
+        elif 'counterparty_asset_mappings/v' in url:
+            data = COUNTERPARTY_ASSET_MAPPINGS_DATA
         else:
             raise AssertionError(f'Unknown {url=} during test')
 
@@ -279,6 +298,8 @@ def make_mock_github_response(latest: int, min_version: str | None = None, max_v
             result = LOCATION_ASSET_MAPPINGS_DATA
         elif 'location_unsupported_assets/v' in url:
             result = LOCATION_UNSUPPORTED_ASSETS_DATA
+        elif 'counterparty_asset_mappings/v' in url:
+            result = COUNTERPARTY_ASSET_MAPPINGS_DATA
         else:
             raise AssertionError(f'Unknown {url=} during test')
 
@@ -297,6 +318,7 @@ def reset_update_type_mappings(data_updater: RotkiDataUpdater) -> None:
         UpdateType.ACCOUNTING_RULES: data_updater.update_accounting_rules,
         UpdateType.LOCATION_ASSET_MAPPINGS: data_updater.update_location_asset_mappings,
         UpdateType.LOCATION_UNSUPPORTED_ASSETS: data_updater.update_location_unsupported_assets,
+        UpdateType.COUNTERPARTY_ASSET_MAPPINGS: data_updater.update_counterparty_asset_mappings,
     }
 
 
@@ -375,6 +397,7 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.ACCOUNTING_RULES.serialize(), 999),
                 (UpdateType.LOCATION_ASSET_MAPPINGS.serialize(), 999),
                 (UpdateType.LOCATION_UNSUPPORTED_ASSETS.serialize(), 999),
+                (UpdateType.COUNTERPARTY_ASSET_MAPPINGS.serialize(), 999),
             ],
         )
     with ExitStack() as stack:
@@ -661,6 +684,58 @@ def test_location_asset_mappings_updates(
 
     with globaldb.conn.read_ctx() as cursor:
         _check_location_asset_mappings(cursor, after_upgrade=True)
+
+
+def _check_counterparty_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> None:
+    """Auxiliary function to check the db values for counterparty asset mappings before and after the upgrade"""  # noqa: E501
+
+    for addition, is_present_count in zip(
+        COUNTERPARTY_ASSET_MAPPINGS_DATA['counterparty_asset_mappings']['additions'],
+        (0, 0),
+        strict=True,
+    ):
+        result = cursor.execute(
+            f"SELECT {'COUNT(*)' if after_upgrade is False else 'local_id'} "
+            'FROM counterparty_asset_mappings WHERE counterparty IS ? AND symbol IS ?',
+            (addition['counterparty'], addition['counterparty_symbol']),
+        ).fetchone()[0]
+        if not after_upgrade:
+            assert result == is_present_count
+        else:
+            assert result == addition['asset']
+
+    for update in COUNTERPARTY_ASSET_MAPPINGS_DATA['counterparty_asset_mappings'].get('updates', []):  # noqa: E501
+        asset_id = cursor.execute(
+            'SELECT local_id FROM counterparty_asset_mappings WHERE counterparty IS ? AND symbol IS ?',  # noqa: E501
+            (update['counterparty'], update['counterparty_symbol']),
+        ).fetchone()[0]
+        assert (asset_id == update['asset']) == after_upgrade
+
+    for deletion in COUNTERPARTY_ASSET_MAPPINGS_DATA['counterparty_asset_mappings'].get('deletions', []):  # noqa: E501
+        not_exists = cursor.execute(
+            'SELECT COUNT(*) FROM counterparty_asset_mappings WHERE counterparty IS ? AND symbol IS ?',  # noqa: E501
+            (deletion['counterparty'], deletion['counterparty_symbol']),
+        ).fetchone()[0] == 0
+        assert not_exists == after_upgrade
+
+
+def test_counterparty_asset_mappings_updates(
+        data_updater: RotkiDataUpdater,
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Test that remote updates for location asset mappings work"""
+    # check state of the location asset mappings before updating
+    with globaldb.conn.read_ctx() as cursor:
+        _check_counterparty_asset_mappings(cursor, after_upgrade=False)
+
+    with patch(
+        'requests.get',
+        wraps=make_single_mock_github_data_response(UpdateType.COUNTERPARTY_ASSET_MAPPINGS),
+    ):
+        data_updater.check_for_updates()
+
+    with globaldb.conn.read_ctx() as cursor:
+        _check_counterparty_asset_mappings(cursor, after_upgrade=True)
 
 
 def _check_location_unsupported_assets(cursor: 'DBCursor', after_upgrade: bool) -> None:

@@ -1,9 +1,9 @@
 import json
 import logging
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from sqlite3 import OperationalError
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 from packaging import version as pversion
@@ -28,6 +28,8 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
+    CounterpartyAssetMappingDeleteEntry,
+    CounterpartyAssetMappingUpdateEntry,
     Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
@@ -71,6 +73,7 @@ class RotkiDataUpdater:
             UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
             UpdateType.LOCATION_ASSET_MAPPINGS: self.update_location_asset_mappings,
             UpdateType.LOCATION_UNSUPPORTED_ASSETS: self.update_location_unsupported_assets,
+            UpdateType.COUNTERPARTY_ASSET_MAPPINGS: self.update_counterparty_asset_mappings,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
         self.version = get_current_version().our_version
 
@@ -351,26 +354,55 @@ class RotkiDataUpdater:
 
     def update_location_asset_mappings(self, data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
         """Applies location asset mappings updates in the global DB"""
-        log.info(f'Applying update for location asset mappings to v{version}')
-        for update_function, entry_type, raw_data_key in (
-            (GlobalDBHandler.delete_location_asset_mappings, LocationAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
-            (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
-            (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
-        ):
+        self._process_mapping_updates(
+            data=data,
+            mapping_type='location',
+            update_functions=(
+                (GlobalDBHandler.delete_location_asset_mappings, LocationAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
+                (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
+                (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
+            ),
+            version=version,
+        )
+
+    def update_counterparty_asset_mappings(self, data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
+        """Applies counterparty asset mappings updates in the global DB"""
+        self._process_mapping_updates(
+            data=data,
+            mapping_type='counterparty',
+            update_functions=(
+                (GlobalDBHandler.delete_counterparty_asset_mappings, CounterpartyAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
+                (GlobalDBHandler.update_counterparty_asset_mappings, CounterpartyAssetMappingUpdateEntry, 'updates'),  # noqa: E501
+                (GlobalDBHandler.add_counterparty_asset_mappings, CounterpartyAssetMappingUpdateEntry, 'additions'),  # noqa: E501
+            ),
+            version=version,
+        )
+
+    def _process_mapping_updates(
+            self,
+            data: dict[str, list[dict[str, Any]]],
+            mapping_type: Literal['location', 'counterparty'],
+            update_functions: tuple[tuple[Callable, type, str], ...],
+            version: int,
+    ) -> None:
+        """Common implementation for processing both location and counterparty asset mapping updates"""  # noqa: E501
+        log.info(f'Applying update for {mapping_type} asset mappings to v{version}')
+        for update_function, entry_type, raw_data_key in update_functions:
             entries, raw_data = [], data.get(raw_data_key)
             if raw_data is None:
                 continue  # no data to update
+
             for raw_entry in raw_data:
                 try:
                     if (asset_id := raw_entry.get('asset')) is not None:
                         raw_entry['asset'] = Asset(asset_id)
                     if (raw_location := raw_entry.get('location')) is not None:
                         raw_entry['location'] = Location.deserialize(raw_location)
-                    entries.append(entry_type.deserialize(raw_entry))
+                    entries.append(entry_type.deserialize(raw_entry))  # type: ignore[attr-defined]  # they all implement deserialize()
                 except DeserializationError as e:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
 
-            update_function(entries=entries, skip_errors=True)  # type: ignore  # entries/update function type varies
+            update_function(entries=entries, skip_errors=True)
 
     def update_location_unsupported_assets(self, data: dict[str, dict[str, list[str]]], version: int) -> None:  # noqa: E501
         """Applies location unsupported assets updates in the global DB"""
