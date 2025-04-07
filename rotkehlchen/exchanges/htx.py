@@ -18,7 +18,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
@@ -26,13 +25,18 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
-    deserialize_timestamp_from_intms,
+    deserialize_timestamp_ms_from_intms,
 )
 from rotkehlchen.types import (
     ApiKey,
@@ -41,7 +45,6 @@ from rotkehlchen.types import (
     Location,
     Timestamp,
     TimestampMS,
-    TradeType,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
@@ -350,19 +353,19 @@ class Htx(ExchangeInterface):
         invalid, the API does not return any results and raises an error indicating that a
         required 'type' argument is missing.
         """
-        new_movements = self._query_deposits_withdrawals(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            query_for='deposit',
-        )
-        new_movements.extend(
-            self._query_deposits_withdrawals(
+        events: list[AssetMovement | SwapEvent] = []
+        for query_for in ('deposit', 'withdraw'):
+            events.extend(self._query_deposits_withdrawals(
                 start_ts=start_ts,
                 end_ts=end_ts,
-                query_for='withdraw',
-            ),
-        )
-        return new_movements, end_ts
+                query_for=query_for,
+            ))
+
+        events.extend(self._query_trades(
+            start_ts=start_ts,
+            end_ts=end_ts,
+        ))
+        return events, end_ts
 
     def query_online_margin_history(
             self,
@@ -371,11 +374,11 @@ class Htx(ExchangeInterface):
     ) -> list['MarginPosition']:
         return []  # noop for htx
 
-    def query_online_trade_history(
+    def _query_trades(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
+    ) -> list[SwapEvent]:
         """
         Query trades from HTX in the spot category.
         The API is limited to query trades up to 120 days into the past. We can query time ranges
@@ -389,12 +392,12 @@ class Htx(ExchangeInterface):
 
         https://huobiapi.github.io/docs/spot/v1/en/#search-match-results
         """
-        new_trades: list[Trade] = []
+        events: list[SwapEvent] = []
         upper_ts, lower_ts = end_ts, Timestamp(end_ts - DAY_IN_SECONDS * 2)
         earliest_query_start_ts = Timestamp((ts_now() - DAY_IN_SECONDS * 120) + (15 * 60))  # margin of 15 minutes to not raise an error if the bound is reached while querying # noqa: E501
 
         if end_ts <= earliest_query_start_ts:  # 0... start_ts ... end_ts ... earliest_query_start
-            return [], (start_ts, end_ts)  # entire query out of range. Bail
+            return []  # entire query out of range. Bail
 
         if start_ts < earliest_query_start_ts:  # 0 ... start_ts ...  earliest_query_start ... end_ts  # noqa: E501
             start_ts = Timestamp(earliest_query_start_ts)
@@ -411,8 +414,8 @@ class Htx(ExchangeInterface):
             for raw_trade in raw_data:
                 try:
                     symbol, fee_currency = raw_trade['symbol'], raw_trade['fee-currency']
-                    trade_type = TradeType.deserialize(raw_trade['type'].split('-')[0])
-                    if trade_type not in (TradeType.BUY, TradeType.SELL):
+                    trade_type = raw_trade['type'].split('-')[0]
+                    if trade_type not in {'buy', 'sell'}:
                         raise DeserializationError
 
                     # On the API page, it's mentioned transaction fee of buy order is based on
@@ -422,7 +425,7 @@ class Htx(ExchangeInterface):
                         remove_fee_currency(symbol=symbol, fee_currency=fee_currency),
                     )
                     fee_asset = base_asset
-                    if trade_type == TradeType.SELL:
+                    if trade_type == 'sell':
                         base_asset, quote_asset = quote_asset, base_asset
                         fee_asset = quote_asset
                 except (UnknownAsset, DeserializationError) as e:
@@ -438,18 +441,25 @@ class Htx(ExchangeInterface):
                     continue
 
                 try:
-                    trade = Trade(
-                        timestamp=deserialize_timestamp_from_intms(raw_trade['created-at']),
-                        location=Location.HTX,
+                    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(  # noqa: E501
+                        raw_trade_type=trade_type,
                         base_asset=base_asset,
                         quote_asset=quote_asset,
-                        trade_type=trade_type,
-                        fee_currency=fee_asset,
                         amount=deserialize_asset_amount(raw_trade['filled-amount']),
                         rate=deserialize_price(raw_trade['price']),
-                        fee=deserialize_fee(raw_trade['filled-fees']) if raw_trade['filled-fees'] else Fee(ZERO),  # noqa: E501
-                        link=str(raw_trade['id']),
                     )
+                    events.extend(create_swap_events(
+                        timestamp=deserialize_timestamp_ms_from_intms(raw_trade['created-at']),
+                        location=self.location,
+                        spend_asset=spend_asset,
+                        spend_amount=spend_amount,
+                        receive_asset=receive_asset,
+                        receive_amount=receive_amount,
+                        fee_asset=fee_asset,
+                        fee_amount=deserialize_fee(raw_trade['filled-fees']) if raw_trade['filled-fees'] else Fee(ZERO),  # noqa: E501
+                        location_label=self.name,
+                        unique_id=str(raw_trade['id']),
+                    ))
                 except DeserializationError as e:
                     log.error(f'{e} when reading rate for HTX trade {raw_trade}')
                 except KeyError as e:
@@ -457,8 +467,6 @@ class Htx(ExchangeInterface):
                         f'Failed to deserialize HTX trade {raw_trade} due to missing key {e}. '
                         'Skipping...',
                     )
-                else:
-                    new_trades.append(trade)
 
             upper_ts = Timestamp(upper_ts - DAY_IN_SECONDS * 2)
             lower_ts = Timestamp(lower_ts - DAY_IN_SECONDS * 2)
@@ -467,4 +475,4 @@ class Htx(ExchangeInterface):
 
             lower_ts = max(lower_ts, start_ts)  # don't query more than we need in last iteration
 
-        return new_trades, (start_ts, end_ts)
+        return events

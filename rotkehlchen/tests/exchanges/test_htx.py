@@ -12,22 +12,14 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_DOGE, A_USDT, A_ZRX
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import (
-    AssetAmount,
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TimestampMS,
-    TradeType,
-)
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
 def htx_account_mock(
@@ -114,7 +106,10 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
             ({'type': 'withdraw', 'size': 500, 'direct': 'next'}, json.loads('[{"id": 52360978, "type": "withdraw", "sub-type": "NORMAL", "currency": "zrx", "chain": "zrx", "tx-hash": "0xd41ab5afa0e19c84ffa388bbfc60623e4936af2232861e1cf365b2f8725cbd2c", "amount": 1174.49047, "from-addr-tag": "", "address-id": 30777398, "address": "0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97", "address-tag": "", "fee": 13.778201, "state": "confirmed", "created-at": 1631140110655, "updated-at": 1631140245190}]')),  # noqa: E501
         ],
     })
-    with patch.object(htx_exchange, '_query', side_effect=mock_fn):
+    with (
+        patch.object(htx_exchange, '_query', side_effect=mock_fn),
+        patch.object(htx_exchange, '_query_trades'),
+    ):
         movements, _ = htx_exchange.query_online_history_events(
             start_ts=Timestamp(1612492580),
             end_ts=Timestamp(1714746851),
@@ -177,67 +172,133 @@ def test_trades(htx_exchange: Htx) -> None:
             ({'start-time': '1709997318000', 'end-time': '1710170118000', 'size': 500}, json.loads('[{"symbol": "dogeusdt", "fee-currency": "doge", "source": "spot-web", "filled-amount": "0.587616346289181345", "filled-fees": "0.62254395", "filled-points": "0.0", "role": "taker", "updated-at": null, "price": "0.69042", "created-at": 1792370117673, "fee-deduct-currency": "", "fee-deduct-state": "done", "order-id": 10505067, "match-id": 612882223, "trade-id": 708313429, "id": 8208887641319065, "type": "buy-market"}, {"symbol": "dogeusdt", "fee-currency": "doge", "source": "spot-web", "filled-amount": "8.1662", "filled-fees": "0.006007", "filled-points": "0.0", "role": "taker", "updated-at": null, "price": "0.69042", "created-at": 1792370117673, "fee-deduct-currency": "", "fee-deduct-state": "done", "order-id": 10505067, "match-id": 612882223, "trade-id": 708313428, "id": 1836658935934866, "type": "buy-market"}, {"symbol": "dogeusdt", "fee-currency": "doge", "source": "spot-web", "filled-amount": "1.537", "filled-fees": "0.003074", "filled-points": "0.0", "role": "taker", "updated-at": null, "price": "38.8718", "created-at": 1792370117672, "fee-deduct-currency": "", "fee-deduct-state": "done", "order-id": 10505067, "match-id": 612882223, "trade-id": 708313427, "id": 2186266790953303, "type": "buy-market"}, {"symbol": "daiusdt", "fee-currency": "usdt", "source": "spot-web", "filled-amount": "1038.18", "filled-fees": "2.07532182", "filled-points": "0.0", "role": "taker", "updated-at": null, "price": "0.9995", "created-at": 1710354800452, "fee-deduct-currency": "", "fee-deduct-state": "done", "order-id": 1020938404315, "match-id": 100304520643, "trade-id": 73831300, "id": 1552611026239689, "type": "sell-market"}, {"symbol": "daiusdt", "fee-currency": "usdt", "source": "spot-web", "filled-amount": "26.3", "filled-fees": "0.05257896", "filled-points": "0.0", "role": "taker", "updated-at": null, "price": "0.9996", "created-at": 1710354800451, "fee-deduct-currency": "", "fee-deduct-state": "done", "order-id": 1020938404315, "match-id": 100304520643, "trade-id": 73831399, "id": 3409716930791340, "type": "sell-market"}]')),  # noqa: E501
         ],
     })
-    with patch.object(htx_exchange, '_query', side_effect=mock_fn):
-        trades, _ = htx_exchange.query_online_trade_history(
+    with (
+        patch.object(htx_exchange, '_query', side_effect=mock_fn),
+        patch.object(htx_exchange, '_query_deposits_withdrawals'),
+    ):
+        events, _ = htx_exchange.query_online_history_events(
             start_ts=Timestamp(1710354800),
             end_ts=Timestamp(1710170118),
         )
-    expected_trades = [
-        Trade(
-            timestamp=Timestamp(1792370117),
-            location=Location.HTX,
-            base_asset=A_DOGE,
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.587616346289181345')),
-            rate=Price(FVal('0.69042')),
-            fee=Fee(FVal('0.62254395')),
-            fee_currency=A_DOGE,
-            link='8208887641319065',
-        ), Trade(
-            timestamp=Timestamp(1792370117),
-            location=Location.HTX,
-            base_asset=A_DOGE,
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('8.1662')),
-            rate=Price(FVal('0.69042')),
-            fee=Fee(FVal('0.006007')),
-            fee_currency=A_DOGE,
-            link='1836658935934866',
-        ), Trade(
-            timestamp=Timestamp(1792370117),
-            location=Location.HTX,
-            base_asset=A_DOGE,
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('1.537')),
-            rate=Price(FVal('38.8718')),
-            fee=Fee(FVal('0.003074')),
-            fee_currency=A_DOGE,
-            link='2186266790953303',
-        ), Trade(
-            timestamp=Timestamp(1710354800),
-            location=Location.HTX,
-            base_asset=A_DAI,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('1038.18')),
-            rate=Price(FVal('0.9995')),
-            fee=Fee(FVal('2.07532182')),
-            fee_currency=A_USDT,
-            link='1552611026239689',
-        ), Trade(
-            timestamp=Timestamp(1710354800),
-            location=Location.HTX,
-            base_asset=A_DAI,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('26.3')),
-            rate=Price(FVal('0.9996')),
-            fee=Fee(FVal('0.05257896')),
-            fee_currency=A_USDT,
-            link='3409716930791340',
-        ),
-    ]
-    assert trades == expected_trades
+
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1792370117673),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('0.40570207780497658421490'),
+        location_label='htx',
+        unique_id='8208887641319065',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117673),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DOGE,
+        amount=FVal('0.587616346289181345'),
+        location_label='htx',
+        unique_id='8208887641319065',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117673),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_DOGE,
+        amount=FVal('0.62254395'),
+        location_label='htx',
+        unique_id='8208887641319065',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117673),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('5.638107804'),
+        location_label='htx',
+        unique_id='1836658935934866',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117673),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DOGE,
+        amount=FVal('8.1662'),
+        location_label='htx',
+        unique_id='1836658935934866',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117673),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_DOGE,
+        amount=FVal('0.006007'),
+        location_label='htx',
+        unique_id='1836658935934866',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117672),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('59.7459566'),
+        location_label='htx',
+        unique_id='2186266790953303',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117672),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DOGE,
+        amount=FVal('1.537'),
+        location_label='htx',
+        unique_id='2186266790953303',
+    ), SwapEvent(
+        timestamp=TimestampMS(1792370117672),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_DOGE,
+        amount=FVal('0.003074'),
+        location_label='htx',
+        unique_id='2186266790953303',
+    ), SwapEvent(
+        timestamp=TimestampMS(1710354800452),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_DAI,
+        amount=FVal('1038.18'),
+        location_label='htx',
+        unique_id='1552611026239689',
+    ), SwapEvent(
+        timestamp=TimestampMS(1710354800452),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('1037.660910'),
+        location_label='htx',
+        unique_id='1552611026239689',
+    ), SwapEvent(
+        timestamp=TimestampMS(1710354800452),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('2.07532182'),
+        location_label='htx',
+        unique_id='1552611026239689',
+    ), SwapEvent(
+        timestamp=TimestampMS(1710354800451),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_DAI,
+        amount=FVal('26.3'),
+        location_label='htx',
+        unique_id='3409716930791340',
+    ), SwapEvent(
+        timestamp=TimestampMS(1710354800451),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('26.28948'),
+        location_label='htx',
+        unique_id='3409716930791340',
+    ), SwapEvent(
+        timestamp=TimestampMS(1710354800451),
+        location=Location.HTX,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.05257896'),
+        location_label='htx',
+        unique_id='3409716930791340',
+    )]
