@@ -1,5 +1,6 @@
 import os
 import warnings as test_warnings
+from collections import defaultdict
 from unittest.mock import patch
 
 import pytest
@@ -11,11 +12,11 @@ from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
@@ -139,38 +140,61 @@ def test_gemini_query_trades(sandbox_gemini):
 
     Uses the Gemini sandbox
     """
-    trades = sandbox_gemini.query_trade_history(
-        start_ts=0,
-        end_ts=Timestamp(1584881354),
-        only_cache=False,
-    )
-    assert len(trades) == 2
-    assert trades[0] == Trade(
-        timestamp=Timestamp(1584720549),
+    with patch.object(sandbox_gemini, '_query_asset_movements'):
+        events, _ = sandbox_gemini.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1584881354),
+        )
+
+    assert events == [SwapEvent(
+        timestamp=TimestampMS(1584720549000),
         location=Location.GEMINI,
-        base_asset=A_BTC,
-        quote_asset=A_USD,
-        trade_type=TradeType.BUY,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('3311.315'),
+        location_label='gemini',
+        unique_id='560627330',
+    ), SwapEvent(
+        timestamp=TimestampMS(1584720549000),
+        location=Location.GEMINI,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
         amount=FVal('0.5'),
-        rate=FVal('6622.63'),
-        fee=FVal('33.11315'),
-        fee_currency=A_USD,
-        link='560627330',
-        notes='',
-    )
-    assert trades[1] == Trade(
-        timestamp=Timestamp(1584721109),
+        location_label='gemini',
+        unique_id='560627330',
+    ), SwapEvent(
+        timestamp=TimestampMS(1584720549000),
         location=Location.GEMINI,
-        base_asset=A_ETH,
-        quote_asset=A_USD,
-        trade_type=TradeType.SELL,
-        amount=FVal('1.0'),
-        rate=FVal('20.0'),
-        fee=FVal('0.2'),
-        fee_currency=A_USD,
-        link='560628883',
-        notes='',
-    )
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('33.11315'),
+        location_label='gemini',
+        unique_id='560627330',
+    ), SwapEvent(
+        timestamp=TimestampMS(1584721109000),
+        location=Location.GEMINI,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('1'),
+        location_label='gemini',
+        unique_id='560628883',
+    ), SwapEvent(
+        timestamp=TimestampMS(1584721109000),
+        location=Location.GEMINI,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USD,
+        amount=FVal('20.00'),
+        location_label='gemini',
+        unique_id='560628883',
+    ), SwapEvent(
+        timestamp=TimestampMS(1584721109000),
+        location=Location.GEMINI,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.20'),
+        location_label='gemini',
+        unique_id='560628883',
+    )]
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
@@ -180,12 +204,19 @@ def test_gemini_query_all_trades_pagination(sandbox_gemini):
 
     Uses the Gemini sandbox at which we've made quite a few test trades
     """
-    trades = sandbox_gemini.query_trade_history(start_ts=0, end_ts=ts_now(), only_cache=False)
-    identifiers = set()
-    for trade in trades:
-        assert trade.link not in identifiers, 'trade included multiple times in the results'
-        identifiers.add(trade.link)
-    assert len(trades) == 591
+    with patch.object(sandbox_gemini, '_query_asset_movements'):
+        events, _ = sandbox_gemini.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+        )
+
+    identifiers = defaultdict(int)
+    for event in events:
+        # The same event_identifier can be present up to 3 times (spend/receive/fee events).
+        assert identifiers[event.event_identifier] <= 3, 'trade included multiple times in the results'  # noqa: E501
+        identifiers[event.event_identifier] += 1
+
+    assert len(events) == 1773
 
 
 # Taken from the API docs
@@ -269,7 +300,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
     """
     transfers_patch = mock_gemini_transfers(sandbox_gemini, requests.post)
 
-    with transfers_patch:
+    with transfers_patch, patch.object(sandbox_gemini, '_query_trades'):
         sandbox_gemini.query_history_events()
 
     with sandbox_gemini.db.conn.read_ctx() as cursor:

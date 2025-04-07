@@ -21,7 +21,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import (
     deserialize_asset_movement_address,
@@ -29,6 +29,11 @@ from rotkehlchen.exchanges.utils import (
 )
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -44,7 +49,6 @@ from rotkehlchen.types import (
     ExchangeAuthCredentials,
     Location,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
@@ -439,16 +443,15 @@ class Gemini(ExchangeInterface):
             return []
         return trades
 
-    def query_online_trade_history(
+    def _query_trades(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """Queries gemini for trades
-        """
+    ) -> list[SwapEvent]:
+        """Queries gemini for trades. Returns a list of SwapEvents."""
         log.debug('Query gemini trade history', start_ts=start_ts, end_ts=end_ts)
-        trades = []
-        gemini_trades = []
+        swap_events = []
+        processed_ids = set()
         for symbol in self.symbols:
             gemini_trades = self._get_trades_for_symbol(
                 symbol=symbol,
@@ -461,20 +464,30 @@ class Gemini(ExchangeInterface):
                     if timestamp > end_ts:
                         break
 
+                    if (unique_id := str(entry['tid'])) in processed_ids:
+                        continue  # Skip already processed trade
+
                     base, quote = gemini_symbol_to_base_quote(symbol)
-                    trades.append(Trade(
-                        timestamp=timestamp,
-                        location=Location.GEMINI,
+                    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(  # noqa: E501
+                        raw_trade_type=entry['type'],
                         base_asset=base,
                         quote_asset=quote,
-                        trade_type=TradeType.deserialize(entry['type']),
                         amount=deserialize_asset_amount(entry['amount']),
                         rate=deserialize_price(entry['price']),
-                        fee=deserialize_fee(entry['fee_amount']),
-                        fee_currency=asset_from_gemini(entry['fee_currency']),
-                        link=str(entry['tid']),
-                        notes='',
+                    )
+                    swap_events.extend(create_swap_events(
+                        timestamp=ts_sec_to_ms(timestamp),
+                        location=self.location,
+                        spend_asset=spend_asset,
+                        spend_amount=spend_amount,
+                        receive_asset=receive_asset,
+                        receive_amount=receive_amount,
+                        fee_asset=asset_from_gemini(entry['fee_currency']),
+                        fee_amount=deserialize_fee(entry['fee_amount']),
+                        location_label=self.name,
+                        unique_id=unique_id,
                     ))
+                    processed_ids.add(unique_id)
                 except UnprocessableTradePair as e:
                     self.msg_aggregator.add_warning(
                         f'Found unprocessable Gemini pair {e.pair}. Ignoring the trade.',
@@ -501,13 +514,14 @@ class Gemini(ExchangeInterface):
                     )
                     continue
 
-        return trades, (start_ts, end_ts)
+        return swap_events
 
-    def query_online_history_events(
+    def _query_asset_movements(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
+    ) -> list[AssetMovement]:
+        """Queries Gemini for transfers. Returns a list of AssetMovements."""
         result = self._get_paginated_query(
             endpoint='transfers',
             start_ts=start_ts,
@@ -562,7 +576,24 @@ class Gemini(ExchangeInterface):
 
             movements.append(movement)
 
-        return movements, end_ts
+        return movements
+
+    def query_online_history_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
+        events: list[AssetMovement | SwapEvent] = []
+        for query_func in (
+            self._query_asset_movements,
+            self._query_trades,
+        ):
+            events.extend(query_func(
+                start_ts=start_ts,
+                end_ts=end_ts,
+            ))
+
+        return events, end_ts
 
     def query_online_margin_history(
             self,
