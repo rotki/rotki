@@ -186,6 +186,7 @@ watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOpt
 
 watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
   if (!fromAddress || !toAddress || !isValidEthAddress(toAddress)) {
+    set(showNeverInteractedWarning, false);
     return;
   }
 

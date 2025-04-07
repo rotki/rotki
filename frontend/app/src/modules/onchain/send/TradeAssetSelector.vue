@@ -2,6 +2,7 @@
 import type { TradableAsset } from '@/modules/onchain/types';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import TradeAssetDisplay from '@/modules/onchain/send/TradeAssetDisplay.vue';
+import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { Blockchain } from '@rotki/common';
@@ -24,7 +25,8 @@ const { t } = useI18n();
 
 const { allOwnedAssets, getAssetDetail } = useTradableAsset(address);
 
-const { connected, supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
+const { connected, connectedAddress, supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
+const { useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
 
 const assetDetail = getAssetDetail(asset, chain);
 
@@ -141,7 +143,14 @@ watchImmediate(chain, (chain) => {
           name="lu-x"
         />
       </RuiButton>
-      <div class="p-4">
+      <div class="p-4 pb-4">
+        <RuiAlert
+          v-if="useQueryingBalances"
+          class="mb-4"
+          type="warning"
+        >
+          {{ t('trade.warning.query_on_progress') }}
+        </RuiAlert>
         <ChainSelect
           v-model="internalChain"
           hide-details
@@ -151,7 +160,7 @@ watchImmediate(chain, (chain) => {
       </div>
       <div
         v-if="assetOptions.length > 0"
-        class="flex flex-col max-h-[calc(100vh-400px)] overflow-auto py-2"
+        class="flex flex-col max-h-[calc(100vh-400px)] overflow-auto pb-2"
       >
         <TradeAssetDisplay
           v-for="item in assetOptions"

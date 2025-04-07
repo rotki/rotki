@@ -24,27 +24,29 @@ const { isPackaged } = useInterop();
 </script>
 
 <template>
-  <div class="container !max-w-lg py-6 min-h-screen">
-    <h4 class="text-h4 mb-4">
-      {{ t('trade.bridge.title') }}
-    </h4>
+  <div class="overflow-auto w-full">
+    <div class="container !max-w-lg py-6 min-h-screen">
+      <h4 class="text-h4 mb-4">
+        {{ t('trade.bridge.title') }}
+      </h4>
 
-    <div class="flex gap-2">
-      <TradeConnectedAddressBadge />
-      <RuiButton
-        v-if="connectedAddress && connectedChainId"
-        color="error"
-        @click="disconnect()"
-      >
-        {{ t('trade.actions.disconnect') }}
-      </RuiButton>
+      <div class="flex gap-2">
+        <TradeConnectedAddressBadge />
+        <RuiButton
+          v-if="connectedAddress && connectedChainId"
+          color="error"
+          @click="disconnect()"
+        >
+          {{ t('trade.actions.disconnect') }}
+        </RuiButton>
+      </div>
+
+      <Pairing
+        v-if="!isPackaged && connected && connectedAddress && connectedChainId"
+        class="mt-8 border-t border-default py-8"
+        :address="connectedAddress"
+        :connected-chain-id="connectedChainId"
+      />
     </div>
-
-    <Pairing
-      v-if="!isPackaged && connected && connectedAddress && connectedChainId"
-      class="mt-8 border-t border-default py-8"
-      :address="connectedAddress"
-      :connected-chain-id="connectedChainId"
-    />
   </div>
 </template>

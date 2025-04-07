@@ -17,12 +17,13 @@ defineProps<{
 
 const { t } = useI18n();
 
-const openDialog = ref<boolean>(false);
+const openOptionsDialog = ref<boolean>(false);
 
-const addressBookAddresses = ref<string[]>([]);
+const addressBookOptions = ref<string[]>([]);
 const addressBookSearch = ref<string>('');
 const addressBookSearchDebounced = refDebounced(addressBookSearch, 200);
-const open = ref<boolean>(false);
+
+const openSuggestionsMenu = ref<boolean>(false);
 const searchValue = ref<string>('');
 const directOptions = ref<{ address: string; name: string }[]>([]);
 const debouncedSearchValue = refDebounced(searchValue, 200);
@@ -37,12 +38,17 @@ const { addresses } = useAccountAddresses();
 const { fetchAddressBook, resolveEnsNames } = useAddressesNamesApi();
 const { updateEnsNamesState } = useAddressesNamesStore();
 
+function isNotConnectedAddress(address: string) {
+  const connected = get(connectedAddress);
+  return !connected || address !== connected;
+}
+
 const trackedAddresses = computed<string[]>(() => {
   const accountsAddresses = [...new Set(Object.values(get(addresses)).flat())];
-  const connected = get(connectedAddress);
-
-  return accountsAddresses.filter(address => isValidEthAddress(address) && (!connected || address !== connected));
+  return accountsAddresses.filter(address => isValidEthAddress(address) && isNotConnectedAddress(address));
 });
+
+const filteredAddressBookOptions = computed<string[]>(() => get(addressBookOptions).filter(isNotConnectedAddress));
 
 const valid = computed<boolean>(() => {
   const value = get(model);
@@ -54,9 +60,11 @@ const focusDebounced = refDebounced(anyFocused, 200);
 const usedAnyFocused = logicAnd(anyFocused, focusDebounced);
 
 function select(address: string) {
-  set(model, address);
-  set(openDialog, false);
-  set(open, false);
+  if (isNotConnectedAddress(address)) {
+    set(model, address);
+  }
+  set(openOptionsDialog, false);
+  set(openSuggestionsMenu, false);
   set(searchValue, '');
 }
 
@@ -67,21 +75,21 @@ async function getAddressBookData(name: string): Promise<AddressBookEntry[]> {
     offset: 0,
   });
 
-  return data.data;
+  return data.data.filter(item => isValidEthAddress(item.address));
 }
 
 async function fetchAddressBookAddresses(name: string) {
   const data = await getAddressBookData(name);
   const addresses = data.map(item => item.address);
-  set(addressBookAddresses, addresses);
+  set(addressBookOptions, addresses);
 }
 
 function resetModelValue() {
   set(model, '');
 }
 
-watch([addressBookSearchDebounced, openDialog], ([search, openDialog]) => {
-  if (openDialog) {
+watch([addressBookSearchDebounced, openOptionsDialog], ([search, openOptionsDialog]) => {
+  if (openOptionsDialog) {
     fetchAddressBookAddresses(search);
   }
   else {
@@ -90,7 +98,7 @@ watch([addressBookSearchDebounced, openDialog], ([search, openDialog]) => {
 });
 
 watch(usedAnyFocused, (focus) => {
-  set(open, focus);
+  set(openSuggestionsMenu, focus);
   if (!focus) {
     const search = get(searchValue);
     if (search && isValidEthAddress(search)) {
@@ -105,29 +113,35 @@ watch(usedAnyFocused, (focus) => {
 watch(debouncedSearchValue, async (value) => {
   const values = [];
   const privateBooks = await getAddressBookData(value);
-  values.push(...privateBooks.map(item => ({ address: item.address, name: item.name })));
+  values.push(...privateBooks);
 
   if (value.endsWith('.eth')) {
-    const resolved = await resolveEnsNames(value);
-    if (resolved && isValidEthAddress(resolved)) {
+    const address = await resolveEnsNames(value);
+    if (address && isValidEthAddress(address)) {
       values.push({
-        address: resolved,
+        address,
         name: value,
       });
 
       updateEnsNamesState({
-        [resolved]: value,
+        [address]: value,
       });
     }
   }
 
-  set(directOptions, values);
+  set(directOptions, values.filter(item => isNotConnectedAddress(item.address)));
+});
+
+watch(connectedAddress, (connectedAddress) => {
+  if (connectedAddress && connectedAddress === get(model)) {
+    set(model, '');
+  }
 });
 </script>
 
 <template>
   <RuiMenu
-    v-model="open"
+    v-model="openSuggestionsMenu"
     wrapper-class="w-full"
   >
     <template #activator>
@@ -185,7 +199,7 @@ watch(debouncedSearchValue, async (value) => {
               type="text"
               class="outline-none w-full bg-transparent text-sm placeholder:text-rui-grey-400 dark:placeholder:text-rui-grey-700"
               placeholder="E.g. 0x9531c059098e3d194ff87febb587ab07b30b1306"
-              @click="open = true"
+              @click="openSuggestionsMenu = true"
             />
           </label>
           <div class="p-3 pl-0">
@@ -193,7 +207,7 @@ watch(debouncedSearchValue, async (value) => {
               variant="outlined"
               color="primary"
               class="!p-3"
-              @click="openDialog = true"
+              @click="openOptionsDialog = true"
             >
               <RuiIcon
                 name="lu-book-user"
@@ -224,14 +238,14 @@ watch(debouncedSearchValue, async (value) => {
   </RuiMenu>
 
   <RuiAlert
-    v-if="connected && showWarning"
+    v-if="connected && model && showWarning"
     type="warning"
     class="mt-2"
   >
     {{ t('trade.never_interacted') }}
   </RuiAlert>
   <RuiDialog
-    v-model="openDialog"
+    v-model="openOptionsDialog"
     max-width="500"
   >
     <RuiCard
@@ -246,7 +260,7 @@ watch(debouncedSearchValue, async (value) => {
         variant="text"
         class="absolute top-2 right-2"
         icon
-        @click="openDialog = false"
+        @click="openOptionsDialog = false"
       >
         <RuiIcon
           class="text-white"
@@ -288,14 +302,14 @@ watch(debouncedSearchValue, async (value) => {
         </div>
 
         <div
-          v-if="addressBookAddresses.length === 0"
+          v-if="filteredAddressBookOptions.length === 0"
           class="p-4 pt-0 text-rui-text-secondary"
         >
           {{ t('trade.recipient.no_addresses_found') }}
         </div>
         <template v-else>
           <TradeAddressDisplay
-            v-for="address in addressBookAddresses"
+            v-for="address in filteredAddressBookOptions"
             :key="address"
             :address="address"
             :chain="chain"
