@@ -244,10 +244,12 @@ describe('store::balances/manual', () => {
     const prices: AssetPrices = {
       BTC: {
         isManualPrice: false,
+        oracle: 'coingecko',
         value: bigNumberify(3),
       },
       DAI: {
         isManualPrice: false,
+        oracle: 'coingecko',
         value: bigNumberify(2),
       },
     };

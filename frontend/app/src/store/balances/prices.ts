@@ -17,6 +17,7 @@ import {
   HistoricPrices,
   type OracleCachePayload,
 } from '@/types/prices';
+import { PriceOracle } from '@/types/settings/price-oracle';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
@@ -273,8 +274,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       return get(assetPricesWithCurrentCurrency)[assetVal]?.value ?? get(prices)[assetVal]?.value;
     });
 
+  const getAssetPriceOracle = (asset: MaybeRef<string>): ComputedRef<string> =>
+    computed(() => get(prices)[get(asset)]?.oracle || '');
+
   const isManualAssetPrice = (asset: MaybeRef<string>): ComputedRef<boolean> =>
-    computed(() => get(prices)[get(asset)]?.isManualPrice || false);
+    computed(() => get(getAssetPriceOracle(asset)) === PriceOracle.MANUALCURRENT);
 
   /**
    * @deprecated
@@ -306,6 +310,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     exchangeRates,
     fetchExchangeRates,
     fetchPrices,
+    getAssetPriceOracle,
     getHistoricPrice,
     getPriceCache,
     isAssetPriceInCurrentCurrency,

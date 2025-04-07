@@ -59,8 +59,3 @@ export const UNISWAP3_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   icon: './assets/images/protocols/uniswap.svg',
   identifier: PriceOracle.UNISWAP3,
 };
-
-export const MANUAL_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
-  icon: './assets/images/oracles/book.svg',
-  identifier: PriceOracle.MANUAL,
-};

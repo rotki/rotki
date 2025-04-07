@@ -126,7 +126,7 @@ useRememberTableSorting<AssetWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, sort, he
       <template #item.price="{ row }">
         <AmountDisplay
           v-if="assetPrice(row.asset).value"
-          no-scramble
+          is-asset-price
           show-currency="symbol"
           fiat-currency="USD"
           :price-asset="row.asset"

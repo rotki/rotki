@@ -1,10 +1,10 @@
 import type { Pinia } from 'pinia';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import AmountDisplay, { type AmountInputProps } from '@/components/display/amount/AmountDisplay.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { type ShownCurrency, useCurrencies } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 import { BigNumber, bigNumberify, Zero } from '@rotki/common';
@@ -31,18 +31,7 @@ describe('amountDisplay.vue', () => {
 
   const createWrapper = (
     value: BigNumber,
-    props: {
-      fiatCurrency?: string;
-      amount?: BigNumber;
-      integer?: boolean;
-      forceCurrency?: boolean;
-      pnl?: boolean;
-      showCurrency?: ShownCurrency;
-      asset?: string;
-      priceAsset?: string;
-      priceOfAsset?: BigNumber;
-      timestamp?: number;
-    } = {},
+    props: Omit<AmountInputProps, 'value'> = {},
   ) =>
     mount(AmountDisplay, {
       global: {
@@ -342,10 +331,11 @@ describe('amountDisplay.vue', () => {
   });
 
   describe('check manual latest prices', () => {
-    it('does not show manual price indicator', () => {
+    it('show oracle information', async () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       set(prices, {
         ETH: {
+          oracle: 'coingecko',
           value: bigNumberify(500),
           isManualPrice: false,
         },
@@ -353,15 +343,20 @@ describe('amountDisplay.vue', () => {
 
       const wrapper = createWrapper(bigNumberify(500), {
         priceAsset: 'ETH',
+        isAssetPrice: true,
       });
 
-      expect(wrapper.find('.rui-icon').exists()).toBe(false);
+      await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
+      await nextTick();
+
+      expect(wrapper.find('span[class*=chip] > div:last-child').text()).toBe('lu-info coingecko');
     });
 
     it('shows manual price indicator', () => {
       const { prices } = storeToRefs(useBalancePricesStore());
       set(prices, {
         ETH: {
+          oracle: 'manualcurrent',
           value: bigNumberify(500),
           isManualPrice: true,
         },
@@ -379,6 +374,7 @@ describe('amountDisplay.vue', () => {
     const { prices } = storeToRefs(useBalancePricesStore());
     set(prices, {
       ETH: {
+        oracle: 'manualcurrent',
         value: bigNumberify(500),
         isManualPrice: true,
       },

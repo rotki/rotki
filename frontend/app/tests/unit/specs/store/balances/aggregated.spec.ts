@@ -58,22 +58,27 @@ describe('store::balances/aggregated', () => {
 
     set(prices, {
       DAI: {
+        oracle: 'coingecko',
         value: bigNumberify(1),
         isManualPrice: false,
       },
       EUR: {
+        oracle: 'coingecko',
         value: bigNumberify(1),
         isManualPrice: false,
       },
       SAI: {
+        oracle: 'coingecko',
         value: bigNumberify(1),
         isManualPrice: false,
       },
       ETH: {
+        oracle: 'coingecko',
         value: bigNumberify(3000),
         isManualPrice: false,
       },
       BTC: {
+        oracle: 'coingecko',
         value: bigNumberify(40000),
         isManualPrice: false,
       },
@@ -326,22 +331,27 @@ describe('store::balances/aggregated', () => {
 
     set(prices, {
       DAI: {
+        oracle: 'coingecko',
         value: bigNumberify(1),
         isManualPrice: false,
       },
       EUR: {
+        oracle: 'coingecko',
         value: bigNumberify(1),
         isManualPrice: false,
       },
       SAI: {
+        oracle: 'coingecko',
         value: bigNumberify(1),
         isManualPrice: false,
       },
       ETH: {
+        oracle: 'coingecko',
         value: bigNumberify(3000),
         isManualPrice: false,
       },
       BTC: {
+        oracle: 'coingecko',
         value: bigNumberify(40000),
         isManualPrice: false,
       },
