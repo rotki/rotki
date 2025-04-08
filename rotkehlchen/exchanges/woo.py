@@ -18,12 +18,17 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
+)
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -147,7 +152,7 @@ class Woo(ExchangeInterface):
 
         return dict(assets_balance), ''
 
-    def _deserialize_trade(self, trade: dict[str, Any]) -> Trade:
+    def _deserialize_trade(self, trade: dict[str, Any]) -> list[SwapEvent]:
         """
         Deserialize a Woo trade returned from the API
 
@@ -163,39 +168,26 @@ class Woo(ExchangeInterface):
             raise DeserializationError(
                 f'Could not split symbol {symbol} into base and quote asset',
             ) from e
-        return Trade(
-            timestamp=deserialize_timestamp_from_floatstr(trade['executed_timestamp']),
-            location=Location.WOO,
+
+        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            raw_trade_type=trade['side'],
             base_asset=asset_from_woo(base_asset_symbol),
             quote_asset=asset_from_woo(quote_asset_symbol),
-            trade_type=TradeType.BUY if trade['side'] == 'BUY' else TradeType.SELL,
             amount=deserialize_asset_amount(trade['executed_quantity']),
             rate=deserialize_price(trade['executed_price']),
-            fee=deserialize_fee(trade['fee']),
-            fee_currency=asset_from_woo(trade['fee_asset']),
-            link=str(trade['id']),
         )
-
-    def query_online_trade_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """Return trade history on Woo in a range of time."""
-        start_ts = max(start_ts, MIN_TIMESTAMP)
-        end_ts = max(end_ts, MIN_TIMESTAMP)
-        trades: list[Trade] = self._api_query_paginated(
-            endpoint='v1/client/hist_trades',
-            options={
-                'end_t': ts_sec_to_ms(end_ts),
-                'fromId': 1,
-                'limit': API_MAX_LIMIT,
-                'start_t': ts_sec_to_ms(start_ts),
-            },
-            deserialization_method=self._deserialize_trade,
-            entries_key='data',
+        return create_swap_events(
+            timestamp=ts_sec_to_ms(deserialize_timestamp_from_floatstr(trade['executed_timestamp'])),
+            location=self.location,
+            spend_asset=spend_asset,
+            spend_amount=spend_amount,
+            receive_asset=receive_asset,
+            receive_amount=receive_amount,
+            fee_asset=asset_from_woo(trade['fee_asset']),
+            fee_amount=deserialize_fee(trade['fee']),
+            location_label=self.name,
+            unique_id=str(trade['id']),
         )
-        return trades, (start_ts, end_ts)
 
     def query_online_history_events(
             self,
@@ -203,20 +195,32 @@ class Woo(ExchangeInterface):
             end_ts: Timestamp,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         """Return deposits/withdrawals history on Woo in a range of time."""
-        movements: list[AssetMovement] = self._api_query_paginated(
+        events: list[AssetMovement | SwapEvent] = []
+        events.extend(self._api_query_paginated(
             endpoint='v1/asset/history',
             options={
-                'end_t': ts_sec_to_ms(max(end_ts, MIN_TIMESTAMP)),
+                'end_t': (end_ts_ms := ts_sec_to_ms(max(end_ts, MIN_TIMESTAMP))),
                 'page': 1,
                 'size': API_MAX_LIMIT,
-                'start_t': ts_sec_to_ms(max(start_ts, MIN_TIMESTAMP)),
+                'start_t': (start_ts_ms := ts_sec_to_ms(max(start_ts, MIN_TIMESTAMP))),
                 'status': 'COMPLETED',
                 'type': 'BALANCE',
             },
             deserialization_method=self._deserialize_asset_movement,
             entries_key='rows',
-        )
-        return movements, end_ts
+        ))
+        events.extend(self._api_query_paginated(
+            endpoint='v1/client/hist_trades',
+            options={
+                'end_t': end_ts_ms,
+                'fromId': 1,
+                'limit': API_MAX_LIMIT,
+                'start_t': start_ts_ms,
+            },
+            deserialization_method=self._deserialize_trade,
+            entries_key='data',
+        ))
+        return events, end_ts
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the Woo API key is good for usage in rotki"""
@@ -287,7 +291,7 @@ class Woo(ExchangeInterface):
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], Any],
             entries_key: Literal['data'],
-    ) -> list[Trade]:
+    ) -> list[SwapEvent]:
         ...
 
     @overload
@@ -306,7 +310,7 @@ class Woo(ExchangeInterface):
             options: dict[str, Any],
             deserialization_method: Callable[[dict[str, Any]], Any],
             entries_key: Literal['data', 'rows'],
-    ) -> list[Trade] | (list[AssetMovement] | list):
+    ) -> list[SwapEvent] | (list[AssetMovement] | list):
         """Request a Woo API endpoint paginating via an options attribute."""
         assert list(options.keys()) == sorted(options.keys())  # options need to be in alphabetic order as stated in their api: https://docs.woo.org/#example  # noqa: E501
         results = []
@@ -334,25 +338,16 @@ class Woo(ExchangeInterface):
                 return []
             for entry in entries:
                 try:
-                    result = deserialization_method(entry)
+                    results.extend(deserialization_method(entry))
                 except (DeserializationError, KeyError) as e:
                     msg = f'Missing key {e}' if isinstance(e, KeyError) else str(e)
                     log.error(f'Woo {endpoint} {msg}: {entry}')
                     self.msg_aggregator.add_error(msg)
-                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
                         details=f'{endpoint} query',
                     )
-                    continue
-
-                # TODO: use only extend here after trades are also converted to history events
-                # and have their fee in a separate event.
-                if isinstance(result, list):
-                    results.extend(result)  # AssetMovements - fee in separate event
-                else:
-                    results.append(result)  # Trades - no separate event for fee
 
             if len(entries) < API_MAX_LIMIT:
                 break
