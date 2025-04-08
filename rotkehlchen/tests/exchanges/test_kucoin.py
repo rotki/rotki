@@ -12,12 +12,10 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_LINK, A_USDT
-from rotkehlchen.constants.timing import WEEK_IN_SECONDS
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_SOL, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
-from rotkehlchen.exchanges.kucoin import KUCOIN_LAUNCH_TS, Kucoin, KucoinCase
+from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -26,7 +24,7 @@ from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -468,116 +466,318 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
     assert asset_movement == expected_asset_movement
 
 
-@pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
-    assets_balance, msg = sandbox_kucoin.query_balances()
+def test_query_balances(mock_kucoin, inquirer):  # pylint: disable=unused-argument
+    balances_response = """{
+        "code": "200000",
+        "data": [{
+            "id": "4928501346311",
+            "currency": "USDT",
+            "type": "trade",
+            "balance": "12.30997447",
+            "available": "12.30997447",
+            "holds": "0"
+        },{
+            "id": "4928505730055",
+            "currency": "ETH",
+            "type": "trade",
+            "balance": "0.00797524",
+            "available": "0.00797524",
+            "holds": "0"
+        },{
+            "id": "5022173216775",
+            "currency": "BTC",
+            "type": "trade",
+            "balance": "0.0000649",
+            "available": "0.0000649",
+            "holds": "0"
+        },{
+            "id": "61269252ea49050006088e70",
+            "currency": "USDT",
+            "type": "main",
+            "balance": "2",
+            "available": "2",
+            "holds": "0"
+        }]
+    }"""
+
+    def mock_query(case):  # pylint: disable=unused-argument
+        return MockResponse(HTTPStatus.OK, balances_response)
+
+    with patch.object(target=mock_kucoin, attribute='_api_query', side_effect=mock_query):
+        assets_balance, msg = mock_kucoin.query_balances()
+
     assert assets_balance == {
-        A_BTC: Balance(
-            amount=FVal('2.61018067'),
-            usd_value=FVal('3.915271005'),
+        A_USDT: Balance(
+            amount=FVal('14.30997447'),
+            usd_value=FVal('21.464961705'),
         ),
         A_ETH: Balance(
-            amount=FVal('47.43934995'),
-            usd_value=FVal('71.159024925'),
+            amount=FVal('0.00797524'),
+            usd_value=FVal('0.011962860'),
         ),
-        A_KCS: Balance(
-            amount=FVal('0.2'),
-            usd_value=FVal('0.30'),
-        ),
-        A_USDT: Balance(
-            amount=FVal('45097.26244755'),
-            usd_value=FVal('67645.893671325'),
+        A_BTC: Balance(
+            amount=FVal('0.0000649'),
+            usd_value=FVal('0.00009735'),
         ),
     }
     assert msg == ''
 
 
-# TODO: rewrite the tests currently using the sandbox to use mocking instead
-# See https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=105529855
-@pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
-@pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_trades_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
-    """The sandbox account has 6 trades. Below a list of the trades and their
-    timestamps in ascending mode.
-    - trade 1: 1612556651 -> skipped
-    - trade 2: 1612556693
-    - trade 3: 1612556765
-    - trade 4: 1612556765
-    - trade 5: 1612556765
-    - trade 6: 1612556794 -> skipped
+def test_query_trades(mock_kucoin: Kucoin):
+    """Test that querying kucoin trades works properly."""
+    trades_response_1 = """{
+        "code": "200000",
+        "data": {
+            "currentPage": 1,
+            "pageSize": 500,
+            "totalNum": 1,
+            "totalPage": 1,
+            "items": [{
+                "symbol": "BNB-USDT",
+                "tradeId": "13983206078699521",
+                "orderId": "67f559d287dd6b0007bf9842",
+                "counterOrderId": "67f559d2568251000704842a",
+                "side": "buy",
+                "liquidity": "taker",
+                "forceTaker": false,
+                "price": "552.08",
+                "size": "0.009",
+                "funds": "4.96872",
+                "fee": "0.00496872",
+                "feeRate": "0.001",
+                "feeCurrency": "USDT",
+                "stop": "",
+                "tradeType": "TRADE",
+                "taxRate": "0.075",
+                "tax": "0.000372654",
+                "taxCurrency": "USDT",
+                "type": "market",
+                "createdAt": 1744132562652
+            }]
+        }
+    }"""
+    trades_response_2 = """{
+        "code": "200000",
+        "data": {
+            "currentPage": 1,
+            "pageSize": 500,
+            "totalNum": 2,
+            "totalPage": 1,
+            "items": [{
+                "symbol": "ETH-USDT",
+                "tradeId": "14218680720705537",
+                "orderId": "67f55a3f74607b0007b0ebc1",
+                "counterOrderId": "67f55a3f9e0e4d0007be7549",
+                "side": "sell",
+                "liquidity": "taker",
+                "forceTaker": false,
+                "price": "1474.61",
+                "size": "0.0026585",
+                "funds": "3.920250685",
+                "fee": "0.003920250685",
+                "feeRate": "0.001",
+                "feeCurrency": "USDT",
+                "stop": "",
+                "tradeType": "TRADE",
+                "taxRate": "0.075",
+                "tax": "0.000294018801375",
+                "taxCurrency": "USDT",
+                "type": "market",
+                "createdAt": 1744132671985
+            },{
+                "symbol": "SOL-USDT",
+                "tradeId": "13983241039403009",
+                "orderId": "67f55a16f62e74000741947a",
+                "counterOrderId": "67f55a156f95500007de330e",
+                "side": "buy",
+                "liquidity": "taker",
+                "forceTaker": false,
+                "price": "104.161",
+                "size": "0.0288",
+                "funds": "2.9998368",
+                "fee": "0.0029998368",
+                "feeRate": "0.001",
+                "feeCurrency": "USDT",
+                "stop": "",
+                "tradeType": "TRADE",
+                "taxRate": "0.075",
+                "tax": "0.00022498776",
+                "taxCurrency": "USDT",
+                "type": "market",
+                "createdAt": 1744132630457
+            }]
+        }
+    }"""
+    trades_response_3 = """{
+        "code": "200000",
+        "data": {
+            "currentPage": 1,
+            "pageSize": 500,
+            "totalNum": 1,
+            "totalPage": 1,
+            "items": [{
+                "symbol": "USDT-USDC",
+                "tradeId": "11759667966785537",
+                "orderId": "67f55a6187dd6b0007c33077",
+                "counterOrderId": "67f557eadd0f240007e80327",
+                "side": "sell",
+                "liquidity": "taker",
+                "forceTaker": false,
+                "price": "0.9995",
+                "size": "4.11",
+                "funds": "4.107945",
+                "fee": "0.004107945",
+                "feeRate": "0.001",
+                "feeCurrency": "USDC",
+                "stop": "",
+                "tradeType": "TRADE",
+                "taxRate": "0.075",
+                "tax": "0.000308095875",
+                "taxCurrency": "USDC",
+                "type": "market",
+                "createdAt": 1744132705815
+            }]
+        }
+    }"""
 
-    By requesting trades from 1612556693 to 1612556765, the first and last trade
-    should be skipped.
-    """
-    expected_trades = [
-        Trade(
-            timestamp=Timestamp(1612556765),
-            location=Location.KUCOIN,
-            base_asset=A_ETH,
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.02934995')),
-            rate=Price(FVal('0.046058')),
-            fee=Fee(FVal('9.4625999797E-7')),
-            fee_currency=A_BTC,
-            link='601da9ddf73c300006194ec6',
-            notes='',
-        ),
-        Trade(
-            timestamp=Timestamp(1612556765),
-            location=Location.KUCOIN,
-            base_asset=A_ETH,
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.02')),
-            rate=Price(FVal('0.04561')),
-            fee=Fee(FVal('6.3854E-7')),
-            fee_currency=A_BTC,
-            link='601da9ddf73c300006194ec5',
-            notes='',
-        ),
-        Trade(
-            timestamp=Timestamp(1612556765),
-            location=Location.KUCOIN,
-            base_asset=A_ETH,
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.06')),
-            rate=Price(FVal('0.0456')),
-            fee=Fee(FVal('0.0000019152')),
-            fee_currency=A_BTC,
-            link='601da9ddf73c300006194ec4',
-            notes='',
-        ),
-        Trade(
-            timestamp=Timestamp(1612556693),
-            location=Location.KUCOIN,
-            base_asset=A_BTC,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('0.0013')),
-            rate=Price(FVal('37624.4')),
-            fee=Fee(FVal('0.034238204')),
-            fee_currency=A_USDT,
-            link='601da995e0ee8b00063a075c',
-            notes='',
-        ),
-    ]
-    trades, _ = sandbox_kucoin.query_online_trade_history(
-        start_ts=Timestamp(1612556693),
-        end_ts=Timestamp(1612556765),
+    def get_endpoints_response() -> Generator[str, None, None]:
+        results = [
+            f'{trades_response_1}',
+            f'{trades_response_2}',
+            f'{trades_response_3}',
+        ]
+        yield from results
+
+    def mock_api_query_response(case, options):  # pylint: disable=unused-argument
+        return MockResponse(HTTPStatus.OK, (
+            next(get_response) if case == KucoinCase.TRADES else
+            '{"data":{"currentPage":1,"totalPage":1,"items":[]}}'  # Empty response if not trades since query_online_history_events also queries asset movements  # noqa: E501
+        ))
+
+    get_response = get_endpoints_response()
+    months_in_seconds_patch = patch(
+        target='rotkehlchen.exchanges.kucoin.WEEK_IN_SECONDS',
+        new=100,  # Force a time_step of 100s for trades
     )
-    assert trades == expected_trades
+    api_query_patch = patch.object(
+        target=mock_kucoin,
+        attribute='_api_query',
+        side_effect=mock_api_query_response,
+    )
+    with ExitStack() as stack:
+        stack.enter_context(months_in_seconds_patch)
+        stack.enter_context(api_query_patch)
+        events, _ = mock_kucoin.query_online_history_events(
+            start_ts=Timestamp(1744132500),
+            end_ts=Timestamp(1744132800),
+        )
+
+    assert events == [SwapEvent(
+        timestamp=(timestamp_1 := TimestampMS(1744132562652)),
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('4.96872'),
+        location_label=mock_kucoin.name,
+        unique_id=(unique_id_1 := '13983206078699521'),
+    ), SwapEvent(
+        timestamp=timestamp_1,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BNB,
+        amount=FVal('0.009'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_1,
+    ), SwapEvent(
+        timestamp=timestamp_1,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.00496872'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_1,
+    ), SwapEvent(
+        timestamp=(timestamp_2 := TimestampMS(1744132671985)),
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('0.0026585'),
+        location_label=mock_kucoin.name,
+        unique_id=(unique_id_2 := '14218680720705537'),
+    ), SwapEvent(
+        timestamp=timestamp_2,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('3.920250685'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_2,
+    ), SwapEvent(
+        timestamp=timestamp_2,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.003920250685'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_2,
+    ), SwapEvent(
+        timestamp=(timestamp_3 := TimestampMS(1744132630457)),
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('2.9998368'),
+        location_label=mock_kucoin.name,
+        unique_id=(unique_id_3 := '13983241039403009'),
+    ), SwapEvent(
+        timestamp=timestamp_3,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_SOL,
+        amount=FVal('0.0288'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_3,
+    ), SwapEvent(
+        timestamp=timestamp_3,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.0029998368'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_3,
+    ), SwapEvent(
+        timestamp=(timestamp_4 := TimestampMS(1744132705815)),
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('4.11'),
+        location_label=mock_kucoin.name,
+        unique_id=(unique_id_4 := '11759667966785537'),
+    ), SwapEvent(
+        timestamp=timestamp_4,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDC,
+        amount=FVal('4.107945'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_4,
+    ), SwapEvent(
+        timestamp=timestamp_4,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDC,
+        amount=FVal('0.004107945'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id_4,
+    )]
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_asset_movements_sandbox(
-        sandbox_kucoin: 'Kucoin',
+def test_query_asset_movements(
+        mock_kucoin: 'Kucoin',
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
-    """Unfortunately the sandbox environment does not support deposits and
-    withdrawals, therefore they must be mocked.
+    """Test that querying kucoin deposits and withdrawals works properly.
 
     Below a list of the movements and their timestamps in ascending mode:
 
@@ -751,7 +951,7 @@ def test_query_asset_movements_sandbox(
     )
     expected_asset_movements = [AssetMovement(
         location=Location.KUCOIN,
-        location_label=sandbox_kucoin.name,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
@@ -763,7 +963,7 @@ def test_query_asset_movements_sandbox(
         },
     ), AssetMovement(
         location=Location.KUCOIN,
-        location_label=sandbox_kucoin.name,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
@@ -772,7 +972,7 @@ def test_query_asset_movements_sandbox(
         is_fee=True,
     ), AssetMovement(
         location=Location.KUCOIN,
-        location_label=sandbox_kucoin.name,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
@@ -784,7 +984,7 @@ def test_query_asset_movements_sandbox(
         },
     ), AssetMovement(
         location=Location.KUCOIN,
-        location_label=sandbox_kucoin.name,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.DEPOSIT,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
@@ -793,7 +993,7 @@ def test_query_asset_movements_sandbox(
         is_fee=True,
     ), AssetMovement(
         location=Location.KUCOIN,
-        location_label=sandbox_kucoin.name,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
@@ -805,7 +1005,7 @@ def test_query_asset_movements_sandbox(
         },
     ), AssetMovement(
         location=Location.KUCOIN,
-        location_label=sandbox_kucoin.name,
+        location_label=mock_kucoin.name,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
@@ -839,38 +1039,16 @@ def test_query_asset_movements_sandbox(
         new=2,
     )
     api_query_patch = patch.object(
-        target=sandbox_kucoin,
+        target=mock_kucoin,
         attribute='_api_query',
         side_effect=mock_api_query_response,
     )
     with ExitStack() as stack:
         stack.enter_context(months_in_seconds_patch)
         stack.enter_context(api_query_patch)
-        asset_movements, _ = sandbox_kucoin.query_online_history_events(
+        asset_movements, _ = mock_kucoin.query_online_history_events(
             start_ts=Timestamp(1612556651),
             end_ts=Timestamp(1612556654),
         )
 
     assert asset_movements == expected_asset_movements
-
-
-@pytest.mark.skip('Fails with Kucoin old trades JSON response is missing key: "data"')
-@pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_old_trades_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
-    """Test that the endpoint for old trades returns valid results from the api
-    in very old timestamps
-    """
-    trades, _ = sandbox_kucoin.query_online_trade_history(
-        start_ts=Timestamp(KUCOIN_LAUNCH_TS),
-        end_ts=Timestamp(KUCOIN_LAUNCH_TS + WEEK_IN_SECONDS * 4),
-    )
-    msg_aggregator = sandbox_kucoin.msg_aggregator
-    assert len(msg_aggregator.consume_errors()) == 0
-    assert len(msg_aggregator.consume_warnings()) == 0
-    assert trades == []
-
-    last_trades, _ = sandbox_kucoin.query_online_trade_history(
-        start_ts=Timestamp(1651425348),
-        end_ts=Timestamp(1654110961),
-    )
-    assert len(last_trades) == 24
