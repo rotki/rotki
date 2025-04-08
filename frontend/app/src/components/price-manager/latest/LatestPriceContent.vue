@@ -9,7 +9,8 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import { useLatestPrices } from '@/composables/price-manager/latest';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
+import { useCommonTableProps } from '@/modules/table/use-common-table-props';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { isNft } from '@/utils/nft';
@@ -59,6 +60,8 @@ const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<ManualPriceWithUsd>(TableId.LATEST_PRICES, sort, headers);
 
 const router = useRouter();
 const route = useRoute();

@@ -14,7 +14,7 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
+    #default="{ error, success, updateImmediate }"
     setting="showGraphRangeSelector"
     frontend-setting
   >
@@ -24,7 +24,7 @@ const { t } = useI18n();
       :success-messages="success"
       :error-messages="error"
       color="primary"
-      @update:model-value="update($event)"
+      @update:model-value="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

@@ -14,6 +14,7 @@ import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
 import { useSupportedChains } from '@/composables/info/chains';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
@@ -156,6 +157,8 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
 
   return headers;
 });
+
+useRememberTableSorting<DataRow>(TableId.ACCOUNT_BALANCES, sort, cols);
 
 const accountOperation = logicOr(
   useIsTaskRunning(TaskType.ADD_ACCOUNT),

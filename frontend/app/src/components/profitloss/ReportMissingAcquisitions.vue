@@ -5,6 +5,7 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { bigNumberSum } from '@/utils/calculation';
@@ -134,6 +135,9 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [{
   label: t('common.actions_text'),
   sortable: true,
 }]);
+
+useRememberTableSorting<MappedGroupedItems>(TableId.REPORT_MISSING_ACQUISITIONS, sort, headers);
+useRememberTableSorting<MissingAcquisition>(TableId.REPORT_MISSING_ACQUISITIONS_DETAIL, childSort, childHeaders);
 
 const isIgnored = (asset: string) => get(useIsAssetIgnored(asset));
 

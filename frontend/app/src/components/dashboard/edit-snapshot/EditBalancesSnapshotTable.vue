@@ -13,6 +13,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ConfirmSnapshotConflictReplacementDialog
   from '@/components/snapshots/ConfirmSnapshotConflictReplacementDialog.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { BalanceType } from '@/types/balances';
@@ -119,6 +120,8 @@ const tableHeaders = computed<DataTableColumn<IndexedBalanceSnapshot>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<BalanceSnapshot>(TableId.EDIT_BALANCE_SNAPSHOT, sort, tableHeaders);
 
 function input(value: Snapshot) {
   emit('update:model-value', value);

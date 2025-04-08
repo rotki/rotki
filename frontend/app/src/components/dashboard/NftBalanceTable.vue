@@ -13,6 +13,7 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -115,6 +116,8 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => {
 
   return headers;
 });
+
+useRememberTableSorting<NonFungibleBalance>(TableId.NON_FUNGIBLE_BALANCES, sort, tableHeaders);
 
 function percentageOfTotalNetValue(value: BigNumber) {
   return calculatePercentage(value, get(totalNetWorthUsd));

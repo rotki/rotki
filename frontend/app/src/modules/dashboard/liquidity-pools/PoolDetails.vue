@@ -4,9 +4,12 @@ import type { PoolAsset } from './types';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { sortAssetBalances } from '@/utils/balances';
 import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
 
 interface PoolDetailsProps {
@@ -14,7 +17,7 @@ interface PoolDetailsProps {
   premiumOnly?: boolean;
 }
 
-withDefaults(defineProps<PoolDetailsProps>(), {
+const props = withDefaults(defineProps<PoolDetailsProps>(), {
   premiumOnly: true,
 });
 
@@ -25,6 +28,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetPrice } = useBalancePricesStore();
+const { assetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
 const { t } = useI18n();
 
@@ -32,6 +36,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   cellClass: 'text-no-wrap',
   key: 'asset',
   label: t('common.asset'),
+  sortable: true,
 }, {
   align: 'end',
   class: 'text-no-wrap',
@@ -39,10 +44,12 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   label: t('common.price', {
     symbol: get(currencySymbol),
   }),
+  sortable: true,
 }, {
   align: 'end',
   key: 'amount',
   label: t('common.amount'),
+  sortable: true,
 }, {
   align: 'end',
   class: 'text-no-wrap',
@@ -50,26 +57,31 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   label: t('common.value_in_symbol', {
     symbol: get(currencySymbol),
   }),
+  sortable: true,
 }]);
 
-function transformAssets(assets: PoolAsset[]): AssetBalanceWithPrice[] {
-  return assets.map(item => ({
+useRememberTableSorting<AssetBalanceWithPrice>(TableId.POOL_LIQUIDITY_BALANCE_DETAIL, sort, cols);
+
+const sorted = computed<AssetBalanceWithPrice[]>(() => {
+  const transformed: AssetBalanceWithPrice[] = props.assets.map(item => ({
     amount: item.userBalance.amount,
     asset: item.asset,
     usdPrice: item.usdPrice ?? get(assetPrice(item.asset)) ?? Zero,
     usdValue: item.userBalance.usdValue,
   }));
-}
+
+  return sortAssetBalances(transformed, get(sort), assetInfo);
+});
 </script>
 
 <template>
   <RuiDataTable
     v-if="premium || !premiumOnly"
+    v-model:sort.external="sort"
     dense
     outlined
     :cols="cols"
-    :sort="sort"
-    :rows="transformAssets(assets)"
+    :rows="sorted"
     row-attr="asset"
     class="bg-white dark:bg-[#1E1E1E] my-2"
   >

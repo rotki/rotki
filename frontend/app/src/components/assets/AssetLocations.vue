@@ -13,6 +13,7 @@ import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -164,6 +165,8 @@ const headers = computed<DataTableColumn<AssetLocation>[]>(() => {
     sortable: false,
   }];
 });
+
+useRememberTableSorting<AssetLocation>(TableId.ASSET_LOCATION, sort, headers);
 
 watch(locationFilter, (location) => {
   if (location && !matchChain(location)) {

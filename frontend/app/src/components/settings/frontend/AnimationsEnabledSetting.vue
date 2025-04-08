@@ -28,14 +28,14 @@ function updateSetting(value: boolean, update: (newValue: any) => void) {
     <template #title>
       {{ t('frontend_settings.animations.title') }}
     </template>
-    <template #default="{ error, success, update }">
+    <template #default="{ error, success, updateImmediate }">
       <RuiSwitch
         color="primary"
         :model-value="!animationsEnabled"
         :label="t('frontend_settings.animations.animations_note')"
         :success-messages="success"
         :error-messages="error"
-        @update:model-value="updateSetting($event, update)"
+        @update:model-value="updateSetting($event, updateImmediate)"
       />
     </template>
   </SettingsOption>

@@ -16,6 +16,7 @@ import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanc
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -136,6 +137,8 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
   key: 'actions',
   label: t('common.actions_text'),
 }]);
+
+useRememberTableSorting<ManualBalanceWithPrice>(TableId.MANUAL_BALANCES, sort, cols);
 
 const { show } = useConfirmStore();
 

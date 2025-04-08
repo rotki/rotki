@@ -72,6 +72,7 @@ describe('settings:frontend', () => {
       ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
+      persistTableSorting: false,
       renderAllNftImages: true,
       whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {
@@ -149,6 +150,7 @@ describe('settings:frontend', () => {
       ignoreSnapshotError: false,
       showGraphRangeSelector: true,
       nftsInNetValue: true,
+      persistTableSorting: false,
       renderAllNftImages: false,
       whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {
@@ -221,6 +223,7 @@ describe('settings:frontend', () => {
     expect(store.ignoreSnapshotError).toBe(false);
     expect(store.showGraphRangeSelector).toBe(true);
     expect(store.nftsInNetValue).toBe(true);
+    expect(store.persistTableSorting).toBe(false);
     expect(store.renderAllNftImages).toBe(false);
     expect(store.whitelistedDomainsForNftImages).toStrictEqual([]);
     expect(store.dashboardTablesVisibleColumns).toStrictEqual({

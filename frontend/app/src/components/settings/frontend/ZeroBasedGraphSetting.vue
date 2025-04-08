@@ -15,7 +15,7 @@ const { t } = useI18n();
 <template>
   <div class="pb-2">
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, updateImmediate }"
       setting="graphZeroBased"
       frontend-setting
     >
@@ -26,7 +26,7 @@ const { t } = useI18n();
         :success-messages="success"
         :error-messages="error"
         color="primary"
-        @update:model-value="update($event)"
+        @update:model-value="updateImmediate($event)"
       />
     </SettingsOption>
   </div>

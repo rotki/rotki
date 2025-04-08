@@ -7,8 +7,8 @@ import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButto
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
-import { useCommonTableProps } from '@/composables/use-common-table-props';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';

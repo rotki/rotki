@@ -8,6 +8,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { some } from 'es-toolkit/compat';
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
@@ -55,6 +56,8 @@ const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
     label: '',
   },
 ]);
+
+useRememberTableSorting<CustomAsset>(TableId.CUSTOM_ASSET, sortModel, cols);
 
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);

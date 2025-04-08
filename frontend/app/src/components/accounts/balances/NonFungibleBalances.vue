@@ -19,6 +19,7 @@ import NftImageRenderingSettingMenu from '@/components/settings/general/nft/NftI
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
@@ -58,14 +59,12 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => [
     align: 'center',
     key: 'ignored',
     label: t('non_fungible_balances.ignore'),
-    sortable: false,
   },
   {
     align: 'end',
     class: 'text-no-wrap',
     key: 'priceInAsset',
     label: t('non_fungible_balances.column.price_in_asset'),
-    sortable: false,
     width: '75%',
   },
   {
@@ -79,13 +78,11 @@ const tableHeaders = computed<DataTableColumn<NonFungibleBalance>[]>(() => [
     class: 'text-no-wrap',
     key: 'manuallyInput',
     label: t('non_fungible_balances.column.custom_price'),
-    sortable: false,
   },
   {
     align: 'center',
     key: 'actions',
     label: t('common.actions_text'),
-    sortable: false,
     width: '50',
   },
 ]);
@@ -117,6 +114,8 @@ const {
     set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
   },
 });
+
+useRememberTableSorting<NonFungibleBalance>(TableId.NON_FUNGIBLE_BALANCES, sort, tableHeaders);
 
 const { show } = useConfirmStore();
 

@@ -65,6 +65,7 @@ describe('types/user', () => {
       showGraphRangeSelector: true,
       notifyNewNfts: false,
       nftsInNetValue: true,
+      persistTableSorting: false,
       renderAllNftImages: true,
       whitelistedDomainsForNftImages: [],
       dashboardTablesVisibleColumns: {

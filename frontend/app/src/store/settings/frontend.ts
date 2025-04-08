@@ -41,6 +41,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const ignoreSnapshotError = useComputedRef(settings, 'ignoreSnapshotError');
   const showGraphRangeSelector = useComputedRef(settings, 'showGraphRangeSelector');
   const nftsInNetValue = useComputedRef(settings, 'nftsInNetValue');
+  const persistTableSorting = useComputedRef(settings, 'persistTableSorting');
   const renderAllNftImages = useComputedRef(settings, 'renderAllNftImages');
   const whitelistedDomainsForNftImages = useComputedRef(settings, 'whitelistedDomainsForNftImages');
   const dashboardTablesVisibleColumns = useComputedRef(settings, 'dashboardTablesVisibleColumns');
@@ -133,6 +134,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     minimumDigitToBeAbbreviated,
     nftsInNetValue,
     notifyNewNfts,
+    persistTableSorting,
     profitLossReportPeriod,
     queryPeriod,
     refreshPeriod,

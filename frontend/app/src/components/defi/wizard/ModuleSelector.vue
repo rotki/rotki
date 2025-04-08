@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { CamelCase } from '@/types/common';
-import type { DataTableColumn } from '@rotki/ui-library';
+import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -31,10 +32,16 @@ const { update: updateSettings } = useSettingsStore();
 const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
 const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
 
+const sort = ref<DataTableSortColumn<ModuleEntry>>({
+  column: 'name',
+  direction: 'asc',
+});
+
 const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [{
   class: 'w-full',
   key: 'name',
   label: t('common.name'),
+  sortable: true,
 }, {
   key: 'selectedAccounts',
   label: t('module_selector.table.select_accounts'),
@@ -48,6 +55,8 @@ const headers = computed<DataTableColumn<ModuleEntry>[]>(() => [{
   key: 'actions',
   label: '',
 }]);
+
+useRememberTableSorting<ModuleEntry>(TableId.MODULES, sort, headers);
 
 const modules = computed<ModuleEntry[]>(() => {
   const active = get(activeModules);
@@ -161,6 +170,7 @@ onMounted(async () => {
     </div>
 
     <RuiDataTable
+      v-model:sort="sort"
       :cols="headers"
       :rows="modules"
       row-attr="identifier"

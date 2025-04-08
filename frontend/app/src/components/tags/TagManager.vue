@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { DataTableColumn } from '@rotki/ui-library';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import RowActions from '@/components/helper/RowActions.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag, type Tag } from '@/types/tags';
@@ -22,15 +23,22 @@ const { deleteTag } = store;
 const { tags } = storeToRefs(store);
 const { show } = useConfirmStore();
 
+const sort = ref<DataTableSortData<Tag>>({
+  column: 'name',
+  direction: 'asc',
+});
+
 const headers = computed<DataTableColumn<Tag>[]>(() => [
   {
     key: 'name',
     label: t('common.name'),
+    sortable: true,
   },
   {
     cellClass: 'w-1/2 !text-sm !text-rui-text-secondary',
     key: 'description',
     label: t('common.description'),
+    sortable: true,
   },
   {
     key: 'tagView',
@@ -43,6 +51,8 @@ const headers = computed<DataTableColumn<Tag>[]>(() => [
     sortable: false,
   },
 ]);
+
+useRememberTableSorting<Tag>(TableId.TAG_MANAGER, sort, headers);
 
 function editItem(newTag: Tag) {
   set(editMode, true);
@@ -102,12 +112,13 @@ onMounted(async () => {
         hide-details
       />
       <RuiDataTable
+        v-model:sort="sort"
         dense
+        outlined
         :rows="tags"
         row-attr="name"
         :cols="headers"
         :search="search"
-        outlined
       >
         <template #item.tagView="{ row }">
           <TagIcon

@@ -9,6 +9,7 @@ import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -102,6 +103,9 @@ const tableHeaders = computed<DataTableColumn<ExchangeSavingsEvent>[]>(() => [{
   }),
   sortable: true,
 }]);
+
+useRememberTableSorting<AssetBalance>(TableId.BINANCE_RECEIVED_SAVING, receivedTableSort, receivedTableHeaders);
+useRememberTableSorting<ExchangeSavingsEvent>(TableId.BINANCE_RECEIVED_SAVING_EVENTS, sort, tableHeaders);
 
 watch(loading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)

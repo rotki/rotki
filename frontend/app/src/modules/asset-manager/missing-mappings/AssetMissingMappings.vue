@@ -8,6 +8,7 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useMissingMappingsDB } from '@/modules/asset-manager/missing-mappings/use-missing-mappings-db';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import z from 'zod';
 
 const QuerySchema = z.object({
@@ -71,6 +72,8 @@ const {
     }
   },
 });
+
+useRememberTableSorting<MissingMapping>(TableId.ASSET_MISSING_MAPPINGS, sort, cols);
 
 function onAddClick(item: MissingMapping) {
   set(mapping, {

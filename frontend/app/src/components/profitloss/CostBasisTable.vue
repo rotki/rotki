@@ -4,6 +4,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 
 type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
 
@@ -67,6 +68,8 @@ const cols = computed<DataTableColumn<Acquisition>[]>(() => [
     sortable: true,
   },
 ]);
+
+useRememberTableSorting<Acquisition>(TableId.COST_BASIS, sort, cols);
 
 const matchedAcquisitions = computed<Acquisition[]>(() => {
   const acquisitions = get(costBasis).matchedAcquisitions;
