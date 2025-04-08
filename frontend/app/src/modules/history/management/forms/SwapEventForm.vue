@@ -8,13 +8,13 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useMessageStore } from '@/store/message';
 import { DateFormat } from '@/types/date-format';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { omit, pick } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
@@ -58,31 +58,22 @@ const datetime = computed<string>({
   },
 });
 
-const externalServerValidation = () => true;
-
 const { t } = useI18n({ useScope: 'global' });
 
+const { createCommonRules } = useEventFormValidation();
+const commonRules = createCommonRules();
+
 const rules = {
-  feeAmount: { externalServerValidation },
-  feeAsset: { externalServerValidation },
-  location: {
-    required: helpers.withMessage(t('transactions.events.form.location.validation.non_empty'), required),
-  },
-  receiveAmount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
-  receiveAsset: {
-    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
-  },
-  spendAmount: {
-    required: helpers.withMessage(t('transactions.events.form.amount.validation.non_empty'), required),
-  },
-  spendAsset: {
-    required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
-  },
-  timestamp: { externalServerValidation },
-  uniqueId: { externalServerValidation },
-  userNotes: { externalServerValidation },
+  feeAmount: commonRules.createExternalValidationRule(),
+  feeAsset: commonRules.createExternalValidationRule(),
+  location: commonRules.createRequiredLocationRule(),
+  receiveAmount: commonRules.createRequiredAmountRule(),
+  receiveAsset: commonRules.createRequiredAssetRule(),
+  spendAmount: commonRules.createRequiredAmountRule(),
+  spendAsset: commonRules.createRequiredAssetRule(),
+  timestamp: commonRules.createExternalValidationRule(),
+  uniqueId: commonRules.createExternalValidationRule(),
+  userNotes: commonRules.createExternalValidationRule(),
 };
 
 const v$ = useVuelidate(
