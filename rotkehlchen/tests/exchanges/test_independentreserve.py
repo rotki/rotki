@@ -6,13 +6,16 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_AUD, A_ETC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
+from rotkehlchen.exchanges.data_structures import Location
 from rotkehlchen.exchanges.independentreserve import (
     Independentreserve,
     independentreserve_asset,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import Timestamp, TimestampMS
 
 
 def test_location():
@@ -188,37 +191,64 @@ def test_query_trade_history(function_scope_independentreserve):
 """
         return MockResponse(200, response)
 
-    with patch.object(exchange.session, 'request', side_effect=mock_api_return):
-        trades = exchange.query_trade_history(
-            start_ts=0,
-            end_ts=1565732120,
-            only_cache=False,
+    with (
+        patch.object(exchange.session, 'request', side_effect=mock_api_return),
+        patch.object(exchange, '_query_asset_movements'),
+    ):
+        events, _ = exchange.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1565732120),
         )
-    expected_trades = [
-        Trade(
-            timestamp=1501234760,
-            location=Location.INDEPENDENTRESERVE,
-            base_asset=A_ETH,
-            quote_asset=A_AUD,
-            trade_type=TradeType.BUY,
-            amount=FVal('2.64117379'),
-            rate=FVal('257.25'),
-            fee=FVal('0.01320586895'),
-            fee_currency=A_ETH,
-            link='foo2',
-        ), Trade(
-            timestamp=1511391280,
-            location=Location.INDEPENDENTRESERVE,
-            base_asset=A_ETH,
-            quote_asset=A_AUD,
-            trade_type=TradeType.SELL,
-            amount=FVal('0.5'),
-            rate=FVal('603.7'),
-            fee=FVal('0.0025'),
-            fee_currency=A_ETH,
-            link='foo1',
-        )]
-    assert trades == expected_trades
+
+    assert events == [SwapEvent(
+        timestamp=(timestamp_1 := TimestampMS(1511391280000)),
+        location=Location.INDEPENDENTRESERVE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('0.5'),
+        location_label=exchange.name,
+        unique_id=(unique_id_1 := 'foo1'),
+    ), SwapEvent(
+        timestamp=timestamp_1,
+        location=Location.INDEPENDENTRESERVE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_AUD,
+        amount=FVal('301.85'),
+        location_label=exchange.name,
+        unique_id=unique_id_1,
+    ), SwapEvent(
+        timestamp=timestamp_1,
+        location=Location.INDEPENDENTRESERVE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.0025'),
+        location_label=exchange.name,
+        unique_id=unique_id_1,
+    ), SwapEvent(
+        timestamp=(timestamp_2 := TimestampMS(1501234760000)),
+        location=Location.INDEPENDENTRESERVE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_AUD,
+        amount=FVal('679.4419574775'),
+        location_label=exchange.name,
+        unique_id=(unique_id_2 := 'foo2'),
+    ), SwapEvent(
+        timestamp=timestamp_2,
+        location=Location.INDEPENDENTRESERVE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('2.64117379'),
+        location_label=exchange.name,
+        unique_id=unique_id_2,
+    ), SwapEvent(
+        timestamp=timestamp_2,
+        location=Location.INDEPENDENTRESERVE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.01320586895'),
+        location_label=exchange.name,
+        unique_id=unique_id_2,
+    )]
 
 
 # TODO: Make a test for asset movements.
