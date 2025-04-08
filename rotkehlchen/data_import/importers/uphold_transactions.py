@@ -9,17 +9,17 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -97,20 +97,20 @@ Activity from uphold with uphold transaction id:
                 if fee_asset == destination_asset:
                     destination_amount = AssetAmount(destination_amount + fee)
                 if destination_amount > 0:
-                    trade = Trade(
-                        timestamp=timestamp,
-                        location=Location.UPHOLD,
-                        base_asset=destination_asset,
-                        quote_asset=origin_asset,
-                        trade_type=TradeType.BUY,
-                        amount=destination_amount,
-                        rate=Price(origin_amount / destination_amount),
-                        fee=Fee(fee),
-                        fee_currency=fee_asset,
-                        link='',
-                        notes=notes,
+                    self.add_history_events(
+                        write_cursor=write_cursor,
+                        history_events=create_swap_events(
+                            timestamp=ts_sec_to_ms(timestamp),
+                            location=Location.UPHOLD,
+                            spend_asset=origin_asset,
+                            spend_amount=origin_amount,
+                            receive_asset=destination_asset,
+                            receive_amount=destination_amount,
+                            fee_asset=fee_asset,
+                            fee_amount=fee,
+                            spend_notes=notes,
+                        ),
                     )
-                    self.add_trade(write_cursor, trade)
                 else:
                     raise SkippedCSVEntry(f'Trade destination amount is {destination_amount}.')
         elif origin == 'uphold' and transaction_type == 'out':
@@ -134,20 +134,20 @@ Activity from uphold with uphold transaction id:
                     ))
                 self.add_history_events(write_cursor, events)
             elif origin_amount > 0:  # Trades (sell)
-                trade = Trade(
-                    timestamp=timestamp,
-                    location=Location.UPHOLD,
-                    base_asset=origin_asset,
-                    quote_asset=destination_asset,
-                    trade_type=TradeType.SELL,
-                    amount=origin_amount,
-                    rate=Price(destination_amount / origin_amount),
-                    fee=Fee(fee),
-                    fee_currency=fee_asset,
-                    link='',
-                    notes=notes,
+                self.add_history_events(
+                    write_cursor=write_cursor,
+                    history_events=create_swap_events(
+                        timestamp=ts_sec_to_ms(timestamp),
+                        location=Location.UPHOLD,
+                        spend_asset=origin_asset,
+                        spend_amount=origin_amount,
+                        receive_asset=destination_asset,
+                        receive_amount=destination_amount,
+                        fee_asset=fee_asset,
+                        spend_notes=notes,
+                        fee_amount=fee,
+                    ),
                 )
-                self.add_trade(write_cursor, trade)
             else:
                 raise SkippedCSVEntry(f'Trade origin amount is {origin_amount}.')
 
@@ -172,20 +172,20 @@ Activity from uphold with uphold transaction id:
                     ))
                 self.add_history_events(write_cursor, events)
             elif destination_amount > 0:  # Trades (buy)
-                trade = Trade(
-                    timestamp=timestamp,
-                    location=Location.UPHOLD,
-                    base_asset=destination_asset,
-                    quote_asset=origin_asset,
-                    trade_type=TradeType.BUY,
-                    amount=destination_amount,
-                    rate=Price(origin_amount / destination_amount),
-                    fee=Fee(fee),
-                    fee_currency=fee_asset,
-                    link='',
-                    notes=notes,
+                self.add_history_events(
+                    write_cursor=write_cursor,
+                    history_events=create_swap_events(
+                        timestamp=ts_sec_to_ms(timestamp),
+                        location=Location.UPHOLD,
+                        spend_asset=origin_asset,
+                        spend_amount=origin_amount,
+                        receive_asset=destination_asset,
+                        receive_amount=destination_amount,
+                        fee_asset=fee_asset,
+                        fee_amount=fee,
+                        spend_notes=notes,
+                    ),
                 )
-                self.add_trade(write_cursor, trade)
             else:
                 raise SkippedCSVEntry(f'Trade destination amount is {destination_amount}.')
 
