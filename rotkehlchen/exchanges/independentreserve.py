@@ -21,11 +21,16 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Price, Trade
+from rotkehlchen.exchanges.data_structures import Location, MarginPosition, Price
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -39,9 +44,7 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
@@ -66,43 +69,6 @@ def independentreserve_asset(symbol: str) -> AssetWithOracles:
         symbol=symbol,
         default=symbol,
     ))
-
-
-def _trade_from_independentreserve(raw_trade: dict) -> Trade:
-    """Convert IndependentReserve raw data to a trade
-
-    https://www.independentreserve.com/products/api#GetClosedFilledOrders
-    May raise:
-    - DeserializationError
-    - UnsupportedAsset
-    - UnknownAsset
-    - KeyError
-    """
-    log.debug(f'Processing raw IndependentReserve trade: {raw_trade}')
-    trade_type = TradeType.BUY if 'Bid' in raw_trade['OrderType'] else TradeType.SELL
-    base_asset = independentreserve_asset(raw_trade['PrimaryCurrencyCode'])
-    quote_asset = independentreserve_asset(raw_trade['SecondaryCurrencyCode'])
-    amount = FVal(raw_trade['Volume']) - FVal(raw_trade['Outstanding'])
-    timestamp = deserialize_timestamp_from_date(
-        date=raw_trade['CreatedTimestampUtc'],
-        formatstr='iso8601',
-        location='IndependentReserve',
-    )
-    rate = Price(FVal(raw_trade['AvgPrice']))
-    fee_amount = FVal(raw_trade['FeePercent']) * amount
-    fee_asset = base_asset
-    return Trade(
-        timestamp=timestamp,
-        location=Location.INDEPENDENTRESERVE,
-        base_asset=base_asset,
-        quote_asset=quote_asset,
-        trade_type=trade_type,
-        amount=AssetAmount(amount),
-        rate=rate,
-        fee=Fee(fee_amount),
-        fee_currency=fee_asset,
-        link=str(raw_trade['OrderGuid']),
-    )
 
 
 def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | None:
@@ -351,12 +317,15 @@ class Independentreserve(ExchangeInterface):
 
         return data
 
-    def query_online_trade_history(
+    def _query_trades(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """May raise RemoteError"""
+    ) -> list[SwapEvent]:
+        """Query IndependentReserve trades and convert them into SwapEvents.
+        https://www.independentreserve.com/products/api#GetClosedFilledOrders
+        May raise RemoteError.
+        """
         try:
             resp_trades = self._gather_paginated_data(path='GetClosedFilledOrders')
         except KeyError as e:
@@ -364,27 +333,49 @@ class Independentreserve(ExchangeInterface):
                 f'Error processing independentreserve trades response. '
                 f'Missing key: {e!s}.',
             )
-            return [], (start_ts, end_ts)
+            return []
 
-        trades = []
+        events = []
         for raw_trade in resp_trades:
             try:
-                trade = _trade_from_independentreserve(raw_trade)
-                if trade.timestamp < start_ts or trade.timestamp > end_ts:
+                log.debug(f'Processing raw IndependentReserve trade: {raw_trade}')
+                timestamp = deserialize_timestamp_from_date(
+                    date=raw_trade['CreatedTimestampUtc'],
+                    formatstr='iso8601',
+                    location='IndependentReserve',
+                )
+                if timestamp < start_ts or timestamp > end_ts:
                     continue
-                trades.append(trade)
+
+                spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+                    raw_trade_type='buy' if 'Bid' in raw_trade['OrderType'] else 'sell',
+                    base_asset=(base_asset := independentreserve_asset(raw_trade['PrimaryCurrencyCode'])),  # noqa: E501
+                    quote_asset=independentreserve_asset(raw_trade['SecondaryCurrencyCode']),
+                    amount=AssetAmount(amount := (FVal(raw_trade['Volume']) - FVal(raw_trade['Outstanding']))),  # noqa: E501
+                    rate=Price(FVal(raw_trade['AvgPrice'])),
+                )
+                events.extend(create_swap_events(
+                    timestamp=ts_sec_to_ms(timestamp),
+                    location=self.location,
+                    spend_asset=spend_asset,
+                    spend_amount=spend_amount,
+                    receive_asset=receive_asset,
+                    receive_amount=receive_amount,
+                    fee_asset=base_asset,
+                    fee_amount=FVal(raw_trade['FeePercent']) * amount,
+                    location_label=self.name,
+                    unique_id=str(raw_trade['OrderGuid']),
+                ))
             except UnsupportedAsset as e:
                 log.error(
                     f'Found unsupported {self.name} asset {e.identifier}. '
                     f'Ignoring this trade entry {raw_trade}.',
                 )
-                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
                     details='trade',
                 )
-                continue
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -398,15 +389,14 @@ class Independentreserve(ExchangeInterface):
                     trade=raw_trade,
                     error=msg,
                 )
-                continue
 
-        return trades, (start_ts, end_ts)
+        return events
 
-    def query_online_history_events(
+    def _query_asset_movements(
             self,
             start_ts: Timestamp,  # pylint: disable=unused-argument
             end_ts: Timestamp,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> list['AssetMovement']:
         if self.account_guids is None:
             self.query_balances()  # do a balance query to populate the account guids
         movements = []
@@ -427,7 +417,7 @@ class Independentreserve(ExchangeInterface):
                     f'Error processing IndependentReserve transactions response. '
                     f'Missing key: {e!s}.',
                 )
-                return [], start_ts
+                return []
 
             for entry in resp:
                 entry_type = entry.get('Type')
@@ -465,7 +455,18 @@ class Independentreserve(ExchangeInterface):
                     )
                     continue
 
-        return movements, end_ts
+        return movements
+
+    def query_online_history_events(
+            self,
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,
+    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+        events: list[AssetMovement | SwapEvent] = []
+        for query_func in (self._query_asset_movements, self._query_trades):
+            events.extend(query_func(start_ts=start_ts, end_ts=end_ts))
+
+        return events, end_ts
 
     def query_online_margin_history(
             self,
