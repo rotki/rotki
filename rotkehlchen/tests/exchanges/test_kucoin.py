@@ -20,7 +20,8 @@ from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.kucoin import KUCOIN_LAUNCH_TS, Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
@@ -242,7 +243,7 @@ def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disabl
 def test_deserialize_v2_trade_buy(mock_kucoin):
     raw_result = {
         'symbol': 'KCS-USDT',
-        'tradeId': '601da9faf1297d0007efd712',
+        'tradeId': (unique_id := '601da9faf1297d0007efd712'),
         'orderId': '601da9fa0c92050006bd83be',
         'counterOrderId': '601bad620c9205000642300f',
         'side': 'buy',
@@ -257,32 +258,42 @@ def test_deserialize_v2_trade_buy(mock_kucoin):
         'stop': '',
         'tradeType': 'TRADE',
         'type': 'market',
-        'createdAt': 1612556794259,
+        'createdAt': (timestamp := TimestampMS(1612556794259)),
     }
-    expected_trade = Trade(
-        timestamp=Timestamp(1612556794),
-        location=Location.KUCOIN,
-        base_asset=A_KCS,
-        quote_asset=A_USDT,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('0.2')),
-        rate=Price(FVal('1000')),
-        fee=Fee(FVal('0.14')),
-        fee_currency=A_USDT,
-        link='601da9faf1297d0007efd712',
-        notes='',
-    )
-    trade = mock_kucoin._deserialize_trade(
+    assert mock_kucoin._deserialize_trade(
         raw_result=raw_result,
         case=KucoinCase.TRADES,
-    )
-    assert trade == expected_trade
+    ) == [SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('200.0'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_KCS,
+        amount=FVal('0.2'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.14'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    )]
 
 
 def test_deserialize_v2_trade_sell(mock_kucoin):
     raw_result = {
         'symbol': 'BCHSV-USDT',
-        'tradeId': '601da995e0ee8b00063a075c',
+        'tradeId': (unique_id := '601da995e0ee8b00063a075c'),
         'orderId': '601da9950c92050006bd45c5',
         'counterOrderId': '601da9950c92050006bd457d',
         'side': 'sell',
@@ -297,31 +308,41 @@ def test_deserialize_v2_trade_sell(mock_kucoin):
         'stop': '',
         'tradeType': 'TRADE',
         'type': 'market',
-        'createdAt': 1612556794259,
+        'createdAt': (timestamp := TimestampMS(1612556794259)),
     }
-    expected_trade = Trade(
-        timestamp=Timestamp(1612556794),
-        location=Location.KUCOIN,
-        base_asset=A_BSV,
-        quote_asset=A_USDT,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('0.0013')),
-        rate=Price(FVal('37624.4')),
-        fee=Fee(FVal('0.034238204')),
-        fee_currency=A_USDT,
-        link='601da995e0ee8b00063a075c',
-        notes='',
-    )
-    trade = mock_kucoin._deserialize_trade(
+    assert mock_kucoin._deserialize_trade(
         raw_result=raw_result,
         case=KucoinCase.TRADES,
-    )
-    assert trade == expected_trade
+    ) == [SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BSV,
+        amount=FVal('0.0013'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('48.91172'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.034238204'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    )]
 
 
 def test_deserialize_v1_trade(mock_kucoin):
     raw_result = {
-        'id': 'xxxx',
+        'id': (unique_id := 'xxxx'),
         'symbol': 'NANO-ETH',
         'dealPrice': '0.015743',
         'dealValue': '0.00003441',
@@ -330,24 +351,34 @@ def test_deserialize_v1_trade(mock_kucoin):
         'side': 'sell',
         'createdAt': 1520471876,
     }
-    expected_trade = Trade(
-        timestamp=Timestamp(1520471876),
-        location=Location.KUCOIN,
-        base_asset=A_NANO,
-        quote_asset=A_ETH,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('0.002186')),
-        rate=Price(FVal('0.015743')),
-        fee=Fee(FVal('0.00000003')),
-        fee_currency=A_ETH,
-        link='xxxx',
-        notes='',
-    )
-    trade = mock_kucoin._deserialize_trade(
+    assert mock_kucoin._deserialize_trade(
         raw_result=raw_result,
         case=KucoinCase.OLD_TRADES,
-    )
-    assert trade == expected_trade
+    ) == [SwapEvent(
+        timestamp=(timestamp := TimestampMS(1520471876000)),
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_NANO,
+        amount=FVal('0.002186'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('0.000034414198'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('3E-8'),
+        location_label=mock_kucoin.name,
+        unique_id=unique_id,
+    )]
 
 
 def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
@@ -462,6 +493,8 @@ def test_query_balances_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=un
     assert msg == ''
 
 
+# TODO: rewrite the tests currently using the sandbox to use mocking instead
+# See https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=105529855
 @pytest.mark.skip('Fails with status code: 404 and text: KC-API-KEY not exists')
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_trades_sandbox(sandbox_kucoin, inquirer):  # pylint: disable=unused-argument
@@ -794,7 +827,10 @@ def test_query_asset_movements_sandbox(
         yield from results
 
     def mock_api_query_response(case, options):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.OK, next(get_response))
+        return MockResponse(HTTPStatus.OK, (
+            '{"data":{"currentPage":1,"totalPage":1,"items":[]}}'  # Empty trades response since query_online_history_events also queries trades  # noqa: E501
+            if case == KucoinCase.TRADES else next(get_response)
+        ))
 
     get_response = get_endpoints_response()
     # Force a time_step of 2s
