@@ -9,11 +9,11 @@ from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_SOL, A_USDT, A_WOO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.woo import API_MAX_LIMIT, Woo
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -51,93 +51,38 @@ def test_woo_assets_are_known(mock_woo):
             ))
 
 
-def test_query_online_trade_history_basic(mock_woo):
+def test_query_online_history_events_basic(mock_woo):
     """Assert that the expected arguments are passed to the `_api_query` method"""
-    start_ts, end_ts = 1634600000, 1634620000
-    expected_call = call(
+    with patch.object(mock_woo, '_api_query') as mock_query:
+        mock_woo.query_online_history_events(
+            start_ts=(start_ts := Timestamp(1634600000)),
+            end_ts=(end_ts := Timestamp(1634620000)),
+        )
+    assert mock_query.call_args_list == [call(
+        endpoint='v1/asset/history',
+        options={
+            'end_t': (end_ts_ms := ts_sec_to_ms(end_ts)),
+            'page': 1,
+            'size': API_MAX_LIMIT,
+            'start_t': (start_ts_ms := ts_sec_to_ms(start_ts)),
+            'status': 'COMPLETED',
+            'type': 'BALANCE',
+        },
+    ), call(
         endpoint='v1/client/hist_trades',
         options={
-            'end_t': ts_sec_to_ms(end_ts),
+            'end_t': end_ts_ms,
             'fromId': 1,
             'limit': API_MAX_LIMIT,
-            'start_t': ts_sec_to_ms(start_ts),
+            'start_t': start_ts_ms,
         },
-    )
-    with patch.object(mock_woo, '_api_query') as mock_query:
-        mock_woo.query_online_trade_history(
-            start_ts=Timestamp(start_ts),
-            end_ts=Timestamp(end_ts),
-        )
-    assert mock_query.call_args_list == [expected_call]
+    )]
 
 
-def test_query_online_trade_history_paginated(mock_woo):
-    """Assert that the expected arguments are passed to the `_api_query` method
-    for trades with multiple pages"""
-    start_ts, end_ts = 1634600000, 1634620000
-
-    def trades_generator():
-        for response in (
-            [{
-                'id': 122,
-                'symbol': 'SPOT_BTC_ETH',
-                'order_id': 101,
-                'executed_price': 50000.0,
-                'executed_quantity': 1.0,
-                'side': 'BUY',
-                'fee': 0.1,
-                'fee_asset': 'ETH',
-                'executed_timestamp': '1634600000.0',
-            }],
-            [],
-        ):
-            yield {'data': response}
-
-    limit_patch = patch(
-        'rotkehlchen.exchanges.woo.API_MAX_LIMIT',
-        new_callable=MagicMock(return_value=1),
-    )
-    trades_response = trades_generator()
-    api_query_patch = patch.object(
-        mock_woo,
-        '_api_query',
-        side_effect=lambda endpoint, options: next(trades_response),
-    )
-    with limit_patch, api_query_patch as mock_query:
-        mock_woo.query_online_trade_history(
-            start_ts=Timestamp(start_ts),
-            end_ts=Timestamp(end_ts),
-        )
-
-    assert mock_query.call_args_list == [
-        call(
-            endpoint='v1/client/hist_trades',
-            options={
-                'end_t': ts_sec_to_ms(end_ts),
-                'fromId': 1,
-                'limit': 1,
-                'start_t': ts_sec_to_ms(start_ts),
-            },
-        ),
-        call(
-            endpoint='v1/client/hist_trades',
-            options={
-                'end_t': ts_sec_to_ms(end_ts),
-                'fromId': 122,
-                'limit': 1,
-                'start_t': ts_sec_to_ms(start_ts),
-            },
-        ),
-    ]
-
-
-def test_query_online_deposits_withdrawals(mock_woo):
+def test_query_online_history_events(mock_woo):
+    """Assert that the expected calls are made to the `_api_query` method
+    for deposit/withdrawals and trades with multiple pages
     """
-    Assert that the expected calls are made to the `_api_query` method
-    for deposits and withdrawals with multiple pages
-    """
-    start_ts, end_ts = 1634600000, 1634620000
-
     def deposits_withdrawals_generator():
         for i, response in enumerate((
             [
@@ -213,42 +158,90 @@ def test_query_online_deposits_withdrawals(mock_woo):
                 },
             }
 
+    def trades_generator():
+        for response in (
+            [{
+                'id': 121,
+                'symbol': 'SPOT_BTC_ETH',
+                'order_id': 100,
+                'executed_price': 48000.0,
+                'executed_quantity': 1.0,
+                'side': 'BUY',
+                'fee': 0.1,
+                'fee_asset': 'ETH',
+                'executed_timestamp': '1634600000.0',
+            }, {
+                'id': 122,
+                'symbol': 'SPOT_BTC_ETH',
+                'order_id': 101,
+                'executed_price': 50000.0,
+                'executed_quantity': 1.0,
+                'side': 'BUY',
+                'fee': 0.1,
+                'fee_asset': 'ETH',
+                'executed_timestamp': '1634610000.0',
+            }],
+            [],
+        ):
+            yield {'data': response}
+
     limit_patch = patch(
         'rotkehlchen.exchanges.woo.API_MAX_LIMIT',
         new_callable=MagicMock(return_value=2),
     )
     deposits_withdrawals_response = deposits_withdrawals_generator()
+    trades_response = trades_generator()
     api_query_patch = patch.object(
         mock_woo,
         '_api_query',
-        side_effect=lambda endpoint, options: next(deposits_withdrawals_response),
+        side_effect=lambda endpoint, options: (
+            next(trades_response)
+            if 'hist_trades' in endpoint else
+            next(deposits_withdrawals_response)
+        ),
     )
     with limit_patch, api_query_patch as mock_query:
         mock_woo.query_online_history_events(
-            start_ts=Timestamp(start_ts),
-            end_ts=Timestamp(end_ts),
+            start_ts=(start_ts := Timestamp(1634600000)),
+            end_ts=(end_ts := Timestamp(1634620000)),
         )
 
     assert mock_query.call_args_list == [
         call(
             endpoint='v1/asset/history',
             options={
-                'end_t': 1634620000000,
+                'end_t': (end_ts_ms := ts_sec_to_ms(end_ts)),
                 'page': 1,
                 'size': 2,
-                'start_t': 1634600000000,
+                'start_t': (start_ts_ms := ts_sec_to_ms(start_ts)),
                 'status': 'COMPLETED',
                 'type': 'BALANCE',
             },
         ), call(
             endpoint='v1/asset/history',
             options={
-                'end_t': 1634620000000,
+                'end_t': end_ts_ms,
                 'page': 2,
                 'size': 2,
-                'start_t': 1634600000000,
+                'start_t': start_ts_ms,
                 'status': 'COMPLETED',
                 'type': 'BALANCE',
+            },
+        ), call(
+            endpoint='v1/client/hist_trades',
+            options={
+                'end_t': end_ts_ms,
+                'fromId': 1,
+                'limit': 2,
+                'start_t': start_ts_ms,
+            },
+        ), call(
+            endpoint='v1/client/hist_trades',
+            options={
+                'end_t': end_ts_ms,
+                'fromId': 122,
+                'limit': 2,
+                'start_t': start_ts_ms,
             },
         )]
 
@@ -320,8 +313,8 @@ def test_query_balances(mock_woo):
         }
 
 
-def test_deserialize_trade_buy(mock_woo):
-    mock_trades = {
+def test_deserialize_trade_buy(mock_woo: Woo):
+    assert mock_woo._deserialize_trade(trade={
         'id': 1,
         'symbol': 'SPOT_BTC_ETH',
         'order_id': 101,
@@ -331,24 +324,36 @@ def test_deserialize_trade_buy(mock_woo):
         'fee': 0.1,
         'fee_asset': 'ETH',
         'executed_timestamp': '1634600000.0',
-    }
-    result = mock_woo._deserialize_trade(mock_trades)
-    assert result == Trade(
-        timestamp=1634600000,
+    }) == [SwapEvent(
+        timestamp=(timestamp := TimestampMS(1634600000000)),
         location=Location.WOO,
-        base_asset=A_BTC,
-        quote_asset=A_ETH,
-        trade_type=TradeType.BUY,
-        amount=FVal('1'),
-        rate=FVal('50000'),
-        fee=FVal('0.1'),
-        fee_currency=A_ETH,
-        link='1',
-    )
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('50000.00'),
+        location_label=mock_woo.name,
+        unique_id=(unique_id := '1'),
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.WOO,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('1.0'),
+        location_label=mock_woo.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.WOO,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('0.1'),
+        location_label=mock_woo.name,
+        unique_id=unique_id,
+    )]
 
 
 def test_deserialize_trade_sell(mock_woo):
-    mock_trades = {
+    assert mock_woo._deserialize_trade(
+        trade={
         'id': 2,
         'symbol': 'SPOT_ETH_USDT',
         'order_id': 102,
@@ -358,20 +363,31 @@ def test_deserialize_trade_sell(mock_woo):
         'fee': 0.2,
         'fee_asset': 'USDT',
         'executed_timestamp': '1634610000.0',
-    }
-    result = mock_woo._deserialize_trade(mock_trades)
-    assert result == Trade(
-        timestamp=1634610000,
+    }) == [SwapEvent(
+        timestamp=(timestamp := TimestampMS(1634610000000)),
         location=Location.WOO,
-        base_asset=A_ETH,
-        quote_asset=A_USDT,
-        trade_type=TradeType.SELL,
-        amount=FVal('2'),
-        rate=FVal('3000'),
-        fee=FVal('0.2'),
-        fee_currency=A_USDT,
-        link='2',
-    )
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('2.0'),
+        location_label=mock_woo.name,
+        unique_id=(unique_id := '2'),
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.WOO,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        amount=FVal('6000.00'),
+        location_label=mock_woo.name,
+        unique_id=unique_id,
+    ), SwapEvent(
+        timestamp=timestamp,
+        location=Location.WOO,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDT,
+        amount=FVal('0.2'),
+        location_label=mock_woo.name,
+        unique_id=unique_id,
+    )]
 
 
 def test_deserialize_asset_movement_deposit(mock_woo: 'Woo') -> None:
