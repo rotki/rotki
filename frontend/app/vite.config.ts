@@ -75,6 +75,7 @@ export default defineConfig({
       'imask',
       'vanilla-jsoneditor',
       '@reown/appkit',
+      '@reown/appkit/vue',
       '@reown/appkit-adapter-wagmi',
       '@reown/walletkit',
       '@walletconnect/core',

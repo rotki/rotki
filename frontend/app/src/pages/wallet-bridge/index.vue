@@ -24,7 +24,7 @@ const { isPackaged } = useInterop();
 </script>
 
 <template>
-  <div class="overflow-auto w-full">
+  <div class="overflow-auto w-full text-rui-text">
     <div class="container !max-w-lg py-6 min-h-screen">
       <h4 class="text-h4 mb-4">
         {{ t('trade.bridge.title') }}
