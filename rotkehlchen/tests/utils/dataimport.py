@@ -43,7 +43,16 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
-from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_GBP, A_KCS, A_MCO, A_XMR, A_XTZ
+from rotkehlchen.tests.utils.constants import (
+    A_AXS,
+    A_CRO,
+    A_GBP,
+    A_KCS,
+    A_MCO,
+    A_NANO,
+    A_XMR,
+    A_XTZ,
+)
 from rotkehlchen.types import (
     AssetAmount,
     Fee,
@@ -1114,7 +1123,6 @@ Trade from ShapeShift with ShapeShift Deposit Address:
 def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from uphold"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         history_db = DBHistoryEvents(rotki.data.db)
         events = history_db.get_history_events(
             cursor=cursor,
@@ -1161,57 +1169,8 @@ Activity from uphold with uphold transaction id:
 """
     assert len(errors) == 0
     assert len(warnings) == 0
-    expected_trades = [Trade(
-        timestamp=Timestamp(1581426837),
-        location=Location.UPHOLD,
-        base_asset=A_BTC,
-        quote_asset=symbol_to_asset_or_token('GBP'),
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('0.00331961')),
-        rate=Price(FVal('7531.00514819511930618355770708004855992119556212928627158009525215311437186898')),
-        fee=Fee(ZERO),
-        fee_currency=symbol_to_asset_or_token('GBP'),
-        link='',
-        notes=notes1,
-    ), Trade(
-        timestamp=Timestamp(1585484504),
-        location=Location.UPHOLD,
-        base_asset=symbol_to_asset_or_token('GBP'),
-        quote_asset=A_BTC,
-        trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('24.65')),
-        rate=Price(FVal('0.000170791075050709939148073022312373225152129817444219066937119675456389452332657')),
-        fee=Fee(ZERO),
-        fee_currency=A_BTC,
-        link='',
-        notes=notes2,
-    ), Trade(
-        timestamp=Timestamp(1589940026),
-        location=Location.UPHOLD,
-        base_asset=symbol_to_asset_or_token('NANO'),
-        quote_asset=A_LTC,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('133.362002	')),
-        rate=Price(FVal('0.00945963318697030358017570852003256519799395333012472323263413517142611581370832')),
-        fee=Fee(FVal('0.111123')),
-        fee_currency=symbol_to_asset_or_token('NANO'),
-        link='',
-        notes=notes3,
-    ), Trade(
-        timestamp=Timestamp(1590516388),
-        location=Location.UPHOLD,
-        base_asset=A_BTC,
-        quote_asset=A_XRP,
-        trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal('0.00714216')),
-        rate=Price(FVal('44054.1938293177414115617684285986312264076973912653875018201776493385754449634')),
-        fee=Fee(FVal('0.0000021')),
-        fee_currency=A_BTC,
-        link='',
-        notes=notes4,
-    )]
     expected_events = [HistoryEvent(
-        identifier=2,
+        identifier=12,
         event_identifier='UPH_55d4d58869d96ad9adf18929bf89caaae87e657482ea20ae4c8c66b8ab34f4e2',
         sequence_index=0,
         timestamp=TimestampMS(1576780809000),
@@ -1221,17 +1180,89 @@ Activity from uphold with uphold transaction id:
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         notes=notes5,
+    ), SwapEvent(
+        identifier=10,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1581426837000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_GBP,
+        notes=notes1,
+        amount=FVal('25'),
+    ), SwapEvent(
+        identifier=11,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1581426837000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.00331961'),
+    ), SwapEvent(
+        identifier=8,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1585484504000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BTC,
+        notes=notes2,
+        amount=FVal('0.00421'),
+    ), SwapEvent(
+        identifier=9,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1585484504000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_GBP,
+        amount=FVal('24.65'),
     ), AssetMovement(
-        identifier=1,
+        identifier=7,
         event_identifier='c85215d66a23ae39cbf232dd931dafa40006acb065d5314382f623b7bb8ce707',
         location=Location.UPHOLD,
         event_type=HistoryEventType.WITHDRAWAL,
         timestamp=TimestampMS(1589376604000),
         asset=symbol_to_asset_or_token('GBP'),
         amount=FVal('24.65'),
+    ), SwapEvent(
+        identifier=4,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1589940026000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_NANO,
+        amount=FVal('133.362002'),
+        notes=notes3,
+    ), SwapEvent(
+        identifier=5,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1589940026000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_LTC,
+        amount=FVal('1.26155562'),
+    ), SwapEvent(
+        identifier=6,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1589940026000),
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_NANO,
+        amount=FVal('0.111123'),
+    ), SwapEvent(
+        identifier=1,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1590516388000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BTC,
+        amount=FVal('0.00714216'),
+        notes=notes4,
+    ), SwapEvent(
+        identifier=2,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1590516388000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_XRP,
+        amount=FVal('314.642101'),
+    ), SwapEvent(
+        identifier=3,
+        location=Location.UPHOLD,
+        timestamp=TimestampMS(1590516388000),
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=FVal('0.0000021'),
     )]
-    assert len(trades) == 4
-    assert trades == expected_trades
     assert events == expected_events
 
 
