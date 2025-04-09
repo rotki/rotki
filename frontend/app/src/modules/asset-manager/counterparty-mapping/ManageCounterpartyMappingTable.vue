@@ -1,42 +1,42 @@
 <script setup lang="ts">
-import type { CexMapping } from '@/types/asset';
+import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import CounterpartyMappingFilter from '@/modules/asset-manager/counterparty-mapping/CounterpartyMappingFilter.vue';
 
-interface ManageCexMappingTableProps {
-  collection: Collection<CexMapping>;
+interface ManageCounterpartyMappingTableProps {
+  collection: Collection<CounterpartyMapping>;
   loading: boolean;
 }
 
-const locationModel = defineModel<string | undefined>('location', { required: true });
+const counterpartyModel = defineModel<string | undefined>('counterparty', { required: true });
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
 const symbol = defineModel<string>('symbol', { required: true });
 
-defineProps<ManageCexMappingTableProps>();
+defineProps<ManageCounterpartyMappingTableProps>();
 
 const emit = defineEmits<{
-  edit: [mapping: CexMapping];
-  delete: [mapping: CexMapping];
+  edit: [mapping: CounterpartyMapping];
+  delete: [mapping: CounterpartyMapping];
 }>();
 
 const { t } = useI18n();
-const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
+const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
   align: 'center',
   cellClass: 'py-3',
-  key: 'location',
-  label: t('asset_management.cex_mapping.exchange'),
+  key: 'counterparty',
+  label: t('common.counterparty'),
 }, {
   align: 'center',
   cellClass: 'py-3',
-  key: 'locationSymbol',
+  key: 'counterpartySymbol',
   label: t('asset_management.cex_mapping.asset_symbol'),
 }, {
   cellClass: 'py-0 border-x border-default',
@@ -60,10 +60,10 @@ function setPage(page: number) {
   <div>
     <div class="flex sm:items-center justify-between mb-4">
       <HintMenuIcon>
-        {{ t('asset_management.cex_mapping.subtitle') }}
+        {{ t('asset_management.counterparty_mapping.subtitle') }}
       </HintMenuIcon>
-      <ExchangeMappingFilter
-        v-model:location="locationModel"
+      <CounterpartyMappingFilter
+        v-model:counterparty="counterpartyModel"
         v-model:symbol="symbol"
       />
     </div>
@@ -80,27 +80,13 @@ function setPage(page: number) {
           :loading="loading"
           :cols="cols"
           :sticky-offset="64"
-          row-attr="location"
+          row-attr="counterparty"
           outlined
         >
-          <template #item.location="{ row }">
-            <div
-              v-if="!row.location"
-              class="flex flex-col gap-1 items-center"
-            >
-              <div class="icon-bg">
-                <RuiIcon
-                  name="lu-building-2"
-                  color="secondary"
-                />
-              </div>
-              <div class="text-rui-text-secondary whitespace-nowrap">
-                {{ t('asset_management.cex_mapping.all_exchanges') }}
-              </div>
-            </div>
-            <LocationDisplay
-              v-else
-              :identifier="row.location"
+          <template #item.counterparty="{ row }">
+            <CounterpartyDisplay
+              class="justify-center"
+              :counterparty="row.counterparty"
             />
           </template>
           <template #item.asset="{ row }">

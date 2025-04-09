@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
-import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';
-import ManageCexMappingTable from '@/components/asset-manager/cex-mapping/ManageCexMappingTable.vue';
+import type { CounterpartyMapping, CounterpartyMappingRequestPayload } from '@/modules/asset-manager/counterparty-mapping/schema';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import ManageCounterpartyMappingFormDialog
+  from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
+import ManageCounterpartyMappingTable from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingTable.vue';
+import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { omit } from 'es-toolkit';
@@ -13,22 +14,22 @@ const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
-const { deleteCexMapping, fetchAllCexMapping } = useAssetCexMappingApi();
+const { deleteCounterpartyMapping, fetchAllCounterpartyMapping } = useCounterpartyMappingApi();
 
-const selectedLocation = ref<string>('');
+const selectedCounterparty = ref<string>('');
 const selectedSymbol = ref<string>('');
 const editMode = ref<boolean>(false);
 
-const modelValue = ref<CexMapping>();
+const modelValue = ref<CounterpartyMapping>();
 
 const extraParams = computed(() => {
-  const location = get(selectedLocation);
+  const counterparty = get(selectedCounterparty);
   const symbol = get(selectedSymbol);
-  const data: { location?: string; locationSymbol?: string } = {};
-  if (location)
-    data.location = location;
+  const data: { counterparty?: string; counterpartySymbol?: string } = {};
+  if (counterparty)
+    data.counterparty = counterparty;
   if (symbol)
-    data.locationSymbol = symbol;
+    data.counterpartySymbol = symbol;
   return data;
 });
 
@@ -38,14 +39,14 @@ const {
   pagination,
   state,
 } = usePaginationFilters<
-  CexMapping,
-  CexMappingRequestPayload
->(fetchAllCexMapping, {
+  CounterpartyMapping,
+  CounterpartyMappingRequestPayload
+>(fetchAllCounterpartyMapping, {
   extraParams,
   history: 'router',
   onUpdateFilters(query) {
-    set(selectedLocation, query.location || '');
-    set(selectedSymbol, query.locationSymbol || '');
+    set(selectedCounterparty, query.counterparty || '');
+    set(selectedSymbol, query.counterpartySymbol || '');
   },
 });
 
@@ -54,25 +55,25 @@ onMounted(async () => {
   if (query.add) {
     await router.replace({ query: {} });
     add({
-      location: (query.location as string) || '',
-      locationSymbol: (query.locationSymbol as string) || '',
+      counterparty: (query.counterparty as string) || '',
+      counterpartySymbol: (query.counterpartySymbol as string) || '',
     });
   }
 
   await fetchData();
 });
 
-function add(payload?: Partial<CexMapping>) {
+function add(payload?: Partial<CounterpartyMapping>) {
   set(modelValue, {
     asset: '',
-    location: get(selectedLocation) || '',
-    locationSymbol: get(selectedSymbol) || '',
+    counterparty: get(selectedCounterparty) || '',
+    counterpartySymbol: get(selectedSymbol) || '',
     ...payload,
   });
   set(editMode, false);
 }
 
-function edit(editMapping: CexMapping) {
+function edit(editMapping: CounterpartyMapping) {
   set(modelValue, editMapping);
   set(editMode, true);
 }
@@ -80,9 +81,9 @@ function edit(editMapping: CexMapping) {
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
 
-async function confirmDelete(mapping: CexMapping) {
+async function confirmDelete(mapping: CounterpartyMapping) {
   try {
-    const success = await deleteCexMapping(omit(mapping, ['asset']));
+    const success = await deleteCounterpartyMapping(omit(mapping, ['asset']));
     if (success)
       await fetchData();
   }
@@ -95,14 +96,14 @@ async function confirmDelete(mapping: CexMapping) {
   }
 }
 
-function showDeleteConfirmation(item: CexMapping) {
+function showDeleteConfirmation(item: CounterpartyMapping) {
   show(
     {
       message: t('asset_management.cex_mapping.confirm_delete.message', {
-        asset: item.locationSymbol,
-        location: item.location || t('asset_management.cex_mapping.all_exchanges'),
+        asset: item.counterpartySymbol,
+        location: item.counterparty.toUpperCase(),
       }),
-      title: t('asset_management.cex_mapping.confirm_delete.title'),
+      title: t('asset_management.counterparty_mapping.confirm_delete.title'),
     },
     async () => await confirmDelete(item),
   );
@@ -125,7 +126,7 @@ function showDeleteConfirmation(item: CexMapping) {
       </RuiButton>
 
       <RuiButton
-        data-cy="managed-cex-mapping-add-btn"
+        data-cy="managed-counterparty-mapping-add-btn"
         color="primary"
         @click="add()"
       >
@@ -136,8 +137,8 @@ function showDeleteConfirmation(item: CexMapping) {
       </RuiButton>
     </template>
     <RuiCard>
-      <ManageCexMappingTable
-        v-model:location="selectedLocation"
+      <ManageCounterpartyMappingTable
+        v-model:counterparty="selectedCounterparty"
         v-model:symbol="selectedSymbol"
         v-model:pagination="pagination"
         :collection="state"
@@ -146,7 +147,7 @@ function showDeleteConfirmation(item: CexMapping) {
         @edit="edit($event)"
         @delete="showDeleteConfirmation($event)"
       />
-      <ManageCexMappingFormDialog
+      <ManageCounterpartyMappingFormDialog
         v-model="modelValue"
         :edit-mode="editMode"
         @refresh="fetchData()"

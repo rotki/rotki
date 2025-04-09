@@ -15,6 +15,7 @@ const tabs = computed<TabContent[]>(() => {
   const Routes = get(appRoutes);
   return [
     Routes.ASSET_MANAGER_CEX_MAPPING,
+    Routes.ASSET_MANAGER_COUNTERPARTY_MAPPING,
     Routes.ASSET_MANAGER_NEWLY_DETECTED,
     Routes.ASSET_MANAGER_MISSING_MAPPINGS,
   ];
@@ -25,14 +26,14 @@ const { t } = useI18n();
 
 <template>
   <TablePageLayout :title="[t('navigation_menu.manage_assets'), t('navigation_menu.manage_assets_sub.more')]">
-    <div class="flex justify-between">
+    <div class="flex justify-between flex-1">
       <TabNavigation
         :tabs="tabs"
-        class="asset-manager-more"
+        class="asset-manager-more max-w-full lg:max-w-[calc(100%-300px)]"
         hide-router-view
         child
       />
     </div>
-    <RouterView />
+    <RouterView class="-mt-5 lg:-mt-[4.5rem]" />
   </TablePageLayout>
 </template>

@@ -796,6 +796,7 @@
       "add_mapping": "添加映射",
       "add_title": "添加新映射",
       "all_exchanges": "所有交易所",
+      "asset_symbol": "资产符号",
       "confirm_delete": {
         "message": "您确定要删除 {location} 中符号 {asset} 的资产映射吗？",
         "title": "删除交易所资产映射"
@@ -811,7 +812,7 @@
         "location_non_empty": "位置字段不能为空",
         "location_symbol_non_empty": "资产符号字段不能为空"
       },
-      "location_symbol": "资产符号",
+      "location_symbol": "交易所中的资产符号",
       "recognized_as": "确认为",
       "save_for_all": "为所有交易所保存此映射",
       "subtitle": "您可以将中央交易所的资产符号与 rotki 识别的资产联系起来。这是 rotki 处理交易所资产所必需的。"

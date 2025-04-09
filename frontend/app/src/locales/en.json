@@ -1048,6 +1048,7 @@
       "add_mapping": "Add Mapping",
       "add_title": "Add a new mapping",
       "all_exchanges": "All exchanges",
+      "asset_symbol": "Asset symbol",
       "confirm_delete": {
         "message": "Are you sure you want to delete the asset mapping for the symbol {asset} in {location}?",
         "title": "Delete Exchange Asset Mapping"
@@ -1063,14 +1064,25 @@
         "location_non_empty": "The location field cannot be empty",
         "location_symbol_non_empty": "The asset symbol field cannot be empty"
       },
-      "location_symbol": "Asset symbol",
+      "location_symbol": "Asset symbol in the exchange",
       "recognized_as": "Recognized as",
-      "save_for_all": "Save this mapping for all exchange",
+      "save_for_all": "Save this mapping for all exchanges",
       "subtitle": "You can link asset symbols on a centralized exchange with assets recognized by rotki. This is necessary for rotki to process assets on the exchanges."
     },
     "confirm_delete": {
       "message": "Are you sure you want to delete {asset} from the asset database?",
       "title": "Delete asset"
+    },
+    "counterparty_mapping": {
+      "confirm_delete": {
+        "title": "Delete Counterparty Asset Mapping"
+      },
+      "counterparty_symbol": "Asset symbol in the counterparty",
+      "filter_by_counterparty": "Filter by counterparty",
+      "form": {
+        "counterparty_non_empty": "The counterparty field cannot be empty"
+      },
+      "subtitle": "You can link asset symbols on a counterparty with assets recognized by rotki. This is necessary for rotki to process assets on certain counterparty."
     },
     "delete_error": "Could not delete {address}: {message}",
     "edit_error": "Could not edit asset: {message}",
@@ -3258,9 +3270,10 @@
     "manage_assets": "Manage Assets",
     "manage_assets_sub": {
       "assets": "Assets",
-      "cex_mapping": "Manage CEX Mapping",
+      "cex_mapping": "CEX Mappings",
+      "counterparty_mapping": "Counterparty Mappings",
       "custom_assets": "Custom Assets",
-      "missing_mappings": "Manage Missing Mappings",
+      "missing_mappings": "Missing CEX Mappings",
       "more": "More",
       "newly_detected": "Newly Detected Tokens"
     },

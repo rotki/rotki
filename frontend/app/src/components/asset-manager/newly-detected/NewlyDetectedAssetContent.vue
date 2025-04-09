@@ -3,5 +3,5 @@ import NewlyDetectedAssetTable from '@/components/asset-manager/newly-detected/N
 </script>
 
 <template>
-  <NewlyDetectedAssetTable class="-mt-5" />
+  <NewlyDetectedAssetTable />
 </template>
