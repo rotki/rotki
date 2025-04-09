@@ -771,7 +771,7 @@ class Rotkehlchen:
             chain: SupportedBlockchain,
             account_data: list[SingleBlockchainAccountData],
     ) -> None:
-        """Adds new blockchain accounts
+        """Adds new blockchain accounts.
 
         Adds the accounts to the blockchain instance and queries them to get the
         updated balances. Also adds them in the DB
