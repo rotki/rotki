@@ -90,7 +90,7 @@ jobs:
 
       - name: Install uv
         run: |
-          pip install --upgrade uv
+          pip install --upgrade uv=="${UV_VERSION}"
 
       - name: Cache rotkehlchen test directory
         uses: actions/cache@v4
@@ -104,17 +104,17 @@ jobs:
           $MINIUPNPC_ZIP = "miniupnpc_64bit_py39-2.2.24.zip"
           echo "`nFetching miniupnpc for windows`n"
           $PYTHON_LOCATION = ((python -c "import os, sys; print(os.path.dirname(sys.executable))") | Out-String).trim()
-          $PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf        
-          
+          $PYTHON_DIRECTORY = Split-Path -Path $PYTHON_LOCATION -Leaf
+
           $DLL_PATH = (Join-Path $PYTHON_LOCATION "miniupnpc.dll")
-          
+
           echo "miniupnpc.dll will be installed in $PYTHON_LOCATION"
           curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/$MINIUPNPC_ZIP"
-          
+
           echo "Downloaded miniupnpc.zip"
-          
+
           Expand-Archive -Force -Path ".\$MINIUPNPC_ZIP" -DestinationPath $PYTHON_LOCATION
-          
+
           echo "Unzipped miniupnpc to $PYTHON_LOCATION`nDone with miniupnpc"
           Get-ChildItem -Path $PYTHON_LOCATION
           (Get-Command python).Path
@@ -154,7 +154,7 @@ jobs:
           else
             python pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests/
           fi
-          
+
           python pytestgeventwrapper.py --dead-fixtures
         shell: bash
 
