@@ -134,6 +134,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -249,6 +250,8 @@ from rotkehlchen.types import (
     CacheType,
     ChainType,
     ChecksumEvmAddress,
+    CounterpartyAssetMappingDeleteEntry,
+    CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
     EvmlikeChain,
     EVMTxHash,
@@ -3163,12 +3166,24 @@ class RestAPI:
         }
         return _wrap_in_ok_result(process_result(result))
 
-    def query_location_asset_mappings(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:  # noqa: E501
-        """Query the location asset mappings using the provided filter_query
+    def query_asset_mappings_by_type(
+            self,
+            dict_keys: tuple[str, str, str],
+            mapping_type: Literal['location', 'counterparty'],
+            location_or_counterparty_reader_callback: Callable,
+            filter_query: LocationAssetMappingsFilterQuery | CounterpartyAssetMappingsFilterQuery,
+            query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
+    ) -> Response:
+        """Query the location/counterparty asset mappings using the provided filter_query
         and return them in a paginated format"""
-        mappings, mappings_found, mappings_total = GlobalDBHandler.query_location_asset_mappings(
+        mappings, mappings_found, mappings_total = GlobalDBHandler.query_asset_mappings_by_type(
+            mapping_type=mapping_type,
             filter_query=filter_query,
+            dict_keys=dict_keys,
+            query_columns=query_columns,
+            location_or_counterparty_reader_callback=location_or_counterparty_reader_callback,
         )
+
         result = {
             'entries': mappings,
             'entries_found': mappings_found,
@@ -3176,43 +3191,14 @@ class RestAPI:
         }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    def add_location_asset_mappings(
-            self,
-            entries: list[LocationAssetMappingUpdateEntry],
+    @staticmethod
+    def perform_asset_mapping_operation(
+            mapping_fn: Callable,
+            entries: Sequence[LocationAssetMappingUpdateEntry | LocationAssetMappingDeleteEntry | CounterpartyAssetMappingUpdateEntry | CounterpartyAssetMappingDeleteEntry],  # noqa: E501
     ) -> Response:
-        """Add the location asset mappings in the global DB for the given location"""
+        """Perform an asset mapping database operation based on the given function and entries."""
         try:
-            GlobalDBHandler.add_location_asset_mappings(entries=entries)
-        except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(str(e)),
-                status_code=HTTPStatus.CONFLICT,
-            )
-        else:
-            return api_response(result=OK_RESULT)
-
-    def update_location_asset_mappings(
-            self,
-            entries: list[LocationAssetMappingUpdateEntry],
-    ) -> Response:
-        """Update the location asset mappings in the global DB for the given location"""
-        try:
-            GlobalDBHandler.update_location_asset_mappings(entries=entries)
-        except InputError as e:
-            return api_response(
-                result=wrap_in_fail_result(str(e)),
-                status_code=HTTPStatus.CONFLICT,
-            )
-        else:
-            return api_response(result=OK_RESULT)
-
-    def delete_location_asset_mappings(
-            self,
-            entries: list[LocationAssetMappingDeleteEntry],
-    ) -> Response:
-        """Delete the location asset mappings from the global DB for the given location"""
-        try:
-            GlobalDBHandler.delete_location_asset_mappings(entries=entries)
+            mapping_fn(entries=entries)
         except InputError as e:
             return api_response(
                 result=wrap_in_fail_result(str(e)),

@@ -1080,7 +1080,7 @@ class CounterpartyAssetMappingDeleteEntry:
         return self.counterparty_symbol, self.counterparty
 
     def __str__(self) -> str:
-        return f'{self.counterparty_symbol} for {self.counterparty}'
+        return f'{self.counterparty_symbol} in {self.counterparty}'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)

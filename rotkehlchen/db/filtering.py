@@ -1622,6 +1622,42 @@ class LocationAssetMappingsFilterQuery(DBFilterQuery):
         return filter_query
 
 
+class CounterpartyAssetMappingsFilterQuery(DBFilterQuery):
+    """DBFilterQuery for filtering asset mappings by counterparty data.
+
+    counterparty: External entity that exchanges assets (e.g., "Hyperliquid").
+    counterparty symbol: Identifier used by the counterparty for an asset (e.g., "HYPE").
+    """
+    @classmethod
+    def make(
+            cls: type['CounterpartyAssetMappingsFilterQuery'],
+            limit: int,
+            offset: int,
+            counterparty: str | None = None,
+            counterparty_symbol: str | None = None,
+            and_op: bool = True,
+    ) -> 'CounterpartyAssetMappingsFilterQuery':
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+        )
+        if counterparty_symbol is not None:
+            filter_query.filters.append(DBSubStringFilter(
+                and_op=True,
+                field='symbol',
+                search_string=counterparty_symbol,
+            ))
+        if counterparty is not None:
+            filter_query.filters.append(DBEqualsFilter(
+                and_op=True,
+                column='counterparty',
+                value=counterparty,
+            ))
+
+        return filter_query
+
+
 class CustomAssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
