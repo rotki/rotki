@@ -10,18 +10,22 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.base import HistoryEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+)
+from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 class BitstampTransactionsImporter(BaseExchangeImporter):
@@ -49,86 +53,45 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             location='Bitstamp',
         ))
 
+        events: list[HistoryBaseEntry] = []
         amount, amount_symbol = csv_row['Amount'].split(' ')
         event_identifier = f'{BITSTAMP_EVENT_PREFIX}_{uuid4().hex}'
-
         if csv_row['Type'] == 'Market':
-            value_amount, value_symbol = csv_row['Value'].split(' ')
-            fee_amount, fee_symbol = csv_row['Fee'].split(' ')
-            trade_type = TradeType.deserialize(csv_row['Sub Type'])
-
-            # if trade_type buy
-            bought_amount = deserialize_asset_amount(amount)
-            sold_amount = deserialize_asset_amount(value_amount)
-            bought_currency = asset_from_bitstamp(amount_symbol)
-            sold_currency = asset_from_bitstamp(value_symbol)
-
-            if trade_type == TradeType.SELL:
-                bought_amount, sold_amount = sold_amount, bought_amount
-                sold_currency, bought_currency = bought_currency, sold_currency
-
-            fee_amount = deserialize_fee(fee_amount)
-            fee_currency = asset_from_bitstamp(fee_symbol)
-            spend_trade_event = HistoryEvent(
-                event_identifier=event_identifier,
-                sequence_index=0,
-                timestamp=timestamp,
-                location=Location.BITSTAMP,
-                asset=sold_currency,
-                amount=sold_amount,
-                notes=f'Spend {sold_amount} {sold_currency} as the result of a trade on Bitstamp',
-                event_type=HistoryEventType.TRADE,
-                event_subtype=HistoryEventSubType.SPEND,
+            value_str, value_symbol = csv_row['Value'].split(' ')
+            fee_str, fee_symbol = csv_row['Fee'].split(' ')
+            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+                raw_trade_type=csv_row['Sub Type'],
+                base_asset=asset_from_bitstamp(amount_symbol),
+                quote_asset=asset_from_bitstamp(value_symbol),
+                amount=(swap_amount := deserialize_asset_amount(amount)),
+                rate=Price(deserialize_asset_amount(value_str) / swap_amount),
             )
-            receive_trade_event = HistoryEvent(
-                event_identifier=event_identifier,
-                sequence_index=1,
+            events.extend(create_swap_events(
                 timestamp=timestamp,
+                spend_asset=spend_asset,
+                spend_amount=spend_amount,
                 location=Location.BITSTAMP,
-                asset=bought_currency,
-                amount=bought_amount,
-                notes=f'Receive {bought_amount} {bought_currency} as the result of a trade on Bitstamp',  # noqa: E501
-                event_type=HistoryEventType.TRADE,
-                event_subtype=HistoryEventSubType.RECEIVE,
-            )
-            fee_event = HistoryEvent(
+                receive_asset=receive_asset,
+                receive_amount=receive_amount,
                 event_identifier=event_identifier,
-                sequence_index=2,
-                timestamp=timestamp,
-                location=Location.BITSTAMP,
-                asset=fee_currency,
-                amount=fee_amount,
-                notes=f'Fee of {fee_amount} {fee_currency} as the result of a trade on Bitstamp',
-                event_type=HistoryEventType.TRADE,
-                event_subtype=HistoryEventSubType.FEE,
-            )
-            self.add_history_events(write_cursor, [
-                spend_trade_event,
-                receive_trade_event,
-                fee_event,
-            ])
+                fee_amount=deserialize_fee(fee_str),
+                fee_asset=asset_from_bitstamp(fee_symbol),
+            ))
         elif csv_row['Type'] in {'Deposit', 'Withdrawal'}:
-            amount = deserialize_asset_amount(amount)
-            asset = asset_from_bitstamp(amount_symbol)
-            transaction_type = csv_row['Type']
-            if transaction_type == 'Deposit':
-                event_type = HistoryEventType.DEPOSIT
-                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            else:
-                event_type = HistoryEventType.WITHDRAWAL
-                event_subtype = HistoryEventSubType.REMOVE_ASSET
-            movement_event = HistoryEvent(
+            events.append(AssetMovement(
                 event_identifier=event_identifier,
-                sequence_index=0,
+                event_type=HistoryEventType.DEPOSIT if csv_row['Type'] == 'Deposit' else HistoryEventType.WITHDRAWAL,  # noqa: E501
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
-                asset=asset,
-                amount=amount,
-                notes=f'{transaction_type} of {amount} {asset} on Bitstamp',
-                event_type=event_type,
-                event_subtype=event_subtype,
+                asset=asset_from_bitstamp(amount_symbol),
+                amount=deserialize_asset_amount(amount),
+            ))
+
+        if len(events) > 0:
+            self.add_history_events(
+                write_cursor=write_cursor,
+                history_events=events,
             )
-            self.add_history_events(write_cursor, [movement_event])
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """

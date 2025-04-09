@@ -2560,65 +2560,50 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
     assert len(history_events) == 5
 
     expected_history_events = [
-        HistoryEvent(
+        AssetMovement(
             identifier=1,
             event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-            sequence_index=0,
             timestamp=TimestampMS(1643328780000),
             location=Location.BITSTAMP,
             asset=A_ETH,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             amount=FVal('2.00000000'),
-            notes='Deposit of 2.00000000 ETH(Ethereum) on Bitstamp',
         ),
-        HistoryEvent(
+        SwapEvent(
             identifier=2,
             event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-            sequence_index=0,
             timestamp=TimestampMS(1643329860000),
             location=Location.BITSTAMP,
             asset=A_ETH,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             amount=FVal('1.00000000'),
-            notes='Spend 1.00000000 ETH(Ethereum) as the result of a trade on Bitstamp',
         ),
-        HistoryEvent(
+        SwapEvent(
             identifier=3,
             event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-            sequence_index=1,
             timestamp=TimestampMS(1643329860000),
             location=Location.BITSTAMP,
             asset=A_EUR,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            amount=FVal('2214.01'),
-            notes='Receive 2214.01 EUR(Euro) as the result of a trade on Bitstamp',
+            amount=FVal('2214.0100000000'),
         ),
-        HistoryEvent(
+        SwapEvent(
             identifier=4,
             event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-            sequence_index=2,
             timestamp=TimestampMS(1643329860000),
             location=Location.BITSTAMP,
             asset=A_EUR,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.FEE,
             amount=FVal('10.87005'),
-            notes='Fee of 10.87005 EUR(Euro) as the result of a trade on Bitstamp',
         ),
-        HistoryEvent(
+        AssetMovement(
             identifier=5,
             event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-            sequence_index=0,
             timestamp=TimestampMS(1643542800000),
             location=Location.BITSTAMP,
             asset=A_EUR,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             amount=FVal('2211.01'),
-            notes='Withdrawal of 2211.01 EUR(Euro) on Bitstamp',
         ),
     ]
 
