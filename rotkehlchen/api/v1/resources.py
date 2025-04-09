@@ -63,6 +63,9 @@ from rotkehlchen.api.v1.schemas import (
     ClearCacheSchema,
     ClearIconsCacheSchema,
     ConnectToRPCNodes,
+    CounterpartyAssetMappingDeleteEntrySchema,
+    CounterpartyAssetMappingsPostSchema,
+    CounterpartyAssetMappingUpdateEntrySchema,
     CreateAccountingRuleSchema,
     CreateHistoryEventSchema,
     CurrentAssetsPriceSchema,
@@ -185,6 +188,7 @@ from rotkehlchen.api.v1.schemas import (
     WatchersEditSchema,
     XpubAddSchema,
     XpubPatchSchema,
+    create_counterparty_asset_mappings_schema,
 )
 from rotkehlchen.assets.asset import (
     Asset,
@@ -211,6 +215,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
     Eth2DailyStatsFilterQuery,
@@ -226,6 +231,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.schemas import (
@@ -246,6 +252,8 @@ from rotkehlchen.types import (
     AssetAmount,
     ChainType,
     ChecksumEvmAddress,
+    CounterpartyAssetMappingDeleteEntry,
+    CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
     EvmlikeChain,
     EVMTxHash,
@@ -2319,28 +2327,109 @@ class LocationAssetMappingsResource(BaseMethodView):
 
     @use_kwargs(post_schema, location='json')
     def post(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:
-        return self.rest_api.query_location_asset_mappings(filter_query=filter_query)
+        return self.rest_api.query_asset_mappings_by_type(
+            mapping_type='location',
+            filter_query=filter_query,
+            dict_keys=('asset', 'location', 'location_symbol'),
+            query_columns='local_id, location, exchange_symbol',
+            location_or_counterparty_reader_callback=self._location_mapping_reader,
+        )
+
+    @staticmethod
+    def _location_mapping_reader(entry: dict[str, Any]) -> dict[str, Any]:
+        if (loc := entry['location']) is not None:
+            entry['location'] = str(Location.deserialize_from_db(loc))
+
+        return entry
 
     @use_kwargs(put_and_patch_schema, location='json')
     def put(
             self,
             entries: list[LocationAssetMappingUpdateEntry],
     ) -> Response:
-        return self.rest_api.add_location_asset_mappings(entries=entries)
+        return self.rest_api.perform_asset_mapping_operation(
+            mapping_fn=GlobalDBHandler.add_location_asset_mappings,
+            entries=entries,
+        )
 
     @use_kwargs(put_and_patch_schema, location='json')
     def patch(
             self,
             entries: list[LocationAssetMappingUpdateEntry],
     ) -> Response:
-        return self.rest_api.update_location_asset_mappings(entries=entries)
+        return self.rest_api.perform_asset_mapping_operation(
+            mapping_fn=GlobalDBHandler.update_location_asset_mappings,
+            entries=entries,
+        )
 
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
             entries: list[LocationAssetMappingDeleteEntry],
     ) -> Response:
-        return self.rest_api.delete_location_asset_mappings(entries=entries)
+        return self.rest_api.perform_asset_mapping_operation(
+            mapping_fn=GlobalDBHandler.delete_location_asset_mappings,
+            entries=entries,
+        )
+
+
+class CounterpartyAssetMappingsResource(BaseMethodView):
+    def make_delete_schema(self) -> Any:
+        return create_counterparty_asset_mappings_schema(
+            entry_schema_class=CounterpartyAssetMappingDeleteEntrySchema,
+            chain_aggregator=self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    def make_put_patch_schema(self) -> Any:
+        return create_counterparty_asset_mappings_schema(
+            entry_schema_class=CounterpartyAssetMappingUpdateEntrySchema,
+            chain_aggregator=self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    def make_post_schema(self) -> CounterpartyAssetMappingsPostSchema:
+        return CounterpartyAssetMappingsPostSchema(
+            chain_aggregator=self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    @resource_parser.use_kwargs(make_post_schema, location='json')
+    def post(self, filter_query: CounterpartyAssetMappingsFilterQuery) -> Response:
+        return self.rest_api.query_asset_mappings_by_type(
+            filter_query=filter_query,
+            mapping_type='counterparty',
+            query_columns='local_id, counterparty, symbol',
+            location_or_counterparty_reader_callback=lambda x: x,
+            dict_keys=('asset', 'counterparty', 'counterparty_symbol'),
+        )
+
+    @resource_parser.use_kwargs(make_put_patch_schema, location='json')
+    def put(
+            self,
+            entries: list[CounterpartyAssetMappingUpdateEntry],
+    ) -> Response:
+        return self.rest_api.perform_asset_mapping_operation(
+            mapping_fn=GlobalDBHandler.add_counterparty_asset_mappings,
+            entries=entries,
+        )
+
+    @resource_parser.use_kwargs(make_put_patch_schema, location='json')
+    def patch(
+            self,
+            entries: list[CounterpartyAssetMappingUpdateEntry],
+    ) -> Response:
+        return self.rest_api.perform_asset_mapping_operation(
+            mapping_fn=GlobalDBHandler.update_counterparty_asset_mappings,
+            entries=entries,
+        )
+
+    @resource_parser.use_kwargs(make_delete_schema, location='json')
+    def delete(
+            self,
+            entries: list[CounterpartyAssetMappingDeleteEntry],
+    ) -> Response:
+        return self.rest_api.perform_asset_mapping_operation(
+            mapping_fn=GlobalDBHandler.delete_counterparty_asset_mappings,
+            entries=entries,
+        )
 
 
 class AllLatestAssetsPriceResource(BaseMethodView):

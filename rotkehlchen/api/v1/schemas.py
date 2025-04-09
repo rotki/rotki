@@ -62,6 +62,7 @@ from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
+    CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     Eth2DailyStatsFilterQuery,
     EthStakingEventFilterQuery,
@@ -124,6 +125,8 @@ from rotkehlchen.types import (
     ChainType,
     ChecksumEvmAddress,
     CostBasisMethod,
+    CounterpartyAssetMappingDeleteEntry,
+    CounterpartyAssetMappingUpdateEntry,
     EvmlikeChain,
     ExchangeLocationID,
     ExternalService,
@@ -2567,12 +2570,85 @@ class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
             raise ValidationError(f'Could not deserialize data: {e!s}') from e
 
 
-class LocationAssetMappingsUpdateSchema(LocationAssetMappingsBaseSchema):
+class LocationAssetMappingsUpdateSchema(Schema):
     entries = NonEmptyList(fields.Nested(LocationAssetMappingUpdateEntrySchema), required=True)
 
 
-class LocationAssetMappingsDeleteSchema(LocationAssetMappingsBaseSchema):
+class LocationAssetMappingsDeleteSchema(Schema):
     entries = NonEmptyList(fields.Nested(LocationAssetMappingDeleteEntrySchema), required=True)
+
+
+class CounterpartyAssetMappingsBaseSchema(Schema):
+    counterparty = EvmCounterpartyField(required=True)
+
+    def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
+        super().__init__()
+        self.declared_fields['counterparty'].set_counterparties(  # type: ignore
+            counterparties={x.identifier for x in chain_aggregator.get_all_counterparties()},
+        )
+
+
+class CounterpartyAssetMappingUpdateEntrySchema(CounterpartyAssetMappingsBaseSchema):
+    asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+    counterparty_symbol = fields.String(required=True)
+
+    @post_load()
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> CounterpartyAssetMappingUpdateEntry:
+        try:
+            return CounterpartyAssetMappingUpdateEntry.deserialize(data)
+        except DeserializationError as e:
+            raise ValidationError(f'Could not deserialize data: {e!s}') from e
+
+
+class CounterpartyAssetMappingsPostSchema(DBPaginationSchema, CounterpartyAssetMappingsBaseSchema):
+    counterparty = EvmCounterpartyField(load_default=None)
+    counterparty_symbol = fields.String(load_default=None)
+
+    @post_load
+    def make_counterparty_asset_mappings_post_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = CounterpartyAssetMappingsFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            counterparty=data['counterparty'],
+            counterparty_symbol=data['counterparty_symbol'],
+        )
+        return {'filter_query': filter_query}
+
+
+class CounterpartyAssetMappingDeleteEntrySchema(CounterpartyAssetMappingsBaseSchema):
+    counterparty_symbol = fields.String(required=True)
+
+    @post_load()
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> CounterpartyAssetMappingDeleteEntry:
+        try:
+            return CounterpartyAssetMappingDeleteEntry.deserialize(data)
+        except DeserializationError as e:
+            raise ValidationError(f'Could not deserialize data: {e!s}') from e
+
+
+def create_counterparty_asset_mappings_schema(
+        entry_schema_class: type[CounterpartyAssetMappingDeleteEntrySchema | CounterpartyAssetMappingUpdateEntrySchema],  # noqa: E501
+        chain_aggregator: 'ChainsAggregator',
+) -> Any:
+    class DynamicCounterpartyAssetMappingsSchema(Schema):
+        entries = NonEmptyList(
+            fields.Nested(entry_schema_class(chain_aggregator=chain_aggregator)),
+            required=True,
+        )
+
+    return DynamicCounterpartyAssetMappingsSchema()
 
 
 class EthStakingCommonFilterSchema(Schema):

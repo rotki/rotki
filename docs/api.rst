@@ -4261,6 +4261,192 @@ Delete asset location mappings for a location
     :statuscode 500: Internal rotki error.
 
 
+Get asset mappings for a counterparty
+======================================
+
+.. http:post:: /api/(version)/assets/counterpartymappings
+
+    Doing a POST on the counterparty asset mappings endpoint will return all the paginated counterparty assets mappings for the given filter.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/assets/counterpartymappings/ HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "offset": 20,
+          "limit": 2
+        }
+
+    :reqjson str counterparty[optional]: If given, filter the returned mappings only for the counterparty. Possible values can be any supported counterparty, or omitting it to get all the mappings.
+    :reqjson str counterparty_symbol[optional]: Filter the counterparty symbols using the provided string.
+    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": {
+              "entries": [
+                { "asset": "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96", "counterparty_symbol": "GNO", "counterparty": "hyperliquid"},
+                { "asset": "eip155:1/erc20:0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE", "counterparty_symbol": "SHIB", "counterparty": "hyperliquid"}
+              ],
+              "entries_found": 1500,
+              "entries_total": 1500
+            },
+            "message": ""
+        }
+
+    :resjson object entries: An array of mapping objects. Each entry is composed of the asset identifier under the ``"asset"`` key, its ticker symbol used in the counterparty under the ``"counterparty_symbol"`` key, and its counterparty under the ``"counterparty"`` key.
+    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
+    :resjson int entries_total: The number of total entries ignoring all filters.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were returned successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 500: Internal rotki error.
+
+
+Insert asset mappings for a counterparty
+=============================================
+
+.. http:put:: /api/(version)/assets/counterpartymappings
+
+    Doing a PUT on the counterparty asset mappings endpoint with a list of entries, and each entry containing an asset's identifier, its counterparty and its counterparty symbol will save these mappings in the DB.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        PUT /api/1/assets/counterpartymappings HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "counterparty_symbol": "UNI", "counterparty": "hyperliquid"},
+            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "counterparty_symbol": "IMX", "counterparty": "hyperliquid"}
+          ]
+        }
+
+    :reqjson object entries: A list of mappings containing ``"asset"``, ``"counterparty_symbol"``, and ``"counterparty"`` to be saved in the database
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in the case the mappings were added successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were added successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided mappings already exist in the database or assets have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Update asset mappings for a counterparty
+=============================================
+
+.. http:patch:: /api/(version)/assets/counterpartymappings
+
+    Doing a PATCH on the counterparty asset mappings endpoint with a list of entries, and each entry containing an asset's identifier, its counterparty, and its counterparty symbol will updates these mappings in the DB.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        PATCH /api/1/assets/counterpartymappings HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "location": "kucoin",
+          "entries": [
+            { "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", "counterparty_symbol": "UNI", "counterparty": "hyperliquid"},
+            { "asset": "eip155:1/erc20:0xF57e7e7C23978C3cAEC3C3548E3D615c346e79fF", "counterparty_symbol": "IMX", "counterparty": "hyperliquid"}
+          ]
+        }
+
+    :reqjson object entries: A list of mappings containing ``"asset"``, ``"counterparty_symbol"``, and ``"counterparty"`` to be updated in the database.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in case the mappings were updated successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were updated successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided mappings don't exist in the database or assets have incorrect format.
+    :statuscode 500: Internal rotki error.
+
+
+Delete asset mappings for a counterparty
+=============================================
+
+.. http:delete:: /api/(version)/assets/counterpartymappings
+
+    Doing a DELETE on the counterparty asset mappings endpoint with a list of entries, and each entry containing an asset's counterparty, and its counterparty symbol will delete these mappings from the DB.
+
+    **Example Request**
+
+    .. http:example:: curl wget httpie python-requests
+
+        DELETE /api/1/assets/counterpartymappings HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "entries": [
+            {"counterparty_symbol": "UNI", "counterparty": "hyperliquid"},
+            {"counterparty_symbol": "IMX", "counterparty": "hyperliquid"}
+          ]
+        }
+
+    :reqjson object entries: A list of objects containing ``"counterparty_symbol"`` and ``"counterparty"`` whose mappings should be deleted from the database.
+
+    **Example Response**
+
+    .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+            "result": true,
+            "message": ""
+        }
+
+    :resjson bool result: A boolean which is true in case the mappings were deleted successfully.
+    :resjson str message: Error message if any errors occurred.
+    :statuscode 200: Mappings were deleted successfully.
+    :statuscode 400: Provided JSON is in some way malformed.
+    :statuscode 409: Some of the provided asset identifiers don't exist in the database for the given counterparty or their format is incorrect.
+    :statuscode 500: Internal rotki error.
+
+
 Statistics for netvalue over time
 ====================================
 

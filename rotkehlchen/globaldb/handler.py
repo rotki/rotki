@@ -3,7 +3,7 @@ import shutil
 import sqlite3
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
 from gevent.lock import Semaphore
 
@@ -62,7 +62,11 @@ from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value, initialize_glo
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.filtering import AssetsFilterQuery, LocationAssetMappingsFilterQuery
+    from rotkehlchen.db.filtering import (
+        AssetsFilterQuery,
+        CounterpartyAssetMappingsFilterQuery,
+        LocationAssetMappingsFilterQuery,
+    )
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -2013,31 +2017,41 @@ class GlobalDBHandler:
         return default if identifier is None else identifier[0]
 
     @staticmethod
-    def query_location_asset_mappings(
-            filter_query: 'LocationAssetMappingsFilterQuery',
+    def query_asset_mappings_by_type(
+            dict_keys: tuple[str, str, str],
+            mapping_type: Literal['location', 'counterparty'],
+            query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
+            filter_query: Union['LocationAssetMappingsFilterQuery', 'CounterpartyAssetMappingsFilterQuery'],  # noqa: E501
+            location_or_counterparty_reader_callback: Callable,
     ) -> tuple[list[dict[str, str | Location | None]], int, int]:
-        """Returns a tuple with the mappings, their amount according to the filter_query, and total
-        amount without any filter. Mappings are in the form of a list of dicts with the keys,
-        asset, location, and location_symbol."""
+        """Query asset mappings based on the mapping type.
+
+        Returns:
+          - A list of mapping dictionaries.
+          - The count of mappings matching the filter.
+          - The total count of mappings.
+
+        For location mappings, keys are: 'asset', 'location', 'location_symbol'.
+        For counterparty mappings, keys are: 'asset', 'counterparty', 'counterparty_symbol'.
+        """
         with GlobalDBHandler().conn.read_ctx() as cursor:
             mappings_total = cursor.execute(
-                'SELECT COUNT(*) FROM location_asset_mappings',
+                f'SELECT COUNT(*) FROM {mapping_type}_asset_mappings',
             ).fetchone()[0]
 
             query, bindings = filter_query.prepare(with_pagination=False)
             mappings_count = cursor.execute(
-                f'SELECT COUNT(*) FROM location_asset_mappings {query}', bindings,
+                f'SELECT COUNT(*) FROM {mapping_type}_asset_mappings {query}', bindings,
             ).fetchone()[0]
 
             query, bindings = filter_query.prepare()
             cursor.execute(
-                f'SELECT local_id, location, exchange_symbol FROM location_asset_mappings {query}', bindings,  # noqa: E501
+                f'SELECT {query_columns} FROM {mapping_type}_asset_mappings {query}', bindings,
             )
-            return [{
-                'asset': identifier,
-                'location': None if location is None else str(Location.deserialize_from_db(location)),  # noqa: E501
-                'location_symbol': symbol,
-            } for identifier, location, symbol in cursor], mappings_count, mappings_total
+            return [
+                location_or_counterparty_reader_callback(dict(zip(dict_keys, entry, strict=False)))
+                for entry in cursor
+            ], mappings_count, mappings_total
 
     @staticmethod
     def _execute_mapping_operation(
@@ -2201,7 +2215,7 @@ class GlobalDBHandler:
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
-            sql_query='DELETE FROM location_asset_mappings WHERE symbol=? AND counterparty=?',
+            sql_query='DELETE FROM counterparty_asset_mappings WHERE symbol=? AND counterparty=?',
             error_msg='Failed to delete the counterparty asset mapping of {entry} because it does not exist in the DB.',  # noqa: E501
         )
 
