@@ -8,7 +8,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
 import { Blockchain, toSentenceCase } from '@rotki/common';
 
@@ -20,24 +19,14 @@ const props = defineProps<BlockChainBalanceCardListProps>();
 
 const { total } = toRefs(props);
 
-const { getChainAccountType, getChainName } = useSupportedChains();
+const { getBlockchainRedirectLink, getChainName } = useSupportedChains();
 
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
-const navTarget = computed<RouteLocationRaw>(() => {
-  const chain = props.total.chain;
-  if (chain === Blockchain.ETH2) {
-    return {
-      path: `${Routes.STAKING}/eth`,
-    };
-  }
-
-  const target = getChainAccountType(chain) ?? 'evm';
-  return {
-    path: `${Routes.ACCOUNTS}/${target}`,
-  };
-});
+const navTarget = computed<RouteLocationRaw>(() => ({
+  path: getBlockchainRedirectLink(props.total.chain),
+}));
 
 function childData(identifier: string): ActionDataEntry | null {
   return SupportedSubBlockchainProtocolData.find(item => item.identifier === identifier) || null;

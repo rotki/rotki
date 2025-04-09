@@ -89,11 +89,15 @@ const page = computed(() => {
 });
 
 onMounted(async () => {
-  const location = get(lastLocation);
-  if (!location)
+  if (props.location) {
+    set(location, props.location);
+    return;
+  }
+  const lastLocationVal = get(lastLocation);
+  if (!lastLocationVal)
     return;
 
-  await redirect(location);
+  await redirect(lastLocationVal);
 });
 </script>
 

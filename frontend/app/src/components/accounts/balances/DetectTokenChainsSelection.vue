@@ -6,6 +6,10 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getTextToken } from '@rotki/common';
 
+const emit = defineEmits<{
+  'redetect:all': [];
+}>();
+
 const { t } = useI18n();
 
 const open = ref<boolean>(false);
@@ -54,10 +58,19 @@ function toggleSelectAll() {
 }
 
 async function detectClick(chain?: string) {
-  if (!chain)
+  if (chain) {
+    await massDetectTokens([chain]);
+  }
+  else {
     set(open, false);
-  const evmChains = chain ? [chain] : get(selectedChains);
-  await massDetectTokens(evmChains);
+    const selected = get(selectedChains);
+    if (selected.length === get(txEvmChains).length) {
+      emit('redetect:all');
+    }
+    else {
+      await massDetectTokens(selected);
+    }
+  }
 }
 
 function reset() {
@@ -108,7 +121,7 @@ watch(open, (open) => {
           clearable
         />
       </div>
-      <div class="p-4 border-b border-default">
+      <div class="px-4 py-2 text-xs font-medium uppercase border-b border-default bg-rui-grey-50 dark:bg-rui-grey-900">
         {{ t('account_balances.detect_tokens.selection.select') }}
       </div>
       <div class="h-[220px] overflow-y-auto">
@@ -128,7 +141,7 @@ watch(open, (open) => {
           />
         </div>
       </div>
-      <div class="p-4 border-t border-default flex items-center justify-between">
+      <div class="px-4 py-2 border-t border-default flex items-center justify-between">
         <RuiCheckbox
           color="primary"
           :disabled="isDetectingTokens"

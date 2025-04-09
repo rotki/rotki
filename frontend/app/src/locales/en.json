@@ -41,6 +41,10 @@
       "loading": "Please wait while rotki queries the blockchain..."
     },
     "detect_tokens": {
+      "confirmation": {
+        "message": "Are you sure you want to redetect tokens for all chains? It might take some time.",
+        "title": "Re-detect tokens for all chains"
+      },
       "selection": {
         "redetect": "Re-detect",
         "redetect_selected": " Re-detect {length} selected chain(s)",
@@ -1642,6 +1646,7 @@
     "default": "Connect to default",
     "message": "A connection to the rotki backend was not possible, would you like to retry again?",
     "retry": "Retry",
+    "retry_with_debug": "Retry with debug",
     "title": "Connection failure"
   },
   "connection_loading": {

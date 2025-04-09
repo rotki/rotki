@@ -1,10 +1,8 @@
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { MaybeRef } from '@vueuse/core';
 import { useSupportedChains } from '@/composables/info/chains';
-import { Routes } from '@/router/routes';
 import { useLocationStore } from '@/store/locations';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { Blockchain } from '@rotki/common';
 
 export const useLocations = createSharedComposable(() => {
   const { tradeLocations } = storeToRefs(useLocationStore());
@@ -15,7 +13,7 @@ export const useLocations = createSharedComposable(() => {
     return exchange?.name ?? '';
   };
 
-  const { getChainAccountType, getChainImageUrl, getChainName } = useSupportedChains();
+  const { getBlockchainRedirectLink, getChainImageUrl, getChainName } = useSupportedChains();
 
   const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
     const id = get(identifier);
@@ -25,9 +23,9 @@ export const useLocations = createSharedComposable(() => {
     const blockchainId = id.split(' ').join('_');
 
     if (isBlockchain(blockchainId)) {
-      const type = blockchainId === Blockchain.ETH2 ? 'validators' : getChainAccountType(blockchainId);
+      const detailPath = getBlockchainRedirectLink(blockchainId);
       return {
-        detailPath: `${Routes.BALANCES_BLOCKCHAIN.toString()}/${type}`,
+        detailPath,
         identifier: blockchainId,
         image: get(getChainImageUrl(blockchainId)),
         name: get(getChainName(blockchainId)),

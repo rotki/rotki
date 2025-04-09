@@ -22,6 +22,7 @@ import { useBlockchains } from '@/composables/blockchain';
 import { AccountExternalFilterSchema, type Filters, type Matcher, useBlockchainAccountFilter } from '@/composables/filters/blockchain-account';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useConfirmStore } from '@/store/confirm';
 import { SavedFilterLocation } from '@/types/filtering';
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
@@ -121,6 +122,18 @@ function getChains(row: BlockchainAccountGroupWithBalance): string[] {
   return excludedChains ? chains.filter(chain => !excludedChains.includes(chain)) : chains;
 }
 
+const { show } = useConfirmStore();
+
+function redetectAllClicked() {
+  show({
+    message: t('account_balances.detect_tokens.confirmation.message'),
+    title: t('account_balances.detect_tokens.confirmation.title'),
+    type: 'info',
+  }, () => {
+    handleBlockchainRefresh(undefined, true);
+  });
+}
+
 watchDebounced(
   logicOr(isDetectingTokens, isSectionLoading, operationRunning),
   async (isLoading, wasLoading) => {
@@ -175,7 +188,7 @@ defineExpose({
                   color="primary"
                   :loading="isDetectingTokens"
                   :disabled="refreshDisabled"
-                  @click="handleBlockchainRefresh(undefined, true)"
+                  @click="redetectAllClicked()"
                 >
                   <template #prepend>
                     <RuiIcon name="lu-refresh-ccw" />
@@ -187,7 +200,7 @@ defineExpose({
               {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
             </RuiTooltip>
 
-            <DetectTokenChainsSelection />
+            <DetectTokenChainsSelection @redetect:all="redetectAllClicked()" />
           </RuiButtonGroup>
 
           <DetectEvmAccounts />

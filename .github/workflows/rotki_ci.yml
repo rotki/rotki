@@ -272,7 +272,7 @@ jobs:
       - name: Set up uv
         run: |
           pip install --upgrade pip
-          pip install --no-cache uv
+          pip install --no-cache uv=="${UV_VERSION}"
 
       - name: Install dependencies
         run: |
