@@ -2859,49 +2859,11 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockpit"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        trades = rotki.data.db.get_trades(cursor=cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         history_events = dbevents.get_history_events(cursor=cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == len(warnings) == 0
-
-    assert trades == [
-        Trade(
-            timestamp=Timestamp(1673181840),
-            location=Location.BINANCE,
-            base_asset=A_ETH_MATIC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('223.7')),
-            rate=Price(FVal('0.7541')),
-            fee=Fee(FVal('0.2237')),
-            fee_currency=A_ETH_MATIC,
-            notes='spot',
-        ), Trade(
-            timestamp=Timestamp(1673192880),
-            location=Location.BINANCE,
-            base_asset=A_EUR,
-            quote_asset=A_ETH_MATIC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('106.1899')),
-            rate=Price(FVal('1.32310134956337655464408573696745170680074093675575549087060068801270177295581')),
-            fee=Fee(FVal('0.1061899')),
-            fee_currency=A_EUR,
-            notes='spot',
-        ), Trade(
-            timestamp=Timestamp(1673195040),
-            location=Location.BINANCE,
-            base_asset=A_BNB,
-            quote_asset=A_USDT,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.00092036')),
-            rate=Price(FVal('263.048328914772480333782432961015254900256421400321613281759311573732017906037')),
-            fee=Fee(FVal('0.0000184')),
-            fee_currency=A_BNB,
-            notes='',
-        ),
-    ]
 
     expected_history_events = [
         HistoryEvent(
@@ -2937,22 +2899,66 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             event_subtype=HistoryEventSubType.NONE,
             amount=FVal('0.01061899'),
             notes='Receive 0.01061899 EUR in binance',
-        ), AssetMovement(
+        ), SwapEvent(
             identifier=4,
+            timestamp=TimestampMS(1673181840000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_EUR,
+            amount=FVal('168.69217'),
+            notes='spot',
+        ), SwapEvent(
+            identifier=5,
+            timestamp=TimestampMS(1673181840000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH_MATIC,
+            amount=FVal('223.7'),
+        ), SwapEvent(
+            identifier=6,
+            timestamp=TimestampMS(1673181840000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH_MATIC,
+            amount=FVal('0.2237'),
+        ), SwapEvent(
+            identifier=7,
+            timestamp=TimestampMS(1673192880000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH_MATIC,
+            amount=FVal('140.5'),
+            notes='spot',
+        ), SwapEvent(
+            identifier=8,
+            timestamp=TimestampMS(1673192880000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_EUR,
+            amount=FVal('106.1899'),
+        ), SwapEvent(
+            identifier=9,
+            timestamp=TimestampMS(1673192880000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_EUR,
+            amount=FVal('0.1061899'),
+        ), AssetMovement(
+            identifier=10,
             location=Location.BINANCE,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1673194740000),
             asset=A_BNB,
             amount=FVal('0.0095'),
         ), AssetMovement(
-            identifier=6,
+            identifier=12,
             location=Location.EXTERNAL,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1673194740000),
             asset=A_BNB,
             amount=FVal('0.0095'),
         ), AssetMovement(
-            identifier=5,
+            identifier=11,
             location=Location.BINANCE,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1673194740000),
@@ -2960,7 +2966,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.0005'),
             is_fee=True,
         ), HistoryEvent(
-            identifier=7,
+            identifier=13,
             event_identifier='',
             sequence_index=1,
             timestamp=TimestampMS(1673194800000),
@@ -2971,50 +2977,71 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.00024391'),
             notes='Fee of 0.00024391 BNB in external',
         ), AssetMovement(
-            identifier=8,
+            identifier=14,
             location=Location.EXTERNAL,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1673194920000),
             asset=A_BNB,
             amount=FVal('0.00915109'),
         ), AssetMovement(
-            identifier=10,
+            identifier=16,
             location=Location.BINANCE,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1673194920000),
             asset=A_BNB,
             amount=FVal('0.00915109'),
         ), AssetMovement(
-            identifier=9,
+            identifier=15,
             location=Location.EXTERNAL,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1673194920000),
             asset=A_BNB,
             amount=FVal('0.000105'),
             is_fee=True,
+        ), SwapEvent(
+            identifier=17,
+            timestamp=TimestampMS(1673195040000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('0.24209916'),
+            asset=A_USDT,
+        ), SwapEvent(
+            identifier=18,
+            timestamp=TimestampMS(1673195040000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('0.00092036'),
+            asset=A_BNB,
+        ), SwapEvent(
+            identifier=19,
+            timestamp=TimestampMS(1673195040000),
+            location=Location.BINANCE,
+            event_subtype=HistoryEventSubType.FEE,
+            amount=FVal('0.0000184'),
+            asset=A_BNB,
         ), AssetMovement(
-            identifier=11,
+            identifier=20,
             location=Location.EXTERNAL,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1673204160000),
             asset=A_EUR,
             amount=FVal('150'),
         ), AssetMovement(
-            identifier=12,
+            identifier=21,
             location=Location.BITPANDA,
             event_type=HistoryEventType.DEPOSIT,
             timestamp=TimestampMS(1674759960000),
             asset=A_EUR,
             amount=FVal('1000'),
         ), AssetMovement(
-            identifier=13,
+            identifier=22,
             location=Location.BITPANDA,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1674760200000),
             asset=A_EUR,
             amount=FVal('1000'),
         ), HistoryEvent(
-            identifier=14,
+            identifier=23,
             event_identifier='',
             sequence_index=1,
             timestamp=TimestampMS(1675532220000),
@@ -3025,7 +3052,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.0181'),
             notes='Spend 0.0181 EUR in kraken',
         ), HistoryEvent(
-            identifier=15,
+            identifier=24,
             event_identifier='',
             sequence_index=0,
             timestamp=TimestampMS(1675532700000),
@@ -3036,7 +3063,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.0021'),
             notes='Fee of 0.0021 EUR in kraken',
         ), HistoryEvent(
-            identifier=16,
+            identifier=25,
             event_identifier='',
             sequence_index=1,
             timestamp=TimestampMS(1675532700000),
@@ -3047,7 +3074,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.0025'),
             notes='Receive 0.0025 EUR in kraken',
         ), HistoryEvent(
-            identifier=17,
+            identifier=26,
             event_identifier='',
             sequence_index=1,
             timestamp=TimestampMS(1675913100000),
@@ -3058,7 +3085,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.1932938'),
             notes='Staking reward of 0.1932938 MATIC in kraken',
         ), HistoryEvent(
-            identifier=18,
+            identifier=27,
             event_identifier='',
             sequence_index=1,
             timestamp=TimestampMS(1675954800000),
@@ -3070,6 +3097,5 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             notes='Receive 0.06 EUR in kraken',
         ),
     ]
-
     for actual, expected in zip(history_events, expected_history_events, strict=True):
         assert_is_equal_history_event(actual=actual, expected=expected)

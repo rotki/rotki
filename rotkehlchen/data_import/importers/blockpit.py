@@ -14,16 +14,16 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Fee, Location, Price, TradeType
+from rotkehlchen.types import Fee, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -91,21 +91,20 @@ class BlockpitImporter(BaseExchangeImporter):
             if (amount_in := deserialize_asset_amount(csv_row['Incoming Amount'])) == ZERO:
                 raise DeserializationError('Incoming amount in trade is zero.')
 
-            rate = Price(deserialize_asset_amount(csv_row['Outgoing Amount']) / amount_in)
-            trade = Trade(
-                timestamp=timestamp,
-                location=location,
-                base_asset=asset_resolver(csv_row['Incoming Asset']),
-                quote_asset=asset_resolver(csv_row['Outgoing Asset']),
-                trade_type=TradeType.BUY,  # Always considered a buy here
-                amount=amount_in,
-                rate=rate,
-                fee=fee_amount,
-                fee_currency=fee_currency,
-                notes=notes,
+            self.add_history_events(
+                write_cursor=write_cursor,
+                history_events=create_swap_events(
+                    timestamp=ts_sec_to_ms(timestamp),
+                    location=location,
+                    spend_asset=asset_resolver(csv_row['Outgoing Asset']),
+                    receive_asset=asset_resolver(csv_row['Incoming Asset']),
+                    spend_amount=deserialize_asset_amount(csv_row['Outgoing Amount']),
+                    receive_amount=amount_in,
+                    fee_amount=fee_amount,
+                    fee_asset=fee_currency,
+                    spend_notes=notes,
+                ),
             )
-            self.add_trade(write_cursor, trade)
-
         elif transaction_type in {'Deposit', 'Withdrawal', 'NonTaxableIn', 'NonTaxableOut'}:
             if transaction_type in {'Deposit', 'NonTaxableIn'}:
                 direction = 'Incoming'
