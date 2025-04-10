@@ -8,10 +8,14 @@ from rotkehlchen.data_import.utils import BaseExchangeImporter, maybe_set_transa
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.swap import (
+    SwapEvent,
+    create_swap_events,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
@@ -19,14 +23,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location, TradeType
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 class BittrexFileType(Enum):
@@ -52,7 +55,7 @@ class BittrexImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             file_type: BittrexFileType,
             timestamp_format: str = '%Y-%m-%dT%H:%M:%S',
-    ) -> Trade:
+    ) -> list[SwapEvent]:
         """
         Consume entries of bittrex order history csv
 
@@ -66,14 +69,14 @@ class BittrexImporter(BaseExchangeImporter):
             date = csv_row['Time (UTC)']
             base = csv_row['Base']
             quote = csv_row['Quote']
-            trade_type = TradeType.BUY if csv_row['Transaction'] == 'Bought' else TradeType.SELL
+            trade_type = 'buy' if csv_row['Transaction'] == 'Bought' else 'sell'
             amount = csv_row['Quantity (Base)']
             rate = csv_row['Price']
             order_id = csv_row['TXID']
         elif file_type == BittrexFileType.TRADES_OLD:
             date = csv_row['Closed']
             quote, base = csv_row['Exchange'].split('-')
-            trade_type = TradeType.BUY if csv_row['Type'] == 'LIMIT_BUY' else TradeType.SELL
+            trade_type = 'buy' if csv_row['Type'] == 'LIMIT_BUY' else 'sell'
             amount = csv_row['Quantity']
             rate = csv_row['Price']
             order_id = csv_row['OrderUuid']
@@ -81,26 +84,33 @@ class BittrexImporter(BaseExchangeImporter):
             date = csv_row['CLOSED']
             base = csv_row['MARKET']
             quote = csv_row['QUOTE']
-            trade_type = TradeType.BUY if csv_row['ORDERTYPE'] == 'LIMIT_BUY' else TradeType.SELL
+            trade_type = 'buy' if csv_row['ORDERTYPE'] == 'LIMIT_BUY' else 'sell'
             amount = csv_row['FILLED']
             rate = csv_row['LIMIT']
             order_id = csv_row['UUID']
-        return Trade(
-            timestamp=deserialize_timestamp_from_date(
+
+        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            raw_trade_type=trade_type,
+            base_asset=asset_from_bittrex(base),
+            quote_asset=(quote_asset := asset_from_bittrex(quote)),
+            amount=deserialize_asset_amount(amount),
+            rate=deserialize_price(rate),
+        )
+        return create_swap_events(
+            timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
                 date=date,
                 formatstr=timestamp_format,
                 location='Bittrex order history import',
-            ),
+            )),
             location=Location.BITTREX,
-            base_asset=asset_from_bittrex(base),
-            quote_asset=asset_from_bittrex(quote),
-            trade_type=trade_type,
-            amount=deserialize_asset_amount(amount),
-            rate=deserialize_price(rate),
-            fee=deserialize_fee(fee),
-            fee_currency=asset_from_bittrex(quote),
-            link=f'Imported bittrex trade {order_id} from csv',
-            notes=notes,
+            spend_asset=spend_asset,
+            receive_asset=receive_asset,
+            spend_amount=spend_amount,
+            receive_amount=receive_amount,
+            fee_asset=quote_asset,
+            fee_amount=deserialize_fee(fee),
+            unique_id=order_id,
+            spend_notes=notes,
         )
 
     @staticmethod
@@ -178,8 +188,7 @@ class BittrexImporter(BaseExchangeImporter):
         - UnsupportedCSVEntry if operation not supported
         - InputError if a column we need is missing
         """
-        consumer_fn: Callable[[dict[str, Any], BittrexFileType, str], list[AssetMovement]] | Callable[[dict[str, Any], BittrexFileType, str], Trade]  # noqa: E501
-        save_fn: Callable[[DBCursor, Trade], None] | Callable[[DBCursor, list[HistoryBaseEntry]], None]  # noqa: E501
+        consumer_fn: Callable[[dict[str, Any], BittrexFileType, str], list[AssetMovement]] | Callable[[dict[str, Any], BittrexFileType, str], list[SwapEvent]]  # noqa: E501
         with open(filepath, encoding='utf-8-sig') as csvfile:
             while True:
                 saved_pos = csvfile.tell()
@@ -191,35 +200,27 @@ class BittrexImporter(BaseExchangeImporter):
             if 'Date,Currency,Type,Address,Memo/Tag,TxId,Amount' in line:
                 file_type = BittrexFileType.DEPOSITS_AND_WITHDRAWALS
                 consumer_fn = self._consume_deposits_or_withdrawals
-                save_fn = self.add_history_events
             elif 'Id,Amount,Currency,Confirmations,LastUpdated,TxId,CryptoAddress' in line:
                 file_type = BittrexFileType.DEPOSITS
                 consumer_fn = self._consume_deposits_or_withdrawals
-                save_fn = self.add_history_events
             elif 'UUID,AMOUNT,CURRENCY,CRYPTOADDRESS,TXID,LASTUPDATED,CONFIRMATIONS,SOURCE,STATE' in line:  # noqa: E501
                 file_type = BittrexFileType.DEPOSITS_OLD
                 consumer_fn = self._consume_deposits_or_withdrawals
-                save_fn = self.add_history_events
             elif 'PaymentUuid,Currency,Amount,Address,Opened,Authorized,PendingPayment,TxCost,TxId,Canceled,InvalidAddress' in line:  # noqa: E501
                 file_type = BittrexFileType.WITHDRAWALS
                 consumer_fn = self._consume_deposits_or_withdrawals
-                save_fn = self.add_history_events
             elif 'UUID,AMOUNT,CURRENCY,ADDRESS,TXID,OPENED,LASTUPDATED,CLOSED,TXCOST,STATE' in line:  # noqa: E501
                 file_type = BittrexFileType.WITHDRAWALS_OLD
                 consumer_fn = self._consume_deposits_or_withdrawals
-                save_fn = self.add_history_events
             elif 'TXID,Time (UTC),Transaction,Order Type,Market,Base,Quote,Price,Quantity (Base),Fees (Quote),Total (Quote),Approx Value (USD),Time In Force,Notes' in line:  # noqa: E501
                 file_type = BittrexFileType.TRADES
                 consumer_fn = self._consume_trades
-                save_fn = self.add_trade
             elif 'OrderUuid,Exchange,Type,Quantity,Limit,CommissionPaid,Price,Opened,Closed' in line:  # noqa: E501
                 file_type = BittrexFileType.TRADES_OLD
                 consumer_fn = self._consume_trades
-                save_fn = self.add_trade
             elif 'UUID,QUOTE,MARKET,ORDERTYPE,LIMIT,CEILING,QUANTITY,FILLED,PROCEEDS,COMISSIONPAID,OPENED,CLOSED,TIMEINFORCETYPE,ISCONDITIONAL,CONDITION,CONDITIONTARGET' in line:  # noqa: E501
                 file_type = BittrexFileType.TRADES_OLDER
                 consumer_fn = self._consume_trades
-                save_fn = self.add_trade
             else:
                 raise InputError('The given bittrex CSV file format can not be recognized')
 
@@ -227,8 +228,8 @@ class BittrexImporter(BaseExchangeImporter):
             for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
                     self.total_entries += 1
-                    event = consumer_fn(row, file_type, **kwargs)
-                    save_fn(write_cursor, event)  # type: ignore  # checked by if above
+                    events = consumer_fn(row, file_type, **kwargs)
+                    self.add_history_events(write_cursor=write_cursor, history_events=events)
                     self.imported_entries += 1
                 except DeserializationError as e:
                     self.send_message(
