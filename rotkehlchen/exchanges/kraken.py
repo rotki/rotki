@@ -666,10 +666,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
     def process_kraken_trades(
             self,
             raw_data: list[HistoryEvent],
-    ) -> tuple[list[SwapEvent], Timestamp]:
+    ) -> tuple[list[SwapEvent | HistoryEvent], Timestamp]:
         """
-        Given a list of history events we process them to create Trade objects. The valid
-        History events type are
+        Given a list of history events we process them to create SwapEvents.
+        The valid history event types are
         - Trade
         - Receive
         - Spend
@@ -683,7 +683,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         Example would be delisting of DAO token and forcible exchange to ETH.
 
         Returns:
-        - The list of trades processed
+        - The list of SwapEvents and adjustment events
         - The biggest timestamp of all the trades processed
 
         May raise:
@@ -732,6 +732,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     receive_amount=receive_event.amount,
                     unique_id='adjustment' + a1.event_identifier + a2.event_identifier,
                 ))
+                # Remove these adjustments since they are now represented by SwapEvents
+                adjustments.remove(a1)
+                adjustments.remove(a2)
 
         else:
             log.warning(
@@ -739,7 +742,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 f'Skipping reading them. {adjustments}',
             )
 
-        return swap_events, Timestamp(max_ts)
+        return swap_events + adjustments, Timestamp(max_ts)
 
     def process_kraken_raw_events(
             self,
