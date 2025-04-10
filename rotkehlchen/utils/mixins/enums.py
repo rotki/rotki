@@ -152,7 +152,13 @@ class DBCharEnumMixIn(SerializableEnumNameMixin, DBEnumMixIn):
                 f'Failed to deserialize {cls.__name__} DB value from non string value: {value}',
             )
 
-        number = ord(value)
+        try:
+            number = ord(value)
+        except TypeError as e:
+            raise DeserializationError(
+                f'Failed to deserialize {cls.__name__} DB value from multi-character value: {value}',  # noqa: E501
+            ) from e
+
         if number < 65 or number > list(cls)[-1].value + 64:
             raise DeserializationError(f'Failed to deserialize {cls.__name__} DB value {value}')
         return cls(number - 64)
