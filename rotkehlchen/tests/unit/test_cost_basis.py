@@ -26,7 +26,6 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
-    AssetAmount,
     CostBasisMethod,
     Fee,
     Location,
@@ -1133,7 +1132,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(100)),
+            amount=FVal(100),
             rate=Price(FVal(50)),
             fee=Fee(FVal(10)),
             fee_currency=A_EUR,
@@ -1144,7 +1143,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(50)),
+            amount=FVal(50),
             rate=Price(FVal(120)),
             fee=Fee(FVal(10)),
             fee_currency=A_EUR,
@@ -1155,7 +1154,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal(50)),
+            amount=FVal(50),
             rate=Price(FVal(130)),
             fee=Fee(FVal(10)),
             fee_currency=A_EUR,
@@ -1166,7 +1165,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal(40)),
+            amount=FVal(40),
             rate=Price(FVal(90)),
             fee=Fee(FVal(10)),
             fee_currency=A_EUR,

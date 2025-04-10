@@ -19,7 +19,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -95,7 +95,7 @@ Activity from uphold with uphold transaction id:
             else:  # Assets or amounts differ (Trades)
                 # in uphold UI the exchanged amount includes the fee.
                 if fee_asset == destination_asset:
-                    destination_amount = AssetAmount(destination_amount + fee)
+                    destination_amount += fee
                 if destination_amount > 0:
                     self.add_history_events(
                         write_cursor=write_cursor,

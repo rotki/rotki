@@ -232,9 +232,6 @@ Fee = NewType('Fee', T_Fee)
 T_Price = FVal
 Price = NewType('Price', T_Price)
 
-T_AssetAmount = FVal
-AssetAmount = NewType('AssetAmount', T_AssetAmount)
-
 T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 

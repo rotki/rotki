@@ -20,7 +20,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -31,6 +30,7 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.fval import FVal
 
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class Trade(AccountingEventMixin):
     trade_type: TradeType
     # The amount represents the amount bought if it's a buy or the amount
     # sold if it's a sell. Should NOT include fees
-    amount: AssetAmount
+    amount: 'FVal'
     rate: Price
     fee: Fee | None = None
     fee_currency: Asset | None = None
@@ -203,7 +203,7 @@ class Trade(AccountingEventMixin):
             asset_out = self.base_asset
             amount_out = self.amount
             asset_in = self.quote_asset
-            amount_in = self.rate * self.amount  # type: ignore
+            amount_in = self.rate * self.amount
             notes = f'Sell {asset_out} for {asset_in}.'
         else:  # settlement buy/sell only in poloniex. Should properly process when margin
             return 1  # trades are implemented
@@ -314,7 +314,7 @@ class MarginPosition(AccountingEventMixin):
     open_time: Timestamp | None
     close_time: Timestamp
     # Profit loss in pl_currency (does not include fees)
-    profit_loss: AssetAmount
+    profit_loss: 'FVal'
     # The asset gained or lost
     pl_currency: Asset
     # Amount of fees paid
@@ -433,7 +433,7 @@ class MarginPosition(AccountingEventMixin):
             direction = EventDirection.IN
         else:
             direction = EventDirection.OUT
-            amount = -self.profit_loss  # type: ignore
+            amount = -self.profit_loss
 
         accounting.add_asset_change_event(
             direction=direction,
@@ -468,8 +468,8 @@ class Loan(AccountingEventMixin):
     close_time: Timestamp
     currency: Asset
     fee: Fee
-    earned: AssetAmount
-    amount_lent: AssetAmount
+    earned: 'FVal'
+    amount_lent: 'FVal'
 
     # -- Methods of AccountingEventMixin
 

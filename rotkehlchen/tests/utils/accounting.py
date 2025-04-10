@@ -20,7 +20,7 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import Fee, Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -54,7 +54,7 @@ history1 = [
         base_asset=A_BTC,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal(82)),
+        amount=FVal(82),
         rate=Price(FVal('268.678317859')),
         fee=None,
         fee_currency=None,
@@ -65,7 +65,7 @@ history1 = [
         base_asset=A_ETH,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal(1450)),
+        amount=FVal(1450),
         rate=Price(FVal('0.2315893')),
         fee=None,
         fee_currency=None,
@@ -76,7 +76,7 @@ history1 = [
         base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 10.36
         quote_asset=A_BTC,
         trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal(50)),
+        amount=FVal(50),
         rate=Price(FVal('0.01858275')),
         fee=Fee(FVal('0.06999999999999999')),
         fee_currency=A_ETH,
@@ -87,7 +87,7 @@ history1 = [
         base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 11.925
         quote_asset=A_BTC,
         trade_type=TradeType.SELL,
-        amount=AssetAmount(FVal(25)),
+        amount=FVal(25),
         rate=Price(FVal('0.02209898')),
         fee=Fee(FVal('0.00082871175')),
         fee_currency=A_BTC,

@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import Fee, Location, Price, Timestamp, TimestampMS, TradeType
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -57,7 +57,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_USDT,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('0.02')),
+            amount=FVal('0.02'),
             rate=Price(FVal(1000)),
             fee=Fee(FVal(30)),  # KFEE should not be taken into account
             fee_currency=A_KFEE,
@@ -88,7 +88,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.BUY,
-            amount=AssetAmount(ONE),
+            amount=ONE,
             rate=Price(FVal('598.26')),
             fee=Fee(ONE),
             fee_currency=A_EUR,
@@ -101,7 +101,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('0.5')),
+            amount=FVal('0.5'),
             rate=Price(FVal('1862.06')),
             fee=Fee(FVal('0.5')),
             fee_currency=A_ETH,
@@ -114,7 +114,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             base_asset=A_ETH,
             quote_asset=A_EUR,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('0.5')),
+            amount=FVal('0.5'),
             rate=Price(FVal('1837.31')),
             fee=None,
             fee_currency=None,
@@ -211,7 +211,7 @@ def test_main_currency_is_respected(
             base_asset=A_ETH2,
             quote_asset=A_USD,
             trade_type=TradeType.SELL,
-            amount=AssetAmount(FVal('0.04')),
+            amount=FVal('0.04'),
             rate=trade_rate,
             fee=Fee(ZERO),
             fee_currency=A_EUR,

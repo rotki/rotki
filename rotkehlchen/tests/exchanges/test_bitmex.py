@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import AssetAmount, Fee, Timestamp, TimestampMS
+from rotkehlchen.types import Fee, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -228,7 +228,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         location=Location.BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
-        profit_loss=AssetAmount(FVal('0.00000683')),
+        profit_loss=FVal('0.00000683'),
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,
@@ -238,7 +238,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         location=Location.BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
-        profit_loss=AssetAmount(FVal('0.00000183')),
+        profit_loss=FVal('0.00000183'),
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,
@@ -248,7 +248,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         location=Location.BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
-        profit_loss=AssetAmount(FVal('0.0000004')),
+        profit_loss=FVal('0.0000004'),
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,
@@ -258,7 +258,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         location=Location.BITMEX,
         open_time=None,
         close_time=Timestamp(1536580800),
-        profit_loss=AssetAmount(FVal('0.00000003')),
+        profit_loss=FVal('0.00000003'),
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,
@@ -268,7 +268,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         location=Location.BITMEX,
         open_time=None,
         close_time=Timestamp(1536494400),
-        profit_loss=AssetAmount(FVal('-0.00007992')),
+        profit_loss=FVal('-0.00007992'),
         pl_currency=A_BTC,
         fee=Fee(ZERO),
         fee_currency=A_BTC,

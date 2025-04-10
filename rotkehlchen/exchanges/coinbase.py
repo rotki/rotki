@@ -53,7 +53,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -702,7 +701,7 @@ class Coinbase(ExchangeInterface):
             if tx_b['amount']['amount'].startswith('-'):
                 tx_a, tx_b = tx_b, tx_a
 
-            tx_amount = AssetAmount(abs(deserialize_asset_amount(tx_a['amount']['amount'])))
+            tx_amount = abs(deserialize_asset_amount(tx_a['amount']['amount']))
             tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
             native_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
             native_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
@@ -755,7 +754,7 @@ class Coinbase(ExchangeInterface):
                     fee_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
 
         else:  # only one transaction
-            tx_amount = AssetAmount(abs(deserialize_asset_amount(tx_a['amount']['amount'])))
+            tx_amount = abs(deserialize_asset_amount(tx_a['amount']['amount']))
             tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
             native_amount = abs(deserialize_asset_amount(tx_a['native_amount']['amount']))
             native_asset = asset_from_coinbase(tx_a['native_amount']['currency'], time=timestamp)
@@ -914,13 +913,13 @@ class Coinbase(ExchangeInterface):
         quote_asset = asset_from_coinbase(asset_identifiers[1], time=timestamp)
         rate = Price(deserialize_fval(event['advanced_trade_fill']['fill_price'], name='fill_price', location='Coinbase advanced trade'))  # noqa: E501
         if tx_asset == quote_asset:  # calculate trade amount depending on the denominated asset
-            amount /= rate  # type: ignore[assignment]  # mixing asset amount and fval types
+            amount /= rate
 
         spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
             raw_trade_type=order_side,
             base_asset=asset_from_coinbase(asset_identifiers[0], time=timestamp),
             quote_asset=quote_asset,
-            amount=AssetAmount(abs(amount)),
+            amount=abs(amount),
             rate=rate,
         )
         return create_swap_events(
@@ -1001,7 +1000,7 @@ class Coinbase(ExchangeInterface):
                         )
                     else:
                         fee = deserialize_fee(raw_fee['amount'])
-                        amount = AssetAmount(amount - fee)  # fee is deducted from withdrawal amount  # noqa: E501
+                        amount -= fee  # fee is deducted from withdrawal amount
 
             if 'network' in raw_data:
                 transaction_hash = get_key_if_has_val(raw_data['network'], 'hash')

@@ -30,7 +30,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import A_DASH
-from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import ChainID, Location, Price, Timestamp, TradeType
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -167,7 +167,7 @@ def test_get_historical_asset_balance(
                     base_asset=A_BTC,
                     quote_asset=A_EUR,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(FVal('0.2')),
+                    amount=FVal('0.2'),
                     rate=Price(FVal('16000.0')),
                 ),
             ],
@@ -205,7 +205,7 @@ def test_get_historical_asset_amounts_over_time(
                 base_asset=A_BTC,
                 quote_asset=A_EUR,
                 trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('1.5')),
+                amount=FVal('1.5'),
                 rate=Price(FVal('16000.0')),
                 link='trade1',
             ), Trade(  # Second trade with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
@@ -214,7 +214,7 @@ def test_get_historical_asset_amounts_over_time(
                 base_asset=A_BTC,
                 quote_asset=A_EUR,
                 trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('0.5')),
+                amount=FVal('0.5'),
                 rate=Price(FVal('16000.0')),
                 link='trade2',
             )],
@@ -471,7 +471,7 @@ def test_get_historical_netvalue(
                     base_asset=A_BTC,
                     quote_asset=A_EUR,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(FVal('0.2')),
+                    amount=FVal('0.2'),
                     rate=Price(FVal('16000.0')),
                 ), Trade(
                     timestamp=Timestamp(START_TS + DAY_IN_SECONDS * 2),  # Day 3
@@ -479,7 +479,7 @@ def test_get_historical_netvalue(
                     base_asset=A_ETH,
                     quote_asset=A_EUR,
                     trade_type=TradeType.SELL,
-                    amount=AssetAmount(FVal('0.2')),
+                    amount=FVal('0.2'),
                     rate=Price(FVal('1200.0')),
                 ),
             ],

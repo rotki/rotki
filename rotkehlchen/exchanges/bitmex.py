@@ -37,7 +37,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     ExchangeAuthCredentials,
     Fee,
     Timestamp,
@@ -87,14 +86,14 @@ def margin_trade_from_bitmex(bitmex_trade: dict, decimals: dict[str, int]) -> Ma
     """
     close_time = iso8601ts_to_timestamp(bitmex_trade['transactTime'])
     currency = bitmex_to_world(bitmex_trade['currency'])
-    profit_loss = AssetAmount(normalized_fval_value_decimals(
+    profit_loss = normalized_fval_value_decimals(
         amount=deserialize_fval(
             value=bitmex_trade['amount'],
             location='bitmex margin trade',
             name='profit loss',
         ),
         decimals=decimals[bitmex_trade['currency']],
-    ))
+    )
 
     fee = deserialize_fee(bitmex_trade['fee'])
     notes = bitmex_trade['address']
@@ -397,10 +396,10 @@ class Bitmex(ExchangeInterface):
                 )) < ZERO:
                     raw_amount = -raw_amount
 
-                amount = AssetAmount(normalized_fval_value_decimals(
+                amount = normalized_fval_value_decimals(
                     amount=raw_amount,
                     decimals=decimals,
-                ))
+                )
 
                 movements.extend(create_asset_movement_with_fee(
                     location=self.location,

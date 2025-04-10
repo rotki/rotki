@@ -49,7 +49,6 @@ from rotkehlchen.tests.utils.factories import make_random_uppercasenumeric_strin
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -637,7 +636,7 @@ def test_delete_external_exchange_data_works(
         base_asset=A_ETH,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=AssetAmount(ONE),
+        amount=ONE,
         rate=Price(ONE),
         fee=Fee(ONE),
         fee_currency=A_EUR,

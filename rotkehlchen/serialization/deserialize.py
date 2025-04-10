@@ -17,7 +17,6 @@ from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
-    AssetAmount,
     ChainID,
     ChecksumEvmAddress,
     EvmInternalTransaction,
@@ -255,16 +254,16 @@ def deserialize_fval_or_zero(
     return deserialize_fval(value=value, name=name, location=location)
 
 
-def deserialize_asset_amount(amount: AcceptableFValInitInput) -> AssetAmount:
+def deserialize_asset_amount(amount: AcceptableFValInitInput) -> FVal:
     try:
-        result = AssetAmount(FVal(amount))
+        result = FVal(FVal(amount))
     except ValueError as e:
         raise DeserializationError(f'Failed to deserialize an amount entry: {e!s}') from e
 
     return result
 
 
-def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> AssetAmount:
+def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> FVal:
     """Acts exactly like deserialize_asset_amount but also forces the number to be positive
 
     Is needed for some places like some exchanges that list the withdrawal amounts as
@@ -275,7 +274,7 @@ def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> 
     """
     result = deserialize_asset_amount(amount)
     if result < ZERO:
-        result = AssetAmount(abs(result))
+        result = FVal(abs(result))
     return result
 
 

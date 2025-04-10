@@ -45,7 +45,6 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ApiSecret,
-    AssetAmount,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -279,7 +278,7 @@ class AmountField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: AssetAmount,
+            value: FVal,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -292,7 +291,7 @@ class AmountField(fields.Field):
             attr: str | None,  # pylint: disable=unused-argument
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
-    ) -> AssetAmount:
+    ) -> FVal:
         try:
             amount = deserialize_asset_amount(value)
         except DeserializationError as e:
@@ -309,7 +308,7 @@ class PositiveAmountField(AmountField):
             attr: str | None,
             data: Mapping[str, Any] | None,
             **kwargs: Any,
-    ) -> AssetAmount:
+    ) -> FVal:
         amount = super()._deserialize(value, attr, data, **kwargs)
         if amount <= ZERO:
             raise ValidationError(f'Non-positive amount {value} given. Amount should be > 0')

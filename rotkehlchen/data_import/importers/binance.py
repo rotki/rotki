@@ -15,6 +15,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -25,7 +26,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -69,7 +69,7 @@ class BinanceSingleEntry(BinanceEntry, abc.ABC):
     """
     AVAILABLE_OPERATIONS: tuple[str, ...]
 
-    def is_entry(self, requested_operation: str, account: str, change: AssetAmount) -> bool:  # pylint: disable=unused-argument
+    def is_entry(self, requested_operation: str, account: str, change: FVal) -> bool:  # pylint: disable=unused-argument
         """This method checks whether row with "requested_operation" could be processed
         by a class on which this method has been called.
         Some subclasses require combined checks with the "account" and "change" to
@@ -277,9 +277,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         raw_trades: list[Trade] = []
         for trade_rows in grouped_trade_rows:
             to_asset: AssetWithOracles | None = None
-            to_amount: AssetAmount | None = None
+            to_amount: FVal | None = None
             from_asset: AssetWithOracles | None = None
-            from_amount: AssetAmount | None = None
+            from_amount: FVal | None = None
             fee_asset: AssetWithOracles | None = None
             fee_amount: Fee | None = None
             trade_type: TradeType | None = None
@@ -294,7 +294,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY
                     if amount < 0:
                         from_asset = cur_asset
-                        from_amount = AssetAmount(-amount)
+                        from_amount = FVal(-amount)
                     else:
                         to_asset = cur_asset
                         to_amount = amount
@@ -343,7 +343,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         for trades_group in grouped_trades.values():
             result_trade = trades_group[0]
             for trade in trades_group[1:]:
-                result_trade.amount = AssetAmount(result_trade.amount + trade.amount)
+                result_trade.amount += trade.amount
                 if result_trade.fee is not None and trade.fee is not None:
                     result_trade.fee = Fee(result_trade.fee + trade.fee)
             unique_trades.append(result_trade)
@@ -558,7 +558,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
         'Realized Profit and Loss',
     )
 
-    def is_entry(self, requested_operation: str, account: str, change: AssetAmount) -> bool:
+    def is_entry(self, requested_operation: str, account: str, change: FVal) -> bool:
         if requested_operation in {'Fee', 'Funding Fee'} and change == abs(change):
             return False
         return requested_operation in self.AVAILABLE_OPERATIONS and account == self.ACCOUNT

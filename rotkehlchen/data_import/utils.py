@@ -11,7 +11,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
-from rotkehlchen.types import AssetAmount, Fee, Location, TimestampMS
+from rotkehlchen.types import Fee, Location, TimestampMS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -193,7 +194,7 @@ def hash_csv_row(csv_row: Mapping[str, Any]) -> str:
 def detect_duplicate_event(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
-        amount: AssetAmount,
+        amount: 'FVal',
         asset: 'Asset',
         timestamp_ms: TimestampMS,
         location: Location,

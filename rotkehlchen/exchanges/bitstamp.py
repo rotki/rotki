@@ -46,7 +46,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -808,7 +807,7 @@ class Bitstamp(ExchangeInterface):
             raw_trade_type='buy' if base_asset_amount >= ZERO else 'sell',
             base_asset=trade_pair_data.base_asset,
             quote_asset=trade_pair_data.quote_asset,
-            amount=AssetAmount(abs(base_asset_amount)),
+            amount=abs(base_asset_amount),
             rate=deserialize_price(raw_trade[trade_pair_data.pair]),
         )
         return create_swap_events(

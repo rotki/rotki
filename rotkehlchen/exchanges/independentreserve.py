@@ -42,7 +42,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     ExchangeAuthCredentials,
     Timestamp,
 )
@@ -351,7 +350,7 @@ class Independentreserve(ExchangeInterface):
                     raw_trade_type='buy' if 'Bid' in raw_trade['OrderType'] else 'sell',
                     base_asset=(base_asset := independentreserve_asset(raw_trade['PrimaryCurrencyCode'])),  # noqa: E501
                     quote_asset=independentreserve_asset(raw_trade['SecondaryCurrencyCode']),
-                    amount=AssetAmount(amount := (FVal(raw_trade['Volume']) - FVal(raw_trade['Outstanding']))),  # noqa: E501
+                    amount=(amount := (FVal(raw_trade['Volume']) - FVal(raw_trade['Outstanding']))),  # noqa: E501
                     rate=Price(FVal(raw_trade['AvgPrice'])),
                 )
                 events.extend(create_swap_events(

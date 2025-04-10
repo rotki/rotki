@@ -12,7 +12,6 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response
 from rotkehlchen.tests.utils.exchanges import mock_exchange_data_in_db
 from rotkehlchen.types import (
     EVM_LOCATIONS_TYPE,
-    AssetAmount,
     ChecksumEvmAddress,
     Fee,
     Location,
@@ -49,7 +48,7 @@ def test_get_associated_locations(
                 base_asset=A_ETH,
                 quote_asset=A_EUR,
                 trade_type=TradeType.BUY,
-                amount=AssetAmount(FVal('1.0')),
+                amount=FVal('1.0'),
                 rate=Price(FVal('281.14')),
                 fee=Fee(ZERO),
                 fee_currency=A_EUR,
