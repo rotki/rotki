@@ -27,7 +27,6 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
-    AssetAmount,
     Location,
     Price,
     Timestamp,
@@ -42,7 +41,7 @@ history5 = history1 + [Trade(
     base_asset=A_BTC,
     quote_asset=A_EUR,
     trade_type=TradeType.SELL,
-    amount=AssetAmount(FVal('20')),
+    amount=FVal('20'),
     rate=Price(FVal('13503.35')),
     fee=None,
     fee_currency=None,

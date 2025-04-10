@@ -43,7 +43,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -1124,7 +1123,7 @@ def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
                     base_asset=A_BTC,
                     quote_asset=A_ETH,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(ONE),
+                    amount=ONE,
                     rate=Price(ONE),
                     fee=Fee(FVal('0.1')),
                     fee_currency=A_ETH,

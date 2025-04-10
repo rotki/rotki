@@ -36,7 +36,6 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
-    AssetAmount,
     BTCAddress,
     ChainID,
     ChecksumEvmAddress,
@@ -493,7 +492,7 @@ def test_query_wrap(
                     base_asset=A_ETH,
                     quote_asset=A_BTC,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(ONE),
+                    amount=ONE,
                     rate=Price(ONE),
                     fee=Fee(FVal('0.1')),
                     fee_currency=A_BTC,
@@ -505,7 +504,7 @@ def test_query_wrap(
                     base_asset=A_ETH,
                     quote_asset=A_BTC,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(FVal(2)),
+                    amount=FVal(2),
                     rate=Price(ONE),
                     fee=Fee(FVal('0.1')),
                     fee_currency=A_BTC,
@@ -517,7 +516,7 @@ def test_query_wrap(
                     base_asset=A_ETH,
                     quote_asset=A_BTC,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(FVal(2)),
+                    amount=FVal(2),
                     rate=Price(ONE),
                     fee=Fee(FVal('0.1')),
                     fee_currency=A_BTC,
@@ -529,7 +528,7 @@ def test_query_wrap(
                     base_asset=A_ETH,
                     quote_asset=A_BTC,
                     trade_type=TradeType.BUY,
-                    amount=AssetAmount(FVal(2)),
+                    amount=FVal(2),
                     rate=Price(ONE),
                     fee=Fee(FVal('0.1')),
                     fee_currency=A_BTC,

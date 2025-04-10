@@ -30,7 +30,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -453,7 +452,7 @@ class CryptocomImporter(BaseExchangeImporter):
                         base_asset=base_asset,
                         quote_asset=quote_asset,
                         trade_type=TradeType.BUY,
-                        amount=AssetAmount(base_amount_bought),
+                        amount=base_amount_bought,
                         rate=rate,
                         fee=fee,
                         fee_currency=fee_currency,

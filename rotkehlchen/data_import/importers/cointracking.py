@@ -29,7 +29,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
+from rotkehlchen.types import Fee, Location, Price, TradeType
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -140,7 +140,7 @@ class CointrackingImporter(BaseExchangeImporter):
             if csv_row['Sell'] != '-':
                 quote_amount_sold = deserialize_asset_amount(csv_row['Sell'])
             else:
-                quote_amount_sold = AssetAmount(ZERO)
+                quote_amount_sold = ZERO
             rate = Price(quote_amount_sold / base_amount_bought)
 
             trade = Trade(

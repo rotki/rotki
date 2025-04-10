@@ -51,7 +51,6 @@ from rotkehlchen.tests.utils.history import (
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import (
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -492,7 +491,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> No
         base_asset=A_DAI,
         quote_asset=A_EUR,
         trade_type=TradeType.BUY,
-        amount=AssetAmount(FVal('1')),
+        amount=FVal('1'),
         rate=Price(FVal('320')),
         fee=Fee(ZERO),
         fee_currency=A_EUR,

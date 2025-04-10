@@ -22,7 +22,6 @@ from rotkehlchen.tests.utils.accounting import accounting_create_and_process_his
 from rotkehlchen.tests.utils.exchanges import mock_normal_coinbase_query
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.types import (
-    AssetAmount,
     Fee,
     Location,
     Price,
@@ -75,7 +74,7 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_trades(write_cursor, trades=[Trade(
             timestamp=Timestamp(1611426201),
-            amount=AssetAmount(ONE),
+            amount=ONE,
             base_asset=A_ETH,
             quote_asset=A_BTC,
             trade_type=TradeType.BUY,
@@ -83,7 +82,7 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
             location=Location.COINBASE,
         ), Trade(
             timestamp=Timestamp(1611426201),
-            amount=AssetAmount(FVal(7)),
+            amount=FVal(7),
             base_asset=A_USDT,
             quote_asset=A_LINK,
             trade_type=TradeType.SELL,
@@ -111,7 +110,7 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
             location=Location.COINBASE,
             open_time=Timestamp(1611426200),
             close_time=Timestamp(1611426201),
-            profit_loss=AssetAmount(ONE),
+            profit_loss=ONE,
             pl_currency=A_BTC,
             fee=Fee(ZERO),
             fee_currency=A_BTC,

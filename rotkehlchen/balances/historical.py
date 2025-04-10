@@ -453,13 +453,13 @@ class HistoricalBalancesManager:
                 spend_asset = event.base_asset
                 receive_asset = event.quote_asset
                 spend_amount = event.amount
-                receive_amount = event.amount * event.rate  # type: ignore[assignment]  # AssetAmount is the same as fval
+                receive_amount = event.amount * event.rate
 
             if assets is not None:  # Only include amounts for the specified assets.
                 if spend_asset not in assets:
                     spend_amount = ZERO
                 if receive_asset not in assets:
-                    receive_amount = ZERO  # type: ignore[assignment]  # AssetAmount is the same as fval
+                    receive_amount = ZERO
 
             if current_balances[spend_asset] - spend_amount < ZERO:
                 return event.identifier, None
