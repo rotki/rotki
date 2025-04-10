@@ -76,6 +76,7 @@ export default defineConfig({
       'vanilla-jsoneditor',
       '@reown/appkit',
       '@reown/appkit/vue',
+      '@reown/appkit/networks',
       '@reown/appkit-adapter-wagmi',
       '@reown/walletkit',
       '@walletconnect/core',
