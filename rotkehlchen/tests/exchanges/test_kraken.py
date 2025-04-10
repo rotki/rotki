@@ -492,6 +492,48 @@ def test_kraken_trade_with_adjustment(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_adjustment(kraken):
+    """Test that a plain adjustment event (no associated trade) is handled correctly."""
+    kraken.random_trade_data = False
+    kraken.random_ledgers_data = False
+    kraken.cache_ttl_secs = 0
+
+    with patch(
+        target='rotkehlchen.tests.utils.kraken.KRAKEN_GENERAL_LEDGER_RESPONSE',
+        new="""{"count": 1, "ledger": {"L1": {
+            "aclass": "currency",
+            "amount": "283.79600",
+            "asset": "SYRUP",
+            "balance": "283.79600",
+            "fee": "0.00000",
+            "refid": "xxxx",
+            "time": 1731508592.028446,
+            "type": "transfer",
+            "subtype": "spotfromfutures"
+        }}}""",
+    ):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        assert DBHistoryEvents(kraken.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+            has_premium=True,
+        ) == [HistoryEvent(
+            identifier=1,
+            event_identifier='xxxx',
+            sequence_index=0,
+            timestamp=TimestampMS(1731508592028),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.ADJUSTMENT,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x643C4E15d7d62Ad0aBeC4a9BD4b001aA3Ef52d66'),
+            amount=FVal('283.79600'),
+            location_label=kraken.name,
+        )]
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_no_counterpart(kraken):
     """Test that trades with no counterpart are processed properly"""
     kraken.random_trade_data = False
