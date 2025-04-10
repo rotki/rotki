@@ -16,7 +16,10 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
-from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    create_asset_movement_with_fee,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -105,10 +108,9 @@ class BitMEXImporter(BaseExchangeImporter):
             formatstr=timestamp_format,
             location='Bitmex Wallet History Import',
         )
-        events = [AssetMovement(
+        return create_asset_movement_with_fee(
             timestamp=ts_sec_to_ms(ts),
             location=Location.BITMEX,
-            event_type=event_type,
             asset=asset,
             amount=amount,
             unique_id=(transaction_id := get_key_if_has_val(csv_row, 'tx')),
@@ -116,18 +118,10 @@ class BitMEXImporter(BaseExchangeImporter):
                 address=deserialize_asset_movement_address(csv_row, 'address', asset),
                 transaction_id=transaction_id,
             ),
-        )]
-        if fee != ZERO:
-            events.append(AssetMovement(
-                timestamp=ts_sec_to_ms(ts),
-                location=Location.BITMEX,
-                event_type=event_type,
-                asset=asset,
-                amount=fee,
-                unique_id=transaction_id,
-                is_fee=True,
-            ))
-        return events
+            event_type=event_type,
+            fee_asset=asset,
+            fee=fee,
+        )
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """

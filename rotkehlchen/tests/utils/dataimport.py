@@ -1572,7 +1572,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
         ),
         AssetMovement(
             identifier=2,
-            event_identifier='415ec13a5c2e79c101ede3f4178cfb3dd576c96ed3037fd96d56e1ea89ba039d',
+            event_identifier='c7ee1cfaa00878d7079cdc2ebf0f15477e9116fc1284f0ebf298db26405e5897',
             location=Location.BITMEX,
             event_type=HistoryEventType.WITHDRAWAL,
             timestamp=TimestampMS(1577252845000),
