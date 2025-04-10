@@ -17,6 +17,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -98,42 +99,22 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             receive_asset_balance = quote_asset_balance
             spend_asset_balance = base_asset_balance
 
-        spend_event = HistoryEvent(
-            event_identifier=event_identifier,
-            sequence_index=0,
-            timestamp=timestamp,
-            location=location,
-            asset=spend_asset_balance.asset,
-            amount=spend_asset_balance.balance.amount,
-            notes=memo,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.SPEND,
-        )
-        receive_event = HistoryEvent(
-            event_identifier=event_identifier,
-            sequence_index=1,
-            timestamp=timestamp,
-            location=location,
-            asset=receive_asset_balance.asset,
-            amount=receive_asset_balance.balance.amount,
-            notes=memo,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.RECEIVE,
-        )
-        self.add_history_events(write_cursor, [spend_event, receive_event])
-        if fee_asset_balance is not None:
-            fee_event = HistoryEvent(
+        fee_asset, fee_amount = (fee_asset_balance.asset, fee_asset_balance.amount) if fee_asset_balance is not None else (None, None)  # noqa: E501
+        self.add_history_events(
+            write_cursor=write_cursor,
+            history_events=create_swap_events(
                 event_identifier=event_identifier,
-                sequence_index=2,
                 timestamp=timestamp,
                 location=location,
-                asset=fee_asset_balance.asset,
-                amount=fee_asset_balance.balance.amount,
-                notes=memo,
-                event_type=HistoryEventType.TRADE,
-                event_subtype=HistoryEventSubType.FEE,
-            )
-            self.add_history_events(write_cursor, [fee_event])
+                spend_asset=spend_asset_balance.asset,
+                receive_asset=receive_asset_balance.asset,
+                spend_amount=spend_asset_balance.amount,
+                receive_amount=receive_asset_balance.amount,
+                spend_notes=memo,
+                fee_asset=fee_asset,  # type: ignore[arg-type]
+                fee_amount=fee_amount,  # type: ignore[arg-type]
+            ),
+        )
 
     def _consume_income_spending_event(
             self,

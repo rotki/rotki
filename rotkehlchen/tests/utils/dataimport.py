@@ -2422,79 +2422,63 @@ def assert_bitcoin_tax_trades_import_results(
         rotki: Rotkehlchen,
         csv_file_name: Literal['bitcoin_tax_trades.csv', 'bitcoin_tax_spending.csv'],
 ):
+    dummy_event_id = '1xyz'  # just a placeholder as comparison is done without this field  # noqa: E501
+    expected_history_events: list[HistoryEvent | SwapEvent]
     if csv_file_name == 'bitcoin_tax_trades.csv':
         expected_history_events = [
-            HistoryEvent(
+            SwapEvent(
                 identifier=1,
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-                sequence_index=0,
+                event_identifier=dummy_event_id,
                 timestamp=TimestampMS(1528060575000),
                 location=Location.COINBASEPRO,
                 asset=A_EUR,
-                event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 amount=FVal('1008'),
-                notes='',
             ),
-            HistoryEvent(
+            SwapEvent(
                 identifier=2,
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-                sequence_index=1,
+                event_identifier=dummy_event_id,
                 timestamp=TimestampMS(1528060575000),
                 location=Location.COINBASEPRO,
                 asset=A_BCH,
-                event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 amount=FVal('0.99735527'),
-                notes='',
             ),
-            HistoryEvent(
+            SwapEvent(
                 identifier=3,
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-                sequence_index=2,
+                event_identifier=dummy_event_id,
                 timestamp=TimestampMS(1528060575000),
                 location=Location.COINBASEPRO,
                 asset=A_EUR,
-                event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.FEE,
                 amount=FVal('3.01495511'),
-                notes='',
             ),
-            HistoryEvent(
+            SwapEvent(
                 identifier=4,
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-                sequence_index=0,
+                event_identifier=dummy_event_id,
                 timestamp=TimestampMS(1541771471000),
                 location=Location.EXTERNAL,
                 asset=A_USDT,
-                event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.SPEND,
                 amount=FVal('713.952'),
-                notes='',
             ),
-            HistoryEvent(
+            SwapEvent(
                 identifier=5,
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-                sequence_index=1,
+                event_identifier=dummy_event_id,
                 timestamp=TimestampMS(1541771471000),
                 location=Location.EXTERNAL,
                 asset=A_BTC,
-                event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.RECEIVE,
                 amount=FVal('0.110778'),
-                notes='',
             ),
-            HistoryEvent(
+            SwapEvent(
                 identifier=6,
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
-                sequence_index=2,
+                event_identifier=dummy_event_id,
                 timestamp=TimestampMS(1541771471000),
                 location=Location.EXTERNAL,
                 asset=A_BTC,
-                event_type=HistoryEventType.TRADE,
                 event_subtype=HistoryEventSubType.FEE,
                 amount=FVal('0.000222'),
-                notes='',
             ),
         ]
         with rotki.data.db.conn.read_ctx() as cursor:
@@ -2514,7 +2498,7 @@ def assert_bitcoin_tax_trades_import_results(
         expected_history_events = [
             HistoryEvent(
                 identifier=7,  # last event identifier of trades import + 1
-                event_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+                event_identifier=dummy_event_id,
                 sequence_index=0,
                 timestamp=TimestampMS(1543701600000),
                 location=Location.EXTERNAL,
