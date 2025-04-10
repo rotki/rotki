@@ -3067,6 +3067,78 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
     db.logout()
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 47 to version 48"""
+    _use_prepared_db(user_data_dir, 'v47_rotkehlchen.db')
+    db_v47 = _init_db_with_target_version(
+        target_version=47,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v47.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT entry_type, event_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, notes, '
+            'type, subtype, extra_data FROM history_events WHERE type IN (?, ?)',
+            (HistoryEventType.TRADE.serialize(), HistoryEventType.ADJUSTMENT.serialize()),
+        ).fetchall() == [
+            # An adjustment event that is not associated with a trade - should remain unmodified.
+            (unmodified_adjustment := (1, 'XTJ7Rry-mZ9Lxc5xuhAbnhbBtu5Gpy', 0, 1731508592028, 'B', 'Kraken 1', 'eip155:1/erc20:0x643C4E15d7d62Ad0aBeC4a9BD4b001aA3Ef52d66', '283.79600', None, 'adjustment', 'receive', None)),  # noqa: E501
+            # History events associated with a trade. The label should be preserved.
+            (1, 'C5DAUH-13NE4-TWYVBD', 0, 1731435124057, 'B', (kraken_normal_trade_label := 'Kraken 2'), 'USD', '25.0000', None, 'trade', 'spend', None),  # noqa: E501
+            (1, 'C5DAUH-13NE4-TWYVBD', 1, 1731435124057, 'B', kraken_normal_trade_label, 'BTC', '0.0002857200', None, 'trade', 'receive', None),  # noqa: E501
+            (1, 'C5DAUH-13NE4-TWYVBD', 2, 1731435124057, 'B', kraken_normal_trade_label, 'USD', '0.1000', None, 'trade', 'fee', None),  # noqa: E501
+            # Adjustment events associated with a trade. The label and amounts should be preserved (adjustment trade rates were incorrect).  # noqa: E501
+            (1, 'NZ5OB33-MW63Z-EN3SV1', 0, 1575784819255, 'B', (kraken_adjustment_label := 'Kraken 3'), 'BSV', (adjustment_spend := '0.00000678'), None, 'adjustment', 'spend', None),  # noqa: E501
+            (1, 'NZ4HZV6-EN3S2-DFZ1X4', 0, 1575784819256, 'B', kraken_adjustment_label, 'BTC', (adjustment_receive := '0.0000000831'), None, 'adjustment', 'receive', None),  # noqa: E501
+        ]
+        assert cursor.execute(
+            'SELECT timestamp, location, base_asset, quote_asset, type, '
+            'amount, rate, fee, fee_currency, link, notes FROM trades',
+        ).fetchall() == [
+            (1731435124, 'B', 'BTC', 'USD', 'A', '0.0002857200', '87498.2500349993000139997200055998880022399552008959820803583928321433571328573', '0.1000', 'USD', 'C5DAUH-13NE4-TWYVBD1731435124', None),  # noqa: E501
+            (1739820693, 'S', 'ETH', 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', 'B', '0.00800000', '2709.53000000', '0.00004800', 'ETH', '17572768', None),  # noqa: E501
+            (1703082904, 'G', 'XRP', 'USD', 'A', '43.764904', '0.685480767877384124960036471232748505514829873727130762128485418361708276567909', None, None, '8ad05838-6b0e-50a8-8665-c784fd4d85fd', None),  # noqa: E501
+            (1575784819, 'B', 'BTC', 'BSV', 'A', '0.0000000831', '0.012256637168141592', None, None, 'adjustmentNZ5OB33-MW63Z-EN3SV1NZ4HZV6-EN3S2-DFZ1X4', None),  # noqa: E501
+        ]
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=48,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT entry_type, event_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, notes, '
+            'type, subtype, extra_data FROM history_events WHERE type IN (?, ?)',
+            (HistoryEventType.TRADE.serialize(), HistoryEventType.ADJUSTMENT.serialize()),
+        ).fetchall() == [
+            unmodified_adjustment,
+            # SwapEvents from the normal trades. The Kraken trade should have its location label set.  # noqa: E501
+            (7, '568667233c36a4975559fc4d105d8dedad6de494e46367740e1b1fc7ec41e1d7', 0, 1731435124000, 'B', kraken_normal_trade_label, 'USD', '25.0000000000000000000000000000000000000000000000000000000000000000000000000000', None, 'trade', 'spend', None),  # noqa: E501
+            (7, '568667233c36a4975559fc4d105d8dedad6de494e46367740e1b1fc7ec41e1d7', 1, 1731435124000, 'B', kraken_normal_trade_label, 'BTC', '0.0002857200', None, 'trade', 'receive', None),  # noqa: E501
+            (7, '568667233c36a4975559fc4d105d8dedad6de494e46367740e1b1fc7ec41e1d7', 2, 1731435124000, 'B', kraken_normal_trade_label, 'USD', '0.1000', None, 'trade', 'fee', None),  # noqa: E501
+            (7, '3e13e1b5594292787b80dd12e80fec0035ff18892dc219790aaee697a55c3fc9', 0, 1739820693000, 'S', None, 'ETH', '0.00800000', None, 'trade', 'spend', None),  # noqa: E501
+            (7, '3e13e1b5594292787b80dd12e80fec0035ff18892dc219790aaee697a55c3fc9', 1, 1739820693000, 'S', None, 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', '21.6762400000000000', None, 'trade', 'receive', None),  # noqa: E501
+            (7, '3e13e1b5594292787b80dd12e80fec0035ff18892dc219790aaee697a55c3fc9', 2, 1739820693000, 'S', None, 'ETH', '0.00004800', None, 'trade', 'fee', None),  # noqa: E501
+            (7, 'd0db33d8ad340e99e717ab103fb4e6009c0797c0ffa94ff30a8d12e54a7b9767', 0, 1703082904000, 'G', None, 'USD', '30.0000000000000000000000000000000000000000000000000000000000000000000000000000', None, 'trade', 'spend', None),  # noqa: E501
+            (7, 'd0db33d8ad340e99e717ab103fb4e6009c0797c0ffa94ff30a8d12e54a7b9767', 1, 1703082904000, 'G', None, 'XRP', '43.764904', None, 'trade', 'receive', None),  # noqa: E501
+            # Two SwapEvents from the adjustment trade. Amounts should be the same as the original adjustment history events.  # noqa: E501
+            (7, '577f4275b57a9c02b166c10f3ffa3e6c616a3d9d1b68cc1d5b5781cbe8cd8992', 0, 1575784819000, 'B', kraken_adjustment_label, 'BSV', adjustment_spend, None, 'trade', 'spend', None),  # noqa: E501
+            (7, '577f4275b57a9c02b166c10f3ffa3e6c616a3d9d1b68cc1d5b5781cbe8cd8992', 1, 1575784819000, 'B', kraken_adjustment_label, 'BTC', adjustment_receive, None, 'trade', 'receive', None),  # noqa: E501
+        ]
+        # TODO: Uncomment this when tables are dropped
+        # assert table_exists(cursor, 'trades') is False  # noqa: ERA001
+        # assert table_exists(cursor, 'trade_type') is False  # noqa: ERA001
+
+    db.logout()
+
+
 def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
