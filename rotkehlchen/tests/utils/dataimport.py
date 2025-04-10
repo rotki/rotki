@@ -1067,7 +1067,11 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
 def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from shapeshift"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
+        events = DBHistoryEvents(rotki.data.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """
@@ -1090,36 +1094,59 @@ Trade from ShapeShift with ShapeShift Deposit Address:
 """
     assert len(errors) == 0
     assert len(warnings) == 0
-    expected_trades = [
-        Trade(
-            timestamp=Timestamp(1561551116),
-            location=Location.SHAPESHIFT,
-            base_asset=symbol_to_asset_or_token('DASH'),
-            quote_asset=A_SAI,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.59420343') + FVal('0.002')),
-            rate=Price(1 / FVal('0.00578758')),
-            fee=Fee(FVal('0.002')),
-            fee_currency=symbol_to_asset_or_token('DASH'),
-            link='',
+    expected_events = [
+        SwapEvent(
+            identifier=4,
+            event_identifier='3524d0001a3be82a69c13e3b2fd954be272f1aafa86764f599ccbc4c7edb0b89',
+            timestamp=TimestampMS(1561551116000),
+            asset=A_SAI,
+            amount=FVal('103.0142883'),
+            event_subtype=HistoryEventSubType.SPEND,
             notes=notes1,
-        ),
-        Trade(
-            timestamp=Timestamp(1630856301),
             location=Location.SHAPESHIFT,
-            base_asset=A_ETH,
-            quote_asset=A_USDC,
-            trade_type=TradeType.BUY,
-            amount=AssetAmount(FVal('0.06198721') + FVal('0.0042')),
-            rate=Price(1 / FVal('0.00065004')),
-            fee=Fee(FVal('0.0042')),
-            fee_currency=A_ETH,
-            link='',
+        ), SwapEvent(
+            identifier=5,
+            event_identifier='61e4fc8d28b1484107eb237f7ea33bcd745dcff20d2d96cc62c0fd4038e7e1fd',
+            timestamp=TimestampMS(1561551116000),
+            asset=A_DASH,
+            amount=FVal('0.59420343'),
+            event_subtype=HistoryEventSubType.RECEIVE,
+            location=Location.SHAPESHIFT,
+        ), SwapEvent(
+            identifier=6,
+            event_identifier='9bf984f502cb04c41e4de3282b9ca4c05daea2278b50f1c832127b5a676d8524',
+            timestamp=TimestampMS(1561551116000),
+            asset=A_DASH,
+            amount=FVal('0.002'),
+            event_subtype=HistoryEventSubType.FEE,
+            location=Location.SHAPESHIFT,
+        ), SwapEvent(
+            identifier=1,
+            event_identifier='e1521c61ba84a0a13776de61a186f4c68b56771fde7d56a987faeaf75cdd7db0',
+            timestamp=TimestampMS(1630856301000),
+            asset=A_USDC,
+            amount=FVal('101.82'),
+            event_subtype=HistoryEventSubType.SPEND,
             notes=notes2,
+            location=Location.SHAPESHIFT,
+        ), SwapEvent(
+            identifier=2,
+            event_identifier='6faadaaea29cc455775893c1d709a6a915ca3459645acd0ab570cce7204b88c4',
+            timestamp=TimestampMS(1630856301000),
+            asset=A_ETH,
+            amount=FVal('0.06198721'),
+            event_subtype=HistoryEventSubType.RECEIVE,
+            location=Location.SHAPESHIFT,
+        ), SwapEvent(
+            identifier=3,
+            event_identifier='d8bc00418b56fe2c97b3772c9ca2a8f8de27aedf002a072f01a0747cabcc88dc',
+            timestamp=TimestampMS(1630856301000),
+            asset=A_ETH,
+            amount=FVal('0.0042'),
+            event_subtype=HistoryEventSubType.FEE,
+            location=Location.SHAPESHIFT,
         )]
-    assert trades[0].timestamp == expected_trades[0].timestamp
-    assert len(trades) == 2
-    assert trades == expected_trades
+    assert events == expected_events
 
 
 def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
