@@ -2476,13 +2476,14 @@ class RestAPI:
         return api_response(result, status_code=status_code)
 
     @async_api_call()
-    def get_ethereum_airdrops(self) -> dict[str, Any]:
+    def get_airdrops(self) -> dict[str, Any]:
         try:
-            data = check_airdrops(
-                addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
-                database=self.rotkehlchen.data.db,
-                tolerance_for_amount_check=AIRDROPS_TOLERANCE,
-            )
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                data = check_airdrops(
+                    addresses=self.rotkehlchen.data.db.get_evm_accounts(cursor),
+                    database=self.rotkehlchen.data.db,
+                    tolerance_for_amount_check=AIRDROPS_TOLERANCE,
+                )
         except RemoteError as e:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_GATEWAY)
         except OSError as e:
