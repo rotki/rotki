@@ -740,7 +740,7 @@ class EthereumAirdropsResource(BaseMethodView):
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_ethereum_airdrops(async_query=async_query)
+        return self.rest_api.get_airdrops(async_query=async_query)
 
 
 class RpcNodesResource(BaseMethodView):
