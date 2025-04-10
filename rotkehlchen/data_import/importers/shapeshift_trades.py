@@ -10,13 +10,14 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
+from rotkehlchen.types import Location
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -56,7 +57,6 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
         sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
         rate = deserialize_asset_amount(csv_row['rate'])
         fee = deserialize_fee(csv_row['minerFee'])
-        gross_amount = AssetAmount(buy_amount + fee)
         in_addr = csv_row['inputAddress']
         out_addr = csv_row['outputAddress']
         notes = f"""
@@ -81,21 +81,20 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         if rate <= ZERO:
             raise SkippedCSVEntry('Entry has negative or zero rate.')
 
-        # Fix the rate correctly (1 / rate) * (fee + buy_amount) = sell_amount
-        trade = Trade(
-            timestamp=timestamp,
-            location=Location.SHAPESHIFT,
-            base_asset=buy_asset,
-            quote_asset=sold_asset,
-            trade_type=TradeType.BUY,
-            amount=gross_amount,
-            rate=Price(1 / rate),
-            fee=Fee(fee),
-            fee_currency=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
-            link='',
-            notes=notes,
+        self.add_history_events(
+            write_cursor=write_cursor,
+            history_events=create_swap_events(
+                location=Location.SHAPESHIFT,
+                timestamp=ts_sec_to_ms(timestamp),
+                spend_asset=sold_asset,
+                receive_asset=buy_asset,
+                spend_amount=sold_amount,
+                receive_amount=buy_amount,
+                fee_asset=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
+                fee_amount=fee,
+                spend_notes=notes,
+            ),
         )
-        self.add_trade(write_cursor, trade)
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
