@@ -17,6 +17,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -179,34 +180,20 @@ class NexoImporter(BaseExchangeImporter):
             )
             self.add_history_events(write_cursor, [event])
         elif entry_type == 'Exchange':
-            input_asset = asset_from_nexo(csv_row['Input Currency'])
-            input_amount = deserialize_asset_amount_force_positive(csv_row['Input Amount'])
-            out_event = HistoryEvent(
-                event_identifier=(event_identifier := f'{NEXO_PREFIX}{hash_csv_row(csv_row)}'),
-                sequence_index=0,
-                timestamp=(timestamp_ms := ts_sec_to_ms(timestamp)),
-                location=Location.NEXO,
-                amount=input_amount,
-                event_type=HistoryEventType.TRADE,
-                event_subtype=HistoryEventSubType.SPEND,
-                asset=input_asset,
-                location_label=transaction,
-                notes=f'{entry_type} from Nexo',
+            self.add_history_events(
+                write_cursor=write_cursor,
+                history_events=create_swap_events(
+                    event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
+                    timestamp=ts_sec_to_ms(timestamp),
+                    location=Location.NEXO,
+                    spend_asset=asset_from_nexo(csv_row['Input Currency']),
+                    spend_amount=deserialize_asset_amount_force_positive(csv_row['Input Amount']),
+                    receive_asset=asset,
+                    receive_amount=amount,
+                    unique_id=transaction,
+                    spend_notes=f'{entry_type} from Nexo',
+                ),
             )
-            in_event = HistoryEvent(
-                event_identifier=event_identifier,
-                sequence_index=1,
-                event_type=HistoryEventType.TRADE,
-                timestamp=timestamp_ms,
-                location=Location.NEXO,
-                event_subtype=HistoryEventSubType.RECEIVE,
-                amount=amount,
-                location_label=transaction,
-                asset=asset,
-                notes=f'{entry_type} from Nexo',
-            )
-            self.add_history_events(write_cursor, [out_event, in_event])
-
         elif entry_type in ignored_entries:
             pass
         else:
