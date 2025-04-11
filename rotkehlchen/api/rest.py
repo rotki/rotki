@@ -950,6 +950,7 @@ class RestAPI:
         if (events_type := events[0].entry_type) in {
             HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
             HistoryBaseEntryType.SWAP_EVENT,
+            HistoryBaseEntryType.EVM_SWAP_EVENT,
         }:
             try:
                 with events_db.db.conn.write_ctx() as write_cursor:

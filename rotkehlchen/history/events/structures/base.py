@@ -68,6 +68,7 @@ class HistoryBaseEntryType(DBIntEnumMixIn):
     ETH_DEPOSIT_EVENT = auto()
     ASSET_MOVEMENT_EVENT = auto()
     SWAP_EVENT = auto()
+    EVM_SWAP_EVENT = auto()
 
 
 T = TypeVar('T', bound='HistoryBaseEntry')
