@@ -21,6 +21,7 @@ export const Routes = {
   API_KEYS_ROTKI_PREMIUM: ensureRoute('/api-keys/premium'),
   ASSET_MANAGER: ensureRoute('/asset-manager'),
   ASSET_MANAGER_CEX_MAPPING: ensureRoute('/asset-manager/more/cex-mapping'),
+  ASSET_MANAGER_COUNTERPARTY_MAPPING: ensureRoute('/asset-manager/more/counterparty-mapping'),
   ASSET_MANAGER_CUSTOM: ensureRoute('/asset-manager/custom'),
   ASSET_MANAGER_MANAGED: ensureRoute('/asset-manager/managed'),
   ASSET_MANAGER_MISSING_MAPPINGS: ensureRoute('/asset-manager/more/missing-mappings'),
@@ -127,6 +128,11 @@ export const useAppRoutes = createSharedComposable(() => {
       route: Routes.ASSET_MANAGER_CEX_MAPPING,
       text: t('navigation_menu.manage_assets_sub.cex_mapping'),
     },
+    ASSET_MANAGER_COUNTERPARTY_MAPPING: {
+      icon: 'lu-list-todo' as const,
+      route: Routes.ASSET_MANAGER_COUNTERPARTY_MAPPING,
+      text: t('navigation_menu.manage_assets_sub.counterparty_mapping'),
+    },
     ASSET_MANAGER_CUSTOM: {
       icon: 'lu-custom-assets' as const,
       route: Routes.ASSET_MANAGER_CUSTOM,
@@ -138,7 +144,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.manage_assets_sub.assets'),
     },
     ASSET_MANAGER_MISSING_MAPPINGS: {
-      icon: 'lu-list-todo' as const,
+      icon: 'lu-scroll' as const,
       route: Routes.ASSET_MANAGER_MISSING_MAPPINGS,
       text: t('navigation_menu.manage_assets_sub.missing_mappings'),
     },
@@ -148,7 +154,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.manage_assets_sub.more'),
     },
     ASSET_MANAGER_NEWLY_DETECTED: {
-      icon: 'lu-list-todo' as const,
+      icon: 'lu-list-collapse' as const,
       route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
       text: t('navigation_menu.manage_assets_sub.newly_detected'),
     },

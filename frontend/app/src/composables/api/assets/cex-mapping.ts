@@ -9,7 +9,6 @@ import {
   CexMappingCollectionResponse,
   type CexMappingDeletePayload,
   type CexMappingRequestPayload,
-  type SupportedAssets,
 } from '@/types/asset';
 import { mapCollectionResponse } from '@/utils/collection';
 import { omit } from 'es-toolkit';
@@ -23,7 +22,7 @@ interface UseAssetCexMappingApiReturn {
 
 export function useAssetCexMappingApi(): UseAssetCexMappingApiReturn {
   const fetchAllCexMapping = async (payload: MaybeRef<CexMappingRequestPayload>): Promise<Collection<CexMapping>> => {
-    const response = await api.instance.post<ActionResult<SupportedAssets>>(
+    const response = await api.instance.post<ActionResult<Collection<CexMapping>>>(
       '/assets/locationmappings',
       snakeCaseTransformer(omit(get(payload), ['orderByAttributes', 'ascending'])),
       {

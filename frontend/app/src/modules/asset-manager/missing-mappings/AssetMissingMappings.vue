@@ -35,13 +35,14 @@ const cols = computed<DataTableColumn<MissingMapping>[]>(() => [{
   sortable: true,
 }, {
   cellClass: 'py-3 border-x border-default',
+  class: 'border-x border-default',
   key: 'details',
   label: t('common.details'),
 }, {
   align: 'center',
   cellClass: 'py-3 w-24',
   key: 'actions',
-  label: '',
+  label: t('common.actions_text'),
 }]);
 
 const { getData, remove } = useMissingMappingsDB();
@@ -99,7 +100,8 @@ onMounted(async () => {
 <template>
   <TablePageLayout
     child
-    class="md:-mt-[4.5rem]"
+    hide-header
+    class="lg:!-mt-5"
   >
     <RuiCard>
       <div class="mb-4 flex justify-end">
@@ -115,6 +117,8 @@ onMounted(async () => {
         v-model:pagination.external="pagination"
         v-model:sort.external="sort"
         outlined
+        dense
+        stripped
         :cols="cols"
         row-attr="id"
         :rows="mappings.data"

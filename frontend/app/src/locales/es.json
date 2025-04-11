@@ -788,6 +788,7 @@
       "add_mapping": "Añadir cartografía",
       "add_title": "Añadir una nueva asignación",
       "all_exchanges": "Todos los intercambios",
+      "asset_symbol": "Símbolo del activo",
       "confirm_delete": {
         "message": "¿Está seguro de que desea eliminar la asignación de activos para el símbolo {asset} en {location}?",
         "title": "Eliminar asignación de activos de bolsa"
@@ -803,7 +804,7 @@
         "location_non_empty": "El campo ubicación no puede estar vacío",
         "location_symbol_non_empty": "El campo de símbolo de activo no puede estar vacío"
       },
-      "location_symbol": "Símbolo del activo",
+      "location_symbol": "Símbolo del activo en la bolsa",
       "recognized_as": "Reconocido como",
       "save_for_all": "Guardar esta asignación para todas las bolsas",
       "subtitle": "Puede vincular símbolos de activos en una bolsa centralizada con activos reconocidos por rotki. Esto es necesario para que rotki pueda procesar activos en las bolsas."

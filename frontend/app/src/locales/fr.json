@@ -919,6 +919,7 @@
       "add_mapping": "Ajouter une cartographie",
       "add_title": "Ajouter une nouvelle cartographie",
       "all_exchanges": "Tous les échanges",
+      "asset_symbol": "Symbole de l'actif",
       "confirm_delete": {
         "message": "Êtes-vous sûr de vouloir supprimer la cartographie des actifs pour le symbole {asset} dans {location} ?",
         "title": "Supprimer la cartographie des actifs de la bourse"
@@ -934,7 +935,7 @@
         "location_non_empty": "Le champ emplacement ne peut pas être vide",
         "location_symbol_non_empty": "Le champ symbole du bien ne peut pas être vide"
       },
-      "location_symbol": "Symbole du bien",
+      "location_symbol": "Symbole de l'actif dans la bourse",
       "recognized_as": "Reconnu comme",
       "save_for_all": "Sauvegarder cette correspondance pour tous les échanges",
       "subtitle": "Vous pouvez lier des symboles d'actifs sur une bourse centralisée avec des actifs reconnus par rotki. Ceci est nécessaire pour que rotki puisse traiter les actifs sur les bourses."
