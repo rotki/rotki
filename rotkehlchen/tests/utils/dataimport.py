@@ -5,6 +5,7 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
+    A_ADA,
     A_BAT,
     A_BCH,
     A_BNB,
@@ -2286,46 +2287,6 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
 
 
 def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):  # noqa: E501
-    expected_trades = [
-        Trade(  # Sell 1875.64 USDC for 1 ETH
-            timestamp=Timestamp(1659085200),
-            location=Location.BINANCE,
-            base_asset=A_USDC,
-            quote_asset=A_ETH,
-            trade_type=TradeType.SELL,
-            amount=FVal('1875.64'),
-            rate=Price(FVal('0.000533151351005523447996417222921242882429464076261969247830074001407519566654582')),
-            fee=None,
-            fee_currency=None,
-            notes='Trade USDC for ETH',
-        ), Trade(  # Buy 4.3241 BTC with 392.8870 LTC
-            timestamp=Timestamp(1659171600),
-            location=Location.KRAKEN,
-            base_asset=A_BTC,
-            quote_asset=A_LTC,
-            trade_type=TradeType.BUY,
-            amount=FVal('4.3241'),
-            rate=Price(FVal('90.8598321037903841261765454082930552022386161282116509793945560925973034851183')),
-            fee=None,
-            fee_currency=None,
-            notes='Trade LTC for BTC',
-        ), Trade(  # Sell 20 UNI for 880 DAI
-            timestamp=Timestamp(1659344400),
-            location=Location.KUCOIN,
-            base_asset=A_UNI,
-            quote_asset=A_DAI,
-            trade_type=TradeType.SELL,
-            amount=FVal('20'),
-            rate=Price(FVal('44')),
-            fee=Fee(FVal('0.1040')),
-            fee_currency=A_USD,
-            notes='Trade UNI for DAI',
-        ),
-    ]
-    with rotki.data.db.conn.read_ctx() as cursor:
-        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-
-    assert trades == expected_trades
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
         'type': 'progress_updates',
@@ -2333,14 +2294,130 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
             'subtype': 'csv_import_result',
             'source_name': 'Rotki generic trades',
             'total': 5,
-            'processed': 3,
-            'messages': [
-                {'msg': 'Deserialization error: Failed to deserialize Location value luno.', 'rows': [4], 'is_error': True},  # noqa: E501
-                {'msg': 'Entry has zero amount bought.', 'rows': [5], 'is_error': True},
-            ],
+            'processed': 5,
+            'messages': [],
         },
     }
     assert websocket_connection.messages_num() == 0
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(rotki.data.db).get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
+
+    expected_events = [SwapEvent(
+        identifier=1,
+        timestamp=TimestampMS(1659085200000),
+        event_identifier='8201d7f8a520bd68a25e350104b50aa93cd65b1a82037b4a080016f48ebcc8d2',
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal('1875.64'),
+        notes='Trade USDC for ETH',
+    ), SwapEvent(
+        identifier=2,
+        timestamp=TimestampMS(1659085200000),
+        event_identifier='30a4f24e74690eda15c201ad037844e66725e097048459817264bf27675992e3',
+        location=Location.BINANCE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=ONE,
+    ), SwapEvent(
+        identifier=3,
+        timestamp=TimestampMS(1659171600000),
+        event_identifier='a9abd4557d83e142b0abf466c94df9d7d502fe7cfeab5588e303a50384fe7b5b',
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_LTC,
+        amount=FVal('392.8870'),
+        notes='Trade LTC for BTC',
+    ), SwapEvent(
+        identifier=4,
+        timestamp=TimestampMS(1659171600000),
+        event_identifier='949994727e9473c2146516d53fe12a88f380beb11f7814930d3c269db3cbfb11',
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('4.3241'),
+    ), SwapEvent(
+        identifier=5,
+        timestamp=TimestampMS(1659344400000),
+        event_identifier='4da80539bea53968ae70c4ad928f3ebac76afdc23dd21d46a7f370668f45ee72',
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_UNI,
+        amount=FVal('20.0000'),
+        notes='Trade UNI for DAI',
+    ), SwapEvent(
+        identifier=6,
+        timestamp=TimestampMS(1659344400000),
+        event_identifier='09265391ed365d51d38112d68362274162c6ed54257fa5d2d22f34c129a3f689',
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DAI,
+        amount=FVal('880.0000'),
+    ), SwapEvent(
+        identifier=7,
+        timestamp=TimestampMS(1659344400000),
+        event_identifier='9c9a209b04c0968fa1b8caa5f62626a94f5c3354833967f9078b98b32fec4e46',
+        location=Location.KUCOIN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.1040'),
+    ), SwapEvent(
+        identifier=8,
+        timestamp=TimestampMS(1659344900000),
+        event_identifier='fcf2bf577b441b79009079669ad59475df7c9f8c03160f5de8866b37fdac1363',
+        location=Location.EXTERNAL,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ADA,
+        amount=FVal('4576.6400'),
+        notes='Trade ADA for BCH',
+    ), SwapEvent(
+        identifier=9,
+        timestamp=TimestampMS(1659344900000),
+        event_identifier='5d47aca9f29f52c3d889cff2e16257ea00d906eb019d6b2ed4ec74d0a4a8f61c',
+        location=Location.EXTERNAL,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BCH,
+        amount=FVal('16.3444'),
+    ), SwapEvent(
+        identifier=10,
+        timestamp=TimestampMS(1659344900000),
+        event_identifier='1f983e79980f7c491c2392a0df53d44ed500b65cf4448181f6322ed240332c45',
+        location=Location.EXTERNAL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('5.1345'),
+    ), SwapEvent(
+        identifier=11,
+        timestamp=TimestampMS(1659345600000),
+        event_identifier='009193a33205dd3f1c844638932dd8253f3b3dda25f8dacaa7f729ffcf9513b9',
+        location=Location.BISQ,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal('4576.6400'),
+        notes='Trade USDT for DAI',
+    ), SwapEvent(
+        identifier=12,
+        timestamp=TimestampMS(1659345600000),
+        event_identifier='46385f027819f4936b78a1edc3efbd8170124f8fbefb2f9c10fc2a4863facfcd',
+        location=Location.BISQ,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DAI,
+        amount=ZERO,
+    ), SwapEvent(
+        identifier=13,
+        timestamp=TimestampMS(1659345600000),
+        event_identifier='d55beb4f545e5633b6045d79a4313b518391950cebf0870c28af2aefce582f79',
+        location=Location.BISQ,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('5.1345'),
+    )]
+    assert events == expected_events
 
 
 def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):  # noqa: E501

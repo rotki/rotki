@@ -1,5 +1,4 @@
 import csv
-from decimal import DivisionByZero
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -12,10 +11,8 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
-from rotkehlchen.types import Price, TradeType
-from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -37,30 +34,25 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         - DeserializationError
         - UnknownAsset
         - KeyError
-        - DivisionByZero if `amount_bought` is ZERO
         """
-        amount_sold = deserialize_asset_amount(csv_row['Sell Amount'])
-        amount_bought = deserialize_asset_amount(csv_row['Buy Amount'])
-        asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Base Currency')  # noqa: E501
-        if (trade_type := TradeType.deserialize(csv_row['Type'])) == TradeType.BUY:
-            rate = amount_sold / amount_bought
-            amount = amount_bought
-        else:  # sell
-            rate = amount_bought / amount_sold
-            amount = amount_sold
-        trade = Trade(
-            timestamp=ts_ms_to_sec(timestamp),
-            location=location,
-            fee=fee,
-            fee_currency=fee_currency,
-            rate=Price(rate),
-            base_asset=asset,
-            quote_asset=symbol_to_asset_or_token(csv_row['Quote Currency']),
-            trade_type=trade_type,
-            amount=amount,
-            notes=csv_row['Description'],
+        spend_amount = deserialize_asset_amount(csv_row['Spend Amount'])
+        receive_amount = deserialize_asset_amount(csv_row['Receive Amount'])
+        spend_asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Spend Currency')  # noqa: E501
+        receive_asset = symbol_to_asset_or_token(csv_row['Receive Currency'])
+        self.add_history_events(
+            write_cursor=write_cursor,
+            history_events=create_swap_events(
+                timestamp=timestamp,
+                location=location,
+                spend_asset=spend_asset,
+                spend_amount=spend_amount,
+                receive_asset=receive_asset,
+                receive_amount=receive_amount,
+                spend_notes=csv_row['Description'],
+                fee_amount=fee,  # type: ignore[arg-type]
+                fee_asset=fee_currency,  # type: ignore[arg-type]
+            ),
         )
-        self.add_trade(write_cursor, trade)
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """May raise:
@@ -84,13 +76,6 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
                         row_index=index,
                         csv_row=row,
                         msg=f'Deserialization error: {e!s}.',
-                        is_error=True,
-                    )
-                except DivisionByZero:
-                    self.send_message(
-                        row_index=index,
-                        csv_row=row,
-                        msg='Entry has zero amount bought.',
                         is_error=True,
                     )
                 except KeyError as e:

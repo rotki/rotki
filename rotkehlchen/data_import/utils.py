@@ -8,6 +8,7 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
@@ -173,7 +174,11 @@ def process_rotki_generic_import_csv_fields(
     """
     Process the imported csv for generic rotki trades and events
     """
-    location = Location.deserialize(csv_row['Location'])
+    try:
+        location = Location.deserialize(csv_row['Location'])
+    except DeserializationError:
+        location = Location.EXTERNAL
+
     timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
     fee = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else None
     asset_mapping = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
