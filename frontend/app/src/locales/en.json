@@ -3662,6 +3662,20 @@
         },
         "title": "There is a mismatch between the amount of asset in the last event and the amount in the current balance."
       },
+      "failed_daily_prices": {
+        "dialog_title": "Some prices were not retrieved for the asset: {name}",
+        "missing_prices": {
+          "description": "We cannot find prices for {length} dates. You can add manual historical prices.",
+          "end": "You need to click \"Fetch Prices\" again to apply saved manual historical prices.",
+          "title": "Missing prices"
+        },
+        "rate_limited": {
+          "description": "Prices query for {length} dates were rate-limited. You can try to fetch the prices again by clicking the \"Fetch Prices\" button outside.",
+          "title": "Prices rate-limited"
+        },
+        "see_detail": "See detail",
+        "title": "Some prices cannot be found or were rate-limited."
+      },
       "fallback_to_snapshot": "Use snapshot data instead",
       "fetch_prices": "Fetch prices",
       "fetch_prices_hint": "rotki will try to get the daily prices of the assets to fill the gap between events.",

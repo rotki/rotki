@@ -49,6 +49,7 @@ export type TimedAssetHistoricalBalances = z.infer<typeof TimedAssetHistoricalBa
 
 export const HistoricalAssetPricePayload = z.object({
   asset: z.string(),
+  excludeTimestamps: z.array(z.number()).optional(),
   fromTimestamp: z.number(),
   interval: z.number(),
   onlyCachePeriod: z.number().optional(),
@@ -57,8 +58,14 @@ export const HistoricalAssetPricePayload = z.object({
 
 export type HistoricalAssetPricePayload = z.infer<typeof HistoricalAssetPricePayload>;
 
-export const HistoricalAssetPriceResponse = z.object({
+export const FailedHistoricalAssetPriceResponse = z.object({
   noPricesTimestamps: z.array(z.number()),
+  rateLimitedPricesTimestamps: z.array(z.number()),
+});
+
+export type FailedHistoricalAssetPriceResponse = z.infer<typeof FailedHistoricalAssetPriceResponse>;
+
+export const HistoricalAssetPriceResponse = FailedHistoricalAssetPriceResponse.extend({
   prices: z.record(NumericString),
 });
 
