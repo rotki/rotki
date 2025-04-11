@@ -289,6 +289,7 @@ def test_query_history_errors(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_query_history_external_exchanges(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that history is processed for external exchanges too"""
     start_ts = Timestamp(0)
