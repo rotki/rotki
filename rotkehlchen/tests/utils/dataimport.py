@@ -29,7 +29,6 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XRP,
 )
-from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
@@ -74,7 +73,6 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
     """A utility function to help assert on correctness of importing data from cointracking.info"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         events = dbevents.get_history_events(cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
 
     warnings = rotki.msg_aggregator.consume_warnings()
@@ -93,53 +91,14 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
                 {'msg': 'Not importing ETH Transactions from Cointracking. Cointracking does not export enough data for them. Simply enter your ethereum accounts and all your transactions will be auto imported directly from the chain', 'rows': [1, 2], 'is_error': True},  # noqa: E501
                 {'msg': 'Not importing BTC Transactions from Cointracking. Cointracking does not export enough data for them. Simply enter your BTC accounts and all your transactions will be auto imported directly from the chain', 'rows': [5], 'is_error': True},  # noqa: E501
                 {'msg': 'Unknown asset ADS.', 'rows': [9], 'is_error': True},
-                {'msg': 'Staking event for eip155:1/erc20:0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b(Axie Infinity Shard) at 1641386280 already exists in the DB', 'rows': [12]},  # noqa: E501
+                {'msg': 'Staking event for eip155:1/erc20:0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b(Axie Infinity Shard) at 1641386280000 already exists in the DB', 'rows': [12]},  # noqa: E501
             ],
         },
     }
     assert websocket_connection.messages_num() == 0
 
-    expected_trades = [Trade(
-        timestamp=Timestamp(1566687719),
-        location=Location.COINBASE,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('0.05772716'),
-        rate=Price(FVal('190.378324518302996371205512275331057339387560378858062651964863679418838550173')),
-        fee=Fee(FVal('0.02')),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1567418410),
-        location=Location.EXTERNAL,
-        base_asset=A_BTC,
-        quote_asset=A_USD,
-        trade_type=TradeType.BUY,
-        amount=FVal('0.00100000'),
-        rate=ZERO_PRICE,
-        fee=Fee(ZERO),
-        fee_currency=A_USD,
-        link='',
-        notes='Just a small gift from someone. Data from -no exchange- not known by rotki.',
-    ), Trade(
-        timestamp=Timestamp(1567504805),
-        location=Location.EXTERNAL,
-        base_asset=A_ETH,
-        quote_asset=A_USD,
-        trade_type=TradeType.BUY,
-        amount=FVal('2'),
-        rate=ZERO_PRICE,
-        fee=Fee(ZERO),
-        fee_currency=A_USD,
-        link='',
-        notes='Sign up bonus. Data from -no exchange- not known by rotki.',
-    )]
-    assert expected_trades == trades
-
-    for movement in [AssetMovement(
-        identifier=1,
+    for entry in [AssetMovement(
+        identifier=5,
         event_identifier='7626b5d52eb9c67f2c9d83a0c1a97f38c8d2e0466d055fd23c48a30afe2aa972',
         location=Location.POLONIEX,
         event_type=HistoryEventType.DEPOSIT,
@@ -147,7 +106,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         asset=A_XMR,
         amount=FVal('5.00000000'),
     ), AssetMovement(
-        identifier=2,
+        identifier=9,
         event_identifier='5dfd720e8b362491a663f4440477592a4e5c48bef0166bc42dd138c6e4ff0054',
         location=Location.COINBASE,
         event_type=HistoryEventType.WITHDRAWAL,
@@ -155,7 +114,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         asset=A_ETH,
         amount=FVal('0.05770427'),
     ), AssetMovement(
-        identifier=3,
+        identifier=10,
         event_identifier='5dfd720e8b362491a663f4440477592a4e5c48bef0166bc42dd138c6e4ff0054',
         location=Location.COINBASE,
         event_type=HistoryEventType.WITHDRAWAL,
@@ -163,9 +122,67 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         asset=A_ETH,
         amount=FVal('0.0001'),
         is_fee=True,
+    ), SwapEvent(
+        identifier=6,
+        event_identifier='a9610bfcaa74db4c71c656f33f88e44203a8483e9c14ddbfa1a03e1c569a6cd3',
+        timestamp=TimestampMS(1566687719000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_EUR,
+        location=Location.COINBASE,
+        amount=FVal('10.99000000'),
+    ), SwapEvent(
+        identifier=7,
+        event_identifier='09e42264602d834aa8faccc437b66bcf38cb980fdf051eb2a1cfcd7627c05acf',
+        timestamp=TimestampMS(1566687719000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        location=Location.COINBASE,
+        amount=FVal('0.05772716'),
+    ), SwapEvent(
+        identifier=8,
+        event_identifier='bb116bc99ef30fd8d93a0c05af2dd27802b4e4dbd86872f5c27331723fbdddeb',
+        timestamp=TimestampMS(1566687719000),
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_EUR,
+        location=Location.COINBASE,
+        amount=FVal('0.02'),
+    ), SwapEvent(
+        identifier=1,
+        event_identifier='87aac7b10944ad85d1d5a293a16f3ffa37e3af9856bd063eb8e969095508da30',
+        timestamp=TimestampMS(1567418410000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        location=Location.EXTERNAL,
+        amount=ZERO,
+        notes='Just a small gift from someone. Data from -no exchange- not known by rotki.',
+    ), SwapEvent(
+        identifier=2,
+        event_identifier='f523915b2b20e25abaa3232e6eb9999e9f36d365826a988b11345dce754fef2a',
+        timestamp=TimestampMS(1567418410000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        location=Location.EXTERNAL,
+        amount=FVal('0.00100000'),
+    ), SwapEvent(
+        identifier=3,
+        event_identifier='3e764855f80a214bba839c674b9c6cb13223a58376f25c3979de37d606c582a9',
+        timestamp=TimestampMS(1567504805000),
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        location=Location.EXTERNAL,
+        amount=ZERO,
+        notes='Sign up bonus. Data from -no exchange- not known by rotki.',
+    ), SwapEvent(
+        identifier=4,
+        event_identifier='1c69e96eca4026b3e86ce551022556ed4d3087958032846e711c4c5c68ebc88a',
+        timestamp=TimestampMS(1567504805000),
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        location=Location.EXTERNAL,
+        amount=FVal('2'),
     )]:
-        assert movement in events
-        events.remove(movement)  # remove for simpler checking below.
+        assert entry in events
+        events.remove(entry)  # remove for simpler checking below.
 
     assert len(events) == 2, 'Duplicated event was not ignored'
     for event in events:
@@ -879,17 +896,14 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         timestamp=TimestampMS(1649877300000),
         asset=A_USDC,
         amount=FVal('595.92'),
-    ), HistoryEvent(
+    ), SwapEvent(
         identifier=8,
-        event_identifier='NEXO_1b9bf08b0a12bfb57beca6b558d3e38fd4133a6dfaea596df989753e7eef4af4',
-        sequence_index=0,
         timestamp=TimestampMS(1650192060000),
-        location=Location.NEXO,
-        event_type=HistoryEventType.TRADE,
+        event_identifier='NEXO_1b9bf08b0a12bfb57beca6b558d3e38fd4133a6dfaea596df989753e7eef4af4',
         event_subtype=HistoryEventSubType.SPEND,
-        amount=FVal('54'),
+        location=Location.NEXO,
         asset=A_GBP,
-        location_label='NXTsDa2LR4Pcw',
+        amount=FVal('54'),
         notes='Exchange from Nexo',
     ), AssetMovement(
         identifier=10,
@@ -899,18 +913,14 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         timestamp=TimestampMS(1650192060000),
         asset=A_GBP,
         amount=FVal('54'),
-    ), HistoryEvent(
+    ), SwapEvent(
         identifier=9,
-        event_identifier='NEXO_1b9bf08b0a12bfb57beca6b558d3e38fd4133a6dfaea596df989753e7eef4af4',
-        sequence_index=1,
         timestamp=TimestampMS(1650192060000),
-        location=Location.NEXO,
-        event_type=HistoryEventType.TRADE,
+        event_identifier='NEXO_1b9bf08b0a12bfb57beca6b558d3e38fd4133a6dfaea596df989753e7eef4af4',
         event_subtype=HistoryEventSubType.RECEIVE,
-        amount=FVal('0.0017316'),
+        location=Location.NEXO,
         asset=A_BTC,
-        location_label='NXTsDa2LR4Pcw',
-        notes='Exchange from Nexo',
+        amount=FVal('0.0017316'),
     ), AssetMovement(
         identifier=13,
         event_identifier='22d48c31b52037480e31c626d6d38c34fc2ee501819cfea78b2e512e2900f140',
@@ -1011,30 +1021,23 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         asset=A_USDC,
         location_label='NXT44OjpCjxegVqhfHj3ZmeAa',
         notes='Exchange Cashback from Nexo',
-    ), HistoryEvent(
+    ), SwapEvent(
         identifier=22,
-        event_identifier='NEXO_dc19313d088deb51008fe1f8b8255606f33e65e7308412525cbd8187320a2bfe',
-        sequence_index=0,
         timestamp=TimestampMS(1734971539000),
-        location=Location.NEXO,
-        event_type=HistoryEventType.TRADE,
+        event_identifier='NEXO_dc19313d088deb51008fe1f8b8255606f33e65e7308412525cbd8187320a2bfe',
         event_subtype=HistoryEventSubType.SPEND,
-        amount=FVal('500.00000000'),
-        asset=Asset('eip155:1/erc20:0x05Ac103f68e05da35E78f6165b9082432FE64B58'),
-        location_label='NXT4RYSlktqu0Ip9I4Wy2mIsv',
-        notes='Exchange from Nexo',
-    ), HistoryEvent(
-        identifier=23,
-        event_identifier='NEXO_dc19313d088deb51008fe1f8b8255606f33e65e7308412525cbd8187320a2bfe',
-        sequence_index=1,
-        timestamp=TimestampMS(1734971539000),
         location=Location.NEXO,
-        event_type=HistoryEventType.TRADE,
-        event_subtype=HistoryEventSubType.RECEIVE,
-        amount=FVal('514.15679500'),
-        asset=A_USDC,
-        location_label='NXT4RYSlktqu0Ip9I4Wy2mIsv',
+        asset=Asset('eip155:1/erc20:0x05Ac103f68e05da35E78f6165b9082432FE64B58'),
+        amount=FVal('500.00000000'),
         notes='Exchange from Nexo',
+    ), SwapEvent(
+        identifier=23,
+        timestamp=TimestampMS(1734971539000),
+        event_identifier='NEXO_dc19313d088deb51008fe1f8b8255606f33e65e7308412525cbd8187320a2bfe',
+        event_subtype=HistoryEventSubType.RECEIVE,
+        location=Location.NEXO,
+        asset=A_USDC,
+        amount=FVal('514.15679500'),
     ), HistoryEvent(
         identifier=15,
         event_identifier='NEXO_4cf8625c0bd44e83aab18c3f380f0de765ce52174806f71a232fd16492adcba8',
