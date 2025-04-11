@@ -99,6 +99,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -752,6 +753,53 @@ class CreateHistoryEventSchema(Schema):
         sequence_index = fields.Integer(required=True)
         location_label = fields.String(load_default=None)
 
+    class BaseEvmEventSchema(Schema):
+        """Base schema for EVM events. Used for EvmEvents and EvmSwapEvents."""
+        tx_hash = EVMTransactionHashField(required=True)
+        event_identifier = fields.String(required=False, load_default=None)
+        counterparty = fields.String(load_default=None)
+        product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
+        address = EvmAddressField(load_default=None)
+        extra_data = fields.Dict(load_default=None)
+        location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
+
+    class BaseSwapEventSchema(Schema):
+        """Base schema for swap events. Used for SwapEvents and EvmSwapEvents."""
+        identifier = fields.Integer(required=True)
+        timestamp = TimestampMSField(required=True)
+        spend_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
+        spend_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
+        receive_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
+        receive_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
+        fee_amount = FeeField(required=False, load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
+        fee_asset = AssetField(required=False, load_default=None, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
+        location_label = fields.String(required=False, load_default=None)
+        unique_id = fields.String(required=False, load_default=None)
+        user_notes = fields.List(fields.String(), required=False, validate=validate.Length(min=2, max=3))  # noqa: E501
+        event_identifier = fields.String(required=False, load_default=None)
+
+        @staticmethod
+        def _validate_fee_and_get_notes(
+                data: dict[str, Any],
+        ) -> tuple[str | None, str | None, str | None]:
+            if ((fee_amount := data['fee_amount']) is None) ^ (data['fee_asset'] is None):
+                raise ValidationError(
+                    message='fee_amount and fee_asset must be provided together',
+                    field_name='fee_amount',
+                )
+            elif fee_amount is None and len(data.get('user_notes', [])) == 3:
+                raise ValidationError(
+                    message='fee_notes may only be provided when fee_amount is present',
+                    field_name='fee_notes',
+                )
+
+            if (notes := data.get('user_notes')) is None:
+                return None, None, None
+            elif len(notes) == 2:
+                return notes + (None,)
+            else:  # len == 3, enforced by validate.Length above
+                return notes
+
     class CreateBaseHistoryEventSchema(BaseEventSchema):
         event_identifier = fields.String(required=True)
         location = LocationField(required=True)
@@ -765,15 +813,8 @@ class CreateHistoryEventSchema(Schema):
             data['notes'] = data.pop('user_notes')
             return {'events': [HistoryEvent(**data)]}
 
-    class CreateEvmEventSchema(BaseEventSchema):
+    class CreateEvmEventSchema(BaseEventSchema, BaseEvmEventSchema):
         """Schema used when adding a new event in the EVM transactions view"""
-        tx_hash = EVMTransactionHashField(required=True)
-        event_identifier = fields.String(required=False, load_default=None)
-        counterparty = fields.String(load_default=None)
-        product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
-        address = EvmAddressField(load_default=None)
-        extra_data = fields.Dict(load_default=None)
-        location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
         @post_load
         def make_history_base_entry(
@@ -927,6 +968,7 @@ class CreateHistoryEventSchema(Schema):
                 fee_identifier=CreateHistoryEventSchema.history_event_context.get()['schema'].get_grouped_event_identifier(
                     data=data,
                     subtype=HistoryEventSubType.FEE,
+                    sequence_index_offset=1,
                 ),
                 location_label=data['location_label'],
                 movement_notes=movement_notes,
@@ -948,41 +990,12 @@ class CreateHistoryEventSchema(Schema):
 
             return {'events': events}
 
-    class CreateSwapEventSchema(Schema):
-        identifier = fields.Integer(required=True)
-        timestamp = TimestampMSField(required=True)
+    class CreateSwapEventSchema(BaseSwapEventSchema):
         location = LocationField(required=True)
-        spend_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
-        spend_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        receive_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
-        receive_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        fee_amount = FeeField(required=False, load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
-        fee_asset = AssetField(required=False, load_default=None, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        location_label = fields.String(required=False, load_default=None)
-        unique_id = fields.String(required=False, load_default=None)
-        user_notes = fields.List(fields.String(), required=False, validate=validate.Length(min=2, max=3))  # noqa: E501
-        event_identifier = fields.String(required=False, load_default=None)
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
-            if (notes := data.get('user_notes')) is None:
-                spend_notes, receive_notes, fee_notes = None, None, None
-            elif len(notes) == 2:
-                spend_notes, receive_notes = notes
-                fee_notes = None
-            else:  # len == 3, enforced by validate.Length above
-                spend_notes, receive_notes, fee_notes = notes
-
-            if ((fee_amount := data['fee_amount']) is None) ^ (data['fee_asset'] is None):
-                raise ValidationError(
-                    message='fee_amount and fee_asset must be provided together',
-                    field_name='fee_amount',
-                )
-            elif fee_amount is None and fee_notes is not None:
-                raise ValidationError(
-                    message='fee_notes may only be provided when fee_amount is present',
-                    field_name='fee_notes',
-                )
+            spend_notes, receive_notes, fee_notes = self._validate_fee_and_get_notes(data)
 
             extra_data: SwapEventExtraData = {}
             if (unique_id := data['unique_id']) is not None:
@@ -996,7 +1009,7 @@ class CreateHistoryEventSchema(Schema):
                 spend_amount=data['spend_amount'],
                 receive_asset=data['receive_asset'],
                 receive_amount=data['receive_amount'],
-                fee_amount=fee_amount or ZERO,
+                fee_amount=data['fee_amount'] or ZERO,
                 fee_asset=data['fee_asset'],
                 location_label=data['location_label'],
                 unique_id=data['unique_id'],
@@ -1008,13 +1021,74 @@ class CreateHistoryEventSchema(Schema):
                 receive_identifier=context_schema.get_grouped_event_identifier(
                     data=data,
                     subtype=HistoryEventSubType.RECEIVE,
+                    sequence_index_offset=1,
                 ),
                 fee_identifier=context_schema.get_grouped_event_identifier(
                     data=data,
                     subtype=HistoryEventSubType.FEE,
+                    sequence_index_offset=2,
                 ),
                 extra_data=extra_data,
             )
+            return {'events': events}
+
+    class CreateEvmSwapEventSchema(BaseSwapEventSchema, BaseEvmEventSchema):
+        sequence_index = fields.Integer(required=True)
+
+        @post_load
+        def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
+            spend_notes, receive_notes, fee_notes = self._validate_fee_and_get_notes(data)
+            context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
+            events = [EvmSwapEvent(
+                tx_hash=(tx_hash := data['tx_hash']),
+                sequence_index=(sequence_index := data['sequence_index']),
+                timestamp=(timestamp := data['timestamp']),
+                location=(location := data['location']),
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=data['spend_asset'],
+                amount=data['spend_amount'],
+                location_label=data['location_label'],
+                notes=spend_notes,
+                identifier=data.get('identifier'),
+                event_identifier=(event_identifier := data['event_identifier']),
+                extra_data=data['extra_data'],
+                counterparty=data['counterparty'],
+                product=data['product'],
+                address=data['address'],
+            ), EvmSwapEvent(
+                tx_hash=tx_hash,
+                sequence_index=sequence_index + 1,
+                timestamp=timestamp,
+                location=location,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=data['receive_asset'],
+                amount=data['receive_amount'],
+                notes=receive_notes,
+                identifier=context_schema.get_grouped_event_identifier(
+                    data=data,
+                    subtype=HistoryEventSubType.RECEIVE,
+                    sequence_index_offset=1,
+                ),
+                event_identifier=event_identifier,
+            )]
+            if (fee_asset := data['fee_asset']) is not None:
+                events.append(EvmSwapEvent(
+                    tx_hash=tx_hash,
+                    sequence_index=sequence_index + 2,
+                    timestamp=timestamp,
+                    location=location,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=fee_asset,
+                    amount=data['fee_amount'],
+                    notes=fee_notes,
+                    identifier=context_schema.get_grouped_event_identifier(
+                        data=data,
+                        subtype=HistoryEventSubType.FEE,
+                        sequence_index_offset=2,
+                    ),
+                    event_identifier=event_identifier,
+                ))
+
             return {'events': events}
 
     ENTRY_TO_SCHEMA: Final[dict[HistoryBaseEntryType, type[Schema]]] = {
@@ -1025,12 +1099,14 @@ class CreateHistoryEventSchema(Schema):
         HistoryBaseEntryType.EVM_EVENT: CreateEvmEventSchema,
         HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: CreateAssetMovementEventSchema,
         HistoryBaseEntryType.SWAP_EVENT: CreateSwapEventSchema,
+        HistoryBaseEntryType.EVM_SWAP_EVENT: CreateEvmSwapEventSchema,
     }
 
     def get_grouped_event_identifier(
             self,
             data: dict[str, Any],
             subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.FEE],
+            sequence_index_offset: int,
     ) -> int | None:
         """Retrieve grouped event's identifier, returns None for create."""
         return None
@@ -1058,19 +1134,21 @@ class EditHistoryEventSchema(CreateHistoryEventSchema):
             self,
             data: dict[str, Any],
             subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.FEE],
+            sequence_index_offset: int,
     ) -> int | None:
-        """Retrieve grouped event's identifier, returns None for create."""
+        """Retrieve grouped event's identifier, returns None for create.
+        Since there may be multiple groups with the same event_identifier, only select an event
+        that has the correct offset after the main event of this group. This works since grouped
+        event indexes increment consecutively from the main event's index.
+        """
         with self.database.conn.read_ctx() as cursor:
-            result = cursor.execute("""
-                SELECT identifier
-                FROM history_events
-                WHERE event_identifier = (
-                    SELECT event_identifier
-                    FROM history_events
-                    WHERE identifier = ?
-                )
-                AND subtype = ?
-            """, (data['identifier'], subtype.serialize())).fetchone()
+            result = cursor.execute(
+                'SELECT h2.identifier, h2.sequence_index FROM history_events h1 '
+                'JOIN history_events h2 ON h2.event_identifier = h1.event_identifier AND '
+                f'h2.sequence_index = h1.sequence_index + {sequence_index_offset} AND '
+                'h2.subtype = ? WHERE h1.identifier = ?',
+                (subtype.serialize(), data['identifier']),
+            ).fetchone()
 
             return result[0] if result else None
 

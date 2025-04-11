@@ -5,13 +5,18 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryData,
+    HistoryBaseEntryType,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_event_identifier
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import Location, TimestampMS
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE
+from .evm_event import EVM_EVENT_FIELDS
 
 if TYPE_CHECKING:
     from more_itertools import peekable
@@ -26,6 +31,26 @@ class SwapEventExtraData(TypedDict):
     """Typed dict with all the valid fields used in extra_data for SwapEvents"""
     # Internal reference used in exchanges.
     reference: NotRequired[str]
+
+
+class SwapEventEntryData(TypedDict):
+    """Typed dict of attributes common to both SwapEvents and EvmSwapEvents.
+     Used during deserialization.
+     """
+    timestamp: TimestampMS
+    location: Location
+    event_subtype: Literal[
+        HistoryEventSubType.SPEND,
+        HistoryEventSubType.RECEIVE,
+        HistoryEventSubType.FEE,
+    ]
+    asset: Asset
+    amount: 'FVal'
+    location_label: str | None
+    identifier: int | None
+    event_identifier: str | None
+    notes: str | None
+    extra_data: dict[str, Any] | None
 
 
 class SwapEvent(HistoryBaseEntry):
@@ -85,7 +110,10 @@ class SwapEvent(HistoryBaseEntry):
     def entry_type(self) -> HistoryBaseEntryType:
         return HistoryBaseEntryType.SWAP_EVENT
 
-    def serialize_for_db(self) -> tuple[tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]]:
+    def serialize_for_db(self) -> tuple[tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE]] | tuple[
+            tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],
+            tuple[str, str, EVM_EVENT_FIELDS],
+    ]:
         return (self._serialize_base_tuple_for_db(),)
 
     @classmethod
@@ -111,27 +139,31 @@ class SwapEvent(HistoryBaseEntry):
             notes=entry[8] or None,
         )
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the event for api, and generate the auto_notes.
+    def _generate_auto_notes(self) -> str:
+        """Generate a description of this event. Used in serialize().
         May raise UnknownAsset, but this would be an edge case as the asset should already have
         been checked for existence when it was deserialized from an API or from the database.
         """
-        serialized_data = super().serialize()
         location_name = get_formatted_location_name(self.location)
         asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.SPEND:
-            auto_notes = f'Swap {self.amount} {asset_symbol} in {location_name}'
+            return f'Swap {self.amount} {asset_symbol} in {location_name}'
         elif self.event_subtype == HistoryEventSubType.RECEIVE:
-            auto_notes = f'Receive {self.amount} {asset_symbol} after a swap in {location_name}'
+            return f'Receive {self.amount} {asset_symbol} after a swap in {location_name}'
         else:  # Fee
-            auto_notes = f'Spend {self.amount} {asset_symbol} as {location_name} swap fee'
+            return f'Spend {self.amount} {asset_symbol} as {location_name} swap fee'
 
-        serialized_data['auto_notes'] = auto_notes
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the event for api."""
+        serialized_data = super().serialize()
+        serialized_data['auto_notes'] = self._generate_auto_notes()
         return serialized_data
 
     @classmethod
-    def deserialize(cls: type['SwapEvent'], data: dict[str, Any]) -> 'SwapEvent':
-        base_data = cls._deserialize_base_history_data(data)
+    def _deserialize_swap_data(
+            cls: type['SwapEvent'],
+            base_data: HistoryBaseEntryData,
+    ) -> SwapEventEntryData:
         if (event_subtype := base_data['event_subtype']) not in {
             HistoryEventSubType.SPEND,
             HistoryEventSubType.RECEIVE,
@@ -142,17 +174,24 @@ class SwapEvent(HistoryBaseEntry):
                 f'Expected SPEND, RECEIVE or FEE',
             )
 
-        return cls(
+        return SwapEventEntryData(
             identifier=base_data['identifier'],
             event_identifier=base_data['event_identifier'],
             timestamp=base_data['timestamp'],
             location=base_data['location'],
-            location_label=base_data['location_label'],
             event_subtype=event_subtype,  # type: ignore  # just confirmed it's a SPEND, RECEIVE or FEE above
             asset=base_data['asset'],
             amount=base_data['amount'],
+            notes=base_data['notes'],
+            location_label=base_data['location_label'],
             extra_data=base_data['extra_data'],
         )
+
+    @classmethod
+    def deserialize(cls: type['SwapEvent'], data: dict[str, Any]) -> 'SwapEvent':
+        return cls(**cls._deserialize_swap_data(  # type: ignore[arg-type]  # deserialized extra_data should be valid SwapEventExtraData
+            base_data=cls._deserialize_base_history_data(data),
+        ))
 
     def __repr__(self) -> str:
         return f'SwapEvent({", ".join(self._history_base_entry_repr_fields())})'

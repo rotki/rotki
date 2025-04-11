@@ -8,14 +8,15 @@ import requests
 
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USD, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USD, A_USDT, A_WBTC
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
-from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
+from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
@@ -922,4 +923,155 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'sequence_index': 0,
         'extra_data': {'reference': 'TRADE2'},
         'auto_notes': 'Swap 0.01 ETH in Bitfinex',
+    }
+
+
+def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    entries = [{
+        'entry_type': 'evm swap event',
+        'timestamp': 1569924575000,
+        'location': 'ethereum',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'spend_amount': '0.16',
+        'spend_asset': 'ETH',
+        'receive_amount': '0.003',
+        'receive_asset': A_WBTC.identifier,
+        'fee_amount': '0.0002',
+        'fee_asset': 'ETH',
+        'user_notes': ['Example note', '', ''],
+        'sequence_index': 0,
+        'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'counterparty': 'some counterparty',
+        'address': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
+    }, {
+        'entry_type': 'evm swap event',
+        'timestamp': 1569924576000,
+        'location': 'ethereum',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'spend_amount': '50',
+        'spend_asset': A_USDT.identifier,
+        'receive_amount': '0.026',
+        'receive_asset': 'ETH',
+        'sequence_index': 123,
+        'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'counterparty': 'some counterparty',
+        'product': 'pool',
+        'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
+    }]
+    for entry in entries:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert 'identifier' in result
+        entry['identifier'] = result['identifier']
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )) == 5  # spend/receive/fee (3) from first swap, and spend/receive (2) from the second
+
+    # Edit the event identifier of the second entry and add a fee
+    entry = entries[1].copy()
+    entry['fee_amount'], entry['fee_asset'], entry['event_identifier'] = '0.1', 'USD', 'test_id'
+    requests.patch(api_url_for(rotkehlchen_api_server, 'historyeventresource'), json=entry)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert (events := db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )) == [EvmSwapEvent(
+            identifier=1,
+            sequence_index=0,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.16'),
+            location_label=(location_label := '0x6e15887E2CEC81434C16D587709f64603b39b545'),
+            notes='Example note',
+            tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f')),  # noqa: E501
+            counterparty='some counterparty',
+            product=None,
+            address=string_to_evm_address('0xA090e606E30bD747d4E6245a1517EbE430F0057e'),
+        ), EvmSwapEvent(
+            identifier=2,
+            sequence_index=1,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_WBTC,
+            amount=FVal('0.003'),
+            tx_hash=tx_hash,
+        ), EvmSwapEvent(
+            identifier=3,
+            sequence_index=2,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.0002'),
+            tx_hash=tx_hash,
+        ), EvmSwapEvent(
+            identifier=4,
+            event_identifier='test_id',
+            sequence_index=123,
+            timestamp=TimestampMS(1569924576000),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('50'),
+            location_label=location_label,
+            tx_hash=tx_hash,
+            counterparty='some counterparty',
+            product=EvmProduct.POOL,
+            address=string_to_evm_address('0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511'),
+        ), EvmSwapEvent(
+            identifier=5,
+            event_identifier='test_id',
+            sequence_index=124,
+            timestamp=TimestampMS(1569924576000),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('0.026'),
+            tx_hash=tx_hash,
+        ), EvmSwapEvent(
+            identifier=6,
+            event_identifier='test_id',
+            sequence_index=125,
+            timestamp=TimestampMS(1569924576000),
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('0.1'),
+            tx_hash=tx_hash,
+        )]
+
+    # Check event serialization.
+    assert generate_events_response(data=[events[3]])[0]['entry'] == {
+        'timestamp': 1569924576000,
+        'event_type': 'trade',
+        'event_subtype': 'spend',
+        'location': 'ethereum',
+        'location_label': '0x6e15887E2CEC81434C16D587709f64603b39b545',
+        'asset': A_USDT.identifier,
+        'amount': '50',
+        'identifier': 4,
+        'entry_type': 'evm swap event',
+        'event_identifier': 'test_id',
+        'sequence_index': 123,
+        'extra_data': None,
+        'auto_notes': 'Swap 50 USDT in Ethereum',
+        'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'counterparty': 'some counterparty',
+        'product': 'pool',
+        'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
     }

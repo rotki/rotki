@@ -47,6 +47,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.price import query_usd_price_or_use_default
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -512,6 +513,7 @@ class DBHistoryEvents:
                     deserialized_event = (
                         AssetMovement if entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else  # noqa: E501
                         SwapEvent if entry_type == HistoryBaseEntryType.SWAP_EVENT else
+                        EvmSwapEvent if entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT else
                         HistoryEvent
                     ).deserialize_from_db(data)
             except (DeserializationError, UnknownAsset) as e:
