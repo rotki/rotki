@@ -19,7 +19,7 @@
 ![Visitors](https://api.visitorbadge.io/api/visitors?path=rotki%2Frotki%20&countColor=%23263759&style=flat)
 [![GitHub forks](https://img.shields.io/github/forks/rotki/rotki)](https://github.com/rotki/rotki/forks)
 [![GitHub stars](https://img.shields.io/github/stars/rotki/rotki)](https://github.com/rotki/rotki/stargazers)
-![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki)
+[![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki)](https://github.com/rotki/rotki/graphs/commit-activity)
 [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
 [![Github downloads](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
 [![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen)](https://rotki.com/jobs/)
