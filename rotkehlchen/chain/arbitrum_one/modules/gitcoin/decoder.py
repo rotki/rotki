@@ -39,6 +39,9 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
                 string_to_evm_address('0x0C0412DDB846096Ea1e37de717921EBF4fEF9A39'),
                 string_to_evm_address('0x0023055B2F86EAE827C2bee06BBF483738fb600c'),
                 string_to_evm_address('0x347Ff9951D24E29b559E3323b5370Aa29993e613'),
+                string_to_evm_address('0xe5B88c67fCd25f0a7BAD6cF7c5A5197e61BFd143'),
+                string_to_evm_address('0x145052E87140b7309F6EE18Ba12fC187560d5D89'),
+                string_to_evm_address('0x3E93205B786796Cf7Ea70404E89c7dda3b84D07a'),
             ],
             retro_funding_strategy_addresses=[string_to_evm_address('0x2Caa214E2de4b05A9E0E1a1cCfDb3c673a28acCf')],
         )
