@@ -121,6 +121,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.MINT: {
         HistoryEventSubType.NFT: {DEFAULT: EventCategory.MINT_NFT},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
     },
     HistoryEventType.BURN: {
         HistoryEventSubType.NFT: {DEFAULT: EventCategory.BURN_NFT},

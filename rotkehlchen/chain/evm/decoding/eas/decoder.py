@@ -57,7 +57,12 @@ class EASCommonDecoder(DecoderInterface, ABC):
             return DEFAULT_DECODING_OUTPUT
 
         attester = bytes_to_address(context.tx_log.topics[2])
-        if self.base.is_tracked(attester) is False:
+        recipient = bytes_to_address(context.tx_log.topics[1])
+        if self.base.is_tracked(attester):
+            location_label = attester
+        elif self.base.is_tracked(recipient):
+            location_label = recipient
+        else:
             return DEFAULT_DECODING_OUTPUT
 
         uid = context.tx_log.data.hex()
@@ -74,7 +79,7 @@ class EASCommonDecoder(DecoderInterface, ABC):
             event_subtype=HistoryEventSubType.ATTEST,
             asset=A_ETH,
             amount=ZERO,
-            location_label=attester,
+            location_label=location_label,
             notes=f'Attest to https://{prefix}easscan.org/attestation/view/0x{uid}',
             counterparty=CPT_EAS,
             address=context.tx_log.address,
