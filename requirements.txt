@@ -7,27 +7,27 @@ eth-typing==5.1.0
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.10.1
 requests==2.32.3
-urllib3==2.3.0
+urllib3==2.4.0
 coincurve==21.0.0
 base58check==1.0.2
 bech32==1.2.0
 jsonschema==4.23.0
-gql[requests]==3.5.0
+gql[requests]==3.5.2
 scalecodec==1.2.11
-py-sr25519-bindings==0.2.0
-py-ed25519-zebra-bindings==1.0.1
-py-bip39-bindings==0.1.11
+py-sr25519-bindings==0.2.2
+py-ed25519-zebra-bindings==1.2.0
+py-bip39-bindings==0.2.0
 substrate-interface==1.7.11
 beautifulsoup4==4.13.3
 maxminddb==2.6.3
 pywin32==306; sys_platform == 'win32'
 miniupnpc==2.3.2
 cryptography==44.0.2
-py-machineid==0.6.0
+py-machineid==0.7.0
 more-itertools==10.6.0  # for peekable iterators
 regex==2024.11.6  # used for unicode information in detection of spam tokens
 eth-abi==5.2.0
-polars-lts-cpu==1.26.0
+polars-lts-cpu==1.27.1
 
 # For the rest api
 flask-cors==5.0.1
