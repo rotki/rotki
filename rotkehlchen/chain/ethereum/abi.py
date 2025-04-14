@@ -89,11 +89,10 @@ def decode_event_data_abi(
 
     # sanity check that there are not name intersections between the topic
     # names and the data argument names.
-    duplicate_names = set(log_topic_names).intersection(log_data_names)
-    if duplicate_names:
+    if (duplicate_names := set(log_topic_names).intersection(log_data_names)):
         raise DeserializationError(
             f'The following argument names are duplicated '
-            f"between event inputs: '{', '.join(duplicate_names)}'",
+            f"between event inputs: '{', '.join({name for name in duplicate_names if name is not None})}'",  # noqa: E501
         )
 
     decoded_log_data = WEB3.codec.decode(log_data_types, tx_log.data)

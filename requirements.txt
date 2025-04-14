@@ -3,7 +3,7 @@ greenlet==3.1.1
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.7  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==7.8.0
-eth-typing==5.1.0
+eth-typing==5.2.1
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.10.1
 requests==2.32.3
@@ -28,6 +28,7 @@ more-itertools==10.6.0  # for peekable iterators
 regex==2024.11.6  # used for unicode information in detection of spam tokens
 eth-abi==5.2.0
 polars-lts-cpu==1.22.0
+eth-utils==5.3.0
 
 # For the rest api
 flask-cors==5.0.0
