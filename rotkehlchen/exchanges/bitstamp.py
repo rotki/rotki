@@ -302,9 +302,10 @@ class Bitstamp(ExchangeInterface):
                         abs(crypto_movement.timestamp - asset_movement.timestamp) <= BITSTAMP_MATCHING_TOLERANCE  # noqa: E501
                 ):
                     asset_movement.extra_data.update(crypto_movement.extra_data)  # type: ignore  # crypto_movement.extra_data should always be set here
-                    del asset_movement.extra_data['fee']  # no need to save this to the DB
                     indices_to_delete.append(idx)
                     break
+
+            asset_movement.extra_data.pop('fee', None)  # don't let this get to the DB
 
         for idx in sorted(indices_to_delete, reverse=True):
             del crypto_asset_movements[idx]  # remove the crypto asset movements whose data we already correlated  # noqa: E501
