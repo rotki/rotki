@@ -3103,6 +3103,12 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (1703082904, 'G', 'XRP', 'USD', 'A', '43.764904', '0.685480767877384124960036471232748505514829873727130762128485418361708276567909', None, None, '8ad05838-6b0e-50a8-8665-c784fd4d85fd', None),  # noqa: E501
             (1575784819, 'B', 'BTC', 'BSV', 'A', '0.0000000831', '0.012256637168141592', None, None, 'adjustmentNZ5OB33-MW63Z-EN3SV1NZ4HZV6-EN3S2-DFZ1X4', None),  # noqa: E501
         ]
+        assert cursor.execute('SELECT identifier, location FROM user_notes WHERE identifier BETWEEN 1001 AND 1004').fetchall() == [  # noqa: E501
+            (1001, 'HISTORY_TRADES'),
+            (1002, 'HISTORY_TRANSACTIONS'),
+            (1003, 'HISTORY_DEPOSITS_WITHDRAWALS'),
+            (1004, 'DASHBOARD'),
+        ]
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3135,6 +3141,13 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         # TODO: Uncomment this when tables are dropped
         # assert table_exists(cursor, 'trades') is False  # noqa: ERA001
         # assert table_exists(cursor, 'trade_type') is False  # noqa: ERA001
+
+        assert cursor.execute('SELECT identifier, location FROM user_notes WHERE identifier BETWEEN 1001 AND 1004').fetchall() == [  # noqa: E501
+            (1001, 'HISTORY'),
+            (1002, 'HISTORY'),
+            (1003, 'HISTORY'),
+            (1004, 'DASHBOARD'),
+        ]
 
     db.logout()
 
