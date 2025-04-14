@@ -144,7 +144,6 @@ from rotkehlchen.api.v1.resources import (
     SupportedChainsResource,
     TagsResource,
     TimestampHistoricalBalanceResource,
-    TradesResource,
     TypesMappingsResource,
     UserAssetsResource,
     UserNotesResource,
@@ -195,7 +194,6 @@ URLS_V1: URLS = [
     ('/assets/icon/modify', AssetIconsResource),
     ('/assets/locationmappings', LocationAssetMappingsResource),
     ('/assets/counterpartymappings', CounterpartyAssetMappingsResource),
-    ('/trades', TradesResource),
     ('/tags', TagsResource),
     ('/exchanges/binance/pairs', BinanceAvailableMarkets),
     ('/exchanges/<string:location>/savings', BinanceSavingsResource),  # this can only be Binance/BinanceUS  # noqa: E501
