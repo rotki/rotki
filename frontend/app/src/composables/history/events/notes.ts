@@ -2,6 +2,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
+import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
 import { type BigNumber, bigNumberify, Blockchain, isEvmIdentifier, isValidEthAddress, isValidTxHash } from '@rotki/common';
 
@@ -31,7 +32,7 @@ export interface NoteFormat {
 
 interface FormatNoteParams {
   notes: MaybeRef<string>;
-  amount?: MaybeRef<BigNumber | undefined>;
+  amount?: MaybeRef<BigNumber | BigNumber[] | undefined>;
   assetId?: MaybeRef<string>;
   noTxHash?: MaybeRef<boolean>;
   validatorIndex?: MaybeRef<number | undefined>;
@@ -237,27 +238,31 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       }
 
       const amountVal = get(amount);
+      const amountArr: BigNumber[] = amountVal ? arrayify(amountVal) : [];
       const wordUsed = word.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
 
-      const isAmount = amountVal
-        && !isNaN(Number.parseFloat(wordUsed))
-        && bigNumberify(wordUsed).eq(amountVal)
-        && amountVal.gt(0);
+      const isAmount = amountArr.length > 0
+        && !isNaN(parseFloat(wordUsed));
 
       if (isAmount) {
-        const isAsset = index < processedWords.length - 1
-          && processedWords[index + 1] === asset;
+        const bigNumber = bigNumberify(wordUsed);
+        const isIncluded = amountArr.some(item => item.eq(bigNumber));
 
-        formats.push({
-          amount: amountVal,
-          asset: isAsset ? get(assetId) : undefined,
-          type: NoteType.AMOUNT,
-        });
+        if (isIncluded && bigNumber.gt(0)) {
+          const isAsset = index < processedWords.length - 1
+            && processedWords[index + 1] === asset;
 
-        if (isAsset)
-          skip = true;
+          formats.push({
+            amount: bigNumber,
+            asset: isAsset ? get(assetId) : undefined,
+            type: NoteType.AMOUNT,
+          });
 
-        return putBackPunctuation();
+          if (isAsset)
+            skip = true;
+
+          return putBackPunctuation();
+        }
       }
 
       // Check if the word is Markdown link format

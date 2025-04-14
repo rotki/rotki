@@ -6,6 +6,8 @@ const props = withDefaults(
   defineProps<{
     type: HistoryEventCategoryDetailWithId;
     showLabel?: boolean;
+    icon?: RuiIcons;
+    highlight?: boolean;
   }>(),
   {
     showLabel: false,
@@ -32,10 +34,13 @@ const { t } = useI18n();
   <div class="flex items-center gap-3">
     <div
       class="shrink-0 bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full"
+      :class="{
+        '!bg-rui-primary-lighter/[0.7] dark:!bg-rui-primary-lighter !text-rui-primary': highlight,
+      }"
     >
       <RuiIcon
         size="20"
-        :name="type.icon"
+        :name="icon || type.icon"
         :color="type.color"
       />
     </div>

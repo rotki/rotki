@@ -1,27 +1,14 @@
 <script setup lang="ts">
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { DependentHistoryEvent, HistoryEvent, HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
-import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
+import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
+import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
-import { isDependentHistoryEvent } from '@/modules/history/management/forms/form-guards';
-import {
-  isAssetMovementEvent,
-  isEventAccountingRuleProcessed,
-  isEventMissingAccountingRule,
-  isEvmEvent,
-} from '@/utils/history/events';
 import { HistoryEventEntryType } from '@rotki/common';
-import { pick } from 'es-toolkit';
-
-interface DeleteEvent {
-  canDelete: boolean;
-  item: HistoryEventEntry;
-}
 
 interface HistoryEventsListTableProps {
   events: HistoryEventEntry[];
@@ -38,163 +25,198 @@ const props = withDefaults(defineProps<HistoryEventsListTableProps>(), {
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
-  'delete-event': [data: DeleteEvent];
+  'delete-event': [data: { canDelete: boolean; item: HistoryEventEntry }];
   'show:missing-rule-action': [data: HistoryEventEditData];
 }>();
 
 const { t } = useI18n();
+
+const isCompact = ref(true);
+const isInitialRender = ref(true);
+
 const { getChain } = useSupportedChains();
+const { assetSymbol } = useAssetInfoRetrieval();
 
-function isNoTxHash(item: HistoryEventEntry) {
-  return (
-    item.entryType === HistoryEventEntryType.EVM_EVENT
-    && ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset')
-      || (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply')
-      || item.counterparty === 'safe-multisig')
-  );
-}
+const allowCompactView = computed(() => props.eventGroup.entryType === HistoryEventEntryType.SWAP_EVENT);
+const usedIsCompact = logicAnd(allowCompactView, isCompact);
 
-function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
-  if (isDependentHistoryEvent(item)) {
-    const events = props.events;
-    return {
-      eventsInGroup: events as DependentHistoryEvent[],
-      type: 'edit-group',
-    };
+function getSwapEventRank(eventSubtype: string): number {
+  if (eventSubtype === 'spend') {
+    return -1;
   }
-  else {
-    return {
-      event: item,
-      nextSequenceId: '',
-      type: 'edit',
-    };
+  if (eventSubtype === 'receive') {
+    return 1;
   }
+  return 0;
 }
 
-function editEvent(item: HistoryEvent) {
-  emit('edit-event', getEmittedEvent(item));
-}
-
-function deleteEvent(item: HistoryEventEntry) {
-  return emit('delete-event', {
-    canDelete: isEvmEvent(item) ? props.events.length > 1 : true,
-    item,
-  });
-}
-
-function getNotes(description: string | undefined, notes: string | undefined | null): string | undefined {
-  if (description) {
-    return notes ? `${description}. ${notes}` : description;
+const formattedEvents = computed(() => {
+  if (!get(usedIsCompact)) {
+    return props.events;
   }
-  else {
-    return notes || undefined;
+
+  return props.events.filter(item => item.eventSubtype !== 'fee').sort((a, b) => getSwapEventRank(a.eventSubtype) - getSwapEventRank(b.eventSubtype));
+});
+
+const compactNotes = computed(() => {
+  if (!get(usedIsCompact))
+    return undefined;
+
+  const events = get(formattedEvents);
+  const outAsset = events.find(item => item.eventSubtype === 'spend');
+  const inAsset = events.find(item => item.eventSubtype === 'receive');
+
+  if (!outAsset || !inAsset) {
+    return undefined;
   }
-}
 
-function getEventNoteAttrs(event: HistoryEventEntry) {
-  const data: {
-    validatorIndex?: number;
-    blockNumber?: number;
-    counterparty?: string;
-  } = {};
+  const outAssetNote = `${outAsset.amount} ${get(assetSymbol(outAsset.asset))}`;
+  const inAssetNote = `${inAsset.amount} ${get(assetSymbol(inAsset.asset))}`;
 
-  if ('validatorIndex' in event)
-    data.validatorIndex = event.validatorIndex;
+  let notes = `Swap ${outAssetNote} for ${inAssetNote}`;
 
-  if ('blockNumber' in event)
-    data.blockNumber = event.blockNumber;
-  else if ('blockNumber' in props.eventGroup)
-    data.blockNumber = props.eventGroup.blockNumber;
+  const feeAsset = props.events.find(item => item.eventSubtype === 'fee');
+  if (feeAsset) {
+    const feeAssetNote = `${feeAsset.amount} ${get(assetSymbol(feeAsset.asset))}`;
+    notes = `${notes} with fee ${feeAssetNote}`;
+  }
 
-  if ('counterparty' in event && event.counterparty)
-    data.counterparty = event.counterparty;
+  return notes;
+});
 
-  // todo: validate optional or nullable state of schema
-  const { asset, autoNotes, userNotes } = pick(event, ['userNotes', 'autoNotes', 'asset']);
+// Add this watch to set isInitialRender to false after the first change
+watch(isCompact, () => {
+  if (get(isInitialRender)) {
+    set(isInitialRender, false);
+  }
+});
 
-  return {
-    asset,
-    notes: getNotes(autoNotes, userNotes),
-    ...data,
-  };
-}
-
-function hideActions(item: HistoryEventEntry, index: number): boolean {
-  const isSwapButNotSpend = item.entryType === HistoryEventEntryType.SWAP_EVENT && index !== 0;
-  const isAssetMovementFee = isAssetMovementEvent(item) && item.eventSubtype === 'fee';
-  return isAssetMovementFee || isSwapButNotSpend;
-}
+const [DefineTemplate, ReuseTemplate] = createReusableTemplate<{
+  item: HistoryEventEntry;
+  index: number;
+}>();
 </script>
 
 <template>
+  <DefineTemplate #default="{ item, index }">
+    <HistoryEventsListItem
+      class="flex-1"
+      :item="item"
+      :index="index"
+      :events="events"
+      :event-group="eventGroup"
+      :compact="usedIsCompact"
+      :is-last="index === events.length - 1"
+      :is-highlighted="highlightedIdentifiers?.includes(item.identifier.toString())"
+      @edit-event="emit('edit-event', $event)"
+      @delete-event="emit('delete-event', $event)"
+      @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+    />
+  </DefineTemplate>
   <div>
     <template v-if="total > 0">
-      <LazyLoader
-        v-for="(item, index) in events"
-        :key="item.identifier"
-        min-height="5rem"
-        class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-3 items-center -mx-4 px-4"
-        :class="{
-          'border-b border-default': index < events.length - 1,
-          'bg-rui-error/[0.05]': highlightedIdentifiers && highlightedIdentifiers.includes(item.identifier.toString()),
-        }"
-      >
-        <HistoryEventType
-          :event="item"
-          :chain="getChain(item.location)"
-          class="md:col-span-2 lg:col-span-6"
+      <template v-if="!allowCompactView">
+        <ReuseTemplate
+          v-for="(item, index) in events"
+          :key="item.identifier"
+          :item="item"
+          :index="index"
         />
-        <HistoryEventAsset
-          :event="item"
-          class="md:col-span-2 lg:col-span-4"
-        />
-        <HistoryEventNote
-          v-bind="getEventNoteAttrs(item)"
-          :amount="item.amount"
-          :chain="getChain(item.location)"
-          :no-tx-hash="isNoTxHash(item)"
-          class="break-words leading-6 md:col-span-3 lg:col-span-7"
-        />
-        <RowActions
-          class="lg:col-span-3"
-          align="end"
-          :delete-tooltip="t('transactions.events.actions.delete')"
-          :edit-tooltip="t('transactions.events.actions.edit')"
-          :no-delete="hideActions(item, index)"
-          :no-edit="hideActions(item, index)"
-          @edit-click="editEvent(item)"
-          @delete-click="deleteEvent(item)"
+      </template>
+      <template v-else>
+        <TransitionGroup
+          tag="div"
+          name="list"
+          class="relative"
+          :class="{
+            'grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 items-start gap-3 gap-y-1': usedIsCompact,
+            'flex flex-col': !usedIsCompact,
+            'transition-wrapper': !isInitialRender,
+          }"
         >
-          <RuiTooltip
-            v-if="isEventMissingAccountingRule(item)"
-            :popper="{ placement: 'top', offsetDistance: 0 }"
-            :open-delay="400"
+          <LazyLoader
+            v-if="usedIsCompact"
+            class="pt-4 pb-0 lg:py-4.5"
           >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                color="warning"
-                icon
-                @click="emit('show:missing-rule-action', getEmittedEvent(item))"
+            <HistoryEventType
+              icon="lu-arrow-right-left"
+              :event="formattedEvents[0]"
+              highlight
+              :chain="getChain(formattedEvents[0].location)"
+            />
+          </LazyLoader>
+          <template
+            v-for="(item, index) in formattedEvents"
+            :key="item.identifier"
+          >
+            <div
+              class="flex flex-col md:flex-row"
+              :data-subtype="item.eventSubtype"
+            >
+              <ReuseTemplate
+                :item="item"
+                :index="index"
+              />
+              <LazyLoader
+                v-if="index === 0 && usedIsCompact"
+                class="py-0 md:py-6 text-rui-grey-400 dark:text-rui-grey-600"
               >
                 <RuiIcon
-                  size="16"
-                  name="lu-info"
+                  name="lu-chevron-right"
+                  size="24"
+                  class="rotate-90 md:rotate-0"
                 />
-              </RuiButton>
+              </LazyLoader>
+            </div>
+          </template>
+          <template v-if="usedIsCompact">
+            <LazyLoader
+              v-if="compactNotes"
+              class="py-2 lg:pt-4 lg:pb-4"
+              min-height="70"
+            >
+              <HistoryEventNote
+                class="md:col-span-2 lg:col-span-1"
+                :notes="compactNotes"
+                :amount="events.map(item => item.amount)"
+              />
+            </LazyLoader>
+            <LazyLoader
+              class="py-0 lg:py-4"
+              min-height="40"
+            >
+              <HistoryEventsListItemAction
+                :item="formattedEvents[0]"
+                :index="0"
+                :events="events"
+                @edit-event="emit('edit-event', $event)"
+                @delete-event="emit('delete-event', $event)"
+                @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+              />
+            </LazyLoader>
+          </template>
+        </TransitionGroup>
+        <LazyLoader
+          class="pb-2"
+          min-height="36"
+        >
+          <RuiButton
+            variant="text"
+            color="primary"
+            @click="isCompact = !isCompact"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-chevron-down"
+                size="16"
+                class="transition-all"
+                :class="{ 'rotate-180': !usedIsCompact }"
+              />
             </template>
-            {{ t('actions.history_events.missing_rule.title') }}
-          </RuiTooltip>
-          <HistoryEventAction
-            v-else-if="!isEventAccountingRuleProcessed(item)"
-            :event="item"
-          />
-          <div
-            v-else
-            class="w-10 h-10"
-          />
-        </RowActions>
-      </LazyLoader>
+            {{ usedIsCompact ? t('transactions.events.view.view_detail') : t('transactions.events.view.compact_view') }}
+          </RuiButton>
+        </LazyLoader>
+      </template>
     </template>
 
     <template v-else>
@@ -207,3 +229,26 @@ function hideActions(item: HistoryEventEntry, index: number): boolean {
     </template>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.transition-wrapper {
+  .list-move,
+  .list-enter-active,
+  .list-leave-active {
+    @apply transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)];
+  }
+
+  .list-enter-from,
+  .list-leave-to {
+    @apply opacity-0;
+  }
+
+  .list-leave-active {
+    @apply absolute w-full;
+
+    &[data-subtype="fee"] {
+      @apply transition-none !important;
+    }
+  }
+}
+</style>
