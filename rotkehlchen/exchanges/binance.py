@@ -64,6 +64,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -146,7 +147,7 @@ def trade_from_binance(
             f'{binance_trade["symbol"]} in binance_symbols_to_pair',
         )
 
-    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+    spend, receive = get_swap_spend_receive(
         raw_trade_type='buy' if binance_trade['isBuyer'] else 'sell',
         base_asset=binance_pair.base_asset,
         quote_asset=binance_pair.quote_asset,
@@ -157,22 +158,19 @@ def trade_from_binance(
         f'Processing {location!s} Swap',
         timestamp=(timestamp := deserialize_timestamp_ms_from_intms(binance_trade['time'])),
         pair=binance_trade['symbol'],
-        spend_asset=spend_asset,
-        spend_amount=spend_amount,
-        receive_asset=receive_asset,
-        receive_amount=receive_amount,
-        fee_currency=(fee_currency := asset_from_binance(binance_trade['commissionAsset'])),
-        fee=(fee := deserialize_fee(binance_trade['commission'])),
+        spend=spend,
+        receive=receive,
+        fee=(fee := AssetAmount(
+            asset=asset_from_binance(binance_trade['commissionAsset']),
+            amount=deserialize_fee(binance_trade['commission']),
+        )),
     )
     return (unique_id := str(binance_trade['id'])), create_swap_events(
         timestamp=timestamp,
         location=location,
-        spend_asset=spend_asset,
-        spend_amount=spend_amount,
-        receive_asset=receive_asset,
-        receive_amount=receive_amount,
-        fee_asset=fee_currency,
-        fee_amount=fee,
+        spend=spend,
+        receive=receive,
+        fee=fee,
         unique_id=unique_id,
     )
 
@@ -1297,7 +1295,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 log.error(f'Found {self.location!s} fiat payment with failed status. Ignoring it.')
                 return []
 
-            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            spend, receive = get_swap_spend_receive(
                 raw_trade_type='buy' if is_buy else 'sell',
                 base_asset=asset_from_binance(raw_data['cryptoCurrency']),
                 quote_asset=(fiat_asset := asset_from_binance(raw_data['fiatCurrency'])),
@@ -1307,12 +1305,12 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             return create_swap_events(
                 timestamp=deserialize_timestamp_ms_from_intms(raw_data['createTime']),
                 location=self.location,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
-                fee_asset=fiat_asset,
-                fee_amount=Fee(deserialize_asset_amount(raw_data['totalFee'])),
+                spend=spend,
+                receive=receive,
+                fee=AssetAmount(
+                    asset=fiat_asset,
+                    amount=Fee(deserialize_asset_amount(raw_data['totalFee'])),
+                ),
                 location_label=self.name,
                 unique_id=get_key_if_has_val(raw_data, 'orderNo'),
             )

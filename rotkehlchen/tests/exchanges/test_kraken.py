@@ -61,7 +61,7 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -1134,12 +1134,9 @@ def test_kraken_event_serialization_with_custom_asset(database):
     swap_events = create_swap_events(
         timestamp=TimestampMS(10000000000),
         location=Location.KRAKEN,
-        spend_asset=custom_asset,
-        spend_amount=ONE,
-        receive_asset=custom_asset,
-        receive_amount=ONE,
-        fee_asset=custom_asset,
-        fee_amount=ONE,
+        spend=AssetAmount(asset=custom_asset, amount=ONE),
+        receive=AssetAmount(asset=custom_asset, amount=ONE),
+        fee=AssetAmount(asset=custom_asset, amount=ONE),
     )
     for idx, expected_notes in enumerate((
         'Swap 1 Gold Bar in Kraken',

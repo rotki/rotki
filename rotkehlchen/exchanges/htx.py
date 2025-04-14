@@ -41,6 +41,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     Fee,
     Location,
     Timestamp,
@@ -441,7 +442,7 @@ class Htx(ExchangeInterface):
                     continue
 
                 try:
-                    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(  # noqa: E501
+                    spend, receive = get_swap_spend_receive(
                         raw_trade_type=trade_type,
                         base_asset=base_asset,
                         quote_asset=quote_asset,
@@ -451,12 +452,12 @@ class Htx(ExchangeInterface):
                     events.extend(create_swap_events(
                         timestamp=deserialize_timestamp_ms_from_intms(raw_trade['created-at']),
                         location=self.location,
-                        spend_asset=spend_asset,
-                        spend_amount=spend_amount,
-                        receive_asset=receive_asset,
-                        receive_amount=receive_amount,
-                        fee_asset=fee_asset,
-                        fee_amount=deserialize_fee(raw_trade['filled-fees']) if raw_trade['filled-fees'] else Fee(ZERO),  # noqa: E501
+                        spend=spend,
+                        receive=receive,
+                        fee=AssetAmount(
+                            asset=fee_asset,
+                            amount=deserialize_fee(raw_trade['filled-fees']) if raw_trade['filled-fees'] else Fee(ZERO),  # noqa: E501
+                        ),
                         location_label=self.name,
                         unique_id=str(raw_trade['id']),
                     ))

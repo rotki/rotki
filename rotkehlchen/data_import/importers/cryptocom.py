@@ -28,11 +28,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import (
-    Fee,
-    Location,
-    Timestamp,
-)
+from rotkehlchen.types import AssetAmount, Fee, Location, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -129,14 +125,11 @@ class CryptocomImporter(BaseExchangeImporter):
                 history_events=create_swap_events(
                     event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row_without_index(csv_row)}',
                     timestamp=timestamp,
-                    spend_asset=quote_asset,
-                    spend_amount=abs(quote_amount_sold),
-                    receive_asset=base_asset,
-                    receive_amount=abs(base_amount_bought),
+                    spend=AssetAmount(asset=quote_asset, amount=abs(quote_amount_sold)),
+                    receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
+                    fee=AssetAmount(asset=fee_currency, amount=fee),
                     location=Location.CRYPTOCOM,
                     spend_notes=notes,
-                    fee_amount=fee,
-                    fee_asset=fee_currency,
                 ),
             )
 
@@ -440,14 +433,11 @@ class CryptocomImporter(BaseExchangeImporter):
                         history_events=create_swap_events(
                             event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row_without_index(debited_row)}',
                             timestamp=ts_sec_to_ms(timestamp),
-                            spend_asset=quote_asset,
-                            spend_amount=abs(quote_amount_sold),
-                            receive_asset=base_asset,
-                            receive_amount=abs(base_amount_bought),
+                            spend=AssetAmount(asset=quote_asset, amount=abs(quote_amount_sold)),
+                            receive=AssetAmount(asset=base_asset, amount=abs(base_amount_bought)),
+                            fee=AssetAmount(asset=fee_currency, amount=fee),
                             location=Location.CRYPTOCOM,
                             spend_notes=notes,
-                            fee_amount=fee,
-                            fee_asset=fee_currency,
                         ),
                     )
 

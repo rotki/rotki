@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict, overload
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, TypedDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.assets.asset import Asset
@@ -13,7 +13,7 @@ from rotkehlchen.history.events.structures.base import (
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_event_identifier
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import AssetAmount, Location, TimestampMS
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE
 from .evm_event import EVM_EVENT_FIELDS
@@ -210,65 +210,12 @@ class SwapEvent(HistoryBaseEntry):
         return accounting.events_accountant.process(self, events_iterator)
 
 
-@overload
 def create_swap_events(
         timestamp: TimestampMS,
         location: Location,
-        spend_asset: Asset,
-        spend_amount: 'FVal',
-        receive_asset: Asset,
-        receive_amount: 'FVal',
-        fee_asset: None = None,
-        fee_amount: None = None,
-        location_label: str | None = None,
-        unique_id: str | None = None,
-        spend_notes: str | None = None,
-        receive_notes: str | None = None,
-        fee_notes: str | None = None,
-        identifier: int | None = None,
-        receive_identifier: int | None = None,
-        fee_identifier: int | None = None,
-        event_identifier: str | None = None,
-        extra_data: SwapEventExtraData | None = None,
-) -> list[SwapEvent]:
-    """Overload for creating swap events with no fee."""
-
-
-@overload
-def create_swap_events(
-        timestamp: TimestampMS,
-        location: Location,
-        spend_asset: Asset,
-        spend_amount: 'FVal',
-        receive_asset: Asset,
-        receive_amount: 'FVal',
-        fee_asset: Asset,
-        fee_amount: 'FVal',
-        location_label: str | None = None,
-        unique_id: str | None = None,
-        spend_notes: str | None = None,
-        receive_notes: str | None = None,
-        fee_notes: str | None = None,
-        identifier: int | None = None,
-        receive_identifier: int | None = None,
-        fee_identifier: int | None = None,
-        event_identifier: str | None = None,
-        extra_data: SwapEventExtraData | None = None,
-) -> list[SwapEvent]:
-    """Overload for creating swap events with a fee.
-    The fee will still be omitted if the fee_amount is zero.
-    """
-
-
-def create_swap_events(
-        timestamp: TimestampMS,
-        location: Location,
-        spend_asset: Asset,
-        spend_amount: 'FVal',
-        receive_asset: Asset,
-        receive_amount: 'FVal',
-        fee_asset: Asset | None = None,
-        fee_amount: 'FVal | None' = None,
+        spend: AssetAmount,
+        receive: AssetAmount,
+        fee: AssetAmount | None = None,
         location_label: str | None = None,
         unique_id: str | None = None,
         spend_notes: str | None = None,
@@ -287,8 +234,8 @@ def create_swap_events(
         timestamp=timestamp,
         location=location,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=spend_asset,
-        amount=spend_amount,
+        asset=spend.asset,
+        amount=spend.amount,
         unique_id=unique_id,
         location_label=location_label,
         notes=spend_notes,
@@ -299,21 +246,21 @@ def create_swap_events(
         timestamp=timestamp,
         location=location,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=receive_asset,
-        amount=receive_amount,
+        asset=receive.asset,
+        amount=receive.amount,
         unique_id=unique_id,
         location_label=location_label,
         notes=receive_notes,
         identifier=receive_identifier,
         event_identifier=event_identifier,
     )]
-    if fee_asset is not None and fee_amount != ZERO:
+    if fee is not None and fee.amount != ZERO:
         events.append(SwapEvent(
             timestamp=timestamp,
             location=location,
             event_subtype=HistoryEventSubType.FEE,
-            asset=fee_asset,
-            amount=fee_amount,  # type: ignore[arg-type]  # Overloads ensure fee_amount is set when fee_asset is.
+            asset=fee.asset,
+            amount=fee.amount,
             unique_id=unique_id,
             location_label=location_label,
             notes=fee_notes,
@@ -330,14 +277,16 @@ def get_swap_spend_receive(
         quote_asset: Asset,
         amount: 'FVal',
         rate: 'Price',
-) -> tuple['Asset', 'FVal', 'Asset', 'FVal']:
+) -> tuple[AssetAmount, AssetAmount]:
     """Deserialize the trade type and calculate amounts and assets spent and received.
     Returns spend_asset, spend_amount, receive_asset, and receive_amount in a tuple.
     May raise DeserializationError if raw_trade_type has an unexpected value.
     """
+    base = AssetAmount(asset=base_asset, amount=amount)
+    quote = AssetAmount(asset=quote_asset, amount=amount * rate)
     if (sanitized_symbol := raw_trade_type.strip().lower()) in {'buy', 'limit_buy', 'settlement_buy', 'settlement buy'}:  # noqa: E501
-        return quote_asset, amount * rate, base_asset, amount
+        return quote, base
     elif sanitized_symbol in {'sell', 'limit_sell', 'settlement_sell', 'settlement sell'}:
-        return base_asset, amount, quote_asset, amount * rate
+        return base, quote
 
     raise DeserializationError(f'Failed to deserialize trade type from {type(raw_trade_type)} entry')  # noqa: E501

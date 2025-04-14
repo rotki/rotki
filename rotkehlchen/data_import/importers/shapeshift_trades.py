@@ -16,7 +16,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -86,12 +86,9 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             history_events=create_swap_events(
                 location=Location.SHAPESHIFT,
                 timestamp=ts_sec_to_ms(timestamp),
-                spend_asset=sold_asset,
-                receive_asset=buy_asset,
-                spend_amount=sold_amount,
-                receive_amount=buy_amount,
-                fee_asset=buy_asset,  # Assumption that minerFee is denominated in outputCurrency
-                fee_amount=fee,
+                spend=AssetAmount(asset=sold_asset, amount=sold_amount),
+                receive=AssetAmount(asset=buy_asset, amount=buy_amount),
+                fee=AssetAmount(asset=buy_asset, amount=fee),  # Assumption that minerFee is denominated in outputCurrency  # noqa: E501
                 spend_notes=notes,
             ),
         )

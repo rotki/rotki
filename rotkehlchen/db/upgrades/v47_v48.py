@@ -11,7 +11,7 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location, Price
+from rotkehlchen.types import AssetAmount, Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -42,7 +42,7 @@ def upgrade_trade_to_swap_events(
     - DeserializationError
     - ValueError
     """
-    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+    spend, receive = get_swap_spend_receive(
         raw_trade_type='buy' if row[4] in {'A', 'C'} else 'sell',  # A,C = buy, settlement buy; B,D = sell, settlement sell  # noqa: E501
         base_asset=Asset(row[2]),
         quote_asset=Asset(row[3]),
@@ -68,9 +68,9 @@ def upgrade_trade_to_swap_events(
                 # Set location_label and amounts from the adjustment event data
                 location_label, amount, subtype = adjustment_data
                 if subtype == 'spend':
-                    spend_amount = FVal(amount)
+                    spend = AssetAmount(asset=spend.asset, amount=FVal(amount))
                 elif subtype == 'receive':
-                    receive_amount = FVal(amount)
+                    receive = AssetAmount(asset=receive.asset, amount=FVal(amount))
 
                 if len(adjustments_for_this_trade) == 2:
                     break  # Found both adjustments associated with this trade
@@ -84,12 +84,12 @@ def upgrade_trade_to_swap_events(
     return create_swap_events(
         timestamp=ts_sec_to_ms(row[0]),
         location=location,
-        spend_asset=spend_asset,
-        spend_amount=spend_amount,
-        receive_asset=receive_asset,
-        receive_amount=receive_amount,
-        fee_asset=(fee_asset := None if row[8] is None else Asset(row[8])),  # type: ignore[arg-type]
-        fee_amount=None if fee_asset is None else FVal(row[7] or 0),  # type: ignore[arg-type]  # fee args will be either both None or both set.
+        spend=spend,
+        receive=receive,
+        fee=AssetAmount(
+            asset=Asset(row[8]),
+            amount=FVal(row[7] or 0),
+        ) if row[8] is not None else None,
         location_label=location_label,
         unique_id=link,
         spend_notes=row[10],

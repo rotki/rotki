@@ -236,6 +236,11 @@ T_TradeID = str
 TradeID = NewType('TradeID', T_TradeID)
 
 
+class AssetAmount(NamedTuple):
+    asset: 'Asset'
+    amount: FVal
+
+
 class ChainID(Enum):
     """This class maps each EVM chain to their chain id. This is used to correctly identify EVM
     assets and use it where these ids are needed.

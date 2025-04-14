@@ -42,6 +42,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Timestamp,
 )
@@ -346,7 +347,7 @@ class Independentreserve(ExchangeInterface):
                 if timestamp < start_ts or timestamp > end_ts:
                     continue
 
-                spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+                spend, receive = get_swap_spend_receive(
                     raw_trade_type='buy' if 'Bid' in raw_trade['OrderType'] else 'sell',
                     base_asset=(base_asset := independentreserve_asset(raw_trade['PrimaryCurrencyCode'])),  # noqa: E501
                     quote_asset=independentreserve_asset(raw_trade['SecondaryCurrencyCode']),
@@ -356,12 +357,12 @@ class Independentreserve(ExchangeInterface):
                 events.extend(create_swap_events(
                     timestamp=ts_sec_to_ms(timestamp),
                     location=self.location,
-                    spend_asset=spend_asset,
-                    spend_amount=spend_amount,
-                    receive_asset=receive_asset,
-                    receive_amount=receive_amount,
-                    fee_asset=base_asset,
-                    fee_amount=FVal(raw_trade['FeePercent']) * amount,
+                    spend=spend,
+                    receive=receive,
+                    fee=AssetAmount(
+                        asset=base_asset,
+                        amount=FVal(raw_trade['FeePercent']) * amount,
+                    ),
                     location_label=self.name,
                     unique_id=str(raw_trade['OrderGuid']),
                 ))

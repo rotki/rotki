@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     process_rotki_generic_import_csv_fields,
@@ -13,6 +14,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.types import AssetAmount
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -44,13 +46,10 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
             history_events=create_swap_events(
                 timestamp=timestamp,
                 location=location,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
+                spend=AssetAmount(asset=spend_asset, amount=spend_amount),
+                receive=AssetAmount(asset=receive_asset, amount=receive_amount),
                 spend_notes=csv_row['Description'],
-                fee_amount=fee,  # type: ignore[arg-type]
-                fee_asset=fee_currency,  # type: ignore[arg-type]
+                fee=AssetAmount(asset=fee_currency, amount=fee or ZERO) if fee_currency is not None else None,  # noqa: E501
             ),
         )
 

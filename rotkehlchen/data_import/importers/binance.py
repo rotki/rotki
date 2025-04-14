@@ -26,7 +26,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
-    Fee,
+    AssetAmount,
     Location,
     Price,
     Timestamp,
@@ -278,16 +278,14 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             to_amount: FVal | None = None
             from_asset: AssetWithOracles | None = None
             from_amount: FVal | None = None
-            fee_asset: AssetWithOracles | None = None
-            fee_amount: Fee | None = None
+            fee = None
             trade_type: TradeType | None = None
 
             for row in trade_rows:
                 cur_asset = row['Coin']
                 amount = row['Change']
                 if row['Operation'] in {'Fee', 'Transaction Fee'}:
-                    fee_asset = cur_asset
-                    fee_amount = Fee(abs(amount))
+                    fee = AssetAmount(asset=cur_asset, amount=abs(amount))
                 else:
                     trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY
                     if amount < 0:
@@ -316,12 +314,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             swap_events.extend(create_swap_events(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
-                spend_asset=from_asset,
-                spend_amount=from_amount,
-                receive_asset=to_asset,
-                receive_amount=to_amount,
-                fee_amount=fee_amount,  # type: ignore[arg-type]
-                fee_asset=fee_asset,  # type: ignore[arg-type]
+                spend=AssetAmount(asset=from_asset, amount=from_amount),
+                receive=AssetAmount(asset=to_asset, amount=to_amount),
+                fee=fee,
                 event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(trade_rows[0])}',  # any row works, just using the first to create the event identifier  # noqa: E501
                 spend_notes='Imported from binance CSV file. Binance operation: Buy / Sell',
             ))

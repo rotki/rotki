@@ -38,6 +38,7 @@ from rotkehlchen.serialization.deserialize import deserialize_asset_amount, dese
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -369,7 +370,7 @@ class Okx(ExchangeInterface):
                 raise DeserializationError(
                     f'Expected pair {raw_trade["instId"]} to contain a "-"',
                 ) from e
-            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            spend, receive = get_swap_spend_receive(
                 raw_trade_type=raw_trade['side'],
                 base_asset=asset_from_okx(base_asset_str),
                 quote_asset=asset_from_okx(quote_asset_str),
@@ -408,12 +409,9 @@ class Okx(ExchangeInterface):
             return create_swap_events(
                 timestamp=timestamp,
                 location=self.location,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
-                fee_asset=fee_asset,
-                fee_amount=fee_amount,
+                spend=spend,
+                receive=receive,
+                fee=AssetAmount(asset=fee_asset, amount=fee_amount),
                 location_label=self.name,
                 unique_id=unique_id,
             )

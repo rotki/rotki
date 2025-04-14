@@ -16,7 +16,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -56,10 +56,14 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                     location='BlockFi',
                 )),
                 location=Location.BLOCKFI,
-                spend_asset=asset_from_blockfi(csv_row['Sold Currency']),
-                spend_amount=sold_amount,
-                receive_asset=asset_from_blockfi(csv_row['Buy Currency']),
-                receive_amount=deserialize_asset_amount(csv_row['Buy Quantity']),
+                spend=AssetAmount(
+                    asset=asset_from_blockfi(csv_row['Sold Currency']),
+                    amount=sold_amount,
+                ),
+                receive=AssetAmount(
+                    asset=asset_from_blockfi(csv_row['Buy Currency']),
+                    amount=deserialize_asset_amount(csv_row['Buy Quantity']),
+                ),
                 spend_notes=csv_row['Type'],
                 unique_id=csv_row['Trade ID'],
             ),

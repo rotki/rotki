@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -89,7 +89,7 @@ class BittrexImporter(BaseExchangeImporter):
             rate = csv_row['LIMIT']
             order_id = csv_row['UUID']
 
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type=trade_type,
             base_asset=asset_from_bittrex(base),
             quote_asset=(quote_asset := asset_from_bittrex(quote)),
@@ -103,12 +103,12 @@ class BittrexImporter(BaseExchangeImporter):
                 location='Bittrex order history import',
             )),
             location=Location.BITTREX,
-            spend_asset=spend_asset,
-            receive_asset=receive_asset,
-            spend_amount=spend_amount,
-            receive_amount=receive_amount,
-            fee_asset=quote_asset,
-            fee_amount=deserialize_fee(fee),
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=quote_asset,
+                amount=deserialize_fee(fee),
+            ),
             unique_id=order_id,
             spend_notes=notes,
         )

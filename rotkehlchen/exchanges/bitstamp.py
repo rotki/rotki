@@ -46,6 +46,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -803,7 +804,7 @@ class Bitstamp(ExchangeInterface):
                 f'amounts are negative: {raw_trade}',
             )
 
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type='buy' if base_asset_amount >= ZERO else 'sell',
             base_asset=trade_pair_data.base_asset,
             quote_asset=trade_pair_data.quote_asset,
@@ -813,12 +814,12 @@ class Bitstamp(ExchangeInterface):
         return create_swap_events(
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_bitstamp_date(raw_trade['datetime'])),
             location=self.location,
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=trade_pair_data.quote_asset,
-            fee_amount=deserialize_fee(raw_trade['fee']),
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=trade_pair_data.quote_asset,
+                amount=deserialize_fee(raw_trade['fee']),
+            ),
             location_label=self.name,
             unique_id=(reference := str(raw_trade['id'])),
             extra_data={'reference': reference},

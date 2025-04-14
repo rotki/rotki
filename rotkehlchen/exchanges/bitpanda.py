@@ -41,7 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_int_from_str,
 )
-from rotkehlchen.types import ApiKey, ExchangeAuthCredentials, Location, Timestamp
+from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -277,7 +277,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     entry['attributes']['best_fee_collection']['attributes']['wallet_transaction']['attributes']['fee'],
                 )
 
-            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            spend, receive = get_swap_spend_receive(
                 raw_trade_type=entry['attributes']['type'],
                 base_asset=crypto_asset,
                 quote_asset=fiat_asset,
@@ -287,12 +287,9 @@ class Bitpanda(ExchangeWithoutApiSecret):
             return create_swap_events(
                 timestamp=ts_sec_to_ms(time),
                 location=self.location,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
-                fee_asset=A_BEST,
-                fee_amount=fee,
+                spend=spend,
+                receive=receive,
+                fee=AssetAmount(asset=A_BEST, amount=fee),
                 location_label=self.name,
                 unique_id=entry['id'],
             )

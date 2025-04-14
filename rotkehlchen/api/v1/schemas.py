@@ -119,6 +119,7 @@ from rotkehlchen.types import (
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
+    AssetAmount,
     BlockchainAddress,
     BTCAddress,
     ChainID,
@@ -1005,12 +1006,9 @@ class CreateHistoryEventSchema(Schema):
             events = create_swap_events(
                 timestamp=data['timestamp'],
                 location=data['location'],
-                spend_asset=data['spend_asset'],
-                spend_amount=data['spend_amount'],
-                receive_asset=data['receive_asset'],
-                receive_amount=data['receive_amount'],
-                fee_amount=data['fee_amount'] or ZERO,
-                fee_asset=data['fee_asset'],
+                spend=AssetAmount(asset=data['spend_asset'], amount=data['spend_amount']),
+                receive=AssetAmount(asset=data['receive_asset'], amount=data['receive_amount']),
+                fee=AssetAmount(asset=data['fee_asset'], amount=data['fee_amount']) if data['fee_asset'] is not None else None,  # noqa: E501
                 location_label=data['location_label'],
                 unique_id=data['unique_id'],
                 spend_notes=spend_notes,

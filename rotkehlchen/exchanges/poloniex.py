@@ -49,6 +49,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -78,7 +79,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
         - UnprocessableTradePair due to the pair data being in an unexpected format
     """
     try:
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type=poloniex_trade['side'],
             base_asset=asset_from_poloniex(get_pair_position_str((pair := poloniex_trade['symbol']), 'first')),  # noqa: E501
             quote_asset=asset_from_poloniex(get_pair_position_str(pair, 'second')),
@@ -88,12 +89,12 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
         log.debug(
             'Processing poloniex Swap',
             timestamp=(timestamp := deserialize_timestamp_ms_from_intms(poloniex_trade['createTime'])),  # noqa: E501
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=(fee_currency := asset_from_poloniex(poloniex_trade['feeCurrency'])),
-            fee_amount=(fee := deserialize_fee(poloniex_trade['feeAmount'])),
+            spend=spend,
+            receive=receive,
+            fee=(fee := AssetAmount(
+                asset=asset_from_poloniex(poloniex_trade['feeCurrency']),
+                amount=deserialize_fee(poloniex_trade['feeAmount']),
+            )),
         )
     except KeyError as e:
         raise DeserializationError(
@@ -103,12 +104,9 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
     return create_swap_events(
         timestamp=timestamp,
         location=Location.POLONIEX,
-        spend_asset=spend_asset,
-        spend_amount=spend_amount,
-        receive_asset=receive_asset,
-        receive_amount=receive_amount,
-        fee_asset=fee_currency,
-        fee_amount=fee,
+        spend=spend,
+        receive=receive,
+        fee=fee,
         unique_id=str(poloniex_trade['id']),
     )
 

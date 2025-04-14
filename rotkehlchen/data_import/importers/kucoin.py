@@ -15,7 +15,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -70,7 +70,7 @@ class KucoinImporter(BaseExchangeImporter):
                     self.total_entries += 1
                     base, quote = row[tokens_key].split(splitter)
                     fee_currency = get_key_if_has_val(row, fee_currency_key)
-                    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(  # noqa: E501
+                    spend, receive = get_swap_spend_receive(
                         raw_trade_type=row[trade_type_key],
                         base_asset=asset_from_kucoin(base),
                         quote_asset=asset_from_kucoin(quote),
@@ -86,12 +86,12 @@ class KucoinImporter(BaseExchangeImporter):
                                 location='Kucoin order history import',
                             )),
                             location=Location.KUCOIN,
-                            spend_asset=spend_asset,
-                            spend_amount=spend_amount,
-                            receive_asset=receive_asset,
-                            receive_amount=receive_amount,
-                            fee_asset=asset_from_kucoin(fee_currency) if fee_currency is not None else None,  # type: ignore[arg-type]  # noqa: E501  # fee currency is an asset
-                            fee_amount=deserialize_fee(get_key_if_has_val(row, fee_key)),
+                            spend=spend,
+                            receive=receive,
+                            fee=AssetAmount(
+                                asset=asset_from_kucoin(fee_currency),
+                                amount=deserialize_fee(get_key_if_has_val(row, fee_key)),
+                            ) if fee_currency is not None else None,
                         ),
                     )
                     self.imported_entries += 1

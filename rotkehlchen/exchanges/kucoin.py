@@ -49,6 +49,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -609,7 +610,7 @@ class Kucoin(ExchangeInterface):
                 rate = deserialize_price(raw_result['dealPrice'])
                 trade_id = raw_result['id']
 
-            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            spend, receive = get_swap_spend_receive(
                 raw_trade_type=raw_result['side'],
                 base_asset=base_asset,
                 quote_asset=quote_asset,
@@ -619,12 +620,12 @@ class Kucoin(ExchangeInterface):
             return create_swap_events(
                 timestamp=timestamp_ms,
                 location=self.location,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
-                fee_asset=fee_currency,
-                fee_amount=deserialize_fee(raw_result['fee']),
+                spend=spend,
+                receive=receive,
+                fee=AssetAmount(
+                    asset=fee_currency,
+                    amount=deserialize_fee(raw_result['fee']),
+                ),
                 location_label=self.name,
                 unique_id=str(trade_id),
             )

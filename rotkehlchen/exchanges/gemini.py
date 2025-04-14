@@ -46,6 +46,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -468,7 +469,7 @@ class Gemini(ExchangeInterface):
                         continue  # Skip already processed trade
 
                     base, quote = gemini_symbol_to_base_quote(symbol)
-                    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(  # noqa: E501
+                    spend, receive = get_swap_spend_receive(
                         raw_trade_type=entry['type'],
                         base_asset=base,
                         quote_asset=quote,
@@ -478,12 +479,12 @@ class Gemini(ExchangeInterface):
                     swap_events.extend(create_swap_events(
                         timestamp=ts_sec_to_ms(timestamp),
                         location=self.location,
-                        spend_asset=spend_asset,
-                        spend_amount=spend_amount,
-                        receive_asset=receive_asset,
-                        receive_amount=receive_amount,
-                        fee_asset=asset_from_gemini(entry['fee_currency']),
-                        fee_amount=deserialize_fee(entry['fee_amount']),
+                        spend=spend,
+                        receive=receive,
+                        fee=AssetAmount(
+                            asset=asset_from_gemini(entry['fee_currency']),
+                            amount=deserialize_fee(entry['fee_amount']),
+                        ),
                         location_label=self.name,
                         unique_id=unique_id,
                     ))

@@ -27,7 +27,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_fval,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -287,12 +287,18 @@ class Iconomi(ExchangeInterface):
                 events.extend(create_swap_events(
                     timestamp=ts_sec_to_ms(timestamp),
                     location=self.location,
-                    spend_asset=asset_from_iconomi(tx['source_ticker']),
-                    spend_amount=deserialize_asset_amount(tx['source_amount']),
-                    receive_asset=asset_from_iconomi(tx['target_ticker']),
-                    receive_amount=deserialize_asset_amount(tx['target_amount']),
-                    fee_asset=asset_from_iconomi(tx['fee_ticker']),
-                    fee_amount=deserialize_fee(tx['fee_amount']),
+                    spend=AssetAmount(
+                        asset=asset_from_iconomi(tx['source_ticker']),
+                        amount=deserialize_asset_amount(tx['source_amount']),
+                    ),
+                    receive=AssetAmount(
+                        asset=asset_from_iconomi(tx['target_ticker']),
+                        amount=deserialize_asset_amount(tx['target_amount']),
+                    ),
+                    fee=AssetAmount(
+                        asset=asset_from_iconomi(tx['fee_ticker']),
+                        amount=deserialize_fee(tx['fee_amount']),
+                    ),
                     location_label=self.name,
                     unique_id=str(tx['transactionId']),
                 ))
