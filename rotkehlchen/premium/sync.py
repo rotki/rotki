@@ -3,6 +3,8 @@ import shutil
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
+import gevent
+
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
@@ -196,7 +198,8 @@ class PremiumSyncManager:
             self.last_upload_attempt_ts = ts_now()
             return False, message
 
-        data, our_hash = self.data.compress_and_encrypt_db()
+        greenlet = gevent.get_hub().threadpool.spawn(self.data.compress_and_encrypt_db)
+        data, our_hash = greenlet.get()
         log.debug(
             'CAN_PUSH',
             ours=our_hash,

@@ -20,6 +20,7 @@ Changelog
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
+* :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
 * :bug:`9730` Fix the issue where the app breaks when the user clicks on "Ethereum Staking" in the blockchain balance summary on the dashboard.
 * :bug:`-` Fix a rare issue where the manual balance page becomes empty.
 * :bug:`-` Fix a rare issue calling RPC nodes when there is an error connecting to them.
