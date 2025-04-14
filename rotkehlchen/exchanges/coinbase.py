@@ -53,6 +53,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Fee,
     Location,
@@ -695,7 +696,7 @@ class Coinbase(ExchangeInterface):
             formatstr='iso8601',
             location='coinbase',
         )
-        fee_asset = fee_amount = None
+        fee = None
         if tx_b is not None:
             # Trade b will represent the asset we are converting to
             if tx_b['amount']['amount'].startswith('-'):
@@ -745,13 +746,17 @@ class Coinbase(ExchangeInterface):
                     # We have the fee amount in the native currency. To get it in the
                     # converted asset we have to get the rate
                     asset_native_rate = tx_amount / abs(amount_before_fee)
-                    fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
-                    fee_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
+                    fee = AssetAmount(
+                        amount=Fee(conversion_native_fee_amount * asset_native_rate),
+                        asset=asset_from_coinbase(tx_a['amount']['currency'], time=timestamp),
+                    )
                 else:
                     tx_b_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
                     asset_native_rate = tx_b_amount / abs(amount_after_fee)
-                    fee_amount = Fee(conversion_native_fee_amount * asset_native_rate)
-                    fee_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
+                    fee = AssetAmount(
+                        amount=Fee(conversion_native_fee_amount * asset_native_rate),
+                        asset=asset_from_coinbase(tx_b['amount']['currency'], time=timestamp),
+                    )
 
         else:  # only one transaction
             tx_amount = abs(deserialize_asset_amount(tx_a['amount']['amount']))
@@ -760,18 +765,17 @@ class Coinbase(ExchangeInterface):
             native_asset = asset_from_coinbase(tx_a['native_amount']['currency'], time=timestamp)
             # For a single transaction fee may or may not exist in the transaction.
             if (fee_data := tx_a['trade'].get('fee')) is not None:
-                fee_asset = asset_from_coinbase(fee_data['currency'])
-                fee_amount = Fee(abs(deserialize_asset_amount(fee_data['amount'])))
+                fee = AssetAmount(
+                    asset=asset_from_coinbase(fee_data['currency']),
+                    amount=Fee(abs(deserialize_asset_amount(fee_data['amount']))),
+                )
 
         return create_swap_events(
             timestamp=ts_sec_to_ms(timestamp),
             location=self.location,
-            spend_asset=tx_asset,
-            spend_amount=tx_amount,
-            receive_asset=native_asset,
-            receive_amount=native_amount,
-            fee_asset=fee_asset,  # type: ignore[arg-type]  # fee asset and amount will be either both None or both set
-            fee_amount=fee_amount,  # type: ignore[arg-type]
+            spend=AssetAmount(asset=tx_asset, amount=tx_amount),
+            receive=AssetAmount(asset=native_asset, amount=native_amount),
+            fee=fee,
             location_label=self.name,
             unique_id=str(tx_a['trade']['id']),
         )
@@ -849,11 +853,6 @@ class Coinbase(ExchangeInterface):
         tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
         native_amount = deserialize_asset_amount_force_positive(event['native_amount']['amount'])
         native_asset = asset_from_coinbase(event['native_amount']['currency'], time=timestamp)
-        fee_amount = fee_asset = None
-        if 'fee' in event:
-            fee_amount = abs(deserialize_fee(event['fee']['amount']))
-            fee_asset = asset_from_coinbase(event['fee']['currency'], time=timestamp)
-
         spend_asset, spend_amount, receive_asset, receive_amount = (
             (native_asset, native_amount, tx_asset, tx_amount)
             if event['type'] == 'buy' else  # Either buy or sell in _process_normal_trade
@@ -862,12 +861,12 @@ class Coinbase(ExchangeInterface):
         return create_swap_events(
             timestamp=ts_sec_to_ms(timestamp),
             location=self.location,
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=fee_asset,  # type: ignore[arg-type]  # fee asset and amount will be either both None or both set
-            fee_amount=fee_amount,  # type: ignore[arg-type]
+            spend=AssetAmount(asset=spend_asset, amount=spend_amount),
+            receive=AssetAmount(asset=receive_asset, amount=receive_amount),
+            fee=AssetAmount(
+                amount=abs(deserialize_fee(event['fee']['amount'])),
+                asset=asset_from_coinbase(event['fee']['currency'], time=timestamp),
+            ) if 'fee' in event else None,
             location_label=self.name,
             unique_id=str(event['id']),
         )
@@ -915,7 +914,7 @@ class Coinbase(ExchangeInterface):
         if tx_asset == quote_asset:  # calculate trade amount depending on the denominated asset
             amount /= rate
 
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type=order_side,
             base_asset=asset_from_coinbase(asset_identifiers[0], time=timestamp),
             quote_asset=quote_asset,
@@ -925,12 +924,12 @@ class Coinbase(ExchangeInterface):
         return create_swap_events(
             timestamp=ts_sec_to_ms(timestamp),
             location=self.location,
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=quote_asset,  # fee is always in quote asset
-            fee_amount=abs(deserialize_fee(event['advanced_trade_fill']['commission'])),
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=quote_asset,  # fee is always in quote asset
+                amount=abs(deserialize_fee(event['advanced_trade_fill']['commission'])),
+            ),
             location_label=self.name,
             unique_id=str(event['id']),
         )

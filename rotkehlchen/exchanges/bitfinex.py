@@ -48,6 +48,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -512,7 +513,7 @@ class Bitfinex(ExchangeInterface):
                 f'Raw trade: {raw_result}',
             )
 
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type='buy' if (amount := deserialize_asset_amount(raw_result[4])) >= ZERO else 'sell',  # noqa: E501
             base_asset=asset_from_bitfinex(bitfinex_name=bfx_base_asset_symbol),
             quote_asset=asset_from_bitfinex(bitfinex_name=bfx_quote_asset_symbol),
@@ -522,12 +523,12 @@ class Bitfinex(ExchangeInterface):
         return create_swap_events(
             timestamp=deserialize_timestamp_ms_from_intms(raw_result[2]),
             location=self.location,
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=asset_from_bitfinex(bitfinex_name=raw_result[10]),
-            fee_amount=abs(deserialize_fee(raw_result[9])),
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=asset_from_bitfinex(bitfinex_name=raw_result[10]),
+                amount=abs(deserialize_fee(raw_result[9])),
+            ),
             location_label=self.name,
             unique_id=str(raw_result[0]),
         )

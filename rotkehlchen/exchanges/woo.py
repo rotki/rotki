@@ -38,7 +38,14 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_floatstr,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Location, Timestamp
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    AssetAmount,
+    ExchangeAuthCredentials,
+    Location,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
@@ -169,7 +176,7 @@ class Woo(ExchangeInterface):
                 f'Could not split symbol {symbol} into base and quote asset',
             ) from e
 
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type=trade['side'],
             base_asset=asset_from_woo(base_asset_symbol),
             quote_asset=asset_from_woo(quote_asset_symbol),
@@ -179,12 +186,12 @@ class Woo(ExchangeInterface):
         return create_swap_events(
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_floatstr(trade['executed_timestamp'])),
             location=self.location,
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=asset_from_woo(trade['fee_asset']),
-            fee_amount=deserialize_fee(trade['fee']),
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=asset_from_woo(trade['fee_asset']),
+                amount=deserialize_fee(trade['fee']),
+            ),
             location_label=self.name,
             unique_id=str(trade['id']),
         )

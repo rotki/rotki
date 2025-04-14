@@ -19,7 +19,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -102,12 +102,9 @@ Activity from uphold with uphold transaction id:
                         history_events=create_swap_events(
                             timestamp=ts_sec_to_ms(timestamp),
                             location=Location.UPHOLD,
-                            spend_asset=origin_asset,
-                            spend_amount=origin_amount,
-                            receive_asset=destination_asset,
-                            receive_amount=destination_amount,
-                            fee_asset=fee_asset,
-                            fee_amount=fee,
+                            spend=AssetAmount(asset=origin_asset, amount=origin_amount),
+                            receive=AssetAmount(asset=destination_asset, amount=destination_amount),  # noqa: E501
+                            fee=AssetAmount(asset=fee_asset, amount=fee),
                             spend_notes=notes,
                         ),
                     )
@@ -139,13 +136,10 @@ Activity from uphold with uphold transaction id:
                     history_events=create_swap_events(
                         timestamp=ts_sec_to_ms(timestamp),
                         location=Location.UPHOLD,
-                        spend_asset=origin_asset,
-                        spend_amount=origin_amount,
-                        receive_asset=destination_asset,
-                        receive_amount=destination_amount,
-                        fee_asset=fee_asset,
+                        spend=AssetAmount(asset=origin_asset, amount=origin_amount),
+                        receive=AssetAmount(asset=destination_asset, amount=destination_amount),
+                        fee=AssetAmount(asset=fee_asset, amount=fee),
                         spend_notes=notes,
-                        fee_amount=fee,
                     ),
                 )
             else:
@@ -177,12 +171,9 @@ Activity from uphold with uphold transaction id:
                     history_events=create_swap_events(
                         timestamp=ts_sec_to_ms(timestamp),
                         location=Location.UPHOLD,
-                        spend_asset=origin_asset,
-                        spend_amount=origin_amount,
-                        receive_asset=destination_asset,
-                        receive_amount=destination_amount,
-                        fee_asset=fee_asset,
-                        fee_amount=fee,
+                        spend=AssetAmount(asset=origin_asset, amount=origin_amount),
+                        receive=AssetAmount(asset=destination_asset, amount=destination_amount),
+                        fee=AssetAmount(asset=fee_asset, amount=fee),
                         spend_notes=notes,
                     ),
                 )

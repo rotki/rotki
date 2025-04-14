@@ -15,7 +15,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location, Price
+from rotkehlchen.types import AssetAmount, Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class BisqTradesImporter(BaseExchangeImporter):
             fee_amount = deserialize_fee(csv_row['Trade Fee BTC'])
             fee_currency = A_BTC
 
-        spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+        spend, receive = get_swap_spend_receive(
             raw_trade_type=trade_type,
             base_asset=base_asset,
             quote_asset=quote_asset,
@@ -80,15 +80,12 @@ class BisqTradesImporter(BaseExchangeImporter):
                     formatstr=timestamp_format,
                     location='Bisq',
                 )),
-                spend_amount=spend_amount,
-                spend_asset=spend_asset,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
                 location=Location.BISQ,
-                spend_notes=f'ID: {(trade_id := csv_row["Trade ID"])}',
-                fee_asset=fee_currency,
-                fee_amount=fee_amount,
-                unique_id=trade_id,
+                spend=spend,
+                receive=receive,
+                fee=AssetAmount(asset=fee_currency, amount=fee_amount),
+                unique_id=(trade_id := csv_row['Trade ID']),
+                spend_notes=f'ID: {trade_id}',
             ),
         )
 

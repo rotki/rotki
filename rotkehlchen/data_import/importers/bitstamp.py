@@ -20,7 +20,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location, Price
+from rotkehlchen.types import AssetAmount, Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
         if csv_row['Type'] == 'Market':
             value_str, value_symbol = csv_row['Value'].split(' ')
             fee_str, fee_symbol = csv_row['Fee'].split(' ')
-            spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(
+            spend, receive = get_swap_spend_receive(
                 raw_trade_type=csv_row['Sub Type'],
                 base_asset=asset_from_bitstamp(amount_symbol),
                 quote_asset=asset_from_bitstamp(value_symbol),
@@ -68,14 +68,14 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             )
             events.extend(create_swap_events(
                 timestamp=timestamp,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
+                spend=spend,
                 location=Location.BITSTAMP,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
+                receive=receive,
                 event_identifier=event_identifier,
-                fee_amount=deserialize_fee(fee_str),
-                fee_asset=asset_from_bitstamp(fee_symbol),
+                fee=AssetAmount(
+                    asset=asset_from_bitstamp(fee_symbol),
+                    amount=deserialize_fee(fee_str),
+                ),
             ))
         elif csv_row['Type'] in {'Deposit', 'Withdrawal'}:
             events.append(AssetMovement(

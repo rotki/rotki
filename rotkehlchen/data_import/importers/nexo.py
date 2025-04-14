@@ -25,7 +25,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -186,10 +186,11 @@ class NexoImporter(BaseExchangeImporter):
                     event_identifier=f'{NEXO_PREFIX}{hash_csv_row(csv_row)}',
                     timestamp=ts_sec_to_ms(timestamp),
                     location=Location.NEXO,
-                    spend_asset=asset_from_nexo(csv_row['Input Currency']),
-                    spend_amount=deserialize_asset_amount_force_positive(csv_row['Input Amount']),
-                    receive_asset=asset,
-                    receive_amount=amount,
+                    spend=AssetAmount(
+                        asset=asset_from_nexo(csv_row['Input Currency']),
+                        amount=deserialize_asset_amount_force_positive(csv_row['Input Amount']),
+                    ),
+                    receive=AssetAmount(asset=asset, amount=amount),
                     unique_id=transaction,
                     spend_notes=f'{entry_type} from Nexo',
                 ),

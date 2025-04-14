@@ -53,6 +53,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -625,10 +626,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             return create_swap_events(
                 timestamp=timestamp,
                 location=Location.KRAKEN,
-                spend_asset=spend_asset,
-                spend_amount=spend_amount,
-                receive_asset=receive_asset,
-                receive_amount=receive_amount,
+                spend=AssetAmount(asset=spend_asset, amount=spend_amount),
+                receive=AssetAmount(asset=receive_asset, amount=receive_amount),
                 unique_id=exchange_uuid,
             )
 
@@ -644,22 +643,18 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             return []
 
         # If kfee was found we use it as the fee for the trade
+        fee = None
         if kfee_part is not None and fee_part is None:
-            fee = kfee_part.amount
-            fee_asset = A_KFEE
-        else:
-            fee = fee_part.amount if fee_part is not None else ZERO
-            fee_asset = fee_part.asset if fee_part is not None else A_USD
+            fee = AssetAmount(asset=A_KFEE, amount=kfee_part.amount)
+        elif fee_part is not None:
+            fee = AssetAmount(asset=fee_part.asset, amount=fee_part.amount)
 
         return create_swap_events(
             timestamp=timestamp,
             location=Location.KRAKEN,
-            spend_asset=spend_part.asset,
-            spend_amount=spend_part.amount,
-            receive_asset=receive_part.asset,
-            receive_amount=receive_part.amount,
-            fee_asset=fee_asset,
-            fee_amount=fee,
+            spend=AssetAmount(asset=spend_part.asset, amount=spend_part.amount),
+            receive=AssetAmount(asset=receive_part.asset, amount=receive_part.amount),
+            fee=fee,
             unique_id=exchange_uuid,
         )
 
@@ -726,10 +721,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 swap_events.extend(create_swap_events(
                     timestamp=a1.timestamp,
                     location=Location.KRAKEN,
-                    spend_asset=spend_event.asset,
-                    spend_amount=spend_event.amount,
-                    receive_asset=receive_event.asset,
-                    receive_amount=receive_event.amount,
+                    spend=AssetAmount(asset=spend_event.asset, amount=spend_event.amount),
+                    receive=AssetAmount(asset=receive_event.asset, amount=receive_event.amount),
                     unique_id='adjustment' + a1.event_identifier + a2.event_identifier,
                 ))
                 # Remove these adjustments since they are now represented by SwapEvents

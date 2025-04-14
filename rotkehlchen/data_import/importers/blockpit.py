@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Fee, Location
+from rotkehlchen.types import AssetAmount, Fee, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -96,12 +96,18 @@ class BlockpitImporter(BaseExchangeImporter):
                 history_events=create_swap_events(
                     timestamp=ts_sec_to_ms(timestamp),
                     location=location,
-                    spend_asset=asset_resolver(csv_row['Outgoing Asset']),
-                    receive_asset=asset_resolver(csv_row['Incoming Asset']),
-                    spend_amount=deserialize_asset_amount(csv_row['Outgoing Amount']),
-                    receive_amount=amount_in,
-                    fee_amount=fee_amount,
-                    fee_asset=fee_currency,
+                    spend=AssetAmount(
+                        asset=asset_resolver(csv_row['Outgoing Asset']),
+                        amount=deserialize_asset_amount(csv_row['Outgoing Amount']),
+                    ),
+                    receive=AssetAmount(
+                        asset=asset_resolver(csv_row['Incoming Asset']),
+                        amount=amount_in,
+                    ),
+                    fee=AssetAmount(
+                        asset=fee_currency,
+                        amount=fee_amount,
+                    ),
                     spend_notes=notes,
                 ),
             )

@@ -377,7 +377,7 @@ class Bybit(ExchangeInterface):
                     continue
 
                 try:
-                    spend_asset, spend_amount, receive_asset, receive_amount = get_swap_spend_receive(  # noqa: E501
+                    spend, receive = get_swap_spend_receive(
                         raw_trade_type=raw_trade['side'],
                         base_asset=base_asset,
                         quote_asset=quote_asset,
@@ -387,10 +387,8 @@ class Bybit(ExchangeInterface):
                     events.extend(create_swap_events(
                         timestamp=TimestampMS(int(raw_trade['updatedTime'])),
                         location=self.location,
-                        spend_asset=spend_asset,
-                        spend_amount=spend_amount,
-                        receive_asset=receive_asset,
-                        receive_amount=receive_amount,
+                        spend=spend,
+                        receive=receive,
                         location_label=self.name,
                         unique_id=raw_trade['orderId'],
                     ))

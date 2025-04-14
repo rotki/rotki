@@ -27,7 +27,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, ExchangeAuthCredentials, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, ExchangeAuthCredentials, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, ts_sec_to_ms
 
@@ -248,12 +248,9 @@ class Bitcoinde(ExchangeInterface):
                 location='bitcoinde',
             )),
             location=self.location,
-            spend_asset=spend_asset,
-            spend_amount=spend_amount,
-            receive_asset=receive_asset,
-            receive_amount=receive_amount,
-            fee_asset=A_EUR,
-            fee_amount=deserialize_fee(raw_trade['fee_currency_to_pay']),
+            spend=AssetAmount(asset=spend_asset, amount=spend_amount),
+            receive=AssetAmount(asset=receive_asset, amount=receive_amount),
+            fee=AssetAmount(asset=A_EUR, amount=deserialize_fee(raw_trade['fee_currency_to_pay'])),
             location_label=self.name,
             unique_id=raw_trade['trade_id'],
         )

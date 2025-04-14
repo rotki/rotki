@@ -16,7 +16,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Fee, MarginPosition
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -40,6 +40,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
     Location,
     Timestamp,
@@ -100,12 +101,18 @@ def _process_trade(trade_data: dict[str, Any]) -> list[SwapEvent]:
         return create_swap_events(
             timestamp=ts_sec_to_ms(iso8601ts_to_timestamp(trade_data['created_at'])),
             location=Location.COINBASEPRIME,
-            spend_asset=spend_asset,
-            spend_amount=deserialize_asset_amount(trade_data['filled_value']),
-            receive_asset=receive_asset,
-            receive_amount=deserialize_asset_amount(trade_data['filled_quantity']),
-            fee_asset=quote_asset,
-            fee_amount=deserialize_fee(trade_data['commission']) if len(trade_data['commission']) != 0 else Fee(ZERO),  # noqa: E501
+            spend=AssetAmount(
+                asset=spend_asset,
+                amount=deserialize_asset_amount(trade_data['filled_value']),
+            ),
+            receive=AssetAmount(
+                asset=receive_asset,
+                amount=deserialize_asset_amount(trade_data['filled_quantity']),
+            ),
+            fee=AssetAmount(
+                asset=quote_asset,
+                amount=deserialize_fee(trade_data['commission']) if len(trade_data['commission']) != 0 else ZERO,  # noqa: E501
+            ),
             unique_id=str(trade_data['id']),
         )
     except KeyError as e:

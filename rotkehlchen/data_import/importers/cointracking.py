@@ -31,7 +31,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Fee, Location
+from rotkehlchen.types import AssetAmount, Fee, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -149,12 +149,9 @@ class CointrackingImporter(BaseExchangeImporter):
                 history_events=create_swap_events(
                     timestamp=timestamp,
                     location=location,
-                    spend_asset=quote_asset,
-                    spend_amount=quote_amount_sold,
-                    receive_asset=base_asset,
-                    receive_amount=base_amount_bought,
-                    fee_asset=fee_currency,
-                    fee_amount=fee,
+                    spend=AssetAmount(asset=quote_asset, amount=quote_amount_sold),
+                    receive=AssetAmount(asset=base_asset, amount=base_amount_bought),
+                    fee=AssetAmount(asset=fee_currency, amount=fee),
                     spend_notes=notes,
                 ),
             )
