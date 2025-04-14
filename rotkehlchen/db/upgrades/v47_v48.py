@@ -152,4 +152,18 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         # write_cursor.execute('DROP TABLE trades')  # noqa: ERA001
         # write_cursor.execute('DROP TABLE trade_type')  # noqa: ERA001
 
+    @progress_step(description='Replacing specific history note locations with HISTORY')
+    def _replace_history_note_locations(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            """
+            UPDATE user_notes
+            SET location = 'HISTORY'
+            WHERE location IN (
+                'HISTORY_TRADES',
+                'HISTORY_TRANSACTIONS',
+                'HISTORY_DEPOSITS_WITHDRAWALS'
+            )
+            """,
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
