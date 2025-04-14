@@ -42,7 +42,6 @@ from rotkehlchen.accounting.structures.processed_event import AccountingEventExp
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
-from rotkehlchen.api.v1.schemas import TradeSchema
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import (
@@ -102,7 +101,6 @@ from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.limits import (
     FREE_HISTORY_EVENTS_LIMIT,
-    FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
@@ -145,7 +143,6 @@ from rotkehlchen.db.filtering import (
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
-    TradesFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -182,7 +179,6 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_TX_TIMESTAMP_RANGE, init_gnosis_pay
@@ -256,7 +252,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
-    Fee,
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
@@ -271,7 +266,6 @@ from rotkehlchen.types import (
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
     UserNote,
 )
 from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now
@@ -413,7 +407,6 @@ class RestAPI:
         self.login_lock = Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
-        self.trade_schema = TradeSchema()
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -921,137 +914,6 @@ class RestAPI:
             status_code = HTTPStatus.BAD_GATEWAY
 
         return {'result': result, 'message': msg, 'status_code': status_code}
-
-    @async_api_call()
-    def get_trades(
-            self,
-            only_cache: bool,
-            filter_query: TradesFilterQuery,
-            include_ignored_trades: bool,
-    ) -> dict[str, Any]:
-        try:
-            trades, filter_total_found = self.rotkehlchen.history_querying_manager.query_trades(
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-        except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            mapping = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, ActionType.TRADE)
-            total_entries = self.rotkehlchen.data.db.get_entries_count(
-                cursor=cursor,
-                entries_table='trades',
-            )
-
-        ignored_ids = mapping.get(ActionType.TRADE, set())
-        entries_result = []
-        for trade in trades:
-            serialized_trade = self.trade_schema.dump(trade)
-            serialized_trade['trade_id'] = trade.identifier
-            if (
-                (is_trade_ignored := trade.identifier in ignored_ids) and
-                include_ignored_trades is False
-            ):
-                continue
-
-            entries_result.append({
-                'entry': serialized_trade,
-                'ignored_in_accounting': is_trade_ignored,
-            })
-
-        result = {
-            'entries': entries_result,
-            'entries_found': filter_total_found,
-            'entries_total': total_entries,
-            'entries_limit': FREE_TRADES_LIMIT if self.rotkehlchen.premium is None else -1,
-        }
-
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
-
-    def add_trade(
-            self,
-            timestamp: Timestamp,
-            location: Location,
-            base_asset: Asset,
-            quote_asset: Asset,
-            trade_type: TradeType,
-            amount: FVal,
-            rate: Price,
-            fee: Fee | None,
-            fee_currency: Asset | None,
-            link: str | None,
-            notes: str | None,
-    ) -> Response:
-        trade = Trade(
-            timestamp=timestamp,
-            location=location,
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            trade_type=trade_type,
-            amount=amount,
-            rate=rate,
-            fee=fee,
-            fee_currency=fee_currency,
-            link=link,
-            notes=notes,
-        )
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            self.rotkehlchen.data.db.add_trades(cursor, [trade])
-        # For the outside world we should also add the trade identifier
-        result_dict = self.trade_schema.dump(trade)
-        result_dict['trade_id'] = trade.identifier
-        result_dict = _wrap_in_ok_result(result_dict)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
-
-    def edit_trade(
-            self,
-            trade_id: str,
-            timestamp: Timestamp,
-            location: Location,
-            base_asset: Asset,
-            quote_asset: Asset,
-            trade_type: TradeType,
-            amount: FVal,
-            rate: Price,
-            fee: Fee | None,
-            fee_currency: Asset | None,
-            link: str | None,
-            notes: str | None,
-    ) -> Response:
-        trade = Trade(
-            timestamp=timestamp,
-            location=location,
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            trade_type=trade_type,
-            amount=amount,
-            rate=rate,
-            fee=fee,
-            fee_currency=fee_currency,
-            link=link,
-            notes=notes,
-        )
-        with self.rotkehlchen.data.db.user_write() as cursor:
-            result, msg = self.rotkehlchen.data.db.edit_trade(cursor, old_trade_id=trade_id, trade=trade)  # noqa: E501
-
-        if not result:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        # For the outside world we should also add the trade identifier
-        result_dict = self.trade_schema.dump(trade)
-        result_dict['trade_id'] = trade.identifier
-        result_dict = _wrap_in_ok_result(result_dict)
-        return api_response(result_dict, status_code=HTTPStatus.OK)
-
-    def delete_trades(self, trades_ids: list[str]) -> Response:
-        try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                self.rotkehlchen.data.db.delete_trades(cursor, trades_ids)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
     def add_history_events(self, events: list['HistoryBaseEntry']) -> Response:
         """Add list of history events to DB. Returns identifier of first event.
@@ -4361,7 +4223,6 @@ class RestAPI:
                     location=location,
                     filter_query=query_filter,
                     only_cache=only_cache,
-                    task_manager=self.rotkehlchen.task_manager,
                 )
             except sqlcipher.OperationalError as e:  # pylint: disable=no-member
                 return wrap_in_fail_result(

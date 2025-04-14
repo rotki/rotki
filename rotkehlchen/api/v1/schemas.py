@@ -74,7 +74,6 @@ from rotkehlchen.db.filtering import (
     NFTFilterQuery,
     PaginatedFilterQuery,
     ReportDataFilterQuery,
-    TradesFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -142,7 +141,6 @@ from rotkehlchen.types import (
     ProtocolsWithCache,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -180,7 +178,6 @@ from .fields import (
     TaxFreeAfterPeriodField,
     TimestampField,
     TimestampMSField,
-    TimestampUntilNowField,
     XpubField,
 )
 from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats
@@ -449,103 +446,6 @@ class EvmlikePendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchem
                 message='The list of chains should not be empty',
                 field_name='chains',
             )
-
-
-class TradesQuerySchema(
-        AsyncQueryArgumentSchema,
-        TimestampRangeSchema,
-        OnlyCacheQuerySchema,
-        DBPaginationSchema,
-        DBOrderBySchema,
-):
-    base_asset = AssetField(expected_type=Asset, load_default=None)
-    quote_asset = AssetField(expected_type=Asset, load_default=None)
-    trade_type = SerializableEnumField(enum_class=TradeType, load_default=None)
-    location = LocationField(load_default=None)
-    include_ignored_trades = fields.Boolean(load_default=True)
-    exclude_ignored_assets = fields.Boolean(load_default=True)
-
-    def __init__(self, db: 'DBHandler') -> None:
-        super().__init__()
-        self.db = db
-
-    @validates_schema
-    def validate_trades_query_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        valid_ordering_attr = {
-            None,
-            'timestamp',
-            'location',
-            'type',
-            'amount',
-            'rate',
-            'fee',
-        }
-        if (
-            data['order_by_attributes'] is not None and
-            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
-        ):
-            error_msg = (
-                f'order_by_attributes for trades can not be '
-                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
-            )
-            raise ValidationError(
-                message=error_msg,
-                field_name='order_by_attributes',
-            )
-
-    @post_load
-    def make_trades_query(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        base_assets: tuple[Asset, ...] | None = None
-        quote_assets: tuple[Asset, ...] | None = None
-        trades_idx_to_ignore = None
-        with self.db.conn.read_ctx() as cursor:
-            treat_eth2_as_eth = self.db.get_settings(cursor).treat_eth2_as_eth
-            if data['include_ignored_trades'] is not True:
-                ignored_action_ids = self.db.get_ignored_action_ids(cursor, ActionType.TRADE)
-                trades_idx_to_ignore = ignored_action_ids[ActionType.TRADE]
-
-        if data['base_asset'] is not None:
-            base_assets = (data['base_asset'],)
-        if data['quote_asset'] is not None:
-            quote_assets = (data['quote_asset'],)
-
-        if treat_eth2_as_eth is True and data['base_asset'] == A_ETH:
-            base_assets = (A_ETH, A_ETH2)
-        elif treat_eth2_as_eth is True and data['quote_asset'] == A_ETH:
-            quote_assets = (A_ETH, A_ETH2)
-
-        filter_query = TradesFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(
-                data=data,
-                default_order_by_fields=['timestamp'],
-                default_ascending=[False],
-            ),
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            base_assets=base_assets,
-            quote_assets=quote_assets,
-            trade_type=[data['trade_type']] if data['trade_type'] is not None else None,
-            location=data['location'],
-            trades_idx_to_ignore=trades_idx_to_ignore,
-            exclude_ignored_assets=data['exclude_ignored_assets'],
-        )
-
-        return {
-            'async_query': data['async_query'],
-            'only_cache': data['only_cache'],
-            'filter_query': filter_query,
-            'include_ignored_trades': data['include_ignored_trades'],
-        }
 
 
 class BaseStakingQuerySchema(
@@ -1175,43 +1075,6 @@ class EditHistoryEventSchema(CreateHistoryEventSchema):
             return result[0] if result else None
 
 
-class TradeSchema(Schema):
-    timestamp = TimestampUntilNowField(required=True)
-    location = LocationField(required=True)
-    base_asset = AssetField(expected_type=Asset, required=True)
-    quote_asset = AssetField(expected_type=Asset, required=True)
-    trade_type = SerializableEnumField(enum_class=TradeType, required=True)
-    amount = PositiveAmountField(required=True)
-    rate = PriceField(required=True)
-    fee = FeeField(load_default=None)
-    fee_currency = AssetField(expected_type=Asset, load_default=None)
-    link = fields.String(load_default=None)
-    notes = fields.String(load_default=None)
-
-    @validates_schema
-    def validate_trade(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        """This validation checks that fee_currency is provided whenever fee is given and
-        vice versa. It also checks that fee is not a zero value when both fee and
-        fee_currency are provided. Also checks that the trade rate is not zero.
-        Negative rate is checked by price field.
-        """
-        fee = data.get('fee')
-        fee_currency = data.get('fee_currency')
-
-        if not all([fee, fee_currency]) and any([fee, fee_currency]):
-            raise ValidationError('fee and fee_currency must be provided', field_name='fee')
-
-        if fee is not None and fee == ZERO:
-            raise ValidationError('fee cannot be zero', field_name='fee')
-
-        if data['rate'] == ZERO:
-            raise ValidationError('A zero rate is not allowed', field_name='rate')
-
-
 class IntegerIdentifierSchema(Schema):
     identifier = fields.Integer(required=True)
 
@@ -1275,14 +1138,6 @@ class ManuallyTrackedBalancesEditSchema(AsyncQueryArgumentSchema):
 
 class ManuallyTrackedBalancesDeleteSchema(AsyncQueryArgumentSchema):
     ids = fields.List(fields.Integer(required=True), required=True)
-
-
-class TradePatchSchema(TradeSchema):
-    trade_id = fields.String(required=True)
-
-
-class TradeDeleteSchema(Schema):
-    trades_ids = DelimitedOrNormalList(fields.String(required=True), required=True)
 
 
 class TagSchema(Schema):

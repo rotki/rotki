@@ -7,7 +7,6 @@ from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
-from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
@@ -110,20 +109,3 @@ def price_historian(
     )
 
     return historian
-
-
-@pytest.fixture(name='history_querying_manager')
-def fixture_history_querying_manager(
-        database,
-        data_dir,
-        function_scope_messages_aggregator,
-        blockchain,
-        exchange_manager,
-):
-    return HistoryQueryingManager(
-        user_directory=data_dir,
-        db=database,
-        msg_aggregator=function_scope_messages_aggregator,
-        exchange_manager=exchange_manager,
-        chains_aggregator=blockchain,
-    )

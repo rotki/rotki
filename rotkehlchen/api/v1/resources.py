@@ -170,10 +170,6 @@ from rotkehlchen.api.v1.schemas import (
     TagSchema,
     TimedManualPriceSchema,
     TimestampRangeSchema,
-    TradeDeleteSchema,
-    TradePatchSchema,
-    TradeSchema,
-    TradesQuerySchema,
     UpdateCalendarReminderSchema,
     UpdateCalendarSchema,
     UserActionLoginSchema,
@@ -225,7 +221,6 @@ from rotkehlchen.db.filtering import (
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
-    TradesFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -258,7 +253,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
-    Fee,
     HexColorCode,
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
@@ -271,7 +265,6 @@ from rotkehlchen.types import (
     ProtocolsWithCache,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
     UserNote,
 )
 
@@ -1130,101 +1123,6 @@ class ManuallyTrackedBalancesResource(BaseMethodView):
             async_query=async_query,
             ids=ids,
         )
-
-
-class TradesResource(BaseMethodView):
-
-    def make_get_schema(self) -> TradesQuerySchema:
-        return TradesQuerySchema(
-            db=self.rest_api.rotkehlchen.data.db,
-        )
-
-    put_schema = TradeSchema()
-    patch_schema = TradePatchSchema()
-    delete_schema = TradeDeleteSchema()
-
-    @require_loggedin_user()
-    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            only_cache: bool,
-            filter_query: TradesFilterQuery,
-            include_ignored_trades: bool,
-    ) -> Response:
-        return self.rest_api.get_trades(
-            async_query=async_query,
-            only_cache=only_cache,
-            filter_query=filter_query,
-            include_ignored_trades=include_ignored_trades,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(put_schema, location='json')
-    def put(
-            self,
-            timestamp: Timestamp,
-            location: Location,
-            base_asset: Asset,
-            quote_asset: Asset,
-            trade_type: TradeType,
-            amount: FVal,
-            rate: Price,
-            fee: Fee | None,
-            fee_currency: Asset | None,
-            link: str | None,
-            notes: str | None,
-    ) -> Response:
-        return self.rest_api.add_trade(
-            timestamp=timestamp,
-            location=location,
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            trade_type=trade_type,
-            amount=amount,
-            rate=rate,
-            fee=fee,
-            fee_currency=fee_currency,
-            link=link,
-            notes=notes,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(patch_schema, location='json')
-    def patch(
-            self,
-            trade_id: str,
-            timestamp: Timestamp,
-            location: Location,
-            base_asset: Asset,
-            quote_asset: Asset,
-            trade_type: TradeType,
-            amount: FVal,
-            rate: Price,
-            fee: Fee | None,
-            fee_currency: Asset | None,
-            link: str | None,
-            notes: str | None,
-    ) -> Response:
-        return self.rest_api.edit_trade(
-            trade_id=trade_id,
-            timestamp=timestamp,
-            location=location,
-            base_asset=base_asset,
-            quote_asset=quote_asset,
-            trade_type=trade_type,
-            amount=amount,
-            rate=rate,
-            fee=fee,
-            fee_currency=fee_currency,
-            link=link,
-            notes=notes,
-        )
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(self, trades_ids: list[str]) -> Response:
-        return self.rest_api.delete_trades(trades_ids=trades_ids)
 
 
 class TagsResource(BaseMethodView):
