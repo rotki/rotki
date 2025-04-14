@@ -14,10 +14,10 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -30,7 +30,6 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
-    TradeID,
     TradeType,
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -205,8 +204,8 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             importer: BaseExchangeImporter,
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
-    ) -> list[Trade]:
-        """Processes multiple rows data and stores it into rotki's trades
+    ) -> list[SwapEvent]:
+        """Processes multiple rows of data and convert them into SwapEvents.
         Each row has format: {'Operation': ..., 'Change': ..., 'Coin': ...}
         Change is amount, Coin is asset
         If amount is negative then this asset is sold, otherwise it's bought
@@ -273,8 +272,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 cur_batch.append(rows_grouped_by_fee[True].pop())
             grouped_trade_rows.append(cur_batch)
 
-        # Creating trades structures based on grouped rows data
-        raw_trades: list[Trade] = []
+        swap_events = []
         for trade_rows in grouped_trade_rows:
             to_asset: AssetWithOracles | None = None
             to_amount: FVal | None = None
@@ -315,40 +313,20 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     )
                 continue
 
-            rate = to_amount / from_amount
-            trade = Trade(
-                timestamp=timestamp,
+            swap_events.extend(create_swap_events(
+                timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
-                trade_type=trade_type,
-                base_asset=to_asset,
-                quote_asset=from_asset,
-                amount=to_amount,
-                rate=Price(rate),
-                fee_currency=fee_asset,
-                fee=fee_amount,
-                link='',
-                notes='Imported from binance CSV file. Binance operation: Buy / Sell',
-            )
-            raw_trades.append(trade)
+                spend_asset=from_asset,
+                spend_amount=from_amount,
+                receive_asset=to_asset,
+                receive_amount=to_amount,
+                fee_amount=fee_amount,  # type: ignore[arg-type]
+                fee_asset=fee_asset,  # type: ignore[arg-type]
+                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(trade_rows[0])}',  # any row works, just using the first to create the event identifier  # noqa: E501
+                spend_notes='Imported from binance CSV file. Binance operation: Buy / Sell',
+            ))
 
-        # Sometimes we can get absolutely identical trades (including timestamp) but the database
-        # allows us to add only one of them. So we combine these trades into a huge single trade
-        # First step: group trades
-        grouped_trades: dict[TradeID, list[Trade]] = defaultdict(list)
-        for trade in raw_trades:
-            grouped_trades[trade.identifier].append(trade)
-
-        # Second step: combine them
-        unique_trades = []
-        for trades_group in grouped_trades.values():
-            result_trade = trades_group[0]
-            for trade in trades_group[1:]:
-                result_trade.amount += trade.amount
-                if result_trade.fee is not None and trade.fee is not None:
-                    result_trade.fee = Fee(result_trade.fee + trade.fee)
-            unique_trades.append(result_trade)
-
-        return unique_trades
+        return swap_events
 
     def process_entries(
             self,
@@ -357,10 +335,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             timestamp: Timestamp,
             data: list[BinanceCsvRow],
     ) -> int:
-        trades = self.process_trades(importer=importer, timestamp=timestamp, data=data)
-        for trade in trades:
-            importer.add_trade(write_cursor=write_cursor, trade=trade)
-        return len(trades)
+        swap_events = self.process_trades(importer=importer, timestamp=timestamp, data=data)
+        importer.add_history_events(write_cursor=write_cursor, history_events=swap_events)
+        return len(swap_events)
 
 
 class BinanceDepositWithdrawEntry(BinanceSingleEntry):
