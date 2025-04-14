@@ -2424,7 +2424,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
     expected_history_events = [
         HistoryEvent(
             identifier=1,
-            event_identifier='1xyz',  # placeholder as this field is randomly generated on import
+            event_identifier=(dummy_event_id := '1xyz'),  # placeholder as this field is randomly generated on import  # noqa: E501
             sequence_index=0,
             timestamp=TimestampMS(1658912400000),
             location=Location.KUCOIN,
@@ -2435,7 +2435,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             notes='Deposit EUR to Kucoin',
         ), HistoryEvent(
             identifier=2,
-            event_identifier='2xyz',  # placeholder as this field is randomly generated on import
+            event_identifier=dummy_event_id,
             sequence_index=1,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
@@ -2446,7 +2446,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             notes='',
         ), HistoryEvent(
             identifier=3,
-            event_identifier='2xyz',  # placeholder as this field is randomly generated on import
+            event_identifier=dummy_event_id,
             sequence_index=2,
             timestamp=TimestampMS(1658998800000),
             location=Location.BINANCE,
@@ -2457,7 +2457,7 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             notes='',
         ), HistoryEvent(
             identifier=4,
-            event_identifier='3xyz',  # placeholder as this field is randomly generated on import
+            event_identifier=dummy_event_id,
             sequence_index=2,
             timestamp=TimestampMS(1659085200000),
             location=Location.KRAKEN,
@@ -2468,7 +2468,18 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             notes='',
         ), HistoryEvent(
             identifier=5,
-            event_identifier='5xyz',  # placeholder as this field is randomly generated on import
+            event_identifier=dummy_event_id,
+            sequence_index=3,
+            timestamp=TimestampMS(1659340800000),
+            location=Location.EXTERNAL,
+            asset=A_ETH,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            amount=FVal('0.0513'),
+            notes='ETH Staking reward from QRS',
+        ), HistoryEvent(
+            identifier=6,
+            event_identifier=dummy_event_id,
             sequence_index=4,
             timestamp=TimestampMS(1659430800000),
             location=Location.COINBASE,
@@ -2476,6 +2487,17 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             amount=FVal('0.0910'),
+            notes='',
+        ), HistoryEvent(
+            identifier=7,
+            event_identifier=dummy_event_id,
+            sequence_index=5,
+            timestamp=TimestampMS(1659513600000),
+            location=Location.EXTERNAL,
+            asset=A_DAI,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            amount=FVal('1000.00'),
             notes='',
         ),
     ]
@@ -2488,8 +2510,8 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
         )
         warnings = rotki.msg_aggregator.consume_warnings()
 
-    assert len(history_events) == 5
-    assert len(expected_history_events) == 5
+    assert len(history_events) == 7
+    assert len(expected_history_events) == 7
     assert len(warnings) == 0
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.pop_message() == {
@@ -2498,10 +2520,8 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
             'subtype': 'csv_import_result',
             'source_name': 'Rotki generic events',
             'total': 7,
-            'processed': 4,
+            'processed': 6,
             'messages': [
-                {'msg': 'Deserialization error: Failed to deserialize Location value luno.', 'rows': [4], 'is_error': True},  # noqa: E501
-                {'msg': 'Deserialization error: Failed to deserialize Location value cex.', 'rows': [6], 'is_error': True},   # noqa: E501
                 {'msg': "Unsupported entry Invalid. Data: {'Type': 'Invalid', 'Location': 'bisq', 'Currency': 'BCH', 'Amount': '0.3456', 'Fee': '', 'Fee Currency': '', 'Description': '', 'Timestamp': '1659686400000'}", 'rows': [7], 'is_error': True},  # noqa: E501
             ],
         },
