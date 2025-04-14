@@ -95,6 +95,7 @@ watchImmediate(chain, (chain) => {
   >
     <TradeAssetDisplay
       v-if="asset && assetDetail"
+      :key="asset + chain"
       class="py-2 -my-2"
       :data="assetDetail"
     />

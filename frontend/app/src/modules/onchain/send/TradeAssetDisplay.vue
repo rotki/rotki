@@ -17,18 +17,19 @@ const { assetName, assetSymbol } = useAssetInfoRetrieval();
 const { getChainName, getEvmChainName } = useSupportedChains();
 
 const symbol = assetSymbol(props.data.asset, { collectionParent: false });
+const name = assetName(props.data.asset, { collectionParent: false });
 
-const name = computed(() => {
+const mainName = computed(() => {
   const asset = props.data.asset;
-  const name = get(assetName(asset, { collectionParent: false }));
   const isNative = isEvmNativeToken(asset);
+  const symbolVal = get(symbol);
 
-  if (isNative) {
+  if (isNative && props.list) {
     const chain = props.data.chain;
     const chainName = get(getChainName(chain));
-    return `${name} (in ${chainName} chain)`;
+    return `${symbolVal} (in ${chainName} chain)`;
   }
-  return name;
+  return symbolVal;
 });
 </script>
 
@@ -50,13 +51,13 @@ const name = computed(() => {
     >
       <div class="font-medium text-sm -mb-0.5 overflow-hidden truncate">
         <div class="truncate">
-          {{ name }}
+          {{ mainName }}
         </div>
         <div
-          v-if="list"
+          v-if="list || !(data.price && data.fiatValue)"
           class="truncate text-rui-text-secondary font-normal"
         >
-          {{ symbol }}
+          {{ name }}
         </div>
       </div>
       <div

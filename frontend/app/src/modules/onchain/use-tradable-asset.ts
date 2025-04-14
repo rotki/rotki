@@ -72,15 +72,20 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
       }
       else {
         // If no address provided, aggregate balances from all addresses
+        const assetsByChain = new Set<string>();
         Object.values(chainBalances).forEach((addressBalance) => {
           if (addressBalance?.assets) {
             Object.entries(addressBalance.assets).forEach(([asset, balance]) => {
               if (balance.amount) {
-                result.push({
-                  amount: Zero,
-                  asset,
-                  chain,
-                });
+                const assetChainKey = `${asset}-${chain}`;
+                if (!assetsByChain.has(assetChainKey)) {
+                  assetsByChain.add(assetChainKey);
+                  result.push({
+                    amount: Zero,
+                    asset,
+                    chain,
+                  });
+                }
               }
             });
           }
