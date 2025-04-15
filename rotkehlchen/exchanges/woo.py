@@ -407,8 +407,10 @@ class Woo(ExchangeInterface):
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_floatstr(movement['created_time'])),
             asset=asset,
             amount=deserialize_fval(movement['amount']),
-            fee_asset=asset_from_woo(movement['fee_token']) if movement['fee_token'] != '' else asset,  # noqa: E501
-            fee=deserialize_fval_or_zero(movement['fee_amount']),
+            fee=AssetAmount(
+                asset=asset_from_woo(movement['fee_token']),
+                amount=deserialize_fval_or_zero(movement['fee_amount']),
+            ) if movement['fee_token'] != '' else None,
             unique_id=str(movement['id']),
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

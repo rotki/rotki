@@ -955,12 +955,11 @@ class CreateHistoryEventSchema(Schema):
                 extra_data['reference'] = unique_id
 
             events = create_asset_movement_with_fee(
-                fee=fee,
+                fee=AssetAmount(asset=data['fee_asset'], amount=fee),
                 asset=data['asset'],
                 location=data['location'],
                 unique_id=unique_id,
                 timestamp=data['timestamp'],
-                fee_asset=data['fee_asset'],
                 event_type=data['event_type'],
                 identifier=data.get('identifier'),
                 event_identifier=data['event_identifier'],

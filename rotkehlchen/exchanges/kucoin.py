@@ -568,8 +568,7 @@ class Kucoin(ExchangeInterface):
             event_type=event_type,
             asset=fee_asset,
             amount=amount,
-            fee_asset=fee_asset,
-            fee=fee,
+            fee=AssetAmount(asset=fee_asset, amount=fee),
             unique_id=unique_id or transaction_id,
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

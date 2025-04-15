@@ -473,8 +473,7 @@ class Bitfinex(ExchangeInterface):
             timestamp=TimestampMS(deserialize_timestamp(raw_result[5])),
             asset=asset,
             amount=abs(amount),
-            fee_asset=asset,
-            fee=abs(deserialize_fval_or_zero(raw_result[13])),
+            fee=AssetAmount(asset=asset, amount=abs(deserialize_fval_or_zero(raw_result[13]))),
             unique_id=(reference := str(raw_result[0])),
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

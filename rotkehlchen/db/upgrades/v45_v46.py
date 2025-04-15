@@ -17,7 +17,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -114,8 +114,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                     event_type=HistoryEventType.DEPOSIT if row[2] == 'A' else HistoryEventType.WITHDRAWAL,  # noqa: E501
                     asset=Asset(row[6]).check_existence(),  # Added existence check here since AssetMovement has been changed to no longer resolve the asset on initialization  # noqa: E501
                     amount=FVal(row[7]),
-                    fee_asset=Asset(row[8]),
-                    fee=FVal(row[9]),
+                    fee=AssetAmount(asset=Asset(row[8]), amount=FVal(row[9])),
                     extra_data=maybe_set_transaction_extra_data(
                         address=row[3],
                         transaction_id=row[4],

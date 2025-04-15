@@ -161,8 +161,7 @@ def _process_deposit_withdrawal(
             timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
             amount=amount,
-            fee_asset=fee_asset,
-            fee=fee,
+            fee=AssetAmount(asset=fee_asset, amount=fee),
             unique_id=str(event_data['id']),
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

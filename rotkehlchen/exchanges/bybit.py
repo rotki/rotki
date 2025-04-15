@@ -38,12 +38,12 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Timestamp,
     TimestampMS,
@@ -603,8 +603,10 @@ class Bybit(ExchangeInterface):
                     event_type=query_for,
                     asset=coin,
                     amount=deserialize_fval(movement['amount']),
-                    fee_asset=coin,
-                    fee=deserialize_fval_or_zero(movement[fee_key]) if len(movement[fee_key]) else Fee(ZERO),  # noqa: E501,
+                    fee=AssetAmount(
+                        asset=coin,
+                        amount=deserialize_fval(movement[fee_key]),
+                    ) if len(movement[fee_key]) != 0 else None,
                     unique_id=movement[id_key],
                     extra_data=maybe_set_transaction_extra_data(
                         address=None,

@@ -955,7 +955,7 @@ class Coinbase(ExchangeInterface):
             # Only get address/transaction id for "send" type of transactions
             address = None
             transaction_id, transaction_hash = raw_data.get('id'), None
-            notes, fee = None, ZERO
+            notes, fee = None, None
             tx_type = raw_data['type']  # not sure if fiat
             event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             amount_data = raw_data['amount']
@@ -997,8 +997,11 @@ class Coinbase(ExchangeInterface):
                             f'is denoted in {raw_fee["currency"]}',
                         )
                     else:
-                        fee = deserialize_fval_or_zero(raw_fee['amount'])
-                        amount -= fee  # fee is deducted from withdrawal amount
+                        fee = AssetAmount(
+                            asset=asset,
+                            amount=deserialize_fval_or_zero(raw_fee['amount']),
+                        )
+                        amount -= fee.amount  # fee is deducted from withdrawal amount
 
             if 'network' in raw_data:
                 transaction_hash = get_key_if_has_val(raw_data['network'], 'hash')
@@ -1043,7 +1046,6 @@ class Coinbase(ExchangeInterface):
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=amount,
-                fee_asset=asset,
                 fee=fee,
                 unique_id=transaction_id,
                 extra_data=maybe_set_transaction_extra_data(

@@ -943,8 +943,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                                 event_type=event_type,  # type: ignore  # will be deposit or withdrawal
                                 asset=asset,
                                 amount=abs(raw_amount),
-                                fee_asset=asset,
-                                fee=abs(fee_amount),
+                                fee=AssetAmount(asset=asset, amount=abs(fee_amount)),
                                 unique_id=identifier,
                             )
                         )

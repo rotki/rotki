@@ -428,27 +428,20 @@ class Okx(ExchangeInterface):
         If there is an error `None` is returned and error is logged.
         """
         try:
-            tx_hash = raw_movement['txId']
-            timestamp = TimestampMS(int(raw_movement['ts']))
-            asset = asset_from_okx(raw_movement['ccy'])
-            amount = deserialize_fval(raw_movement['amt'])
-            address = deserialize_asset_movement_address(raw_movement, 'to', asset)
-            fee = ZERO
-            if event_type is HistoryEventType.WITHDRAWAL:
-                fee = deserialize_fval_or_zero(raw_movement['fee'])
-
             return create_asset_movement_with_fee(
                 location=self.location,
                 location_label=self.name,
                 event_type=event_type,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee_asset=asset,
-                fee=fee,
-                unique_id=tx_hash,
+                timestamp=TimestampMS(int(raw_movement['ts'])),
+                asset=(asset := asset_from_okx(raw_movement['ccy'])),
+                amount=deserialize_fval(raw_movement['amt']),
+                fee=AssetAmount(
+                    asset=asset,
+                    amount=deserialize_fval_or_zero(raw_movement['fee']),
+                ) if event_type is HistoryEventType.WITHDRAWAL else None,
+                unique_id=(tx_hash := raw_movement['txId']),
                 extra_data=maybe_set_transaction_extra_data(
-                    address=address,
+                    address=deserialize_asset_movement_address(raw_movement, 'to', asset),
                     transaction_id=tx_hash,
                 ),
             )

@@ -19,7 +19,7 @@ from rotkehlchen.history.events.structures.types import (
 from rotkehlchen.history.events.utils import create_event_identifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import AssetAmount, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -229,8 +229,7 @@ def create_asset_movement_with_fee(
         event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
         asset: Asset,
         amount: 'FVal',
-        fee_asset: Asset,
-        fee: 'FVal',
+        fee: AssetAmount | None = None,
         location_label: str | None = None,
         unique_id: str | None = None,
         identifier: int | None = None,
@@ -256,15 +255,15 @@ def create_asset_movement_with_fee(
         location_label=location_label,
         notes=movement_notes,
     )]
-    if fee != ZERO:
+    if fee is not None and fee.amount != ZERO:
         events.append(AssetMovement(
             identifier=fee_identifier,
             event_identifier=events[0].event_identifier,
             location=location,
             event_type=event_type,
             timestamp=timestamp,
-            asset=fee_asset,
-            amount=fee,
+            asset=fee.asset,
+            amount=fee.amount,
             is_fee=True,
             location_label=location_label,
             notes=fee_notes,
