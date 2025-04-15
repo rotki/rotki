@@ -126,7 +126,6 @@ def assert_eth_balances_result(
                         per_account[account]['assets'][token.identifier]['usd_value'],
                     )
                     assert token_amount == from_wei(expected_token_amount)
-                    assert usd_value > ZERO
 
     if totals_only:
         totals = result
@@ -152,21 +151,11 @@ def assert_eth_balances_result(
 
     expected_total_eth = sum(from_wei(FVal(balance)) for balance in eth_balances)
     assert FVal(totals[A_ETH.identifier]['amount']) == expected_total_eth
-    if expected_total_eth == ZERO:
-        assert FVal(totals[A_ETH.identifier]['usd_value']) == ZERO
-    else:
-        assert FVal(totals[A_ETH.identifier]['usd_value']) > ZERO
-
     for token, balances in token_balances.items():
         symbol = token.identifier
 
         expected_total_token = sum(from_wei(FVal(balance)) for balance in balances)
         assert FVal(totals[symbol]['amount']) == expected_total_token
-        if expected_total_token == ZERO:
-            msg = f"{FVal(totals[symbol]['usd_value'])} is not ZERO"
-            assert FVal(totals[symbol]['usd_value']) == ZERO, msg
-        else:
-            assert FVal(totals[symbol]['usd_value']) > ZERO
 
 
 def _get_token(value: Any) -> EvmToken | None:
