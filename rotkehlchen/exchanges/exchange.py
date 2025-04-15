@@ -10,11 +10,10 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.db.filtering import TradesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -331,16 +330,9 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         new_step_callback, exchange_name = None, None
         if new_step_data is not None:
             new_step_callback, exchange_name = new_step_data
-            new_step_callback(f'Querying {exchange_name} trades history')
+            new_step_callback(f'Querying {exchange_name} margin history')
 
         try:
-            self.query_trade_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                only_cache=False,
-            )
-            if new_step_callback is not None:
-                new_step_callback(f'Querying {exchange_name} margin history')
             self.query_margin_history(
                 start_ts=start_ts,
                 end_ts=end_ts,

@@ -6,7 +6,6 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 
 EXCHANGE_METHODS_TO_CHECK = (
     'query_balances',
-    'query_online_trade_history',
     'query_online_deposits_withdrawals',
     'query_online_margin_history',
 )
