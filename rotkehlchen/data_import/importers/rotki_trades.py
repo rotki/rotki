@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     process_rotki_generic_import_csv_fields,
@@ -13,7 +12,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount
 
 if TYPE_CHECKING:
@@ -37,8 +36,8 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         - UnknownAsset
         - KeyError
         """
-        spend_amount = deserialize_asset_amount(csv_row['Spend Amount'])
-        receive_amount = deserialize_asset_amount(csv_row['Receive Amount'])
+        spend_amount = deserialize_fval(csv_row['Spend Amount'])
+        receive_amount = deserialize_fval(csv_row['Receive Amount'])
         spend_asset, fee, fee_currency, location, timestamp = process_rotki_generic_import_csv_fields(csv_row, 'Spend Currency')  # noqa: E501
         receive_asset = symbol_to_asset_or_token(csv_row['Receive Currency'])
         self.add_history_events(
@@ -49,7 +48,7 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
                 spend=AssetAmount(asset=spend_asset, amount=spend_amount),
                 receive=AssetAmount(asset=receive_asset, amount=receive_amount),
                 spend_notes=csv_row['Description'],
-                fee=AssetAmount(asset=fee_currency, amount=fee or ZERO) if fee_currency is not None else None,  # noqa: E501
+                fee=AssetAmount(asset=fee_currency, amount=fee) if fee_currency is not None and fee is not None else None,  # noqa: E501
             ),
         )
 

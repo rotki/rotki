@@ -36,9 +36,9 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
     deserialize_asset_movement_event_type,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_int_from_str,
 )
 from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Location, Timestamp
@@ -194,8 +194,8 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'bitpanda asset with id {asset_id} in the mapping',
                 )
                 return []
-            amount = deserialize_asset_amount(entry['attributes']['amount'])
-            fee = deserialize_fee(entry['attributes']['fee'])
+            amount = deserialize_fval(entry['attributes']['amount'])
+            fee = deserialize_fval_or_zero(entry['attributes']['fee'])
             tx_id = entry['id']
 
             transaction_id = entry['attributes'].get('tx_id')
@@ -273,7 +273,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
             fee = ZERO
             if entry['attributes']['bfc_used'] is True:
-                fee = deserialize_fee(
+                fee = deserialize_fval_or_zero(
                     entry['attributes']['best_fee_collection']['attributes']['wallet_transaction']['attributes']['fee'],
                 )
 
@@ -281,7 +281,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 raw_trade_type=entry['attributes']['type'],
                 base_asset=crypto_asset,
                 quote_asset=fiat_asset,
-                amount=deserialize_asset_amount(entry['attributes']['amount_cryptocoin']),
+                amount=deserialize_fval(entry['attributes']['amount_cryptocoin']),
                 rate=deserialize_price(entry['attributes']['price']),
             )
             return create_swap_events(
@@ -458,7 +458,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 symbol_key = 'fiat_symbol'
 
             try:
-                amount = deserialize_asset_amount(entry['attributes']['balance'])
+                amount = deserialize_fval(entry['attributes']['balance'])
                 asset = asset_from_bitpanda(entry['attributes'][symbol_key])
             except UnknownAsset as e:
                 self.send_unknown_asset_message(

@@ -88,8 +88,8 @@ def upgrade_trade_to_swap_events(
         receive=receive,
         fee=AssetAmount(
             asset=Asset(row[8]),
-            amount=FVal(row[7] or 0),
-        ) if row[8] is not None else None,
+            amount=FVal(row[7]),
+        ) if row[8] is not None and row[7] is not None else None,
         location_label=location_label,
         unique_id=link,
         spend_notes=row[10],

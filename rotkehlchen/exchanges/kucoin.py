@@ -41,8 +41,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_int_from_str,
     deserialize_timestamp,
 )
@@ -467,7 +467,7 @@ class Kucoin(ExchangeInterface):
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for raw_result in accounts_data:
             try:
-                amount = deserialize_asset_amount(raw_result['balance'])
+                amount = deserialize_fval(raw_result['balance'])
                 if amount == ZERO:
                     continue
 
@@ -552,8 +552,8 @@ class Kucoin(ExchangeInterface):
             address = raw_result['address']
             # The transaction id can have an @ which we should just get rid of
             transaction_id = raw_result['walletTxId'].split('@')[0]
-            amount = deserialize_asset_amount(raw_result['amount'])
-            fee = deserialize_fee(raw_result['fee'])
+            amount = deserialize_fval(raw_result['amount'])
+            fee = deserialize_fval_or_zero(raw_result['fee'])
             fee_currency_symbol = raw_result['currency']
             unique_id = raw_result.get('id')  # NB: id only exists for withdrawals
         except KeyError as e:
@@ -598,14 +598,14 @@ class Kucoin(ExchangeInterface):
             base_asset, quote_asset = deserialize_trade_pair(raw_result['symbol'])
             if case == KucoinCase.TRADES:
                 fee_currency = asset_from_kucoin(raw_result['feeCurrency'])
-                amount = deserialize_asset_amount(raw_result['size'])
+                amount = deserialize_fval(raw_result['size'])
                 rate = deserialize_price(raw_result['price'])
                 # new trades have the timestamp in ms
                 timestamp_ms = TimestampMS(timestamp)
                 trade_id = raw_result['tradeId']
             else:  # old v1 trades
                 timestamp_ms = ts_sec_to_ms(timestamp)
-                amount = deserialize_asset_amount(raw_result['amount'])
+                amount = deserialize_fval(raw_result['amount'])
                 fee_currency = quote_asset if raw_result['side'] == 'sell' else base_asset
                 rate = deserialize_price(raw_result['dealPrice'])
                 trade_id = raw_result['id']
@@ -624,7 +624,7 @@ class Kucoin(ExchangeInterface):
                 receive=receive,
                 fee=AssetAmount(
                     asset=fee_currency,
-                    amount=deserialize_fee(raw_result['fee']),
+                    amount=deserialize_fval_or_zero(raw_result['fee']),
                 ),
                 location_label=self.name,
                 unique_id=str(trade_id),

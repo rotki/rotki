@@ -23,8 +23,8 @@ from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_ev
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, ExchangeAuthCredentials, Timestamp
@@ -208,7 +208,7 @@ class Bitcoinde(ExchangeInterface):
                 continue
 
             try:
-                amount = deserialize_asset_amount(balance['total_amount'])
+                amount = deserialize_fval(balance['total_amount'])
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitcoin.de {asset} balance entry due to inability to '
@@ -233,8 +233,8 @@ class Bitcoinde(ExchangeInterface):
         """
         # For very old trades (2013) bitcoin.de does not return 'successfully_finished_at'
         raw_timestamp = raw_trade.get('successfully_finished_at', raw_trade['trade_marked_as_paid_at'])  # noqa: E501
-        tx_amount = deserialize_asset_amount(raw_trade['amount_currency_to_trade'])
-        native_amount = deserialize_asset_amount(raw_trade['volume_currency_to_pay'])
+        tx_amount = deserialize_fval(raw_trade['amount_currency_to_trade'])
+        native_amount = deserialize_fval(raw_trade['volume_currency_to_pay'])
         tx_asset, native_asset = bitcoinde_pair_to_world(raw_trade['trading_pair'])
         if raw_trade['type'] == 'buy':
             spend_asset, spend_amount, receive_asset, receive_amount = native_asset, native_amount, tx_asset, tx_amount  # noqa: E501
@@ -250,7 +250,7 @@ class Bitcoinde(ExchangeInterface):
             location=self.location,
             spend=AssetAmount(asset=spend_asset, amount=spend_amount),
             receive=AssetAmount(asset=receive_asset, amount=receive_amount),
-            fee=AssetAmount(asset=A_EUR, amount=deserialize_fee(raw_trade['fee_currency_to_pay'])),
+            fee=AssetAmount(asset=A_EUR, amount=deserialize_fval_or_zero(raw_trade['fee_currency_to_pay'])),  # noqa: E501
             location_label=self.name,
             unique_id=raw_trade['trade_id'],
         )

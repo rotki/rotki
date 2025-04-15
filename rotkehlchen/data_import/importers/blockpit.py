@@ -19,11 +19,11 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -81,14 +81,14 @@ class BlockpitImporter(BaseExchangeImporter):
             symbol_to_asset_or_token,
         )
 
-        fee_amount = Fee(ZERO)
+        fee_amount = ZERO
         if csv_row['Fee Asset'] != '':
-            fee_amount = deserialize_fee(csv_row['Fee Amount'])
+            fee_amount = deserialize_fval_or_zero(csv_row['Fee Amount'])
             fee_currency = asset_resolver(csv_row['Fee Asset'])
         notes = csv_row['Note']
 
         if transaction_type == 'Trade':
-            if (amount_in := deserialize_asset_amount(csv_row['Incoming Amount'])) == ZERO:
+            if (amount_in := deserialize_fval(csv_row['Incoming Amount'])) == ZERO:
                 raise DeserializationError('Incoming amount in trade is zero.')
 
             self.add_history_events(
@@ -98,7 +98,7 @@ class BlockpitImporter(BaseExchangeImporter):
                     location=location,
                     spend=AssetAmount(
                         asset=asset_resolver(csv_row['Outgoing Asset']),
-                        amount=deserialize_asset_amount(csv_row['Outgoing Amount']),
+                        amount=deserialize_fval(csv_row['Outgoing Amount']),
                     ),
                     receive=AssetAmount(
                         asset=asset_resolver(csv_row['Incoming Asset']),
@@ -124,7 +124,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset_resolver(csv_row[f'{direction} Asset']),
-                amount=deserialize_asset_amount(csv_row[f'{direction} Amount']),
+                amount=deserialize_fval(csv_row[f'{direction} Amount']),
             )]
             if fee_amount != ZERO:
                 events.append(AssetMovement(
@@ -152,13 +152,13 @@ class BlockpitImporter(BaseExchangeImporter):
 
             if transaction_type in {'Fee', 'Gift', 'Margin_trading_loss'}:
                 asset = asset_resolver(csv_row['Outgoing Asset'])
-                amount = deserialize_asset_amount(csv_row['Outgoing Amount'])
+                amount = deserialize_fval(csv_row['Outgoing Amount'])
                 event_type = HistoryEventType.SPEND
                 event_subtype = HistoryEventSubType.NONE
                 event_description = 'Spend'
             else:
                 asset = asset_resolver(csv_row['Incoming Asset'])
-                amount = deserialize_asset_amount(csv_row['Incoming Amount'])
+                amount = deserialize_fval(csv_row['Incoming Amount'])
                 event_type = HistoryEventType.RECEIVE
                 event_subtype = HistoryEventSubType.NONE
                 event_description = 'Receive'

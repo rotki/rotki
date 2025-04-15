@@ -546,7 +546,7 @@ def test_add_edit_manually_tracked_balances_errors(
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to deserialize an amount entry',
+        contained_in_msg='Failed to deserialize value entry',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

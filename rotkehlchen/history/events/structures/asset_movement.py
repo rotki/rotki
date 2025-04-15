@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.types import Fee
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -42,7 +41,7 @@ class AssetMovementExtraData(TypedDict):
     # Internal reference used in exchanges.
     reference: NotRequired[str]
     # Internal use only. Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
-    fee: NotRequired['Fee']
+    fee: NotRequired['FVal']
     # blockchain where the transaction happened. We use string since
     # it can be a non supported blockchain
     blockchain: NotRequired[str]

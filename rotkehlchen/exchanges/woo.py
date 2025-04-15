@@ -34,8 +34,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_floatstr,
 )
 from rotkehlchen.types import (
@@ -129,7 +129,7 @@ class Woo(ExchangeInterface):
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
-                if (amount := deserialize_asset_amount(entry['holding'] + entry['staked'])) == ZERO:  # noqa: E501
+                if (amount := deserialize_fval(entry['holding'] + entry['staked'])) == ZERO:
                     continue
                 asset = asset_from_woo(entry['token'])
                 usd_price = Inquirer.find_usd_price(asset=asset)
@@ -180,7 +180,7 @@ class Woo(ExchangeInterface):
             raw_trade_type=trade['side'],
             base_asset=asset_from_woo(base_asset_symbol),
             quote_asset=asset_from_woo(quote_asset_symbol),
-            amount=deserialize_asset_amount(trade['executed_quantity']),
+            amount=deserialize_fval(trade['executed_quantity']),
             rate=deserialize_price(trade['executed_price']),
         )
         return create_swap_events(
@@ -190,7 +190,7 @@ class Woo(ExchangeInterface):
             receive=receive,
             fee=AssetAmount(
                 asset=asset_from_woo(trade['fee_asset']),
-                amount=deserialize_fee(trade['fee']),
+                amount=deserialize_fval_or_zero(trade['fee']),
             ),
             location_label=self.name,
             unique_id=str(trade['id']),
@@ -406,9 +406,9 @@ class Woo(ExchangeInterface):
             event_type=event_type,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_floatstr(movement['created_time'])),
             asset=asset,
-            amount=deserialize_asset_amount(movement['amount']),
+            amount=deserialize_fval(movement['amount']),
             fee_asset=asset_from_woo(movement['fee_token']) if movement['fee_token'] != '' else asset,  # noqa: E501
-            fee=deserialize_fee(movement['fee_amount']),
+            fee=deserialize_fval_or_zero(movement['fee_amount']),
             unique_id=str(movement['id']),
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

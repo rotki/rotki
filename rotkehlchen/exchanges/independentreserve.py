@@ -35,8 +35,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
     deserialize_asset_movement_event_type,
+    deserialize_fval,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
@@ -102,7 +102,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
 
     if raw_amount is None:  # skip
         return None   # Can end up being None for some things like this: 'Comment': 'Initial balance after Bitcoin fork'  # noqa: E501
-    amount = deserialize_asset_amount(raw_amount)
+    amount = deserialize_fval(raw_amount)
 
     return AssetMovement(
         location=Location.INDEPENDENTRESERVE,
@@ -258,7 +258,7 @@ class Independentreserve(ExchangeInterface):
             try:
                 asset = independentreserve_asset(entry['CurrencyCode'])
                 usd_price = Inquirer.find_usd_price(asset=asset)
-                amount = deserialize_asset_amount(entry['TotalBalance'])
+                amount = deserialize_fval(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
             except UnsupportedAsset as e:
                 log.error(

@@ -18,9 +18,9 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_force_positive,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location
@@ -93,7 +93,7 @@ class BittrexImporter(BaseExchangeImporter):
             raw_trade_type=trade_type,
             base_asset=asset_from_bittrex(base),
             quote_asset=(quote_asset := asset_from_bittrex(quote)),
-            amount=deserialize_asset_amount(amount),
+            amount=deserialize_fval(amount),
             rate=deserialize_price(rate),
         )
         return create_swap_events(
@@ -107,7 +107,7 @@ class BittrexImporter(BaseExchangeImporter):
             receive=receive,
             fee=AssetAmount(
                 asset=quote_asset,
-                amount=deserialize_fee(fee),
+                amount=deserialize_fval_or_zero(fee),
             ),
             unique_id=order_id,
             spend_notes=notes,
@@ -171,7 +171,7 @@ class BittrexImporter(BaseExchangeImporter):
                 location='Bittrex tx history import',
             )),
             asset=asset,
-            amount=deserialize_asset_amount_force_positive(amount),
+            amount=deserialize_fval_force_positive(amount),
             unique_id=(transaction_id := get_key_if_has_val(csv_row, tx_id_key)),
             extra_data=maybe_set_transaction_extra_data(
                 address=deserialize_asset_movement_address(csv_row, address_key, asset),

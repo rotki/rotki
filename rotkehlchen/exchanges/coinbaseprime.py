@@ -31,11 +31,10 @@ from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_ev
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_event_type,
-    deserialize_fee,
     deserialize_fval,
+    deserialize_fval_force_positive,
+    deserialize_fval_or_zero,
 )
 from rotkehlchen.types import (
     ApiKey,
@@ -103,16 +102,16 @@ def _process_trade(trade_data: dict[str, Any]) -> list[SwapEvent]:
             location=Location.COINBASEPRIME,
             spend=AssetAmount(
                 asset=spend_asset,
-                amount=deserialize_asset_amount(trade_data['filled_value']),
+                amount=deserialize_fval(trade_data['filled_value']),
             ),
             receive=AssetAmount(
                 asset=receive_asset,
-                amount=deserialize_asset_amount(trade_data['filled_quantity']),
+                amount=deserialize_fval(trade_data['filled_quantity']),
             ),
             fee=AssetAmount(
                 asset=quote_asset,
-                amount=deserialize_fee(trade_data['commission']) if len(trade_data['commission']) != 0 else ZERO,  # noqa: E501
-            ),
+                amount=deserialize_fval(trade_data['commission']),
+            ) if len(trade_data['commission']) != 0 else None,
             unique_id=str(trade_data['id']),
         )
     except KeyError as e:
@@ -144,8 +143,8 @@ def _process_deposit_withdrawal(
         else:
             address = event_data.get('transfer_to', {}).get('value')
 
-        amount = deserialize_asset_amount_force_positive(event_data['amount'])
-        fee = deserialize_fee(event_data['fees'])
+        amount = deserialize_fval_force_positive(event_data['amount'])
+        fee = deserialize_fval_or_zero(event_data['fees'])
         timestamp = iso8601ts_to_timestamp(event_data['completed_at'] or event_data['created_at'])
         try:
             fee_asset = asset_from_coinbase(event_data['fee_symbol'])
@@ -465,9 +464,7 @@ class Coinbaseprime(ExchangeInterface):
                         'unvested_amount',
                         'pending_rewards_amount',
                     ):
-                        total_balance += deserialize_asset_amount(
-                            amount=balance_entry.get(balance_key, ZERO),
-                        )
+                        total_balance += deserialize_fval(balance_entry.get(balance_key, ZERO))
 
                     # ignore empty balances. Coinbase returns zero balances for everything
                     # a user does not own

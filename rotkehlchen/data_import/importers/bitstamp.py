@@ -16,8 +16,8 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location, Price
@@ -63,8 +63,8 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 raw_trade_type=csv_row['Sub Type'],
                 base_asset=asset_from_bitstamp(amount_symbol),
                 quote_asset=asset_from_bitstamp(value_symbol),
-                amount=(swap_amount := deserialize_asset_amount(amount)),
-                rate=Price(deserialize_asset_amount(value_str) / swap_amount),
+                amount=(swap_amount := deserialize_fval(amount)),
+                rate=Price(deserialize_fval(value_str) / swap_amount),
             )
             events.extend(create_swap_events(
                 timestamp=timestamp,
@@ -74,7 +74,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 event_identifier=event_identifier,
                 fee=AssetAmount(
                     asset=asset_from_bitstamp(fee_symbol),
-                    amount=deserialize_fee(fee_str),
+                    amount=deserialize_fval_or_zero(fee_str),
                 ),
             ))
         elif csv_row['Type'] in {'Deposit', 'Withdrawal'}:
@@ -84,7 +84,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
                 asset=asset_from_bitstamp(amount_symbol),
-                amount=deserialize_asset_amount(amount),
+                amount=deserialize_fval(amount),
             ))
 
         if len(events) > 0:

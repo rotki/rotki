@@ -12,8 +12,8 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location
@@ -52,11 +52,11 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
         )
         # Use asset_from_kraken since the mapping is the same as in kraken
         buy_asset = asset_from_kraken(csv_row['outputCurrency'])
-        buy_amount = deserialize_asset_amount(csv_row['outputAmount'])
+        buy_amount = deserialize_fval(csv_row['outputAmount'])
         sold_asset = asset_from_kraken(csv_row['inputCurrency'])
-        sold_amount = deserialize_asset_amount(csv_row['inputAmount'])
-        rate = deserialize_asset_amount(csv_row['rate'])
-        fee = deserialize_fee(csv_row['minerFee'])
+        sold_amount = deserialize_fval(csv_row['inputAmount'])
+        rate = deserialize_fval(csv_row['rate'])
+        fee = deserialize_fval_or_zero(csv_row['minerFee'])
         in_addr = csv_row['inputAddress']
         out_addr = csv_row['outputAddress']
         notes = f"""

@@ -14,8 +14,8 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
     deserialize_fee,
+    deserialize_fval,
     deserialize_optional,
     deserialize_timestamp,
 )
@@ -159,7 +159,7 @@ class Trade(AccountingEventMixin):
             base_asset=Asset(entry[3]).check_existence(),
             quote_asset=Asset(entry[4]).check_existence(),
             trade_type=TradeType.deserialize_from_db(entry[5]),
-            amount=deserialize_asset_amount(entry[6]),
+            amount=deserialize_fval(entry[6]),
             rate=deserialize_price(entry[7]),
             fee=deserialize_optional(entry[8], deserialize_fee),
             fee_currency=deserialize_optional(entry[9], Asset),
@@ -375,7 +375,7 @@ class MarginPosition(AccountingEventMixin):
             location=Location.deserialize(data['location']),
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
-            profit_loss=deserialize_asset_amount(data['profit_loss']),
+            profit_loss=deserialize_fval(data['profit_loss']),
             pl_currency=Asset(data['pl_currency']).check_existence(),
             fee=deserialize_fee(data['fee']),
             fee_currency=Asset(data['fee_currency']).check_existence(),
@@ -397,7 +397,7 @@ class MarginPosition(AccountingEventMixin):
             location=Location.deserialize_from_db(entry[1]),
             open_time=open_time,
             close_time=deserialize_timestamp(entry[3]),
-            profit_loss=deserialize_asset_amount(entry[4]),
+            profit_loss=deserialize_fval(entry[4]),
             pl_currency=Asset(entry[5]).check_existence(),
             fee=deserialize_fee(entry[6]),
             fee_currency=Asset(entry[7]).check_existence(),
@@ -502,8 +502,8 @@ class Loan(AccountingEventMixin):
             close_time=deserialize_timestamp(data['close_time']),
             currency=Asset(data['currency']).check_existence(),
             fee=deserialize_fee(data['fee']),
-            earned=deserialize_asset_amount(data['earned']),
-            amount_lent=deserialize_asset_amount(data['amount_lent']),
+            earned=deserialize_fval(data['earned']),
+            amount_lent=deserialize_fval(data['amount_lent']),
         )
 
     @staticmethod
@@ -546,7 +546,7 @@ def deserialize_trade(data: dict[str, Any]) -> Trade:
         - DeserializationError: If any of the trade dict entries is not as expected
     """
     rate = deserialize_price(data['rate'])
-    amount = deserialize_asset_amount(data['amount'])
+    amount = deserialize_fval(data['amount'])
     trade_type = TradeType.deserialize(data['trade_type'])
     location = Location.deserialize(data['location'])
 

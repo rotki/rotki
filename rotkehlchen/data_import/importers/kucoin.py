@@ -11,8 +11,8 @@ from rotkehlchen.exchanges.utils import get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location
@@ -74,7 +74,7 @@ class KucoinImporter(BaseExchangeImporter):
                         raw_trade_type=row[trade_type_key],
                         base_asset=asset_from_kucoin(base),
                         quote_asset=asset_from_kucoin(quote),
-                        amount=deserialize_asset_amount(row[amount_key]),
+                        amount=deserialize_fval(row[amount_key]),
                         rate=deserialize_price(row[rate_key]),
                     )
                     self.add_history_events(
@@ -90,7 +90,7 @@ class KucoinImporter(BaseExchangeImporter):
                             receive=receive,
                             fee=AssetAmount(
                                 asset=asset_from_kucoin(fee_currency),
-                                amount=deserialize_fee(get_key_if_has_val(row, fee_key)),
+                                amount=deserialize_fval_or_zero(get_key_if_has_val(row, fee_key)),
                             ) if fee_currency is not None else None,
                         ),
                     )

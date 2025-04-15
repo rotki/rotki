@@ -34,15 +34,14 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_ms_from_intms,
 )
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    Fee,
     Location,
     Timestamp,
     TimestampMS,
@@ -195,7 +194,7 @@ class Htx(ExchangeInterface):
                     continue
 
                 if (amount_str := balance_info.get('balance')) is not None:
-                    amount = deserialize_asset_amount(amount_str)
+                    amount = deserialize_fval(amount_str)
                 else:
                     log.error(
                         f'Got HTX account with no balance value key in {balance_info}. Skipping',
@@ -316,9 +315,9 @@ class Htx(ExchangeInterface):
                     location_label=self.name,
                     event_type=event_type,
                     asset=coin,
-                    amount=deserialize_asset_amount(movement['amount']),
+                    amount=deserialize_fval(movement['amount']),
                     fee_asset=coin,
-                    fee=deserialize_fee(movement.get('fee', '0')),
+                    fee=deserialize_fval_or_zero(movement.get('fee', '0')),
                     unique_id=str(movement['id']),
                     extra_data=maybe_set_transaction_extra_data(
                         address=get_key_if_has_val(movement, 'address'),
@@ -446,7 +445,7 @@ class Htx(ExchangeInterface):
                         raw_trade_type=trade_type,
                         base_asset=base_asset,
                         quote_asset=quote_asset,
-                        amount=deserialize_asset_amount(raw_trade['filled-amount']),
+                        amount=deserialize_fval(raw_trade['filled-amount']),
                         rate=deserialize_price(raw_trade['price']),
                     )
                     events.extend(create_swap_events(
@@ -456,8 +455,8 @@ class Htx(ExchangeInterface):
                         receive=receive,
                         fee=AssetAmount(
                             asset=fee_asset,
-                            amount=deserialize_fee(raw_trade['filled-fees']) if raw_trade['filled-fees'] else Fee(ZERO),  # noqa: E501
-                        ),
+                            amount=deserialize_fval(raw_trade['filled-fees']),
+                        ) if raw_trade['filled-fees'] else None,
                         location_label=self.name,
                         unique_id=str(raw_trade['id']),
                     ))

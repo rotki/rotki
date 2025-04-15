@@ -11,8 +11,8 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location, Price
@@ -53,16 +53,16 @@ class BisqTradesImporter(BaseExchangeImporter):
             quote_asset = symbol_to_asset_or_token(assets1_symbol)
 
         if base_asset == A_BTC:
-            buy_amount = deserialize_asset_amount(csv_row['Amount in BTC'])
+            buy_amount = deserialize_fval(csv_row['Amount in BTC'])
         else:
-            buy_amount = deserialize_asset_amount(csv_row['Amount'])
+            buy_amount = deserialize_fval(csv_row['Amount'])
 
         # Get trade fee
         if len(csv_row['Trade Fee BSQ']) != 0:
-            fee_amount = deserialize_fee(csv_row['Trade Fee BSQ'])
+            fee_amount = deserialize_fval_or_zero(csv_row['Trade Fee BSQ'])
             fee_currency = A_BSQ
         else:
-            fee_amount = deserialize_fee(csv_row['Trade Fee BTC'])
+            fee_amount = deserialize_fval_or_zero(csv_row['Trade Fee BTC'])
             fee_currency = A_BTC
 
         spend, receive = get_swap_spend_receive(
@@ -70,7 +70,7 @@ class BisqTradesImporter(BaseExchangeImporter):
             base_asset=base_asset,
             quote_asset=quote_asset,
             amount=buy_amount,
-            rate=Price(deserialize_asset_amount(csv_row['Price'])),
+            rate=Price(deserialize_fval(csv_row['Price'])),
         )
         self.add_history_events(
             write_cursor=write_cursor,
