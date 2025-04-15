@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import (
@@ -164,6 +165,19 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 'HISTORY_DEPOSITS_WITHDRAWALS'
             )
             """,
+        )
+
+    @progress_step(description='Resetting asset movement notes')
+    def _reset_asset_movement_notes(write_cursor: 'DBCursor') -> None:
+        """Clears auto-generated asset movement notes.
+
+        Auto-generated notes were previously stored for asset movements (entry_type=6).
+        Now these are generated on the fly, so we remove them unless the event is customized.
+        """
+        write_cursor.execute(
+            'UPDATE history_events SET notes = NULL WHERE entry_type = 6 AND notes IS NOT NULL '
+            'AND NOT EXISTS (SELECT 1 FROM history_events_mappings WHERE parent_identifier = history_events.identifier AND name=? AND value=?)',  # noqa: E501
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -3109,6 +3109,11 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (1003, 'HISTORY_DEPOSITS_WITHDRAWALS'),
             (1004, 'DASHBOARD'),
         ]
+        assert cursor.execute('SELECT identifier, notes FROM history_events WHERE entry_type=6').fetchall() == [  # noqa: E501
+            (10, 'Withdraw 100 from A'),
+            (11, 'Custom note for asset move'),
+        ]
+        assert cursor.execute('SELECT * from history_events_mappings').fetchall() == [(11, 'state', 1)]  # noqa: E501
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3148,6 +3153,11 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (1003, 'HISTORY'),
             (1004, 'DASHBOARD'),
         ]
+        assert cursor.execute('SELECT identifier, notes FROM history_events WHERE entry_type=6').fetchall() == [  # noqa: E501
+            (10, None),
+            (11, 'Custom note for asset move'),
+        ]
+        assert cursor.execute('SELECT * from history_events_mappings').fetchall() == [(11, 'state', 1)]  # noqa: E501
 
     db.logout()
 
