@@ -549,14 +549,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
     def process_kraken_events_for_trade(
             self,
             trade_parts: list[HistoryEvent],
-            adjustments: list[HistoryEvent],
     ) -> list[SwapEvent]:
         """Processes events from trade parts to a list of SwapEvents. If it's an adjustment
         adds it to a separate list"""
-        if trade_parts[0].event_type == HistoryEventType.ADJUSTMENT:
-            adjustments.append(trade_parts[0])
-            return []  # skip as they don't have same refid
-
         event_id = trade_parts[0].event_identifier
         is_spend_receive = False
         trade_assets = []
@@ -665,15 +660,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
     def process_kraken_trades(
             self,
-            raw_data: list[HistoryEvent],
+            trade_events: list[HistoryEvent],
+            adjustments: list[HistoryEvent],
     ) -> tuple[list[SwapEvent | HistoryEvent], Timestamp]:
-        """
-        Given a list of history events we process them to create SwapEvents.
-        The valid history event types are
-        - Trade
-        - Receive
-        - Spend
-        - Adjustment
+        """Process history events converting them into SwapEvents.
+        `trade_events` contains Trade, Receive, and Spend events.
+        `adjustments` contains Adjustment events.
 
         A pair of receive and spend events can be a trade and kraken uses this kind of event
         for instant trades and trades made from the phone app. What we do in order to verify
@@ -683,7 +675,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         Example would be delisting of DAO token and forcible exchange to ETH.
 
         Returns:
-        - The list of SwapEvents and adjustment events
+        - The list of SwapEvents and any adjustment events that were not converted.
         - The biggest timestamp of all the trades processed
 
         May raise:
@@ -692,11 +684,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         swap_events = []
         max_ts = 0
         get_attr = operator.attrgetter('event_identifier')
-        adjustments: list[HistoryEvent] = []
         # Create a list of lists where each sublist has the events for the same event identifier
-        grouped_events = [list(g) for k, g in itertools.groupby(sorted(raw_data, key=get_attr), get_attr)]  # noqa: E501
+        grouped_events = [list(g) for k, g in itertools.groupby(sorted(trade_events, key=get_attr), get_attr)]  # noqa: E501
         for trade_parts in grouped_events:
-            if len(events := self.process_kraken_events_for_trade(trade_parts, adjustments)) == 0:
+            if len(events := self.process_kraken_events_for_trade(trade_parts)) == 0:
                 continue
 
             swap_events.extend(events)
@@ -826,19 +817,24 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         )
 
         trade_events: list[HistoryEvent] = []
+        adjustment_events: list[HistoryEvent] = []
         final_events: list[HistoryBaseEntry] = []
         for event in new_events:
             if event.event_type in {
                 HistoryEventType.TRADE,
                 HistoryEventType.RECEIVE,
                 HistoryEventType.SPEND,
-                HistoryEventType.ADJUSTMENT,
             }:
-                trade_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check above
+                trade_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check
+            elif event.event_type == HistoryEventType.ADJUSTMENT:
+                adjustment_events.append(event)  # type: ignore[arg-type]  # will not be AssetMovement due to event_type check
             else:
                 final_events.append(event)
 
-        swap_events, max_ts = self.process_kraken_trades(trade_events)
+        swap_events, max_ts = self.process_kraken_trades(
+            trade_events=trade_events,
+            adjustments=adjustment_events,
+        )
         final_events.extend(swap_events)
         return final_events, Timestamp(max_ts) if with_errors else end_ts
 
