@@ -123,12 +123,13 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
   try {
-    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice)) {
+    const currency = get(currencySymbol);
+    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency) {
       await savePrice({
         fromAsset: assetVal,
         price: get(assetToFiatPrice),
         timestamp,
-        toAsset: get(currencySymbol),
+        toAsset: currency,
       });
     }
 

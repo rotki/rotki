@@ -160,8 +160,8 @@ function createNewEntry() {
   );
 }
 
-function add() {
-  set(modelValue, createNewEntry());
+function add(rule?: AccountingRuleEntry) {
+  set(modelValue, rule || createNewEntry());
   set(editMode, false);
 }
 
@@ -222,11 +222,9 @@ onMounted(async () => {
     eventType: eventType?.toString() ?? '',
   };
 
-  async function openDialog(rule?: AccountingRuleEntry) {
+  async function openDialog(rule?: AccountingRuleEntry, forceAdd = false) {
     if (rule) {
-      startPromise(nextTick(() => {
-        edit(rule);
-      }));
+      startPromise(nextTick(() => forceAdd ? add(rule) : edit(rule)));
     }
     await router.replace({ query: {} });
   }
@@ -235,7 +233,7 @@ onMounted(async () => {
     await openDialog({
       ...getPlaceholderRule(),
       ...ruleData,
-    });
+    }, true);
   }
   else if (editRule) {
     await openDialog(await getAccountingRule({
