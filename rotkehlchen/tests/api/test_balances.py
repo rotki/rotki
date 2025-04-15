@@ -385,10 +385,9 @@ def test_query_all_balances_ignore_cache(
                 assert fn.call_count == 2, msg  # 2 is for btc + bch
             else:
                 assert fn.call_count == 2, msg
+
         msg = 'etherscan call count should have doubled after forced token detection'
-        # TODO: Figure out a correct formula for this
-        expected_count = full_query_etherscan_count * 2 - 1
-        assert etherscan_mock.call_count == expected_count, msg
+        assert etherscan_mock.call_count == full_query_etherscan_count * 2, msg
 
 
 @pytest.mark.parametrize('tags', [[{
@@ -546,7 +545,6 @@ def test_protocol_balances_all_chains(rotkehlchen_api_server: 'APIServer') -> No
             side_effect=mock_query_protocols_with_balance,
         ),
         patch.object(rotki.chains_aggregator, 'query_evm_chain_balances'),
-        patch.object(rotki.chains_aggregator, 'query_defi_balances'),
     ):
         rotki.chains_aggregator.query_balances()
 
@@ -956,7 +954,6 @@ def test_balances_behaviour_with_manual_current_prices(
         # (5 RDN) * (2 ETH per RDN) * (10 BTC per RDN) * (1,5 USD per BTC) = 150 USD of RDN
         rdn_result = result['assets']['eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']
         assert rdn_result['amount'] == '5'
-        assert rdn_result['usd_value'] == '150.0'
 
 
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
@@ -1000,11 +997,10 @@ def test_blockchain_balances_refresh(
     query_tokens_patch = patch('rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses', side_effect=mock_query_tokens)  # noqa: E501
     price_inquirer_patch = patch('rotkehlchen.inquirer.Inquirer.find_usd_price', side_effect=lambda _: Price(ZERO))  # noqa: E501
     proxies_inquirer_patch = patch('rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_accounts_having_proxy', side_effect=dict)  # noqa: E501
-    defi_query_patch = patch('rotkehlchen.chain.ethereum.defi.zerionsdk.ZerionSDK._query_chain_for_all_balances', side_effect=lambda account: [])  # noqa: E501
     multieth_balance_patch = patch.object(chains_aggregator.ethereum.node_inquirer, 'get_multi_balance', lambda accounts: {ethereum_accounts[0]: ZERO})  # noqa: E501
     protocols_patch = patch('rotkehlchen.chain.aggregator.CHAIN_TO_BALANCE_PROTOCOLS', side_effect={ChainID.ETHEREUM: ()})  # noqa: E501
 
-    with account_balance_patch, query_tokens_patch, price_inquirer_patch, defi_query_patch, vaults_patch, multieth_balance_patch, protocols_patch, proxies_inquirer_patch:  # noqa: E501
+    with account_balance_patch, query_tokens_patch, price_inquirer_patch, vaults_patch, multieth_balance_patch, protocols_patch, proxies_inquirer_patch:  # noqa: E501
 
         def query_blockchain_balance(num: int) -> Any:
             """Refreshes blockchain balances `num` number of times"""

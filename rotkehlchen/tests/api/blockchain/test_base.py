@@ -9,16 +9,9 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
-from rotkehlchen.chain.ethereum.defi.structures import (
-    DefiBalance,
-    DefiProtocol,
-    DefiProtocolBalances,
-)
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
-from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_USDT
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.fval import FVal
@@ -1351,53 +1344,6 @@ def _remove_blockchain_accounts_test_start(
     token_balances_after_removal: dict[EvmToken, list[str]] = {}
     a_dai_token = A_DAI.resolve_to_evm_token()
     starting_liabilities = {a_dai_token: ['5555555', '1000000', '0', '99999999']}
-    after_liabilities = {a_dai_token: ['1000000', '99999999']}
-    # in this part of the test we also check that defi balances for a particular
-    # account are deleted when we remove the account
-    defi_balances = {
-        ethereum_accounts[0]: [
-            DefiProtocolBalances(
-                protocol=DefiProtocol(
-                    name='TEST_PROTOCOL',
-                    description='very descriptive description',
-                    url='',
-                    version=0,
-                ),
-                balance_type='Debt',
-                base_balance=DefiBalance(
-                    token_address=A_USDT.resolve_to_evm_token().evm_address,
-                    token_name='USDT',
-                    token_symbol='USDT',
-                    balance=Balance(
-                        amount=ONE,
-                        usd_value=ONE,
-                    ),
-                ),
-                underlying_balances=[],
-            ),
-        ],
-        ethereum_accounts[1]: [
-            DefiProtocolBalances(
-                protocol=DefiProtocol(
-                    name='TEST_PROTOCOL',
-                    description='very descriptive description',
-                    url='',
-                    version=0,
-                ),
-                balance_type='Debt',
-                base_balance=DefiBalance(
-                    token_address=A_USDT.resolve_to_evm_token().evm_address,
-                    token_name='USDT',
-                    token_symbol='USDT',
-                    balance=Balance(
-                        amount=ONE,
-                        usd_value=ONE,
-                    ),
-                ),
-                underlying_balances=[],
-            ),
-        ],
-    }
 
     if query_balances_before_first_modification:
         # Also test by having balances queried before removing an account
@@ -1408,7 +1354,6 @@ def _remove_blockchain_accounts_test_start(
             eth_balances=all_eth_balances,
             token_balances=token_balances,
             liabilities=starting_liabilities,
-            defi_balances=defi_balances,
         )
         with ExitStack() as stack:
             setup.enter_blockchain_patches(stack)
@@ -1416,7 +1361,6 @@ def _remove_blockchain_accounts_test_start(
                 api_server,
                 'blockchainbalancesresource',
             )))
-        assert rotki.chains_aggregator.defi_balances == defi_balances  # check that defi balances were populated  # noqa: E501
 
     setup = setup_balances(
         rotki,
@@ -1425,7 +1369,6 @@ def _remove_blockchain_accounts_test_start(
         eth_balances=all_eth_balances,
         token_balances=token_balances,
         liabilities=starting_liabilities,
-        defi_balances=defi_balances,
     )
 
     with rotki.data.db.user_write() as write_cursor:  # add block production with removed account as recpient  # noqa: E501
@@ -1462,12 +1405,7 @@ def _remove_blockchain_accounts_test_start(
             eth_balances=eth_balances_after_removal,
             token_balances=token_balances_after_removal,
             also_btc=True,
-            expected_liabilities=after_liabilities,
         )
-
-    # check that after removing ethereum account defi balances were updated
-    if query_balances_before_first_modification:
-        assert rotki.chains_aggregator.defi_balances == {eth_accounts_after_removal[0]: defi_balances[eth_accounts_after_removal[0]]}  # noqa: E501
 
     # Also make sure that DB has been properly modified
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -1495,7 +1433,6 @@ def _remove_blockchain_accounts_test_start(
         eth_balances=eth_balances_after_removal,
         token_balances=token_balances_after_removal,
         also_btc=True,
-        expected_liabilities=after_liabilities,
     )
 
     return eth_accounts_after_removal, eth_balances_after_removal, token_balances_after_removal

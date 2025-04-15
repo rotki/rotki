@@ -37,8 +37,6 @@ from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import SAFE_BASIC_ABI
-from rotkehlchen.chain.ethereum.defi.chad import DefiChad
-from rotkehlchen.chain.ethereum.defi.structures import DefiProtocolBalances
 from rotkehlchen.chain.ethereum.modules import (
     MODULE_NAME_TO_PATH,
     Liquity,
@@ -78,7 +76,6 @@ from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -325,8 +322,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.data_directory = data_directory
         self.beaconchain = beaconchain
         self.btc_derivation_gap_limit = btc_derivation_gap_limit
-        self.defi_balances_last_query_ts = Timestamp(0)
-        self.defi_balances: dict[ChecksumEvmAddress, list[DefiProtocolBalances]] = {}
 
         # All of these locks are used, but the chain ones with dynamic getattr below
         self.defi_lock = Semaphore()
@@ -355,11 +350,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         for given_module in eth_modules:
             self.activate_module(given_module)
 
-        self.defichad = DefiChad(
-            ethereum_inquirer=self.ethereum.node_inquirer,
-            msg_aggregator=self.msg_aggregator,
-            database=self.database,
-        )
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
         # type ignores here are to keep the callable mappings generic enough
         self.chain_modify_init: dict[SupportedBlockchain, Callable[[SupportedBlockchain, Literal['append', 'remove']], None]] = {  # noqa: E501
@@ -847,7 +837,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             address: ChecksumEvmAddress,
     ) -> None:
         """Extra code to run when eth account removal happens"""
-        self.defi_balances.pop(address, None)
         for _, module in self.iterate_modules():
             module.on_account_removal(address)
 
@@ -986,23 +975,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             token_usd_price=token_usd_price,
             balances=balances,
         )
-
-    def query_defi_balances(self) -> dict[ChecksumEvmAddress, list[DefiProtocolBalances]]:
-        """Queries DeFi balances from Zerion contract and updates the state
-
-        - RemoteError if an external service such as Etherscan or cryptocompare
-        is queried and there is a problem with its query.
-        - EthSyncError if querying the token balances through a provided ethereum
-        client and the chain is not synced
-        """
-        with self.defi_lock:
-            if ts_now() - self.defi_balances_last_query_ts < DEFI_BALANCES_REQUERY_SECONDS:
-                return self.defi_balances
-
-            # query zerion adapter contract for defi balances
-            self.defi_balances = self.defichad.query_defi_balances(self.accounts.eth)
-            self.defi_balances_last_query_ts = ts_now()
-            return self.defi_balances
 
     def query_evm_chain_balances(self, chain: SUPPORTED_EVM_CHAINS_TYPE) -> None:
         """Queries all the balances for an evm chain and populates the state
@@ -1143,7 +1115,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         client and the chain is not synced
         """
         self.query_evm_chain_balances(chain=SupportedBlockchain.ETHEREUM)
-        self.query_defi_balances()
         self._add_eth_protocol_balances(eth_balances=self.balances.eth)
         self._query_protocols_with_balance(chain_id=ChainID.ETHEREUM)
 
@@ -1227,14 +1198,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 balances=eth_balances,
             )
 
-            # also query defi balances of proxies
-            defi_balances_map = self.defichad.query_defi_balances(proxy_addresses)
-            for proxy_address, defi_balances in defi_balances_map.items():
-                self._add_account_defi_balances_to_token(
-                    account=proxy_to_address[proxy_address],
-                    balances=defi_balances,
-                )
-
         if (pickle_module := self.get_module('pickle_finance')) is not None:
             pickle_balances_per_address = pickle_module.balances_in_protocol(
                 addresses=self.queried_addresses_for_module('pickle_finance'),
@@ -1256,75 +1219,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             liquity_module.enrich_staking_balances(
                 balances=eth_balances,
                 queried_addresses=liquity_addresses,
-            )
-
-        # Finally count the balances detected in various protocols in defi balances
-        self.add_defi_balances_to_account()
-
-    def _add_account_defi_balances_to_token(
-            self,
-            account: ChecksumEvmAddress,
-            balances: list[DefiProtocolBalances],
-    ) -> None:
-        """Add a single account's defi balances to per account"""
-        for entry in balances:
-            found_double_entry = False
-            # filter our specific protocols for double entries
-            for skip_mapping, balance_type in (
-                    (DEFI_PROTOCOLS_TO_SKIP_ASSETS, 'Asset'),
-                    (DEFI_PROTOCOLS_TO_SKIP_LIABILITIES, 'Debt'),
-            ):
-                skip_list: Literal[True] | list[str] | None = skip_mapping.get(entry.protocol.name, None)  # type: ignore  # noqa: E501
-                double_entry = (
-                    entry.balance_type == balance_type and
-                    skip_list is not None and
-                    (skip_list is True or entry.base_balance.token_symbol in skip_list)
-                )
-                if double_entry:
-                    found_double_entry = True
-                    break
-
-            if found_double_entry:
-                continue
-
-            if entry.balance_type == 'Asset' and entry.base_balance.token_symbol == 'ETH':
-                # If ETH appears as asset here I am not sure how to handle, so ignore for now
-                log.warning(
-                    f'Found ETH in DeFi balances for account: {account} and '
-                    f'protocol: {entry.protocol.name}. Ignoring ...',
-                )
-                continue
-
-            try:
-                token = EvmToken(ethaddress_to_identifier(entry.base_balance.token_address))
-            except (UnknownAsset, WrongAssetType):
-                log.warning(
-                    f'Found unknown asset {entry.base_balance.token_symbol} in DeFi '
-                    f'balances for account: {account} and '
-                    f'protocol: {entry.protocol.name}. Ignoring ...',
-                )
-                continue
-
-            eth_balances = self.balances.eth
-            if entry.balance_type == 'Asset':
-                log.debug(f'Adding DeFi asset balance for {token} {entry.base_balance.balance}')
-                eth_balances[account].assets[token] += entry.base_balance.balance
-            elif entry.balance_type == 'Debt':
-                log.debug(f'Adding DeFi debt balance for {token} {entry.base_balance.balance}')
-                eth_balances[account].liabilities[token] += entry.base_balance.balance
-            else:
-                log.warning(  # type: ignore # is an unreachable statement but we are defensive
-                    f'Zerion Defi Adapter returned unknown asset type {entry.balance_type}. '
-                    f'Skipping ...',
-                )
-                continue
-
-    def add_defi_balances_to_account(self) -> None:
-        """Take into account defi balances and add them to the per account balances"""
-        for account, defi_balances in self.defi_balances.items():
-            self._add_account_defi_balances_to_token(
-                account=account,
-                balances=defi_balances,
             )
 
     def get_eth2_daily_stats(

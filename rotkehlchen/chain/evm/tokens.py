@@ -402,9 +402,9 @@ class EvmTokens(ABC):  # noqa: B024
                 addresses_to_balances[address].update(balances)
 
         # Hack to avoid querying price of tokens one by one. This can be slow and is ignored
-        # since the frontend later queries again the prices in a more optimized way.
-        # https://github.com/rotki/rotki/issues/5071
-        token_usd_price: dict[EvmToken, Price] = dict.fromkeys(all_tokens, ZERO)
+        # since the frontend later queries the prices again in a more optimized way.
+        # Can be removed when this is implemented: https://github.com/rotki/rotki/issues/5071
+        token_usd_price: dict[EvmToken, Price] = dict.fromkeys(all_tokens, Price(ZERO))
 
         return dict(addresses_to_balances), token_usd_price
 

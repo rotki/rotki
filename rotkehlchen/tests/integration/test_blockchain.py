@@ -4,12 +4,6 @@ import gevent
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.defi.structures import (
-    DefiBalance,
-    DefiProtocol,
-    DefiProtocolBalances,
-)
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -60,33 +54,6 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         original_requests_get=requests.get,
     )
 
-    def mock_query_defi_balances():
-        blockchain.defi_balances = {
-            addr1: [DefiProtocolBalances(
-                protocol=DefiProtocol('a', 'b', 'c', 1),
-                balance_type='Asset',
-                base_balance=DefiBalance(
-                    token_address=A_DAI.resolve_to_evm_token().evm_address,
-                    token_name='DAI',
-                    token_symbol='DAI',
-                    balance=Balance(ONE),
-                ),
-                underlying_balances=[DefiBalance(
-                    token_address=A_DAI.resolve_to_evm_token().evm_address,
-                    token_name='DAI',
-                    token_symbol='DAI',
-                    balance=Balance(ONE),
-                )],
-            )],
-        }
-        return blockchain.defi_balances
-
-    defi_balances_mock = patch.object(
-        blockchain,
-        'query_defi_balances',
-        wraps=mock_query_defi_balances,
-    )
-
     def mock_add_defi_balances_to_account():
         """This function will make sure all greenlets end up hitting the balance addition
         at the same time thus double +++ counting balance ... in the way the code
@@ -98,12 +65,6 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
                 account=account,
                 balances=defi_balances,
             )
-
-    add_defi_mock = patch.object(
-        blockchain,
-        'add_defi_balances_to_account',
-        wraps=mock_add_defi_balances_to_account,
-    )
 
     with etherscan_patch, evmtokens_max_chunks_patch:
         blockchain.modify_blockchain_accounts(
@@ -119,7 +80,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
 
     assert addr1 in blockchain.accounts.eth
 
-    with etherscan_patch, evmtokens_max_chunks_patch, defi_balances_mock, add_defi_mock, beaconchain_patch:  # noqa: E501
+    with etherscan_patch, evmtokens_max_chunks_patch, beaconchain_patch:
         greenlets = [
             # can't call query_eth_balances directly since we have to update totals
             gevent.spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
@@ -127,5 +88,5 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         ]
         gevent.joinall(greenlets)
 
-    assert blockchain.totals.assets[A_DAI].amount == 2
-    assert blockchain.balances.eth[addr1].assets[A_DAI].amount == 2
+    assert blockchain.totals.assets[A_DAI].amount == ONE
+    assert blockchain.balances.eth[addr1].assets[A_DAI].amount == ONE

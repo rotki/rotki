@@ -47,8 +47,6 @@ class BalancesTestSetup(NamedTuple):
     beaconchain_patch: _patch
     evmtokens_max_chunks_patch: _patch
     bitcoin_patch: _patch
-    defi_balances_addition_method_patch: _patch | None
-    defichad_query_balances_patch: _patch | None
 
     def enter_all_patches(self, stack: ExitStack):
         if self.poloniex_patch:
@@ -67,10 +65,6 @@ class BalancesTestSetup(NamedTuple):
         stack.enter_context(self.etherscan_patch)
         stack.enter_context(self.evmtokens_max_chunks_patch)
         stack.enter_context(self.beaconchain_patch)
-        if self.defi_balances_addition_method_patch is not None:
-            stack.enter_context(self.defi_balances_addition_method_patch)
-        if self.defichad_query_balances_patch is not None:
-            stack.enter_context(self.defichad_query_balances_patch)
         return stack
 
 
@@ -145,7 +139,6 @@ def setup_balances(
             if populate_detected_tokens is True:
                 rotki.data.db.save_tokens_for_address(write_cursor, acc, SupportedBlockchain.ETHEREUM, list(token_balances.keys()))  # noqa: E501
 
-    defi_balances_addition_method_patch = None
     if liabilities is not None:
         def mock_add_defi_balances_to_account():
             # super hacky way of mocking this but well fuck it
@@ -177,28 +170,6 @@ def setup_balances(
                         account=account,
                         balances=single_defi_balances,
                     )
-
-        defi_balances_addition_method_patch = patch.object(
-            rotki.chains_aggregator,
-            'add_defi_balances_to_account',
-            side_effect=mock_add_defi_balances_to_account,
-        )
-
-    if defi_balances is not None:
-        def mock_defichad_query_balances(addresses: list[ChecksumEvmAddress]):
-            result: dict[ChecksumEvmAddress, list[DefiProtocolBalances]] = {}
-            for addr in addresses:
-                if addr in defi_balances:
-                    result[addr] = defi_balances[addr]
-            return result
-
-        defichad_query_balances_patch = patch.object(
-            rotki.chains_aggregator.defichad,
-            'query_defi_balances',
-            side_effect=mock_defichad_query_balances,
-        )
-    else:
-        defichad_query_balances_patch = None
 
     btc_map: dict[BTCAddress, str] = {}
     for idx, btc_acc in enumerate(btc_accounts):
@@ -268,8 +239,6 @@ def setup_balances(
         evmtokens_max_chunks_patch=evmtokens_max_chunks_patch,
         bitcoin_patch=bitcoin_patch,
         beaconchain_patch=beaconchain_patch,
-        defi_balances_addition_method_patch=defi_balances_addition_method_patch,
-        defichad_query_balances_patch=defichad_query_balances_patch,
     )
 
 
