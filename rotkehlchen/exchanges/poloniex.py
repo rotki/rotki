@@ -38,9 +38,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_force_positive,
+    deserialize_fval_or_zero,
     deserialize_timestamp,
     deserialize_timestamp_from_intms,
     deserialize_timestamp_ms_from_intms,
@@ -51,7 +51,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Timestamp,
     TimestampMS,
@@ -83,7 +82,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
             raw_trade_type=poloniex_trade['side'],
             base_asset=asset_from_poloniex(get_pair_position_str((pair := poloniex_trade['symbol']), 'first')),  # noqa: E501
             quote_asset=asset_from_poloniex(get_pair_position_str(pair, 'second')),
-            amount=deserialize_asset_amount(poloniex_trade['quantity']),
+            amount=deserialize_fval(poloniex_trade['quantity']),
             rate=deserialize_price(poloniex_trade['price']),
         )
         log.debug(
@@ -93,7 +92,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
             receive=receive,
             fee=(fee := AssetAmount(
                 asset=asset_from_poloniex(poloniex_trade['feeCurrency']),
-                amount=deserialize_fee(poloniex_trade['feeAmount']),
+                amount=deserialize_fval_or_zero(poloniex_trade['feeAmount']),
             )),
         )
     except KeyError as e:
@@ -377,8 +376,8 @@ class Poloniex(ExchangeInterface):
 
             for balance_entry in balances:
                 try:
-                    available = deserialize_asset_amount(balance_entry['available'])
-                    on_orders = deserialize_asset_amount(balance_entry['hold'])
+                    available = deserialize_fval(balance_entry['available'])
+                    on_orders = deserialize_fval(balance_entry['hold'])
                     poloniex_asset = balance_entry['currency']
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
@@ -490,11 +489,11 @@ class Poloniex(ExchangeInterface):
         """
         try:
             if movement_type == HistoryEventType.DEPOSIT:
-                fee = Fee(ZERO)
+                fee = ZERO
                 uid_key = 'depositNumber'
                 transaction_id = get_key_if_has_val(movement_data, 'txid')
             else:
-                fee = deserialize_fee(movement_data['fee'])
+                fee = deserialize_fval_or_zero(movement_data['fee'])
                 uid_key = 'withdrawalRequestsId'
                 split = movement_data['status'].split(':')
                 if len(split) != 2:
@@ -511,7 +510,7 @@ class Poloniex(ExchangeInterface):
                 event_type=movement_type,
                 timestamp=ts_sec_to_ms(deserialize_timestamp(movement_data['timestamp'])),
                 asset=asset,
-                amount=deserialize_asset_amount_force_positive(movement_data['amount']),
+                amount=deserialize_fval_force_positive(movement_data['amount']),
                 fee_asset=asset,
                 fee=fee,
                 unique_id=f'{movement_type.serialize()}_{movement_data[uid_key]!s}',  # movement_data[uid_key] is only unique within the same event type  # noqa: E501

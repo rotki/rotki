@@ -15,8 +15,8 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location
@@ -55,14 +55,14 @@ class UpholdTransactionsImporter(BaseExchangeImporter):
         )
         destination = csv_row['Destination']
         destination_asset = asset_from_uphold(csv_row['Destination Currency'])
-        destination_amount = deserialize_asset_amount(csv_row['Destination Amount'])
+        destination_amount = deserialize_fval(csv_row['Destination Amount'])
         origin = csv_row['Origin']
         origin_asset = asset_from_uphold(csv_row['Origin Currency'])
-        origin_amount = deserialize_asset_amount(csv_row['Origin Amount'])
+        origin_amount = deserialize_fval(csv_row['Origin Amount'])
         if csv_row['Fee Amount'] == '':
             fee = FVal(ZERO)
         else:
-            fee = deserialize_fee(csv_row['Fee Amount'])
+            fee = deserialize_fval_or_zero(csv_row['Fee Amount'])
         fee_asset = asset_from_uphold(csv_row['Fee Currency'] or csv_row['Origin Currency'])
         transaction_type = csv_row['Type']
         notes = f"""

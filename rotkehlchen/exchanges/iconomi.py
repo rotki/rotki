@@ -22,11 +22,7 @@ from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalan
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
-    deserialize_fval,
-)
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -188,7 +184,7 @@ class Iconomi(ExchangeInterface):
                     continue
 
                 try:
-                    amount = deserialize_asset_amount(balance_info['balance'])
+                    amount = deserialize_fval(balance_info['balance'])
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
                     if isinstance(e, KeyError):
@@ -289,15 +285,15 @@ class Iconomi(ExchangeInterface):
                     location=self.location,
                     spend=AssetAmount(
                         asset=asset_from_iconomi(tx['source_ticker']),
-                        amount=deserialize_asset_amount(tx['source_amount']),
+                        amount=deserialize_fval(tx['source_amount']),
                     ),
                     receive=AssetAmount(
                         asset=asset_from_iconomi(tx['target_ticker']),
-                        amount=deserialize_asset_amount(tx['target_amount']),
+                        amount=deserialize_fval(tx['target_amount']),
                     ),
                     fee=AssetAmount(
                         asset=asset_from_iconomi(tx['fee_ticker']),
-                        amount=deserialize_fee(tx['fee_amount']),
+                        amount=deserialize_fval_or_zero(tx['fee_amount']),
                     ),
                     location_label=self.name,
                     unique_id=str(tx['transactionId']),

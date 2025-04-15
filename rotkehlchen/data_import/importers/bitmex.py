@@ -24,9 +24,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
     deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import Fee, Location
@@ -60,7 +60,7 @@ class BitMEXImporter(BaseExchangeImporter):
             formatstr=timestamp_format,
             location='Bitmex Wallet History Import',
         )
-        realised_pnl = satoshis_to_btc(deserialize_asset_amount(csv_row['amount']))
+        realised_pnl = satoshis_to_btc(deserialize_fval(csv_row['amount']))
         fee = deserialize_fee(csv_row['fee']) if csv_row['fee'] != 'null' else Fee(ZERO)
         notes = f"PnL from trade on {csv_row['address']}"
         log.debug(
@@ -97,8 +97,8 @@ class BitMEXImporter(BaseExchangeImporter):
         - DeserializationError
         """
         asset = A_BTC.resolve_to_asset_with_oracles()
-        amount = deserialize_asset_amount_force_positive(csv_row['amount'])
-        fee = deserialize_fee(csv_row['fee']) if csv_row['fee'] != 'null' else Fee(ZERO)
+        amount = deserialize_fval_force_positive(csv_row['amount'])
+        fee = deserialize_fval(csv_row['fee']) if csv_row['fee'] != 'null' else Fee(ZERO)
         transact_type = csv_row['transactType']
         event_type: Final = HistoryEventType.DEPOSIT if transact_type == 'Deposit' else HistoryEventType.WITHDRAWAL  # noqa: E501
         amount = satoshis_to_btc(amount)  # bitmex stores amounts in satoshis

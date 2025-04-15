@@ -53,7 +53,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import (
@@ -592,9 +592,9 @@ def test_global_db_restore(globaldb, database):
 
     # Try to reset DB it if we have a trade that uses a custom asset
     buy_asset = symbol_to_asset_or_token('LOLZ2')
-    buy_amount = deserialize_asset_amount(1)
+    buy_amount = deserialize_fval(1)
     sold_asset = symbol_to_asset_or_token('LOLZ')
-    sold_amount = deserialize_asset_amount(2)
+    sold_amount = deserialize_fval(2)
     rate = Price(buy_amount / sold_amount)
     trade = Trade(
         timestamp=Timestamp(12312312),

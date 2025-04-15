@@ -38,11 +38,7 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
-    deserialize_fval,
-)
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -381,7 +377,7 @@ class Bybit(ExchangeInterface):
                         raw_trade_type=raw_trade['side'],
                         base_asset=base_asset,
                         quote_asset=quote_asset,
-                        amount=deserialize_asset_amount(raw_trade['qty']),
+                        amount=deserialize_fval(raw_trade['qty']),
                         rate=deserialize_price(raw_trade['avgPrice' if raw_trade['orderType'] == 'Market' else 'price']),  # noqa: E501
                     )
                     events.extend(create_swap_events(
@@ -606,9 +602,9 @@ class Bybit(ExchangeInterface):
                     location_label=self.name,
                     event_type=query_for,
                     asset=coin,
-                    amount=deserialize_asset_amount(movement['amount']),
+                    amount=deserialize_fval(movement['amount']),
                     fee_asset=coin,
-                    fee=deserialize_fee(movement[fee_key]) if len(movement[fee_key]) else Fee(ZERO),  # noqa: E501,
+                    fee=deserialize_fval_or_zero(movement[fee_key]) if len(movement[fee_key]) else Fee(ZERO),  # noqa: E501,
                     unique_id=movement[id_key],
                     extra_data=maybe_set_transaction_extra_data(
                         address=None,

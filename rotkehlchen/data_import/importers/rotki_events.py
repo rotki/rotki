@@ -15,7 +15,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.serialization.deserialize import deserialize_fval
 
 from .constants import ROTKI_EVENT_PREFIX
 
@@ -66,7 +66,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
-            amount=deserialize_asset_amount(csv_row['Amount']),
+            amount=deserialize_fval(csv_row['Amount']),
             notes=csv_row['Description'],
         )
         events.append(history_event)

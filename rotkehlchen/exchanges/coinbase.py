@@ -44,10 +44,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
-    deserialize_fee,
     deserialize_fval,
+    deserialize_fval_force_positive,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
@@ -427,9 +426,9 @@ class Coinbase(ExchangeInterface):
                     continue
 
                 if (amount_str := balance.get('amount')) is not None:
-                    amount = deserialize_asset_amount(amount_str)
+                    amount = deserialize_fval(amount_str)
                 elif (amount_str := balance.get('value')) is not None:
-                    amount = deserialize_asset_amount(account['balance']['value'])
+                    amount = deserialize_fval(account['balance']['value'])
                 else:  # missing both amount and value
                     log.error(f'Got coinbase account with neither amount, nor value key in balance: {account}')  # noqa: E501
                     continue
@@ -702,13 +701,13 @@ class Coinbase(ExchangeInterface):
             if tx_b['amount']['amount'].startswith('-'):
                 tx_a, tx_b = tx_b, tx_a
 
-            tx_amount = abs(deserialize_asset_amount(tx_a['amount']['amount']))
+            tx_amount = abs(deserialize_fval(tx_a['amount']['amount']))
             tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
-            native_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
+            native_amount = abs(deserialize_fval(tx_b['amount']['amount']))
             native_asset = asset_from_coinbase(tx_b['amount']['currency'], time=timestamp)
 
-            amount_after_fee = deserialize_asset_amount(tx_b['native_amount']['amount'])
-            amount_before_fee = deserialize_asset_amount(tx_a['native_amount']['amount'])
+            amount_after_fee = deserialize_fval(tx_b['native_amount']['amount'])
+            amount_before_fee = deserialize_fval(tx_a['native_amount']['amount'])
             if (
                     (fee_a := tx_a['trade'].get('fee')) is not None and
                     (fee_b := tx_b['trade'].get('fee')) is not None and
@@ -751,7 +750,7 @@ class Coinbase(ExchangeInterface):
                         asset=asset_from_coinbase(tx_a['amount']['currency'], time=timestamp),
                     )
                 else:
-                    tx_b_amount = abs(deserialize_asset_amount(tx_b['amount']['amount']))
+                    tx_b_amount = abs(deserialize_fval(tx_b['amount']['amount']))
                     asset_native_rate = tx_b_amount / abs(amount_after_fee)
                     fee = AssetAmount(
                         amount=Fee(conversion_native_fee_amount * asset_native_rate),
@@ -759,15 +758,15 @@ class Coinbase(ExchangeInterface):
                     )
 
         else:  # only one transaction
-            tx_amount = abs(deserialize_asset_amount(tx_a['amount']['amount']))
+            tx_amount = abs(deserialize_fval(tx_a['amount']['amount']))
             tx_asset = asset_from_coinbase(tx_a['amount']['currency'], time=timestamp)
-            native_amount = abs(deserialize_asset_amount(tx_a['native_amount']['amount']))
+            native_amount = abs(deserialize_fval(tx_a['native_amount']['amount']))
             native_asset = asset_from_coinbase(tx_a['native_amount']['currency'], time=timestamp)
             # For a single transaction fee may or may not exist in the transaction.
             if (fee_data := tx_a['trade'].get('fee')) is not None:
                 fee = AssetAmount(
                     asset=asset_from_coinbase(fee_data['currency']),
-                    amount=Fee(abs(deserialize_asset_amount(fee_data['amount']))),
+                    amount=Fee(abs(deserialize_fval(fee_data['amount']))),
                 )
 
         return create_swap_events(
@@ -849,9 +848,9 @@ class Coinbase(ExchangeInterface):
         - KeyError due to dict entries missing an expected entry
         - ZeroDivisionError due to rate calculation
         """
-        tx_amount = deserialize_asset_amount_force_positive(event['amount']['amount'])
+        tx_amount = deserialize_fval_force_positive(event['amount']['amount'])
         tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
-        native_amount = deserialize_asset_amount_force_positive(event['native_amount']['amount'])
+        native_amount = deserialize_fval_force_positive(event['native_amount']['amount'])
         native_asset = asset_from_coinbase(event['native_amount']['currency'], time=timestamp)
         spend_asset, spend_amount, receive_asset, receive_amount = (
             (native_asset, native_amount, tx_asset, tx_amount)
@@ -864,7 +863,7 @@ class Coinbase(ExchangeInterface):
             spend=AssetAmount(asset=spend_asset, amount=spend_amount),
             receive=AssetAmount(asset=receive_asset, amount=receive_amount),
             fee=AssetAmount(
-                amount=abs(deserialize_fee(event['fee']['amount'])),
+                amount=abs(deserialize_fval_or_zero(event['fee']['amount'])),
                 asset=asset_from_coinbase(event['fee']['currency'], time=timestamp),
             ) if 'fee' in event else None,
             location_label=self.name,
@@ -890,7 +889,7 @@ class Coinbase(ExchangeInterface):
         - IndexError due to indices being out of bounds when parsing asset ids
         """
         # Notice that we do not use abs() yet, since this helps determine order type down the line
-        amount = deserialize_asset_amount(event['amount']['amount'])
+        amount = deserialize_fval(event['amount']['amount'])
         tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
         if len(asset_identifiers := event['advanced_trade_fill']['product_id'].split('-')) != 2:
             log.error('Error processing asset identifiers for coinbase trade', trade=event)
@@ -928,7 +927,7 @@ class Coinbase(ExchangeInterface):
             receive=receive,
             fee=AssetAmount(
                 asset=quote_asset,  # fee is always in quote asset
-                amount=abs(deserialize_fee(event['advanced_trade_fill']['commission'])),
+                amount=abs(deserialize_fval_or_zero(event['advanced_trade_fill']['commission'])),
             ),
             location_label=self.name,
             unique_id=str(event['id']),
@@ -956,7 +955,7 @@ class Coinbase(ExchangeInterface):
             # Only get address/transaction id for "send" type of transactions
             address = None
             transaction_id, transaction_hash = raw_data.get('id'), None
-            notes, fee = None, Fee(ZERO)
+            notes, fee = None, ZERO
             tx_type = raw_data['type']  # not sure if fiat
             event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             amount_data = raw_data['amount']
@@ -981,7 +980,7 @@ class Coinbase(ExchangeInterface):
                 return None
 
             # Can't see the fee being charged from the "send" resource
-            amount = deserialize_asset_amount_force_positive(amount_data['amount'])
+            amount = deserialize_fval_force_positive(amount_data['amount'])
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             # Fees dont appear in the docs but from an experiment of sending ETH
             # to an address from coinbase there is the network fee in the response
@@ -998,7 +997,7 @@ class Coinbase(ExchangeInterface):
                             f'is denoted in {raw_fee["currency"]}',
                         )
                     else:
-                        fee = deserialize_fee(raw_fee['amount'])
+                        fee = deserialize_fval_or_zero(raw_fee['amount'])
                         amount -= fee  # fee is deducted from withdrawal amount
 
             if 'network' in raw_data:
@@ -1085,7 +1084,7 @@ class Coinbase(ExchangeInterface):
                 )
 
             amount_data = raw_data.get('amount', {})
-            amount = deserialize_asset_amount_force_positive(amount_data['amount'])
+            amount = deserialize_fval_force_positive(amount_data['amount'])
             asset = asset_from_coinbase(amount_data['currency'], time=timestamp)
             notes = raw_data.get('details', {}).get('header', '')
             tx_type = raw_data['type']

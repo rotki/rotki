@@ -36,8 +36,8 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
     deserialize_fee,
+    deserialize_fval,
     deserialize_hex_color_code,
     deserialize_timestamp,
 )
@@ -293,7 +293,7 @@ class AmountField(fields.Field):
             **_kwargs: Any,
     ) -> FVal:
         try:
-            amount = deserialize_asset_amount(value)
+            amount = deserialize_fval(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 

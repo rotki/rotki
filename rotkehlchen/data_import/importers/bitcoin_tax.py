@@ -20,7 +20,7 @@ from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
+    deserialize_fval,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Fee, Location, TimestampMS
@@ -198,8 +198,8 @@ class BitcoinTaxImporter(BaseExchangeImporter):
 
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
         base_asset = asset_resolver(csv_row['Symbol'])
-        base_amount = deserialize_asset_amount(csv_row['Volume'])
-        fee_amount = Fee(deserialize_asset_amount(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)
+        base_amount = deserialize_fval(csv_row['Volume'])
+        fee_amount = Fee(deserialize_fval(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)
         fee_asset = (
             asset_resolver(csv_row['FeeCurrency'])
             if csv_row['FeeCurrency'] and fee_amount is not None else None
@@ -223,7 +223,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
                 base_asset_amount=base_asset_amount,
                 quote_asset_amount=AssetAmount(
                     asset=asset_resolver(csv_row['Currency']),
-                    amount=deserialize_asset_amount(csv_row['Cost/Proceeds']),
+                    amount=deserialize_fval(csv_row['Cost/Proceeds']),
                 ),
                 fee_asset_amount=fee_asset_amount,
                 memo=memo,

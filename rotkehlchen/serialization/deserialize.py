@@ -215,21 +215,26 @@ def deserialize_timestamp_from_intms(value: Any) -> Timestamp:
 
 def deserialize_fval(
         value: AcceptableFValInitInput,
-        name: str,
-        location: str,
+        name: str | None = None,
+        location: str | None = None,
 ) -> FVal:
     try:
         result = FVal(value)
     except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize value entry: {e!s} for {name} during {location}') from e  # noqa: E501
+        msg = f'Failed to deserialize value entry: {e!s}'
+        if name is not None:
+            msg += f' for {name}'
+        if location is not None:
+            msg += f' during {location}'
+        raise DeserializationError(msg) from e
 
     return result
 
 
 def deserialize_optional_to_optional_fval(
         value: AcceptableFValInitInput | None,
-        name: str,
-        location: str,
+        name: str | None = None,
+        location: str | None = None,
 ) -> FVal | None:
     """
     Deserializes an FVal from a field that was optional and if None returns None
@@ -242,8 +247,8 @@ def deserialize_optional_to_optional_fval(
 
 def deserialize_fval_or_zero(
         value: AcceptableFValInitInput | None,
-        name: str,
-        location: str,
+        name: str | None = None,
+        location: str | None = None,
 ) -> FVal:
     """
     Deserializes an FVal from a field that was optional and if None returns ZERO
@@ -254,17 +259,12 @@ def deserialize_fval_or_zero(
     return deserialize_fval(value=value, name=name, location=location)
 
 
-def deserialize_asset_amount(amount: AcceptableFValInitInput) -> FVal:
-    try:
-        result = FVal(FVal(amount))
-    except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize an amount entry: {e!s}') from e
-
-    return result
-
-
-def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> FVal:
-    """Acts exactly like deserialize_asset_amount but also forces the number to be positive
+def deserialize_fval_force_positive(
+        value: AcceptableFValInitInput,
+        name: str | None = None,
+        location: str | None = None,
+) -> FVal:
+    """Acts exactly like deserialize_fval but also forces the number to be positive
 
     Is needed for some places like some exchanges that list the withdrawal amounts as
     negative numbers because it's a withdrawal.
@@ -272,8 +272,7 @@ def deserialize_asset_amount_force_positive(amount: AcceptableFValInitInput) -> 
     May raise:
     - DeserializationError
     """
-    result = deserialize_asset_amount(amount)
-    if result < ZERO:
+    if (result := deserialize_fval(value=value, name=name, location=location)) < ZERO:
         result = FVal(abs(result))
     return result
 

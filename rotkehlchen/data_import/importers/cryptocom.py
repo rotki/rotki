@@ -24,8 +24,8 @@ from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
+    deserialize_fval,
+    deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Fee, Location, Timestamp
@@ -107,18 +107,18 @@ class CryptocomImporter(BaseExchangeImporter):
                 quote_asset = asset_from_cryptocom(currency)
                 if quote_asset is None:
                     raise DeserializationError('Got a trade entry with an empty quote asset')
-                base_amount_bought = deserialize_asset_amount(to_amount)
-                quote_amount_sold = deserialize_asset_amount(amount)
+                base_amount_bought = deserialize_fval(to_amount)
+                quote_amount_sold = deserialize_fval(amount)
             elif row_type == 'card_top_up':
                 quote_asset = asset_from_cryptocom(currency)
                 base_asset = asset_from_cryptocom(native_currency)
-                base_amount_bought = deserialize_asset_amount_force_positive(native_amount)
-                quote_amount_sold = deserialize_asset_amount_force_positive(amount)
+                base_amount_bought = deserialize_fval_force_positive(native_amount)
+                quote_amount_sold = deserialize_fval_force_positive(amount)
             else:
                 base_asset = asset_from_cryptocom(currency)
                 quote_asset = asset_from_cryptocom(native_currency)
-                base_amount_bought = deserialize_asset_amount(amount)
-                quote_amount_sold = deserialize_asset_amount(native_amount)
+                base_amount_bought = deserialize_fval(amount)
+                quote_amount_sold = deserialize_fval(native_amount)
 
             self.add_history_events(
                 write_cursor=write_cursor,
@@ -141,10 +141,10 @@ class CryptocomImporter(BaseExchangeImporter):
         }:
             if row_type in {'crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'}:
                 movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.WITHDRAWAL  # noqa: E501
-                amount = deserialize_asset_amount_force_positive(csv_row['Amount'])
+                amount = deserialize_fval_force_positive(csv_row['Amount'])
             else:
                 movement_type = HistoryEventType.DEPOSIT
-                amount = deserialize_asset_amount(csv_row['Amount'])
+                amount = deserialize_fval(csv_row['Amount'])
 
             asset = asset_from_cryptocom(csv_row['Currency'])
             self.add_history_events(write_cursor, [AssetMovement(
@@ -171,7 +171,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'reimbursement',
         }:
             asset = asset_from_cryptocom(csv_row['Currency'])
-            amount = deserialize_asset_amount(csv_row['Amount'])
+            amount = deserialize_fval(csv_row['Amount'])
             event = HistoryEvent(
                 event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
@@ -186,7 +186,7 @@ class CryptocomImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [event])
         elif row_type in {'crypto_payment', 'reimbursement_reverted', 'card_cashback_reverted'}:
             asset = asset_from_cryptocom(csv_row['Currency'])
-            amount = abs(deserialize_asset_amount(csv_row['Amount']))
+            amount = abs(deserialize_fval(csv_row['Amount']))
             event = HistoryEvent(
                 event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(csv_row)}',
                 sequence_index=0,
@@ -201,7 +201,7 @@ class CryptocomImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [event])
         elif row_type == 'invest_deposit':
             asset = asset_from_cryptocom(csv_row['Currency'])
-            amount = abs(deserialize_asset_amount(csv_row['Amount']))
+            amount = abs(deserialize_fval(csv_row['Amount']))
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
                 event_type=HistoryEventType.DEPOSIT,
@@ -211,7 +211,7 @@ class CryptocomImporter(BaseExchangeImporter):
             )])
         elif row_type == 'invest_withdrawal':
             asset = asset_from_cryptocom(csv_row['Currency'])
-            amount = deserialize_asset_amount(csv_row['Amount'])
+            amount = deserialize_fval(csv_row['Amount'])
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
                 event_type=HistoryEventType.WITHDRAWAL,
@@ -221,7 +221,7 @@ class CryptocomImporter(BaseExchangeImporter):
             )])
         elif row_type == 'crypto_transfer':
             asset = asset_from_cryptocom(csv_row['Currency'])
-            amount = deserialize_asset_amount(csv_row['Amount'])
+            amount = deserialize_fval(csv_row['Amount'])
             if amount < 0:
                 event_type = HistoryEventType.SPEND
                 amount = abs(amount)
@@ -385,7 +385,7 @@ class CryptocomImporter(BaseExchangeImporter):
             total_debited_usd = functools.reduce(
                 lambda acc, row:
                     acc +
-                    deserialize_asset_amount(row['Native Amount (in USD)']),
+                    deserialize_fval(row['Native Amount (in USD)']),
                 debited_rows,
                 ZERO,
             )
@@ -417,14 +417,14 @@ class CryptocomImporter(BaseExchangeImporter):
                     part_of_total = (
                         ONE
                         if len(debited_rows) == 1
-                        else deserialize_asset_amount(
+                        else deserialize_fval(
                             debited_row['Native Amount (in USD)'],
                         ) / total_debited_usd
                     )
-                    quote_amount_sold = deserialize_asset_amount(
+                    quote_amount_sold = deserialize_fval(
                         debited_row['Amount'],
                     ) * part_of_total
-                    base_amount_bought = deserialize_asset_amount(
+                    base_amount_bought = deserialize_fval(
                         credited_row['Amount'],
                     ) * part_of_total
 
@@ -487,8 +487,8 @@ class CryptocomImporter(BaseExchangeImporter):
                         )
                         if last_date < deposit_date <= withdrawal_date:
                             # Amount is negative
-                            amount_deposited += deserialize_asset_amount(deposit['Amount'])
-                    amount_withdrawal = deserialize_asset_amount(withdrawal['Amount'])
+                            amount_deposited += deserialize_fval(deposit['Amount'])
+                    amount_withdrawal = deserialize_fval(withdrawal['Amount'])
                     # Compute profit
                     profit = amount_withdrawal + amount_deposited
                     if profit >= ZERO:

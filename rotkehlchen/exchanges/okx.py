@@ -34,7 +34,7 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -282,7 +282,7 @@ class Okx(ExchangeInterface):
                 continue
 
             try:
-                amount = deserialize_asset_amount(currency_data['availBal']) + deserialize_asset_amount(currency_data['frozenBal'])  # noqa: E501
+                amount = deserialize_fval(currency_data['availBal']) + deserialize_fval(currency_data['frozenBal'])  # noqa: E501
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
@@ -374,10 +374,10 @@ class Okx(ExchangeInterface):
                 raw_trade_type=raw_trade['side'],
                 base_asset=asset_from_okx(base_asset_str),
                 quote_asset=asset_from_okx(quote_asset_str),
-                amount=deserialize_asset_amount(raw_trade['accFillSz']),
+                amount=deserialize_fval(raw_trade['accFillSz']),
                 rate=deserialize_price(raw_trade['avgPx']),
             )
-            fee_amount = deserialize_fee(raw_trade['fee'])
+            fee_amount = deserialize_fval_or_zero(raw_trade['fee'])
             # fee charged by the platform is represented by a negative number
             if fee_amount < ZERO:
                 fee_amount = Fee(-1 * fee_amount)
@@ -431,11 +431,11 @@ class Okx(ExchangeInterface):
             tx_hash = raw_movement['txId']
             timestamp = TimestampMS(int(raw_movement['ts']))
             asset = asset_from_okx(raw_movement['ccy'])
-            amount = deserialize_asset_amount(raw_movement['amt'])
+            amount = deserialize_fval(raw_movement['amt'])
             address = deserialize_asset_movement_address(raw_movement, 'to', asset)
-            fee = Fee(ZERO)
+            fee = ZERO
             if event_type is HistoryEventType.WITHDRAWAL:
-                fee = deserialize_fee(raw_movement['fee'])
+                fee = deserialize_fval_or_zero(raw_movement['fee'])
 
             return create_asset_movement_with_fee(
                 location=self.location,

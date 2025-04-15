@@ -54,9 +54,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_force_positive,
+    deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
     deserialize_timestamp_from_intms,
     deserialize_timestamp_ms_from_intms,
@@ -151,7 +151,7 @@ def trade_from_binance(
         raw_trade_type='buy' if binance_trade['isBuyer'] else 'sell',
         base_asset=binance_pair.base_asset,
         quote_asset=binance_pair.quote_asset,
-        amount=deserialize_asset_amount(binance_trade['qty']),
+        amount=deserialize_fval(binance_trade['qty']),
         rate=deserialize_price(binance_trade['price']),
     )
     log.debug(
@@ -162,7 +162,7 @@ def trade_from_binance(
         receive=receive,
         fee=(fee := AssetAmount(
             asset=asset_from_binance(binance_trade['commissionAsset']),
-            amount=deserialize_fee(binance_trade['commission']),
+            amount=deserialize_fval_or_zero(binance_trade['commission']),
         )),
     )
     return (unique_id := str(binance_trade['id'])), create_swap_events(
@@ -471,8 +471,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             try:
                 # force string https://github.com/rotki/rotki/issues/2342
                 asset_symbol = str(entry['asset'])
-                free = deserialize_asset_amount(entry['free'])
-                locked = deserialize_asset_amount(entry['locked'])
+                free = deserialize_fval(entry['free'])
+                locked = deserialize_fval(entry['locked'])
             except (KeyError, DeserializationError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -621,7 +621,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         for amount_key, positions in all_positions:
             for entry in positions:
                 try:
-                    amount = deserialize_asset_amount(entry[amount_key])
+                    amount = deserialize_fval(entry[amount_key])
                     if amount == ZERO:
                         continue
 
@@ -728,7 +728,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
                 for entry in response:
                     try:
-                        interest_received = deserialize_asset_amount(entry['rewards'])
+                        interest_received = deserialize_fval(entry['rewards'])
                         if interest_received == ZERO:
                             continue
 
@@ -801,7 +801,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             for entry in response:
                 try:
-                    interest_received = deserialize_asset_amount(entry['amount'])
+                    interest_received = deserialize_fval(entry['amount'])
                     if interest_received == ZERO:
                         continue
 
@@ -876,7 +876,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         try:
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
-                amount = deserialize_asset_amount(entry['locked'])
+                amount = deserialize_fval(entry['locked'])
                 if amount == ZERO:
                     continue
 
@@ -952,7 +952,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
         try:
             for entry in response:
-                amount = deserialize_asset_amount(entry['balance'])
+                amount = deserialize_fval(entry['balance'])
                 if amount == ZERO:
                     continue
 
@@ -1299,7 +1299,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 raw_trade_type='buy' if is_buy else 'sell',
                 base_asset=asset_from_binance(raw_data['cryptoCurrency']),
                 quote_asset=(fiat_asset := asset_from_binance(raw_data['fiatCurrency'])),
-                amount=deserialize_asset_amount_force_positive(raw_data['obtainAmount']),
+                amount=deserialize_fval_force_positive(raw_data['obtainAmount']),
                 rate=deserialize_price(raw_data['price']),
             )
             return create_swap_events(
@@ -1309,7 +1309,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 receive=receive,
                 fee=AssetAmount(
                     asset=fiat_asset,
-                    amount=Fee(deserialize_asset_amount(raw_data['totalFee'])),
+                    amount=deserialize_fval(raw_data['totalFee']),
                 ),
                 location_label=self.name,
                 unique_id=get_key_if_has_val(raw_data, 'orderNo'),
@@ -1359,8 +1359,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             asset = asset_from_binance(raw_data['fiatCurrency'])
             tx_id = get_key_if_has_val(raw_data, 'orderNo')
             timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['createTime']))
-            fee = Fee(deserialize_asset_amount(raw_data['totalFee']))
-            amount = deserialize_asset_amount_force_positive(raw_data['amount'])
+            fee = Fee(deserialize_fval(raw_data['totalFee']))
+            amount = deserialize_fval_force_positive(raw_data['amount'])
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
             self.send_unknown_asset_message(
@@ -1423,14 +1423,14 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     location='binance withdrawal',
                     skip_milliseconds=True,
                 ))
-                fee = Fee(deserialize_asset_amount(raw_data['transactionFee']))
+                fee = Fee(deserialize_fval(raw_data['transactionFee']))
 
             asset = asset_from_binance(raw_data['coin'])
             tx_id = get_key_if_has_val(raw_data, 'txId')
             internal_id = get_key_if_has_val(raw_data, 'id')
             unique_id = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
-            amount = deserialize_asset_amount_force_positive(raw_data['amount'])
+            amount = deserialize_fval_force_positive(raw_data['amount'])
         except UnknownAsset as e:
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,

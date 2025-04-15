@@ -38,8 +38,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_int_from_str,
     deserialize_timestamp_from_bitstamp_date,
 )
@@ -192,7 +192,7 @@ class Bitstamp(ExchangeInterface):
 
             symbol = entry.split('_')[0]  # If no `_`, defaults to entry
             try:
-                amount = deserialize_asset_amount(raw_amount)
+                amount = deserialize_fval(raw_amount)
                 if amount == ZERO:
                     continue
                 asset = asset_from_bitstamp(symbol)
@@ -716,7 +716,7 @@ class Bitstamp(ExchangeInterface):
             except (UnknownAsset, DeserializationError):
                 continue
             try:
-                amount = deserialize_asset_amount(value)
+                amount = deserialize_fval(value)
             except DeserializationError:
                 continue
             if amount != ZERO:
@@ -740,7 +740,7 @@ class Bitstamp(ExchangeInterface):
             asset=fee_asset,
             amount=abs(amount),
             fee_asset=fee_asset,
-            fee=(fee := deserialize_fee(raw_movement['fee'])),
+            fee=(fee := deserialize_fval_or_zero(raw_movement['fee'])),
             unique_id=(reference := str(raw_movement['id'])),
             extra_data={
                 'reference': reference,
@@ -764,7 +764,7 @@ class Bitstamp(ExchangeInterface):
         try:
             timestamp = Timestamp(raw_movement['datetime'])
             asset = asset_from_bitstamp(raw_movement['currency'])
-            amount = deserialize_asset_amount(raw_movement['amount'])
+            amount = deserialize_fval(raw_movement['amount'])
             address = raw_movement['destinationAddress']
             transaction_id = raw_movement['txid']
         except KeyError as e:
@@ -792,10 +792,10 @@ class Bitstamp(ExchangeInterface):
         Can raise DeserializationError.
         """
         trade_pair_data = self._get_trade_pair_data_from_transaction(raw_trade)
-        base_asset_amount = deserialize_asset_amount(
+        base_asset_amount = deserialize_fval(
             raw_trade[trade_pair_data.base_asset_symbol],
         )
-        quote_asset_amount = deserialize_asset_amount(
+        quote_asset_amount = deserialize_fval(
             raw_trade[trade_pair_data.quote_asset_symbol],
         )
         if base_asset_amount < ZERO and quote_asset_amount < ZERO:
@@ -818,7 +818,7 @@ class Bitstamp(ExchangeInterface):
             receive=receive,
             fee=AssetAmount(
                 asset=trade_pair_data.quote_asset,
-                amount=deserialize_fee(raw_trade['fee']),
+                amount=deserialize_fval_or_zero(raw_trade['fee']),
             ),
             location_label=self.name,
             unique_id=(reference := str(raw_trade['id'])),

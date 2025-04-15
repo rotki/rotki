@@ -37,10 +37,10 @@ from rotkehlchen.history.events.structures.swap import (
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_asset_amount_force_positive,
     deserialize_asset_movement_event_type,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_force_positive,
+    deserialize_fval_or_zero,
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
@@ -323,9 +323,9 @@ class Gemini(ExchangeInterface):
             try:
                 balance_type = entry['type']
                 if balance_type == 'exchange':
-                    amount = deserialize_asset_amount(entry['amount'])
+                    amount = deserialize_fval(entry['amount'])
                 else:  # should be 'Earn'
-                    amount = deserialize_asset_amount(entry['balance'])
+                    amount = deserialize_fval(entry['balance'])
                 # ignore empty balances
                 if amount == ZERO:
                     continue
@@ -473,7 +473,7 @@ class Gemini(ExchangeInterface):
                         raw_trade_type=entry['type'],
                         base_asset=base,
                         quote_asset=quote,
-                        amount=deserialize_asset_amount(entry['amount']),
+                        amount=deserialize_fval(entry['amount']),
                         rate=deserialize_price(entry['price']),
                     )
                     swap_events.extend(create_swap_events(
@@ -483,7 +483,7 @@ class Gemini(ExchangeInterface):
                         receive=receive,
                         fee=AssetAmount(
                             asset=asset_from_gemini(entry['fee_currency']),
-                            amount=deserialize_fee(entry['fee_amount']),
+                            amount=deserialize_fval_or_zero(entry['fee_amount']),
                         ),
                         location_label=self.name,
                         unique_id=unique_id,
@@ -541,7 +541,7 @@ class Gemini(ExchangeInterface):
                     event_type=deserialize_asset_movement_event_type(entry['type']),
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
-                    amount=deserialize_asset_amount_force_positive(entry['amount']),
+                    amount=deserialize_fval_force_positive(entry['amount']),
                     unique_id=str(entry['eid']),
                     extra_data=maybe_set_transaction_extra_data(
                         address=deserialize_asset_movement_address(entry, 'destination', asset),

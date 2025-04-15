@@ -46,10 +46,7 @@ from rotkehlchen.history.events.structures.base import (
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fval,
-)
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -393,7 +390,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for kraken_name, amount_ in kraken_balances.items():
             try:
-                amount = deserialize_asset_amount(amount_)
+                amount = deserialize_fval(amount_)
                 if amount == ZERO:
                     continue
 
@@ -925,7 +922,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         f'Encountered kraken historic event type we do not process. {raw_event}',
                     )
 
-                fee_amount = deserialize_asset_amount(raw_event['fee'])
+                fee_amount = deserialize_fval(raw_event['fee'])
                 # check for failed events (events that cancel each other out -- like failed
                 if (  # withdrawals). Compare if amounts cancel themselves out (also fee if exists)
                         len(events) == 2 and idx == 1 and

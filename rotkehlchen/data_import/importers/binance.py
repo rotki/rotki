@@ -22,7 +22,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
+    deserialize_fval,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
@@ -656,7 +656,7 @@ class BinanceImporter(BaseExchangeImporter):
                     location='binance',
                 )
                 csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
-                csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
+                csv_row['Change'] = deserialize_fval(csv_row['Change'])
                 csv_row[INDEX] = index
                 multirows[timestamp].append(csv_row)
             except UnknownAsset as e:

@@ -40,8 +40,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
-    deserialize_fee,
+    deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_timestamp,
     deserialize_timestamp_ms_from_intms,
 )
@@ -454,7 +454,7 @@ class Bitfinex(ExchangeInterface):
             )
         asset = asset_from_bitfinex(bitfinex_name=raw_result[1])
 
-        amount = deserialize_asset_amount(raw_result[12])
+        amount = deserialize_fval(raw_result[12])
         event_type: Final = (
             HistoryEventType.DEPOSIT
             if amount > ZERO
@@ -474,7 +474,7 @@ class Bitfinex(ExchangeInterface):
             asset=asset,
             amount=abs(amount),
             fee_asset=asset,
-            fee=abs(deserialize_fee(raw_result[13])),
+            fee=abs(deserialize_fval_or_zero(raw_result[13])),
             unique_id=(reference := str(raw_result[0])),
             extra_data=maybe_set_transaction_extra_data(
                 address=address,
@@ -514,7 +514,7 @@ class Bitfinex(ExchangeInterface):
             )
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type='buy' if (amount := deserialize_asset_amount(raw_result[4])) >= ZERO else 'sell',  # noqa: E501
+            raw_trade_type='buy' if (amount := deserialize_fval(raw_result[4])) >= ZERO else 'sell',  # noqa: E501
             base_asset=asset_from_bitfinex(bitfinex_name=bfx_base_asset_symbol),
             quote_asset=asset_from_bitfinex(bitfinex_name=bfx_quote_asset_symbol),
             amount=abs(amount),
@@ -527,7 +527,7 @@ class Bitfinex(ExchangeInterface):
             receive=receive,
             fee=AssetAmount(
                 asset=asset_from_bitfinex(bitfinex_name=raw_result[10]),
-                amount=abs(deserialize_fee(raw_result[9])),
+                amount=abs(deserialize_fval_or_zero(raw_result[9])),
             ),
             location_label=self.name,
             unique_id=str(raw_result[0]),
@@ -883,7 +883,7 @@ class Bitfinex(ExchangeInterface):
                 continue
 
             try:
-                amount = deserialize_asset_amount(wallet[balance_index])
+                amount = deserialize_fval(wallet[balance_index])
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '

@@ -13,7 +13,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_asset_amount,
+    deserialize_fval,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import AssetAmount, Location
@@ -44,7 +44,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
         - UnknownAsset
         - DeserializationError
         """
-        if (sold_amount := deserialize_asset_amount(csv_row['Sold Quantity'])) == ZERO:
+        if (sold_amount := deserialize_fval(csv_row['Sold Quantity'])) == ZERO:
             raise SkippedCSVEntry('Trade has sold_amount equal to zero.')
 
         self.add_history_events(  # BlockFi does not provide fee info
@@ -62,7 +62,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                 ),
                 receive=AssetAmount(
                     asset=asset_from_blockfi(csv_row['Buy Currency']),
-                    amount=deserialize_asset_amount(csv_row['Buy Quantity']),
+                    amount=deserialize_fval(csv_row['Buy Quantity']),
                 ),
                 spend_notes=csv_row['Type'],
                 unique_id=csv_row['Trade ID'],

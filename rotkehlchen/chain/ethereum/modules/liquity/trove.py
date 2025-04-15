@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import from_wei
 
@@ -131,10 +131,10 @@ class Liquity(HasDSProxy):
                     trove_is_active = bool(trove_info[3])
                     if not trove_is_active:
                         continue
-                    collateral = deserialize_asset_amount(
+                    collateral = deserialize_fval(
                         token_normalized_value_decimals(trove_info[1], 18),
                     )
-                    debt = deserialize_asset_amount(
+                    debt = deserialize_fval(
                         token_normalized_value_decimals(trove_info[0], 18),
                     )
                     collateral_balance = AssetBalance(
@@ -246,7 +246,7 @@ class Liquity(HasDSProxy):
 
             # get price information for the asset and deserialize the amount
             asset_price = Inquirer.find_usd_price(asset)
-            amount = deserialize_asset_amount(
+            amount = deserialize_fval(
                 token_normalized_value_decimals(gain_info, 18),
             )
             proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address.get(current_address)
