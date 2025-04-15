@@ -167,24 +167,6 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         verify the api key's validity"""
         raise NotImplementedError('validate_api_key() should only be implemented by subclasses')
 
-    def query_online_trade_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        """Queries the exchange's API for the trade history of the user
-
-        Should be implemented by subclasses if the exchange can return trade history in any form.
-        This is not implemented only for bitmex as it only returns margin positions
-
-        Returns a tuple of the trades of the exchange and a Tuple of the queried time
-        range. The time range can differ from the given time range if an error happened
-        and the call stopped in the middle.
-
-        Deprecated, Trades are changing to SwapEvents and queried via query_online_history_events
-        """
-        return [], (start_ts, end_ts)
-
     def query_online_margin_history(
             self,
             start_ts: Timestamp,
@@ -213,70 +195,6 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         an error occurred preventing the full range from being queried.
         """
         return [], end_ts
-
-    @protect_with_lock()
-    def query_trade_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            only_cache: bool,
-    ) -> list[Trade]:
-        """Queries the local DB and the remote exchange for the trade history of the user
-
-        Limits the query to the given time range and also if only_cache is True returns
-        only what is already saved in the DB without performing an exchange query
-
-        Returns the trades sorted in an ascending timestamp order
-        """
-        log.debug(f'Querying trade history for {self.name} exchange')
-        if only_cache is False:
-            ranges = DBQueryRanges(self.db)
-            location_string = f'{self.location!s}_trades_{self.name}'
-            with self.db.conn.read_ctx() as cursor:
-                ranges_to_query = ranges.get_location_query_ranges(
-                    cursor=cursor,
-                    location_string=location_string,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                )
-
-            log.debug(f'Found query ranges {ranges_to_query=} for {location_string}')
-            for query_start_ts, query_end_ts in ranges_to_query:
-                # If we have a time frame we have not asked the exchange for trades then
-                # go ahead and do that now
-                log.debug(
-                    f'Querying online trade history for {self.name} between '
-                    f'{query_start_ts} and {query_end_ts}',
-                )
-                new_trades, queried_range = self.query_online_trade_history(
-                    start_ts=query_start_ts,
-                    end_ts=query_end_ts,
-                )
-
-                # make sure to add them to the DB
-                with self.db.user_write() as write_cursor:
-                    if len(new_trades) != 0:
-                        self.db.add_trades(write_cursor=write_cursor, trades=new_trades)
-
-                    # and also set the used queried timestamp range for the exchange
-                    ranges.update_used_query_range(
-                        write_cursor=write_cursor,
-                        location_string=location_string,
-                        queried_ranges=[queried_range],
-                    )
-
-        # Read all requested trades from the DB
-        with self.db.conn.read_ctx() as cursor:
-            filter_query = TradesFilterQuery.make(
-                from_ts=start_ts,
-                to_ts=end_ts,
-                location=self.location,
-            )
-            return self.db.get_trades(
-                cursor=cursor,
-                filter_query=filter_query,
-                has_premium=True,  # is okay since the returned trades don't make it to the user
-            )
 
     def query_margin_history(
             self,
