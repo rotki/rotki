@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`9793` Users will now be able to add a missing accounting rule by clicking the menu on the history events page.
 * :bug:`9777` Bitstamp asset movements with a fee will now load correctly.
 * :bug:`9730` Fix the issue where the app breaks when the user clicks on "Ethereum Staking" in the blockchain balance summary on the dashboard.
 * :bug:`-` Addresses tracked only on non-mainnet EVM networks should now also be checked for airdrop eligibility.
