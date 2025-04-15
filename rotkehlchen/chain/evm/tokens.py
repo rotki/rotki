@@ -12,10 +12,10 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
@@ -401,7 +401,10 @@ class EvmTokens(ABC):  # noqa: B024
             for address, balances in new_balances.items():
                 addresses_to_balances[address].update(balances)
 
-        token_usd_price: dict[EvmToken, Price] = {token: Inquirer.find_usd_price(asset=token) for token in all_tokens}  # noqa: E501
+        # Hack to avoid querying price of tokens one by one. This can be slow and is ignored
+        # since the frontend later queries again the prices in a more optimized way.
+        # https://github.com/rotki/rotki/issues/5071
+        token_usd_price: dict[EvmToken, Price] = dict.fromkeys(all_tokens, ZERO)
 
         return dict(addresses_to_balances), token_usd_price
 
