@@ -1,25 +1,16 @@
 import logging
-from collections import defaultdict, deque
-from typing import TYPE_CHECKING, Any, Final, TypedDict
+from collections import defaultdict
+from typing import TYPE_CHECKING, Final, TypedDict
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import DAY_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.db.constants import HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.filtering import (
-    DBFilter,
-    DBIgnoredAssetsFilter,
-    DBMultiStringFilter,
-    DBMultiValueFilter,
-    DBNestedFilter,
-    DBNotEqualFilter,
-    DBTimestampFilter,
+    HistoryEventFilterQuery,
 )
-from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -29,7 +20,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Timestamp, TradeType
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -57,7 +48,7 @@ class HistoricalBalancesManager:
 
         May raise:
         - NotFoundError if balance for the given timestamp does not exist.
-        - DeserializationError if there is a problem deserializing an event or trade from DB.
+        - DeserializationError if there is a problem deserializing an event from DB.
         """
         events, main_currency = self._get_events_and_currency(to_ts=timestamp)
         if len(events) == 0:
@@ -88,7 +79,7 @@ class HistoricalBalancesManager:
 
         May raise:
         - NotFoundError if balance for the asset at the given timestamp does not exist.
-        - DeserializationError if there is a problem deserializing an event or trade from DB.
+        - DeserializationError if there is a problem deserializing an event from DB.
         """
         events, main_currency = self._get_events_and_currency(to_ts=timestamp, assets=(asset,))
         if len(events) == 0:
@@ -99,7 +90,6 @@ class HistoricalBalancesManager:
             if self._update_balances(
                 event=event,
                 current_balances=current_balances,
-                assets=(asset,),
             ) is not None:
                 break
 
@@ -123,15 +113,14 @@ class HistoricalBalancesManager:
         """Get historical balance amounts for the given assets within the given time range.
 
         If a negative amount is encountered, returns a tuple of (identifier, group_identifier)
-        for the event that caused it alongside the balances. For trades, returns
-        (trade_identifier, None).
+        for the event that caused it alongside the balances.
 
         It does not include the value of the balances in the user's profit currency as
         that is handled separately by the frontend in a different request.
 
         May raise:
         - NotFoundError if no events exist for the assets in the specified time period.
-        - DeserializationError if there is a problem deserializing an event or trade from DB.
+        - DeserializationError if there is a problem deserializing an event from DB.
         """
         events, _ = self._get_events_and_currency(from_ts=from_ts, to_ts=to_ts, assets=assets)
         if len(events) == 0:
@@ -144,18 +133,12 @@ class HistoricalBalancesManager:
             if (negative_balance_data := self._update_balances(
                 event=event,
                 current_balances=current_balances,
-                assets=assets,
             )) is not None:
                 break
 
-            event_ts = (
-                event.timestamp
-                if isinstance(event, Trade)
-                else ts_ms_to_sec(event.timestamp)
-            )
             # Combine balances of all assets. Overwrite any existing value for this timestamp
             # so the final amount per timestamp is the cumulative result of all processed events.
-            amounts[event_ts] = FVal(sum(current_balances[asset] for asset in assets))
+            amounts[ts_ms_to_sec(event.timestamp)] = FVal(sum(current_balances[asset] for asset in assets))  # noqa: E501
 
         return amounts, negative_balance_data
 
@@ -172,13 +155,13 @@ class HistoricalBalancesManager:
 
         May raise:
             - NotFoundError if no events exist in the specified time period.
-            - DeserializationError if there is a problem deserializing an event or trade from DB.
+            - DeserializationError if there is a problem deserializing an event from DB.
 
         Returns:
             - A mapping of timestamps to net worth in main currency for each day
             - A list of (asset id, timestamp) tuples where price data was missing
             - A tuple of (identifier, group_identifier) for the event that caused a negative
-              balance if any, else None. For trades, returns (trade_identifier, None).
+              balance if any, else None.
         """
         events, main_currency = self._get_events_and_currency(from_ts=from_ts, to_ts=to_ts)
         if len(events) == 0:
@@ -187,18 +170,10 @@ class HistoricalBalancesManager:
         negative_balance_data = None
         current_balances: dict[Asset, FVal] = defaultdict(FVal)
         daily_balances: dict[Timestamp, dict[Asset, FVal]] = {}
-        current_day = timestamp_to_daystart_timestamp(
-            events[0].timestamp
-            if isinstance(events[0], Trade)
-            else ts_ms_to_sec(events[0].timestamp),
-        )
+        current_day = timestamp_to_daystart_timestamp(ts_ms_to_sec(events[0].timestamp))
         daily_balances[current_day] = current_balances.copy()
         for event in events:
-            if (day_ts := timestamp_to_daystart_timestamp(
-                event.timestamp
-                if isinstance(event, Trade)
-                else ts_ms_to_sec(event.timestamp),
-            )) > current_day:
+            if (day_ts := timestamp_to_daystart_timestamp(ts_ms_to_sec(event.timestamp))) > current_day:  # noqa: E501
                 daily_balances[current_day] = current_balances.copy()
                 current_day = day_ts
 
@@ -243,135 +218,42 @@ class HistoricalBalancesManager:
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-    ) -> tuple[list[HistoryEvent | Trade], Asset]:
-        """Helper method to get events(including trades) and main currency from DB.
-        Kraken trades are ignored because they are duplicated in the history events table.
+    ) -> tuple[list[HistoryEvent], Asset]:
+        """Helper method to get events and main currency from DB.
 
-        Using two cursors to parallel scan trades and history_events tables, merging them
-        chronologically. This avoids loading full tables into memory while maintaining
-        event ordering. Each cursor fetches one table, allowing streaming iteration.
-
-        If `assets` is provided, returns only events and trades involving these specific
-        assets. For trades, both base and quote assets are checked. For history events,
-        only the affected asset is checked. Otherwise, no asset filtering is applied.
+        If `assets` is provided, returns only events involving these specific
+        assets. For history events, only the affected asset is checked.
+        Otherwise, no asset filtering is applied.
 
         May raise:
-        - DeserializationError if there is a problem deserializing an event or trade from DB.
-
-        TODO: Refactor this once trades are migrated to history events.
+        - DeserializationError if there is a problem deserializing an event from DB.
         """
-        events: list[HistoryEvent | Trade] = []
-        with self.db.conn.read_ctx() as cursor1, self.db.conn.read_ctx() as cursor2:
-            main_currency = self.db.get_setting(cursor=cursor1, name='main_currency')
-            trade_filters: list[DBFilter] = [
-                DBNestedFilter(
-                    and_op=True,
-                    filters=[
-                        DBIgnoredAssetsFilter(
-                            and_op=True,
-                            asset_key='base_asset',
-                            operator='NOT IN',
-                        ),
-                        DBIgnoredAssetsFilter(
-                            and_op=True,
-                            asset_key='quote_asset',
-                            operator='NOT IN',
-                        ),
-                    ],
-                ),
-                DBNotEqualFilter(and_op=True, column='location', value='B'),
-                DBTimestampFilter(and_op=True, from_ts=from_ts, to_ts=to_ts),
-            ]
-            event_filters: list[DBFilter] = [
-                DBIgnoredAssetsFilter(
-                    and_op=True,
-                    asset_key='asset',
-                    operator='NOT IN',
-                ), DBTimestampFilter(
-                    and_op=True,
-                    to_ts=to_ts,
-                    from_ts=from_ts,
-                    scaling_factor=FVal(1000),  # timestamp of events are stored in ms
-                ), DBMultiValueFilter(
-                    and_op=True,
-                    column='subtype',
-                    values=[  # Skip all DEPOSIT_ASSET and REMOVE_ASSET events since they don't affect the balance.  # noqa: E501
-                        HistoryEventSubType.DEPOSIT_ASSET.serialize(),
-                        HistoryEventSubType.REMOVE_ASSET.serialize(),
-                    ],
-                    operator='NOT IN',
-                ),
-            ]
-            if assets is not None:  # filter for the specific assets
-                asset_identifiers = [asset.identifier for asset in assets]
-                trade_filters.append(DBNestedFilter(
-                    and_op=False,
-                    filters=[
-                        DBMultiStringFilter(and_op=False, column='base_asset', values=asset_identifiers, operator='IN'),  # noqa: E501
-                        DBMultiStringFilter(and_op=False, column='quote_asset', values=asset_identifiers, operator='IN'),  # noqa: E501
-                    ],
-                ))
-                event_filters.append(DBMultiStringFilter(
-                    and_op=True,
-                    column='asset',
-                    values=asset_identifiers,
-                    operator='IN',
-                ))
-
-            trade_where_clauses = []
-            trade_bindings: list[Any] = []
-            for filter_ in trade_filters:
-                clauses, bindings = filter_.prepare()
-                trade_where_clauses.extend(clauses)
-                trade_bindings.extend(bindings)
-
-            event_where_clauses = []
-            event_bindings: list[Any] = []
-            for filter_ in event_filters:
-                clauses, bindings = filter_.prepare()
-                event_where_clauses.extend(clauses)
-                event_bindings.extend(bindings)
-
-            cursor1.execute(
-                f'SELECT * FROM trades WHERE {" AND ".join(trade_where_clauses)} ORDER BY timestamp',  # noqa: E501
-                trade_bindings,
+        with self.db.conn.read_ctx() as cursor:
+            main_currency = self.db.get_setting(cursor=cursor, name='main_currency')
+            filter_query = HistoryEventFilterQuery.make(
+                from_ts=from_ts,
+                to_ts=to_ts,
+                order_by_rules=[('timestamp', True)],
+                exclude_ignored_assets=True,
+                assets=assets,
+                exclude_subtypes=[
+                    HistoryEventSubType.DEPOSIT_ASSET,
+                    HistoryEventSubType.REMOVE_ASSET,
+                ],
             )
-            cursor2.execute(
-                f'SELECT {HISTORY_BASE_ENTRY_FIELDS} FROM history_events WHERE {" AND ".join(event_where_clauses)} ORDER BY timestamp',  # noqa: E501
-                event_bindings,
+            events = []
+            where_clauses, bindings = filter_query.prepare(
+                with_order=True,
+                with_group_by=False,
+                with_pagination=False,
+                without_ignored_asset_filter=False,
             )
-
-            trades_buffer = deque(cursor1.fetchmany(BATCH_SIZE))
-            events_buffer = deque(cursor2.fetchmany(BATCH_SIZE))
-            trade_row, event_row = None, None
-            while trades_buffer or events_buffer:
+            for entry in cursor.execute(f'SELECT {filter_query.get_columns()} FROM history_events {where_clauses}', bindings):  # noqa: E501
                 try:
-                    trade_row = trades_buffer[0] if trades_buffer else None
-                    event_row = events_buffer[0] if events_buffer else None
-
-                    # determine which event comes first
-                    if not trade_row:
-                        process_event = True
-                    elif not event_row:
-                        process_event = False
-                    else:  # compare timestamps
-                        trade_ts = trade_row[1]
-                        event_ts = ts_ms_to_sec(event_row[4])
-                        process_event = event_ts <= trade_ts
-
-                    if process_event:
-                        # we do not need the `entry_type` so we remove it from the tuple
-                        events.append(HistoryEvent.deserialize_from_db(events_buffer.popleft()[1:]))
-                        if len(events_buffer) == 0:  # refill trades buffer if empty
-                            events_buffer.extend(cursor2.fetchmany(BATCH_SIZE))
-                    else:
-                        events.append(Trade.deserialize_from_db(trades_buffer.popleft()))
-                        if len(trades_buffer) == 0:  # refill trades buffer if empty
-                            trades_buffer.extend(cursor1.fetchmany(BATCH_SIZE))
-
-                except (UnknownAsset, DeserializationError) as e:
+                    events.append(HistoryEvent.deserialize_from_db(entry[1:]))
+                except DeserializationError as e:
                     raise DeserializationError(
-                        f'Failed to deserialize event(s) {trade_row=} {event_row=} while '
+                        f'Failed to deserialize event {entry} while '
                         f'processing historical balances due to {e!s}',
                     ) from e
 
@@ -425,53 +307,16 @@ class HistoricalBalancesManager:
 
     @staticmethod
     def _update_balances(
-            event: HistoryEvent | Trade,
+            event: HistoryEvent,
             current_balances: dict[Asset, FVal],
-            assets: tuple[Asset, ...] | None = None,
     ) -> tuple[str | int | None, str | None] | None:
-        """Updates current balances for a trade or history event, checking for negative balances.
+        """Updates current balances for a history event, checking for negative balances.
         Zero balance assets are removed to avoid accumulating empty entries.
 
-        For trades:
-        - BUY means we receive base_asset and spend quote_asset
-        - SELL means we spend base_asset and receive quote_asset
-
-        If `assets` is specified, then trade amounts for assets not in the list will be ignored.
-
         Returns a tuple of identifier & group_identifier if a negative balance would occur,
-        otherwise None. For trades, only returns (trade_identifier, None).
-
-        TODO: Remove trade-specific logic once trades are merged into history events.
+        otherwise None.
         """
-        if isinstance(event, Trade):
-            if event.trade_type in {TradeType.BUY, TradeType.SETTLEMENT_BUY}:
-                spend_asset = event.quote_asset
-                receive_asset = event.base_asset
-                spend_amount = event.amount * event.rate
-                receive_amount = event.amount
-            else:
-                spend_asset = event.base_asset
-                receive_asset = event.quote_asset
-                spend_amount = event.amount
-                receive_amount = event.amount * event.rate
-
-            if assets is not None:  # Only include amounts for the specified assets.
-                if spend_asset not in assets:
-                    spend_amount = ZERO
-                if receive_asset not in assets:
-                    receive_amount = ZERO
-
-            if current_balances[spend_asset] - spend_amount < ZERO:
-                return event.identifier, None
-
-            current_balances[spend_asset] -= spend_amount
-            current_balances[receive_asset] += receive_amount
-            if current_balances[spend_asset] == ZERO:
-                del current_balances[spend_asset]
-
-            return None
-
-        if (  # history event logic from here and down
+        if (
             (direction := event.maybe_get_direction()) is None or
             direction == EventDirection.NEUTRAL
         ):
