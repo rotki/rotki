@@ -13606,7 +13606,7 @@ Historical Balance Queries
         }
 
         :resjson list[integer] times: Timestamps of balance changes.
-        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance amount. For trades, returns [trade_identifier, null].
+        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance amount.
         :resjson list[string] values: Net asset balance amount at each corresponding timestamp.
         :statuscode 200: Historical balances returned
         :statuscode 400: Malformed query
@@ -13663,7 +13663,7 @@ Historical Balance Queries
 
         :resjson list[integer] times: Timestamps at which net worth was calculated
         :resjson list[string] values: Net worth value at each corresponding timestamp in user's profit currency
-        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance. For trades, returns [trade_identifier, null].
+        :resjson list last_event_identifier: (Optional) A list containing [identifier, group_identifier] of the event that caused the negative balance.
         :resjson list[list] missing_prices: List of [asset_identifier, timestamp] pairs where price data was missing
         :statuscode 200: Historical net worth values returned
         :statuscode 400: Malformed query

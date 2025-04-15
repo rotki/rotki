@@ -12,10 +12,10 @@ from rotkehlchen.constants import DAY_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
@@ -30,7 +30,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import A_DASH
-from rotkehlchen.types import ChainID, Location, Price, Timestamp, TradeType
+from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -158,19 +158,14 @@ def test_get_historical_asset_balance(
     """
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with db.user_write() as write_cursor:
-        db.add_trades(
+        DBHistoryEvents(database=db).add_history_events(
             write_cursor=write_cursor,
-            trades=[
-                Trade(
-                    timestamp=DAY_AFTER_START_TS,  # Day 2
-                    location=Location.EXTERNAL,
-                    base_asset=A_BTC,
-                    quote_asset=A_EUR,
-                    trade_type=TradeType.BUY,
-                    amount=FVal('0.2'),
-                    rate=Price(FVal('16000.0')),
-                ),
-            ],
+            history=create_swap_events(
+                timestamp=ts_sec_to_ms(DAY_AFTER_START_TS),
+                location=Location.EXTERNAL,
+                spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
+                receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
+            ),
         )
 
     response = requests.post(
@@ -197,26 +192,18 @@ def test_get_historical_asset_amounts_over_time(
 ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with db.user_write() as write_cursor:
-        db.add_trades(
+        DBHistoryEvents(database=db).add_history_events(
             write_cursor=write_cursor,
-            trades=[Trade(
-                timestamp=Timestamp(START_TS + DAY_IN_SECONDS * 3),
+            history=[*create_swap_events(
+                timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
                 location=Location.EXTERNAL,
-                base_asset=A_BTC,
-                quote_asset=A_EUR,
-                trade_type=TradeType.BUY,
-                amount=FVal('1.5'),
-                rate=Price(FVal('16000.0')),
-                link='trade1',
-            ), Trade(  # Second trade with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
-                timestamp=Timestamp(START_TS + DAY_IN_SECONDS * 3),
+                spend=AssetAmount(asset=A_EUR, amount=FVal('24000.0')),
+                receive=AssetAmount(asset=A_BTC, amount=FVal('1.5')),
+            ), *create_swap_events(  # Second swap with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
+                timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
                 location=Location.EXTERNAL,
-                base_asset=A_BTC,
-                quote_asset=A_EUR,
-                trade_type=TradeType.BUY,
-                amount=FVal('0.5'),
-                rate=Price(FVal('16000.0')),
-                link='trade2',
+                spend=AssetAmount(asset=A_EUR, amount=FVal('8000.0')),
+                receive=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
             )],
         )
 
@@ -448,42 +435,29 @@ def test_get_historical_netvalue(
     with db.user_write() as write_cursor:
         DBHistoryEvents(database=db).add_history_events(
             write_cursor=write_cursor,
-            history=[
-                HistoryEvent(
-                    event_identifier='eur_receive_1',
-                    sequence_index=0,
-                    timestamp=ts_sec_to_ms(START_TS),  # Day 1
-                    event_type=HistoryEventType.RECEIVE,
-                    event_subtype=HistoryEventSubType.NONE,
-                    location=Location.BLOCKCHAIN,
-                    asset=A_EUR,
-                    amount=FVal('20000'),  # Enough EUR to buy BTC
-                    notes='Receive EUR',
-                ),
-            ],
+            history=[HistoryEvent(
+                event_identifier='eur_receive_1',
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(START_TS),  # Day 1
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                location=Location.BLOCKCHAIN,
+                asset=A_EUR,
+                amount=FVal('20000'),  # Enough EUR to buy BTC
+                notes='Receive EUR',
+            ), *create_swap_events(
+                timestamp=ts_sec_to_ms(DAY_AFTER_START_TS),  # Day 2,
+                location=Location.EXTERNAL,
+                spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
+                receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
+            ), *create_swap_events(
+                timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),  # Day 3,
+                location=Location.EXTERNAL,
+                spend=AssetAmount(asset=A_ETH, amount=FVal('0.2')),
+                receive=AssetAmount(asset=A_EUR, amount=FVal('240.0')),
+            )],
         )
-        db.add_trades(
-            write_cursor=write_cursor,
-            trades=[
-                Trade(
-                    timestamp=DAY_AFTER_START_TS,  # Day 2
-                    location=Location.EXTERNAL,
-                    base_asset=A_BTC,
-                    quote_asset=A_EUR,
-                    trade_type=TradeType.BUY,
-                    amount=FVal('0.2'),
-                    rate=Price(FVal('16000.0')),
-                ), Trade(
-                    timestamp=Timestamp(START_TS + DAY_IN_SECONDS * 2),  # Day 3
-                    location=Location.EXTERNAL,
-                    base_asset=A_ETH,
-                    quote_asset=A_EUR,
-                    trade_type=TradeType.SELL,
-                    amount=FVal('0.2'),
-                    rate=Price(FVal('1200.0')),
-                ),
-            ],
-        )
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -544,18 +518,19 @@ def test_get_historical_netvalue(
     result = assert_proper_sync_response_with_result(response)
     assert len(result['missing_prices']) == 0
     assert 'last_event_identifier' not in result
-    assert len(result['times']) == len(result['values']) == 2
+    assert len(result['times']) == len(result['values']) == 3
     assert all(ts in result['times'] for ts in expected_timestamps[::2])
 
     # Expected values after ignoring BTC
     expected_values_ignored = [
         FVal('32000'),  # Day 1: (10 ETH * 1200) + 20000 EUR
-        FVal('32000'),  # Day 3: (9.8 ETH * 1200) + (20000 + 240) EUR (after ETH sale)
+        FVal('28800.0'),  # Day 2: (10 ETH * 1200) + (20000 - 3200) EUR = 28800
+        FVal('28800.0'),  # Day 3: (9.8 ETH * 1200 = 11760) + (16800 + 240 = 17040) EUR = 28800
     ]
     for timestamp, value, expected_ts, expected_val in zip(
         result['times'],
         result['values'],
-        expected_timestamps[::2],
+        expected_timestamps,
         expected_values_ignored,
         strict=True,
     ):
