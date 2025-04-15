@@ -35,7 +35,6 @@ from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -119,12 +118,10 @@ class CointrackingImporter(BaseExchangeImporter):
         if location == Location.EXTERNAL:
             notes += f'. Data from -{csv_row["Exchange"]}- not known by rotki.'
 
-        fee = ZERO
-        # whatever (used only if there is no fee)
-        fee_currency: AssetWithOracles = self.usd
-        if csv_row['Fee'] != '':
-            fee = deserialize_fval_or_zero(csv_row['Fee'])
-            fee_currency = asset_resolver(csv_row['Cur.Fee'])
+        fee = AssetAmount(
+            asset=asset_resolver(csv_row['Cur.Fee']),
+            amount=deserialize_fval_or_zero(csv_row['Fee']),
+        ) if csv_row['Fee'] != '' else None
 
         if row_type in {'Gift/Tip', 'Trade', 'Income'}:
             base_asset = asset_resolver(csv_row['Cur.Buy'])
@@ -151,7 +148,7 @@ class CointrackingImporter(BaseExchangeImporter):
                     location=location,
                     spend=AssetAmount(asset=quote_asset, amount=quote_amount_sold),
                     receive=AssetAmount(asset=base_asset, amount=base_amount_bought),
-                    fee=AssetAmount(asset=fee_currency, amount=fee),
+                    fee=fee,
                     spend_notes=notes,
                 ),
             )
@@ -170,11 +167,10 @@ class CointrackingImporter(BaseExchangeImporter):
                 history_events=create_asset_movement_with_fee(
                     timestamp=timestamp,
                     location=location,
-                    fee=fee,
                     asset=asset,
                     amount=amount,
                     event_type=movement_type,
-                    fee_asset=fee_currency,
+                    fee=fee,
                 ),
             )
         elif row_type == 'Staking':

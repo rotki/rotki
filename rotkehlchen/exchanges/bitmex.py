@@ -37,8 +37,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -381,14 +381,6 @@ class Bitmex(ExchangeInterface):
                     log.error(f'Found non valid amount in asset movement {movement} at bitmex. Skipping')  # noqa: E501
                     continue
 
-                if (fee_str := movement.get('fee', 0)) is None:
-                    fee = Fee(ZERO)
-                else:  # deposit has no fees
-                    fee = Fee(normalized_fval_value_decimals(
-                        amount=deserialize_fval(fee_str, location='btimex asset movements', name='fee'),  # noqa: E501
-                        decimals=decimals,
-                    ))
-
                 if (raw_amount := deserialize_fval(
                     value=amount_str,
                     location='btimex asset movements',
@@ -396,20 +388,20 @@ class Bitmex(ExchangeInterface):
                 )) < ZERO:
                     raw_amount = -raw_amount
 
-                amount = normalized_fval_value_decimals(
-                    amount=raw_amount,
-                    decimals=decimals,
-                )
-
                 movements.extend(create_asset_movement_with_fee(
                     location=self.location,
                     location_label=self.name,
                     event_type=event_type,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
-                    amount=amount,
-                    fee_asset=asset,
-                    fee=fee,
+                    amount=normalized_fval_value_decimals(amount=raw_amount, decimals=decimals),
+                    fee=None if (fee_str := movement.get('fee')) is None else AssetAmount(
+                        asset=asset,
+                        amount=normalized_fval_value_decimals(
+                            amount=deserialize_fval(fee_str, location='bitmex asset movements', name='fee'),  # noqa: E501
+                            decimals=decimals,
+                        ),
+                    ),
                     unique_id=str(movement['transactID']),
                     extra_data=maybe_set_transaction_extra_data(
                         address=deserialize_asset_movement_address(movement, 'address', asset),

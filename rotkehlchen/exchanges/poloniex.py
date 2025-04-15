@@ -488,12 +488,16 @@ class Poloniex(ExchangeInterface):
         Logs error/warning and returns an empty list if unable to deserialize.
         """
         try:
+            asset = asset_from_poloniex(movement_data['currency'])
             if movement_type == HistoryEventType.DEPOSIT:
-                fee = ZERO
+                fee = None
                 uid_key = 'depositNumber'
                 transaction_id = get_key_if_has_val(movement_data, 'txid')
             else:
-                fee = deserialize_fval_or_zero(movement_data['fee'])
+                fee = AssetAmount(
+                    asset=asset,
+                    amount=deserialize_fval_or_zero(movement_data['fee']),
+                )
                 uid_key = 'withdrawalRequestsId'
                 split = movement_data['status'].split(':')
                 if len(split) != 2:
@@ -503,7 +507,6 @@ class Poloniex(ExchangeInterface):
                     if transaction_id == '':
                         transaction_id = None
 
-            asset = asset_from_poloniex(movement_data['currency'])
             return create_asset_movement_with_fee(
                 location=self.location,
                 location_label=self.name,
@@ -511,7 +514,6 @@ class Poloniex(ExchangeInterface):
                 timestamp=ts_sec_to_ms(deserialize_timestamp(movement_data['timestamp'])),
                 asset=asset,
                 amount=deserialize_fval_force_positive(movement_data['amount']),
-                fee_asset=asset,
                 fee=fee,
                 unique_id=f'{movement_type.serialize()}_{movement_data[uid_key]!s}',  # movement_data[uid_key] is only unique within the same event type  # noqa: E501
                 extra_data=maybe_set_transaction_extra_data(

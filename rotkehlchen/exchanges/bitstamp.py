@@ -739,8 +739,10 @@ class Bitstamp(ExchangeInterface):
             timestamp=timestamp,
             asset=fee_asset,
             amount=abs(amount),
-            fee_asset=fee_asset,
-            fee=(fee := deserialize_fval_or_zero(raw_movement['fee'])),
+            fee=AssetAmount(
+                asset=fee_asset,
+                amount=(fee := deserialize_fval_or_zero(raw_movement['fee'])),
+            ),
             unique_id=(reference := str(raw_movement['id'])),
             extra_data={
                 'reference': reference,

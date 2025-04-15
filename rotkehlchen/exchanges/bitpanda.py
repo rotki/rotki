@@ -220,8 +220,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             timestamp=ts_sec_to_ms(time),
             asset=asset,
             amount=amount,
-            fee_asset=asset,
-            fee=fee,
+            fee=AssetAmount(asset=asset, amount=fee),
             unique_id=f'{tx_id}{transaction_id}',  # Use both here as tx_id is not always unique (at least in the test data)  # noqa: E501
             extra_data=maybe_set_transaction_extra_data(
                 address=address,

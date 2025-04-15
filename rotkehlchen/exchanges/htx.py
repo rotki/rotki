@@ -35,7 +35,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
-    deserialize_fval_or_zero,
     deserialize_timestamp_ms_from_intms,
 )
 from rotkehlchen.types import (
@@ -308,16 +307,17 @@ class Htx(ExchangeInterface):
                 continue
 
             try:
-                coin = asset_from_htx(movement['currency'])
                 movements.extend(create_asset_movement_with_fee(
                     timestamp=ts_sec_to_ms(timestamp),
                     location=self.location,
                     location_label=self.name,
                     event_type=event_type,
-                    asset=coin,
+                    asset=(coin := asset_from_htx(movement['currency'])),
                     amount=deserialize_fval(movement['amount']),
-                    fee_asset=coin,
-                    fee=deserialize_fval_or_zero(movement.get('fee', '0')),
+                    fee=AssetAmount(
+                        asset=coin,
+                        amount=deserialize_fval(movement['fee']),
+                    ) if 'fee' in movement else None,
                     unique_id=str(movement['id']),
                     extra_data=maybe_set_transaction_extra_data(
                         address=get_key_if_has_val(movement, 'address'),

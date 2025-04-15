@@ -1393,8 +1393,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
-                fee_asset=asset,
-                fee=fee,
+                fee=AssetAmount(asset=asset, amount=fee),
                 unique_id=tx_id,
                 extra_data=maybe_set_transaction_extra_data(
                     address=address,
@@ -1462,8 +1461,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
-                fee_asset=asset,
-                fee=fee,
+                fee=AssetAmount(asset=asset, amount=fee),
                 unique_id=unique_id,
                 extra_data=maybe_set_transaction_extra_data(
                     address=address,

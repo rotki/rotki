@@ -1152,8 +1152,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
             event_type=event_type,
             asset=custom_asset,
             amount=ONE,
-            fee_asset=custom_asset,
-            fee=ONE,
+            fee=AssetAmount(asset=custom_asset, amount=ONE),
         )
         if event_type == HistoryEventType.DEPOSIT:
             assert asset_movements[0].serialize()['auto_notes'] == 'Deposit 1 Gold Bar to Kraken'
