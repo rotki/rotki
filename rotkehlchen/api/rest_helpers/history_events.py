@@ -27,7 +27,7 @@ def edit_grouped_events_with_optional_fee(
     """
     db = events_db.db
     with db.conn.read_ctx() as read_cursor:
-        if (result := read_cursor.execute(
+        if (result := read_cursor.execute(  # Get the event_identifier and beginning sequence index of the group, selecting by the identifier of the first event.  # noqa: E501
             'SELECT event_identifier, sequence_index FROM history_events WHERE identifier=?',
             (events[0].identifier,),
         ).fetchone()) is not None:
