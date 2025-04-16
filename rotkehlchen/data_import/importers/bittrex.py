@@ -14,6 +14,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -69,14 +70,14 @@ class BittrexImporter(BaseExchangeImporter):
             date = csv_row['Time (UTC)']
             base = csv_row['Base']
             quote = csv_row['Quote']
-            trade_type = 'buy' if csv_row['Transaction'] == 'Bought' else 'sell'
+            is_buy = csv_row['Transaction'] == 'Bought'
             amount = csv_row['Quantity (Base)']
             rate = csv_row['Price']
             order_id = csv_row['TXID']
         elif file_type == BittrexFileType.TRADES_OLD:
             date = csv_row['Closed']
             quote, base = csv_row['Exchange'].split('-')
-            trade_type = 'buy' if csv_row['Type'] == 'LIMIT_BUY' else 'sell'
+            is_buy = deserialize_trade_type_is_buy(csv_row['Type'])
             amount = csv_row['Quantity']
             rate = csv_row['Price']
             order_id = csv_row['OrderUuid']
@@ -84,13 +85,13 @@ class BittrexImporter(BaseExchangeImporter):
             date = csv_row['CLOSED']
             base = csv_row['MARKET']
             quote = csv_row['QUOTE']
-            trade_type = 'buy' if csv_row['ORDERTYPE'] == 'LIMIT_BUY' else 'sell'
+            is_buy = deserialize_trade_type_is_buy(csv_row['ORDERTYPE'])
             amount = csv_row['FILLED']
             rate = csv_row['LIMIT']
             order_id = csv_row['UUID']
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type=trade_type,
+            is_buy=is_buy,
             base_asset=asset_from_bittrex(base),
             quote_asset=(quote_asset := asset_from_bittrex(quote)),
             amount=deserialize_fval(amount),

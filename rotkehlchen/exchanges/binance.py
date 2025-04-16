@@ -148,7 +148,7 @@ def trade_from_binance(
         )
 
     spend, receive = get_swap_spend_receive(
-        raw_trade_type='buy' if binance_trade['isBuyer'] else 'sell',
+        is_buy=binance_trade['isBuyer'],
         base_asset=binance_pair.base_asset,
         quote_asset=binance_pair.quote_asset,
         amount=deserialize_fval(binance_trade['qty']),
@@ -1296,7 +1296,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 return []
 
             spend, receive = get_swap_spend_receive(
-                raw_trade_type='buy' if is_buy else 'sell',
+                is_buy=is_buy,
                 base_asset=asset_from_binance(raw_data['cryptoCurrency']),
                 quote_asset=(fiat_asset := asset_from_binance(raw_data['fiatCurrency'])),
                 amount=deserialize_fval_force_positive(raw_data['obtainAmount']),

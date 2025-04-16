@@ -348,7 +348,7 @@ class Independentreserve(ExchangeInterface):
                     continue
 
                 spend, receive = get_swap_spend_receive(
-                    raw_trade_type='buy' if 'Bid' in raw_trade['OrderType'] else 'sell',
+                    is_buy='Bid' in raw_trade['OrderType'],
                     base_asset=(base_asset := independentreserve_asset(raw_trade['PrimaryCurrencyCode'])),  # noqa: E501
                     quote_asset=independentreserve_asset(raw_trade['SecondaryCurrencyCode']),
                     amount=(amount := (FVal(raw_trade['Volume']) - FVal(raw_trade['Outstanding']))),  # noqa: E501

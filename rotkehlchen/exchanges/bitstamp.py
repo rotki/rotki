@@ -807,7 +807,7 @@ class Bitstamp(ExchangeInterface):
             )
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type='buy' if base_asset_amount >= ZERO else 'sell',
+            is_buy=base_asset_amount >= ZERO,
             base_asset=trade_pair_data.base_asset,
             quote_asset=trade_pair_data.quote_asset,
             amount=abs(base_asset_amount),

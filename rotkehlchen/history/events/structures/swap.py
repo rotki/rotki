@@ -271,22 +271,29 @@ def create_swap_events(
     return events
 
 
+def deserialize_trade_type_is_buy(value: str) -> bool:
+    """Deserialize trade type from raw exchange api or csv value.
+    Returns True if trade is a buy, or False if it's a sell.
+    May raise DeserializationError if an unexpected value is encountered.
+    """
+    if (sanitized_value := value.strip().lower()) in {'buy', 'limit_buy', 'settlement_buy', 'settlement buy'}:  # noqa: E501
+        return True
+    elif sanitized_value in {'sell', 'limit_sell', 'settlement_sell', 'settlement sell'}:
+        return False
+
+    raise DeserializationError(f'Failed to deserialize swap side from {value} entry')
+
+
 def get_swap_spend_receive(
-        raw_trade_type: str,
+        is_buy: bool,
         base_asset: Asset,
         quote_asset: Asset,
         amount: 'FVal',
         rate: 'Price',
 ) -> tuple[AssetAmount, AssetAmount]:
-    """Deserialize the trade type and calculate amounts and assets spent and received.
-    Returns spend_asset, spend_amount, receive_asset, and receive_amount in a tuple.
-    May raise DeserializationError if raw_trade_type has an unexpected value.
+    """Calculates amounts and assets spent and received depending on the is_buy flag.
+    Returns the spend asset amount and receive asset amount in a tuple.
     """
     base = AssetAmount(asset=base_asset, amount=amount)
     quote = AssetAmount(asset=quote_asset, amount=amount * rate)
-    if (sanitized_symbol := raw_trade_type.strip().lower()) in {'buy', 'limit_buy', 'settlement_buy', 'settlement buy'}:  # noqa: E501
-        return quote, base
-    elif sanitized_symbol in {'sell', 'limit_sell', 'settlement_sell', 'settlement sell'}:
-        return base, quote
-
-    raise DeserializationError(f'Failed to deserialize trade type from {type(raw_trade_type)} entry')  # noqa: E501
+    return (quote, base) if is_buy else (base, quote)

@@ -32,6 +32,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.inquirer import Inquirer
@@ -470,7 +471,7 @@ class Gemini(ExchangeInterface):
 
                     base, quote = gemini_symbol_to_base_quote(symbol)
                     spend, receive = get_swap_spend_receive(
-                        raw_trade_type=entry['type'],
+                        is_buy=deserialize_trade_type_is_buy(entry['type']),
                         base_asset=base,
                         quote_asset=quote,
                         amount=deserialize_fval(entry['amount']),

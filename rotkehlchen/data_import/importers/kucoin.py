@@ -9,7 +9,11 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.utils import get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
-from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
+from rotkehlchen.history.events.structures.swap import (
+    create_swap_events,
+    deserialize_trade_type_is_buy,
+    get_swap_spend_receive,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
@@ -71,7 +75,7 @@ class KucoinImporter(BaseExchangeImporter):
                     base, quote = row[tokens_key].split(splitter)
                     fee_currency = get_key_if_has_val(row, fee_currency_key)
                     spend, receive = get_swap_spend_receive(
-                        raw_trade_type=row[trade_type_key],
+                        is_buy=deserialize_trade_type_is_buy(row[trade_type_key]),
                         base_asset=asset_from_kucoin(base),
                         quote_asset=asset_from_kucoin(quote),
                         amount=deserialize_fval(row[amount_key]),
