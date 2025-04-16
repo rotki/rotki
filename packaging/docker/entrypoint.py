@@ -20,20 +20,6 @@ logging.basicConfig(level=logging.DEBUG)
 DEFAULT_LOG_LEVEL = 'critical'
 
 
-def sanitize_args_for_popen(args: list[Any]) -> list[str]:
-    """
-    Sanitizes the arguments for `subprocess.Popen` by converting them to strings.
-
-    Ratio: `subprocess.Popen` expects a list of strings and PathLikes as arguments.
-    Some configuration values may be of type `int` or other types. Casting them to
-    string ensures that `subprocess.Popen` can handle them correctly.
-
-    :param args: The list of arguments to sanitize.
-    :return: A sanitized list of arguments.
-    """
-    return [str(arg) for arg in args]
-
-
 def check_core_api_availability(retries: int = 30, wait_seconds: int = 10) -> bool:
     """
     Checks the availability of the core backend API by sending a ping request.
@@ -207,10 +193,9 @@ base_args = [
 ]
 
 # Arguments needs to be sanitized for `subprocess.Popen`, as it does not accept `int`
-cmd = sanitize_args_for_popen(base_args + config_args)
+cmd = [str(arg) for arg in (base_args + config_args)]
 
-logger.info('starting rotki backend')
-logger.debug('backend arguments: %s', cmd)
+logger.info(f'starting rotki backend with arguments {cmd}')
 
 rotki = subprocess.Popen(cmd)
 
