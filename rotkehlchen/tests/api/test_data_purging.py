@@ -25,7 +25,6 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
-    Fee,
     Location,
     ModuleName,
     OnlyPurgeableModuleName,
@@ -143,7 +142,7 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                     to_address=make_evm_address(),
                     asset=A_ETH,
                     amount=ONE,
-                    fee=Fee(ONE),
+                    fee=ONE,
                     swap_data=None if i == 0 else ZKSyncLiteSwapData(from_asset=A_ETH, from_amount=ONE, to_asset=A_DAI, to_amount=FVal(3000)),  # noqa: E501
                 )],
             )

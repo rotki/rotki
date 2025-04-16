@@ -226,9 +226,6 @@ ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[S
 TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...]  # noqa: E501
 
 
-T_Fee = FVal
-Fee = NewType('Fee', T_Fee)
-
 T_Price = FVal
 Price = NewType('Price', T_Price)
 

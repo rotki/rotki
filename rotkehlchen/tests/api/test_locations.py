@@ -13,7 +13,6 @@ from rotkehlchen.tests.utils.exchanges import mock_exchange_data_in_db
 from rotkehlchen.types import (
     EVM_LOCATIONS_TYPE,
     ChecksumEvmAddress,
-    Fee,
     Location,
     Price,
     Timestamp,
@@ -50,7 +49,7 @@ def test_get_associated_locations(
                 trade_type=TradeType.BUY,
                 amount=FVal('1.0'),
                 rate=Price(FVal('281.14')),
-                fee=Fee(ZERO),
+                fee=ZERO,
                 fee_currency=A_EUR,
                 link='',
                 notes='',

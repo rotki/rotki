@@ -66,7 +66,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Timestamp,
     TimestampMS,
@@ -1359,7 +1358,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             asset = asset_from_binance(raw_data['fiatCurrency'])
             tx_id = get_key_if_has_val(raw_data, 'orderNo')
             timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['createTime']))
-            fee = Fee(deserialize_fval(raw_data['totalFee']))
+            fee = deserialize_fval(raw_data['totalFee'])
             amount = deserialize_fval_force_positive(raw_data['amount'])
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
@@ -1413,7 +1412,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             if 'insertTime' in raw_data:
                 event_type = HistoryEventType.DEPOSIT
                 timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['insertTime']))
-                fee = Fee(ZERO)
+                fee = ZERO
             else:
                 event_type = HistoryEventType.WITHDRAWAL
                 timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
@@ -1422,7 +1421,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     location='binance withdrawal',
                     skip_milliseconds=True,
                 ))
-                fee = Fee(deserialize_fval(raw_data['transactionFee']))
+                fee = deserialize_fval(raw_data['transactionFee'])
 
             asset = asset_from_binance(raw_data['coin'])
             tx_id = get_key_if_has_val(raw_data, 'txId')

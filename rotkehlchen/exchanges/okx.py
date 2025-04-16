@@ -40,7 +40,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Timestamp,
     TimestampMS,
@@ -380,7 +379,7 @@ class Okx(ExchangeInterface):
             fee_amount = deserialize_fval_or_zero(raw_trade['fee'])
             # fee charged by the platform is represented by a negative number
             if fee_amount < ZERO:
-                fee_amount = Fee(-1 * fee_amount)
+                fee_amount = -1 * fee_amount
             fee_asset = asset_from_okx(raw_trade['feeCcy'])
             unique_id = raw_trade['ordId']
         except UnknownAsset as e:

@@ -30,10 +30,7 @@ from rotkehlchen.history.events.structures.asset_movement import create_asset_mo
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import (
-    deserialize_fee,
-    deserialize_fval,
-)
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -95,7 +92,7 @@ def margin_trade_from_bitmex(bitmex_trade: dict, decimals: dict[str, int]) -> Ma
         decimals=decimals[bitmex_trade['currency']],
     )
 
-    fee = deserialize_fee(bitmex_trade['fee'])
+    fee = deserialize_fval_or_zero(bitmex_trade['fee'])
     notes = bitmex_trade['address']
 
     log.debug(

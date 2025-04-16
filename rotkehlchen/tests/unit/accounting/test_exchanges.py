@@ -21,14 +21,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.accounting import accounting_create_and_process_history
 from rotkehlchen.tests.utils.exchanges import mock_normal_coinbase_query
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.types import (
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TimestampMS,
-    TradeType,
-)
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, TradeType
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -112,7 +105,7 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
             close_time=Timestamp(1611426201),
             profit_loss=ONE,
             pl_currency=A_BTC,
-            fee=Fee(ZERO),
+            fee=ZERO,
             fee_currency=A_BTC,
             link='no link',
             notes='no notes',

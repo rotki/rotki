@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Fee, Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, TradeType
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -59,7 +59,7 @@ def test_kfee_price_in_accounting(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=FVal('0.02'),
             rate=Price(FVal(1000)),
-            fee=Fee(FVal(30)),  # KFEE should not be taken into account
+            fee=FVal(30),  # KFEE should not be taken into account
             fee_currency=A_KFEE,
             link=None,
         ),
@@ -90,7 +90,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             trade_type=TradeType.BUY,
             amount=ONE,
             rate=Price(FVal('598.26')),
-            fee=Fee(ONE),
+            fee=ONE,
             fee_currency=A_EUR,
             link=None,
         ), Trade(
@@ -103,7 +103,7 @@ def test_fees_count_in_cost_basis(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=FVal('0.5'),
             rate=Price(FVal('1862.06')),
-            fee=Fee(FVal('0.5')),
+            fee=FVal('0.5'),
             fee_currency=A_ETH,
             link=None,
         ), Trade(
@@ -213,7 +213,7 @@ def test_main_currency_is_respected(
             trade_type=TradeType.SELL,
             amount=FVal('0.04'),
             rate=trade_rate,
-            fee=Fee(ZERO),
+            fee=ZERO,
             fee_currency=A_EUR,
             link=None,
         ),

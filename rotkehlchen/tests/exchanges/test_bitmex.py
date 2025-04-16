@@ -14,7 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Fee, Timestamp, TimestampMS
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -230,7 +230,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.00000683'),
         pl_currency=A_BTC,
-        fee=Fee(ZERO),
+        fee=ZERO,
         fee_currency=A_BTC,
         link='9ab9f275-9132-64aa-4aa6-8c6503418ac6',
         notes='ETHUSD',
@@ -240,7 +240,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.00000183'),
         pl_currency=A_BTC,
-        fee=Fee(ZERO),
+        fee=ZERO,
         fee_currency=A_BTC,
         link='9c50e247-9bea-b10b-93c8-26845f202e9a',
         notes='XBTJPY',
@@ -250,7 +250,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.0000004'),
         pl_currency=A_BTC,
-        fee=Fee(ZERO),
+        fee=ZERO,
         fee_currency=A_BTC,
         link='c74e6967-1411-0ad1-e3e3-6f97a04d7202',
         notes='XBTUSD',
@@ -260,7 +260,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         close_time=Timestamp(1536580800),
         profit_loss=FVal('0.00000003'),
         pl_currency=A_BTC,
-        fee=Fee(ZERO),
+        fee=ZERO,
         fee_currency=A_BTC,
         link='97402f76-828e-a8ea-5d26-920134924149',
         notes='XBTZ18',
@@ -270,7 +270,7 @@ def test_bitmex_margin_history(sandbox_bitmex: Bitmex) -> None:
         close_time=Timestamp(1536494400),
         profit_loss=FVal('-0.00007992'),
         pl_currency=A_BTC,
-        fee=Fee(ZERO),
+        fee=ZERO,
         fee_currency=A_BTC,
         link='df46338a-da5e-e16c-9753-3e863d83d92c',
         notes='ETHU18',

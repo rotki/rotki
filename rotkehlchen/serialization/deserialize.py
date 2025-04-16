@@ -22,7 +22,6 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
-    Fee,
     HexColorCode,
     Timestamp,
     TimestampMS,
@@ -38,23 +37,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-def deserialize_fee(fee: str | None) -> Fee:
-    """Deserializes a fee from a json entry. Fee in the JSON entry can also be null
-    in which case a ZERO fee is returned.
-
-    Can throw DeserializationError if the fee is not as expected
-    """
-    if fee is None:
-        return Fee(ZERO)
-
-    try:
-        result = Fee(FVal(fee))
-    except ValueError as e:
-        raise DeserializationError(f'Failed to deserialize a fee entry due to: {e!s}') from e
-
-    return result
 
 
 def deserialize_timestamp(timestamp: float | (str | FVal)) -> Timestamp:

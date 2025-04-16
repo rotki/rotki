@@ -3,11 +3,10 @@ from dataclasses import dataclass
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_fee, deserialize_fval
+from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
-    Fee,
     Timestamp,
     deserialize_evm_tx_hash,
 )
@@ -88,7 +87,7 @@ class ZKSyncLiteTransaction:
     to_address: ChecksumEvmAddress | None
     asset: Asset
     amount: FVal
-    fee: Fee | None
+    fee: FVal | None
     swap_data: ZKSyncLiteSwapData | None = None
 
     def serialize_for_db(self) -> ZKSyncLiteTransactionDBTuple:
@@ -122,6 +121,6 @@ class ZKSyncLiteTransaction:
             to_address=None if data[5] is None else string_to_evm_address(data[5]),
             asset=Asset(data[6]),
             amount=deserialize_fval(data[7], 'amount', 'zksync lite tx'),
-            fee=deserialize_fee(data[8]) if data[8] is not None else None,
+            fee=deserialize_fval(data[8]) if data[8] is not None else None,
             swap_data=None,
         )

@@ -24,12 +24,11 @@ from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_fee,
     deserialize_fval,
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import satoshis_to_btc, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -61,7 +60,7 @@ class BitMEXImporter(BaseExchangeImporter):
             location='Bitmex Wallet History Import',
         )
         realised_pnl = satoshis_to_btc(deserialize_fval(csv_row['amount']))
-        fee = deserialize_fee(csv_row['fee']) if csv_row['fee'] != 'null' else Fee(ZERO)
+        fee = deserialize_fval(csv_row['fee']) if csv_row['fee'] != 'null' else ZERO
         notes = f"PnL from trade on {csv_row['address']}"
         log.debug(
             'Processing Bitmex Realised PnL',
