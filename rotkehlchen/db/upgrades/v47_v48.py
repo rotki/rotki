@@ -45,7 +45,7 @@ def upgrade_trade_to_swap_events(
     - ValueError
     """
     spend, receive = get_swap_spend_receive(
-        raw_trade_type='buy' if row[4] in {'A', 'C'} else 'sell',  # A,C = buy, settlement buy; B,D = sell, settlement sell  # noqa: E501
+        is_buy=row[4] in {'A', 'C'},  # A,C = buy, settlement buy; B,D = sell, settlement sell
         base_asset=Asset(row[2]),
         quote_asset=Asset(row[3]),
         amount=FVal(row[5]),

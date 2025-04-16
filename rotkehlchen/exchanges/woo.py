@@ -28,6 +28,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -177,7 +178,7 @@ class Woo(ExchangeInterface):
             ) from e
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type=trade['side'],
+            is_buy=deserialize_trade_type_is_buy(trade['side']),
             base_asset=asset_from_woo(base_asset_symbol),
             quote_asset=asset_from_woo(quote_asset_symbol),
             amount=deserialize_fval(trade['executed_quantity']),

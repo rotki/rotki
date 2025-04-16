@@ -31,6 +31,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.inquirer import Inquirer
@@ -277,7 +278,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 )
 
             spend, receive = get_swap_spend_receive(
-                raw_trade_type=entry['attributes']['type'],
+                is_buy=deserialize_trade_type_is_buy(entry['attributes']['type']),
                 base_asset=crypto_asset,
                 quote_asset=fiat_asset,
                 amount=deserialize_fval(entry['attributes']['amount_cryptocoin']),

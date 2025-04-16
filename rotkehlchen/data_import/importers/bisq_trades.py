@@ -9,7 +9,11 @@ from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
+from rotkehlchen.history.events.structures.swap import (
+    create_swap_events,
+    deserialize_trade_type_is_buy,
+    get_swap_spend_receive,
+)
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
@@ -66,7 +70,7 @@ class BisqTradesImporter(BaseExchangeImporter):
             fee_currency = A_BTC
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type=trade_type,
+            is_buy=deserialize_trade_type_is_buy(trade_type),
             base_asset=base_asset,
             quote_asset=quote_asset,
             amount=buy_amount,

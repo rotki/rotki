@@ -35,6 +35,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -610,7 +611,7 @@ class Kucoin(ExchangeInterface):
                 trade_id = raw_result['id']
 
             spend, receive = get_swap_spend_receive(
-                raw_trade_type=raw_result['side'],
+                is_buy=deserialize_trade_type_is_buy(raw_result['side']),
                 base_asset=base_asset,
                 quote_asset=quote_asset,
                 amount=amount,

@@ -29,6 +29,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -370,7 +371,7 @@ class Okx(ExchangeInterface):
                     f'Expected pair {raw_trade["instId"]} to contain a "-"',
                 ) from e
             spend, receive = get_swap_spend_receive(
-                raw_trade_type=raw_trade['side'],
+                is_buy=deserialize_trade_type_is_buy(raw_trade['side']),
                 base_asset=asset_from_okx(base_asset_str),
                 quote_asset=asset_from_okx(quote_asset_str),
                 amount=deserialize_fval(raw_trade['accFillSz']),

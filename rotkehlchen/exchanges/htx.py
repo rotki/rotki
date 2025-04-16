@@ -28,6 +28,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -442,7 +443,7 @@ class Htx(ExchangeInterface):
 
                 try:
                     spend, receive = get_swap_spend_receive(
-                        raw_trade_type=trade_type,
+                        is_buy=deserialize_trade_type_is_buy(trade_type),
                         base_asset=base_asset,
                         quote_asset=quote_asset,
                         amount=deserialize_fval(raw_trade['filled-amount']),

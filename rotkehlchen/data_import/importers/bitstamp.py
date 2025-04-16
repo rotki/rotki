@@ -13,7 +13,11 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
 )
-from rotkehlchen.history.events.structures.swap import create_swap_events, get_swap_spend_receive
+from rotkehlchen.history.events.structures.swap import (
+    create_swap_events,
+    deserialize_trade_type_is_buy,
+    get_swap_spend_receive,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -60,7 +64,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             value_str, value_symbol = csv_row['Value'].split(' ')
             fee_str, fee_symbol = csv_row['Fee'].split(' ')
             spend, receive = get_swap_spend_receive(
-                raw_trade_type=csv_row['Sub Type'],
+                is_buy=deserialize_trade_type_is_buy(csv_row['Sub Type']),
                 base_asset=asset_from_bitstamp(amount_symbol),
                 quote_asset=asset_from_bitstamp(value_symbol),
                 amount=(swap_amount := deserialize_fval(amount)),

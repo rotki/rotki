@@ -38,6 +38,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -913,7 +914,7 @@ class Coinbase(ExchangeInterface):
             amount /= rate
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type=order_side,
+            is_buy=deserialize_trade_type_is_buy(order_side),
             base_asset=asset_from_coinbase(asset_identifiers[0], time=timestamp),
             quote_asset=quote_asset,
             amount=abs(amount),

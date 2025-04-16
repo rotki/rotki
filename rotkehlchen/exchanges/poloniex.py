@@ -32,6 +32,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
+    deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -79,7 +80,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
     """
     try:
         spend, receive = get_swap_spend_receive(
-            raw_trade_type=poloniex_trade['side'],
+            is_buy=deserialize_trade_type_is_buy(poloniex_trade['side']),
             base_asset=asset_from_poloniex(get_pair_position_str((pair := poloniex_trade['symbol']), 'first')),  # noqa: E501
             quote_asset=asset_from_poloniex(get_pair_position_str(pair, 'second')),
             amount=deserialize_fval(poloniex_trade['quantity']),

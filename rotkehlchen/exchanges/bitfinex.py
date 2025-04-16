@@ -513,7 +513,7 @@ class Bitfinex(ExchangeInterface):
             )
 
         spend, receive = get_swap_spend_receive(
-            raw_trade_type='buy' if (amount := deserialize_fval(raw_result[4])) >= ZERO else 'sell',  # noqa: E501
+            is_buy=(amount := deserialize_fval(raw_result[4])) >= ZERO,
             base_asset=asset_from_bitfinex(bitfinex_name=bfx_base_asset_symbol),
             quote_asset=asset_from_bitfinex(bitfinex_name=bfx_quote_asset_symbol),
             amount=abs(amount),
