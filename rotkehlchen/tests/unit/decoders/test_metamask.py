@@ -30,6 +30,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -83,12 +84,11 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Set LUX spending approval of {user_address} by {METAMASK_ROUTER_ETH} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_LUX,
         amount=FVal(swap_amount),
@@ -96,32 +96,24 @@ def test_metamask_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} LUX in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} ETH as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=134,
+        sequence_index=5,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(metamask_fee),
-        location_label=user_address,
         notes=f'Spend {metamask_fee} ETH as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
     )]
     assert expected_events == events
 
@@ -148,12 +140,11 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -161,32 +152,24 @@ def test_metamask_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ETH in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OTACON,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} OTACON as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=214,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} ETH as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
     )]
     assert expected_events == events
 
@@ -213,12 +196,11 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(swap_amount),
@@ -226,32 +208,24 @@ def test_metamask_swap_usdt_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} USDT in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_INU,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} INU as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=141,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} USDT as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
     )]
     assert expected_events == events
 
@@ -278,12 +252,11 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_MOG,
         amount=FVal(swap_amount),
@@ -291,32 +264,24 @@ def test_metamask_swap_token_to_usdc(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} Mog in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} USDC as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=418,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} USDC as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
     )]
     assert expected_events == events
 
@@ -355,12 +320,11 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Set AAVE spending approval of {user_address} by {METAMASK_ROUTER_ETH} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=290,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_AAVE,
         amount=FVal(swap_amount),
@@ -368,32 +332,24 @@ def test_metamask_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} AAVE in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=291,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_INJ,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} INJ as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=317,
+        sequence_index=292,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_AAVE,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} AAVE as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ETH,
     )]
     assert expected_events == events
 
@@ -423,12 +379,11 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ARBITRUM_USDC,
         amount=FVal(swap_amount),
@@ -436,32 +391,24 @@ def test_metamask_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
         notes=f'Swap {swap_amount} USDC in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_ARB,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} ETH as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ARB,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=11,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ARBITRUM_USDC,
         amount=FVal(metamask_fee),
-        location_label=user_address,
         notes=f'Spend {metamask_fee} USDC as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_ARB,
     )]
     assert expected_events == events
 
@@ -488,12 +435,11 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_OPTIMISM_USDT,
         amount=FVal(swap_amount),
@@ -501,32 +447,24 @@ def test_metamask_swap_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount} USDT in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_OPT,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OPTIMISM_USDC,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} USDC as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_OPT,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=19,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_OPTIMISM_USDT,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} USDT as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_OPT,
     )]
     assert expected_events == events
 
@@ -568,12 +506,11 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         location_label=user_address,
         notes=f'Set USDC spending approval of {user_address} by {METAMASK_ROUTER_MATIC} to {approval_amount}',  # noqa: E501
         address=METAMASK_ROUTER_MATIC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=245,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_USDC,
         amount=FVal(swap_amount),
@@ -581,32 +518,24 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         notes=f'Swap {swap_amount} USDC in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=246,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} POL as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_MATIC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=256,
+        sequence_index=247,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POLYGON_USDC,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} USDC as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_MATIC,
     )]
     assert expected_events == events
 
@@ -646,12 +575,11 @@ def test_metamask_swap_binance_sc(
         location_label=user_address,
         notes=f'Set BSC-USD spending approval of {user_address} by {METAMASK_ROUTER_BSC} to {approve_amount}',  # noqa: E501
         address=METAMASK_ROUTER_BSC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=72,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_bsc_usd,
         amount=FVal(swap_amount),
@@ -659,30 +587,22 @@ def test_metamask_swap_binance_sc(
         notes=f'Swap {swap_amount} BSC-USD in metamask',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_BSC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=73,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BSC_BNB,
         amount=FVal(received_amount),
-        location_label=user_address,
         notes=f'Receive {received_amount} BNB as the result of a metamask swap',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_BSC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=80,
+        sequence_index=74,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BSC_BNB,
         amount=FVal(fee_amount),
-        location_label=user_address,
         notes=f'Spend {fee_amount} BNB as metamask fees',
-        counterparty=CPT_METAMASK_SWAPS,
-        address=METAMASK_ROUTER_BSC,
     )]

@@ -98,9 +98,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the event for api."""
-        serialized_data = EvmEvent.serialize(self)
-        serialized_data['auto_notes'] = self._generate_auto_notes()
-        return serialized_data
+        return EvmEvent.serialize(self)
 
     @classmethod
     def deserialize(cls: type['EvmSwapEvent'], data: dict[str, Any]) -> 'EvmSwapEvent':

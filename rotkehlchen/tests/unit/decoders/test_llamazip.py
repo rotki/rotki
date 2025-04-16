@@ -14,6 +14,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -38,12 +39,11 @@ def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_account
             location_label=optimism_accounts[0],
             notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
             amount=FVal(spend_amount),
@@ -51,19 +51,15 @@ def test_llamazip_optimism_swap_token_to_eth(optimism_inquirer, optimism_account
             notes=f'Swap {spend_amount} DAI in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=string_to_evm_address('0x03aF20bDAaFfB4cC0A521796a223f7D85e2aAc31'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),
-            location_label=optimism_accounts[0],
             notes=f'Receive {receive_amount} ETH as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=OPTIMISM_ROUTER_ADDRESSES[0],
         ),
     ]
 
@@ -87,12 +83,11 @@ def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_account
             location_label=optimism_accounts[0],
             notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(spend_amount),
@@ -100,19 +95,15 @@ def test_llamazip_optimism_swap_eth_to_token(optimism_inquirer, optimism_account
             notes=f'Swap {spend_amount} ETH in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=OPTIMISM_ROUTER_ADDRESSES[0],
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             amount=FVal(receive_amount),
-            location_label=optimism_accounts[0],
             notes=f'Receive {receive_amount} USDC.e as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=OPTIMISM_ROUTER_ADDRESSES[0],
         ),
     ]
 
@@ -136,12 +127,11 @@ def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accou
             location_label=optimism_accounts[0],
             notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
             amount=FVal(spend_amount),
@@ -149,19 +139,15 @@ def test_llamazip_optimism_swap_token_to_token(optimism_inquirer, optimism_accou
             notes=f'Swap {spend_amount} DAI in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=string_to_evm_address('0xbf16ef186e715668AA29ceF57e2fD7f9D48AdFE6'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
             amount=FVal(receive_amount),
-            location_label=optimism_accounts[0],
             notes=f'Receive {receive_amount} USDC.e as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=OPTIMISM_ROUTER_ADDRESSES[0],
         ),
     ]
 
@@ -200,12 +186,11 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
             location_label=arbitrum_one_accounts[0],
             notes=f'Revoke USDC.e spending approval of {arbitrum_one_accounts[0]} by {ARBITRUM_ROUTER_ADDRESSES[0]}',  # noqa: E501
             address=ARBITRUM_ROUTER_ADDRESSES[0],
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_usdce,
             amount=FVal(spend_amount),
@@ -213,19 +198,15 @@ def test_llamazip_arbitrum_swap_token_to_eth(arbitrum_one_inquirer, arbitrum_one
             notes=f'Swap {spend_amount} USDC.e in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=string_to_evm_address('0xC31E54c7a869B9FcBEcc14363CF510d1c41fa443'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),
-            location_label=arbitrum_one_accounts[0],
             notes=f'Receive {receive_amount} ETH as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=ARBITRUM_ROUTER_ADDRESSES[0],
         ),
     ]
 
@@ -252,12 +233,11 @@ def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(spend_amount),
@@ -265,19 +245,15 @@ def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one
             notes=f'Swap {spend_amount} ETH in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=ARBITRUM_ROUTER_ADDRESSES[0],
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal(receive_amount),
-            location_label=arbitrum_one_accounts[0],
             notes=f'Receive {receive_amount} USDT as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=ARBITRUM_ROUTER_ADDRESSES[0],
         ),
     ]
 
@@ -316,12 +292,11 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
             location_label=arbitrum_one_accounts[0],
             notes=f'Revoke WETH spending approval of {arbitrum_one_accounts[0]} by {ARBITRUM_ROUTER_ADDRESSES[0]}',  # noqa: E501
             address=ARBITRUM_ROUTER_ADDRESSES[0],
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_weth,
             amount=FVal(spend_amount),
@@ -329,19 +304,15 @@ def test_llamazip_arbitrum_swap_token_to_token(arbitrum_one_inquirer, arbitrum_o
             notes=f'Swap {spend_amount} WETH in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=string_to_evm_address('0x2f5e87C9312fa29aed5c179E456625D79015299c'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'),
             amount=FVal(receive_amount),
-            location_label=arbitrum_one_accounts[0],
             notes=f'Receive {receive_amount} WBTC as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=ARBITRUM_ROUTER_ADDRESSES[0],
         ),
     ]
 
@@ -368,12 +339,11 @@ def test_llamazip_arbitrum_swap_eth_to_arb(arbitrum_one_inquirer, arbitrum_one_a
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {fee_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(spend_amount),
@@ -381,18 +351,14 @@ def test_llamazip_arbitrum_swap_eth_to_arb(arbitrum_one_inquirer, arbitrum_one_a
             notes=f'Swap {spend_amount} ETH in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=ARBITRUM_ROUTER_ADDRESSES[1],
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:42161/erc20:0x912CE59144191C1204E64559FE8253a0e49E6548'),
             amount=FVal(receive_amount),
-            location_label=arbitrum_one_accounts[0],
             notes=f'Receive {receive_amount} ARB as the result of a swap in LlamaZip',
-            counterparty=CPT_LLAMAZIP,
-            address=ARBITRUM_ROUTER_ADDRESSES[1],
         ),
     ]
