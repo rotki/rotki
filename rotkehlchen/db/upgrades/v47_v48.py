@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -142,12 +143,30 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             f'DELETE FROM history_events WHERE location=? AND event_identifier IN ({placeholders})',  # noqa: E501
             (Location.KRAKEN.serialize_for_db(),) + tuple(kraken_ids_to_delete),
         )
+
         # Write the new swap events to the db and drop the old trade tables.
+        # We hardcode the insert tuple instead of calling the serialization method to avoid
+        # issues in the case of new fields being added or a change in the order.
+        # Avoiding the call to the serialization function improved performance on databases
+        # with many trades reducing the execution time by a considerable amount.
         write_cursor.executemany(
             'INSERT OR IGNORE INTO history_events(entry_type, event_identifier, '
             'sequence_index, timestamp, location, location_label, asset, amount, '
             'notes, type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (event.serialize_for_db()[0][2] for event in new_events),
+            ((
+                event.entry_type.value,
+                event.event_identifier,
+                event.sequence_index,
+                event.timestamp,
+                event.location.serialize_for_db(),
+                event.location_label,
+                event.asset.identifier,
+                str(event.amount),
+                event.notes,
+                event.event_type.serialize(),
+                event.event_subtype.serialize(),
+                json.dumps(event.extra_data) if event.extra_data else None,
+            ) for event in new_events),
         )
         # TODO: Uncomment these when ready to drop the tables
         # write_cursor.execute('DROP TABLE trades')  # noqa: ERA001
