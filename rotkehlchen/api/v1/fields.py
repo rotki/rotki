@@ -36,7 +36,6 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_fee,
     deserialize_fval,
     deserialize_hex_color_code,
     deserialize_timestamp,
@@ -48,7 +47,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
-    Fee,
     HexColorCode,
     Location,
     Price,
@@ -282,8 +280,10 @@ class AmountField(fields.Field):
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
-    ) -> str:
-        return str(value)
+    ) -> str | None:
+        # TODO: Check if this function is actually used and if value can actually be missing here
+        # See https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=106815946
+        return str(value) if value else None
 
     def _deserialize(
             self,
@@ -343,33 +343,6 @@ class PriceField(fields.Field):
             raise ValidationError('A negative price is not allowed')
 
         return price
-
-
-class FeeField(fields.Field):
-
-    @staticmethod
-    def _serialize(
-            value: Fee,
-            attr: str | None,  # pylint: disable=unused-argument
-            obj: Any,
-            **_kwargs: Any,
-    ) -> str | None:
-        # Fee can be missing so we need to handle None when serializing from schema
-        return str(value) if value else None
-
-    def _deserialize(
-            self,
-            value: str,
-            attr: str | None,  # pylint: disable=unused-argument
-            data: Mapping[str, Any] | None,
-            **_kwargs: Any,
-    ) -> Fee:
-        try:
-            fee = deserialize_fee(value)
-        except DeserializationError as e:
-            raise ValidationError(str(e)) from e
-
-        return fee
 
 
 class FloatingPercentageField(fields.Field):

@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location, TimestampMS
+from rotkehlchen.types import AssetAmount, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 from .constants import ROTKI_EVENT_PREFIX
@@ -199,7 +199,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
         base_asset = asset_resolver(csv_row['Symbol'])
         base_amount = deserialize_fval(csv_row['Volume'])
-        fee_amount = Fee(deserialize_fval(csv_row['Fee'])) if csv_row['Fee'] else Fee(ZERO)
+        fee_amount = deserialize_fval(csv_row['Fee']) if csv_row['Fee'] else ZERO
         fee_asset = (
             asset_resolver(csv_row['FeeCurrency'])
             if csv_row['FeeCurrency'] and fee_amount is not None else None

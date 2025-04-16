@@ -54,7 +54,6 @@ from rotkehlchen.types import (
     ApiSecret,
     AssetAmount,
     ExchangeAuthCredentials,
-    Fee,
     Location,
     Price,
     Timestamp,
@@ -746,14 +745,14 @@ class Coinbase(ExchangeInterface):
                     # converted asset we have to get the rate
                     asset_native_rate = tx_amount / abs(amount_before_fee)
                     fee = AssetAmount(
-                        amount=Fee(conversion_native_fee_amount * asset_native_rate),
+                        amount=conversion_native_fee_amount * asset_native_rate,
                         asset=asset_from_coinbase(tx_a['amount']['currency'], time=timestamp),
                     )
                 else:
                     tx_b_amount = abs(deserialize_fval(tx_b['amount']['amount']))
                     asset_native_rate = tx_b_amount / abs(amount_after_fee)
                     fee = AssetAmount(
-                        amount=Fee(conversion_native_fee_amount * asset_native_rate),
+                        amount=conversion_native_fee_amount * asset_native_rate,
                         asset=asset_from_coinbase(tx_b['amount']['currency'], time=timestamp),
                     )
 
@@ -766,7 +765,7 @@ class Coinbase(ExchangeInterface):
             if (fee_data := tx_a['trade'].get('fee')) is not None:
                 fee = AssetAmount(
                     asset=asset_from_coinbase(fee_data['currency']),
-                    amount=Fee(abs(deserialize_fval(fee_data['amount']))),
+                    amount=abs(deserialize_fval(fee_data['amount'])),
                 )
 
         return create_swap_events(

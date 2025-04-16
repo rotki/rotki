@@ -30,7 +30,6 @@ from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     CostBasisMethod,
-    Fee,
     Location,
     Price,
     Timestamp,
@@ -103,7 +102,7 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
             trade_type=TradeType.BUY,
             amount=FVal(375),
             rate=Price(FVal('0.0010275')),
-            fee=Fee(FVal('0.9375')),
+            fee=FVal('0.9375'),
             fee_currency=A_XMR,
             link=None,
         ), Trade(
@@ -114,7 +113,7 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
             trade_type=TradeType.SELL,
             amount=FVal(45),
             rate=Price(FVal('1.0443027675')),
-            fee=Fee(FVal('0.117484061344')),
+            fee=FVal('0.117484061344'),
             fee_currency=A_XMR,
             link=None,
         ),
@@ -142,7 +141,7 @@ def test_buy_event_creation(accountant):
             trade_type=TradeType.BUY,
             amount=FVal(5),
             rate=Price(FVal('578.505')),
-            fee=Fee(FVal('0.0012')),
+            fee=FVal('0.0012'),
             fee_currency=A_BTC,
             link=None,
         ), Trade(
@@ -153,7 +152,7 @@ def test_buy_event_creation(accountant):
             trade_type=TradeType.BUY,
             amount=FVal(5),
             rate=Price(FVal('578.505')),
-            fee=Fee(FVal('0.0012')),
+            fee=FVal('0.0012'),
             fee_currency=A_EUR,
             link=None,
         ),
@@ -183,7 +182,7 @@ def test_no_corresponding_buy_for_sell(accountant, google_service):
         trade_type=TradeType.SELL,
         amount=ONE,
         rate=Price(FVal('2519.62')),
-        fee=Fee(FVal('0.02')),
+        fee=FVal('0.02'),
         fee_currency=A_EUR,
         link=None,
     )]
@@ -234,7 +233,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=FVal(2000),
             rate=Price(FVal('0.002')),
-            fee=Fee(FVal('0.0012')),
+            fee=FVal('0.0012'),
             fee_currency=A_EUR,
             link=None,
         ), Trade(
@@ -248,7 +247,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=FVal(500),
             rate=Price(FVal('0.004')),
-            fee=Fee(FVal('0.02')),
+            fee=FVal('0.02'),
             fee_currency=A_EUR,
             link=None,
         ), Trade(
@@ -259,7 +258,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=ONE,
             rate=Price(FVal(25000)),
-            fee=Fee(FVal('0.02')),
+            fee=FVal('0.02'),
             fee_currency=A_EUR,
             link=None,
         ),
@@ -295,7 +294,7 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
             trade_type=TradeType.BUY,
             amount=ONE,
             rate=buy_price,  # But we bought in discount
-            fee=Fee(ZERO),
+            fee=ZERO,
             fee_currency=A_EUR,
             link=None,
         ), Trade(
@@ -306,7 +305,7 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=ONE,
             rate=sell_price,  # But we sold for more than oracle
-            fee=Fee(ZERO),
+            fee=ZERO,
             fee_currency=A_EUR,
             link=None,
         ),
@@ -342,7 +341,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
             trade_type=TradeType.BUY,
             amount=ONE,
             rate=buy_price,  # But we bought in discount
-            fee=Fee(ZERO),
+            fee=ZERO,
             fee_currency=A_USD,
             link=None,
         ), Trade(
@@ -353,7 +352,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
             trade_type=TradeType.SELL,
             amount=ONE,
             rate=sell_price,  # But we sold for more than oracle
-            fee=Fee(ZERO),
+            fee=ZERO,
             fee_currency=A_USD,
             link=None,
         ),
@@ -393,7 +392,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         trade_type=TradeType.BUY,
         amount=FVal('2.5'),
         rate=Price(FVal(.11000)),
-        fee=Fee(FVal('0.15')),
+        fee=FVal('0.15'),
         fee_currency=fgp,
         link=None,
     )

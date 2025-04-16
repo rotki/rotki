@@ -34,7 +34,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmlikeChain,
     EVMTxHash,
-    Fee,
     Location,
     deserialize_evm_tx_hash,
 )
@@ -392,7 +391,7 @@ class ZksyncLiteManager:
                 to_address=to_address,
                 asset=asset,
                 amount=amount,
-                fee=Fee(asset_normalized_value(fee_raw, asset)) if fee_raw else None,
+                fee=asset_normalized_value(fee_raw, asset) if fee_raw else None,
                 swap_data=swap_data,
             )
 

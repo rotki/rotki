@@ -12,7 +12,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import Fee, Location, TimestampMS
+from rotkehlchen.types import Location, TimestampMS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -170,7 +170,7 @@ class SkippedCSVEntry(Exception):
 def process_rotki_generic_import_csv_fields(
         csv_row: dict[str, Any],
         currency_colname: str,
-) -> tuple['AssetWithOracles', Fee | None, 'Asset | None', Location, TimestampMS]:
+) -> tuple['AssetWithOracles', 'FVal | None', 'Asset | None', Location, TimestampMS]:
     """
     Process the imported csv for generic rotki trades and events
     """
@@ -180,7 +180,7 @@ def process_rotki_generic_import_csv_fields(
         location = Location.EXTERNAL
 
     timestamp = TimestampMS(deserialize_timestamp(csv_row['Timestamp']))
-    fee = Fee(deserialize_fval(csv_row['Fee'])) if csv_row['Fee'] else None
+    fee = deserialize_fval(csv_row['Fee']) if csv_row['Fee'] else None
     asset_mapping = LOCATION_TO_ASSET_MAPPING.get(location, asset_from_common_identifier)
     asset = asset_mapping(csv_row[currency_colname])
     fee_currency = (

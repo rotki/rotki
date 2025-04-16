@@ -27,7 +27,6 @@ from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     CostBasisMethod,
-    Fee,
     Location,
     Price,
     SupportedBlockchain,
@@ -1134,7 +1133,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             trade_type=TradeType.BUY,
             amount=FVal(100),
             rate=Price(FVal(50)),
-            fee=Fee(FVal(10)),
+            fee=FVal(10),
             fee_currency=A_EUR,
             notes='Trade 1',
         ), Trade(
@@ -1145,7 +1144,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             trade_type=TradeType.SELL,
             amount=FVal(50),
             rate=Price(FVal(120)),
-            fee=Fee(FVal(10)),
+            fee=FVal(10),
             fee_currency=A_EUR,
             notes='Trade 2',
         ), Trade(
@@ -1156,7 +1155,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             trade_type=TradeType.BUY,
             amount=FVal(50),
             rate=Price(FVal(130)),
-            fee=Fee(FVal(10)),
+            fee=FVal(10),
             fee_currency=A_EUR,
             notes='Trade 3',
         ), Trade(
@@ -1167,7 +1166,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
             trade_type=TradeType.SELL,
             amount=FVal(40),
             rate=Price(FVal(90)),
-            fee=Fee(FVal(10)),
+            fee=FVal(10),
             fee_currency=A_EUR,
             notes='Trade 4',
         ),

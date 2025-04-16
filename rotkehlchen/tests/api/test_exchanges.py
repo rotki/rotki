@@ -49,7 +49,6 @@ from rotkehlchen.tests.utils.factories import make_random_uppercasenumeric_strin
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
-    Fee,
     Location,
     Price,
     Timestamp,
@@ -638,7 +637,7 @@ def test_delete_external_exchange_data_works(
         trade_type=TradeType.BUY,
         amount=ONE,
         rate=Price(ONE),
-        fee=Fee(ONE),
+        fee=ONE,
         fee_currency=A_EUR,
         link='',
         notes='',

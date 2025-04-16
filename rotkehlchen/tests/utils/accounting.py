@@ -20,7 +20,7 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
-from rotkehlchen.types import Fee, Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -78,7 +78,7 @@ history1 = [
         trade_type=TradeType.BUY,
         amount=FVal(50),
         rate=Price(FVal('0.01858275')),
-        fee=Fee(FVal('0.06999999999999999')),
+        fee=FVal('0.06999999999999999'),
         fee_currency=A_ETH,
         link=None,
     ), Trade(
@@ -89,7 +89,7 @@ history1 = [
         trade_type=TradeType.SELL,
         amount=FVal(25),
         rate=Price(FVal('0.02209898')),
-        fee=Fee(FVal('0.00082871175')),
+        fee=FVal('0.00082871175'),
         fee_currency=A_BTC,
         link=None,
     ),

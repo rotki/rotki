@@ -14,19 +14,12 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_fee,
     deserialize_fval,
+    deserialize_fval_or_zero,
     deserialize_optional,
     deserialize_timestamp,
 )
-from rotkehlchen.types import (
-    Fee,
-    Location,
-    Price,
-    Timestamp,
-    TradeID,
-    TradeType,
-)
+from rotkehlchen.types import Location, Price, Timestamp, TradeID, TradeType
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -85,7 +78,7 @@ class Trade(AccountingEventMixin):
     # sold if it's a sell. Should NOT include fees
     amount: 'FVal'
     rate: Price
-    fee: Fee | None = None
+    fee: 'FVal | None' = None
     fee_currency: Asset | None = None
     # For external trades this is optional and is a link to the trade in an explorer
     # For exchange trades this should be the exchange unique trade identifier
@@ -161,7 +154,7 @@ class Trade(AccountingEventMixin):
             trade_type=TradeType.deserialize_from_db(entry[5]),
             amount=deserialize_fval(entry[6]),
             rate=deserialize_price(entry[7]),
-            fee=deserialize_optional(entry[8], deserialize_fee),
+            fee=deserialize_optional(entry[8], deserialize_fval_or_zero),
             fee_currency=deserialize_optional(entry[9], Asset),
             link=entry[10],
             notes=entry[11],
@@ -318,7 +311,7 @@ class MarginPosition(AccountingEventMixin):
     # The asset gained or lost
     pl_currency: Asset
     # Amount of fees paid
-    fee: Fee
+    fee: 'FVal'
     # The asset in which fees were paid
     fee_currency: Asset
     # For exchange margins this should be the exchange unique identifier
@@ -377,7 +370,7 @@ class MarginPosition(AccountingEventMixin):
             close_time=deserialize_timestamp(data['close_time']),
             profit_loss=deserialize_fval(data['profit_loss']),
             pl_currency=Asset(data['pl_currency']).check_existence(),
-            fee=deserialize_fee(data['fee']),
+            fee=deserialize_fval_or_zero(data['fee']),
             fee_currency=Asset(data['fee_currency']).check_existence(),
             link=str(data['link']),
             notes=str(data['notes']),
@@ -399,7 +392,7 @@ class MarginPosition(AccountingEventMixin):
             close_time=deserialize_timestamp(entry[3]),
             profit_loss=deserialize_fval(entry[4]),
             pl_currency=Asset(entry[5]).check_existence(),
-            fee=deserialize_fee(entry[6]),
+            fee=deserialize_fval_or_zero(entry[6]),
             fee_currency=Asset(entry[7]).check_existence(),
             link=entry[8],
             notes=entry[9],
@@ -467,7 +460,7 @@ class Loan(AccountingEventMixin):
     open_time: Timestamp
     close_time: Timestamp
     currency: Asset
-    fee: Fee
+    fee: 'FVal'
     earned: 'FVal'
     amount_lent: 'FVal'
 
@@ -501,7 +494,7 @@ class Loan(AccountingEventMixin):
             open_time=deserialize_timestamp(data['open_time']),
             close_time=deserialize_timestamp(data['close_time']),
             currency=Asset(data['currency']).check_existence(),
-            fee=deserialize_fee(data['fee']),
+            fee=deserialize_fval_or_zero(data['fee']),
             earned=deserialize_fval(data['earned']),
             amount_lent=deserialize_fval(data['amount_lent']),
         )
@@ -565,7 +558,7 @@ def deserialize_trade(data: dict[str, Any]) -> Trade:
         trade_type=trade_type,
         amount=amount,
         rate=rate,
-        fee=deserialize_optional(data['fee'], deserialize_fee),
+        fee=deserialize_optional(data['fee'], deserialize_fval_or_zero),
         fee_currency=Asset(data['fee_currency']).check_existence() if data['fee_currency'] is not None else None,  # noqa: E501
         link=trade_link,
         notes=trade_notes,

@@ -165,7 +165,6 @@ from .fields import (
     EvmChainNameField,
     EvmCounterpartyField,
     EVMTransactionHashField,
-    FeeField,
     FileField,
     FloatingPercentageField,
     HistoricalPriceOracleField,
@@ -772,7 +771,7 @@ class CreateHistoryEventSchema(Schema):
         spend_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
         receive_amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         receive_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        fee_amount = FeeField(required=False, load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
+        fee_amount = AmountField(required=False, load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         fee_asset = AssetField(required=False, load_default=None, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
         location_label = fields.String(required=False, load_default=None)
         unique_id = fields.String(required=False, load_default=None)
@@ -905,7 +904,7 @@ class CreateHistoryEventSchema(Schema):
             allow_only=[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
             required=True,
         )
-        fee = FeeField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))
+        fee = AmountField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         location = LocationField(required=True)
         location_label = fields.String(load_default=None)
         blockchain = fields.String(load_default=None)

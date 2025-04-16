@@ -30,7 +30,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_PAN, CURRENT_PRICE_MOCK
-from rotkehlchen.types import Fee, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -70,7 +70,7 @@ def test_fetch_transactions(zksync_lite_manager):
         to_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         asset=A_ETH,
         amount=FVal(0.4023119998),
-        fee=Fee(FVal(0.000233)),
+        fee=FVal(0.000233),
     )
     assert transactions[5] == ZKSyncLiteTransaction(
         tx_hash=b'\xe8wB<\xc4\xf2F\x13H\x96\xbfZf\xcc\x922\xa8\xbeM\xc7\x1au\xd7\xeap>\x10]\xfd\x8e{\x82',
@@ -81,7 +81,7 @@ def test_fetch_transactions(zksync_lite_manager):
         to_address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         asset=A_ETH,
         amount=FVal(0.50543049),
-        fee=Fee(FVal(0.0000324)),
+        fee=FVal(0.0000324),
     )
     # For 1656022105 order can be random.
     tx_hash = b'\xe8"\x81\xa8\\"\xc7r\xeb5\x17p5\xd9<\xdb\x7fU\x9b\xafp\xe0,\t\x00\xf5\x08\xe7#=\x1d\x0f'  # noqa: E501
@@ -115,7 +115,7 @@ def test_fetch_transactions(zksync_lite_manager):
         to_address=None,
         asset=A_ETH,
         amount=ZERO,
-        fee=Fee(FVal(0.001513)),
+        fee=FVal(0.001513),
     )
     assert transactions[14] == ZKSyncLiteTransaction(
         tx_hash=b'3\x1f\xccI\xdc<\nw.\x0b^E\x185\x0f=\x9a\\Uv\xb4\xe8\xdb\xc7\xc5k,Y\xca\xa29\xbb',
@@ -287,7 +287,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         to_address=address,
         asset=A_DAI,
         amount=FVal('0.1659'),
-        fee=Fee(FVal('0.1659')),
+        fee=FVal('0.1659'),
         swap_data=ZKSyncLiteSwapData(
             from_asset=A_ETH,
             from_amount=FVal('0.01042855223'),

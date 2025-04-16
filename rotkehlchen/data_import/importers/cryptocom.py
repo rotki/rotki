@@ -28,7 +28,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Fee, Location, Timestamp
+from rotkehlchen.types import AssetAmount, Location, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class CryptocomImporter(BaseExchangeImporter):
 
         # No fees info until (Nov 2020) on crypto.com
         # fees are not displayed in the export data
-        fee = Fee(ZERO)
+        fee = ZERO
         fee_currency = A_USD  # whatever (used only if there is no fee)
 
         if row_type in {
@@ -409,7 +409,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     description = credited_row['Transaction Description']
                     notes = f'{description}\nSource: crypto.com (CSV import)'
                     # No fees here
-                    fee = Fee(ZERO)
+                    fee = ZERO
                     fee_currency = A_USD
 
                     base_asset = asset_from_cryptocom(credited_row['Currency'])
