@@ -13,6 +13,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import CacheType, Location, TimestampMS, deserialize_evm_tx_hash
@@ -431,12 +432,11 @@ def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Revoke EIGEN spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946',  # noqa: E501
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=959,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83'),
             amount=FVal(out_amount),
@@ -444,19 +444,15 @@ def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
             notes=f'Swap {out_amount} EIGEN in Pendle',
             counterparty=CPT_PENDLE,
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=960,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal(in_amount),
-            location_label=user_address,
             notes=f'Receive {in_amount} USDC from Pendle swap',
-            counterparty=CPT_PENDLE,
-            address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
     assert events == expected_events
@@ -485,12 +481,11 @@ def test_swap_using_kyber_2(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0x58D97B57BB95320F9a05dC918Aef65434969c2B2'),
             amount=FVal(out_amount),
@@ -498,19 +493,15 @@ def test_swap_using_kyber_2(ethereum_inquirer, ethereum_accounts):
             notes=f'Swap {out_amount} MORPHO in Pendle',
             counterparty=CPT_PENDLE,
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(in_amount),
-            location_label=user_address,
             notes=f'Receive {in_amount} ETH from Pendle swap',
-            counterparty=CPT_PENDLE,
-            address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
     assert events == expected_events
@@ -538,12 +529,11 @@ def test_swap_using_odos(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal(out_amount),
@@ -551,19 +541,15 @@ def test_swap_using_odos(ethereum_inquirer, ethereum_accounts):
             notes=f'Swap {out_amount} USDC in Pendle',
             counterparty=CPT_PENDLE,
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x4c9EDD5852cd905f086C759E8383e09bff1E68B3'),
             amount=FVal(in_amount),
-            location_label=user_address,
             notes=f'Receive {in_amount} USDe from Pendle swap',
-            counterparty=CPT_PENDLE,
-            address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
     assert events == expected_events

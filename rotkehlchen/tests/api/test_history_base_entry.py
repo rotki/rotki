@@ -1069,7 +1069,6 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'event_identifier': 'test_id',
         'sequence_index': 123,
         'extra_data': None,
-        'auto_notes': 'Swap 50 USDT in Ethereum',
         'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
         'counterparty': 'some counterparty',
         'product': 'pool',

@@ -139,24 +139,22 @@ class SwapEvent(HistoryBaseEntry):
             notes=entry[8] or None,
         )
 
-    def _generate_auto_notes(self) -> str:
-        """Generate a description of this event. Used in serialize().
+    def serialize(self) -> dict[str, Any]:
+        """Serialize the event for api, and generate the auto_notes.
         May raise UnknownAsset, but this would be an edge case as the asset should already have
         been checked for existence when it was deserialized from an API or from the database.
         """
+        serialized_data = super().serialize()
         location_name = get_formatted_location_name(self.location)
         asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.SPEND:
-            return f'Swap {self.amount} {asset_symbol} in {location_name}'
+            auto_notes = f'Swap {self.amount} {asset_symbol} in {location_name}'
         elif self.event_subtype == HistoryEventSubType.RECEIVE:
-            return f'Receive {self.amount} {asset_symbol} after a swap in {location_name}'
+            auto_notes = f'Receive {self.amount} {asset_symbol} after a swap in {location_name}'
         else:  # Fee
-            return f'Spend {self.amount} {asset_symbol} as {location_name} swap fee'
+            auto_notes = f'Spend {self.amount} {asset_symbol} as {location_name} swap fee'
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the event for api."""
-        serialized_data = super().serialize()
-        serialized_data['auto_notes'] = self._generate_auto_notes()
+        serialized_data['auto_notes'] = auto_notes
         return serialized_data
 
     @classmethod

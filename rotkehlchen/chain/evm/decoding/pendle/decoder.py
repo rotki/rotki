@@ -318,7 +318,7 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(action_items=action_items)
+        return DecodingOutput(action_items=action_items, process_swaps=True)
 
     def _decode_sy_pt_yt_events(
             self,

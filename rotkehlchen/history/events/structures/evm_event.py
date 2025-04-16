@@ -158,7 +158,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
         return self._serialize_evm_event_tuple_for_db()
 
     def serialize(self) -> dict[str, Any]:
-        return super().serialize() | {
+        return HistoryBaseEntry.serialize(self) | {  # not using super() since it has unexpected results due to diamond shaped inheritance.  # noqa: E501
             'tx_hash': self.tx_hash.hex(),
             'counterparty': self.counterparty,
             'product': self.product.serialize() if self.product is not None else None,
