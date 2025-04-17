@@ -4542,9 +4542,11 @@
         }
       },
       "view": {
+        "compact_view": "Compact view",
         "hide": "Hide events",
         "load_more": "Load more events ({length})",
-        "show": "Show events ({length})"
+        "show": "Show events ({length})",
+        "view_detail": "View events details"
       }
     },
     "events_decoding": {

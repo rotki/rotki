@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events';
 import type { Blockchain } from '@rotki/common';
+import type { RuiIcons } from '@rotki/ui-library';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -16,6 +17,8 @@ import {
 const props = defineProps<{
   event: HistoryEventEntry;
   chain: Blockchain;
+  icon?: RuiIcons;
+  highlight?: boolean;
 }>();
 
 const { event } = toRefs(props);
@@ -43,10 +46,16 @@ const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isE
       v-if="evmOrEthDepositEvent"
       :event="evmOrEthDepositEvent"
     >
-      <HistoryEventTypeCombination :type="attrs" />
+      <HistoryEventTypeCombination
+        :highlight="highlight"
+        :icon="icon"
+        :type="attrs"
+      />
     </HistoryEventTypeCounterparty>
     <HistoryEventTypeCombination
       v-else
+      :highlight="highlight"
+      :icon="icon"
       :type="attrs"
     />
 

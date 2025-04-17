@@ -98,6 +98,7 @@ const buttonText = computed(() => {
     :class="{ 'pl-[3.125rem]': hasIgnoredEvent }"
   >
     <HistoryEventsListTable
+      :key="eventGroup.eventIdentifier"
       :event-group="eventGroup"
       :events="limitedEvents"
       :total="events.length"

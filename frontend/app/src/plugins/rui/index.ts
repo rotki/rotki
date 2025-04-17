@@ -10,6 +10,7 @@ import {
   LuArrowLeft,
   LuArrowLeftRight,
   LuArrowRight,
+  LuArrowRightLeft,
   LuArrowUp,
   LuArrowUpDown,
   LuArrowUpRight,
@@ -444,6 +445,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
         LuChevronsLeftRightEllipsis,
         LuListCollapse,
         LuScroll,
+        LuArrowRightLeft,
         // remaining from prev version of premium components
         RiEqualLine,
         RiMoonLine,
