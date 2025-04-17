@@ -734,38 +734,6 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
 ]
 
 
-class TradeType(DBCharEnumMixIn):
-    BUY = 1
-    SELL = 2
-    SETTLEMENT_BUY = 3
-    SETTLEMENT_SELL = 4
-
-    @classmethod
-    def deserialize(cls: type['TradeType'], symbol: str) -> 'TradeType':
-        """Overriding deserialize here since it can have different wordings for the same type
-        so the automatic deserialization does not work
-        """
-        if not isinstance(symbol, str):
-            raise DeserializationError(
-                f'Failed to deserialize trade type symbol from {type(symbol)} entry',
-            )
-
-        sanitized_symbol = symbol.strip().lower()
-        if sanitized_symbol in {'buy', 'limit_buy'}:
-            return TradeType.BUY
-        if sanitized_symbol in {'sell', 'limit_sell'}:
-            return TradeType.SELL
-        if sanitized_symbol in {'settlement_buy', 'settlement buy'}:
-            return TradeType.SETTLEMENT_BUY
-        if sanitized_symbol in {'settlement_sell', 'settlement sell'}:
-            return TradeType.SETTLEMENT_SELL
-
-        # else
-        raise DeserializationError(
-            f'Failed to deserialize trade type symbol. Unknown symbol {symbol} for trade type',
-        )
-
-
 class Location(DBCharEnumMixIn):
     """Supported Locations"""
     EXTERNAL = 1

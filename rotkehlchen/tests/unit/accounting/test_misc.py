@@ -2,13 +2,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
+from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.accounting import (
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -51,17 +51,13 @@ def test_kfee_price_in_accounting(accountant, google_service):
             event_subtype=HistoryEventSubType.NONE,
             asset=A_KFEE,
             amount=FVal(1000),
-        ), Trade(
-            timestamp=Timestamp(1609537953),
-            location=Location.KRAKEN,  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
-            base_asset=A_ETH,
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,
-            amount=FVal('0.02'),
-            rate=Price(FVal(1000)),
-            fee=FVal(30),  # KFEE should not be taken into account
-            fee_currency=A_KFEE,
-            link=None,
+        ), *create_swap_events(
+            timestamp=TimestampMS(1609537953000),  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
+            location=Location.KRAKEN,
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_ETH, amount=FVal('0.02')),
+            receive=AssetAmount(asset=A_USDT, amount=FVal('0.02') * FVal(1000)),
+            fee=AssetAmount(asset=A_KFEE, amount=FVal(30)),  # KFEE is not taken into account
         ),
     ]
     accounting_history_process(
@@ -81,46 +77,33 @@ def test_kfee_price_in_accounting(accountant, google_service):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_fees_count_in_cost_basis(accountant, google_service):
     """Make sure that asset amounts used in fees are reduced."""
-    history = [
-        Trade(
-            timestamp=Timestamp(1609537953),
-            location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=Price(FVal('598.26')),
-            fee=ONE,
-            fee_currency=A_EUR,
-            link=None,
-        ), Trade(
-            # fee: 0.5 * 1862.06 -> 931.03
-            # PNL: 0.5 * 1862.06 - 0.5 * 599.26 - fee -> -299.63
-            timestamp=Timestamp(1624395186),
-            location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal('0.5'),
-            rate=Price(FVal('1862.06')),
-            fee=FVal('0.5'),
-            fee_currency=A_ETH,
-            link=None,
-        ), Trade(
-            # No ETH is owned at this point.
-            # PNL: 0.5 * 1837.31 -> 918.655
-            timestamp=Timestamp(1625001464),
-            location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal('0.5'),
-            rate=Price(FVal('1837.31')),
-            fee=None,
-            fee_currency=None,
-            link=None,
-        ),
-    ]
+    history = [*create_swap_events(
+        timestamp=TimestampMS(1609537953000),
+        location=Location.KRAKEN,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=ONE * FVal('598.26')),
+        receive=AssetAmount(asset=A_ETH, amount=ONE),
+        fee=AssetAmount(asset=A_EUR, amount=ONE),
+    ),
+    # fee: 0.5 * 1862.06 -> 931.03
+    # PNL: 0.5 * 1862.06 - 0.5 * 599.26 - fee -> -299.63
+    *create_swap_events(
+        timestamp=TimestampMS(1624395186000),
+        location=Location.KRAKEN,
+        event_identifier='2xyz',
+        spend=AssetAmount(asset=A_ETH, amount=FVal('0.5')),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('0.5') * FVal('1862.06')),
+        fee=AssetAmount(asset=A_ETH, amount=FVal('0.5')),
+    ),
+    # No ETH is owned at this point.
+    # PNL: 0.5 * 1837.31 -> 918.655
+    *create_swap_events(
+        timestamp=TimestampMS(1625001464000),
+        location=Location.KRAKEN,
+        event_identifier='3xyz',
+        spend=AssetAmount(asset=A_ETH, amount=FVal('0.5')),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('0.5') * FVal('1837.31')),
+    )]
     accounting_history_process(
         accountant=accountant,
         start_ts=Timestamp(1436979735),
@@ -154,21 +137,18 @@ def test_fees_in_received_asset(accountant, google_service):
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             amount=ONE,
-        ), Trade(
-            # Sell 0.02 ETH for USDT with rate 1000 USDT/ETH and 0.10 USDT fee
-            # So acquired 20 USDT for 0.02 ETH + 0.10 USDT
-            # So acquired 20 USDT for 0.02 * 598.26 + 0.10 * 0.89 -> 12.0542 EUR
-            # So paid 12.0542/20 -> 0.60271 EUR/USDT
-            timestamp=Timestamp(1609537953),  # 0.89 EUR/USDT
+        ),
+        # Sell 0.02 ETH for USDT with rate 1000 USDT/ETH and 0.10 USDT fee
+        # So acquired 20 USDT for 0.02 ETH + 0.10 USDT
+        # So acquired 20 USDT for 0.02 * 598.26 + 0.10 * 0.89 -> 12.0542 EUR
+        # So paid 12.0542/20 -> 0.60271 EUR/USDT
+        *create_swap_events(
+            timestamp=TimestampMS(1609537953000),  # 0.89 EUR/USDT
             location=Location.BINANCE,
-            base_asset=A_ETH,  # 598.26 EUR/ETH
-            quote_asset=A_USDT,
-            trade_type=TradeType.SELL,  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
-            amount=FVal('0.02'),
-            rate=FVal(1000),
-            fee=FVal('0.10'),
-            fee_currency=A_USDT,
-            link=None,
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_ETH, amount=FVal('0.02')),  # 598.26 EUR/ETH
+            receive=AssetAmount(asset=A_USDT, amount=FVal('0.02') * FVal(1000)),  # PNL: 598.26 ETH/EUR -> PNL: 0.02 * 598.26 - 0.02*178.615 ->  8.3929  # noqa: E501
+            fee=AssetAmount(amount=FVal('0.10'), asset=A_USDT),
         ),
     ]
 
@@ -204,20 +184,14 @@ def test_main_currency_is_respected(
         accountant.db.set_setting(cursor, name='main_currency', value=A_GBP)
 
     trade_rate = Price(FVal('2403.20'))
-    history: list[AccountingEventMixin] = [
-        Trade(
-            timestamp=Timestamp(1609537953),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH2,
-            quote_asset=A_USD,
-            trade_type=TradeType.SELL,
-            amount=FVal('0.04'),
-            rate=trade_rate,
-            fee=ZERO,
-            fee_currency=A_EUR,
-            link=None,
-        ),
-    ]
+    history = create_swap_events(
+        timestamp=TimestampMS(1609537953000),
+        location=Location.EXTERNAL,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_ETH2, amount=FVal('0.04')),
+        receive=AssetAmount(asset=A_USD, amount=FVal('0.04') * trade_rate),
+        fee=AssetAmount(asset=A_EUR, amount=ZERO),
+    )
     accounting_history_process(
         accountant=accountant,
         start_ts=Timestamp(1436979735),

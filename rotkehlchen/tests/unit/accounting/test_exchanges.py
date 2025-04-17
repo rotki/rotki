@@ -13,15 +13,21 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_KSM, A_LINK, A_U
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import accounting_create_and_process_history
 from rotkehlchen.tests.utils.exchanges import mock_normal_coinbase_query
 from rotkehlchen.tests.utils.history import prices
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import (
+    AssetAmount,
+    Location,
+    Timestamp,
+    TimestampMS,
+)
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -58,6 +64,7 @@ def test_account_for_coinbase_income_expense(rotkehlchen_api_server_with_exchang
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('added_exchanges', [(Location.COINBASE,)])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APIServer):
     """
     Test that if actions made on an exchange are stored in the DB but the API keys were removed
@@ -65,23 +72,6 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
     """
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     with rotki.data.db.user_write() as write_cursor:
-        rotki.data.db.add_trades(write_cursor, trades=[Trade(
-            timestamp=Timestamp(1611426201),
-            amount=ONE,
-            base_asset=A_ETH,
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            rate=Price(FVal(1.5)),
-            location=Location.COINBASE,
-        ), Trade(
-            timestamp=Timestamp(1611426201),
-            amount=FVal(7),
-            base_asset=A_USDT,
-            quote_asset=A_LINK,
-            trade_type=TradeType.SELL,
-            rate=Price(FVal(7)),
-            location=Location.EXTERNAL,
-        )])
         DBHistoryEvents(rotki.data.db).add_history_events(
             write_cursor=write_cursor,
             history=[AssetMovement(
@@ -95,8 +85,20 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
                 location=Location.COINBASE,
                 event_type=HistoryEventType.DEPOSIT,
                 asset=A_BTC,
-                amount=FVal(0.00001),
+                amount=FVal('0.00001'),
                 is_fee=True,
+            ), *create_swap_events(
+                timestamp=TimestampMS(1611426201001),
+                location=Location.COINBASE,
+                event_identifier='1xyz',
+                spend=AssetAmount(asset=A_BTC, amount=FVal(1.5)),
+                receive=AssetAmount(asset=A_ETH, amount=ONE),
+            ), *create_swap_events(
+                timestamp=TimestampMS(1611426201003),
+                location=Location.EXTERNAL,
+                event_identifier='2xyz',
+                spend=AssetAmount(asset=A_USDT, amount=FVal(7)),
+                receive=AssetAmount(asset=A_LINK, amount=FVal(49)),
             )],
         )
         rotki.data.db.add_margin_positions(write_cursor, margin_positions=[MarginPosition(
@@ -115,42 +117,42 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
     _, events = accounting_create_and_process_history(rotki=rotki, start_ts=Timestamp(0), end_ts=Timestamp(1611426233))  # noqa: E501
     assert len(events) == 6
     event1 = events[0]
-    assert event1.event_type == AccountingEventType.TRADE
+    assert event1.event_type == AccountingEventType.MARGIN_POSITION
     assert event1.location == Location.COINBASE
-    assert event1.taxable_amount == FVal(1.5)
+    assert event1.free_amount == ZERO
+    assert event1.taxable_amount == ONE
     assert event1.asset == A_BTC
 
     event2 = events[1]
-    assert event2.event_type == AccountingEventType.TRADE
+    assert event2.event_type == AccountingEventType.ASSET_MOVEMENT
     assert event2.location == Location.COINBASE
-    assert event2.free_amount == ONE
-    assert event2.asset == A_ETH
+    assert event2.free_amount == ZERO
+    assert event2.taxable_amount == FVal(0.00001)
+    assert event2.asset == A_BTC
 
     event3 = events[2]
     assert event3.event_type == AccountingEventType.TRADE
-    assert event3.location == Location.EXTERNAL
-    assert event3.taxable_amount == FVal(7)
-    assert event3.asset == A_USDT
+    assert event3.location == Location.COINBASE
+    assert event3.taxable_amount == FVal(1.5)
+    assert event3.asset == A_BTC
 
     event4 = events[3]
     assert event4.event_type == AccountingEventType.TRADE
-    assert event4.location == Location.EXTERNAL
-    assert event4.free_amount == FVal(49)
-    assert event4.asset == A_LINK
+    assert event4.location == Location.COINBASE
+    assert event4.free_amount == ONE
+    assert event4.asset == A_ETH
 
     event5 = events[4]
-    assert event5.event_type == AccountingEventType.MARGIN_POSITION
-    assert event5.location == Location.COINBASE
-    assert event5.free_amount == ZERO
-    assert event5.taxable_amount == ONE
-    assert event5.asset == A_BTC
+    assert event5.event_type == AccountingEventType.TRADE
+    assert event5.location == Location.EXTERNAL
+    assert event5.taxable_amount == FVal(7)
+    assert event5.asset == A_USDT
 
     event6 = events[5]
-    assert event6.event_type == AccountingEventType.ASSET_MOVEMENT
-    assert event6.location == Location.COINBASE
-    assert event6.free_amount == ZERO
-    assert event6.taxable_amount == FVal(0.00001)
-    assert event6.asset == A_BTC
+    assert event6.event_type == AccountingEventType.TRADE
+    assert event6.location == Location.EXTERNAL
+    assert event6.free_amount == FVal(49)
+    assert event6.asset == A_LINK
 
 
 @pytest.mark.parametrize('have_decoders', [True])

@@ -6,7 +6,6 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import (
     EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
-    TradesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
@@ -176,14 +175,6 @@ class HistoryQueryingManager:
         # possible locations.
         self.processing_state_name = 'Reading trades, asset movements and margin positions from the DB'  # noqa: E501
         with self.db.conn.read_ctx() as cursor:
-            # Include all trades
-            trades = self.db.get_trades(
-                cursor,
-                filter_query=TradesFilterQuery.make(to_ts=end_ts),
-                has_premium=True,  # we need all trades for accounting -- limit happens later
-            )
-            history.extend(trades)
-
             # Include all margin positions
             margin_positions = self.db.get_margin_positions(cursor, to_ts=end_ts)
             history.extend(margin_positions)

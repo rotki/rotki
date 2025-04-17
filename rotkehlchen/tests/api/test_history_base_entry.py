@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USD, A_USDT, A_WBTC
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -416,7 +415,6 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     with rotki.data.db.conn.write_ctx() as cursor:
         rotki.data.db.add_to_ignored_action_ids(
             write_cursor=cursor,
-            action_type=ActionType.HISTORY_EVENT,
             identifiers=[f'{entries[0].event_identifier}'],
         )
 

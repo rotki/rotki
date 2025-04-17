@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
@@ -920,24 +919,18 @@ def test_phishing_zero_transfers(database, ethereum_inquirer):
     assert events == []
 
     with database.conn.read_ctx() as cursor:
-        ignored_actions = database.get_ignored_action_ids(
-            cursor=cursor,
-            action_type=ActionType.HISTORY_EVENT,
-        )
+        ignored_actions = database.get_ignored_action_ids(cursor=cursor)
 
-    assert ignored_actions == {ActionType.HISTORY_EVENT: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+    assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hex}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
     # Repeat the same process to see that redecoding doesnt break anything
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     assert events == []
 
     with database.conn.read_ctx() as cursor:
-        ignored_actions = database.get_ignored_action_ids(
-            cursor=cursor,
-            action_type=ActionType.HISTORY_EVENT,
-        )
+        ignored_actions = database.get_ignored_action_ids(cursor=cursor)
 
-    assert ignored_actions == {ActionType.HISTORY_EVENT: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
+    assert ignored_actions == {f'{ChainID.ETHEREUM.value}{tx_hex}'}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
 
 def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transactions):

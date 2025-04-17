@@ -9,7 +9,6 @@ from more_itertools import peekable
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.pot import AccountingPot
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import EventAccountingRuleStatus, MissingPrice
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.db.reports import DBAccountingReports
@@ -160,7 +159,7 @@ class Accountant:
             count = 0
             actions_length = len(events)
             prev_time = last_event_ts = Timestamp(0)
-            ignored_ids_mapping = self.db.get_ignored_action_ids(cursor=cursor, action_type=None)
+            ignored_ids = self.db.get_ignored_action_ids(cursor=cursor)
 
         events_iter = peekable(events)
         while True:
@@ -174,7 +173,7 @@ class Accountant:
                     end_ts=end_ts,
                     prev_time=prev_time,
                     db_settings=db_settings,
-                    ignored_ids_mapping=ignored_ids_mapping,
+                    ignored_ids=ignored_ids,
                 )
             except PriceQueryUnsupportedAsset as e:
                 count = self._process_skipping_exception(
@@ -246,7 +245,7 @@ class Accountant:
             end_ts: Timestamp,
             prev_time: Timestamp,
             db_settings: DBSettings,
-            ignored_ids_mapping: dict[ActionType, set[str]],
+            ignored_ids: set[str],
     ) -> tuple[int, Timestamp]:
         """Processes each individual event and returns a tuple with processing information:
         - How many events were consumed (0 to indicate we finished processing)
@@ -304,7 +303,7 @@ class Accountant:
             )
             return 1, prev_time
 
-        if event.should_ignore(ignored_ids_mapping):
+        if event.should_ignore(ignored_ids):
             log.info(
                 f'Ignoring event with identifier {event.get_identifier()} '
                 f'at {timestamp} since the user asked to ignore it',

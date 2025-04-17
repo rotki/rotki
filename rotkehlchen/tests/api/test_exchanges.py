@@ -7,10 +7,9 @@ from unittest.mock import _patch, patch
 import pytest
 import requests
 
-from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
+from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
-from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
@@ -21,7 +20,6 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.fval import FVal
@@ -50,10 +48,8 @@ from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     Location,
-    Price,
     Timestamp,
     TimestampMS,
-    TradeType,
 )
 
 if TYPE_CHECKING:
@@ -629,19 +625,6 @@ def test_delete_external_exchange_data_works(
     server = rotkehlchen_api_server_with_exchanges
     rotki = server.rest_api.rotkehlchen
 
-    trades = [Trade(
-        timestamp=Timestamp(0),
-        location=x,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=ONE,
-        rate=Price(ONE),
-        fee=ONE,
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    ) for x in (Location.CRYPTOCOM, Location.KRAKEN)]
     events = [AssetMovement(
         location=x,
         event_type=HistoryEventType.DEPOSIT,
@@ -651,10 +634,8 @@ def test_delete_external_exchange_data_works(
     ) for x in (Location.CRYPTOCOM, Location.KRAKEN)]
     history_db = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.user_write() as write_cursor:
-        rotki.data.db.add_trades(write_cursor, trades)
         history_db.add_history_events(write_cursor=write_cursor, history=events)
 
-        assert len(rotki.data.db.get_trades(cursor=write_cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501
         assert len(history_db.get_history_events(
             cursor=write_cursor,
             filter_query=HistoryEventFilterQuery.make(),
@@ -670,7 +651,6 @@ def test_delete_external_exchange_data_works(
     result = assert_proper_sync_response_with_result(response)  # check no validation error happens
     assert result is True
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 1  # noqa: E501
         assert len(history_db.get_history_events(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
@@ -710,12 +690,10 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     # add some exchanges ranges
     start_ts, end_ts = Timestamp(0), Timestamp(9999)
     with db.user_write() as cursor:
-        db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_trades_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_margins_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_history_events_mockkraken', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_margins_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.KRAKEN!s}_history_events_kraken_boi', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
-        db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_trades_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_margins_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name=f'{Location.POLONIEX!s}_history_events_poloniex', start_ts=start_ts, end_ts=end_ts)  # noqa: E501
         db.update_used_query_range(cursor, name='uniswap_trades', start_ts=start_ts, end_ts=end_ts)
@@ -737,13 +715,10 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     # check that queryranges were successfully updated and the others were unmodified
     expected_ranges_tuple = (start_ts, end_ts)
     with db.conn.read_ctx() as cursor:
-        assert db.get_used_query_range(cursor, 'kraken_trades_mockkraken') is None
         assert db.get_used_query_range(cursor, 'kraken_margins_mockkraken') is None
         assert db.get_used_query_range(cursor, 'kraken_history_events_mockkraken') is None
-        assert db.get_used_query_range(cursor, 'kraken_trades_my_kraken') == expected_ranges_tuple
         assert db.get_used_query_range(cursor, 'kraken_margins_my_kraken') == expected_ranges_tuple
         assert db.get_used_query_range(cursor, 'kraken_history_events_my_kraken') == expected_ranges_tuple  # noqa: E501
-        assert db.get_used_query_range(cursor, 'poloniex_trades_poloniex') == expected_ranges_tuple
         assert db.get_used_query_range(cursor, 'poloniex_margins_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == expected_ranges_tuple  # noqa: E501
 
@@ -754,7 +729,6 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
         poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
         assert poloniex is not None
         assert poloniex.name == 'my_poloniex'
-        assert db.get_used_query_range(cursor, 'poloniex_trades_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_margins_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_history_events_my_poloniex') == expected_ranges_tuple  # noqa: E501
         assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') is None

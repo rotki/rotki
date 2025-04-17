@@ -4,19 +4,19 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_EUR
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.tests.utils.exchanges import mock_exchange_data_in_db
 from rotkehlchen.types import (
     EVM_LOCATIONS_TYPE,
+    AssetAmount,
     ChecksumEvmAddress,
     Location,
-    Price,
-    Timestamp,
-    TradeType,
+    TimestampMS,
 )
 
 if TYPE_CHECKING:
@@ -39,21 +39,14 @@ def test_get_associated_locations(
     mock_exchange_data_in_db(added_exchanges, rotki)
     db = rotki.data.db
     with db.user_write() as cursor:
-        db.add_trades(
+        DBHistoryEvents(db).add_history_events(
             write_cursor=cursor,
-            trades=[Trade(
-                timestamp=Timestamp(1595833195),
+            history=create_swap_events(
+                timestamp=TimestampMS(1595833195000),
                 location=Location.NEXO,
-                base_asset=A_ETH,
-                quote_asset=A_EUR,
-                trade_type=TradeType.BUY,
-                amount=FVal('1.0'),
-                rate=Price(FVal('281.14')),
-                fee=ZERO,
-                fee_currency=A_EUR,
-                link='',
-                notes='',
-            )])
+                spend=AssetAmount(asset=A_EUR, amount=ONE),
+                receive=AssetAmount(asset=A_ETH, amount=FVal('281.14')),
+            ))
 
     # get locations
     response = requests.get(

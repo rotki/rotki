@@ -15,9 +15,9 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2, A_EUR, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -36,15 +36,14 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
+    AssetAmount,
     BTCAddress,
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
     Location,
-    Price,
     Timestamp,
     TimestampMS,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -468,7 +467,7 @@ def test_query_wrap(
     - transactions
     - evm events (for fees)
     - gnosis payments
-    - trades
+    - swap events
 
     Some of them are outside the queried range to confirm that the range is correct.
     """
@@ -480,59 +479,39 @@ def test_query_wrap(
         json={'from_timestamp': 1704067200, 'to_timestamp': 1735689599},
     )
     result = assert_proper_sync_response_with_result(response)
-
+    events_db = DBHistoryEvents(db)
     with db.conn.write_ctx() as write_cursor:
-        db.add_trades(
+        events_db.add_history_events(
             write_cursor=write_cursor,
-            trades=[
-                Trade(
-                    timestamp=Timestamp(1718562595),
+            history=[
+                *create_swap_events(
+                    timestamp=TimestampMS(1718562595000),
                     location=Location.KRAKEN,
-                    base_asset=A_ETH,
-                    quote_asset=A_BTC,
-                    trade_type=TradeType.BUY,
-                    amount=ONE,
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(1734373795),
+                    event_identifier='1xyz',
+                    spend=AssetAmount(asset=A_BTC, amount=ONE),
+                    receive=AssetAmount(asset=A_ETH, amount=ONE),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(1734373795000),
                     location=Location.COINBASE,
-                    base_asset=A_ETH,
-                    quote_asset=A_BTC,
-                    trade_type=TradeType.BUY,
-                    amount=FVal(2),
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(1734373795),
+                    event_identifier='2xyz',
+                    spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
+                    receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(1734373795000),
                     location=Location.EXTERNAL,
-                    base_asset=A_ETH,
-                    quote_asset=A_BTC,
-                    trade_type=TradeType.BUY,
-                    amount=FVal(2),
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(1702751395),  # last year
-                    location=Location.BYBIT,
-                    base_asset=A_ETH,
-                    quote_asset=A_BTC,
-                    trade_type=TradeType.BUY,
-                    amount=FVal(2),
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
+                    event_identifier='3xyz',
+                    spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
+                    receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(1702751395000),  # last year
+                    location=Location.EXTERNAL,
+                    event_identifier='4xyz',
+                    spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
+                    receive=AssetAmount(asset=A_ETH, amount=FVal(2)),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ),
             ],
         )
@@ -544,7 +523,6 @@ def test_query_wrap(
             make_evm_tx_hash(): Location.BASE,
             make_evm_tx_hash(): Location.ARBITRUM_ONE,
         }
-        events_db = DBHistoryEvents(db)
         events_db.add_history_events(
             write_cursor=write_cursor,
             history=[

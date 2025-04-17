@@ -94,32 +94,68 @@
       "accounting_event_type": "staking"
     },
     {
-      "timestamp": 1643182009,
+      "timestamp": 1643182009000,
+      "event_type": "trade",
+      "event_subtype": "spend",
       "location": "external",
-      "base_asset": "MHC",
-      "quote_asset": "MHC",
-      "trade_type": "buy",
+      "location_label": null,
+      "asset": "MHC",
       "amount": "1",
-      "rate": "1",
+      "identifier": 1,
       "accounting_event_type": "trade",
-      "fee": null,
-      "fee_currency": null,
-      "link": null,
-      "notes": null
+      "event_identifier": "EXT_abcdef1234567890",
+      "sequence_index": 0,
+      "extra_data": null,
+      "user_notes": null,
+      "auto_notes": "Swap 1 MHC in external"
     },
     {
-      "timestamp": 1643182027,
+      "timestamp": 1643182009000,
+      "event_type": "trade",
+      "event_subtype": "receive",
       "location": "external",
-      "base_asset": "BALHALF",
-      "quote_asset": "ALGOHALF",
-      "trade_type": "buy",
-      "amount": "123",
+      "location_label": null,
+      "asset": "MHC",
+      "amount": "1",
+      "identifier": 2,
       "accounting_event_type": "trade",
-      "rate": "1",
-      "fee": null,
-      "fee_currency": null,
-      "link": null,
-      "notes": null
+      "event_identifier": "EXT_abcdef1234567890",
+      "sequence_index": 1,
+      "extra_data": null,
+      "user_notes": null,
+      "auto_notes": "Swap 1 MHC in external"
+    },
+    {
+      "timestamp": 1643182027000,
+      "event_type": "trade",
+      "event_subtype": "spend",
+      "location": "external",
+      "location_label": null,
+      "asset": "ALGOHALF",
+      "amount": "123",
+      "identifier": 3,
+      "accounting_event_type": "trade",
+      "event_identifier": "EXT_1234567890abcdef",
+      "sequence_index": 0,
+      "extra_data": null,
+      "user_notes": null,
+      "auto_notes": "Swap 123 ALGOHALF in external"
+    },
+    {
+      "timestamp": 1643182027000,
+      "event_type": "trade",
+      "event_subtype": "receive",
+      "location": "external",
+      "location_label": null,
+      "asset": "BALHALF",
+      "amount": "123",
+      "identifier": 4,
+      "accounting_event_type": "trade",
+      "event_identifier": "EXT_1234567890abcdef",
+      "sequence_index": 1,
+      "extra_data": null,
+      "user_notes": null,
+      "auto_notes": "Swap 123 ALGOHALF in external"
     },
     {
       "identifier": 3,
@@ -236,17 +272,7 @@
     "csv_export_delimiter": ",",
     "use_unified_etherscan_api": false
   },
-  "ignored_events_ids": {
-    "history_event": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
-    "asset_movement": [
-      "a86d6d7d2f94db9f3ba96d29afbc26fa0c550e689638cde74123867b04a61916",
-      "4c7a5f933609815f0b0b4f6c5b777cbe565864d45005fba32f109f6ce9ed8e4c"
-    ],
-    "trade": [
-      "fe2ce38ff37d2c1701cb57f3b084cf8845f3ea1104e7589bac747cbcd0829608",
-      "3fbe108f96668a9a008eba040e17327618e512dc3700cb6c173d1604f51e90aa"
-    ]
-  },
+  "ignored_events_ids": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
   "pnl_settings": {
     "from_timestamp": 1443381940,
     "to_timestamp": 1643381940

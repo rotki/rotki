@@ -3,7 +3,7 @@ import csv
 import logging
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
@@ -30,7 +30,6 @@ from rotkehlchen.types import (
     Location,
     Price,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -279,7 +278,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             from_asset: AssetWithOracles | None = None
             from_amount: FVal | None = None
             fee = None
-            trade_type: TradeType | None = None
+            trade_type: Literal['buy', 'sell'] | None = None
 
             for row in trade_rows:
                 cur_asset = row['Coin']
@@ -287,7 +286,7 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 if row['Operation'] in {'Fee', 'Transaction Fee'}:
                     fee = AssetAmount(asset=cur_asset, amount=abs(amount))
                 else:
-                    trade_type = TradeType.SELL if row['Operation'] == 'Sell' else TradeType.BUY
+                    trade_type = row['Operation']
                     if amount < 0:
                         from_asset = cur_asset
                         from_amount = FVal(-amount)

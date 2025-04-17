@@ -15,7 +15,6 @@ from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
@@ -2251,7 +2250,6 @@ class IgnoredAssetsSchema(Schema):
 
 
 class IgnoredActionsModifySchema(Schema):
-    action_type = SerializableEnumField(enum_class=ActionType, required=True)
     data = DelimitedOrNormalList(fields.String(required=True), required=True)
 
 

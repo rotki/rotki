@@ -15,7 +15,6 @@ from gevent.lock import Semaphore
 from more_itertools import peekable
 from web3.exceptions import Web3Exception
 
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -780,7 +779,6 @@ class EVMTransactionDecoder(ABC):
                 with suppress(InputError):  # We don't care if it's already in the DB
                     self.database.add_to_ignored_action_ids(
                         write_cursor=write_cursor,
-                        action_type=ActionType.HISTORY_EVENT,
                         identifiers=[transaction.identifier],
                     )
 

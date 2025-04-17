@@ -44,7 +44,7 @@ def test_serialize_with_invalid_type_subtype():
     event.event_subtype = event_subtype  # do here cause ctor will raise for invalid subtype
     assert event.serialize_for_api(
         customized_event_ids=[],
-        ignored_ids_mapping={},
+        ignored_ids=set(),
         hidden_event_ids=[],
         event_accounting_rule_status=EventAccountingRuleStatus.NOT_PROCESSED,  # needed to recreate the error this tests for  # noqa: E501
         grouped_events_num=None,

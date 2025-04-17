@@ -41,9 +41,10 @@ from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME, NFT_DIRECT
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.filtering import CustomAssetsFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
     globaldb_get_unique_cache_last_queried_ts_by_key,
@@ -52,8 +53,8 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import (
@@ -63,13 +64,13 @@ from rotkehlchen.tests.utils.globaldb import (
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     SPAM_PROTOCOL,
+    AssetAmount,
     CacheType,
     ChainID,
     EvmTokenKind,
     Location,
-    Price,
     Timestamp,
-    TradeType,
+    TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -591,32 +592,30 @@ def test_global_db_restore(globaldb, database):
         database.add_asset_identifiers(write_cursor, '2')
 
     # Try to reset DB it if we have a trade that uses a custom asset
-    buy_asset = symbol_to_asset_or_token('LOLZ2')
-    buy_amount = deserialize_fval(1)
-    sold_asset = symbol_to_asset_or_token('LOLZ')
-    sold_amount = deserialize_fval(2)
-    rate = Price(buy_amount / sold_amount)
-    trade = Trade(
-        timestamp=Timestamp(12312312),
-        location=Location.BLOCKFI,
-        base_asset=buy_asset,
-        quote_asset=sold_asset,
-        trade_type=TradeType.BUY,
-        amount=buy_amount,
-        rate=rate,
-        fee=None,
-        fee_currency=None,
-        link='',
-        notes='',
-    )
-
     with database.user_write() as write_cursor:
-        database.add_trades(write_cursor, [trade])
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=create_swap_events(
+                timestamp=TimestampMS(12312312000),
+                location=Location.BLOCKFI,
+                event_identifier='this-is-so-unique',
+                spend=AssetAmount(
+                    asset=symbol_to_asset_or_token('LOLZ'),
+                    amount=FVal(2),
+                ),
+                receive=AssetAmount(
+                    asset=symbol_to_asset_or_token('LOLZ2'),
+                    amount=ONE,
+                ),
+            ),
+        )
     status, _ = GlobalDBHandler().hard_reset_assets_list(database)
     assert status is False
     with database.user_write() as write_cursor:
-        # Now do it without the trade
-        database.delete_trades(write_cursor, [trade.identifier])
+        DBHistoryEvents(database).delete_events_by_location(  # Now do it without the event
+            write_cursor=write_cursor,
+            location=Location.BLOCKFI,
+        )
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
     cursor = globaldb.conn.cursor()

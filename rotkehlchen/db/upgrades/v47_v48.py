@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import (
@@ -102,6 +103,21 @@ def upgrade_trade_to_swap_events(
 def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v47 to v48. This was in v1.39 release."""
 
+    @progress_step(description='Removing action_type table and simplifying ignored_actions')
+    def _remove_action_types(write_cursor: 'DBCursor') -> None:
+        """This upgrade drops the action_type table and modifies the ignored_actions table
+        to remove the type column, making identifier the primary key.
+
+        The type column is no longer needed as we're standardizing on a single action type.
+        """
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='ignored_actions',
+            schema='identifier TEXT PRIMARY KEY',
+            insert_columns='identifier',
+        )
+        write_cursor.execute('DROP TABLE action_type')
+
     @progress_step(description='Converting trades to history events')
     def _convert_trades_to_swap_events(write_cursor: 'DBCursor') -> None:
         new_events: list[SwapEvent] = []
@@ -168,9 +184,9 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 json.dumps(event.extra_data) if event.extra_data else None,
             ) for event in new_events),
         )
-        # TODO: Uncomment these when ready to drop the tables
-        # write_cursor.execute('DROP TABLE trades')  # noqa: ERA001
-        # write_cursor.execute('DROP TABLE trade_type')  # noqa: ERA001
+        write_cursor.execute('DROP TABLE trades')
+        write_cursor.execute('DROP TABLE trade_type')
+        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "%_trades_%"')
 
     @progress_step(description='Replacing specific history note locations with HISTORY')
     def _replace_history_note_locations(write_cursor: 'DBCursor') -> None:

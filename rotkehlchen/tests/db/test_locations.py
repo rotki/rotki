@@ -1,133 +1,81 @@
-from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_EUR, A_LTC, A_USD, A_USDC
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USDC
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     Location,
-    Price,
-    Timestamp,
-    TradeType,
+    TimestampMS,
 )
 
 
 def test_associated_locations(database):
     """Test that locations imported in different places are correctly stored in database"""
-    # Add trades from different locations
-    trades = [Trade(
-        timestamp=Timestamp(1595833195),
-        location=Location.CRYPTOCOM,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('1.0'),
-        rate=Price(FVal('281.14')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1587825824),
-        location=Location.CRYPTOCOM,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('50.0'),
-        rate=Price(FVal('3.521')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1596014214),
-        location=Location.BLOCKFI,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('50.0'),
-        rate=Price(FVal('3.521')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1565888464),
-        location=Location.NEXO,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('50.0'),
-        rate=Price(FVal('3.521')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1596014214),
-        location=Location.NEXO,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('50.0'),
-        rate=Price(FVal('3.521')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1612051199),
-        location=Location.BLOCKFI,
-        base_asset=A_USDC,
-        quote_asset=A_LTC,
-        trade_type=TradeType.BUY,
-        amount=FVal('6404.6'),
-        rate=Price(FVal('151.6283999982779809352223797')),
-        fee=None,
-        fee_currency=None,
-        link='',
-        notes='One Time',
-    ), Trade(
-        timestamp=Timestamp(1595833195),
-        location=Location.POLONIEX,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('1.0'),
-        rate=Price(FVal('281.14')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1596429934),
-        location=Location.COINBASE,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('0.00061475'),
-        rate=Price(FVal('309.0687271248474989833265555')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    ), Trade(
-        timestamp=Timestamp(1596429934),
-        location=Location.EXTERNAL,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('1'),
-        rate=Price(FVal('320')),
-        fee=ZERO,
-        fee_currency=A_USD,
-        link='',
-        notes='',
-    )]
-
     # Add multiple entries for same exchange + connected exchange
     with database.user_write() as write_cursor:
-        database.add_trades(write_cursor, trades)
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[AssetMovement(
+                timestamp=TimestampMS(1595833195000),
+                location=Location.CRYPTOCOM,
+                asset=A_EUR,
+                event_type=HistoryEventType.DEPOSIT,
+                amount=ONE,
+            ), AssetMovement(
+                timestamp=TimestampMS(1587825824000),
+                location=Location.CRYPTOCOM,
+                asset=A_ETH,
+                event_type=HistoryEventType.WITHDRAWAL,
+                amount=FVal('50.0'),
+            ), AssetMovement(
+                timestamp=TimestampMS(1596014214000),
+                location=Location.BLOCKFI,
+                asset=A_ETH,
+                event_type=HistoryEventType.DEPOSIT,
+                amount=FVal('50.0'),
+            ), AssetMovement(
+                timestamp=TimestampMS(1565888464000),
+                location=Location.NEXO,
+                asset=A_ETH,
+                event_type=HistoryEventType.WITHDRAWAL,
+                amount=FVal('50.0'),
+            ), AssetMovement(
+                timestamp=TimestampMS(1596014214000),
+                location=Location.NEXO,
+                asset=A_ETH,
+                event_type=HistoryEventType.DEPOSIT,
+                amount=FVal('50.0'),
+                notes='',
+            ), AssetMovement(
+                timestamp=TimestampMS(1612051199000),
+                location=Location.BLOCKFI,
+                asset=A_USDC,
+                event_type=HistoryEventType.WITHDRAWAL,
+                amount=FVal('6404.6'),
+                notes='One Time',
+            ), AssetMovement(
+                timestamp=TimestampMS(1595833195000),
+                location=Location.POLONIEX,
+                event_type=HistoryEventType.DEPOSIT,
+                asset=A_ETH,
+                amount=ONE,
+            ), AssetMovement(
+                timestamp=TimestampMS(1596429934000),
+                location=Location.COINBASE,
+                asset=A_ETH,
+                event_type=HistoryEventType.WITHDRAWAL,
+                amount=FVal('0.00061475'),
+            ), AssetMovement(
+                timestamp=TimestampMS(1596429934000),
+                location=Location.EXTERNAL,
+                asset=A_ETH,
+                event_type=HistoryEventType.DEPOSIT,
+                amount=ONE,
+            )],
+        )
 
     kraken_api_key1 = ApiKey('kraken_api_key')
     kraken_api_secret1 = ApiSecret(b'kraken_api_secret')

@@ -38,7 +38,6 @@ from rotkehlchen.types import (
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -549,21 +548,6 @@ class DBEth2ValidatorIndicesFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBTypeFilter(DBFilter):
-    """A filter for type/category/HistoryBaseEntry enums"""
-    filter_types: list[TradeType]
-    type_key: Literal['type', 'subtype', 'category']
-
-    def prepare(self) -> tuple[list[str], list[Any]]:
-        if len(self.filter_types) == 1:
-            return [f'{self.type_key}=?'], [self.filter_types[0].serialize_for_db()]
-        return (
-            [f'{self.type_key} IN ({", ".join(["?"] * len(self.filter_types))})'],
-            [entry.serialize_for_db() for entry in self.filter_types],
-        )
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBNotEqualFilter(DBFilter):
     """Filter a column by comparing its column to its value for inequality"""
     column: str
@@ -646,94 +630,6 @@ class DBOptionalChainAddressesFilter(DBFilter):
                     bindings.append(optional_chain_address.blockchain.value)
                 query_filters.append(query_part)
         return query_filters, bindings
-
-
-class TradesFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation):
-
-    @classmethod
-    def make(
-            cls: type['TradesFilterQuery'],
-            and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
-            limit: int | None = None,
-            offset: int | None = None,
-            from_ts: Timestamp | None = None,
-            to_ts: Timestamp | None = None,
-            base_assets: tuple[Asset, ...] | None = None,
-            quote_assets: tuple[Asset, ...] | None = None,
-            trade_type: list[TradeType] | None = None,
-            location: Location | None = None,
-            trades_idx_to_ignore: set[str] | None = None,
-            exclude_ignored_assets: bool = False,
-    ) -> 'TradesFilterQuery':
-        if order_by_rules is None:
-            order_by_rules = [('timestamp', True)]
-
-        filter_query = cls.create(
-            and_op=and_op,
-            limit=limit,
-            offset=offset,
-            order_by_rules=order_by_rules,
-        )
-        filters: list[DBFilter] = []
-        if base_assets is not None:
-            if len(base_assets) == 1:
-                filters.append(
-                    DBAssetFilter(and_op=True, asset=base_assets[0], asset_key='base_asset'),
-                )
-            else:
-                filters.append(
-                    DBMultiStringFilter(
-                        and_op=True,
-                        column='base_asset',
-                        values=[asset.identifier for asset in base_assets],
-                    ),
-                )
-        if quote_assets is not None:
-            if len(quote_assets) == 1:
-                filters.append(
-                    DBAssetFilter(and_op=True, asset=quote_assets[0], asset_key='quote_asset'),
-                )
-            else:
-                filters.append(
-                    DBMultiStringFilter(
-                        and_op=True,
-                        column='quote_asset',
-                        values=[asset.identifier for asset in quote_assets],
-                    ),
-                )
-        if trade_type is not None:
-            filters.append(DBTypeFilter(and_op=True, filter_types=trade_type, type_key='type'))
-        if location is not None:
-            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
-            filters.append(filter_query.location_filter)
-        if trades_idx_to_ignore is not None:
-            filters.append(DBIgnoreValuesFilter(
-                and_op=True,
-                column='id',
-                values=trades_idx_to_ignore,
-            ))
-
-        if exclude_ignored_assets is True:
-            filters.extend((
-                DBIgnoredAssetsFilter(
-                    and_op=True,
-                    asset_key='base_asset',
-                    operator='NOT IN',
-                ), DBIgnoredAssetsFilter(
-                    and_op=True,
-                    asset_key='quote_asset',
-                    operator='NOT IN',
-                )))
-
-        filter_query.timestamp_filter = DBTimestampFilter(
-            and_op=True,
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        filters.append(filter_query.timestamp_filter)
-        filter_query.filters = filters
-        return filter_query
 
 
 class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):

@@ -17,10 +17,10 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USDC, A_WBTC
 from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS, TradeType
+from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
@@ -48,50 +48,35 @@ MOCKED_PRICES = {
 
 
 history1 = [
-    Trade(
-        timestamp=Timestamp(1446979735),
+    *create_swap_events(
+        timestamp=TimestampMS(1446979735000),
         location=Location.EXTERNAL,
-        base_asset=A_BTC,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal(82),
-        rate=Price(FVal('268.678317859')),
-        fee=None,
-        fee_currency=None,
-        link=None,
-    ), Trade(
-        timestamp=Timestamp(1446979735),
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('268.678317859') * FVal(82)),
+        receive=AssetAmount(asset=A_BTC, amount=FVal(82)),
+    ),
+    *create_swap_events(
+        timestamp=TimestampMS(1446979735000),
         location=Location.EXTERNAL,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal(1450),
-        rate=Price(FVal('0.2315893')),
-        fee=None,
-        fee_currency=None,
-        link=None,
-    ), Trade(
-        timestamp=Timestamp(1473505138),  # cryptocompare hourly BTC/EUR price: 556.435
+        event_identifier='2xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('0.2315893') * FVal(1450)),
+        receive=AssetAmount(asset=A_ETH, amount=FVal(1450)),
+    ),
+    *create_swap_events(
+        timestamp=TimestampMS(1473505138000),  # cryptocompare hourly BTC/EUR price: 556.435
         location=Location.POLONIEX,
-        base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 10.36
-        quote_asset=A_BTC,
-        trade_type=TradeType.BUY,
-        amount=FVal(50),
-        rate=Price(FVal('0.01858275')),
-        fee=FVal('0.06999999999999999'),
-        fee_currency=A_ETH,
-        link=None,
-    ), Trade(
-        timestamp=Timestamp(1475042230),  # cryptocompare hourly BTC/EUR price: 537.805
+        event_identifier='3xyz',  # cryptocompare hourly ETH/EUR price: 10.36
+        spend=AssetAmount(asset=A_BTC, amount=FVal('0.01858275') * FVal(50)),
+        receive=AssetAmount(asset=A_ETH, amount=FVal(50)),
+        fee=AssetAmount(asset=A_ETH, amount=FVal('0.06999999999999999')),
+    ),
+    *create_swap_events(
+        timestamp=TimestampMS(1475042230000),  # cryptocompare hourly BTC/EUR price: 537.805
         location=Location.POLONIEX,
-        base_asset=A_ETH,  # cryptocompare hourly ETH/EUR price: 11.925
-        quote_asset=A_BTC,
-        trade_type=TradeType.SELL,
-        amount=FVal(25),
-        rate=Price(FVal('0.02209898')),
-        fee=FVal('0.00082871175'),
-        fee_currency=A_BTC,
-        link=None,
+        event_identifier='4xyz',  # cryptocompare hourly ETH/EUR price: 11.925
+        spend=AssetAmount(asset=A_ETH, amount=FVal(25)),
+        receive=AssetAmount(asset=A_BTC, amount=FVal('0.02209898') * FVal(25)),
+        fee=AssetAmount(asset=A_BTC, amount=FVal('0.00082871175')),
     ),
 ]
 

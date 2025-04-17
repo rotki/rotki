@@ -19,20 +19,20 @@ from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_WETH
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import accounting_history_process
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
+    AssetAmount,
     CostBasisMethod,
     Location,
     Price,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
-    TradeType,
 )
 
 if TYPE_CHECKING:
@@ -1010,9 +1010,15 @@ def test_accounting_average_cost_basis(accountant: Accountant):
     A_3CRV: {A_EUR: {1469020840: ONE}},
 }])
 @pytest.mark.parametrize('taxable', [True, False])
-def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
-    """Check taxable parameter works and acquisition part of swaps doesn't count as taxable."""
+@pytest.mark.parametrize('include_crypto2crypto', [True, False])
+def test_swaps_taxability(
+        accountant: Accountant,
+        taxable: bool,
+        include_crypto2crypto: bool,
+) -> None:
+    """Check the complex taxability logic for swaps works correctly."""
     pot = accountant.pots[0]
+    pot.settings.include_crypto2crypto = include_crypto2crypto
     event_accountant = pot.events_accountant
     event_accountant._process_swap(
         timestamp=Timestamp(1469020840),
@@ -1051,7 +1057,7 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
         ),
         general_extra_data={},
     )
-    if taxable is True:
+    if taxable and include_crypto2crypto:
         expected_pnl_taxable = ONE
         expected_pnl_totals = PnlTotals(
             totals={AccountingEventType.TRANSACTION_EVENT: PNL(taxable=ONE)},
@@ -1062,12 +1068,14 @@ def test_swaps_taxability(accountant: Accountant, taxable: bool) -> None:
 
     assert pot.pnls == expected_pnl_totals
     assert len(pot.processed_events) == 2
+
+    # Check the spend event
     assert pot.processed_events[0].taxable_amount == ONE
     assert pot.processed_events[0].free_amount == ZERO
-    # Check that dependping on whether is taxable or not, we see different values for spend event
     assert pot.processed_events[0].pnl.taxable == expected_pnl_taxable
     assert pot.processed_events[0].pnl.free == ZERO
-    # Check that no matter whether taxable flag is True or not, acquisitions are never taxable
+
+    # Check the acquisition part - still never taxable regardless of settings
     assert pot.processed_events[1].taxable_amount == ZERO
     assert pot.processed_events[1].free_amount == ONE
     assert pot.processed_events[1].pnl.taxable == ZERO
@@ -1111,66 +1119,49 @@ def test_taxable_acquisition(accountant: Accountant) -> None:
 @pytest.mark.parametrize(('db_settings', 'expected_pnls'), [
     (
         {'cost_basis_method': CostBasisMethod.FIFO, 'include_fees_in_cost_basis': False},
-        [ZERO, ZERO, FVal(-10), FVal(3500), ZERO, FVal(-10), ZERO, ZERO, FVal(-10), FVal(1600), ZERO, FVal(-10)],  # noqa: E501
+        [ZERO, FVal(-10), ZERO, FVal(3500), ZERO, FVal(-10), ZERO, FVal(-10), ZERO, FVal(1600), ZERO, FVal(-10)],  # noqa: E501
     ),
     (
         {'cost_basis_method': CostBasisMethod.ACB, 'include_fees_in_cost_basis': True},
         [ZERO, ZERO, ZERO, FVal(3485), ZERO, ZERO, ZERO, ZERO, ZERO, FVal(-16), ZERO, ZERO],
     ),
 ])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
     """
     Tests that fees are properly either calculated as standalone events or included in the price.
     Values for the example are taken from the Canada example from this issue comment
     https://github.com/rotki/rotki/issues/5561#issuecomment-1423338938.
     """
-    history = [
-        Trade(
-            timestamp=Timestamp(1677593073),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(100),
-            rate=Price(FVal(50)),
-            fee=FVal(10),
-            fee_currency=A_EUR,
-            notes='Trade 1',
-        ), Trade(
-            timestamp=Timestamp(1677593074),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal(50),
-            rate=Price(FVal(120)),
-            fee=FVal(10),
-            fee_currency=A_EUR,
-            notes='Trade 2',
-        ), Trade(
-            timestamp=Timestamp(1677593075),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(50),
-            rate=Price(FVal(130)),
-            fee=FVal(10),
-            fee_currency=A_EUR,
-            notes='Trade 3',
-        ), Trade(
-            timestamp=Timestamp(1677593076),
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal(40),
-            rate=Price(FVal(90)),
-            fee=FVal(10),
-            fee_currency=A_EUR,
-            notes='Trade 4',
-        ),
-    ]
+    history = [*create_swap_events(
+        timestamp=TimestampMS(1677593073000),
+        location=Location.EXTERNAL,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal(5000)),
+        receive=AssetAmount(asset=A_ETH, amount=FVal(100)),
+        fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
+    ), *create_swap_events(
+        timestamp=TimestampMS(1677593074000),
+        location=Location.EXTERNAL,
+        event_identifier='2xyz',
+        spend=AssetAmount(asset=A_ETH, amount=FVal(50)),
+        receive=AssetAmount(asset=A_EUR, amount=FVal(6000)),
+        fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
+    ), *create_swap_events(
+        timestamp=TimestampMS(1677593075000),
+        location=Location.EXTERNAL,
+        event_identifier='3xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal(6500)),
+        receive=AssetAmount(asset=A_ETH, amount=FVal(50)),
+        fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
+    ), *create_swap_events(
+        timestamp=TimestampMS(1677593076000),
+        location=Location.EXTERNAL,
+        event_identifier='4xyz',
+        spend=AssetAmount(asset=A_ETH, amount=FVal(40)),
+        receive=AssetAmount(asset=A_EUR, amount=FVal(3600)),
+        fee=AssetAmount(asset=A_EUR, amount=FVal(10)),
+    )]
     accounting_history_process(
         accountant=accountant,
         start_ts=Timestamp(0),

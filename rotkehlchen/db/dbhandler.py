@@ -14,7 +14,6 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -34,10 +33,7 @@ from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
-from rotkehlchen.constants.limits import (
-    FREE_TRADES_LIMIT,
-    FREE_USER_NOTES_LIMIT,
-)
+from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import (
@@ -60,10 +56,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import (
-    TradesFilterQuery,
-    UserNotesFilterQuery,
-)
+from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -111,7 +104,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -164,7 +157,6 @@ TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 # reference assets ids. This is used to query all assets that a user has ever owned.
 TABLES_WITH_ASSETS = (
     ('manually_tracked_balances', 'asset'),
-    ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
     ('margin_positions', 'pl_currency', 'fee_currency'),
     ('timed_balances', 'currency'),
     ('history_events', 'asset'),
@@ -994,17 +986,16 @@ class DBHandler:
     def add_to_ignored_action_ids(
             self,
             write_cursor: 'DBCursor',
-            action_type: ActionType,
             identifiers: list[str],
     ) -> None:
-        """Adds a list of identifiers to be ignored for a given action type
+        """Adds a list of identifiers to be ignored.
 
         Raises InputError in case of adding already existing ignored action
         """
-        tuples = [(action_type.serialize_for_db(), x) for x in identifiers]
+        tuples = [(x,) for x in identifiers]
         try:
             write_cursor.executemany(
-                'INSERT INTO ignored_actions(type, identifier) VALUES(?, ?)',
+                'INSERT INTO ignored_actions(identifier) VALUES(?)',
                 tuples,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -1013,16 +1004,15 @@ class DBHandler:
     def remove_from_ignored_action_ids(
             self,
             write_cursor: 'DBCursor',
-            action_type: ActionType,
             identifiers: list[str],
     ) -> None:
-        """Removes a list of identifiers to be ignored for a given action type
+        """Removes a list of identifiers to be ignored.
 
         Raises InputError in case of removing an action that is not in the DB
         """
-        tuples = [(action_type.serialize_for_db(), x) for x in identifiers]
+        tuples = [(x,) for x in identifiers]
         write_cursor.executemany(
-            'DELETE FROM ignored_actions WHERE type=? AND identifier=?;',
+            'DELETE FROM ignored_actions WHERE identifier=?;',
             tuples,
         )
         affected_rows = write_cursor.rowcount
@@ -1035,30 +1025,8 @@ class DBHandler:
     def get_ignored_action_ids(
             self,
             cursor: 'DBCursor',
-            action_type: ActionType | None,
-    ) -> dict[ActionType, set[str]]:
-        query = 'SELECT type, identifier from ignored_actions'
-        tuples: tuple
-        if action_type is None:
-            query += ';'
-            tuples = ()
-        else:
-            query += ' WHERE type=?;'
-            tuples = (action_type.serialize_for_db(),)
-
-        cursor.execute(query, tuples)
-        mapping = defaultdict(set)
-        for entry in cursor:
-            mapping[entry[0]].add(entry[1])
-
-        for map_key in list(mapping.keys()):
-            # To avoid doing a deserialization for each trade we use the string key
-            # of the ActionType and deserialize it at the end. Assigning to a new key
-            # and deleting the old one doesn't copy the pointed set in the dict.
-            mapping[ActionType.deserialize_from_db(map_key)] = mapping[map_key]
-            del mapping[map_key]
-
-        return mapping
+    ) -> set[str]:
+        return {entry[0] for entry in cursor.execute('SELECT identifier from ignored_actions;')}
 
     def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
@@ -1122,7 +1090,6 @@ class DBHandler:
         """Get the last start/end timestamp range that has been queried for name
 
         Currently possible names are:
-        - {exchange_location_name}_trades_{exchange_name}
         - {exchange_location_name}_margins_{exchange_name}
         - {location}_history_events_{optional_label}
         - {exchange_location_name}_lending_history_{exchange_name}
@@ -1157,10 +1124,7 @@ class DBHandler:
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
         self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
         serialized_location = location.serialize_for_db()
-        for table in ('trades', 'history_events'):
-            write_cursor.execute(
-                f'DELETE FROM {table} WHERE location = ?;', (serialized_location,),
-            )
+        write_cursor.execute('DELETE FROM history_events WHERE location = ?;', (serialized_location,))  # noqa: E501
 
     def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
         write_cursor.execute(
@@ -1799,13 +1763,13 @@ class DBHandler:
                 # from the possible new pairs
                 write_cursor.execute(
                     'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                    (f'{location!s}\\_trades\\_{name}', '\\'),
+                    (f'{location!s}\\_history_events_\\_{name}', '\\'),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if new_name is not None:
-            exchange_re = re.compile(r'(.*?)_(trades|margins|history_events).*')
+            exchange_re = re.compile(r'(.*?)_(margins|history_events).*')
             used_ranges = write_cursor.execute(
                 'SELECT * from used_query_ranges WHERE name LIKE ?',
                 (f'{location!s}_%_{name}',),
@@ -2103,7 +2067,6 @@ class DBHandler:
             cursor: 'DBCursor',
             entries_table: Literal[
                 'address_book',
-                'trades',
                 'evm_transactions',
                 'eth2_daily_staking_details',
                 'entries_notes',
@@ -2210,140 +2173,6 @@ class DBHandler:
                 f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
                 hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
             )
-
-    def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
-        trade_tuples = [(
-            trade.identifier,
-            trade.timestamp,
-            trade.location.serialize_for_db(),
-            trade.base_asset.identifier,
-            trade.quote_asset.identifier,
-            trade.trade_type.serialize_for_db(),
-            str(trade.amount),
-            str(trade.rate),
-            str(trade.fee) if trade.fee else None,
-            trade.fee_currency.identifier if trade.fee_currency else None,
-            trade.link,
-            trade.notes,
-        ) for trade in trades]
-        query = """
-            INSERT OR IGNORE INTO trades(
-              id,
-              timestamp,
-              location,
-              base_asset,
-              quote_asset,
-              type,
-              amount,
-              rate,
-              fee,
-              fee_currency,
-              link,
-              notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        self.write_tuples(write_cursor=write_cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
-
-    def edit_trade(
-            self,
-            write_cursor: 'DBCursor',
-            old_trade_id: str,
-            trade: Trade,
-    ) -> tuple[bool, str]:
-        write_cursor.execute(
-            'UPDATE trades SET '
-            '  id=?, '
-            '  timestamp=?,'
-            '  location=?,'
-            '  base_asset=?,'
-            '  quote_asset=?,'
-            '  type=?,'
-            '  amount=?,'
-            '  rate=?,'
-            '  fee=?,'
-            '  fee_currency=?,'
-            '  link=?,'
-            '  notes=? '
-            'WHERE id=?',
-            (
-                trade.identifier,
-                trade.timestamp,
-                trade.location.serialize_for_db(),
-                trade.base_asset.identifier,
-                trade.quote_asset.identifier,
-                trade.trade_type.serialize_for_db(),
-                str(trade.amount),
-                str(trade.rate),
-                str(trade.fee) if trade.fee else None,
-                trade.fee_currency.identifier if trade.fee_currency else None,
-                trade.link,
-                trade.notes,
-                old_trade_id,
-            ),
-        )
-        if write_cursor.rowcount == 0:
-            return False, 'Tried to edit non existing trade id'
-
-        return True, ''
-
-    def get_trades_and_limit_info(
-            self,
-            cursor: 'DBCursor',
-            filter_query: TradesFilterQuery,
-            has_premium: bool,
-    ) -> tuple[list[Trade], int]:
-        """Gets all trades for the query from the DB
-
-        Also returns how many are the total found for the filter
-        """
-        trades = self.get_trades(cursor, filter_query=filter_query, has_premium=has_premium)
-        query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from trades ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return trades, total_found_result.fetchone()[0]
-
-    def get_trades(self, cursor: 'DBCursor', filter_query: TradesFilterQuery, has_premium: bool) -> list[Trade]:  # noqa: E501
-        """Returns a list of trades optionally filtered by various filters.
-
-        The returned list is ordered according to the passed filter query"""
-        query, bindings = filter_query.prepare()
-        if has_premium:
-            query = 'SELECT * from trades ' + query
-            results = cursor.execute(query, bindings)
-        else:
-            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query
-            results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
-
-        trades = []
-        for result in results:
-            try:
-                trade = Trade.deserialize_from_db(result)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing trade from the DB. Skipping trade. Error was: {e!s}',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing trade from the DB. Skipping trade. '
-                    f'Unknown asset {e.identifier} found',
-                )
-                continue
-            trades.append(trade)
-
-        return trades
-
-    def delete_trades(self, write_cursor: 'DBCursor', trades_ids: list[str]) -> None:
-        """Removes trades from the database using their `trade_id`.
-        May raise:
-        - InputError if any of the `trade_id` are non-existent.
-        """
-        write_cursor.executemany(
-            'DELETE FROM trades WHERE id=?',
-            [(trade_id,) for trade_id in trades_ids],
-        )
-        if write_cursor.rowcount != len(trades_ids):
-            raise InputError('Tried to delete one or more non-existing trade(s)')
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
@@ -2628,7 +2457,6 @@ class DBHandler:
 
         The assets are taken from:
         - Balance snapshots
-        - Trades the user made
         - Manual balances
         """
         # but think on the performance. This is a synchronous api call so if
@@ -3300,7 +3128,7 @@ class DBHandler:
             self,
             cursor: 'DBCursor',
             table_name: str,
-            klass: type[Trade | MarginPosition],
+            klass: type[MarginPosition],
     ) -> None:
         updates: list[tuple[str, str]] = []
         log.debug(f'db integrity: start {table_name}')
@@ -3330,13 +3158,12 @@ class DBHandler:
         """Runs some checks for data integrity of the DB that can't be verified by SQLite
 
         For now it mostly tackles https://github.com/rotki/rotki/issues/3010 ,
-        the problem of identifiers of trades, asset movements and margin positions
+        the problem of identifiers of margin positions
         changing and no longer corresponding to the calculated id.
         """
         start_time = ts_now()
         log.debug('Starting DB data integrity check')
         with self.conn.read_ctx() as cursor:
-            self._ensure_data_integrity(cursor, 'trades', Trade)
             self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)
         log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
 
@@ -3388,7 +3215,6 @@ class DBHandler:
     def get_associated_locations(self) -> set[Location]:
         with self.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT location FROM trades UNION '
                 'SELECT location FROM margin_positions UNION '
                 'SELECT location FROM user_credentials UNION '
                 'SELECT location FROM history_events',

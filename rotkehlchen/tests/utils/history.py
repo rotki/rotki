@@ -913,19 +913,10 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
         pnl_debug_json = json.load(f)
 
     settings_from_file = pnl_debug_json['settings']
-    ignored_actions_ids_from_file = {}
-    for action_type, values in pnl_debug_json['ignored_events_ids'].items():
-        ignored_actions_ids_from_file[action_type] = set(values)
-
+    ignored_actions_ids_from_file = pnl_debug_json['ignored_events_ids']
     with database.conn.read_ctx() as cursor:
         settings_from_db = database.get_settings(cursor=cursor).serialize()
-        ignored_actions_ids_from_db = database.get_ignored_action_ids(
-            cursor=cursor,
-            action_type=None,
-        )
-        serialized_ignored_actions_from_db = {
-            k.serialize(): v for k, v in ignored_actions_ids_from_db.items()
-        }
+        ignored_actions_ids_from_db = database.get_ignored_action_ids(cursor=cursor)
 
     # Since following settings change often do not compare here
     assert settings_from_file['last_data_migration'] == 5
@@ -936,4 +927,4 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
         settings_from_file.pop(x)
 
     assert settings_from_file == settings_from_db
-    assert serialized_ignored_actions_from_db == ignored_actions_ids_from_file
+    assert list(ignored_actions_ids_from_db) == ignored_actions_ids_from_file

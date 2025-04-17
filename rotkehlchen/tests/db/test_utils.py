@@ -16,35 +16,35 @@ from rotkehlchen.types import SUPPORTED_EVM_EVMLIKE_CHAINS, SupportedBlockchain
     (('query_in', 'timestamp_attribute', 'from_ts', 'to_ts', 'expected_query_out', 'expected_bindings')),  # noqa: E501
     [
         (
-            'SELECT * FROM trades',
+            'SELECT * FROM margin_positions',
             'timestamp',
             None,
             None,
-            'SELECT * FROM trades ORDER BY timestamp ASC;',
+            'SELECT * FROM margin_positions ORDER BY timestamp ASC;',
             (),
         ),
         (
-            'SELECT * FROM trades',
+            'SELECT * FROM margin_positions',
             'timestamp',
             1609336000,
             None,
-            'SELECT * FROM trades WHERE timestamp >= ? ORDER BY timestamp ASC;',
+            'SELECT * FROM margin_positions WHERE timestamp >= ? ORDER BY timestamp ASC;',
             (1609336000,),
         ),
         (
-            'SELECT * FROM trades',
+            'SELECT * FROM margin_positions',
             'timestamp',
             None,
             1609336240,
-            'SELECT * FROM trades WHERE timestamp <= ? ORDER BY timestamp ASC;',
+            'SELECT * FROM margin_positions WHERE timestamp <= ? ORDER BY timestamp ASC;',
             (1609336240,),
         ),
         (
-            'SELECT * FROM trades',
+            'SELECT * FROM margin_positions',
             'timestamp',
             1609336000,
             1609336240,
-            'SELECT * FROM trades WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC;',
+            'SELECT * FROM margin_positions WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC;',  # noqa: E501
             (1609336000, 1609336240),
         ),
     ],
@@ -159,10 +159,6 @@ def test_combine_asset_balances():
 @pytest.mark.parametrize(
     ('data', 'tuple_type', 'expected_str'),
     [(
-        ('1', 1674510513, 'B', 'ETH', 'USD', 'A', '1', '100', '0.1', 'USD', 'link', 'no notes'),
-        'trade',
-        'buy trade with id 1 in kraken and base/quote asset ETH / USD at timestamp 1674510513',
-    ), (
         ('44', 'F', 1674510513, 1674510513, '1', 'ETH', '0.1', 'USD', 'link', 'notes'),
         'margin_position',
         'Margin position with id 44 in bitmex for ETH closed at timestamp 1674510513',

@@ -4,7 +4,6 @@ import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
@@ -139,7 +138,6 @@ def test_ignoring_transaction_from_accounting(accountant, google_service, databa
     with database.user_write() as write_cursor:
         database.add_to_ignored_action_ids(
             write_cursor=write_cursor,
-            action_type=ActionType.HISTORY_EVENT,
             identifiers=['10' + tx_hash.hex()],  # pylint: disable=no-member
         )
     events = accounting_history_process(
