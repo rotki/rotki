@@ -448,11 +448,13 @@ def test_get_historical_netvalue(
             ), *create_swap_events(
                 timestamp=ts_sec_to_ms(DAY_AFTER_START_TS),  # Day 2,
                 location=Location.EXTERNAL,
+                event_identifier='1xyz',
                 spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
             ), *create_swap_events(
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 2)),  # Day 3,
                 location=Location.EXTERNAL,
+                event_identifier='2xyz',
                 spend=AssetAmount(asset=A_ETH, amount=FVal('0.2')),
                 receive=AssetAmount(asset=A_EUR, amount=FVal('240.0')),
             )],
