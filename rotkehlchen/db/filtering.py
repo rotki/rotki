@@ -884,6 +884,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_entire_event_group_on_ignored_asset: bool = True,
             customized_events_only: bool = False,
     ) -> Self:
         """May raise:
@@ -986,11 +987,14 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 ),
             )
         if exclude_ignored_assets is True:
-            filters.append(DBIgnoredAssetsFilter(
-                and_op=True,
-                asset_key='asset',
-                operator='NOT IN',
-            ))
+            if exclude_entire_event_group_on_ignored_asset is True:
+                filters.append(DBIgnoredEventFilter(and_op=True))
+            else:
+                filters.append(DBIgnoredAssetsFilter(
+                    and_op=True,
+                    asset_key='asset',
+                    operator='NOT IN',
+                ))
         if identifiers is not None:
             filters.append(
                 DBMultiIntegerFilter(
@@ -1057,6 +1061,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_entire_event_group_on_ignored_asset: bool = True,
             customized_events_only: bool = False,
             tx_hashes: list[EVMTxHash] | None = None,
             counterparties: list[str] | None = None,
@@ -1088,6 +1093,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            exclude_entire_event_group_on_ignored_asset=exclude_entire_event_group_on_ignored_asset,
         )
         if counterparties is not None:
             filter_query.filters.append(DBMultiStringFilter(
@@ -1156,6 +1162,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_entire_event_group_on_ignored_asset: bool = True,
             customized_events_only: bool = False,
             validator_indices: list[int] | None = None,
     ) -> Self:
@@ -1184,6 +1191,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            exclude_entire_event_group_on_ignored_asset=exclude_entire_event_group_on_ignored_asset,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
@@ -1234,6 +1242,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_entire_event_group_on_ignored_asset: bool = True,
             customized_events_only: bool = False,
             validator_indices: list[int] | None = None,
             withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
@@ -1262,6 +1271,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             event_identifiers=event_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_entire_event_group_on_ignored_asset=exclude_entire_event_group_on_ignored_asset,
             customized_events_only=customized_events_only,
             validator_indices=validator_indices,
         )
@@ -1310,6 +1320,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             event_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_entire_event_group_on_ignored_asset: bool = True,
             customized_events_only: bool = False,
             tx_hashes: list[EVMTxHash] | None = None,
             validator_indices: list[int] | None = None,
@@ -1340,6 +1351,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             exclude_ignored_assets=exclude_ignored_assets,
             tx_hashes=tx_hashes,
             customized_events_only=customized_events_only,
+            exclude_entire_event_group_on_ignored_asset=exclude_entire_event_group_on_ignored_asset,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
@@ -1386,6 +1398,22 @@ class DBIgnoredAssetsFilter(DBSubtableSelectFilter):
     select_value: str = field(default='value', init=False)
     select_table: str = field(default='multisettings', init=False)
     select_condition: str = field(default="name='ignored_asset'", init=False)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBIgnoredEventFilter(DBFilter):
+    """Filter that excludes all events with the same event_identifier if any of them has an ignored asset"""  # noqa: E501
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        query = """
+        event_identifier NOT IN (
+            SELECT DISTINCT he.event_identifier
+            FROM history_events he
+            JOIN multisettings ms ON he.asset = ms.value
+            WHERE ms.name = 'ignored_asset'
+        )
+        """
+        return [query], []
 
 
 class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):

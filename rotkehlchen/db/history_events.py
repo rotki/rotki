@@ -684,6 +684,12 @@ class DBHistoryEvents:
         if entries_limit is None:
             return count_without_limit, count_without_limit
 
+        # When we have a limit but the total is already smaller or equal,
+        # just return the total for both counts
+        if count_without_limit <= entries_limit:
+            return count_without_limit, count_without_limit
+
+        # Otherwise, get the limited count
         free_query, free_bindings = self._create_history_events_query(
             has_premium=False,
             filter_query=query_filter,
@@ -694,6 +700,12 @@ class DBHistoryEvents:
             f'SELECT COUNT(*) FROM ({free_query})',
             free_bindings,
         ).fetchone()[0]
+
+        # If we're grouping by event IDs and got 0 results but should have some,
+        # fall back to using the minimum of limit and total
+        if group_by_event_ids and count_with_limit == 0 and entries_limit > 0:
+            count_with_limit = min(entries_limit, count_without_limit)
+
         return count_without_limit, count_with_limit
 
     def get_amount_stats(
