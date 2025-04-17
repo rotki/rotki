@@ -36,7 +36,6 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.calendar import CalendarEntry, ReminderEntry
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -58,7 +57,6 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     Location,
     SupportedBlockchain,
-    TradeType,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
 
@@ -124,7 +122,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
     )):
         return entry.serialize()
     if isinstance(entry, (
-            Trade |
             MakerdaoVault |
             Balance |
             CompoundBalance |
@@ -152,7 +149,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
     if isinstance(entry, Asset):
         return entry.identifier
     if isinstance(entry, (
-            TradeType |
             Location |
             KrakenAccountType |
             Location |

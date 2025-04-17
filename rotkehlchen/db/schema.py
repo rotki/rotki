@@ -1,19 +1,3 @@
-# Custom enum table for trade types
-DB_CREATE_TRADE_TYPE = """
-CREATE TABLE IF NOT EXISTS trade_type (
-  type    CHAR(1)       PRIMARY KEY NOT NULL,
-  seq     INTEGER UNIQUE
-);
-/* Buy Type */
-INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('A', 1);
-/* Sell Type */
-INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('B', 2);
-/* Settlement Buy Type */
-INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('C', 3);
-/* Settlement Sell Type */
-INSERT OR IGNORE INTO trade_type(type, seq) VALUES ('D', 4);
-"""
-
 # Custom enum table for locations
 DB_CREATE_LOCATION = """
 CREATE TABLE IF NOT EXISTS location (
@@ -142,20 +126,6 @@ INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('A', 1);
 INSERT OR IGNORE INTO balance_category(category, seq) VALUES ('B', 2);
 """
 
-# Custom enum table for taxable action types
-DB_CREATE_ACTION_TYPE = """
-CREATE TABLE IF NOT EXISTS action_type (
-  type    CHAR(1)       PRIMARY KEY NOT NULL,
-  seq     INTEGER UNIQUE
-);
-/* Trade Type */
-INSERT OR IGNORE INTO action_type(type, seq) VALUES ('A', 1);
-/* Asset Movement Type */
-INSERT OR IGNORE INTO action_type(type, seq) VALUES ('B', 2);
-/* History Event Type - Used to be Ethereum Transaction */
-INSERT OR IGNORE INTO action_type(type, seq) VALUES ('C', 3);
-"""
-
 DB_CREATE_ASSETS = """
 CREATE TABLE IF NOT EXISTS assets (
     identifier TEXT NOT NULL PRIMARY KEY
@@ -164,9 +134,7 @@ CREATE TABLE IF NOT EXISTS assets (
 
 DB_CREATE_IGNORED_ACTIONS = """
 CREATE TABLE IF NOT EXISTS ignored_actions (
-    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES action_type(type),
-    identifier TEXT,
-    PRIMARY KEY (type, identifier)
+    identifier TEXT PRIMARY KEY
 );
 """
 
@@ -313,25 +281,6 @@ CREATE TABLE IF NOT EXISTS multisettings (
 );
 """
 
-DB_CREATE_TRADES = """
-CREATE TABLE IF NOT EXISTS trades (
-    id TEXT PRIMARY KEY NOT NULL,
-    timestamp INTEGER NOT NULL,
-    location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
-    base_asset TEXT NOT NULL,
-    quote_asset TEXT NOT NULL,
-    type CHAR(1) NOT NULL DEFAULT ('A') REFERENCES trade_type(type),
-    amount TEXT NOT NULL,
-    rate TEXT NOT NULL,
-    fee TEXT,
-    fee_currency TEXT,
-    link TEXT,
-    notes TEXT,
-    FOREIGN KEY(base_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(quote_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(fee_currency) REFERENCES assets(identifier) ON UPDATE CASCADE
-);
-"""
 
 DB_CREATE_MARGIN = """
 CREATE TABLE IF NOT EXISTS margin_positions (
@@ -768,7 +717,6 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
-{DB_CREATE_TRADE_TYPE}
 {DB_CREATE_LOCATION}
 {DB_CREATE_BALANCE_CATEGORY}
 {DB_CREATE_ASSETS}
@@ -781,7 +729,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVM_ACCOUNTS_DETAILS}
 {DB_CREATE_MULTISETTINGS}
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
-{DB_CREATE_TRADES}
 {DB_CREATE_EVM_TRANSACTIONS}
 {DB_CREATE_OPTIMISM_TRANSACTIONS}
 {DB_CREATE_EVM_INTERNAL_TRANSACTIONS}
@@ -806,7 +753,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVM_EVENTS_INFO}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
-{DB_CREATE_ACTION_TYPE}
 {DB_CREATE_IGNORED_ACTIONS}
 {DB_CREATE_NFTS}
 {DB_CREATE_ENS_MAPPINGS}

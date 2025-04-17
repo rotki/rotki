@@ -9,7 +9,6 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
@@ -30,7 +29,8 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import AddressbookFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import AddressbookFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
@@ -73,8 +73,9 @@ from rotkehlchen.db.settings import (
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import DBSchemaError, InputError
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.utils.constants import (
     A_DAO,
@@ -94,15 +95,15 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
+    AssetAmount,
     CostBasisMethod,
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
     Location,
-    Price,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
+    TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -119,7 +120,6 @@ TABLES_AT_INIT = [
     'calendar',
     'evm_accounts_details',
     'multisettings',
-    'trades',
     'evm_transactions',
     'optimism_transactions',
     'evm_internal_transactions',
@@ -129,7 +129,6 @@ TABLES_AT_INIT = [
     'evmtx_address_mappings',
     'evm_tx_mappings',
     'manually_tracked_balances',
-    'trade_type',
     'location',
     'settings',
     'used_query_ranges',
@@ -141,7 +140,6 @@ TABLES_AT_INIT = [
     'eth2_daily_staking_details',
     'eth2_validators',
     'ignored_actions',
-    'action_type',
     'nfts',
     'history_events',
     'history_events_mappings',
@@ -955,83 +953,53 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
                 category=BalanceType.ASSET,
                 time=Timestamp(1488326400),
                 asset=A_BTC,
-                amount='1',
-                usd_value='1222.66',
+                amount=ONE,
+                usd_value=FVal('1222.66'),
             ),
             DBAssetBalance(
                 category=BalanceType.ASSET,
                 time=Timestamp(1489326500),
                 asset=A_XMR,
-                amount='2',
-                usd_value='33.8',
+                amount=FVal(2),
+                usd_value=FVal('33.8'),
             ),
         ])
         data.db.add_multiple_balances(cursor, balances)
 
         # also make sure that assets from trades are included
-        data.db.add_trades(
+        DBHistoryEvents(data.db).add_history_events(
             write_cursor=cursor,
-            trades=[
-                Trade(
-                    timestamp=Timestamp(1),
+            history=[
+                *create_swap_events(
+                    timestamp=TimestampMS(1),
                     location=Location.EXTERNAL,
-                    base_asset=A_ETH,
-                    quote_asset=A_BTC,
-                    trade_type=TradeType.BUY,
-                    amount=ONE,
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(99),
+                    spend=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                    receive=AssetAmount(asset=A_ETH, amount=FVal('0.1')),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(99),
                     location=Location.EXTERNAL,
-                    base_asset=A_ETH,
-                    quote_asset=A_BTC,
-                    trade_type=TradeType.BUY,
-                    amount=FVal(2),
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(1),
+                    spend=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                    receive=AssetAmount(asset=A_ETH, amount=FVal('0.1')),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(1),
                     location=Location.EXTERNAL,
-                    base_asset=A_SDC,
-                    quote_asset=A_SDT2,
-                    trade_type=TradeType.BUY,
-                    amount=ONE,
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(1),
+                    spend=AssetAmount(asset=A_SDT2, amount=FVal('0.1')),
+                    receive=AssetAmount(asset=A_SDC, amount=FVal('0.1')),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(1),
                     location=Location.EXTERNAL,
-                    base_asset=A_SUSHI,
-                    quote_asset=A_1INCH,
-                    trade_type=TradeType.BUY,
-                    amount=ONE,
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
-                ), Trade(
-                    timestamp=Timestamp(3),
+                    spend=AssetAmount(asset=A_1INCH, amount=FVal('0.1')),
+                    receive=AssetAmount(asset=A_SUSHI, amount=FVal('0.1')),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
+                ), *create_swap_events(
+                    timestamp=TimestampMS(3),
                     location=Location.EXTERNAL,
-                    base_asset=A_SUSHI,
-                    quote_asset=A_1INCH,
-                    trade_type=TradeType.BUY,
-                    amount=FVal(2),
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_BTC,
-                    link='',
-                    notes='',
+                    spend=AssetAmount(asset=A_1INCH, amount=FVal('0.1')),
+                    receive=AssetAmount(asset=A_SUSHI, amount=FVal('0.1')),
+                    fee=AssetAmount(asset=A_BTC, amount=FVal('0.1')),
                 ),
             ])
 
@@ -1153,74 +1121,6 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     assert values[0] == '2000'
     assert values[2] == '3000'
     assert values[3] == '4500'
-    data.logout()
-
-
-def test_add_trades(data_dir, username, sql_vm_instructions_cb):
-    """Test that adding and retrieving trades from the DB works fine.
-
-    Also duplicates should be ignored and an error returned
-    """
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
-    data.unlock(username, '123', create_new=True, resume_from_backup=False)
-
-    trade1 = Trade(
-        timestamp=1451606400,
-        location=Location.KRAKEN,
-        base_asset=A_ETH,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('1.1'),
-        rate=FVal('10'),
-        fee=FVal('0.01'),
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    )
-    trade2 = Trade(
-        timestamp=1451607500,
-        location=Location.BINANCE,
-        base_asset=A_BTC,
-        quote_asset=A_ETH,
-        trade_type=TradeType.BUY,
-        amount=FVal('0.00120'),
-        rate=FVal('10'),
-        fee=FVal('0.001'),
-        fee_currency=A_ETH,
-        link='',
-        notes='',
-    )
-    trade3 = Trade(
-        timestamp=1451608600,
-        location=Location.COINBASE,
-        base_asset=A_BTC,
-        quote_asset=A_ETH,
-        trade_type=TradeType.SELL,
-        amount=FVal('0.00120'),
-        rate=FVal('1'),
-        fee=FVal('0.001'),
-        fee_currency=A_ETH,
-        link='',
-        notes='',
-    )
-
-    # Add and retrieve the first 2 trades. All should be fine.
-    with data.db.user_write() as cursor:
-        data.db.add_trades(cursor, [trade1, trade2])
-        errors = msg_aggregator.consume_errors()
-        warnings = msg_aggregator.consume_warnings()
-        assert len(errors) == 0
-        assert len(warnings) == 0
-        returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-        assert returned_trades == [trade1, trade2]
-
-        # Add the last 2 trades. Since trade2 already exists in the DB it should be
-        # ignored
-        data.db.add_trades(cursor, [trade2, trade3])
-        returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-
-    assert returned_trades == [trade1, trade2, trade3]
     data.logout()
 
 
@@ -1727,10 +1627,6 @@ def test_int_overflow_at_tuple_insertion(database, caplog):
 @pytest.mark.parametrize(('enum_class', 'query', 'deserialize_from_db', 'deserialize'), [
     (Location, 'SELECT location, seq from location',
         Location.deserialize_from_db, Location.deserialize),
-    (TradeType, 'SELECT type, seq from trade_type',
-        TradeType.deserialize_from_db, TradeType.deserialize),
-    (ActionType, 'SELECT type, seq from action_type',
-        ActionType.deserialize_from_db, ActionType.deserialize),
 ])
 def test_enum_in_db(database, enum_class, query, deserialize_from_db, deserialize):
     """
@@ -1769,8 +1665,6 @@ def test_all_balance_types_in_db(database):
 
 @pytest.mark.parametrize(('enum_class', 'table_name'), [
     (Location, 'location'),
-    (TradeType, 'trade_type'),
-    (ActionType, 'action_type'),
     (BalanceType, 'balance_category'),
 ])
 def test_values_are_present_in_db(database, enum_class, table_name):

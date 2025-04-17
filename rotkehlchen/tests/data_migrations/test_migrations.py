@@ -41,7 +41,6 @@ from rotkehlchen.types import (
     Location,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 
@@ -204,40 +203,35 @@ def test_migration_1(database: DBHandler) -> None:
     # Migration shouldn't execute and information should stay in database
     with database.user_write() as write_cursor:
         for exchange_location in [Location.BINANCE, Location.KRAKEN]:
-            trade_tuples = ((
-                f'custom-trade-id-{exchange_location}',
-                1,
-                exchange_location.serialize_for_db(),
-                A_BTC.identifier,
-                A_ETH.identifier,
-                TradeType.BUY.serialize_for_db(),
-                str(ONE),
-                str(ONE),
-                str(FVal('0.1')),
-                A_ETH.identifier,
-                'foo',
-                'boo',
-            ),)
+            margin_tuples = ((
+                 f'custom-margin-id-{exchange_location}',  # id
+                 exchange_location.serialize_for_db(),  # location
+                 1,  # open_time
+                 2,  # close_time
+                 str(ONE),  # profit_loss
+                 A_BTC.identifier,  # pl_currency
+                 str(FVal('0.1')),  # fee
+                 A_ETH.identifier,  # fee_currency
+                 'foo',  # link
+                 'boo',  # notes
+             ),)
+
             query = """
-                INSERT INTO trades(
+            INSERT INTO margin_positions(
                 id,
-                time,
                 location,
-                base_asset,
-                quote_asset,
-                type,
-                amount,
-                rate,
+                open_time,
+                close_time,
+                profit_loss,
+                pl_currency,
                 fee,
                 fee_currency,
                 link,
-                notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            database.write_tuples(write_cursor=write_cursor, tuple_type='trade', query=query, tuples=trade_tuples)  # noqa: E501
-            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_trades_{exchange_location!s}', start_ts=Timestamp(0), end_ts=Timestamp(9999))  # noqa: E501
+            database.write_tuples(write_cursor=write_cursor, tuple_type='margin_position', query=query, tuples=margin_tuples)  # noqa: E501
             database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_margins_{exchange_location!s}', start_ts=Timestamp(0), end_ts=Timestamp(9999))  # noqa: E501
-            database.update_used_query_range(write_cursor=write_cursor, name=f'{exchange_location!s}_asset_movements_{exchange_location!s}', start_ts=Timestamp(0), end_ts=Timestamp(9999))  # noqa: E501
 
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',

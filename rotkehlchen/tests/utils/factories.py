@@ -9,9 +9,7 @@ from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress
-from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_USDC
-from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.constants import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -26,11 +24,9 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
     Location,
-    Price,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -165,7 +161,7 @@ def generate_events_response(
     return [
         x.serialize_for_api(
             customized_event_ids=[],
-            ignored_ids_mapping={},
+            ignored_ids=set(),
             hidden_event_ids=[],
             event_accounting_rule_status=accounting_status,
         ) for x in data
@@ -243,29 +239,6 @@ def make_random_user_notes(num_notes: int) -> list[dict[str, Any]]:
         'location': 'manual balances',
         'is_pinned': random.choice([True, False]),
     } for note_number in range(num_notes)]
-
-
-def make_random_trades(num_trades: int, base_asset=A_ETH) -> list[Trade]:
-    """Make random trades to be used in tests."""
-    trades = []
-    for idx in range(num_trades):
-        trade_type = random.choice([TradeType.BUY, TradeType.SELL])
-        trades.append(
-            Trade(
-                timestamp=Timestamp(random.randint(100000, 10000000)),
-                trade_type=trade_type,
-                location=Location.EXTERNAL,
-                base_asset=base_asset,
-                quote_asset=A_USDC,
-                amount=FVal(idx),
-                rate=Price(FVal(idx)),
-                fee=ZERO,
-                fee_currency=A_USDC,
-                link='',
-                notes='',
-            ),
-        )
-    return trades
 
 
 UNIT_BTC_ADDRESS1 = BTCAddress('1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2')

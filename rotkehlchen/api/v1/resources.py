@@ -14,7 +14,6 @@ from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import FileStorage
 
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest import (
     RestAPI,
     api_response,
@@ -1821,16 +1820,13 @@ class IgnoredActionsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
-    def put(self, action_type: ActionType, data: list[str]) -> Response:
-        return self.rest_api.add_ignored_action_ids(action_type=action_type, action_ids=data)
+    def put(self, data: list[str]) -> Response:
+        return self.rest_api.add_ignored_action_ids(action_ids=data)
 
     @require_loggedin_user()
     @use_kwargs(modify_schema, location='json')
-    def delete(self, action_type: ActionType, data: list[str]) -> Response:
-        return self.rest_api.remove_ignored_action_ids(
-            action_type=action_type,
-            action_ids=data,
-        )
+    def delete(self, data: list[str]) -> Response:
+        return self.rest_api.remove_ignored_action_ids(action_ids=data)
 
 
 class QueriedAddressesResource(BaseMethodView):

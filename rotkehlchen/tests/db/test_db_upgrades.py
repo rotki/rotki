@@ -3103,6 +3103,8 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (1703082904, 'G', 'XRP', 'USD', 'A', '43.764904', '0.685480767877384124960036471232748505514829873727130762128485418361708276567909', None, None, '8ad05838-6b0e-50a8-8665-c784fd4d85fd', None),  # noqa: E501
             (1575784819, 'B', 'BTC', 'BSV', 'A', '0.0000000831', '0.012256637168141592', None, None, 'adjustmentNZ5OB33-MW63Z-EN3SV1NZ4HZV6-EN3S2-DFZ1X4', None),  # noqa: E501
         ]
+        assert table_exists(cursor, 'trades')
+        assert table_exists(cursor, 'trade_type')
         assert cursor.execute('SELECT identifier, location FROM user_notes WHERE identifier BETWEEN 1001 AND 1004').fetchall() == [  # noqa: E501
             (1001, 'HISTORY_TRADES'),
             (1002, 'HISTORY_TRANSACTIONS'),
@@ -3114,6 +3116,21 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (11, 'Custom note for asset move'),
         ]
         assert cursor.execute('SELECT * from history_events_mappings').fetchall() == [(11, 'state', 1)]  # noqa: E501
+        assert cursor.execute('SELECT * from ignored_actions').fetchall() == [
+            ('A', 'C5DAUH-13NE4-TWYVBD'),
+            ('A', 'NZ5OB33-MW63Z-EN3SV1'),
+            ('C', '17572768'),
+            ('A', '8ad05838-6b0e-50a8-8665-c784fd4d85fd'),
+            ('B', 'some-deposit-id'),
+            ('C', 'some-withdrawal-id'),
+        ]
+        assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE "%_trades_%"').fetchall() == [  # noqa: E501
+            ('kraken_trades_kraken', 1577836800, 1609459200),
+            ('binance_trades_binance', 1609459200, 1640995200),
+            ('coinbase_trades_coinbase', 1640995200, 1672531200),
+            ('gemini_trades_gemini', 1672531200, 1704067200),
+        ]
+        assert table_exists(cursor, 'action_type')
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3143,9 +3160,8 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (7, '577f4275b57a9c02b166c10f3ffa3e6c616a3d9d1b68cc1d5b5781cbe8cd8992', 0, 1575784819000, 'B', kraken_adjustment_label, 'BSV', adjustment_spend, None, 'trade', 'spend', None),  # noqa: E501
             (7, '577f4275b57a9c02b166c10f3ffa3e6c616a3d9d1b68cc1d5b5781cbe8cd8992', 1, 1575784819000, 'B', kraken_adjustment_label, 'BTC', adjustment_receive, None, 'trade', 'receive', None),  # noqa: E501
         ]
-        # TODO: Uncomment this when tables are dropped
-        # assert table_exists(cursor, 'trades') is False  # noqa: ERA001
-        # assert table_exists(cursor, 'trade_type') is False  # noqa: ERA001
+        assert not table_exists(cursor, 'trades')
+        assert not table_exists(cursor, 'trade_type')
 
         assert cursor.execute('SELECT identifier, location FROM user_notes WHERE identifier BETWEEN 1001 AND 1004').fetchall() == [  # noqa: E501
             (1001, 'HISTORY'),
@@ -3158,6 +3174,16 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (11, 'Custom note for asset move'),
         ]
         assert cursor.execute('SELECT * from history_events_mappings').fetchall() == [(11, 'state', 1)]  # noqa: E501
+        assert cursor.execute('SELECT * from ignored_actions').fetchall() == [
+            ('C5DAUH-13NE4-TWYVBD',),
+            ('NZ5OB33-MW63Z-EN3SV1',),
+            ('17572768',),
+            ('8ad05838-6b0e-50a8-8665-c784fd4d85fd',),
+            ('some-deposit-id',),
+            ('some-withdrawal-id',),
+        ]
+        assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "%_trades_%"').fetchone()[0] == 0  # noqa: E501
+        assert not table_exists(cursor, 'action_type')
 
     db.logout()
 
@@ -3215,7 +3241,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = {'asset_movements', 'asset_movement_category'}
+    removed_tables = {'action_type', 'asset_movements', 'asset_movement_category', 'trade_type', 'trades'}  # noqa: E501
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade

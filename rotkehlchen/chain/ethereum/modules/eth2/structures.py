@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Self
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -123,7 +122,7 @@ class ValidatorDailyStats(AccountingEventMixin):
     def get_assets(self) -> list['Asset']:
         return [A_ETH, A_ETH2]
 
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
+    def should_ignore(self, ignored_ids: set[str]) -> bool:
         return False
 
     def process(

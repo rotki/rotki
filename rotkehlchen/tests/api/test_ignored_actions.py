@@ -19,43 +19,33 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> dict[str, set[str]]:
-    data = [
-        ('trade', ['1', '2', '3']),
-        ('asset_movement', ['1', '4', '5', '7']),
-        (
-            'history_event',
-            [
-                '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
-                '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-                '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-            ]),
-    ]
-
-    for action_type, action_ids in data:
-        response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'ignoredactionsresource',
-            ), json={'action_type': action_type, 'data': action_ids},
-        )
-        assert_simple_ok_response(response)
+def _populate_ignored_actions(rotkehlchen_api_server: 'APIServer') -> set[str]:
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ignoredactionsresource',
+        ), json={'data': [
+            '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+            '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b54',
+            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846df4b53',
+        ]},
+    )
+    assert_simple_ok_response(response)
 
     # get all entries and make sure nothing new slipped in
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    serialized_result = {k.serialize(): v for k, v in result.items()}
-    assert serialized_result == {
-        'trade': {'1', '2', '3'},
-        'asset_movement': {'1', '4', '5', '7'},
-        'history_event': {
-            '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
-            '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-        },
+        result = rotki.data.db.get_ignored_action_ids(cursor)
+    assert result == {
+        '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+        '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+        '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+        '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b54',
+        '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846df4b53',
     }
-    return serialized_result
+    return result
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -67,7 +57,13 @@ def test_add_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'trade', 'data': ['1', '9', '11']},
+        ), json={
+            'data': [
+                '10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+                '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
+                '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+            ],
+        },
     )
     assert_error_response(
         response=response,
@@ -78,9 +74,8 @@ def test_add_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
     # get all entries and make sure nothing new slipped in
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    serialized_result = {k.serialize(): v for k, v in result.items()}
-    assert serialized_result == data
+        result = rotki.data.db.get_ignored_action_ids(cursor)
+    assert result == data
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -91,7 +86,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'asset_movement', 'data': ['1', '7']},
+        ), json={'data': ['10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53']},
     )
     assert_simple_ok_response(response)
 
@@ -100,10 +95,7 @@ def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={
-            'action_type': 'history_event',
-            'data': ['10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53'],
-        },
+        ), json={'data': ['10x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53']},
     )
     assert_simple_ok_response(response)
 
@@ -112,16 +104,22 @@ def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'trade', 'data': ['1', '2', '3']},
+        ), json={
+            'data': [
+                '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
+                '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b54',
+                '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846df4b53',
+            ],
+        },
     )
     assert_simple_ok_response(response)
 
-    # try to remove non existing entries
+    # try to remove non-existing entries
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'history_event', 'data': ['42', '666']},
+        ), json={'data': ['42', '666']},
     )
     assert_error_response(
         response=response,
@@ -132,15 +130,8 @@ def test_remove_ignored_actions(rotkehlchen_api_server: 'APIServer') -> None:
     # get all entries again and make sure deleted ones do not appear
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
-        result = rotki.data.db.get_ignored_action_ids(cursor, None)
-    serialized_result = {k.serialize(): v for k, v in result.items()}
-    assert serialized_result == {
-        'asset_movement': {'4', '5'},
-        'history_event': {
-            '10x9c7096c0a2a5e1b8bcf444a6929881af55d83fb0b713ad3f7f0028006ff9ec53',
-            '100x6328a70f18534d60f6fc085c22a1273fd4a7c7f2e6cdc3bb49168c2846af4b53',
-        },
-    }
+        result = rotki.data.db.get_ignored_action_ids(cursor)
+    assert result == set()
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
@@ -175,13 +166,13 @@ def test_ignore_history_events_in_accountant(rotkehlchen_api_server: 'APIServer'
         api_url_for(
             rotkehlchen_api_server,
             'ignoredactionsresource',
-        ), json={'action_type': 'history_event', 'data': ['b']},
+        ), json={'data': ['b']},
     )
     assert_simple_ok_response(response)
 
     # Retrieve ignored actions mapping. Should contain 2
     with accountant.db.conn.read_ctx() as cursor:
-        ignored_actions = accountant.db.get_ignored_action_ids(cursor, action_type=None)
+        ignored_actions = accountant.db.get_ignored_action_ids(cursor)
     ignored = []
     # Call the should_ignore method used in the accountant
     for event in events_list:

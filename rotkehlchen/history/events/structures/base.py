@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
 
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, EXCHANGE
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
@@ -311,14 +310,14 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
     def serialize_for_api(
             self,
             customized_event_ids: list[int],
-            ignored_ids_mapping: dict[ActionType, set[str]],
+            ignored_ids: set[str],
             hidden_event_ids: list[int],
             event_accounting_rule_status: EventAccountingRuleStatus,
             grouped_events_num: int | None = None,
     ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
         result: dict[str, Any] = {'entry': self.serialize()}
-        if self.should_ignore(ignored_ids_mapping=ignored_ids_mapping):
+        if self.should_ignore(ignored_ids=ignored_ids):
             result['ignored_in_accounting'] = True
         if self.identifier in customized_event_ids:
             result['customized'] = True
@@ -399,8 +398,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         return ts_ms_to_sec(self.timestamp)
 
     # -- Methods of AccountingEventMixin
-    def should_ignore(self, ignored_ids_mapping: dict[ActionType, set[str]]) -> bool:
-        ignored_ids = ignored_ids_mapping.get(ActionType.HISTORY_EVENT, set())
+    def should_ignore(self, ignored_ids: set[str]) -> bool:
         return self.event_identifier in ignored_ids
 
     def get_timestamp(self) -> Timestamp:

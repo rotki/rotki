@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
-from rotkehlchen.db.filtering import HistoryEventFilterQuery, TradesFilterQuery
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -346,13 +346,12 @@ def test_data_import_errors(
     )
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with database.conn.read_ctx() as cursor:
-        _, trades_count = database.get_trades_and_limit_info(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         _, history_events_count, _ = DBHistoryEvents(database).get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
         )
-    assert trades_count == history_events_count == 0
+    assert history_events_count == 0
 
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 

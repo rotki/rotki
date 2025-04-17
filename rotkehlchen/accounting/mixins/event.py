@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
-    from rotkehlchen.accounting.structures.types import ActionType
 
 
 class AccountingEventType(SerializableEnumNameMixin):
@@ -44,7 +43,7 @@ class AccountingEventMixin(ABC):
         """Get a unique identifier from an accounting event"""
 
     @abstractmethod
-    def should_ignore(self, ignored_ids_mapping: dict['ActionType', set[str]]) -> bool:
+    def should_ignore(self, ignored_ids: set[str]) -> bool:
         """Returns whether this event should be ignored due to user settings"""
 
     @abstractmethod

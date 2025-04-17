@@ -11,10 +11,10 @@ from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD, A_USDC, A_WBTC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -29,13 +29,14 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    AssetAmount,
     CostBasisMethod,
     Location,
     Price,
     Timestamp,
     TimestampMS,
-    TradeType,
 )
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
@@ -45,19 +46,20 @@ if TYPE_CHECKING:
     (
         {'cost_basis_method': CostBasisMethod.FIFO},
         PnlTotals({
-            AccountingEventType.TRADE: PNL(taxable=FVal('559.7007917527833875'), free=ZERO),
+            AccountingEventType.TRADE: PNL(taxable=FVal('559.70079175278338750'), free=ZERO),
             AccountingEventType.FEE: PNL(taxable=ZERO, free=ZERO),
         }),
     ),
     (
         {'cost_basis_method': CostBasisMethod.ACB},
         PnlTotals({
-            AccountingEventType.TRADE: PNL(taxable=FVal('551.2649524225750541683933333'), free=ZERO),  # noqa: E501
+            AccountingEventType.TRADE: PNL(taxable=FVal('551.2649524225750541683933'), free=ZERO),
             AccountingEventType.FEE: PNL(taxable=ZERO, free=ZERO),
         }),
     ),
 ])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_simple_accounting(accountant, google_service, expected_pnls):
     accounting_history_process(accountant, 1436979735, 1495751688, history1)
     no_message_errors(accountant.msg_aggregator)
@@ -81,41 +83,31 @@ def test_simple_accounting(accountant, google_service, expected_pnls):
         }),
     ),
 ])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_pnl_totals):
     history = [
-        Trade(
-            timestamp=Timestamp(1446979735),
+        *create_swap_events(
+            timestamp=TimestampMS(1446979735000),
             location=Location.EXTERNAL,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(82),
-            rate=Price(FVal('268.678317859')),
-            fee=None,
-            fee_currency=None,
-            link=None,
-        ), Trade(
-            timestamp=Timestamp(1449809536),  # cryptocompare hourly BTC/EUR price: 386.175
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_EUR, amount=Price(FVal('268.678317859')) * FVal(82)),
+            receive=AssetAmount(asset=A_BTC, amount=FVal(82)),
+        ),
+        *create_swap_events(
+            timestamp=TimestampMS(1449809536000),  # cryptocompare hourly BTC/EUR price: 386.175
             location=Location.POLONIEX,
-            base_asset=A_XMR,  # cryptocompare hourly XMR/EUR price: 0.39665
-            quote_asset=A_BTC,
-            trade_type=TradeType.BUY,
-            amount=FVal(375),
-            rate=Price(FVal('0.0010275')),
-            fee=FVal('0.9375'),
-            fee_currency=A_XMR,
-            link=None,
-        ), Trade(
-            timestamp=Timestamp(1458070370),  # cryptocompare hourly rate XMR/EUR price: 1.0443027675  # noqa: E501
+            event_identifier='2xyz',
+            spend=AssetAmount(asset=A_BTC, amount=Price(FVal('0.0010275')) * FVal(375)),
+            receive=AssetAmount(asset=A_XMR, amount=FVal(375)),
+            fee=AssetAmount(asset=A_XMR, amount=FVal('0.9375')),
+        ),
+        *create_swap_events(
+            timestamp=TimestampMS(1458070370000),  # cryptocompare hourly XMR/EUR price: 1.0443027675  # noqa: E501
             location=Location.KRAKEN,
-            base_asset=A_XMR,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal(45),
-            rate=Price(FVal('1.0443027675')),
-            fee=FVal('0.117484061344'),
-            fee_currency=A_XMR,
-            link=None,
+            event_identifier='3xyz',
+            spend=AssetAmount(asset=A_XMR, amount=FVal(45)),
+            receive=AssetAmount(asset=A_EUR, amount=Price(FVal('1.0443027675')) * FVal(45)),
+            fee=AssetAmount(asset=A_XMR, amount=FVal('0.117484061344')),
         ),
     ]
     accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1495751688), history)
@@ -131,30 +123,23 @@ def test_selling_crypto_bought_with_crypto(accountant, google_service, expected_
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_buy_event_creation(accountant):
     history = [
-        Trade(
-            timestamp=Timestamp(1476979735),
+        *create_swap_events(
+            timestamp=TimestampMS(1476979735000),
             location=Location.KRAKEN,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(5),
-            rate=Price(FVal('578.505')),
-            fee=FVal('0.0012'),
-            fee_currency=A_BTC,
-            link=None,
-        ), Trade(
-            timestamp=Timestamp(1476979735),
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_EUR, amount=Price(FVal('578.505')) * FVal(5)),
+            receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
+            fee=AssetAmount(asset=A_BTC, amount=FVal('0.0012')),
+        ), *create_swap_events(
+            timestamp=TimestampMS(1476979735000),
             location=Location.KRAKEN,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(5),
-            rate=Price(FVal('578.505')),
-            fee=FVal('0.0012'),
-            fee_currency=A_EUR,
-            link=None,
+            event_identifier='2xyz',
+            spend=AssetAmount(asset=A_EUR, amount=Price(FVal('578.505')) * FVal(5)),
+            receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
+            fee=AssetAmount(asset=A_EUR, amount=FVal('0.0012')),
         ),
     ]
     accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1519693374), history)
@@ -172,20 +157,17 @@ def test_buy_event_creation(accountant):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_no_corresponding_buy_for_sell(accountant, google_service):
     """Test that if there is no corresponding buy for a sell, the entire sell counts as profit"""
-    history = [Trade(
-        timestamp=Timestamp(1476979735),
+    history = create_swap_events(
+        timestamp=TimestampMS(1476979735000),
         location=Location.KRAKEN,
-        base_asset=A_BTC,
-        quote_asset=A_EUR,
-        trade_type=TradeType.SELL,
-        amount=ONE,
-        rate=Price(FVal('2519.62')),
-        fee=FVal('0.02'),
-        fee_currency=A_EUR,
-        link=None,
-    )]
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_BTC, amount=ONE),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('2519.62')),
+        fee=AssetAmount(asset=A_EUR, amount=FVal('0.02')),
+    )
     accounting_history_process(
         accountant=accountant,
         start_ts=Timestamp(1436979735),
@@ -218,6 +200,7 @@ def test_accounting_works_for_empty_history(accountant, google_service):
     'taxfree_after_period': -1,
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_sell_fiat_for_crypto(accountant, google_service):
     """
     Test for https://github.com/rotki/rotki/issues/2993
@@ -225,42 +208,29 @@ def test_sell_fiat_for_crypto(accountant, google_service):
     inability to trace the source of the sold fiat.
     """
     history = [
-        Trade(
-            timestamp=Timestamp(1446979735),
+        *create_swap_events(
+            timestamp=TimestampMS(1446979735000),
             location=Location.KRAKEN,
-            base_asset=A_EUR,
-            quote_asset=A_BTC,
-            trade_type=TradeType.SELL,
-            amount=FVal(2000),
-            rate=Price(FVal('0.002')),
-            fee=FVal('0.0012'),
-            fee_currency=A_EUR,
-            link=None,
-        ), Trade(
-            # Selling 500 CHF for ETH with 0.004 CHF/ETH. + 0.02 EUR
-            # That means 2 ETH for 500 CHF + 0.02 EUR -> with 1.001 CHF/EUR ->
-            # (500*1.001 + 0.02)/2 -> 250.26 EUR per ETH
-            timestamp=Timestamp(1496979735),
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_EUR, amount=FVal(2000)),
+            receive=AssetAmount(asset=A_BTC, amount=FVal('0.002') * FVal(2000)),
+        ),
+        # Selling 500 CHF for ETH with 0.004 CHF/ETH. + 0.02 EUR
+        # That means 2 ETH for 500 CHF + 0.02 EUR -> with 1.001 CHF/EUR ->
+        # (500*1.001 + 0.02)/2 -> 250.26 EUR per ETH
+        *create_swap_events(
+            timestamp=TimestampMS(1496979735000),
             location=Location.KRAKEN,
-            base_asset=A_CHF,
-            quote_asset=A_ETH,
-            trade_type=TradeType.SELL,
-            amount=FVal(500),
-            rate=Price(FVal('0.004')),
-            fee=FVal('0.02'),
-            fee_currency=A_EUR,
-            link=None,
-        ), Trade(
-            timestamp=Timestamp(1506979735),
+            event_identifier='2xyz',
+            spend=AssetAmount(asset=A_CHF, amount=FVal(500)),
+            receive=AssetAmount(asset=A_ETH, amount=FVal('0.004') * FVal(500)),
+        ),
+        *create_swap_events(
+            timestamp=TimestampMS(1506979735000),
             location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=Price(FVal(25000)),
-            fee=FVal('0.02'),
-            fee_currency=A_EUR,
-            link=None,
+            event_identifier='3xyz',
+            spend=AssetAmount(asset=A_ETH, amount=ONE),
+            receive=AssetAmount(asset=A_EUR, amount=FVal(25000)),
         ),
     ]
     accounting_history_process(
@@ -271,7 +241,7 @@ def test_sell_fiat_for_crypto(accountant, google_service):
     )
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=FVal('24749.72'), free=ZERO),
+        AccountingEventType.TRADE: PNL(taxable=FVal('24749.75'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
 
@@ -280,34 +250,26 @@ def test_sell_fiat_for_crypto(accountant, google_service):
     'taxfree_after_period': -1,
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_direct_profit_currency_fiat_trades(accountant, google_service):
     """Test that buying crypto with fiat and then selling crypto for fiat takes the
     trade rate as is, if it's the chosen profit currency
     """
     buy_price, sell_price = Price(FVal('0.80')), Price(FVal('10.9'))
     history = [
-        Trade(
-            timestamp=Timestamp(1446979735),  # 1 ETH = 0.8583 EUR according to oracle
+        *create_swap_events(
+            timestamp=TimestampMS(1446979735000),  # 1 ETH = 0.8583 EUR according to oracle
             location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=buy_price,  # But we bought in discount
-            fee=ZERO,
-            fee_currency=A_EUR,
-            link=None,
-        ), Trade(
-            timestamp=Timestamp(1463508234),  # 1 ETH = 10.785 EUR according to oracle
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_EUR, amount=buy_price),
+            receive=AssetAmount(asset=A_ETH, amount=ONE),
+        ),
+        *create_swap_events(
+            timestamp=TimestampMS(1463508234000),  # 1 ETH = 10.785 EUR according to oracle
             location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=sell_price,  # But we sold for more than oracle
-            fee=ZERO,
-            fee_currency=A_EUR,
-            link=None,
+            event_identifier='2xyz',
+            spend=AssetAmount(asset=A_ETH, amount=ONE),
+            receive=AssetAmount(asset=A_EUR, amount=sell_price),
         ),
     ]
     accounting_history_process(
@@ -327,34 +289,26 @@ def test_direct_profit_currency_fiat_trades(accountant, google_service):
     'taxfree_after_period': -1,
 }])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_other_currency_fiat_trades(accountant, google_service):
     """Test that buying crypto with fiat and then selling crypto for fiat takes the
     price from the fiat part.
     """
-    buy_price, sell_price = Price(FVal('0.80')), Price(FVal('10.9'))
+    buy_price, sell_price = FVal('0.80'), FVal('10.9')
     history = [
-        Trade(
-            timestamp=Timestamp(1446979735),  # 1 ETH = 0.8583 EUR according to oracle
+        *create_swap_events(
+            timestamp=TimestampMS(1446979735000),  # 1 ETH = 0.8583 EUR according to oracle
             location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_USD,
-            trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=buy_price,  # But we bought in discount
-            fee=ZERO,
-            fee_currency=A_USD,
-            link=None,
-        ), Trade(
-            timestamp=Timestamp(1463508234),  # 1 ETH = 10.785 EUR according to oracle
+            event_identifier='1xyz',
+            spend=AssetAmount(asset=A_USD, amount=buy_price),
+            receive=AssetAmount(asset=A_ETH, amount=ONE),
+        ),
+        *create_swap_events(
+            timestamp=TimestampMS(1463508234000),  # 1 ETH = 10.785 EUR according to oracle
             location=Location.KRAKEN,
-            base_asset=A_ETH,
-            quote_asset=A_USD,  # USD/EUR -> 0.8878
-            trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=sell_price,  # But we sold for more than oracle
-            fee=ZERO,
-            fee_currency=A_USD,
-            link=None,
+            event_identifier='2xyz',
+            spend=AssetAmount(asset=A_ETH, amount=ONE),
+            receive=AssetAmount(asset=A_USD, amount=sell_price),
         ),
     ]
     accounting_history_process(
@@ -364,7 +318,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
         history_list=history,
     )
     no_message_errors(accountant.msg_aggregator)
-    expected_pnl = sell_price * prices['USD']['EUR'][history[1].timestamp] - buy_price * prices['USD']['EUR'][history[0].timestamp]  # noqa: E501
+    expected_pnl = sell_price * prices['USD']['EUR'][ts_ms_to_sec(history[2].timestamp)] - buy_price * prices['USD']['EUR'][ts_ms_to_sec(history[0].timestamp)]  # noqa: E501
     expected_pnls = PnlTotals({
         AccountingEventType.TRADE: PNL(taxable=expected_pnl, free=ZERO),
     })
@@ -373,6 +327,7 @@ def test_other_currency_fiat_trades(accountant, google_service):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_asset_and_price_not_found_in_history_processing(accountant):
     """
     Make sure that in history processing if no price is found for a trade it's added to a
@@ -384,19 +339,15 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     PriceHistorian().set_oracles_order([HistoricalPriceOracle.CRYPTOCOMPARE])  # enforce single oracle for VCR  # noqa: E501
     fgp = EvmToken('eip155:1/erc20:0xd9A8cfe21C232D485065cb62a96866799d4645f7')
     time = Timestamp(1492685761)
-    trade = Trade(
-        timestamp=time,
+    events = create_swap_events(
+        timestamp=ts_sec_to_ms(time),
         location=Location.KRAKEN,
-        base_asset=A_EUR,
-        quote_asset=A_BTC,
-        trade_type=TradeType.BUY,
-        amount=FVal('2.5'),
-        rate=Price(FVal(.11000)),
-        fee=FVal('0.15'),
-        fee_currency=fgp,
-        link=None,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_BTC, amount=FVal('0.11000') * FVal('2.5')),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('2.5')),
+        fee=AssetAmount(asset=fgp, amount=FVal('0.15')),
     )
-    history = [trade, trade]  # duplicate missing price
+    history = [*events, *events]  # duplicate missing price
     accounting_history_process(
         accountant,
         start_ts=Timestamp(0),
@@ -416,6 +367,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('force_no_price_found_for', [[(A_COMP, 1446979735)]])
+@pytest.mark.parametrize('accounting_initialize_parameters', [True])
 def test_acquisition_price_not_found(accountant, google_service):
     """Test that if for an acquisition the price is not found, price of
     zero is taken and asset is not ignored and no missing acquisition is counted"""
@@ -429,15 +381,12 @@ def test_acquisition_price_not_found(accountant, google_service):
             event_subtype=HistoryEventSubType.NONE,
             asset=A_COMP,
             amount=ONE,
-        ), Trade(
-            timestamp=Timestamp(1635314397),  # cryptocompare hourly COMP/EUR price: 261.39
+        ), *create_swap_events(
+            timestamp=TimestampMS(1635314397000),  # cryptocompare hourly COMP/EUR price: 261.39
             location=Location.POLONIEX,
-            base_asset=A_COMP,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=Price(FVal('261.39')),
-            link=None,
+            event_identifier='2xyz',
+            spend=AssetAmount(asset=A_COMP, amount=ONE),
+            receive=AssetAmount(asset=A_EUR, amount=FVal('261.39')),
         ),
     ]
     accounting_history_process(accountant, Timestamp(1436979735), Timestamp(1636314397), history)
@@ -454,25 +403,17 @@ def test_acquisition_price_not_found(accountant, google_service):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_no_fiat_missing_acquisitions(accountant):
     history = [
-        Trade(
-            timestamp=Timestamp(1459024920),
+        *create_swap_events(
+            timestamp=TimestampMS(1459024920000),
             location=Location.UPHOLD,
-            base_asset=A_EUR,
-            quote_asset=A_USD,
-            trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=Price(FVal('0.8982')),
-            link=None,
+            spend=AssetAmount(asset=A_USD, amount=FVal('0.8982')),
+            receive=AssetAmount(asset=A_EUR, amount=ONE),
         ),
-        Trade(
-            timestamp=Timestamp(1446979735),
+        *create_swap_events(
+            timestamp=TimestampMS(1446979735000),
             location=Location.POLONIEX,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=ONE,
-            rate=Price(FVal(355.9)),
-            link=None,
+            spend=AssetAmount(asset=A_EUR, amount=FVal(355.9)),
+            receive=AssetAmount(asset=A_BTC, amount=ONE),
         ),
     ]
     accounting_history_process(accountant, Timestamp(1446979735), Timestamp(1635314397), history)

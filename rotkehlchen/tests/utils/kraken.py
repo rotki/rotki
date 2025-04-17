@@ -5,7 +5,6 @@ from typing import Any
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import TradeType
 from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -381,7 +380,6 @@ def create_kraken_trade(
         time: Timestamp | None = None,
         start_ts: Timestamp | None = None,
         end_ts: Timestamp | None = None,
-        trade_type: TradeType | None = None,
         rate: FVal | None = None,
         amount: FVal | None = None,
         fee: FVal | None = None,
@@ -409,10 +407,8 @@ def create_kraken_trade(
         trade['time'] = str(time) + '.0000'
     else:
         trade['time'] = str(make_random_timestamp(start=start_ts, end=end_ts)) + '.0000'
-    if trade_type:
-        trade['type'] = str(trade_type)
-    else:
-        trade['type'] = random.choice(('buy', 'sell'))
+
+    trade['type'] = random.choice(('buy', 'sell'))
     trade['ordertype'] = random.choice(('limit', 'market'))
     if rate:
         price = rate

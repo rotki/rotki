@@ -39,7 +39,6 @@ from rotkehlchen.accounting.export.csv import (
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -1601,11 +1600,11 @@ class RestAPI:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             settings = self.rotkehlchen.get_settings(cursor)
             cache = self.rotkehlchen.data.db.get_cache_for_api(cursor)
-            ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor, None)
+            ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor)
         debug_info = {
             'events': [entry.serialize_for_debug_import() for entry in events],
             'settings': settings.serialize() | cache,
-            'ignored_events_ids': {k.serialize(): list(v) for k, v in ignored_ids.items()},
+            'ignored_events_ids': list(ignored_ids),
             'pnl_settings': {
                 'from_timestamp': int(from_timestamp),
                 'to_timestamp': int(to_timestamp),
@@ -2093,12 +2092,11 @@ class RestAPI:
         result = {'successful': list(succeeded), 'no_action': list(no_action)}
         return api_response(_wrap_in_ok_result(process_result(result)), status_code=HTTPStatus.OK)
 
-    def add_ignored_action_ids(self, action_type: ActionType, action_ids: list[str]) -> Response:
+    def add_ignored_action_ids(self, action_ids: list[str]) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.data.db.add_to_ignored_action_ids(
                     write_cursor=cursor,
-                    action_type=action_type,
                     identifiers=action_ids,
                 )
         except InputError as e:
@@ -2108,14 +2106,12 @@ class RestAPI:
 
     def remove_ignored_action_ids(
             self,
-            action_type: ActionType,
             action_ids: list[str],
     ) -> Response:
         try:
             with self.rotkehlchen.data.db.user_write() as cursor:
                 self.rotkehlchen.data.db.remove_from_ignored_action_ids(
                     write_cursor=cursor,
-                    action_type=action_type,
                     identifiers=action_ids,
                 )
         except InputError as e:
@@ -3609,10 +3605,7 @@ class RestAPI:
                 location=filter_query.location,
             )
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
-            ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
-                cursor=cursor,
-                action_type=ActionType.HISTORY_EVENT,
-            )
+            ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor=cursor)
 
         accountant_pot = AccountingPot(
             database=self.rotkehlchen.data.db,
@@ -3631,7 +3624,7 @@ class RestAPI:
             entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
-                    ignored_ids_mapping=ignored_ids_mapping,
+                    ignored_ids=ignored_ids,
                     hidden_event_ids=hidden_event_ids,
                     event_accounting_rule_status=event_accounting_rule_status,
                     grouped_events_num=grouped_events_num,  # type: ignore
@@ -3648,7 +3641,7 @@ class RestAPI:
             entries = [
                 x.serialize_for_api(  # type: ignore
                     customized_event_ids=customized_event_ids,
-                    ignored_ids_mapping=ignored_ids_mapping,
+                    ignored_ids=ignored_ids,
                     hidden_event_ids=hidden_event_ids,
                     event_accounting_rule_status=event_accounting_rule_status,
                 ) for x, event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501

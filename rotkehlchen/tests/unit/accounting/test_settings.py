@@ -10,10 +10,11 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.accounting_rules import DBAccountingRules
-from rotkehlchen.exchanges.data_structures import MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
     accounting_history_process,
@@ -27,26 +28,20 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
+    AssetAmount,
     Location,
-    Price,
     Timestamp,
     TimestampMS,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 
-history5 = history1 + [Trade(
-    timestamp=Timestamp(1512693374),  # cryptocompare hourly BTC/EUR price: 537.805
+history5 = history1 + create_swap_events(
+    timestamp=TimestampMS(1512693374000),  # cryptocompare hourly BTC/EUR price: 537.805
     location=Location.KRAKEN,
-    base_asset=A_BTC,
-    quote_asset=A_EUR,
-    trade_type=TradeType.SELL,
-    amount=FVal('20'),
-    rate=Price(FVal('13503.35')),
-    fee=None,
-    fee_currency=None,
-    link=None,
-)]
+    event_identifier='',
+    spend=AssetAmount(asset=A_BTC, amount=FVal('20')),
+    receive=AssetAmount(asset=A_EUR, amount=FVal('13503.35') * FVal('20')),
+)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -58,7 +53,7 @@ def test_nocrypto2crypto(accountant, google_service):
     accounting_history_process(accountant, 1436979735, 1519693374, history5)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
-        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('264693.433642820')),
+        AccountingEventType.TRADE: PNL(taxable=ZERO, free=FVal('264693.43364282000')),
         AccountingEventType.FEE: PNL(taxable=FVal('-0.238868129979988140934107'), free=ZERO),
     })
     check_pnls_and_csv(accountant, expected_pnls, google_service)
@@ -103,31 +98,25 @@ def test_big_taxfree_period(accountant, google_service):
 def test_include_gas_costs(accountant, google_service):
     addr1 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
     tx_hash = deserialize_evm_tx_hash('0x5cc0e6e62753551313412492296d5e57bea0a9d1ce507cc96aa4aa076c5bde7a')  # noqa: E501
-    history = [
-        Trade(
-            timestamp=1539388574,
-            location=Location.EXTERNAL,
-            base_asset=A_ETH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(10),
-            rate=FVal('168.7'),
-            fee=None,
-            fee_currency=None,
-            link=None,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=0,
-            timestamp=1569924574000,
-            location=Location.ETHEREUM,
-            location_label=addr1,
-            asset=A_ETH,
-            amount=FVal('0.000030921'),
-            notes='Burn 0.000030921 ETH for gas',
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            counterparty=CPT_GAS,
-        )]
+    history = [*create_swap_events(
+        timestamp=TimestampMS(1539388574000),
+        location=Location.EXTERNAL,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('1687')),
+        receive=AssetAmount(asset=A_ETH, amount=FVal(10)),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1569924574000),
+        location=Location.ETHEREUM,
+        location_label=addr1,
+        asset=A_ETH,
+        amount=FVal('0.000030921'),
+        notes='Burn 0.000030921 ETH for gas',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        counterparty=CPT_GAS,
+    )]
     accounting_history_process(accountant, start_ts=1436979735, end_ts=1619693374, history_list=history)  # noqa: E501
     no_message_errors(accountant.msg_aggregator)
     expected = ZERO
@@ -143,30 +132,21 @@ def test_include_gas_costs(accountant, google_service):
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_ignored_assets(accountant, google_service):
     history = history1 + [
-        Trade(
-            timestamp=1476979735,
+        *create_swap_events(
+            timestamp=TimestampMS(1476979735000),
             location=Location.KRAKEN,
-            base_asset=A_DASH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(10),
-            rate=FVal('9.76775956284'),
-            fee=FVal('0.0011'),
-            fee_currency=A_DASH,
-            link=None,
-        ), Trade(
-            timestamp=1496979735,
-            location=Location.KRAKEN,
-            base_asset=A_DASH,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal(5),
-            rate=FVal('128.09'),
-            fee=FVal('0.015'),
-            fee_currency=A_EUR,
-            link=None,
-        ),
-    ]
+            event_identifier='10xyz',
+            spend=AssetAmount(asset=A_EUR, amount=FVal('9.76775956284') * FVal(10)),
+            receive=AssetAmount(asset=A_DASH, amount=FVal(10)),
+            fee=AssetAmount(asset=A_DASH, amount=FVal('0.0011')),
+        ), *create_swap_events(
+        timestamp=TimestampMS(1496979735000),
+        location=Location.KRAKEN,
+        event_identifier='11xyz',
+        spend=AssetAmount(asset=A_DASH, amount=FVal(5)),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('128.09') * FVal(5)),
+        fee=AssetAmount(asset=A_EUR, amount=FVal('0.015')),
+    )]
     accounting_history_process(accountant, 1436979735, 1519693374, history)
     no_message_errors(accountant.msg_aggregator)
     expected_pnls = PnlTotals({
@@ -179,31 +159,21 @@ def test_ignored_assets(accountant, google_service):
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('db_settings', [{'include_fees_in_cost_basis': False}])
 def test_margin_events_affect_gained_lost_amount(accountant, google_service):
-    history = [
-        Trade(
-            timestamp=1476979735,
-            location=Location.KRAKEN,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(5),
-            rate=FVal('578.505'),
-            fee=FVal('0.0012'),
-            fee_currency=A_BTC,
-            link=None,
-        ), Trade(  # 2519.62 - 0.02 - ((0.0012*578.505)/5 + 578.505)
-            timestamp=1476979735,
-            location=Location.KRAKEN,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=ONE,
-            rate=FVal('2519.62'),
-            fee=FVal('0.02'),
-            fee_currency=A_EUR,
-            link=None,
-        ),
-    ]
+    history = create_swap_events(
+        timestamp=TimestampMS(1476979735000),
+        location=Location.KRAKEN,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('578.505') * FVal(5)),
+        receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
+        fee=AssetAmount(asset=A_BTC, amount=FVal('0.0012')),
+    ) + create_swap_events(  # 2519.62 - 0.02 - ((0.0012*578.505)/5 + 578.505)
+        timestamp=TimestampMS(1476979735000),
+        location=Location.KRAKEN,
+        event_identifier='2xyz',
+        spend=AssetAmount(asset=A_BTC, amount=ONE),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('2519.62')),
+        fee=AssetAmount(asset=A_EUR, amount=FVal('0.02')),
+    )
     history += [MarginPosition(
         location=Location.POLONIEX,  # BTC/EUR: 810.49
         open_time=1484438400,  # 15/01/2017
@@ -271,31 +241,20 @@ def test_not_calculate_past_cost_basis(accountant, expected, google_service):
     # trades copied from
     # rotkehlchen/tests/integration/test_end_to_end_tax_report.py
 
-    history = [
-        Trade(
-            timestamp=1446979735,  # 08/11/2015
-            location=Location.EXTERNAL,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.BUY,
-            amount=FVal(5),
-            rate=FVal('268.678317859'),
-            fee=None,
-            fee_currency=None,
-            link=None,
-        ), Trade(
-            timestamp=1488373504,  # 29/02/2017
-            location=Location.KRAKEN,
-            base_asset=A_BTC,
-            quote_asset=A_EUR,
-            trade_type=TradeType.SELL,
-            amount=FVal(2),
-            rate=FVal('1146.22'),
-            fee=FVal('0.01'),
-            fee_currency=A_EUR,
-            link=None,
-        ),
-    ]
+    history = create_swap_events(
+        timestamp=TimestampMS(1446979735000),  # 08/11/2015
+        location=Location.EXTERNAL,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('268.678317859') * FVal(5)),
+        receive=AssetAmount(asset=A_BTC, amount=FVal(5)),
+    ) + create_swap_events(
+        timestamp=TimestampMS(1488373504000),  # 29/02/2017
+        location=Location.KRAKEN,
+        event_identifier='2xyz',
+        spend=AssetAmount(asset=A_BTC, amount=FVal(2)),
+        receive=AssetAmount(asset=A_EUR, amount=FVal('1146.22') * FVal(2)),
+        fee=AssetAmount(asset=A_EUR, amount=FVal('0.01')),
+    )
     accounting_history_process(
         accountant=accountant,
         start_ts=1466979735,

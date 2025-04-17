@@ -35,6 +35,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
@@ -883,9 +884,9 @@ class DBHistoryEvents:
             )
             transactions_per_chain = {ChainID.deserialize_from_db(row[0]).name: row[1] for row in cursor}  # noqa: E501
             cursor.execute(
-                'SELECT location, COUNT(*) from trades '
-                'WHERE timestamp >= ? AND timestamp <= ? GROUP BY location',
-                (from_ts, to_ts),
+                f'SELECT location, COUNT(DISTINCT event_identifier) AS unique_events FROM history_events '  # noqa: E501
+                f'WHERE location IN ({",".join("?" * len(possible_trades_locations := ALL_SUPPORTED_EXCHANGES + (Location.EXTERNAL,)))}) AND timestamp BETWEEN ? AND ? GROUP BY location',  # noqa: E501
+                (*[i.serialize_for_db() for i in possible_trades_locations], from_ts_ms, to_ts_ms),
             )
             trades_by_exchange = {str(Location.deserialize_from_db(row[0])): row[1] for row in cursor}  # noqa: E501
             cursor.execute(

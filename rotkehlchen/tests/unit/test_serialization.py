@@ -17,7 +17,6 @@ from rotkehlchen.types import (
     EvmTransaction,
     Location,
     Timestamp,
-    TradeType,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -39,32 +38,6 @@ def test_rlk_jsondumps():
         '{"a": "5.4", "b": "foo", "c": "32.1", "d": 5, '
         '"e": [1, "a", "5.1"], "f": "ETH", "BTC": "test_with_asset_key"}'
     )
-
-
-def test_deserialize_trade_type():
-    assert TradeType.deserialize('buy') == TradeType.BUY
-    assert TradeType.deserialize('LIMIT_BUY') == TradeType.BUY
-    assert TradeType.deserialize('BUY') == TradeType.BUY
-    assert TradeType.deserialize('Buy') == TradeType.BUY
-    assert TradeType.deserialize('sell') == TradeType.SELL
-    assert TradeType.deserialize('LIMIT_SELL') == TradeType.SELL
-    assert TradeType.deserialize('SELL') == TradeType.SELL
-    assert TradeType.deserialize('Sell') == TradeType.SELL
-    assert TradeType.deserialize('settlement buy') == TradeType.SETTLEMENT_BUY
-    assert TradeType.deserialize('settlement_buy') == TradeType.SETTLEMENT_BUY
-    assert TradeType.deserialize('settlement sell') == TradeType.SETTLEMENT_SELL
-    assert TradeType.deserialize('settlement_sell') == TradeType.SETTLEMENT_SELL
-
-    assert len(list(TradeType)) == 4
-
-    with pytest.raises(DeserializationError):
-        TradeType.deserialize('dsad')
-
-    with pytest.raises(DeserializationError):
-        TradeType.deserialize(None)
-
-    with pytest.raises(DeserializationError):
-        TradeType.deserialize(1)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

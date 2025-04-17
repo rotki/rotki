@@ -108,6 +108,15 @@ class EventsAccountant:
             if next_event and isinstance(next_event, HistoryBaseEntry) and next_event.event_identifier == event.event_identifier and next_event.event_subtype == HistoryEventSubType.FEE:  # noqa: E501
                 fee_event = cast('HistoryBaseEntry', next(events_iterator))  # guaranteed by if check  # noqa: E501
 
+            with self.pot.database.conn.read_ctx() as cursor:
+                if (
+                        event.asset in (ignored_assets := self.pot.database.get_ignored_asset_ids(cursor)) or  # noqa: E501
+                        in_event.asset in ignored_assets or
+                        (fee_event is not None and fee_event.asset in ignored_assets)
+                ):
+                    # skip out_event and in_event, and maybe fee_event
+                    return 3 if fee_event is not None else 2
+
             return self._process_swap(
                 timestamp=timestamp,
                 out_event=event,
@@ -147,9 +156,6 @@ class EventsAccountant:
         1. out_event is always first
         2. fee_event comes just after the other event (in/out) with the same asset
         3. sequence of the in_event and fee_event is preserved
-
-        TODO: Contains similarities with Trade::process() which could be abstracted.
-        Especially regarding the fees.
         """
         fee_info = None
         if fee_event is not None:
@@ -177,7 +183,12 @@ class EventsAccountant:
             timestamp=timestamp,
             asset=out_event.asset,
             amount=out_event.amount,
-            taxable=event_settings.taxable,
+            # Determine taxability for the out_event:
+            # - Event is only taxable if explicitly allowed in event_settings
+            # - AND either:
+            #   - It's a crypto-to-fiat trade (receiving fiat), OR
+            #   - It's a crypto-to-crypto trade and include_crypto2crypto is enabled
+            taxable=(in_event.asset.is_fiat() or self.pot.settings.include_crypto2crypto) and event_settings.taxable,  # noqa: E501
             given_price=prices[0],
             count_entire_amount_spend=False,
             extra_data=extra_data,

@@ -6,17 +6,17 @@ from typing import Any
 from marshmallow import EXCLUDE, ValidationError
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import ModifiableSettingsSchema
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import Loan, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import Loan, MarginPosition
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class DebugHistoryImporter:
         has_required_types = (
             isinstance(debug_data['events'], list) and
             isinstance(debug_data['settings'], dict) and
-            isinstance(debug_data['ignored_events_ids'], dict)
+            isinstance(debug_data['ignored_events_ids'], list)
         )
         if has_required_types is False:
             error_msg = 'import history data contains some invalid data types'
@@ -57,7 +57,7 @@ class DebugHistoryImporter:
                 event_type = AccountingEventType.deserialize(event['accounting_event_type'])
                 match event_type:
                     case AccountingEventType.TRADE:
-                        events.append(Trade.deserialize(event))
+                        events.append(SwapEvent.deserialize(event))
                     case AccountingEventType.ASSET_MOVEMENT:
                         events.append(AssetMovement.deserialize(event))
                     case AccountingEventType.MARGIN_POSITION:
@@ -89,29 +89,16 @@ class DebugHistoryImporter:
 
         log.debug('Trying to add ignored actions identifiers')
         try:
-            for raw_action_type, action_ids in debug_data['ignored_events_ids'].items():
-                try:
-                    action_type = ActionType.deserialize(raw_action_type)
-                    if not isinstance(action_ids, list) and all(isinstance(x, str) for x in action_ids):  # noqa: E501
-                        raise DeserializationError('Ignored event ids are not a list of strings')
-                    with self.db.user_write() as cursor:
-                        self.db.add_to_ignored_action_ids(
-                            write_cursor=cursor,
-                            action_type=action_type,
-                            identifiers=action_ids,
-                        )
-                except (DeserializationError, InputError) as e:
-                    err_str = str(e)
-                    error_msg = f'Error while adding ignored action identifiers due to: {err_str}'
-                    if 'already exists in the database' in err_str:
-                        error_msg += 'Skipping it'
-                        log.error(error_msg)
-                        continue
-
-                    log.error(error_msg)
-                    return False, error_msg, {}
-        except KeyError as e:
-            error_msg = f'Error while adding history events due to: {e!s}'
+            if not isinstance((action_ids := debug_data['ignored_events_ids']), list) and all(isinstance(x, str) for x in action_ids):  # noqa: E501
+                raise DeserializationError('Ignored event ids are not a list of strings')
+            with self.db.user_write() as cursor:
+                self.db.add_to_ignored_action_ids(
+                    write_cursor=cursor,
+                    identifiers=debug_data['ignored_events_ids'],
+                )
+        except (DeserializationError, InputError, KeyError) as e:
+            err_str = f'missing key: {e}' if isinstance(e, KeyError) else str(e)
+            error_msg = f'Error while adding ignored action identifiers due to {err_str}'
             log.error(error_msg)
             return False, error_msg, {}
 

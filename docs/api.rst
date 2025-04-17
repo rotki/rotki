@@ -5891,10 +5891,7 @@ Export PnL report debug data
                 "non_syncing_exchanges": []
                 "evmchains_to_skip_detection": []
             },
-            "ignored_events_ids": {
-                "trade": ["X124-JYI", "2325"],
-                "ethereum transaction": ["0xfoo", "0xboo"]
-            }
+            "ignored_events_ids": ["0xfoo", "0xboo"],
             "pnl_settings": {
                 "from_timestamp": 0,
                 "to_timestamp": 1656608820
@@ -9919,7 +9916,7 @@ Dealing with ignored actions
 
 .. http:put:: /api/(version)/actions/ignored
 
-   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring of a given action type during accounting. Returns the list of all ignored action identifiers of the given type after the addition.
+   Doing a PUT on the ignored actions endpoint will add action identifiers for ignoring of history event type during accounting. Returns the list of all ignored action identifiers of history events after the addition.
 
 
    **Example Request**:
@@ -9930,9 +9927,8 @@ Dealing with ignored actions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action_type": "history event", "data": ["Z231-XH23K"]}
+      {"data": ["Z231-XH23K"]}
 
-   :reqjson str action_type: A type of actions whose ignored ids to add. Defined above. Depending on the type, the data field is different.
    :reqjson list data: The data to ignore. For type "evm_transaction" it's an object with the following keys: ``"evm_chain"`` with the name of the evm chain the transaction happened in and ``"tx_hash"`` the string of the transaction hash to ignore. For all other types it's a list of strings representing the identifier of the action to ignore.
 
    **Example Response**:
@@ -9956,7 +9952,7 @@ Dealing with ignored actions
 
 .. http:delete:: /api/(version)/actions/ignored/
 
-   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions of the given type to be ignored during accounting.
+   Doing a DELETE on the ignored actions endpoint removes action ids from the list of actions of history event to be ignored during accounting.
 
 
    **Example Request**:
@@ -9968,17 +9964,9 @@ Dealing with ignored actions
       Content-Type: application/json;charset=UTF-8
 
       {
-          "action_type": "evm transaction",
-          "data": [{
-              "evm_chain": "ethereum",
-              "tx_hash": "0x34d9887286d8c427e5bf18004c464d150190780e83e89a47906cc63a07267780"
-          }, {
-              "evm_chain": "optimism",
-              "tx_hash": "0x14d9887286d3c427e5bf18004c464d150190780e83e89a47906cc63a07267780"
-          }]
+          "data": ["ethereum-0x34d9887286d8c427e5bf18004c464d150190780e83e89a47906cc63a07267780", "jwonowifewe"]
       }
 
-   :reqjson str action_type: As defined in ``PUT`` above.
    :reqjson list data: As defined in ``PUT`` above.
 
    **Example Response**:

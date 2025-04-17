@@ -7,6 +7,7 @@ from unittest.mock import _patch, patch
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
@@ -16,7 +17,6 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
@@ -44,10 +44,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     Location,
-    Price,
-    Timestamp,
     TimestampMS,
-    TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -1114,24 +1111,18 @@ def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
     db = rotki.data.db
     with db.user_write() as cursor:
         for exchange_location in exchange_locations:
-            db.add_trades(
+            DBHistoryEvents(db).add_history_events(
                 write_cursor=cursor,
-                trades=[Trade(
-                    timestamp=Timestamp(1),
+                history=[AssetMovement(
+                    timestamp=TimestampMS(1),
                     location=exchange_location,
-                    base_asset=A_BTC,
-                    quote_asset=A_ETH,
-                    trade_type=TradeType.BUY,
+                    asset=A_BTC,
+                    event_type=HistoryEventType.DEPOSIT,
                     amount=ONE,
-                    rate=Price(ONE),
-                    fee=FVal('0.1'),
-                    fee_currency=A_ETH,
-                    link='foo',
                     notes='boo',
                 )])
-            db.update_used_query_range(write_cursor=cursor, name=f'{exchange_location!s}_trades_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
             db.update_used_query_range(write_cursor=cursor, name=f'{exchange_location!s}_margins_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
-            db.update_used_query_range(write_cursor=cursor, name=f'{exchange_location!s}_asset_movements_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
+            db.update_used_query_range(write_cursor=cursor, name=f'{exchange_location!s}_history_events_{exchange_location!s}', start_ts=0, end_ts=9999)  # noqa: E501
 
 
 def check_saved_events_for_exchange(
@@ -1142,20 +1133,11 @@ def check_saved_events_for_exchange(
 ) -> None:
     """Check that an exchange has saved events"""
     with db.conn.read_ctx() as cursor:
-        trades = cursor.execute('SELECT * FROM trades where location=?;', (exchange_location.serialize_for_db(),)).fetchall()  # noqa: E501
-        trades_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='trades'))  # noqa: E501
         margins_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='margins'))  # noqa: E501
-        movements_range = db.get_used_query_range(cursor, queryrange_formatstr.format(exchange=exchange_location, type='asset_movements'))  # noqa: E501
     if should_exist:
-        assert trades_range is not None
         assert margins_range is not None
-        assert movements_range is not None
-        assert len(trades) != 0
     else:
-        assert trades_range is None
         assert margins_range is None
-        assert movements_range is None
-        assert len(trades) == 0
 
 
 TRANSACTIONS_RESPONSE = """{

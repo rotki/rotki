@@ -16,7 +16,6 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
-    TradeType,
 )
 from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 
@@ -326,7 +325,6 @@ def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bo
 
 
 DBTupleType = Literal[
-    'trade',
     'margin_position',
     'evm_transaction',
     'evm_internal_transaction',
@@ -338,16 +336,10 @@ def db_tuple_to_str(
         data: tuple[Any, ...],
         tuple_type: DBTupleType,
 ) -> str:
-    """Turns a tuple DB entry for trade, evm_transaction, etc into a user readable string
+    """Turns a tuple DB entry for evm_transaction, etc into a user readable string
 
     This is only intended for error messages.
     """
-    if tuple_type == 'trade':
-        return (
-            f'{TradeType.deserialize_from_db(data[5])} trade with id {data[0]} '
-            f'in {Location.deserialize_from_db(data[2])} and base/quote asset {data[3]} / '
-            f'{data[4]} at timestamp {data[1]}'
-        )
     if tuple_type == 'margin_position':
         return (
             f'Margin position with id {data[0]} in {Location.deserialize_from_db(data[1])} '

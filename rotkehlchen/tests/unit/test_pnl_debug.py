@@ -11,7 +11,7 @@ def test_pnl_debug_import(database):
     status, msg, data = json_importer.import_history_debug(pnl_debug_file)
     assert status is True
     assert msg == ''
-    assert len(data['events']) == 15
+    assert len(data['events']) == 17
     assert 'from_timestamp' in data['pnl_settings']
     assert 'to_timestamp' in data['pnl_settings']
 

@@ -13,18 +13,16 @@ from rotkehlchen.accounting.constants import (
     FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import AccountingError
-from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
@@ -51,11 +49,10 @@ from rotkehlchen.tests.utils.history import (
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import (
+    AssetAmount,
     Location,
-    Price,
     Timestamp,
     TimestampMS,
-    TradeType,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -400,7 +397,6 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_to_ignored_action_ids(
             write_cursor=write_cursor,
-            action_type=ActionType.HISTORY_EVENT,
             identifiers=[tx_id],
         )
 
@@ -419,7 +415,7 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert tuple(result.keys()) == expected_keys
     assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
-    assert result['ignored_events_ids'] == {'history_event': [tx_id]}
+    assert result['ignored_events_ids'] == [tx_id]
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -475,33 +471,26 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> No
     """
     # set environment
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    event = HistoryEvent(
-        event_identifier='whatever',
-        sequence_index=0,
-        timestamp=TimestampMS(1665336822000),
-        location=Location.EXTERNAL,
-        event_type=HistoryEventType.RECEIVE,
-        event_subtype=HistoryEventSubType.NONE,
-        amount=FVal(0.5),
-        asset=A_BTC,
-    )
-    trade = Trade(
-        timestamp=Timestamp(1665336822),
-        location=Location.EXTERNAL,
-        base_asset=A_DAI,
-        quote_asset=A_EUR,
-        trade_type=TradeType.BUY,
-        amount=FVal('1'),
-        rate=Price(FVal('320')),
-        fee=ZERO,
-        fee_currency=A_EUR,
-        link='',
-        notes='',
-    )
     with rotki.data.db.user_write() as write_cursor:
         db = DBHistoryEvents(rotki.data.db)
-        db.add_history_event(write_cursor, event)
-        rotki.data.db.add_trades(write_cursor, [trade])
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                event_identifier='whatever',
+                sequence_index=0,
+                timestamp=TimestampMS(1665336822000),
+                location=Location.EXTERNAL,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=FVal(0.5),
+                asset=A_BTC,
+            ), *create_swap_events(
+                timestamp=TimestampMS(1665336822000),
+                location=Location.EXTERNAL,
+                spend=AssetAmount(amount=FVal('1'), asset=A_EUR),
+                receive=AssetAmount(amount=FVal('320'), asset=A_DAI),
+            )],
+        )
 
     PriceHistorian.__instance = None
     price_historian = PriceHistorian(
@@ -538,7 +527,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> No
         ),
     )
     result = assert_proper_sync_response_with_result(response=response, status_code=HTTPStatus.OK)
-    assert coingecko_api_calls == 2
+    assert coingecko_api_calls == 1
     assert result['report_id'] == 1
     assert result['missing_prices'] == [{
         'from_asset': 'BTC',
