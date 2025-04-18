@@ -216,8 +216,8 @@
       },
       "create_oracle_cache": {
         "already_running": "La tarea ya está en curso",
-        "failed": "Error al crear una entrada de caché desde {fromAsset} a {toAsset} en la fuente: {error}",
-        "task": "Creando entrada de caché desde {fromAsset} a {toAsset} en {source}"
+        "failed": "Error al crear una entrada de caché de {fromAsset} a {toAsset} en la fuente: {error}",
+        "task": "Creando entrada de caché dee {fromAsset} a {toAsset} en {source}"
       },
       "detect_tokens": {
         "task": {
@@ -236,16 +236,16 @@
       },
       "exchange_rates": {
         "error": {
-          "message": "Error al consultar las tasas de intercambio: {message}",
-          "title": "Tasas de Cambio"
+          "message": "Error al consultar los tipos de cambio: {message}",
+          "title": "Tipos de cambio"
         },
         "task": {
-          "title": "Tasas de Cambio"
+          "title": "Tipos de cambio"
         }
       },
       "exchange_removal": {
-        "description": "La eliminación de {exchange} falló debido a: {error}",
-        "title": "Elimination de Exchange"
+        "description": "No se pudo eliminar {exchange} debido a: {error}",
+        "title": "Elimination de plataforma de intercambio"
       },
       "exchange_setup": {
         "description": "La configuración de {exchange} falló debido a: {error}",
@@ -253,8 +253,8 @@
       },
       "historic_fetch_price": {
         "task": {
-          "description": "Recuperando tasa de {fromAsset} a {toAsset} en {date} | Recuperando tasas para {count} pares a {toAsset}",
-          "title": "Recuperando la tasa de conversión"
+          "description": "Recuperando tipos de {fromAsset} a {toAsset} en {date} | Recuperando tasas para {count} pares a {toAsset}",
+          "title": "Recuperando el tipo de intercambio"
         }
       },
       "loopring": {
