@@ -550,7 +550,6 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {crypto_asset.symbol} as the result of a swap in curve'  # noqa: E501
-                event.counterparty = CPT_CURVE
                 receive_event = event
                 event.extra_data = None
 
@@ -564,7 +563,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 f'decoding needs to happen in the aggregator-specific decoder.',
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def _decode_deposit_and_stake(self, context: DecoderContext) -> DecodingOutput:
         """

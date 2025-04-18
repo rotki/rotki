@@ -99,7 +99,6 @@ class GmxDecoder(ArbitrumDecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.amount == amount_in
             ):
-                event.counterparty = CPT_GMX
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {token_in.symbol} as the result of a GMX swap'  # noqa: E501
@@ -112,7 +111,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def decode_position_change(self, context: DecoderContext) -> DecodingOutput:
         """Decode an increase or decrease in short/long positions in GMX V1"""

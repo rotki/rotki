@@ -25,6 +25,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -917,12 +918,11 @@ def test_direct_balancer_v2_given_swap(ethereum_inquirer, ethereum_accounts):
         notes=f'Revoke PSP spending approval of {user_address} by {PARASWAP_TOKEN_TRANSFER_PROXY}',
         counterparty=None,
         address=PARASWAP_TOKEN_TRANSFER_PROXY,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=244,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_PSP,
         amount=FVal(swap_amount),
@@ -930,12 +930,11 @@ def test_direct_balancer_v2_given_swap(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} PSP in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=245,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),

@@ -25,6 +25,7 @@ from rotkehlchen.constants.assets import A_ENS, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
@@ -124,12 +125,11 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             notes=f'Transfer eth node ownership of subnode hania.eth to {ADDY}',
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(register_fee_str),
@@ -138,12 +138,11 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
             extra_data={'name': 'hania.eth', 'expires': expires_timestamp},
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=48,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
             amount=ONE,
@@ -800,12 +799,11 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             notes=f'Transfer eth node ownership of subnode cantillon.eth to {user_address}',
             counterparty=CPT_ENS,
             address=ENS_REGISTRY_WITH_FALLBACK,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=207,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(register_fee_str),
@@ -814,12 +812,11 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
             extra_data={'name': 'cantillon.eth', 'expires': expires_timestamp},
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=208,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset(f'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85/{token_id}'),
             amount=ONE,

@@ -82,7 +82,7 @@ class KyberDecoder(KyberCommonDecoder):
             counterparty=CPT_KYBER_LEGACY,
         )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def _decode_legacy_upgraded_trade(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != KYBER_TRADE_LEGACY:
@@ -103,7 +103,7 @@ class KyberDecoder(KyberCommonDecoder):
             counterparty=CPT_KYBER_LEGACY,
         )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

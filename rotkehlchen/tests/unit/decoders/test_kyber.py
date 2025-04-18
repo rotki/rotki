@@ -10,6 +10,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ARB, A_CRV, A_ETH, A_POLYGON_POS_MATIC, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -40,12 +41,11 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
             location_label=ethereum_accounts[0],
             notes='Burn 0.01212979988 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal(45),
@@ -53,12 +53,11 @@ def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
             notes='Swap 45 USDC in kyber',
             counterparty=CPT_KYBER_LEGACY,
             address=string_to_evm_address('0x65bF64Ff5f51272f729BDcD7AcFB00677ced86Cd'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=1591043988000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.187603293406027635'),
@@ -94,12 +93,11 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
             location_label='0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0',
             notes='Burn 0.066614401 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal(8139.77872),
@@ -107,12 +105,11 @@ def test_kyber_legacy_new_contract(ethereum_inquirer):
             notes='Swap 8139.77872 USDC in kyber',
             counterparty=CPT_KYBER_LEGACY,
             address=string_to_evm_address('0x7C66550C9c730B6fdd4C03bc2e73c5462c5F7ACC'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=1644182638000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_CRV,
             amount=FVal('2428.33585390706162556'),
@@ -159,12 +156,11 @@ def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
             location_label=ethereum_accounts[0],
             notes=f'Set swETH spending approval of {ethereum_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT} to {approval_amount}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=259,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_sweth,
             amount=FVal(spend_amount),
@@ -172,12 +168,11 @@ def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
             notes=f'Swap {spend_amount} swETH in kyber',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0xf081470f5C6FBCCF48cC4e5B82Dd926409DcdD67'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=260,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),
@@ -214,12 +209,11 @@ def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ARB,
             amount=FVal(spend_amount),
@@ -227,12 +221,11 @@ def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_
             notes=f'Swap {spend_amount} ARB in kyber',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x11ddD59C33c73C44733b4123a86Ea5ce57F6e854'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=a_aidoge,
             amount=FVal(receive_amount),
@@ -279,12 +272,11 @@ def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
             location_label=base_accounts[0],
             notes=f'Revoke DOG spending approval of {base_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_dog,
             amount=FVal(spend_amount),
@@ -292,12 +284,11 @@ def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
             notes=f'Swap {spend_amount} DOG in kyber',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x11ddD59C33c73C44733b4123a86Ea5ce57F6e854'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=a_uni_base,
             amount=FVal(receive_amount),
@@ -343,12 +334,11 @@ def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
             location_label=optimism_accounts[0],
             notes=f'Revoke wstETH spending approval of {optimism_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT}',  # noqa: E501
             address=KYBER_AGGREGATOR_CONTRACT,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=47,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_wsteth_op,
             amount=FVal(spend_amount),
@@ -356,12 +346,11 @@ def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
             notes=f'Swap {spend_amount} wstETH in kyber',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x11ddD59C33c73C44733b4123a86Ea5ce57F6e854'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=48,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),
@@ -399,12 +388,11 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas} POL for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_usdc_poly,
             amount=FVal(spend_amount),
@@ -412,19 +400,18 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
             notes=f'Swap {spend_amount} USDC in kyber',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0x7bAF833f82BB1971f99A5a5d84bED1d5D0dEDD70'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=a_bal_poly,
             amount=FVal(receive_amount),
             location_label=polygon_pos_accounts[0],
             notes=f'Receive {receive_amount} BAL from kyber swap',
             counterparty=CPT_KYBER,
-            address=string_to_evm_address('0xf081470f5C6FBCCF48cC4e5B82Dd926409DcdD67'),
+            address=string_to_evm_address('0x7bAF833f82BB1971f99A5a5d84bED1d5D0dEDD70'),
         ),
     ]
     assert events == expected_events
@@ -451,12 +438,11 @@ def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts):
             location_label=scroll_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.SCROLL,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_usdc_scroll,
             amount=FVal(spend_amount),
@@ -464,12 +450,11 @@ def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts):
             notes=f'Swap {spend_amount} USDC in kyber',
             counterparty=CPT_KYBER,
             address=string_to_evm_address('0xf40442E1Cb0BdFb496E8B7405d0c1c48a81BC897'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.SCROLL,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),

@@ -193,6 +193,8 @@ class BasenamesDecoder(EnsCommonDecoder):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
+                # Update the note using the tx_log address (registrar controller) as the from address instead of the zero address  # noqa: E501
+                event.notes = f'Receive {self.display_name} name {fullname} from {context.tx_log.address} to {event.location_label}'  # noqa: E501
                 receive_event = event
 
         if receive_event is not None and spend_event is None:
@@ -218,7 +220,7 @@ class BasenamesDecoder(EnsCommonDecoder):
                 events_list=context.decoded_events,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

@@ -14,6 +14,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -56,12 +57,11 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             location_label='0x20A1CF262Cd3A42a50D226fD728104119e6fD0a1',
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(0.001),
@@ -69,12 +69,11 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             notes='Swap 0.001 ETH in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
-            sequence_index=204,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_DAI,
             amount=FVal('1.207092929058998715'),
@@ -341,12 +340,11 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=56,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal(1000),
@@ -354,12 +352,11 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             notes='Swap 1000 USDC via Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=57,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x3E828ac5C480069D4765654Fb4b8733b910b13b2'),
             amount=FVal('1881.157063057509114271'),
