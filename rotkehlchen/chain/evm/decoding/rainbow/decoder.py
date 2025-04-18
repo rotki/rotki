@@ -17,7 +17,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import CPT_RAINBOW_SWAPS, RAINBOW_ROUTER_CONTRACT
@@ -37,7 +37,6 @@ class RainbowDecoder(DecoderInterface):
             transaction: EvmTransaction,
             fee_amount: FVal,
             fee_asset: CryptoAsset,
-            sender: ChecksumEvmAddress,
             decoded_events: list['EvmEvent'],
             in_event: Optional['EvmEvent'],
             out_event: Optional['EvmEvent'],
@@ -47,14 +46,11 @@ class RainbowDecoder(DecoderInterface):
             tx_hash=transaction.tx_hash,
             sequence_index=self.base.get_next_sequence_index(),
             timestamp=transaction.timestamp,
-            event_type=HistoryEventType.SPEND,
+            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.FEE,
             asset=fee_asset,
             amount=fee_amount,
-            location_label=sender,
             notes=f'Spend {fee_amount} {fee_asset.resolve_to_asset_with_symbol().symbol} as Rainbow fee',  # noqa: E501
-            counterparty=CPT_RAINBOW_SWAPS,
-            address=RAINBOW_ROUTER_CONTRACT,
         )
         decoded_events.append(fee_event)
         maybe_reshuffle_events(
@@ -89,7 +85,6 @@ class RainbowDecoder(DecoderInterface):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = CPT_RAINBOW_SWAPS
                 in_event = event
             elif (
                 (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
@@ -206,7 +201,6 @@ class RainbowDecoder(DecoderInterface):
             transaction=transaction,
             fee_amount=fee_amount,
             fee_asset=fee_asset,
-            sender=out_event.location_label,  # type: ignore
             decoded_events=decoded_events,
             in_event=in_event,
             out_event=out_event,

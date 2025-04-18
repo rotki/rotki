@@ -86,9 +86,7 @@ class MetamaskCommonDecoder(DecoderInterface):
             ):  # find the receive event
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = CPT_METAMASK_SWAPS
                 event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a metamask swap'  # noqa: E501
-                event.address = self.router_address
                 # use this index as the event may be a native currency transfer
                 # and appear at the start
                 event.sequence_index = context.tx_log.log_index
@@ -141,10 +139,7 @@ class MetamaskCommonDecoder(DecoderInterface):
             event_subtype=HistoryEventSubType.FEE,
             asset=fee_asset,
             amount=fee_amount,
-            location_label=sender,
             notes=f'Spend {fee_amount} {fee_asset.symbol} as metamask fees',
-            counterparty=CPT_METAMASK_SWAPS,
-            address=context.transaction.to_address,
         )
 
         return DecodingOutput(event=fee_event, process_swaps=True)

@@ -452,7 +452,10 @@ def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal(in_amount),
+            location_label=user_address,
             notes=f'Receive {in_amount} USDC from Pendle swap',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
     assert events == expected_events
@@ -501,7 +504,10 @@ def test_swap_using_kyber_2(ethereum_inquirer, ethereum_accounts):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(in_amount),
+            location_label=user_address,
             notes=f'Receive {in_amount} ETH from Pendle swap',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
     assert events == expected_events
@@ -549,7 +555,10 @@ def test_swap_using_odos(ethereum_inquirer, ethereum_accounts):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x4c9EDD5852cd905f086C759E8383e09bff1E68B3'),
             amount=FVal(in_amount),
+            location_label=user_address,
             notes=f'Receive {in_amount} USDe from Pendle swap',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
     assert events == expected_events

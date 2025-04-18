@@ -61,7 +61,6 @@ class LlamazipCommonDecoder(DecoderInterface, abc.ABC):
                 event.address in self.router_addresses
             ):
                 receive_event = event
-                receive_event.counterparty = CPT_LLAMAZIP
                 receive_event.event_type = HistoryEventType.TRADE
                 receive_event.event_subtype = HistoryEventSubType.RECEIVE
                 receive_event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as the result of a swap in LlamaZip'  # noqa: E501

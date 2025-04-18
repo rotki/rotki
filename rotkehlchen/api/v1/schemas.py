@@ -1043,14 +1043,14 @@ class CreateHistoryEventSchema(Schema):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=data['spend_asset'],
                 amount=data['spend_amount'],
-                location_label=data['location_label'],
+                location_label=(location_label := data['location_label']),
                 notes=spend_notes,
                 identifier=data.get('identifier'),
                 event_identifier=(event_identifier := data['event_identifier']),
                 extra_data=data['extra_data'],
-                counterparty=data['counterparty'],
-                product=data['product'],
-                address=data['address'],
+                counterparty=(counterparty := data['counterparty']),
+                product=(product := data['product']),
+                address=(address := data['address']),
             ), EvmSwapEvent(
                 tx_hash=tx_hash,
                 sequence_index=sequence_index + 1,
@@ -1059,6 +1059,7 @@ class CreateHistoryEventSchema(Schema):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=data['receive_asset'],
                 amount=data['receive_amount'],
+                location_label=location_label,
                 notes=receive_notes,
                 identifier=context_schema.get_grouped_event_identifier(
                     data=data,
@@ -1066,6 +1067,9 @@ class CreateHistoryEventSchema(Schema):
                     sequence_index_offset=1,
                 ),
                 event_identifier=event_identifier,
+                counterparty=counterparty,
+                product=product,
+                address=address,
             )]
             if (fee_asset := data['fee_asset']) is not None:
                 events.append(EvmSwapEvent(
@@ -1076,6 +1080,7 @@ class CreateHistoryEventSchema(Schema):
                     event_subtype=HistoryEventSubType.FEE,
                     asset=fee_asset,
                     amount=data['fee_amount'],
+                    location_label=location_label,
                     notes=fee_notes,
                     identifier=context_schema.get_grouped_event_identifier(
                         data=data,
@@ -1083,6 +1088,9 @@ class CreateHistoryEventSchema(Schema):
                         sequence_index_offset=2,
                     ),
                     event_identifier=event_identifier,
+                    counterparty=counterparty,
+                    product=product,
+                    address=address,
                 ))
 
             return {'events': events}

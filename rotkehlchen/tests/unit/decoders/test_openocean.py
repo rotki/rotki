@@ -20,6 +20,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -70,12 +71,11 @@ def test_openocean_swap_token_to_token(
             location_label=user_address,
             notes=f'Set USDT spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=15,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=pos_usdt,
             amount=FVal(spend_amount),
@@ -83,12 +83,11 @@ def test_openocean_swap_token_to_token(
             notes=f'Swap {spend_amount} USDT in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0x1E82AD8A12068A85fCb96368463B434e77b21201'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=16,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:137/erc20:0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39'),
             amount=FVal(receive_amount),
@@ -122,12 +121,11 @@ def test_openocean_swap_eth_to_token(
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(spend_amount),
@@ -135,19 +133,18 @@ def test_openocean_swap_eth_to_token(
             notes=f'Swap {spend_amount} ETH in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:8453/erc20:0x9430A7e6283Fb704Fd1D9302868Bc39d16FE82Ba'),
             amount=FVal(receive_amount),
             location_label=user_address,
             notes=f'Receive {receive_amount} cbDXN from {OPENOCEAN_LABEL} swap',
             counterparty=CPT_OPENOCEAN,
-            address=string_to_evm_address('0xdeC876911cBE9428265af0D12132c52ee8642a99'),
+            address=OPENOCEAN_EXCHANGE_ADDRESS,
         ),
     ]
 
@@ -187,12 +184,11 @@ def test_openocean_swap_token_to_eth(
             location_label=user_address,
             notes=f'Set USDC.e spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=op_usdce,
             amount=FVal(spend_amount),
@@ -200,12 +196,11 @@ def test_openocean_swap_token_to_eth(
             notes=f'Swap {spend_amount} USDC.e in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),
@@ -251,12 +246,11 @@ def test_openocean_swap_uniswap_with_swapped_log(
             location_label=user_address,
             notes=f'Set ARB spending approval of {user_address} by {OPENOCEAN_EXCHANGE_ADDRESS} to {approve_amount}',  # noqa: E501
             address=OPENOCEAN_EXCHANGE_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ARB,
             amount=FVal(spend_amount),
@@ -264,12 +258,11 @@ def test_openocean_swap_uniswap_with_swapped_log(
             notes=f'Swap {spend_amount} ARB in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0xE07f9293ADe766Bffdf5e8548aD50425D49D5b25'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
             amount=FVal(receive_amount),
@@ -303,12 +296,11 @@ def test_openocean_swap_uniswapv2(
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xC5bA042BF8832999b17c9036E8212f49DCE0501A'),
             amount=FVal(spend_amount),
@@ -316,19 +308,18 @@ def test_openocean_swap_uniswapv2(
             notes=f'Swap {spend_amount} YOURAI in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0xAd4010bD5579f62fB40730cEf5cdE27d620c0383'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WETH,
             amount=FVal(receive_amount),
             location_label=user_address,
             notes=f'Receive {receive_amount} WETH from {OPENOCEAN_LABEL} swap',
             counterparty=CPT_OPENOCEAN,
-            address=OPENOCEAN_EXCHANGE_ADDRESS,
+            address=string_to_evm_address('0xAd4010bD5579f62fB40730cEf5cdE27d620c0383'),
         ),
     ]
 
@@ -355,12 +346,11 @@ def test_openocean_swap_uniswapv3(
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(spend_amount),
@@ -368,12 +358,11 @@ def test_openocean_swap_uniswapv3(
             notes=f'Swap {spend_amount} ETH in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x157a6df6B74F4E5E45af4E4615FDe7B49225a662'),
             amount=FVal(receive_amount),
@@ -419,12 +408,11 @@ def test_openocean_swap_on_binance_sc(
         location_label=user_address,
         notes=f'Set ETH spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=339,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_bsc_eth,
         amount=FVal(spend_amount),
@@ -432,12 +420,11 @@ def test_openocean_swap_on_binance_sc(
         notes=f'Swap {spend_amount} ETH in {OPENOCEAN_LABEL}',
         counterparty=CPT_OPENOCEAN,
         address=string_to_evm_address('0x55877bD7F2EE37BDe55cA4B271A3631f3A7ef121'),
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=340,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BSC_BNB,
         amount=FVal(receive_amount),
@@ -470,12 +457,11 @@ def test_openocean_swap_xdai_to_token(
             location_label=user_address,
             notes=f'Burn {gas_amount} XDAI for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_XDAI,
             amount=FVal(spend_amount),
@@ -483,18 +469,17 @@ def test_openocean_swap_xdai_to_token(
             notes=f'Swap {spend_amount} XDAI in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=OPENOCEAN_EXCHANGE_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
             amount=FVal(receive_amount),
             location_label=user_address,
             notes=f'Receive {receive_amount} USDC from {OPENOCEAN_LABEL} swap',
             counterparty=CPT_OPENOCEAN,
-            address=string_to_evm_address('0x8D2B7e5501Eb6D92F8e349f2FEbe785DD070bE74'),
+            address=OPENOCEAN_EXCHANGE_ADDRESS,
         ),
     ]

@@ -80,7 +80,6 @@ from .constants import (
     ERC20_OR_ERC721_TRANSFER,
     OUTGOING_EVENT_TYPES,
 )
-from .llamazip.constants import CPT_LLAMAZIP
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -595,15 +594,22 @@ class EVMTransactionDecoder(ABC):
                     len(trade_events) == idx
                 ):  # match events in the order defined in trade_subtypes
                     trade_events.append(next(events_iterator))
-                elif subtype != HistoryEventSubType.FEE:  # spend and receive are required, fee is optional  # noqa: E501
-                    processed_events.extend(trade_events)
-                    processed_events.append(next(events_iterator))
+                elif subtype != HistoryEventSubType.FEE:  # if spend or receive don't match above then the group is incomplete or out of order.  # noqa: E501
+                    # If no matches yet (failed on SPEND), save next(events_iterator), so that
+                    # we move on to the event after in the next while loop iteration.
+                    # If partial match (failed on RECEIVE), save only the already matched
+                    # trade_events so the next event (could be the SPEND of another group) will be
+                    # reprocessed in the next while loop iteration.
+                    processed_events.extend(trade_events if len(trade_events) > 0 else [next(events_iterator)])  # noqa: E501
                     log.error(
                         'Encountered incomplete or unordered swap event group '
                         f'{trade_events + [next_event]} in transaction {transaction!s}',
                     )
                     trade_events = []
                     break
+
+            if len(trade_events) == 0:
+                continue  # swap group was incomplete or unordered.
 
             spend_event = trade_events[0]
             for idx, trade_event in enumerate(trade_events):
@@ -617,14 +623,12 @@ class EVMTransactionDecoder(ABC):
                     amount=trade_event.amount,
                     notes=trade_event.notes,
                     extra_data=trade_event.extra_data,
+                    # the rest should be the same for the whole group, so set from the spend event.
+                    location_label=spend_event.location_label,
+                    counterparty=spend_event.counterparty,
+                    product=spend_event.product,
+                    address=spend_event.address,
                 )
-                if trade_event.event_subtype == HistoryEventSubType.SPEND:
-                    # Only set these properties in the spend event to avoid duplicated data.
-                    swap_event.location_label = trade_event.location_label
-                    swap_event.counterparty = trade_event.counterparty
-                    swap_event.product = trade_event.product
-                    swap_event.address = trade_event.address
-
                 processed_events.append(swap_event)
 
         return processed_events
@@ -736,10 +740,7 @@ class EVMTransactionDecoder(ABC):
             all_logs=tx_receipt.logs,
             counterparties=counterparties,
         )
-        # TODO: update tests for all decoders that process swaps via post decoding rules
-        # and remove the counterparty check from this if
-        # See https://github.com/orgs/rotki/projects/11?pane=issue&itemId=106071652
-        if maybe_modified and CPT_LLAMAZIP in counterparties:
+        if maybe_modified:
             process_swaps = True  # a swap may have been created in post decoding
 
         events = sorted(events, key=lambda x: x.sequence_index, reverse=False)

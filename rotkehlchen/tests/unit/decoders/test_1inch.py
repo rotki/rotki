@@ -14,7 +14,6 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ONEINCH_V4_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import ONEINCH_V5_ROUTER
-from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_DAI,
@@ -29,6 +28,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_CHI, A_PAN
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -73,25 +73,23 @@ def test_1inchv1_swap(ethereum_inquirer):
             location_label=ADDY,
             notes=f'Revoke CHI spending approval of {ADDY} by {chispender_addy}',
             address=chispender_addy,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=104,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('138.75'),
             location_label=ADDY,
-            notes=f'Swap 138.75 USDC in {CPT_UNISWAP_V2}',
-            counterparty=CPT_UNISWAP_V2,
+            notes=f'Swap 138.75 USDC in {CPT_ONEINCH_V1} from {ADDY}',
+            counterparty=CPT_ONEINCH_V1,
             address=oneinch_contract,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=105,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_DAI,
             amount=FVal('135.959878392183347402'),
@@ -141,12 +139,11 @@ def test_1inchv2_swap_for_eth(ethereum_inquirer):
             location_label=ADDY,
             notes=f'Set PAN spending approval of {ADDY} by {ONEINCH_V2_MAINNET_ROUTER} to 115792089237316195423570985008687907853269984665640564037304.954007913129639935',  # noqa: E501
             address=ONEINCH_V2_MAINNET_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=219,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_PAN,
             amount=FVal('2152.63'),
@@ -154,12 +151,11 @@ def test_1inchv2_swap_for_eth(ethereum_inquirer):
             notes='Swap 2152.63 PAN in 1inch-v2',
             counterparty=CPT_ONEINCH_V2,
             address=ONEINCH_V2_MAINNET_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=220,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.220582251767407014'),
@@ -193,12 +189,11 @@ def test_1inchv3_swap_for_eth(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Burn 0.0103897731 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('263.425'),
@@ -206,12 +201,11 @@ def test_1inchv3_swap_for_eth(ethereum_inquirer, ethereum_accounts):
             notes='Swap 263.425 USDT in 1inch-v3',
             counterparty=CPT_ONEINCH_V3,
             address=ONEINCH_V3_MAINNET_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.127775213950949157'),
@@ -250,12 +244,11 @@ def test_1inchv4_swap_on_uniswapv3(ethereum_inquirer):
             location_label=user_address,
             notes='Burn 0.005753512813468296 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal('5527'),
@@ -263,12 +256,11 @@ def test_1inchv4_swap_on_uniswapv3(ethereum_inquirer):
             notes=f'Swap 5527 USDT in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('2.930675563626228657'),
@@ -303,12 +295,11 @@ def test_1inchv4_orderfilledrfq(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal(amount_out),
@@ -316,12 +307,11 @@ def test_1inchv4_orderfilledrfq(ethereum_inquirer, ethereum_accounts):
             notes=f'Swap {amount_out} USDT in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=EvmToken('eip155:1/erc20:0x6De037ef9aD2725EB40118Bb1702EBb27e4Aeb24'),
             amount=FVal(amount_in),
@@ -363,12 +353,11 @@ def test_1inchv4_swap_on_sushiswap(ethereum_inquirer):
             location_label=user_address,
             notes='Burn 0.003337072472716185 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDC,
             amount=FVal('121.424518'),
@@ -376,12 +365,11 @@ def test_1inchv4_swap_on_sushiswap(ethereum_inquirer):
             notes=f'Swap 121.424518 USDC in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.062555211026786486'),
@@ -435,12 +423,11 @@ def test_1inchv4_multiple_swaps(ethereum_inquirer):
             location_label=user_address,
             notes=f'Set USH spending approval of {user_address} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640563937640.413716264772814197',  # noqa: E501
             address=ONEINCH_V4_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=35,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xE60779CC1b2c1d0580611c526a8DF0E3f870EC48'),
             amount=FVal('50000'),
@@ -448,12 +435,11 @@ def test_1inchv4_multiple_swaps(ethereum_inquirer):
             notes=f'Swap 50000 USH in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,
             amount=FVal('7003.996145'),
@@ -495,12 +481,11 @@ def test_1inchv4_weth_eth_swap(ethereum_inquirer):
             location_label=user_address,
             notes='Burn 0.001057637854578432 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WETH,
             amount=FVal('35'),
@@ -508,12 +493,11 @@ def test_1inchv4_weth_eth_swap(ethereum_inquirer):
             notes=f'Swap 35 WETH in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('35'),
@@ -555,12 +539,11 @@ def test_1inchv4_eth_weth_swap(ethereum_inquirer):
             location_label=user_address,
             notes='Burn 0.002694727747581802 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.014763948338176106'),
@@ -568,12 +551,11 @@ def test_1inchv4_eth_weth_swap(ethereum_inquirer):
             notes=f'Swap 0.014763948338176106 ETH in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WETH,
             amount=FVal('0.014763948338176106'),
@@ -626,12 +608,11 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             location_label=user_addy,
             address=ONEINCH_V4_ROUTER,
             notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039457584007913032.844935',  # noqa: E501
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=278,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=pos_usdt,
             amount=FVal('96.795'),
@@ -639,12 +620,11 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             notes='Swap 96.795 USDT in 1inch-v4',
             counterparty=CPT_ONEINCH_V4,
             address=ONEINCH_V4_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=279,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=pos_yfi,
             amount=FVal('0.002830144606136162'),
@@ -680,12 +660,11 @@ def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts):
             location_label=user_addy,
             notes='Burn 0.0004273965 XDAI for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.GNOSIS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
             amount=FVal('0.044662144481150632'),
@@ -693,12 +672,11 @@ def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts):
             notes='Swap 0.044662144481150632 GNO in 1inch-v5',
             address=ONEINCH_V5_ROUTER,
             counterparty=CPT_ONEINCH_V5,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.GNOSIS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:100/erc20:0x4ECaBa5870353805a9F068101A40E0f32ed605C6'),
             amount=FVal('4.522211'),
@@ -734,12 +712,11 @@ def test_1inch_velodrome(optimism_inquirer, optimism_accounts):
             location_label=user_addy,
             notes='Burn 0.000274323853192674 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
             amount=FVal('81.206684164250046887'),
@@ -747,12 +724,11 @@ def test_1inch_velodrome(optimism_inquirer, optimism_accounts):
             notes='Swap 81.206684164250046887 VELO in 1inch-v5',
             address=ONEINCH_V5_ROUTER,
             counterparty=CPT_ONEINCH_V5,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
             amount=FVal('0.001577438860408636'),
@@ -805,12 +781,11 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
             notes='Set LUSD spending approval of 0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379 by 0x1111111254EEB25477B68fb85Ed929f73A960582 to 115792089237316195423570985008687907853269984665640564038929.427407919914021705',  # noqa: E501
             address=ONEINCH_V5_ROUTER,
             counterparty=None,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_LUSD,
             amount=FVal('528.15659999321561823'),
@@ -818,12 +793,11 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
             notes='Swap 528.15659999321561823 LUSD in 1inch-v5',
             address=ONEINCH_V5_ROUTER,
             counterparty=CPT_ONEINCH_V5,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_DAI,
             amount=FVal('521.366008657400952258'),
@@ -870,12 +844,11 @@ def test_1inch_base_v6_swap(base_inquirer, base_accounts):
             location_label=base_accounts[0],
             notes=f'Revoke BERD spending approval of {base_accounts[0]} by {ONEINCH_V6_ROUTER}',
             address=ONEINCH_V6_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:8453/erc20:0xAd1C24dE53fAD18270D5C99026302E989D212b41'),
             amount=FVal(swap_amount),
@@ -883,12 +856,11 @@ def test_1inch_base_v6_swap(base_inquirer, base_accounts):
             notes=f'Swap {swap_amount} BERD in 1inch-v6',
             counterparty=CPT_ONEINCH_V6,
             address=ONEINCH_V6_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal(receive_amount),
@@ -935,12 +907,11 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             location_label=user,
             notes=f'Set DAI spending approval of {user} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039283.378007913129639935',  # noqa: E501
             address=ONEINCH_V4_ROUTER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=21,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:137/erc20:0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063'),  # DAI
             amount=FVal(amount_out),
@@ -948,12 +919,11 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             notes=f'Swap {amount_out} DAI in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=22,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'),  # USDC
             amount=FVal(amount_in),

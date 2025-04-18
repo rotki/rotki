@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.rainbow.constants import (
 from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -39,12 +40,11 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -52,12 +52,11 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ETH in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_AIT,
         amount=FVal(received_amount),
@@ -65,12 +64,11 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} AIT as the result of a swap in Rainbow',
         counterparty=CPT_RAINBOW_SWAPS,
         address=RAINBOW_ROUTER_CONTRACT,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
@@ -99,12 +97,11 @@ def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BUOY,
         amount=FVal(swap_amount),
@@ -112,12 +109,11 @@ def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} BOOE in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
@@ -125,12 +121,11 @@ def test_rainbow_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} ETH as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
@@ -171,12 +166,11 @@ def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Set ZIG spending approval of {user_address} by {RAINBOW_ROUTER_CONTRACT} to {approve_amount}',  # noqa: E501
         address=RAINBOW_ROUTER_CONTRACT,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=282,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ZIG,
         amount=FVal(swap_amount),
@@ -184,12 +178,11 @@ def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ZIG in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=283,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_AXGT,
         amount=FVal(received_amount),
@@ -197,12 +190,11 @@ def test_rainbow_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} AXGT as the result of a swap in Rainbow',
         counterparty=CPT_RAINBOW_SWAPS,
         address=RAINBOW_ROUTER_CONTRACT,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=284,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ZIG,
         amount=FVal(fee_amount),
@@ -231,12 +223,11 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -244,12 +235,11 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
         notes=f'Swap {swap_amount} ETH in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
         amount=FVal(received_amount),
@@ -257,12 +247,11 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
         notes=f'Receive {received_amount} USDT as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
@@ -291,12 +280,11 @@ def test_rainbow_swap_on_base(base_inquirer, base_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -304,12 +292,11 @@ def test_rainbow_swap_on_base(base_inquirer, base_accounts):
         notes=f'Swap {swap_amount} ETH in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:8453/erc20:0x46777C76dBbE40fABB2AAB99E33CE20058e76C59'),
         amount=FVal(received_amount),
@@ -317,12 +304,11 @@ def test_rainbow_swap_on_base(base_inquirer, base_accounts):
         notes=f'Receive {received_amount} L3 as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
@@ -351,12 +337,11 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} BNB for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BSC_BNB,
         amount=FVal(swap_amount),
@@ -364,12 +349,11 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         notes=f'Swap {swap_amount} BNB in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:56/erc20:0x8051A61319B7FF7010a200E39b30b9a084dbCB5f'),
         amount=FVal(received_amount),
@@ -377,12 +361,11 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         notes=f'Receive {received_amount} camel as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BSC_BNB,
         amount=FVal(fee_amount),
@@ -411,12 +394,11 @@ def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -424,12 +406,11 @@ def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount} ETH in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OP,
         amount=FVal(received_amount),
@@ -437,12 +418,11 @@ def test_rainbow_swap_on_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Receive {received_amount} OP as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
@@ -471,12 +451,11 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         location_label=user_address,
         notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(swap_amount),
@@ -484,12 +463,11 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         notes=f'Swap {swap_amount} POL in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:137/erc20:0xBbba073C31bF03b8ACf7c28EF0738DeCF3695683'),
         amount=FVal(received_amount),
@@ -497,12 +475,11 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         notes=f'Receive {received_amount} SAND as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(fee_amount),

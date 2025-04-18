@@ -13,11 +13,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
 from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAPPED
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ORDERFILLED_RFQ
-from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
-    DecoderContext,
-    DecodingOutput,
-)
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
@@ -131,9 +127,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = self.counterparty
                 event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as a result of a {self.counterparty} swap'  # noqa: E501
-                event.address = self.router_address
                 in_event = event
             elif (
                 (
@@ -153,7 +147,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
             ordered_events=[out_event, in_event],
             events_list=decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

@@ -41,7 +41,16 @@ class Oneinchv1Decoder(DecoderInterface):
 
         out_event = in_event = None
         for event in context.decoded_events:
-            if event.event_type == HistoryEventType.SPEND and event.location_label == sender and from_amount == event.amount and from_asset == event.asset:  # noqa: E501
+            if (  # Check for spend and trade/spend since it may have already been decoded by another amm such as uniswap  # noqa: E501
+                (event.event_type == HistoryEventType.SPEND or (
+                    event.event_type == HistoryEventType.TRADE and
+                    event.event_subtype == HistoryEventSubType.SPEND and
+                    event.counterparty in AMM_POSSIBLE_COUNTERPARTIES
+                )) and
+                event.location_label == sender and
+                from_amount == event.amount and
+                from_asset == event.asset
+            ):
                 # find the send event
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
@@ -57,21 +66,12 @@ class Oneinchv1Decoder(DecoderInterface):
                 # use this index as the event may be an ETH transfer and appear at the start
                 event.sequence_index = context.tx_log.log_index
                 in_event = event
-            elif (
-                event.event_type == HistoryEventType.TRADE and
-                event.event_subtype == HistoryEventSubType.SPEND and
-                event.counterparty in AMM_POSSIBLE_COUNTERPARTIES
-            ):
-                # It is possible that in the same transaction we find events decoded by another amm
-                # such as uniswap and then the 1inch decoder (as it appears at the end). In those
-                # cases we need to take the out event as the other amm event
-                out_event = event
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
         """We use the Swapped event to get the fee kept by 1inch"""
@@ -105,12 +105,9 @@ class Oneinchv1Decoder(DecoderInterface):
             event_subtype=HistoryEventSubType.FEE,
             asset=to_asset,
             amount=fee_amount,
-            location_label=sender_address,
             notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
-            counterparty=CPT_ONEINCH_V1,
-            address=context.transaction.to_address,
         )
-        return DecodingOutput(event=fee_event)
+        return DecodingOutput(event=fee_event, process_swaps=True)
 
     def decode_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == HISTORY:
