@@ -5,6 +5,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, TypeVar, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
+from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
@@ -12,13 +13,19 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.constants.resolver import tokenid_to_collectible_id
+from rotkehlchen.errors.misc import NotFoundError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
+
+from .constants import ZERO_ADDRESS
+from .contracts import EvmContract
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
@@ -285,14 +292,78 @@ class EvmTokens(ABC):  # noqa: B024
         return addresses_info
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
-        all_tokens = GlobalDBHandler.get_token_detection_data(
+        erc20_tokens, erc721_tokens = GlobalDBHandler.get_token_detection_data(
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )
         self._detect_tokens(
             addresses=addresses,
-            tokens_to_check=all_tokens,
+            tokens_to_check=erc20_tokens,
         )
+        self._detect_erc721_tokens(
+            addresses=addresses,
+            tokens_to_check=erc721_tokens,
+        )
+
+    def _detect_erc721_tokens(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+            tokens_to_check: list[EvmTokenDetectionData],
+    ) -> None:
+        """Detect ERC-721 tokens owned by the given addresses based on historical events.
+        For each address, checks token ownership from historical events and saves
+        detected tokens to the database.
+
+        May raise:
+        - RemoteError if there is a problem with a query to an external service such as Etherscan.
+        """
+        historical_balance_manager = HistoricalBalancesManager(self.db)
+        erc721_contract = EvmContract(
+            address=ZERO_ADDRESS,
+            abi=self.evm_inquirer.contracts.erc721_abi,
+        )
+        for address in addresses:
+            try:
+                token_balances = historical_balance_manager.get_erc721_tokens_balances(
+                    assets=tuple(Asset(x.identifier) for x in tokens_to_check),
+                    address=address,
+                )
+            except (NotFoundError, DeserializationError) as e:
+                log.error(f'Failed to get erc721 token balances for {address} due to {e}. Skipping.')  # noqa: E501
+                continue
+
+            filtered_tokens, calls = [], []
+            for token in token_balances:
+                if (collectible_id := tokenid_to_collectible_id(token.identifier)) is not None:
+                    calls.append((
+                        token.evm_address,
+                        erc721_contract.encode('ownerOf', arguments=[int(collectible_id)]),
+                    ))
+                    filtered_tokens.append(token)
+
+            valid_tokens, results = [], self.evm_inquirer.multicall(calls=calls)
+            for token, result in zip(filtered_tokens, results, strict=False):
+                try:
+                    if deserialize_evm_address(erc721_contract.decode(
+                            result=result,
+                            method_name='ownerOf',
+                            arguments=[int(tokenid_to_collectible_id(token.identifier))],  # type: ignore[arg-type]  # will always be available
+                    )[0]) != address:
+                        log.debug(f'Address {address} no longer owns erc721 token {token}. Skipping...')  # noqa: E501
+                        continue
+                except DeserializationError as e:
+                    log.error(f'Failed to deserialize owner address of erc721 token {token} due to {e!s}')  # noqa: E501
+                    continue
+
+                valid_tokens.append(token)
+
+            with self.db.user_write() as write_cursor:
+                self.db.save_tokens_for_address(
+                    write_cursor=write_cursor,
+                    address=address,
+                    blockchain=self.evm_inquirer.blockchain,
+                    tokens=valid_tokens,
+                )
 
     def detect_tokens(
             self,

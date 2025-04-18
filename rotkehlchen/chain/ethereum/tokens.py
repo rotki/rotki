@@ -69,16 +69,18 @@ class EthereumTokens(EvmTokensWithDSProxy):
             ),
         ]
         # Add aave tokens
-        self.tokens_for_proxies.extend(GlobalDBHandler.get_token_detection_data(
+        aave_tokens, _ = GlobalDBHandler.get_token_detection_data(
             chain_id=ChainID.ETHEREUM,
             exceptions=set(),
             protocol='aave',
-        ))
-        self.tokens_for_proxies.extend(GlobalDBHandler.get_token_detection_data(
+        )
+        self.tokens_for_proxies.extend(aave_tokens)
+        aave_v2_tokens, _ = GlobalDBHandler.get_token_detection_data(
             chain_id=ChainID.ETHEREUM,
             exceptions=set(),
             protocol='aave-v2',
-        ))
+        )
+        self.tokens_for_proxies.extend(aave_v2_tokens)
 
         # Add Makerdao vault collateral tokens
         with GlobalDBHandler().conn.read_ctx() as cursor:

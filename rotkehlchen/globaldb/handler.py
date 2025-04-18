@@ -871,33 +871,41 @@ class GlobalDBHandler:
             chain_id: ChainID,
             exceptions: set[ChecksumEvmAddress],
             protocol: str | None = None,
-    ) -> list[EvmTokenDetectionData]:
+    ) -> tuple[list[EvmTokenDetectionData], list[EvmTokenDetectionData]]:
         """Query EVM token data from the database for token detection.
 
         Retrieves basic token information including identifier, address, and decimals.
         Tokens in the exceptions set are excluded from results. If a token doesn't have
         decimals we default to 18.
+
+        Returns a tuple of (erc20_tokens, erc721_tokens) with each list containing
+        token detection data for that type.
         """
-        result = []
-        query = 'SELECT identifier, address, decimals FROM evm_tokens WHERE chain=?'
+        erc20_tokens, erc721_tokens = [], []
+        query = 'SELECT identifier, address, token_kind, decimals FROM evm_tokens WHERE chain=?'
         bindings: list[int | str] = [chain_id.serialize_for_db()]
         if protocol is not None:
             query += ' AND protocol=?'
             bindings.append(protocol)
 
+        erc721_token_kind = EvmTokenKind.ERC721.serialize_for_db()
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(query, bindings)
-            for identifier, address, decimals in cursor:
+            for identifier, address, token_kind, decimals in cursor:
                 if address in exceptions:
                     continue
 
-                result.append(EvmTokenDetectionData(
+                details = EvmTokenDetectionData(
                     identifier=identifier,
                     address=address,
                     decimals=decimals if decimals is not None else DEFAULT_TOKEN_DECIMALS,  # TODO: at least two tokens are missing the decimals in my DB and also the EvmToken class allows decimals to be None. We need to think if that is correct and if we should enforce or not for all the erc20s to have decimals.  # noqa: E501
-                ))
+                )
+                if token_kind == erc721_token_kind:
+                    erc721_tokens.append(details)
+                else:
+                    erc20_tokens.append(details)
 
-        return result
+        return erc20_tokens, erc721_tokens
 
     @staticmethod
     def get_addresses_by_protocol(chain_id: ChainID, protocol: str) -> tuple[ChecksumEvmAddress, ...]:  # noqa: E501
