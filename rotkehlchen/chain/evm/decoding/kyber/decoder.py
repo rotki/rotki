@@ -61,7 +61,6 @@ class KyberCommonDecoder(DecoderInterface):
             elif (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and event.location_label == sender and event.amount == return_amount and destination_asset == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = counterparty
                 event.notes = f'Receive {event.amount} {crypto_asset} from kyber swap'
                 in_event = event
 
@@ -98,7 +97,7 @@ class KyberCommonDecoder(DecoderInterface):
             counterparty=CPT_KYBER,
         )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

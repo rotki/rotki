@@ -197,7 +197,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                     event.notes = f'Swap {event.amount} {self.evm_inquirer.native_token.symbol} in Balancer v2'  # noqa: E501
                     event.counterparty = CPT_BALANCER_V2
 
-        return DecodingOutput(action_items=[action_item])
+        return DecodingOutput(action_items=[action_item], process_swaps=True)
 
     def _maybe_enrich_balancer_v2_transfers(
             self,
@@ -238,7 +238,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
 
         context.event.event_type = HistoryEventType.TRADE
 
-        return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V2)
+        return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V2, process_swaps=True)
 
     # -- DecoderInterface methods
 

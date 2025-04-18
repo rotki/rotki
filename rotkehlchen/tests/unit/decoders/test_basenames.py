@@ -9,13 +9,13 @@ from rotkehlchen.chain.base.modules.basenames.constants import (
     BASENAMES_REGISTRY,
     CPT_BASENAMES,
 )
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
@@ -112,12 +112,11 @@ def test_basenames_register(
             notes='Set Basenames address for yabir.base.eth',
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=191,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.0009997724755728'),
@@ -126,19 +125,18 @@ def test_basenames_register(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
             extra_data={'name': 'yabir.base.eth', 'expires': 1758296219},
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=192,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset(f'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/{token_id}'),
             amount=ONE,
             location_label=user_address,
-            notes=f'Receive Basenames name yabir.base.eth from {ZERO_ADDRESS} to {user_address}',
+            notes=f'Receive Basenames name yabir.base.eth from {BASENAMES_REGISTRAR_CONTROLLER} to {user_address}',  # noqa: E501
             counterparty=CPT_BASENAMES,
-            address=ZERO_ADDRESS,
+            address=BASENAMES_REGISTRAR_CONTROLLER,
         ),
     ]
 
@@ -230,12 +228,11 @@ def test_basenames_register_with_discount(
             notes='Set Basenames address for javxq.base.eth',
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=411,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=ZERO,
@@ -244,19 +241,18 @@ def test_basenames_register_with_discount(
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
             extra_data={'name': 'javxq.base.eth', 'expires': 1762551303},
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=412,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset(f'eip155:8453/erc721:0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a/{token_id}'),
             amount=ONE,
             location_label=user_address,
-            notes=f'Receive Basenames name javxq.base.eth from {ZERO_ADDRESS} to {user_address}',
+            notes=f'Receive Basenames name javxq.base.eth from {BASENAMES_REGISTRAR_CONTROLLER} to {user_address}',  # noqa: E501
             counterparty=CPT_BASENAMES,
-            address=ZERO_ADDRESS,
+            address=BASENAMES_REGISTRAR_CONTROLLER,
         ),
     ]
 

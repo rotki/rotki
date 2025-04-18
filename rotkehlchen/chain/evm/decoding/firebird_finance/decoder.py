@@ -91,7 +91,6 @@ class FirebirdFinanceCommonDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in {FIREBIRD_FINANCE_LABEL}'  # noqa: E501
-                event.counterparty = CPT_FIREBIRD_FINANCE
 
         if in_event is None or out_event is None:
             log.warning(f'Failed to find both out and in events for {FIREBIRD_FINANCE_LABEL} swap transaction {context.transaction}')  # noqa: E501
@@ -100,7 +99,7 @@ class FirebirdFinanceCommonDecoder(DecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.router_address: (self._decode_swapped,)}

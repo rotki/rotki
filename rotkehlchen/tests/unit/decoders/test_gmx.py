@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_GMX
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -57,12 +58,11 @@ def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             location_label=user_address,
             address=GMX_ROUTER_ADDRESS,
             notes='Set USDC.e spending approval of 0x22E798f9440F563B92AAE24E94C75DfA499e3d3E by 0xaBBc5F99639c9B6bCb58544ddf04EFA6802F4064 to 18446744073709551614999995512857.612984',  # noqa: E501
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_usdce,
             amount=FVal(swap_amount),
@@ -70,12 +70,11 @@ def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             notes=f'Swap {swap_amount} USDC.e in GMX',
             counterparty=CPT_GMX,
             address=GMX_VAULT_ADDRESS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=4,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=a_link,
             amount=FVal(received_amount),

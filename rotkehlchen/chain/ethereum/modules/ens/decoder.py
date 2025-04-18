@@ -249,7 +249,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 events_list=context.decoded_events,
             )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def _decode_name_renewed(self, context: DecoderContext) -> DecodingOutput:
         try:

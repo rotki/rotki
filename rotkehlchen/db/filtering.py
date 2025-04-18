@@ -965,7 +965,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             addresses: list[ChecksumEvmAddress] | None = None,
     ) -> 'EvmEventFilterQuery':
         if entry_types is None:
-            entry_type_values = [HistoryBaseEntryType.EVM_EVENT]
+            entry_type_values = [HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.EVM_SWAP_EVENT]  # noqa: E501
             entry_types = IncludeExcludeFilterData(values=entry_type_values)
 
         filter_query = super().make(

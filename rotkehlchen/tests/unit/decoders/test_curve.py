@@ -36,6 +36,7 @@ from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
@@ -895,7 +896,7 @@ def test_gauge_deposit(
             amount=FVal('7985.261401730774426743'),
             location_label=user_address,
             notes='Deposit 7985.261401730774426743 crvPlain3andSUSD into 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
             product=EvmProduct.GAUGE,
         ),
@@ -940,7 +941,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
             amount=FVal('37939.72737243936267785'),
             location_label=user_address,
             notes='Withdraw 37939.72737243936267785 crvPlain3andSUSD from 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
             product=EvmProduct.GAUGE,
         ),
@@ -985,7 +986,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, lo
             amount=FVal('0.451753537525671486'),
             location_label=user_address,
             notes='Receive 0.451753537525671486 SNX rewards from 0xA90996896660DEcC6E997655E065b23788857849 curve gauge',  # noqa: E501
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA90996896660DEcC6E997655E065b23788857849'),
         ),
     ]
@@ -1019,31 +1020,29 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
             notes='Burn 0.002265287178848788 ETH for gas',
             counterparty='gas',
             address=None,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal('500000'),
             location_label=user_address,
             notes='Swap 500000 USDC in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1679546783000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
             amount=FVal('498538.169982'),
             location_label=user_address,
             notes='Receive 498538.169982 USDT as the result of a swap in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7'),
         ),
     ]
@@ -1077,31 +1076,29 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
             notes='Burn 0.001727872677935233 ETH for gas',
             counterparty='gas',
             address=None,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('ETH'),
             amount=FVal('0.00008'),
             location_label=user_address,
             notes='Swap 0.00008 ETH in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1679225231000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xE95A203B1a91a908F9B9CE46459d101078c2c3cb'),
             amount=FVal('0.000073629326233652'),
             location_label=user_address,
             notes='Receive 0.000073629326233652 ankrETH as the result of a swap in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2'),
         ),
     ]
@@ -1135,31 +1132,29 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
             notes='Burn 0.003678824742134973 ETH for gas',
             counterparty='gas',
             address=None,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
             amount=FVal('9411.299859703624772744'),
             location_label=user_address,
             notes='Swap 9411.299859703624772744 DAI in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1679482763000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x5BC25f649fc4e26069dDF4cF4010F9f706c23831'),
             amount=FVal('9495.240278199771455578'),
             location_label=user_address,
             notes='Receive 9495.240278199771455578 DUSD as the result of a swap in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c'),
         ),
     ]
@@ -1191,31 +1186,29 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
             notes='Burn 0.003261945529483024 ETH for gas',
             counterparty='gas',
             address=None,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('ETH'),
             amount=FVal('40'),
             location_label=user_address,
             notes='Swap 40 ETH in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1679550275000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xD533a949740bb3306d119CC777fa900bA034cd52'),
             amount=FVal('73317.327157158562433931'),
             location_label=user_address,
             notes='Receive 73317.327157158562433931 CRV as the result of a swap in curve',
-            counterparty='curve',
+            counterparty=CPT_CURVE,
             address=string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f'),
         ),
     ]
@@ -1984,12 +1977,11 @@ def test_curve_swap_router_base(base_inquirer, base_accounts):
             location_label=base_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal(swap_amount),
@@ -1997,12 +1989,11 @@ def test_curve_swap_router_base(base_inquirer, base_accounts):
             notes=f'Swap {swap_amount} ETH in curve',
             counterparty=CPT_CURVE,
             address=string_to_evm_address(CURVE_SWAP_ROUTER_NG),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
             amount=FVal(receive_amount),
@@ -2570,12 +2561,11 @@ def test_curve_swap_router_binance_sc(
         location_label=user_address,
         notes=f'Revoke BSC-USD spending approval of {user_address} by {CURVE_SWAP_ROUTER_NG_BSC}',
         address=CURVE_SWAP_ROUTER_NG_BSC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=78,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_bsc_usd,
         amount=FVal(swap_amount),
@@ -2583,12 +2573,11 @@ def test_curve_swap_router_binance_sc(
         notes=f'Swap {swap_amount} BSC-USD in curve',
         counterparty=CPT_CURVE,
         address=CURVE_SWAP_ROUTER_NG_BSC,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=79,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:56/erc20:0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d'),
         amount=FVal(receive_amount),
