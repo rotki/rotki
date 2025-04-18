@@ -1,4 +1,3 @@
-
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
 ETHEREUM_DIRECTIVE = '_ceth_'

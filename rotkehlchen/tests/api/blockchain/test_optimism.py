@@ -71,7 +71,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     # patch get_evm_tokens return value to just a few tokens
     # to prevent issues when the asset database changes
     with patch('rotkehlchen.chain.evm.tokens.GlobalDBHandler.get_token_detection_data',
-        return_value=[
+        return_value=([
             EvmTokenDetectionData(
                 identifier='eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
                 address=string_to_evm_address('0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
@@ -92,7 +92,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
                 address=string_to_evm_address('0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'),
                 decimals=18,
             ),
-        ],
+        ], []),
     ):
         response = requests.post(
             api_url_for(

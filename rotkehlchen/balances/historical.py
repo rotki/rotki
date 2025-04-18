@@ -24,7 +24,9 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 BATCH_SIZE: Final = 250
 
@@ -73,6 +75,30 @@ class HistoricalBalancesManager:
             result[asset] = {'amount': amount, 'price': price}
 
         return result
+
+    def get_erc721_tokens_balances(
+            self,
+            address: 'ChecksumEvmAddress',
+            assets: tuple[Asset, ...],
+    ) -> dict['EvmToken', FVal]:
+        """Get current balances for the given erc721 assets of a specific address by processing historical events.
+
+        May raise:
+            - NotFoundError if no events exist for the assets/address
+            - DeserializationError if there is a problem deserializing an event from DB
+        """  # noqa: E501
+        events, _ = self._get_events_and_currency(
+            assets=assets,
+            address=address,
+        )
+        if len(events) == 0:
+            raise NotFoundError(f'No historical data found for {assets} for user address {address}')  # noqa: E501
+
+        current_balances: dict[Asset, FVal] = defaultdict(FVal)
+        for event in events:
+            self._update_balances(event=event, current_balances=current_balances)
+
+        return {asset.resolve_to_evm_token(): balance for asset, balance in current_balances.items() if balance > ZERO}  # noqa: E501
 
     def get_asset_balance(self, asset: Asset, timestamp: Timestamp) -> HistoricalBalance:
         """Get historical balance for a single asset at a given timestamp
@@ -218,6 +244,7 @@ class HistoricalBalancesManager:
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
+            address: 'ChecksumEvmAddress | None' = None,
     ) -> tuple[list[HistoryEvent], Asset]:
         """Helper method to get events and main currency from DB.
 
@@ -243,6 +270,7 @@ class HistoricalBalancesManager:
                     HistoryEventSubType.DEPOSIT_ASSET,
                     HistoryEventSubType.REMOVE_ASSET,
                 ],
+                location_labels=[address] if address else None,
             )
             events = []
             where_clauses, bindings = filter_query.prepare(

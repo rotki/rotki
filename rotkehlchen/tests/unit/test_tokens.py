@@ -15,13 +15,23 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE, A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, SupportedBlockchain
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    Location,
+    SupportedBlockchain,
+    TimestampMS,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -73,7 +83,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
     with patch(
         'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
-        side_effect=lambda *args, **kwargs: [  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
+        side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
             EvmTokenDetectionData(
                 identifier=A_WETH.identifier,
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
@@ -91,7 +101,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
                 address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
                 decimals=18,
             ),
-        ],
+        ], []),
     ):
         detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
     assert A_WETH in detection_result[addr3][0], 'WETH is owned by the proxy, but should be returned in the proxy owner address'  # noqa: E501
@@ -155,7 +165,7 @@ def test_last_queried_ts(tokens, freezer):
     # We don't need to query the chain here, so mock tokens list
     evm_tokens_patch = patch(
         'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
-        new=lambda chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: [],
+        new=lambda chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: ([], []),
     )
     beginning = ts_now()
     address = '0x4bBa290826C253BD854121346c370a9886d1bC26'
@@ -397,7 +407,7 @@ def test_monerium_queries(
     )
     with patch(
         'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
-        new=lambda *args, **kwargs: [
+        new=lambda *args, **kwargs: ([
             EvmTokenDetectionData(
                 identifier=new_eure.identifier,
                 address=new_eure.evm_address,
@@ -407,7 +417,7 @@ def test_monerium_queries(
                 address=string_to_evm_address('0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
                 decimals=18,
             ),
-        ],
+        ], []),
     ):
         tokens = gnosis_manager.tokens.detect_tokens(
             only_cache=False,
@@ -433,3 +443,104 @@ def test_monerium_queries(
     )[0][gnosis_accounts[0]]
     assert new_eure in tokens_second_query
     assert A_GNOSIS_EURE not in tokens_second_query
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xbe4f0cdf3834bD876813A1037137DcFAD79AcD99']])
+def test_erc721_token_ownership_verification(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        database: 'DBHandler',
+):
+    """Test that when a user has historical events for two NFTs from the same collection
+    but only currently owns one, we correctly identify only the currently owned NFT.
+    """
+    token_7776 = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_inquirer=ethereum_inquirer,
+        evm_address=(collection_address := string_to_evm_address('0xD3D9ddd0CF0A5F0BFB8f7fcEAe075DF687eAEBaB')),  # noqa: E501
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id='7776',
+    )
+    token_7809 = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_inquirer=ethereum_inquirer,
+        evm_address=collection_address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id='7809',
+    )
+
+    with database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                event_identifier='xxx',
+                sequence_index=0,
+                timestamp=TimestampMS(1645260370000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                location_label=(user_address := ethereum_accounts[0]),
+                amount=ONE,
+                asset=token_7776,
+            ), HistoryEvent(
+                event_identifier='xxy',
+                sequence_index=0,
+                timestamp=TimestampMS(1645260470000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=token_7776,
+            ), HistoryEvent(
+                event_identifier='xyx',
+                sequence_index=0,
+                timestamp=TimestampMS(1645260570000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=token_7776,
+            ), HistoryEvent(
+                event_identifier='yxx',
+                sequence_index=0,
+                timestamp=TimestampMS(1645260670000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=token_7809,
+            ), HistoryEvent(
+                event_identifier='yyx',
+                sequence_index=0,
+                timestamp=TimestampMS(1645260770000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=token_7809,
+            ), HistoryEvent(
+                event_identifier='yyy',
+                sequence_index=0,
+                timestamp=TimestampMS(1645260870000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=token_7809,
+            )],
+        )
+
+    with patch('rotkehlchen.chain.ethereum.tokens.EthereumTokens._detect_tokens', return_value=None):  # noqa: E501
+        user_tokens = EthereumTokens(database, ethereum_inquirer).detect_tokens(
+            only_cache=False,
+            addresses=ethereum_accounts,
+        )
+        assert user_tokens[user_address][0] == [token_7776]
