@@ -74,7 +74,7 @@ class OpenOceanDecoder(DecoderInterface, ABC):
             receive_asset=receive_asset,
             receive_amount=receive_amount,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     @staticmethod
     def _decode_swap(
@@ -113,7 +113,6 @@ class OpenOceanDecoder(DecoderInterface, ABC):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from {OPENOCEAN_LABEL} swap'  # noqa: E501
-                event.counterparty = CPT_OPENOCEAN
                 in_event = event
 
         if in_event is None or out_event is None:

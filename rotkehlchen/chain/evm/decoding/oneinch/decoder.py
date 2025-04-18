@@ -70,18 +70,16 @@ class OneinchCommonDecoder(DecoderInterface, ABC):
             elif event.event_type == HistoryEventType.RECEIVE and event.location_label == sender and receiver == event.location_label and return_amount == event.amount and destination_token == event.asset:  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = self.counterparty
                 event.notes = f'Receive {return_amount} {destination_token.symbol} from {self.counterparty} swap'  # noqa: E501
                 # use this index as the event may be an ETH transfer and appear at the start
                 event.sequence_index = context.tx_log.log_index
-                event.address = self.router_address
                 in_event = event
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     @staticmethod
     def generate_counterparty_details(counterparty: str) -> tuple[CounterpartyDetails, ...]:

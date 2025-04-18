@@ -83,15 +83,11 @@ class ZeroxCommonDecoder(DecoderInterface):
             send_event.event_subtype = HistoryEventSubType.SPEND
             send_event.notes = f'Swap {send_event.amount} {send_event.asset.symbol_or_name()} via the 0x protocol'  # noqa: E501
         if receive_event is not None:
-            receive_event.counterparty = CPT_ZEROX
-            receive_event.address = router_address
             receive_event.event_type = HistoryEventType.TRADE
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
             receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.symbol_or_name()} as the result of a swap via the 0x protocol'  # noqa: E501
         if fee_event is not None:
-            fee_event.counterparty = CPT_ZEROX
-            fee_event.address = router_address
-            fee_event.event_type = HistoryEventType.SPEND
+            fee_event.event_type = HistoryEventType.TRADE
             fee_event.event_subtype = HistoryEventSubType.FEE
             fee_event.notes = f'Spend {fee_event.amount} {fee_event.asset.symbol_or_name()} as a 0x protocol fee'  # noqa: E501
 
@@ -286,7 +282,7 @@ class ZeroxCommonDecoder(DecoderInterface):
             fee_event=fee_event,
         )
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 

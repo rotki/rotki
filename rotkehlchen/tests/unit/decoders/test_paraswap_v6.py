@@ -21,6 +21,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC, A_PSP
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
@@ -68,12 +69,11 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Set ENS spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {approve_amount}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=146,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ENS,
         amount=FVal(spend_amount),
@@ -81,12 +81,11 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {spend_amount} ENS in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=147,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DAI,
         amount=FVal(receive_amount),
@@ -94,12 +93,11 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {receive_amount} DAI as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=148,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_DAI,
         amount=FVal(fee_amount),
@@ -133,12 +131,11 @@ def test_gnosis_swap_amount_in(
         location_label=user_address,
         notes=f'Burn {gas_amount} XDAI for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=58,
         timestamp=timestamp,
         location=Location.GNOSIS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_eure,
         amount=FVal(spend_amount),
@@ -146,12 +143,11 @@ def test_gnosis_swap_amount_in(
         notes=f'Swap {spend_amount} EURe in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=59,
         timestamp=timestamp,
         location=Location.GNOSIS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_XDAI,
         amount=FVal(receive_amount),
@@ -159,12 +155,11 @@ def test_gnosis_swap_amount_in(
         notes=f'Receive {receive_amount} XDAI as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=60,
         timestamp=timestamp,
         location=Location.GNOSIS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_XDAI,
         amount=FVal(fee_amount),
@@ -196,12 +191,11 @@ def test_binance_sc_swap_amount_in(
         location_label=user_address,
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BSC_BNB,
         amount=FVal(spend_amount),
@@ -209,12 +203,11 @@ def test_binance_sc_swap_amount_in(
         notes=f'Swap {spend_amount} BNB in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955'),
         amount=FVal(receive_amount),
@@ -248,12 +241,11 @@ def test_swap_amount_in_on_balancer_v2(
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(spend_amount),
@@ -261,12 +253,11 @@ def test_swap_amount_in_on_balancer_v2(
         notes=f'Swap {spend_amount} ETH in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=a_usdbc,
         amount=FVal(receive_amount),
@@ -274,12 +265,11 @@ def test_swap_amount_in_on_balancer_v2(
         notes=f'Receive {receive_amount} USDbC as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=a_usdbc,
         amount=FVal(fee_amount),
@@ -326,12 +316,11 @@ def test_swap_amount_in_on_curve_v1(
         location_label=user_address,
         notes=f'Revoke USDC.e spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=9,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_bridged_usdc,
         amount=FVal(spend_amount),
@@ -339,12 +328,11 @@ def test_swap_amount_in_on_curve_v1(
         notes=f'Swap {spend_amount} USDC.e in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=10,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=a_usdt,
         amount=FVal(receive_amount),
@@ -352,12 +340,11 @@ def test_swap_amount_in_on_curve_v1(
         notes=f'Receive {receive_amount} USDT as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=11,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=a_usdt,
         amount=FVal(fee_amount),
@@ -403,12 +390,11 @@ def test_swap_amount_in_on_curve_v2(
         location_label=user_address,
         notes=f'Set GMAC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {approve_amount}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_gmac,
         amount=FVal(spend_amount),
@@ -416,12 +402,11 @@ def test_swap_amount_in_on_curve_v2(
         notes=f'Swap {spend_amount} GMAC in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_WETH_ARB,
         amount=FVal(receive_amount),
@@ -454,12 +439,11 @@ def test_swap_amount_in_on_uniswap_v2(
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(spend_amount),
@@ -467,12 +451,11 @@ def test_swap_amount_in_on_uniswap_v2(
         notes=f'Swap {spend_amount} ETH in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OPTIMISM_USDT,
         amount=FVal(receive_amount),
@@ -517,12 +500,11 @@ def test_swap_amount_in_on_uniswap_v3(
         location_label=user_address,
         notes=f'Revoke USDT spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER}',
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_OPTIMISM_USDT,
         amount=FVal(spend_amount),
@@ -530,12 +512,11 @@ def test_swap_amount_in_on_uniswap_v3(
         notes=f'Swap {spend_amount} USDT in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OP,
         amount=FVal(receive_amount),
@@ -568,12 +549,11 @@ def test_swap_amount_out(
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal(spend_amount),
@@ -581,12 +561,11 @@ def test_swap_amount_out(
         notes=f'Swap {spend_amount} USDC in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0x26E550AC11B26f78A04489d5F20f24E3559f7Dd9'),
         amount=FVal(receive_amount),
@@ -594,12 +573,11 @@ def test_swap_amount_out(
         notes=f'Receive {receive_amount} KEKIUS as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDC,
         amount=FVal(fee_amount),
@@ -632,12 +610,11 @@ def test_swap_amount_out_on_balancer_v2(
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(spend_amount),
@@ -645,12 +622,11 @@ def test_swap_amount_out_on_balancer_v2(
         notes=f'Swap {spend_amount} ETH in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_PSP,
         amount=FVal(receive_amount),
@@ -658,12 +634,11 @@ def test_swap_amount_out_on_balancer_v2(
         notes=f'Receive {receive_amount} PSP as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(fee_amount),
@@ -696,12 +671,11 @@ def test_swap_amount_out_on_uniswap_v2(
         location_label=user_address,
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(spend_amount),
@@ -709,12 +683,11 @@ def test_swap_amount_out_on_uniswap_v2(
         notes=f'Swap {spend_amount} POL in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_POLYGON_POS_USDC,
         amount=FVal(receive_amount),
@@ -760,12 +733,11 @@ def test_swap_amount_out_on_uniswap_v3(
         location_label=user_address,
         notes=f'Set USDC spending approval of {user_address} by {PARASWAP_AUGUSTUS_V6_ROUTER} to {approve_amount}',  # noqa: E501
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=a_usdc,
         amount=FVal(spend_amount),
@@ -773,12 +745,11 @@ def test_swap_amount_out_on_uniswap_v3(
         notes=f'Swap {spend_amount} USDC in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:137/erc20:0xE9c21De62C5C5d0cEAcCe2762bF655AfDcEB7ab3'),
         amount=FVal(receive_amount),
@@ -811,12 +782,11 @@ def test_swap_on_augustus_rfq(
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(spend_amount),
@@ -824,12 +794,11 @@ def test_swap_on_augustus_rfq(
         notes=f'Swap {spend_amount} USDT in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0x44ff8620b8cA30902395A7bD3F2407e1A091BF73'),
         amount=FVal(receive_amount),

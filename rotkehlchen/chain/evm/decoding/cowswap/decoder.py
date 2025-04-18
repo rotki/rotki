@@ -274,10 +274,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     event_subtype=HistoryEventSubType.FEE,
                     asset=swap_data.from_asset,
                     amount=swap_data.fee_amount,
-                    location_label=receive_event.location_label,
                     notes=f'Spend {swap_data.fee_amount} {swap_data.from_asset.symbol_or_name()} as a cowswap fee',  # noqa: E501
-                    counterparty=CPT_COWSWAP,
-                    address=transaction.to_address,
                 )
                 decoded_events.append(fee_event)
 
@@ -318,7 +315,6 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         for spend_event, receive_event, fee_event, swap_data in relevant_trades:
             spend_event.amount = swap_data.from_amount
             spend_event.counterparty = CPT_COWSWAP
-            receive_event.counterparty = CPT_COWSWAP
             spend_event.event_type = HistoryEventType.TRADE
             receive_event.event_type = HistoryEventType.TRADE
             spend_event.event_subtype = HistoryEventSubType.SPEND
@@ -427,6 +423,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.notes = f'Pay {event.amount} {event.asset.symbol_or_name()} to claim vCOW'
+                event.counterparty = CPT_COWSWAP
                 claim_has_payment = True
                 out_event = event
                 continue
@@ -456,7 +453,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             else:
                 log.error(f'Could not find the COW token claim corresponding to detected payment for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def _decode_vested_claim(self, context: DecoderContext) -> DecodingOutput:
         """Decode a claim of vested cow token from vcow token"""

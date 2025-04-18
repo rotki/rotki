@@ -998,9 +998,8 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             location_label=(location_label := '0x6e15887E2CEC81434C16D587709f64603b39b545'),
             notes='Example note',
             tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f')),  # noqa: E501
-            counterparty='some counterparty',
-            product=None,
-            address=string_to_evm_address('0xA090e606E30bD747d4E6245a1517EbE430F0057e'),
+            counterparty=(counterparty := 'some counterparty'),
+            address=(addr1 := string_to_evm_address('0xA090e606E30bD747d4E6245a1517EbE430F0057e')),
         ), EvmSwapEvent(
             identifier=2,
             sequence_index=1,
@@ -1009,7 +1008,10 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_WBTC,
             amount=FVal('0.003'),
+            location_label=location_label,
             tx_hash=tx_hash,
+            counterparty=counterparty,
+            address=addr1,
         ), EvmSwapEvent(
             identifier=3,
             sequence_index=2,
@@ -1018,7 +1020,10 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.0002'),
+            location_label=location_label,
             tx_hash=tx_hash,
+            counterparty=counterparty,
+            address=addr1,
         ), EvmSwapEvent(
             identifier=4,
             event_identifier='test_id',
@@ -1031,8 +1036,8 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             location_label=location_label,
             tx_hash=tx_hash,
             counterparty='some counterparty',
-            product=EvmProduct.POOL,
-            address=string_to_evm_address('0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511'),
+            product=(product := EvmProduct.POOL),
+            address=(addr2 := string_to_evm_address('0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511')),
         ), EvmSwapEvent(
             identifier=5,
             event_identifier='test_id',
@@ -1042,7 +1047,11 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.026'),
+            location_label=location_label,
             tx_hash=tx_hash,
+            counterparty=counterparty,
+            product=product,
+            address=addr2,
         ), EvmSwapEvent(
             identifier=6,
             event_identifier='test_id',
@@ -1052,7 +1061,11 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('0.1'),
+            location_label=location_label,
             tx_hash=tx_hash,
+            counterparty=counterparty,
+            product=product,
+            address=addr2,
         )]
 
     # Check event serialization.

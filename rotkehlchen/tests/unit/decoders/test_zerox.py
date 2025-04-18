@@ -21,6 +21,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_aerodrome import A_AERO
 from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
@@ -75,12 +76,11 @@ def test_sell_to_uniswap(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BANANA,
         amount=FVal(swap_amount),
@@ -88,12 +88,11 @@ def test_sell_to_uniswap(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} BANANA via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OXN,
         amount=FVal(received_amount),
@@ -124,12 +123,11 @@ def test_sell_eth_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -137,12 +135,11 @@ def test_sell_eth_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_MYRIA,
         amount=FVal(received_amount),
@@ -173,12 +170,11 @@ def test_sell_token_for_eth_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_LFG,
         amount=FVal(swap_amount),
@@ -186,12 +182,11 @@ def test_sell_token_for_eth_to_uniswap_v3(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} @LFG via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
@@ -222,12 +217,11 @@ def test_sell_token_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_AI,
         amount=FVal(swap_amount),
@@ -235,12 +229,11 @@ def test_sell_token_for_token_to_uniswap_v3(ethereum_inquirer, ethereum_accounts
         notes=f'Swap {swap_amount} AI via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DRGN,
         amount=FVal(received_amount),
@@ -271,12 +264,11 @@ def test_multiplex_batch_sell_eth_for_token(ethereum_inquirer, ethereum_accounts
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -284,12 +276,11 @@ def test_multiplex_batch_sell_eth_for_token(ethereum_inquirer, ethereum_accounts
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_RAINI,
         amount=FVal(received_amount),
@@ -320,12 +311,11 @@ def test_multiplex_batch_sell_token_for_eth(ethereum_inquirer, ethereum_accounts
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_LMWR,
         amount=FVal(swap_amount),
@@ -333,12 +323,11 @@ def test_multiplex_batch_sell_token_for_eth(ethereum_inquirer, ethereum_accounts
         notes=f'Swap {swap_amount} LMWR via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
@@ -369,12 +358,11 @@ def test_multiplex_batch_sell_token_for_token(ethereum_inquirer, ethereum_accoun
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_PRIME,
         amount=FVal(swap_amount),
@@ -382,12 +370,11 @@ def test_multiplex_batch_sell_token_for_token(ethereum_inquirer, ethereum_accoun
         notes=f'Swap {swap_amount} PRIME via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_TSUKA,
         amount=FVal(received_amount),
@@ -418,12 +405,11 @@ def test_multiplex_multihop_sell_token_for_token(ethereum_inquirer, ethereum_acc
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(swap_amount),
@@ -431,12 +417,11 @@ def test_multiplex_multihop_sell_token_for_token(ethereum_inquirer, ethereum_acc
         notes=f'Swap {swap_amount} USDT via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_GF,
         amount=FVal(received_amount),
@@ -468,12 +453,11 @@ def test_0x415565b0_eth_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -481,12 +465,11 @@ def test_0x415565b0_eth_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_SHIB,
         amount=FVal(received_amount),
@@ -518,12 +501,11 @@ def test_0x415565b0_token_to_eth(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal(swap_amount),
@@ -531,12 +513,11 @@ def test_0x415565b0_token_to_eth(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} USDC via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
@@ -568,12 +549,11 @@ def test_0x415565b0_token_to_token(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(swap_amount),
@@ -581,12 +561,11 @@ def test_0x415565b0_token_to_token(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} USDT via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDC,
         amount=FVal(received_amount),
@@ -606,12 +585,11 @@ def test_execute_meta_transaction_v2(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1709638007000)
     swap_amount, received_amount, meta_tx_fees = '1405.596892', '4910.533168813496285354', '58.171192'  # noqa: E501
-    expected_events = [EvmEvent(
+    expected_events = [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(swap_amount),
@@ -619,12 +597,11 @@ def test_execute_meta_transaction_v2(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} USDT via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_IXS,
         amount=FVal(received_amount),
@@ -632,12 +609,11 @@ def test_execute_meta_transaction_v2(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} IXS as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal(meta_tx_fees),
@@ -657,12 +633,11 @@ def test_execute_meta_transaction_v2_multiplex(ethereum_inquirer, ethereum_accou
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1709641247000)
     swap_amount, received_amount, meta_tx_fees = '49934.597014', '352963.071479518181477885', '65.402986'  # noqa: E501
-    expected_events = [EvmEvent(
+    expected_events = [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(swap_amount),
@@ -670,12 +645,11 @@ def test_execute_meta_transaction_v2_multiplex(ethereum_inquirer, ethereum_accou
         notes=f'Swap {swap_amount} USDT via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_RLB,
         amount=FVal(received_amount),
@@ -683,12 +657,11 @@ def test_execute_meta_transaction_v2_multiplex(ethereum_inquirer, ethereum_accou
         notes=f'Receive {received_amount} RLB as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal(meta_tx_fees),
@@ -708,12 +681,11 @@ def test_execute_meta_transaction_v2_flash(ethereum_inquirer, ethereum_accounts)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1709633675000)
     swap_amount, received_amount, meta_tx_fees = '10659.465069', '25162.301091908076364354', '60.028487'  # noqa: E501
-    expected_events = [EvmEvent(
+    expected_events = [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal(swap_amount),
@@ -721,12 +693,11 @@ def test_execute_meta_transaction_v2_flash(ethereum_inquirer, ethereum_accounts)
         notes=f'Swap {swap_amount} USDT via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DERC,
         amount=FVal(received_amount),
@@ -734,12 +705,11 @@ def test_execute_meta_transaction_v2_flash(ethereum_inquirer, ethereum_accounts)
         notes=f'Receive {received_amount} DERC as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USDT,
         amount=FVal(meta_tx_fees),
@@ -773,12 +743,11 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
         location_label=polygon_pos_accounts[0],
         notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(swap_amount),
@@ -786,12 +755,11 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
         notes=f'Swap {swap_amount} POL via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_POLYGON_POS_USDT,
         amount=FVal(received_amount),
@@ -821,12 +789,11 @@ def test_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         location_label=binance_sc_accounts[0],
         notes=f'Burn {gas_fees} BNB for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BSC_BNB,
         amount=FVal(swap_amount),
@@ -834,12 +801,11 @@ def test_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
         notes=f'Swap {swap_amount} BNB via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:56/erc20:0x477bC8d23c634C154061869478bce96BE6045D12'),
         amount=FVal(received_amount),
@@ -861,12 +827,11 @@ def test_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
     )
     timestamp = TimestampMS(1709664647000)
     swap_amount, received_amount, meta_tx_fees = '49920.273922', '11.88137754443033075', '79.726078'  # noqa: E501
-    expected_events = [EvmEvent(
+    expected_events = [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ARBITRUM_USDC,
         amount=FVal(swap_amount),
@@ -874,12 +839,11 @@ def test_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
         notes=f'Swap {swap_amount} USDC via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_WSTETH,
         amount=FVal(received_amount),
@@ -887,12 +851,11 @@ def test_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
         notes=f'Receive {received_amount} wstETH as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ARBITRUM_USDC,
         amount=FVal(meta_tx_fees),
@@ -911,12 +874,11 @@ def test_swap_optimism(optimism_inquirer, optimism_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1707868177000)
     swap_amount, received_amount, meta_tx_fees = '1.181244', '1.180785', '0.818756'
-    expected_events = [EvmEvent(
+    expected_events = [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_OPTIMISM_USDC,
         amount=FVal(swap_amount),
@@ -924,12 +886,11 @@ def test_swap_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount} USDC via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=OP_ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OPTIMISM_USDT,
         amount=FVal(received_amount),
@@ -937,12 +898,11 @@ def test_swap_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Receive {received_amount} USDT as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=OP_ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_OPTIMISM_USDC,
         amount=FVal(meta_tx_fees),
@@ -961,12 +921,11 @@ def test_swap_base(base_inquirer, base_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1709665909000)
     swap_amount, received_amount, meta_tx_fees = '688.271588', '1726.46678822133419734', '4.288419'
-    expected_events = [EvmEvent(
+    expected_events = [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BASE_USDC,
         amount=FVal(swap_amount),
@@ -974,12 +933,11 @@ def test_swap_base(base_inquirer, base_accounts):
         notes=f'Swap {swap_amount} USDC via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_AERO,
         amount=FVal(received_amount),
@@ -987,12 +945,11 @@ def test_swap_base(base_inquirer, base_accounts):
         notes=f'Receive {received_amount} AERO as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BASE_USDC,
         amount=FVal(meta_tx_fees),
@@ -1023,12 +980,11 @@ def test_swap_on_pancakeswap(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -1036,12 +992,11 @@ def test_swap_on_pancakeswap(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal(received_amount),
@@ -1072,12 +1027,11 @@ def test_swap_on_curve(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDE,
         amount=FVal(swap_amount),
@@ -1085,12 +1039,11 @@ def test_swap_on_curve(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} USDe via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_USDT,
         amount=FVal(received_amount),
@@ -1121,12 +1074,11 @@ def test_swap_on_sushiswap(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_SNX,
         amount=FVal(swap_amount),
@@ -1134,12 +1086,11 @@ def test_swap_on_sushiswap(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} SNX via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_PENDLE,
         amount=FVal(received_amount),
@@ -1173,12 +1124,11 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
         location_label=polygon_pos_accounts[0],
         notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(swap_amount),
@@ -1186,12 +1136,11 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
         notes=f'Swap {swap_amount} POL via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BULL,
         amount=FVal(received_amount),
@@ -1224,12 +1173,11 @@ def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_OP,
         amount=FVal(swap_amount),
@@ -1237,12 +1185,11 @@ def test_swap_optimism_with_return(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount} OP via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=OP_ZEROX_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
         amount=FVal(received_amount),
@@ -1261,12 +1208,11 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
     """
     tx_hash = deserialize_evm_tx_hash('0x5871cd5d19d749135ac563eddb4cb04bd0d13f05414666a887b1628f5968b7dc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    assert events == [EvmEvent(
+    assert events == [EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=(timestamp := TimestampMS(1733427911000)),
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:1/erc20:0x58D97B57BB95320F9a05dC918Aef65434969c2B2'),
         amount=FVal(swap_amount := '7734.443526456381826329'),
@@ -1274,12 +1220,11 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
         notes=f'Swap {swap_amount} MORPHO in a cowswap twap order',
         counterparty=CPT_COWSWAP,
         address=(address := string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41')),
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         amount=FVal(received_amount := '17631.876781'),
@@ -1311,12 +1256,11 @@ def test_swap_settler_eth_token_ethereum(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(amount := '0.001490680243368199'),
@@ -1324,12 +1268,11 @@ def test_swap_settler_eth_token_ethereum(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0xa93d86Af16fe83F064E3C0e2F3d129F7B7b002b0'),
         amount=FVal(amount := '392149.120952574'),
@@ -1373,12 +1316,11 @@ def test_swap_settler_token_eth_ethereum(ethereum_inquirer, ethereum_accounts):
         location_label=user_address,
         notes=f'Set MAVIA spending approval of {user_address} by {approval_recipient} to {approval_amount}',  # noqa: E501
         address=approval_recipient,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=TimestampMS(1742365487000),
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=asset,
         amount=FVal(swap_amount := '6.519842317021475224'),
@@ -1386,12 +1328,11 @@ def test_swap_settler_token_eth_ethereum(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} MAVIA via the 0x protocol',
         counterparty=CPT_ZEROX,
         address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=4,
         timestamp=TimestampMS(1742365487000),
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount := '0.00188844058048022'),
@@ -1423,12 +1364,11 @@ def test_swap_settler_token_token_ethereum(ethereum_inquirer, ethereum_accounts)
         notes=f'Burn {gas_amount} ETH for gas',
         location_label=user_address,
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
         amount=FVal(swap_amount := '215'),
@@ -1436,12 +1376,11 @@ def test_swap_settler_token_token_ethereum(ethereum_inquirer, ethereum_accounts)
         location_label=user_address,
         counterparty=CPT_ZEROX,
         address='0x0d0E364aa7852291883C162B22D6D81f6355428F',
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0x2bc46Eb4ae80ddD9c8A6e064C74327C8244D88e2'),
         amount=FVal(received_amount := '1220.713756928144413912'),
@@ -1470,12 +1409,11 @@ def test_swap_via_settler_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_ac
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -1483,12 +1421,11 @@ def test_swap_via_settler_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_ac
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=settler_address,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ARBITRUM_USDC,
         amount=FVal(received_amount),
@@ -1517,12 +1454,11 @@ def test_swap_via_settler_on_base(base_inquirer, base_accounts):
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -1530,12 +1466,11 @@ def test_swap_via_settler_on_base(base_inquirer, base_accounts):
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=settler_address,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BASE_USDC,
         amount=FVal(received_amount),
@@ -1564,12 +1499,11 @@ def test_swap_via_settler_on_binance_sc(binance_sc_inquirer, binance_sc_accounts
         location_label=user_address,
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BSC_BNB,
         amount=FVal(swap_amount),
@@ -1577,12 +1511,11 @@ def test_swap_via_settler_on_binance_sc(binance_sc_inquirer, binance_sc_accounts
         notes=f'Swap {swap_amount} BNB via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=settler_address,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:56/erc20:0xB11E6ed6f481fD954Dcd4585d8877aCe06acadfE'),
         amount=FVal(received_amount),
@@ -1611,12 +1544,11 @@ def test_swap_via_settler_on_optimism(optimism_inquirer, optimism_accounts):
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -1624,12 +1556,11 @@ def test_swap_via_settler_on_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount} ETH via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=settler_address,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_OP,
         amount=FVal(received_amount),
@@ -1658,12 +1589,11 @@ def test_swap_via_settler_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accou
         location_label=user_address,
         notes=f'Burn {gas_amount} POL for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(swap_amount),
@@ -1671,12 +1601,11 @@ def test_swap_via_settler_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accou
         notes=f'Swap {swap_amount} POL via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=settler_address,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:137/erc20:0x3c499c542cef5e3811e1192ce70d8cc03d5c3359'),
         amount=FVal(received_amount),
