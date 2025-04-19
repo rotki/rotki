@@ -497,7 +497,7 @@ class DBHistoryEvents:
                     if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
                         deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
                     else:
-                        if ethereum_tracked_accounts is None:
+                        if ethereum_tracked_accounts is None:  # do the query only once if needed
                             with self.db.conn.read_ctx() as second_cursor:
                                 second_cursor.execute(
                                     'SELECT account FROM blockchain_accounts WHERE blockchain=?',
