@@ -1,9 +1,8 @@
+import json
 import logging
 
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.filtering import EvmEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
@@ -14,24 +13,33 @@ log = RotkehlchenLogsAdapter(logger)
 
 def get_eigenpods_to_owners_mapping(db: DBHandler) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
     """Read stored events and get the deployed eigenpods to owners mappings"""
-    db_filter = EvmEventFilterQuery.make(
-        counterparties=[CPT_EIGENLAYER],
-        location=Location.ETHEREUM,
-        event_types=[HistoryEventType.INFORMATIONAL],
-        event_subtypes=[HistoryEventSubType.CREATE],
-    )
     with db.conn.read_ctx() as cursor:
-        if len(events := DBHistoryEvents(db).get_history_events(
-            cursor=cursor,
-            filter_query=db_filter,
-            has_premium=True,
-        )) == 0:
+        cursor.execute(
+            'SELECT event_identifier, extra_data FROM history_events JOIN evm_events_info ON '
+            'history_events.identifier=evm_events_info.identifier WHERE counterparty=? AND '
+            'type=? AND subtype=? AND location=? AND extra_data IS NOT NULL',
+            (
+                CPT_EIGENLAYER,
+                HistoryEventType.INFORMATIONAL.serialize(),
+                HistoryEventSubType.CREATE.serialize(),
+                Location.ETHEREUM.serialize_for_db(),
+            ),
+        )
+        if len(events_extra_data := cursor.fetchall()) == 0:
             return {}
 
     eigenpod_owner_mapping = {}
-    for event in events:
-        if event.extra_data is None or (owner := event.extra_data.get('eigenpod_owner')) is None or (eigenpod := event.extra_data.get('eigenpod_address')) is None:  # noqa: E501
-            log.error(f'Expected to find extra data with owner and eigenpod in {event}. Skipping.')
+    for row in events_extra_data:
+        try:
+            extra_data = json.loads(row[1])
+        except json.JSONDecodeError:
+            log.error(
+                f'Error processing extra data for eigenpod information in {row[0]}. Skipping...',
+            )
+            continue
+
+        if (owner := extra_data.get('eigenpod_owner')) is None or (eigenpod := extra_data.get('eigenpod_address')) is None:  # noqa: E501
+            log.error(f'Expected to find extra data with owner and eigenpod in event with id {row[0]}. Skipping.')  # noqa: E501
             continue
 
         eigenpod_owner_mapping[eigenpod] = owner
