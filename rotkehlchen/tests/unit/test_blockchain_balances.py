@@ -264,7 +264,10 @@ def test_native_token_balance(
                 amount=FVal('8.204435619126641457'),
                 usd_value=FVal('12.3066534286899621855'),
             ),
-            usdc: Balance(amount=FVal('0.33078')),
-            weth: Balance(amount=FVal('0.007712106620416874')),
-            usdt: Balance(amount=FVal('0.074222')),
+            usdc: Balance(amount=FVal('0.33078'), usd_value=FVal(0.496170)),
+            weth: Balance(
+                amount=FVal('0.007712106620416874'),
+                usd_value=FVal(0.0115681599306253110),
+            ),
+            usdt: Balance(amount=FVal('0.074222'), usd_value=FVal(0.1113330)),
         }

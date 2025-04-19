@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.chain.ethereum.utils import (
@@ -12,10 +12,10 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
@@ -361,7 +361,7 @@ class EvmTokens(ABC):  # noqa: B024
           token has no code. That means the chain is not synced
         """
         addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(dict)
-        all_tokens = set()
+        all_tokens: set[EvmToken] = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
         chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
 
@@ -401,11 +401,7 @@ class EvmTokens(ABC):  # noqa: B024
             for address, balances in new_balances.items():
                 addresses_to_balances[address].update(balances)
 
-        # Hack to avoid querying price of tokens one by one. This can be slow and is ignored
-        # since the frontend later queries the prices again in a more optimized way.
-        # Can be removed when this is implemented: https://github.com/rotki/rotki/issues/5071
-        token_usd_price: dict[EvmToken, Price] = dict.fromkeys(all_tokens, Price(ZERO))
-
+        token_usd_price = cast('dict[EvmToken, Price]', Inquirer.find_usd_prices(list(all_tokens)))
         return dict(addresses_to_balances), token_usd_price
 
     def _get_token_exceptions(self) -> set[ChecksumEvmAddress]:
