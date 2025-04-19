@@ -8,6 +8,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.constants import (
@@ -55,6 +56,7 @@ from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     EVM_EVMLIKE_LOCATIONS_TYPE,
     ChainID,
+    ChecksumEvmAddress,
     EVMTxHash,
     Location,
     SupportedBlockchain,
@@ -462,9 +464,7 @@ class DBHistoryEvents:
         if filter_query.pagination is not None:
             base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
 
-        ethereum_tracked_accounts = self.db.get_blockchain_accounts(cursor).get(
-            SupportedBlockchain.ETHEREUM,
-        )
+        ethereum_tracked_accounts: set[ChecksumEvmAddress] | None = None
         cursor.execute(base_query, filters_bindings)
         output: list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]] = []
         type_idx = 1 if group_by_event_ids else 0
@@ -496,6 +496,14 @@ class DBHistoryEvents:
                     if entry_type == HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT:
                         deserialized_event = EthWithdrawalEvent.deserialize_from_db(data)
                     else:
+                        if ethereum_tracked_accounts is None:
+                            with self.db.conn.read_ctx() as second_cursor:
+                                second_cursor.execute(
+                                    'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+                                    (SupportedBlockchain.ETHEREUM.get_key().upper(),),
+                                )
+                                ethereum_tracked_accounts = {string_to_evm_address(row[0]) for row in second_cursor}  # noqa: E501
+
                         deserialized_event = EthBlockEvent.deserialize_from_db(data, fee_recipient_tracked=location_label_tuple[0] in ethereum_tracked_accounts)  # noqa: E501
 
                 elif entry_type == HistoryBaseEntryType.ETH_DEPOSIT_EVENT:
