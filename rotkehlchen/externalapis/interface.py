@@ -27,11 +27,11 @@ class ExternalServiceWithApiKey:
 
     def _get_api_key(self) -> ApiKey | None:
         """A function to get the API key from the DB (if we have one initialized)"""
-        if not self.db:
-            return None
-
         if self.api_key and ts_now() - self.last_ts <= 120:
             return self.api_key
+
+        if not self.db:
+            return None
 
         # else query the DB
         credentials = self.db.get_external_service_credentials(self.service_name)
