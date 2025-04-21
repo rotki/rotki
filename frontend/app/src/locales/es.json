@@ -207,84 +207,84 @@
       },
       "blockchain_accounts_add": {
         "no_new": {
-          "description": "The selected addresses are already tracked by rotki"
+          "description": "Las direcciones seleccionadas ya están siendo rastreadas por rotki"
         },
         "task": {
-          "description": "Adding {address}",
-          "title": "Adding {blockchain} account"
+          "description": "Agregando {address}",
+          "title": "Agregando cuenta de {blockchain}"
         }
       },
       "create_oracle_cache": {
-        "already_running": "Task is already running",
-        "failed": "Failed while creating a cache entry from {fromAsset} to {toAsset} on source: {error}",
-        "task": "Creating cache entry from {fromAsset} to {toAsset} on {source}"
+        "already_running": "La tarea ya está en curso",
+        "failed": "Error al crear una entrada de caché de {fromAsset} a {toAsset} en la fuente: {error}",
+        "task": "Creando entrada de caché dee {fromAsset} a {toAsset} en {source}"
       },
       "detect_tokens": {
         "task": {
-          "description": "Fetch detected tokens for {address} ({chain})",
-          "title": "Fetch detected tokens"
+          "description": "Recuperando tokens detectados para {address} ({chain})",
+          "title": "Recuperando tokens detectados"
         }
       },
       "exchange_balances": {
         "error": {
-          "message": "Failed to query {location} balances: {error}",
-          "title": "{location} balance query"
+          "message": "Error al consultar los balances de {location}: {error}",
+          "title": "Consulta de balances de {location}"
         },
         "task": {
-          "title": "Retrieving {location} balances"
+          "title": "Recuperando balances de {location}"
         }
       },
       "exchange_rates": {
         "error": {
-          "message": "Failed fetching exchange rates: {message}",
-          "title": "Exchange Rates"
+          "message": "Error al consultar los tipos de cambio: {message}",
+          "title": "Tipos de cambio"
         },
         "task": {
-          "title": "Exchange Rates"
+          "title": "Tipos de cambio"
         }
       },
       "exchange_removal": {
-        "description": "The removal of {exchange} failed due to: {error}",
-        "title": "Exchange removal"
+        "description": "No se pudo eliminar {exchange} debido a: {error}",
+        "title": "Elimination de plataforma de intercambio"
       },
       "exchange_setup": {
-        "description": "The setup of {exchange} failed due to: {error}",
-        "title": "Exchange setup"
+        "description": "La configuración de {exchange} falló debido a: {error}",
+        "title": "Configuración de Exchange"
       },
       "historic_fetch_price": {
         "task": {
-          "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
-          "title": "Fetching conversion rate"
+          "description": "Recuperando tipos de {fromAsset} a {toAsset} en {date} | Recuperando tasas para {count} pares a {toAsset}",
+          "title": "Recuperando el tipo de intercambio"
         }
       },
       "loopring": {
         "error": {
-          "description": "Querying Loopring balances failed: {error}",
-          "title": "Querying Loopring balances"
+          "description": "La consulta de balances de Loopring falló: {error}",
+          "title": "Consultando balances de Loopring"
         },
         "task": {
-          "title": "Querying Loopring balances"
+          "title": "Consultando balances de Loopring"
         }
       },
       "manual_balances": {
         "error": {
-          "message": "Failed: {message}",
-          "title": "Retrieving manual balances"
+          "message": "Falló: {message}",
+          "title": "Recuperando balances manuales"
         }
       },
       "manual_delete": {
         "error": {
-          "title": "Deleting Manual Balance"
+          "title": "Eliminando balance manual"
         }
       },
       "xpub_removal": {
         "error": {
-          "description": "Failed to remove {xpub}: {error}",
-          "title": "Xpub Removal"
+          "description": "Falló al eliminar {xpub}: {error}",
+          "title": "Eliminación de Xpub"
         },
         "task": {
           "description": "{xpub}",
-          "title": "Removing xpub"
+          "title": "Eliminando xpub"
         }
       }
     },
