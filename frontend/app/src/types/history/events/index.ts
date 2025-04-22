@@ -154,14 +154,26 @@ export const SwapEventSchema = CommonHistoryEvent.extend({
 
 export type SwapEvent = z.infer<typeof SwapEventSchema>;
 
+export const EvmSwapEventSchema = CommonHistoryEvent.extend({
+  address: z.string().nullable(),
+  counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.EVM_SWAP_EVENT),
+  extraData: z.unknown().nullable(),
+  product: z.string().nullable(),
+  txHash: z.string(),
+});
+
+export type EvmSwapEvent = z.infer<typeof EvmSwapEventSchema>;
+
 export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
   .or(OnlineHistoryEvent)
   .or(EthWithdrawalEvent)
   .or(EthBlockEvent)
   .or(EthDepositEvent)
-  .or(SwapEventSchema);
+  .or(SwapEventSchema)
+  .or(EvmSwapEventSchema);
 
-export type DependentHistoryEvent = AssetMovementEvent | SwapEvent;
+export type DependentHistoryEvent = AssetMovementEvent | SwapEvent | EvmSwapEvent;
 
 export type IndependentHistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent;
 
