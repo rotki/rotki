@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Any, NamedTuple
 
 from eth_typing import HexAddress, HexStr
@@ -132,3 +133,9 @@ def asset_id_is_evm_token(asset_id: str) -> tuple[ChainID, ChecksumEvmAddress] |
 
     address = string_to_evm_address(match.group(3))
     return chain_id, address
+
+
+class RemoteDataQueryStatus(Enum):
+    FAILED = auto()
+    NEW_DATA = auto()
+    NO_UPDATE = auto()
