@@ -1,6 +1,5 @@
 import type { ActionStatus } from '@/types/action';
 import type {
-  IgnoreActionType,
   IgnorePayload,
 } from '@/types/history/ignored';
 import type { EntryMeta } from '@/types/history/meta';
@@ -9,7 +8,6 @@ import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 import { useMessageStore } from '@/store/message';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
-  actionType: IgnoreActionType.HISTORY_EVENTS;
   toData: (t: T) => string;
 }
 
@@ -20,7 +18,7 @@ interface UseIgnoreReturn<T extends EntryMeta> {
 }
 
 export function useIgnore<T extends EntryMeta>(
-  { actionType, toData }: CommonIgnoreAction<T>,
+  { toData }: CommonIgnoreAction<T>,
   selected: Ref<T[]>,
   refresh: () => any,
 ): UseIgnoreReturn<T> {
@@ -78,7 +76,6 @@ export function useIgnore<T extends EntryMeta>(
     });
 
     const payload: IgnorePayload = {
-      actionType,
       data: data.map(toData),
     };
 
