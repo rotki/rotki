@@ -100,4 +100,4 @@ def decode_basic_uniswap_info(
         ordered_events=[approval_event, spend_event, receive_event],
         events_list=decoded_events,
     )
-    return DEFAULT_DECODING_OUTPUT
+    return DecodingOutput(process_swaps=True)

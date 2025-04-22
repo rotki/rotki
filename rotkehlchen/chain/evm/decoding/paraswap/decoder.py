@@ -82,11 +82,9 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
                 (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE) or  # noqa: E501
                 (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE)  # noqa: E501
             ):  # find the receive event
-                event.counterparty = CPT_PARASWAP
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in paraswap'  # noqa: E501
-                event.address = self.router_address
                 if in_event is None:
                     in_event = event
                 else:  # if another in_event is found, then it is a partial refund of in_asset
@@ -155,10 +153,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
                 event_subtype=HistoryEventSubType.FEE,
                 asset=fee_asset,
                 amount=fee_amount,
-                location_label=sender,
                 notes=f'Spend {fee_amount} {fee_asset.symbol} as a paraswap fee',
-                counterparty=CPT_PARASWAP,
-                address=context.transaction.to_address,
             )
             context.decoded_events.append(fee_event)
 
@@ -166,7 +161,7 @@ class ParaswapCommonDecoder(DecoderInterface, ABC):
             ordered_events=[out_event, in_event, fee_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 
