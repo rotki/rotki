@@ -4514,6 +4514,7 @@
         "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
         "event_identifier": "Event information",
         "evm_event": "Transaction {txHash}",
+        "evm_swap_event": "Swap on {location} transaction {txHash}",
         "history_event": "{location} event",
         "swap_event": "Swap on {location}"
       },

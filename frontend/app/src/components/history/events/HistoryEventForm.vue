@@ -8,6 +8,7 @@ import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventF
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
+import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 import { HistoryEventEntryType } from '@rotki/common';
@@ -39,6 +40,7 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.ETH_DEPOSIT_EVENT]: EthDepositEventForm,
   [HistoryEventEntryType.ETH_WITHDRAWAL_EVENT]: EthWithdrawalEventForm,
   [HistoryEventEntryType.EVM_EVENT]: EvmEventForm,
+  [HistoryEventEntryType.EVM_SWAP_EVENT]: EvmSwapEventForm,
   [HistoryEventEntryType.HISTORY_EVENT]: OnlineHistoryEventForm,
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
