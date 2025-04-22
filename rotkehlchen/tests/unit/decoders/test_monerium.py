@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
 
@@ -280,5 +281,57 @@ def test_v2_migration_gnosis(
         amount=FVal(amount),
         location_label=gnosis_accounts[0],
         notes=f'Mint {amount} EURe',
+        counterparty=CPT_MONERIUM,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xbcBc123312637Be33B36AC49331a9137a784254b']])
+def test_mint_eure_on_arbitrum(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    evmhash = deserialize_evm_tx_hash('0x792faaede6cd025d0a630669bf8fde06f51cc16aceebb67a09430536fea25109')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=evmhash,
+    )
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=8,
+        timestamp=TimestampMS(1744902081000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+        amount=FVal(4076),
+        location_label=arbitrum_one_accounts[0],
+        notes='Mint 4076 EURe',
+        counterparty=CPT_MONERIUM,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xfFd0E4eF79c0C7B427D5CA3C455DB0eBCfa2aE4D']])
+def test_burn_eure_on_arbitrum(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    evmhash = deserialize_evm_tx_hash('0xd403cb41ddb6ae65fbfea44e1f8be8edb20ac5bc2252d69387b16bae3c5f7694')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=evmhash,
+    )
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=46,
+        timestamp=TimestampMS(1745310374000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+        amount=FVal(500),
+        location_label=arbitrum_one_accounts[0],
+        notes='Burn 500 EURe',
         counterparty=CPT_MONERIUM,
     )]

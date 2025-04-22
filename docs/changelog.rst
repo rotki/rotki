@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Monerium transactions on Arbitrum and Scroll blockchains are now properly decoded.
 * :feature:`-` Users can see the compact view of swap events in the history events section.
 * :feature:`-` GG23 arbitrum OSS rounds and impact donation minting will now be properly recognized by rotki
 * :feature:`-` Users can now manually link assets on any counterparty to assets recognized by rotki, without having to wait for a new release.
