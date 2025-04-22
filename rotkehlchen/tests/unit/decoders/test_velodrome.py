@@ -13,6 +13,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -410,12 +411,11 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             location_label=user_address,
             counterparty=CPT_GAS,
             notes='Burn 0.000044146364876824 ETH for gas',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.01'),
@@ -423,18 +423,17 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_VELODROME,
             address=ROUTER_V2,
             notes=f'Swap 0.01 ETH in {CPT_VELODROME}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_OP,
             amount=FVal('11.895061655417592619'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=string_to_evm_address('0x2fE304b407c7fAb2a3c10962F14dB751468a4f5b'),  # op_frxeth_pool_address  # noqa: E501
+            address=ROUTER_V2,
             notes=f'Receive 11.895061655417592619 OP as the result of a swap in {CPT_VELODROME}',
         ),
     ]
@@ -467,12 +466,11 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             location_label=user_address,
             counterparty=CPT_GAS,
             notes='Burn 0.000184626805145159 ETH for gas',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.0000857'),
@@ -480,18 +478,17 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_VELODROME,
             address=ROUTER_V1,
             notes=f'Swap 0.0000857 ETH in {CPT_VELODROME}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:10/erc20:0x9485aca5bbBE1667AD97c7fE7C4531a624C8b1ED'),
             amount=FVal('0.130694520044655821'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=string_to_evm_address('0x7866C6072B09539fC0FDE82963846b80203d7beb'),
+            address=ROUTER_V1,
             notes=f'Receive 0.130694520044655821 agEUR as the result of a swap in {CPT_VELODROME}',
         ),
     ]
@@ -536,12 +533,11 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             location_label=user_address,
             address=ROUTER_V2,
             notes=f'Revoke OP spending approval of {user_address} by {ROUTER_V2}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=98,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_OP,
             amount=FVal('91.173214418890299607'),
@@ -549,18 +545,17 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             counterparty=CPT_VELODROME,
             address=WETH_OP_POOL_ADDRESS,
             notes=f'Swap 91.173214418890299607 OP in {CPT_VELODROME}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=99,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.0770899907450713'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=ROUTER_V2,
+            address=WETH_OP_POOL_ADDRESS,
             notes=f'Receive 0.0770899907450713 ETH as the result of a swap in {CPT_VELODROME}',
         ),
     ]
@@ -593,31 +588,29 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
             location_label=user_address,
             counterparty=CPT_GAS,
             notes='Burn 0.000076204005061914 ETH for gas',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset(VELO_V1_TOKEN),
             amount=FVal('5165.602591359381942771'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=string_to_evm_address('0xe8537b6FF1039CB9eD0B71713f697DDbaDBb717d'),  # velo_usdc_pool_address  # noqa: E501
+            address=(address := string_to_evm_address('0xe8537b6FF1039CB9eD0B71713f697DDbaDBb717d')),  # velo_usdc_pool_address  # noqa: E501
             notes=f'Swap 5165.602591359381942771 VELO in {CPT_VELODROME}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.181508840163183003'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=ROUTER_V1,
+            address=address,
             notes=f'Receive 0.181508840163183003 ETH as the result of a swap in {CPT_VELODROME}',
         ),
     ]
@@ -662,31 +655,29 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             location_label=user_address,
             address=ROUTER_V2,
             notes=f'Revoke DOLA spending approval of {user_address} by {ROUTER_V2}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=93,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:10/erc20:0x8aE125E8653821E851F12A49F7765db9a9ce7384'),
             amount=FVal('1177.178869111912387354'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6'),
+            address=(address := string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6')),  # noqa: E501
             notes=f'Swap 1177.178869111912387354 DOLA in {CPT_VELODROME}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=94,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:10/erc20:0xb396b31599333739A97951b74652c117BE86eE1D'),
             amount=FVal('1122.945013439390360367'),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=string_to_evm_address('0xBf75051F6e6dF9fEcF90d9bebbBB08a85950858C'),
+            address=address,
             notes=f'Receive 1122.945013439390360367 DUSD as the result of a swap in {CPT_VELODROME}',  # noqa: E501
         ),
     ]
@@ -719,12 +710,11 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             location_label=user_address,
             counterparty=CPT_GAS,
             notes='Burn 0.00003955388723844 ETH for gas',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WETH_OPT,
             amount=FVal('0.056827266981849464'),
@@ -732,12 +722,11 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             counterparty=CPT_VELODROME,
             address=string_to_evm_address('0xcdd41009E74bD1AE4F7B2EeCF892e4bC718b9302'),  # weth_op_pool_address_v1  # noqa: E501
             notes=f'Swap 0.056827266981849464 WETH in {CPT_VELODROME}',
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_OP,
             amount=FVal('67.507104801871949085'),

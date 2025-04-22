@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_UNISWAP
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import UNISWAP_DISTRIBUTOR
+from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import UNISWAP_V2_ROUTER
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
@@ -15,6 +16,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -54,32 +56,30 @@ def test_uniswap_v2_swap(ethereum_inquirer):
             location_label=ADDY_1,
             notes='Burn 0.00847616 ETH for gas',
             counterparty=CPT_GAS,
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=1,
             timestamp=TimestampMS(1628753094000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.15'),
             location_label=ADDY_1,
             notes='Swap 0.15 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        ), EvmEvent(
+            address=UNISWAP_V2_ROUTER,
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=TimestampMS(1628753094000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'),
             amount=FVal('462.967761432322996701'),
             location_label=ADDY_1,
             notes='Receive 462.967761432322996701 FRAX in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0xE1573B9D29e2183B1AF0e743Dc2754979A40D237'),
+            address=UNISWAP_V2_ROUTER,
         ),
     ]
     assert events == expected_events
@@ -118,32 +118,30 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             notes='Refund of 0.008104374914845978 ETH in uniswap-v2 due to price change',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('1.59134916748576351'),
             location_label=ADDY_1,
             notes='Swap 1.59134916748576351 ETH in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        ), EvmEvent(
+            address=UNISWAP_V2_ROUTER,
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=EvmToken('eip155:1/erc20:0x761D38e5ddf6ccf6Cf7c55759d5210750B5D60F3'),
             amount=FVal('10000000000'),
             location_label=ADDY_1,
             notes='Receive 10000000000 ELON in uniswap-v2 from 0x3CAdf2cA458376a6a5feA2EF3612346037D5A787',  # noqa: E501
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0x7B73644935b8e68019aC6356c40661E1bc315860'),
+            address=UNISWAP_V2_ROUTER,
         ),
     ]
     assert events == expected_events
@@ -181,12 +179,11 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Set MPL spending approval of 0xa931b486F661540c6D709aE6DfC8BcEF347ea437 by 0x617Dee16B86534a5d792A4d7A62FB491B544111E to 115792089237316195423570985008687907853269984665640564039436.930578017129639935',  # noqa: E501
             address=string_to_evm_address('0x617Dee16B86534a5d792A4d7A62FB491B544111E'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=2,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0x33349B282065b0284d756F0577FB39c158F935e6'),
             amount=FVal('20.653429896'),
@@ -194,12 +191,11 @@ def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
             notes='Swap 20.653429896 MPL in uniswap-v2',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x7b28470032DA06051f2E620531adBAeAdb285408'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             sequence_index=3,
             timestamp=TimestampMS(1667857559000),
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             amount=FVal('273.798721'),
@@ -524,12 +520,11 @@ def test_uniswap_v2_swap_events_order(
             notes=f'Set MTA spending approval of {user_address} by 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D to 115792089237316195423570985008687907853269984665640564039434.499460237779741194',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
             sequence_index=34,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
             amount=FVal('23.084547675349898741'),
@@ -537,19 +532,18 @@ def test_uniswap_v2_swap_events_order(
             notes=f'Swap 23.084547675349898741 MTA in uniswap-v2 from {user_address}',
             counterparty=CPT_UNISWAP_V2,
             address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=evmhash,
             timestamp=1672784687000,
             location=Location.ETHEREUM,
             sequence_index=35,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_DAI,
             amount=FVal('58.517806710690769903'),
             location_label=user_address,
             notes=f'Receive 58.517806710690769903 DAI in uniswap-v2 from {user_address}',
             counterparty=CPT_UNISWAP_V2,
-            address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
+            address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
         ),
     ]
     assert events == expected_events

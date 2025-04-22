@@ -477,7 +477,11 @@ class EVMTransactionDecoder(ABC):
             if err:
                 continue
 
-            if decoding_output.event is not None or len(decoding_output.action_items) > 0:
+            if (
+                decoding_output.event is not None or
+                len(decoding_output.action_items) > 0 or
+                decoding_output.process_swaps
+            ):
                 return decoding_output
 
         return None

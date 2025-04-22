@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import TYPE_CHECKING, Any, overload
+from unittest.mock import patch
 
 import gevent
 from eth_typing import ChecksumAddress
@@ -29,6 +30,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.types import (
@@ -445,6 +447,8 @@ def get_decoded_events_of_transaction(
     If relevant_address is provided then the added transactions are added linked to
     the provided address.
 
+    Also asserts that _process_swaps is called whenever a transaction contains TRADE events.
+
     Returns the list of decoded events and the EVMTransactionDecoder
     """
     chain_mappings = {
@@ -478,6 +482,27 @@ def get_decoded_events_of_transaction(
             )
 
     transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-    with patch_decoder_reload_data(load_global_caches):
+    original_run_all_post_decoding_rules = decoder.run_all_post_decoding_rules
+    expected_call_count = 0
+
+    def mock_run_all_post_decoding_rules(**kwargs):
+        """Increment expected_call_count when a transaction with swaps is encountered."""
+        nonlocal expected_call_count
+        events, maybe_modified = original_run_all_post_decoding_rules(**kwargs)
+        if (
+            maybe_modified is True or
+            len([e for e in events if e.event_type == HistoryEventType.TRADE]) > 0
+        ):
+            expected_call_count += 1
+
+        return events, maybe_modified
+
+    with (
+        patch_decoder_reload_data(load_global_caches),
+        patch.object(decoder, 'run_all_post_decoding_rules', side_effect=mock_run_all_post_decoding_rules),  # noqa: E501
+        patch.object(decoder, '_process_swaps', wraps=decoder._process_swaps) as process_swaps_mock,  # noqa: E501
+    ):
         result = decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
+
+    assert process_swaps_mock.call_count >= expected_call_count, 'Encountered unprocessed swaps. Check that all decoders set the process_swaps flag properly.'  # noqa: E501
     return result, decoder

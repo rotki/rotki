@@ -9,6 +9,7 @@ from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -57,12 +58,11 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             notes=f'Set cvxCRV spending approval of {ADDY_1} by 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F to {approved_amount}',  # noqa: E501
             counterparty=None,
             address=string_to_evm_address('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=309,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=EvmToken('eip155:1/erc20:0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
             amount=FVal(swap_amount),
@@ -70,12 +70,11 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             notes=f'Swap {swap_amount} cvxCRV in sushiswap-v2 from {ADDY_1}',
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
-        ), EvmEvent(
+        ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=310,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=EvmToken('eip155:1/erc20:0xD533a949740bb3306d119CC777fa900bA034cd52'),
             amount=FVal(received_amount),

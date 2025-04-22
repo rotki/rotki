@@ -220,7 +220,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             ordered_events=[spend_event, receive_event],
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        return DecodingOutput(process_swaps=True)
 
     def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         """Decodes transactions that interact with a (velo/aero)drome v1 or v2 pool"""
