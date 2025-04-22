@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { DependentHistoryEvent, HistoryEvent, HistoryEventEntry } from '@/types/history/events';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
+import { isSwap } from '@/modules/history/events/utils';
 import { isDependentHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import {
   isAssetMovementEvent,
@@ -10,7 +12,6 @@ import {
   isEventMissingAccountingRule,
   isEvmEvent,
 } from '@/utils/history/events';
-import { HistoryEventEntryType } from '@rotki/common';
 
 const props = defineProps<{
   item: HistoryEventEntry;
@@ -20,14 +21,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
-  'delete-event': [data: { canDelete: boolean; item: HistoryEventEntry }];
+  'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
 }>();
 
 const { t } = useI18n();
 
 function hideActions(item: HistoryEventEntry, index: number): boolean {
-  const isSwapButNotSpend = item.entryType === HistoryEventEntryType.SWAP_EVENT && index !== 0;
+  const isSwapButNotSpend = isSwap(item) && index !== 0;
   const isAssetMovementFee = isAssetMovementEvent(item) && item.eventSubtype === 'fee';
   return isAssetMovementFee || isSwapButNotSpend;
 }
@@ -51,10 +52,18 @@ function editEvent(item: HistoryEvent) {
 }
 
 function deleteEvent(item: HistoryEventEntry) {
-  emit('delete-event', {
-    canDelete: isEvmEvent(item) ? props.events.length > 1 : true,
-    item,
-  });
+  const isSingleEvmEvent = isEvmEvent(item) && props.events.length === 1;
+  const payload: HistoryEventDeletePayload = isSingleEvmEvent
+    ? {
+        event: item,
+        type: 'ignore',
+      }
+    : {
+        ids: isDependentHistoryEvent(item) || isSwap(item) ? props.events.map(event => event.identifier) : [item.identifier],
+        type: 'delete',
+      };
+
+  emit('delete-event', payload);
 }
 </script>
 

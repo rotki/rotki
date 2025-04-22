@@ -6,7 +6,7 @@ import {
   isEthBlockEventRef,
   isWithdrawalEventRef,
 } from '@/utils/history/events';
-import { Blockchain, toSentenceCase, toSnakeCase } from '@rotki/common';
+import { Blockchain, HistoryEventEntryType, toSentenceCase, toSnakeCase } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -18,7 +18,14 @@ const { event } = toRefs(props);
 
 const { is2xlAndUp } = useBreakpoint();
 
-const translationKey = computed<string>(() => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`);
+const translationKey = computed<string>(() => {
+  // consider an evm swap event as a case of evm event
+  // as they are both evm events and have the same header
+  let entryType = get(event).entryType;
+  if (entryType === HistoryEventEntryType.EVM_SWAP_EVENT)
+    entryType = HistoryEventEntryType.EVM_EVENT;
+  return `transactions.events.headers.${toSnakeCase(entryType)}`;
+});
 
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);

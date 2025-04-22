@@ -26,7 +26,10 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
 </script>
 
 <template>
-  <div class="py-2 flex items-center gap-2">
+  <div
+    class="py-2 flex items-center gap-2"
+    :data-subtype="event.eventSubtype"
+  >
     <AssetIcon
       size="32px"
       :identifier="event.asset"
