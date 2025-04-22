@@ -26,6 +26,7 @@ Changelog
 * :bug:`-` Fix a rare issue where the manual balance page becomes empty.
 * :bug:`-` Fix a rare issue calling RPC nodes when there is an error connecting to them.
 * :bug:`-` Users will now be able to see exchange locations when expanding the ETH entry under Multi Chain Assets.
+* :bug:`-` Updating a protocol cache when no changes happened on a chain will now work properly.
 
 * :release:`1.38.2 <2025-03-26>`
 * :bug:`-` Fix the issue where the "Add new event here" button is missing from the "more" menu in the event group.

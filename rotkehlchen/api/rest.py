@@ -94,7 +94,13 @@ from rotkehlchen.chain.evm.names import (
     maybe_resolve_name,
     search_for_addresses_names,
 )
-from rotkehlchen.chain.evm.types import ChainID, EvmlikeAccount, NodeName, WeightedNode
+from rotkehlchen.chain.evm.types import (
+    ChainID,
+    EvmlikeAccount,
+    NodeName,
+    RemoteDataQueryStatus,
+    WeightedNode,
+)
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
@@ -4537,6 +4543,7 @@ class RestAPI:
                         status_code=HTTPStatus.CONFLICT,
                     )
 
+        failed_to_update = []
         for (cache, cache_type, query_method, chain_id, inquirer) in cache_rules:
             if inquirer.ensure_cache_data_is_updated(
                 cache_type=cache_type,
@@ -4544,11 +4551,14 @@ class RestAPI:
                 chain_id=chain_id,
                 cache_key_parts=[] if chain_id is None else (str(chain_id.serialize_for_db()),),
                 force_refresh=True,
-            ) is False:
-                return wrap_in_fail_result(
-                    message=f'Failed to refresh {cache} cache',
-                    status_code=HTTPStatus.CONFLICT,
-                )
+            ) == RemoteDataQueryStatus.FAILED:
+                failed_to_update.append(cache)
+
+        if len(failed_to_update) != 0:
+            return wrap_in_fail_result(
+                message=f'Failed to refresh caches for: {", ".join(failed_to_update)}',
+                status_code=HTTPStatus.CONFLICT,
+            )
 
         return OK_RESULT
 
