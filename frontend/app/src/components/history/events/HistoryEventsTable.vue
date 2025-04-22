@@ -14,7 +14,7 @@ import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
 import HistoryEventsList from '@/components/history/events/HistoryEventsList.vue';
-import IgnoredInAcountingIcon from '@/components/history/IgnoredInAcountingIcon.vue';
+import IgnoredInAccountingIcon from '@/components/history/IgnoredInAccountingIcon.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
@@ -24,7 +24,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { useStatusStore } from '@/store/status';
-import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
 import { isTaskCancelled } from '@/utils';
 import { isAssetMovementEvent } from '@/utils/history/events';
@@ -73,7 +72,6 @@ const { isLoading } = useStatusStore();
 const { deleteTransactions } = useHistoryEventsApi();
 const { deleteHistoryEvent, fetchHistoryEvents } = useHistoryEvents();
 const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
-  actionType: IgnoreActionType.HISTORY_EVENTS,
   toData: (item: HistoryEventEntry) => item.eventIdentifier,
 }, selected, () => {
   emit('refresh');
@@ -293,7 +291,7 @@ function forceRedecode(): void {
         outlined
       >
         <template #item.ignoredInAccounting="{ row }">
-          <IgnoredInAcountingIcon
+          <IgnoredInAccountingIcon
             v-if="row.ignoredInAccounting"
             class="ml-4"
           />
