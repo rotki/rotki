@@ -130,7 +130,7 @@ def test_get_report_data_with_premium(
     assert_proper_response(response)
     data = response.json()
     assert len(data['result']['entries']) == 1
-    assert data['result']['entries_found'] == 1
+    assert data['result']['entries_found'] == len(events)
     assert data['result']['entries_total'] == len(events)
     assert data['result']['entries_limit'] == -1 if start_with_valid_premium else FREE_PNL_EVENTS_LIMIT  # noqa: E501
 
