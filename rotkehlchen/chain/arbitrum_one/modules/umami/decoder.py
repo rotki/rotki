@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
@@ -22,7 +23,6 @@ from rotkehlchen.types import ChecksumEvmAddress
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -33,6 +33,7 @@ STAKE_TOPIC: Final = b'\x90\x89\x08\t\xc6T\xf1\x1dnr\xa2\x8f\xa6\x01Iw\n\r\x11\x
 UNSTAKE_TOPIC: Final = b'\xf2y\xe6\xa1\xf5\xe3 \xcc\xa9\x115gm\x9c\xb6\xe4L\xa8\xa0\x8c\x0b\x884+\xcd\xb1\x14Oe\x11\xb5h'  # noqa: E501
 REWARD_TOPIC: Final = b'q\xba\xb6\\\xed.WPwZ\x06\x13\xbe\x06}\xf4\x8e\xf0l\xf9*In\xbfvc\xae\x06`\x92IT'  # noqa: E501
 DEPOSIT_EXECUTION_FOUR_BYTES: Final = b'\xdb\x10\xc3\xb9'
+UMAMI_DEPOSIT_WITHDRAWAL_FEE_PERCENTAGE: Final = FVal('0.0015')  # this is an estimate since the actual percentage is dynamic -- 0.15%  # noqa: E501
 
 
 class FoundEventType(Enum):
@@ -164,8 +165,45 @@ class UmamiDecoder(ArbitrumDecoderInterface):
                 main_event = event
 
         if main_event is not None:
+            protocol_fee: FVal | None = None
+            if (
+                    main_event.event_type == HistoryEventType.DEPOSIT and
+                    main_event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+            ):
+                protocol_fee = UMAMI_DEPOSIT_WITHDRAWAL_FEE_PERCENTAGE * main_event.amount
+                main_event.amount -= protocol_fee
+                # Use resolve_to_crypto_asset() here and below to leverage the
+                # previously cached result and avoid additional database query
+                main_event.asset = main_event.asset.resolve_to_crypto_asset()
+                main_event.notes = f'Deposit {main_event.amount} {main_event.asset.symbol} into Umami'  # noqa: E501
+            elif (
+                    main_event.event_type == HistoryEventType.WITHDRAWAL and
+                    main_event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
+            ):
+                protocol_fee = UMAMI_DEPOSIT_WITHDRAWAL_FEE_PERCENTAGE * main_event.amount
+                main_event.amount += protocol_fee
+                main_event.asset = main_event.asset.resolve_to_crypto_asset()
+                main_event.notes = f'Withdraw {main_event.amount} {main_event.asset.symbol} from Umami'  # noqa: E501
+
+            ordered_events = [main_event, fee_event]
+            if protocol_fee is not None:
+                protocol_fee_event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=main_event.event_type,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=main_event.asset,
+                    notes=f'Spend {protocol_fee} {main_event.asset.symbol} as Umami protocol fee',  # type: ignore[attr-defined]  # it has been resolved to crypto asset above
+                    amount=protocol_fee,
+                    address=main_event.address,
+                    counterparty=CPT_UMAMI,
+                    location_label=main_event.location_label,
+                )
+                ordered_events.insert(1, protocol_fee_event)
+                context.decoded_events.append(protocol_fee_event)
+
             maybe_reshuffle_events(
-                ordered_events=[main_event, fee_event],
+                ordered_events=ordered_events,
                 events_list=context.decoded_events,
             )
             return DEFAULT_DECODING_OUTPUT
