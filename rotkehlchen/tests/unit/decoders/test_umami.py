@@ -33,7 +33,7 @@ def test_umami_deposit_request(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x228e4ec7b253a3609c4e28638e0281a0458f541e380d39731fb5249cccc115f5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    user_address, timestamp, gas_amount, fee_amount, deposit_amount = arbitrum_one_accounts[0], TimestampMS(1728996957000), '0.00002373823', '0.00024', '20'  # noqa: E501
+    user_address, timestamp, gas_amount, fee_amount, protocol_fee, deposit_amount = arbitrum_one_accounts[0], TimestampMS(1728996957000), '0.00002373823', '0.00024', '0.0300', '19.9700'  # noqa: E501
     assert events == [
         EvmEvent(
             sequence_index=0,
@@ -62,6 +62,19 @@ def test_umami_deposit_request(
             address=GM_USDC_WBTC_ADDRESS,
         ), EvmEvent(
             sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+            amount=FVal(protocol_fee),
+            location_label=user_address,
+            notes=f'Spend {protocol_fee} USDC as Umami protocol fee',
+            tx_hash=tx_hash,
+            counterparty=CPT_UMAMI,
+            address=GM_USDC_WBTC_ADDRESS,
+        ), EvmEvent(
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.DEPOSIT,
@@ -165,23 +178,34 @@ def test_umami_withdraw_execution(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc604c2d451f0266bd2906360daca3459fd8a1a3b5b3c0d6e8c340197a665f9ee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    user_address, timestamp, receive_amount = arbitrum_one_accounts[0], TimestampMS(1728854540000), '66.530341'  # noqa: E501
-    assert events == [
-        EvmEvent(
-            sequence_index=6,
-            timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
-            asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
-            amount=FVal(receive_amount),
-            location_label=user_address,
-            notes=f'Withdraw {receive_amount} USDC from Umami',
-            tx_hash=tx_hash,
-            counterparty=CPT_UMAMI,
-            address=string_to_evm_address('0x1E914730B4Cd343aE14530F0BBF6b350d83B833d'),
-        ),
-    ]
+    user_address, timestamp, receive_amount, fee_amount = arbitrum_one_accounts[0], TimestampMS(1728854540000), '66.6301365115', '0.0997955115'  # noqa: E501
+    assert events == [EvmEvent(
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal(receive_amount),
+        location_label=user_address,
+        notes=f'Withdraw {receive_amount} USDC from Umami',
+        tx_hash=tx_hash,
+        counterparty=CPT_UMAMI,
+        address=string_to_evm_address('0x1E914730B4Cd343aE14530F0BBF6b350d83B833d'),
+    ), EvmEvent(
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal(fee_amount),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} USDC as Umami protocol fee',
+        tx_hash=tx_hash,
+        counterparty=CPT_UMAMI,
+        address=string_to_evm_address('0x1E914730B4Cd343aE14530F0BBF6b350d83B833d'),
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
