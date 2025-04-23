@@ -820,6 +820,18 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             'fee_asset': 'ETH',
             'unique_id': 'TRADE2',
             'user_notes': ['Example note', '', ''],
+        }, {
+            'entry_type': 'swap event',
+            'timestamp': 1569954576000,
+            'location': 'coinbase',
+            'spend_amount': '0.02',
+            'spend_asset': 'ETH',
+            'receive_amount': '200',
+            'receive_asset': 'USD',
+            'fee_amount': '0.000044',
+            'fee_asset': 'ETH',
+            'unique_id': 'TRADE3',
+            'user_notes': ['Example note', 'Second note'],
         },
     ]
     for entry in entries:
@@ -837,7 +849,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             filter_query=HistoryEventFilterQuery.make(),
             has_premium=True,
             group_by_event_ids=False,
-        )) == 5  # spend/receive (2) from first swap, and spend/receive/fee (3) from the second
+        )) == 8  # spend/receive (2) from first swap, and spend/receive/fee (3) from the second and third  # noqa: E501
 
     # Edit the event identifier of the first entry and add a fee
     entry = entries[0].copy()
@@ -869,7 +881,7 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             notes='Note2',
             event_identifier='test_id',
         ), SwapEvent(
-            identifier=6,  # highest id since it was added during edit
+            identifier=9,  # highest id since it was added during edit
             timestamp=TimestampMS(1569924575000),
             location=Location.BITFINEX,
             event_subtype=HistoryEventSubType.FEE,
@@ -903,6 +915,33 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             asset=A_ETH,
             amount=FVal('0.000004'),
             unique_id='TRADE2',
+        ), SwapEvent(
+            identifier=6,
+            timestamp=TimestampMS(1569954576000),
+            location=Location.COINBASE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.02'),
+            unique_id='TRADE3',
+            notes='Example note',
+            extra_data={'reference': 'TRADE3'},
+        ), SwapEvent(
+            identifier=7,
+            timestamp=TimestampMS(1569954576000),
+            location=Location.COINBASE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_USD,
+            amount=FVal('200'),
+            unique_id='TRADE3',
+            notes='Second note',
+        ), SwapEvent(
+            identifier=8,
+            timestamp=TimestampMS(1569954576000),
+            location=Location.COINBASE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000044'),
+            unique_id='TRADE3',
         )]
 
     # Check event serialization.
