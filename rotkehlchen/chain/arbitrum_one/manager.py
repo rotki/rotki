@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from .accountant import ArbitrumOneAccountingAggregator
 from .decoding.decoder import ArbitrumOneTransactionDecoder
@@ -27,7 +28,11 @@ class ArbitrumOneManager(EvmManager, CurveManagerMixin):
             transactions=transactions,
             tokens=ArbitrumOneTokens(
                 database=node_inquirer.database,
-                arbitrum_one_inquirer=node_inquirer,
+                evm_inquirer=node_inquirer,
+                token_exceptions={
+                    string_to_evm_address('0x0043d7c85C8b96a49A72A92C0B48CdC4720437d7'),  # Constant Inflow Token  # noqa: E501
+                    string_to_evm_address('0x051e766e2d8dc65ae2bFCF084A50AD0447634227'),  # Constant Outflow Token  # noqa: E501
+                },
             ),
             transactions_decoder=ArbitrumOneTransactionDecoder(
                 database=node_inquirer.database,

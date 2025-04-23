@@ -143,9 +143,11 @@ class EvmTokens(ABC):  # noqa: B024
             self,
             database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
+            token_exceptions: set[ChecksumEvmAddress] | None = None,
     ):
         self.db = database
         self.evm_inquirer = evm_inquirer
+        self.token_exceptions = token_exceptions if token_exceptions is not None else set()
 
     def get_token_balances(
             self,
@@ -504,16 +506,17 @@ class EvmTokens(ABC):  # noqa: B024
 
         Each chain needs to implement any chain-specific exceptions here.
         """
-        return set()
+        return self.token_exceptions
 
 
 class EvmTokensWithDSProxy(EvmTokens, ABC):
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+            evm_inquirer: 'EvmNodeInquirer',
+            token_exceptions: set[ChecksumEvmAddress] | None = None,
     ):
-        super().__init__(database=database, evm_inquirer=evm_inquirer)
+        super().__init__(database=database, evm_inquirer=evm_inquirer, token_exceptions=token_exceptions)  # noqa: E501
         self.evm_inquirer: EvmNodeInquirerWithDSProxy  # set explicit type
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:

@@ -25,6 +25,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE, A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
+    ETHERSCAN_TO_CHAINID,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -35,6 +36,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -544,3 +546,27 @@ def test_erc721_token_ownership_verification(
             addresses=ethereum_accounts,
         )
         assert user_tokens[user_address][0] == [token_7776]
+
+
+def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
+        blockchain: 'ChainsAggregator',
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    for chain_id in ETHERSCAN_TO_CHAINID.values():
+        manager = getattr(blockchain, chain_id.to_name())
+        for token in manager.tokens.token_exceptions:
+            get_or_create_evm_token(
+                userdb=blockchain.database,
+                evm_address=token,
+                chain_id=chain_id,
+                token_kind=EvmTokenKind.ERC721,
+                symbol='xxx',
+                name='yyy',
+                decimals=18,
+            )
+
+        _, erc721_tokens = globaldb.get_token_detection_data(
+            chain_id=chain_id,
+            exceptions=(exceptions := manager.tokens._per_chain_token_exceptions()),
+        )
+        assert all(i.address not in exceptions for i in erc721_tokens)

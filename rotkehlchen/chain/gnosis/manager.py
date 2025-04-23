@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from .accountant import GnosisAccountingAggregator
 from .decoding.decoder import GnosisTransactionDecoder
@@ -23,7 +24,11 @@ class GnosisManager(EvmManager, CurveManagerMixin):
             transactions=transactions,
             tokens=GnosisTokens(
                 database=node_inquirer.database,
-                gnosis_inquirer=node_inquirer,
+                evm_inquirer=node_inquirer,
+                token_exceptions={
+                    string_to_evm_address('0x1497440B4E92DC4ca0F76223b28C20Cb9cB8a0f1'),  # Constant Inflow Token  # noqa: E501
+                    string_to_evm_address('0xfC00dEE8a980110c5608A823a5B3af3872635456'),  # Constant Outflow Token  # noqa: E501
+                },
             ),
             transactions_decoder=GnosisTransactionDecoder(
                 database=node_inquirer.database,

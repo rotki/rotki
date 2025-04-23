@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now exclude Superfluid's Constant Inflow and Outflow NFTs from your balances, fixing misleading balance summaries.
 * :bug:`-` rotki will no longer incorrectly count previously owned NFTs from a collection as part of current balance.
 * :feature:`-` Monerium transactions on Arbitrum and Scroll blockchains are now properly decoded.
 * :feature:`-` Users can see the compact view of swap events in the history events section.
