@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from .accountant import PolygonPOSAccountingAggregator
 from .decoding.decoder import PolygonPOSTransactionDecoder
@@ -27,7 +28,11 @@ class PolygonPOSManager(EvmManager, CurveManagerMixin):
             transactions=transactions,
             tokens=PolygonPOSTokens(
                 database=node_inquirer.database,
-                polygon_pos_inquirer=node_inquirer,
+                evm_inquirer=node_inquirer,
+                token_exceptions={
+                    string_to_evm_address('0x55909bB8cd8276887Aae35118d60b19755201c68'),  # Constant Inflow Token  # noqa: E501
+                    string_to_evm_address('0x554e2bbaCF43FD87417b7201A9F1649a3ED89d68'),  # Constant Outflow Token  # noqa: E501
+                },
             ),
             transactions_decoder=PolygonPOSTransactionDecoder(
                 database=node_inquirer.database,

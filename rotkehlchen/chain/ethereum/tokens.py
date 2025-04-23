@@ -54,6 +54,7 @@ class EthereumTokens(EvmTokensWithDSProxy):
         super().__init__(
             database=database,
             evm_inquirer=ethereum_inquirer,
+            token_exceptions=None,
         )
         dai = A_DAI.resolve_to_evm_token()
         weth = A_WETH.resolve_to_evm_token()

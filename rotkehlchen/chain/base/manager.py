@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from .accountant import BaseAccountingAggregator
 from .decoding.decoder import BaseTransactionDecoder
@@ -27,7 +28,11 @@ class BaseManager(EvmManager, CurveManagerMixin):
             transactions=transactions,
             tokens=BaseTokens(
                 database=node_inquirer.database,
-                base_inquirer=node_inquirer,
+                evm_inquirer=node_inquirer,
+                token_exceptions={
+                    string_to_evm_address('0x2d51962A9EE4D3C2819EF585eab7412c2a2C31Ac'),  # Constant Inflow Token  # noqa: E501
+                    string_to_evm_address('0xD3C78bb5a16Ea4ab584844eeb8F90Ac710c16355'),  # Constant Outflow Token  # noqa: E501
+                },
             ),
             transactions_decoder=BaseTransactionDecoder(
                 database=node_inquirer.database,

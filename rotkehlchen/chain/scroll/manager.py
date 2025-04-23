@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from .accountant import ScrollAccountingAggregator
 from .decoding.decoder import ScrollTransactionDecoder
@@ -23,7 +24,11 @@ class ScrollManager(EvmManager):
             transactions=transactions,
             tokens=ScrollTokens(
                 database=node_inquirer.database,
-                scroll_inquirer=node_inquirer,
+                evm_inquirer=node_inquirer,
+                token_exceptions={
+                    string_to_evm_address('0x8c24Fc82c8fDd763F08E654212fc27e577EbD934'),  # Constant Inflow Token  # noqa: E501
+                    string_to_evm_address('0x0de05fe0fF8F5eA9475CA8425e2D05Dd38ccED84'),  # Constant Outflow Token  # noqa: E501
+                },
             ),
             transactions_decoder=ScrollTransactionDecoder(
                 database=node_inquirer.database,

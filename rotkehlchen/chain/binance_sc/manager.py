@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 from .accountant import BinanceSCAccountingAggregator
 from .decoding.decoder import BinanceSCTransactionDecoder
@@ -24,6 +25,10 @@ class BinanceSCManager(EvmManager, CurveManagerMixin):
             tokens=BinanceSCTokens(
                 database=node_inquirer.database,
                 evm_inquirer=node_inquirer,
+                token_exceptions={
+                    string_to_evm_address('0xbF7BCcE8D60A9C3F6bFaEc9346Aa85B9f781a4e9'),  # Constant Inflow Token  # noqa: E501
+                    string_to_evm_address('0xcb05535bd212eCFC4B7b9db81d6C2C768b726776'),  # Constant Outflow Token  # noqa: E501
+                },
             ),
             transactions_decoder=BinanceSCTransactionDecoder(
                 database=node_inquirer.database,
