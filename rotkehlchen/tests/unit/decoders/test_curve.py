@@ -58,7 +58,29 @@ from rotkehlchen.utils.misc import timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+@pytest.fixture(name='populate_eure_pool')
+def _populate_arb_eure_cache(globaldb: 'GlobalDBHandler') -> None:
+    """Function to add in the cache the information for the EURe pool in arbitrum"""
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO general_cache ("key", "value", "last_queried_ts") VALUES (?, ?, ?);',
+            [
+                ('CURVE_LP_TOKENS42161', '0x590f7e2b211Fa5Ff7840Dd3c425B543363797701', 1742925941),
+                ('CURVE_POOL_TOKENS421610x590f7e2b211Fa5Ff7840Dd3c425B5433637977010', '0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 1742925941),  # noqa: E501
+                ('CURVE_POOL_TOKENS421610x590f7e2b211Fa5Ff7840Dd3c425B5433637977011', '0x0c06cCF38114ddfc35e07427B9424adcca9F44F8', 1742925941),  # noqa: E501
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO unique_cache ("key", "value", "last_queried_ts") VALUES (?, ?, ?)',
+            [
+                ('CURVE_POOL_ADDRESS421610x590f7e2b211Fa5Ff7840Dd3c425B543363797701', '0x590f7e2b211Fa5Ff7840Dd3c425B543363797701', 1742925941),  # noqa: E501
+                ('CURVE_GAUGE_ADDRESS421610x590f7e2b211Fa5Ff7840Dd3c425B543363797701', '0x576673a39CCa0F0E4333aC0617638acEbF15536E', 1742925941),  # noqa: E501
+            ],
+        )
 
 
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
@@ -2586,3 +2608,153 @@ def test_curve_swap_router_binance_sc(
         counterparty=CPT_CURVE,
         address=CURVE_SWAP_ROUTER_NG_BSC,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x831A1015d97FD6010EEDBC6C35929473cEE7c6BC']])
+def test_deposit_eure_arb(
+        arbitrum_one_inquirer,
+        arbitrum_one_accounts,
+        load_global_caches,
+        database,
+        populate_eure_pool,
+):
+    """This test checks that we decode properly the optimized curve pools for deposits"""
+    tx_hash = deserialize_evm_tx_hash('0x2f45f0308d2df41155d59bc40564b11cebc661794485727e50f9a99861159512')  # noqa: E501
+    timestamp, gas_fees, pool_addr = TimestampMS(1745307832000), '0.00001019049207', string_to_evm_address('0x590f7e2b211Fa5Ff7840Dd3c425B543363797701')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_fees),
+            location_label=(user_address := arbitrum_one_accounts[0]),
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+            amount=FVal(450),
+            location_label=user_address,
+            notes=f'Deposit 450 USDC in curve pool {pool_addr}',
+            counterparty=CPT_CURVE,
+            address=pool_addr,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+            amount=FVal(spend_amount := '434.893196273763834514'),
+            location_label=user_address,
+            notes=f'Deposit {spend_amount} EURe in curve pool {pool_addr}',
+            counterparty=CPT_CURVE,
+            address=pool_addr,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x590f7e2b211Fa5Ff7840Dd3c425B543363797701'),
+            amount=FVal(receive_amount := '441.715909134954896803'),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} EUReUSDC after depositing in curve pool {pool_addr}',
+            counterparty=CPT_CURVE,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x4bF3951Ce0F09dBF73c41beeEac7FdD5bD291b84']])
+def test_withdraw_eure_arb(
+        arbitrum_one_inquirer,
+        arbitrum_one_accounts,
+        load_global_caches,
+        database,
+        populate_eure_pool,
+):
+    """This test checks that we decode properly the optimized curve pools for withdrawals"""
+    tx_hash = deserialize_evm_tx_hash('0x601dddf2b0b7557f62ad449e14c06367a501cb2133ed947ea11c0b6cdf8286d2')  # noqa: E501
+    timestamp, gas_fees, pool_addr = TimestampMS(1744700948000), '0.00000114612', string_to_evm_address('0x590f7e2b211Fa5Ff7840Dd3c425B543363797701')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_fees),
+            location_label=(user_address := arbitrum_one_accounts[0]),
+            notes=f'Burn {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x590f7e2b211Fa5Ff7840Dd3c425B543363797701'),
+            amount=FVal(returned_amount := '0.922876226485588454'),
+            location_label=user_address,
+            notes=f'Return {returned_amount} EUReUSDC',
+            counterparty=CPT_CURVE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+            amount=FVal(usd_amount := '0.936957'),
+            location_label=user_address,
+            notes=f'Remove {usd_amount} USDC from {pool_addr} curve pool',
+            counterparty=CPT_CURVE,
+            address=pool_addr,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+            amount=FVal(eure_amount := '0.911449082134631299'),
+            location_label=user_address,
+            notes=f'Remove {eure_amount} EURe from {pool_addr} curve pool',
+            counterparty=CPT_CURVE,
+            address=pool_addr,
+        ),
+    ]
