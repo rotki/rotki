@@ -115,7 +115,7 @@ class OdosCommonDecoderBase(DecoderInterface):
                 router_fees.append(self.base.make_event_next_index(
                     tx_hash=context.transaction.tx_hash,
                     timestamp=context.transaction.timestamp,
-                    event_type=HistoryEventType.SPEND,
+                    event_type=HistoryEventType.TRADE,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=held_asset,
                     amount=amount,
@@ -178,7 +178,15 @@ class OdosCommonDecoderBase(DecoderInterface):
             output_tokens=output_tokens,
         ))
         maybe_reshuffle_events(
-            ordered_events=out_events + in_events + fee_events,
+            ordered_events=(out_in_fee_events := out_events + in_events + fee_events),
             events_list=context.decoded_events,
         )
-        return DEFAULT_DECODING_OUTPUT
+        if len(out_events) > 1 or len(in_events) > 1 or len(fee_events) > 1:
+            # Multiple events of a single type is incompatible with normal swaps,
+            # so convert to type MULTI_TRADE, and don't set the process_swaps flag.
+            for event in out_in_fee_events:
+                event.event_type = HistoryEventType.MULTI_TRADE
+
+            return DEFAULT_DECODING_OUTPUT
+
+        return DecodingOutput(process_swaps=True)

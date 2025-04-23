@@ -25,6 +25,7 @@ from rotkehlchen.accounting.constants import (
     ACCOUNTING_EVENTS_ICONS,
     EVENT_CATEGORY_DETAILS,
     EVENT_CATEGORY_MAPPINGS,
+    EVENT_GROUPING_ORDER,
     FREE_PNL_EVENTS_LIMIT,
     FREE_REPORTS_LOOKUP_LIMIT,
 )
@@ -39,6 +40,7 @@ from rotkehlchen.accounting.export.csv import (
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
+from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -3581,6 +3583,77 @@ class RestAPI:
 
         return OK_RESULT
 
+    @staticmethod
+    def _serialize_and_group_history_events(
+            events: list['HistoryBaseEntry'],
+            event_accounting_rule_statuses: list[EventAccountingRuleStatus],
+            grouped_events_nums: list[int | None],
+            customized_event_ids: list[int],
+            ignored_ids: set[str],
+            hidden_event_ids: list[int],
+    ) -> list[dict[str, Any] | list[dict[str, Any]]]:
+        """Serialize and group history events for the api.
+        Groups evm swap and multi trade events into sub-lists. Uses the order defined in
+        EVENT_GROUPING_ORDER to decide which events belong in which group.
+
+        Args:
+        - events: list of events to serialize and group
+        - event_accounting_rule_statuses and grouped_events_nums: lists with each element
+           corresponding to an event.
+        - customized_event_ids, ignored_ids, and hidden_event_ids: arguments applying to all events
+           that are passed directly to serialize_for_api for all events.
+
+        Returns a list of serialized events with grouped events in sub-lists.
+        """
+        entries: list[dict[str, Any] | list[dict[str, Any]]] = []
+        current_group: list[dict[str, Any]] = []
+        last_subtype_index: int | None = None
+        for event, event_accounting_rule_status, grouped_events_num in zip(
+            events,
+            event_accounting_rule_statuses,
+            grouped_events_nums,
+            strict=False,  # guaranteed to have same length. event_accounting_rule_statuses and grouped_events_nums are created directly from the events list.  # noqa: E501
+        ):
+            serialized = event.serialize_for_api(
+                customized_event_ids=customized_event_ids,
+                ignored_ids=ignored_ids,
+                hidden_event_ids=hidden_event_ids,
+                event_accounting_rule_status=event_accounting_rule_status,
+                grouped_events_num=grouped_events_num,
+            )
+            if (
+                event.event_type == HistoryEventType.MULTI_TRADE or
+                event.entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT
+            ):
+                if (event_subtype_index := EVENT_GROUPING_ORDER[event.event_type].get(event.event_subtype)) is None:  # noqa: E501
+                    log.error(
+                        'Unable to determine group order for event type/subtype '
+                        f'{event.event_type}/{event.event_subtype}',
+                    )
+                    event_subtype_index = 0
+
+                if (
+                    len(current_group) == 0 or
+                    (last_subtype_index is not None and event_subtype_index >= last_subtype_index)
+                ):
+                    current_group.append(serialized)
+                else:  # Start a new group because the order is broken
+                    if len(current_group) > 0:
+                        entries.append(current_group)
+                    current_group = [serialized]
+
+                last_subtype_index = event_subtype_index
+            else:  # Non-groupable event
+                if len(current_group) > 0:
+                    entries.append(current_group)
+                    current_group, last_subtype_index = [], None
+                entries.append(serialized)
+
+        if len(current_group) > 0:  # Append any remaining group
+            entries.append(current_group)
+
+        return entries
+
     def get_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
@@ -3619,41 +3692,28 @@ class RestAPI:
             msg_aggregator=self.rotkehlchen.msg_aggregator,
             is_dummy_pot=True,
         )
-        if group_by_event_ids is True:
-            event_accounting_rule_statuses = query_missing_accounting_rules(
-                db=self.rotkehlchen.data.db,
-                accounting_pot=accountant_pot,
-                evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
-                events=[x for _, x in events_result],  # type: ignore
-                accountant=self.rotkehlchen.accountant,
-            )  # length of missing_accounting_rules and events guaranteed by function
-            entries = [  # type: ignore  # mypy doesn't understand significance of boolean check
-                x.serialize_for_api(  # type: ignore
-                    customized_event_ids=customized_event_ids,
-                    ignored_ids=ignored_ids,
-                    hidden_event_ids=hidden_event_ids,
-                    event_accounting_rule_status=event_accounting_rule_status,
-                    grouped_events_num=grouped_events_num,  # type: ignore
-                ) for (grouped_events_num, x), event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501
-            ]
-        else:
-            event_accounting_rule_statuses = query_missing_accounting_rules(
-                db=self.rotkehlchen.data.db,
-                accounting_pot=accountant_pot,
-                evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
-                events=events_result,  # type: ignore
-                accountant=self.rotkehlchen.accountant,
-            )
-            entries = [
-                x.serialize_for_api(  # type: ignore
-                    customized_event_ids=customized_event_ids,
-                    ignored_ids=ignored_ids,
-                    hidden_event_ids=hidden_event_ids,
-                    event_accounting_rule_status=event_accounting_rule_status,
-                ) for x, event_accounting_rule_status in zip(events_result, event_accounting_rule_statuses, strict=True)  # noqa: E501
-            ]
+        events: list[HistoryBaseEntry]
+        grouped_events_nums: list[int | None]
+        grouped_events_nums, events = (
+            zip(*events_result, strict=False)  # type: ignore  # mypy doesn't understand significance of boolean check.
+            if group_by_event_ids is True else
+            ([None] * len(events_result), events_result)
+        )
         result = {
-            'entries': entries,
+            'entries': self._serialize_and_group_history_events(
+                events=events,
+                event_accounting_rule_statuses=query_missing_accounting_rules(
+                    db=self.rotkehlchen.data.db,
+                    accounting_pot=accountant_pot,
+                    evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
+                    events=events,
+                    accountant=self.rotkehlchen.accountant,
+                ),  # length of missing_accounting_rules and events guaranteed by function
+                grouped_events_nums=grouped_events_nums,
+                customized_event_ids=customized_event_ids,
+                ignored_ids=ignored_ids,
+                hidden_event_ids=hidden_event_ids,
+            ),
             'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
             'entries_total': entries_total,

@@ -20,6 +20,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -59,12 +60,11 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Set LUSD spending approval of {ethereum_accounts[0]} by {ETH_ROUTER} to {approval_amount}',  # noqa: E501
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=227,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_LUSD,
         amount=FVal(swap_amount),
@@ -72,12 +72,11 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} LUSD in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=228,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_WETH,
         amount=FVal(received_amount),
@@ -85,12 +84,11 @@ def test_swap_token_to_token_ethereum(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} WETH as the result of a swap in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=229,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_WETH,
         amount=FVal(odos_fees_eth),
@@ -135,12 +133,11 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         location_label=arbitrum_one_accounts[0],
         notes=f'Set WETH spending approval of {arbitrum_one_accounts[0]} by {ARB_ROUTER} to {approval_amount}',  # noqa: E501
         address=ARB_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_WETH_ARB,
         amount=FVal(swap_amount),
@@ -148,12 +145,11 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         notes=f'Swap {swap_amount} WETH in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=ARB_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=5,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal(received_amount),
@@ -161,12 +157,11 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         notes=f'Receive {received_amount} ETH as the result of a swap in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=ARB_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=6,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal(odos_fees_eth),
@@ -196,12 +191,11 @@ def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
         location_label=optimism_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(swap_amount),
@@ -209,12 +203,11 @@ def test_swap_eth_to_token_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount} ETH in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=OPT_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.OPTIMISM,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
         amount=FVal(received_amount),
@@ -247,12 +240,11 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         location_label=polygon_pos_accounts[0],
         notes=f'Burn {gas_fees} POL for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_POLYGON_POS_MATIC,
         amount=FVal(swap_amount),
@@ -260,12 +252,11 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         notes=f'Swap {swap_amount} POL in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=POL_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:137/erc20:0x8b1f836491903743fE51ACd13f2CC8Ab95b270f6'),
         amount=FVal(received_amount),
@@ -273,12 +264,11 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         notes=f'Receive {received_amount} ACY as the result of a swap in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=POL_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
         location=Location.POLYGON_POS,
-        event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:137/erc20:0x8b1f836491903743fE51ACd13f2CC8Ab95b270f6'),
         amount=FVal(odos_fees_eth),
@@ -311,12 +301,11 @@ def test_swap_bnb_to_token_binance_sc(
         location_label=user_address,
         notes=f'Burn {gas_amount} BNB for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BSC_BNB,
         amount=FVal(swap_amount),
@@ -324,12 +313,11 @@ def test_swap_bnb_to_token_binance_sc(
         notes=f'Swap {swap_amount} BNB in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=BSC_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
         location=Location.BINANCE_SC,
-        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:56/erc20:0x1e32B79d8203AC691499fBFbB02c07A9C9850Dd7'),
         amount=FVal(receive_amount),

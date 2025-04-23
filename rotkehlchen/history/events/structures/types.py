@@ -51,6 +51,7 @@ class HistoryEventType(SerializableEnumNameMixin):
     LOSS = auto()
     MINT = auto()
     BURN = auto()
+    MULTI_TRADE = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):

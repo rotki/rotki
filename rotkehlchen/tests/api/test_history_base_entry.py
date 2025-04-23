@@ -6,8 +6,10 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USD, A_USDT, A_WBTC
+from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USD, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -1124,3 +1126,129 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         'product': 'pool',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
     }
+
+
+def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that events are properly grouped into sub-lists
+    when they are serialized for the api.
+
+    The test events are as follows:
+    - spend/fee gas event
+    - group of EvmSwapEvents: spend, receive, fee
+    - informational event
+    - group of MULTI_TRADE events: spend, spend, receive, receive, fee
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f')),  # noqa: E501
+                sequence_index=0,
+                timestamp=(timestamp := TimestampMS(1569924575000)),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_WBTC,
+                amount=FVal('0.003'),
+                counterparty=CPT_GAS,
+            ), EvmSwapEvent(
+                sequence_index=1,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=FVal('0.16'),
+                tx_hash=tx_hash,
+            ), EvmSwapEvent(
+                sequence_index=2,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_WBTC,
+                amount=FVal('0.003'),
+                tx_hash=tx_hash,
+            ), EvmSwapEvent(
+                sequence_index=3,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                amount=FVal('0.0002'),
+                tx_hash=tx_hash,
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=4,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ZERO,
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=5,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.MULTI_TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=FVal(0.123),
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=6,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.MULTI_TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_WBTC,
+                amount=FVal(0.0032),
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=7,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.MULTI_TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USDC,
+                amount=FVal(120),
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=8,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.MULTI_TRADE,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                asset=A_USDT,
+                amount=FVal(140),
+            ), EvmEvent(
+                tx_hash=tx_hash,
+                sequence_index=9,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.MULTI_TRADE,
+                event_subtype=HistoryEventSubType.FEE,
+                asset=A_ETH,
+                amount=FVal(0.0002),
+            )],
+        )
+        result = assert_proper_sync_response_with_result(
+            response=requests.post(api_url_for(rotkehlchen_api_server, 'historyeventresource')),
+        )
+        assert result['entries_found'] == 10
+        assert len(entries := result['entries']) == 4  # gas event, evm swap group, informational event, multi trade group  # noqa: E501
+        assert entries[0]['entry']['counterparty'] == 'gas'
+        assert len(entries[1]) == 3  # spend, receive, fee
+        assert entries[1][0]['entry']['event_type'] == 'trade'
+        assert entries[1][0]['entry']['event_subtype'] == 'spend'
+        assert entries[1][1]['entry']['event_subtype'] == 'receive'
+        assert entries[1][2]['entry']['event_subtype'] == 'fee'
+        assert entries[2]['entry']['event_type'] == 'informational'
+        assert len(entries[3]) == 5  # spend, spend, receive, receive, fee
+        assert entries[3][0]['entry']['event_type'] == 'multi trade'
+        assert entries[3][0]['entry']['event_subtype'] == 'spend'
+        assert entries[3][1]['entry']['event_subtype'] == 'spend'
+        assert entries[3][2]['entry']['event_subtype'] == 'receive'
+        assert entries[3][3]['entry']['event_subtype'] == 'receive'
+        assert entries[3][4]['entry']['event_subtype'] == 'fee'
