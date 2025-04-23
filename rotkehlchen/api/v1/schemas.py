@@ -795,7 +795,7 @@ class CreateHistoryEventSchema(Schema):
             if (notes := data.get('user_notes')) is None:
                 return None, None, None
             elif len(notes) == 2:
-                return notes + (None,)
+                return *notes, None
             else:  # len == 3, enforced by validate.Length above
                 return notes
 
