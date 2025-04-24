@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
+import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/types/history/events';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthWithdrawalEventFormProps {
-  data: IndependentEventData<EthWithdrawalEvent>;
+  data: StandaloneEventData<EthWithdrawalEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

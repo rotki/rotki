@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { DependentHistoryEvent, HistoryEvent, HistoryEventEntry } from '@/types/history/events';
+import type {
+  GroupEditableHistoryEvents,
+  HistoryEvent,
+  HistoryEventEntry,
+} from '@/types/history/events';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import { isSwap } from '@/modules/history/events/utils';
-import { isDependentHistoryEvent } from '@/modules/history/management/forms/form-guards';
+import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import {
   isAssetMovementEvent,
   isEventAccountingRuleProcessed,
@@ -34,9 +38,9 @@ function hideActions(item: HistoryEventEntry, index: number): boolean {
 }
 
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
-  if (isDependentHistoryEvent(item)) {
+  if (isGroupEditableHistoryEvent(item) || isEvmSwapEvent(item)) {
     return {
-      eventsInGroup: props.events as DependentHistoryEvent[],
+      eventsInGroup: props.events as GroupEditableHistoryEvents[],
       type: 'edit-group',
     };
   }
@@ -59,7 +63,7 @@ function deleteEvent(item: HistoryEventEntry) {
         type: 'ignore',
       }
     : {
-        ids: isDependentHistoryEvent(item) || isSwap(item) ? props.events.map(event => event.identifier) : [item.identifier],
+        ids: isGroupEditableHistoryEvent(item) || isSwap(item) ? props.events.map(event => event.identifier) : [item.identifier],
         type: 'delete',
       };
 

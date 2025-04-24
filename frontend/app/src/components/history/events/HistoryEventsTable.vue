@@ -7,6 +7,7 @@ import type {
   HistoryEventEntry,
   HistoryEventRow,
   PullEvmTransactionPayload,
+  StandaloneEditableEvents,
 } from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -260,6 +261,37 @@ function forceRedecode(): void {
   set(deleteCustom, false);
   set(redecodePayload, undefined);
 }
+
+function addEvent(group: StandaloneEditableEvents, row: HistoryEventEntry): void {
+  emit('show:form', {
+    data: {
+      group,
+      nextSequenceId: suggestNextSequenceId(row),
+      type: 'group-add',
+    },
+    type: 'event',
+  });
+}
+
+function editEvent(event: any, row: HistoryEventEntry): void {
+  emit('show:form', {
+    data: {
+      ...event,
+      nextSequenceId: suggestNextSequenceId(row),
+    },
+    type: 'event',
+  });
+}
+
+function addMissingRule($event: any, row: HistoryEventEntry): void {
+  emit('show:form', {
+    data: {
+      ...$event,
+      nextSequenceId: suggestNextSequenceId(row),
+    },
+    type: 'missingRule',
+  });
+}
 </script>
 
 <template>
@@ -318,14 +350,7 @@ function forceRedecode(): void {
             <HistoryEventsAction
               :event="row"
               :loading="eventsLoading"
-              @add-event="emit('show:form', {
-                type: 'event',
-                data: {
-                  type: 'group-add',
-                  group: $event,
-                  nextSequenceId: suggestNextSequenceId(row),
-                },
-              })"
+              @add-event="addEvent($event, row);"
               @toggle-ignore="toggle($event)"
               @redecode="redecode($event, row.eventIdentifier)"
               @delete-tx="confirmTxAndEventsDelete($event)"
@@ -342,21 +367,9 @@ function forceRedecode(): void {
             :loading="sectionLoading || eventsLoading"
             :has-ignored-event="hasIgnoredEvent"
             :highlighted-identifiers="highlightedIdentifiers"
-            @edit-event="emit('show:form', {
-              type: 'event',
-              data: {
-                ...$event,
-                nextSequenceId: suggestNextSequenceId(row),
-              },
-            })"
+            @edit-event="editEvent($event, row);"
             @delete-event="confirmDelete($event)"
-            @show:missing-rule-action="emit('show:form', {
-              type: 'missingRule',
-              data: {
-                ...$event,
-                nextSequenceId: suggestNextSequenceId(row),
-              },
-            })"
+            @show:missing-rule-action="addMissingRule($event, row);"
           />
         </template>
         <template #body.prepend="{ colspan }">

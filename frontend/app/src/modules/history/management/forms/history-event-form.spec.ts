@@ -18,6 +18,8 @@ vi.mock('json-editor-vue', () => ({
   template: '<input />',
 }));
 
+const formTypesYouCanAddTo = Object.values(HistoryEventEntryType).filter(type => type !== HistoryEventEntryType.EVM_SWAP_EVENT);
+
 describe('component/HistoryEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof HistoryEventForm>>;
 
@@ -69,7 +71,7 @@ describe('component/HistoryEventForm.vue', () => {
     expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();
   });
 
-  it.each(Object.values(HistoryEventEntryType))('changes to proper form %s', async (value: string) => {
+  it.each(formTypesYouCanAddTo)('changes to proper form %s', async (value: string) => {
     await wrapper.find('[data-cy=entry-type] [data-id=activator]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
@@ -83,6 +85,6 @@ describe('component/HistoryEventForm.vue', () => {
     }
 
     const id = value.split(/ /g).join('-');
-    expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
+    expect(wrapper.find(`[data-cy=${id}-form]`).exists(), `id: ${id}`).toBeTruthy();
   });
 });

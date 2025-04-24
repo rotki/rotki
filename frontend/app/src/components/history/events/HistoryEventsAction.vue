@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import type {
   EvmChainAndTxHash,
-  EvmHistoryEvent,
   HistoryEvent,
   HistoryEventEntry,
-  IndependentHistoryEvent,
+  StandaloneEditableEvents,
 } from '@/types/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
-import { isDependentHistoryEvent } from '@/modules/history/management/forms/form-guards';
+import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEvmEventRef } from '@/utils/history/events';
+import { isEvmEvent } from '@/utils/history/events';
+
+interface EventInfo { txHash: string; location: string }
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -19,7 +20,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'add-event': [event: IndependentHistoryEvent];
+  'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
   'redecode': [data: EvmChainAndTxHash];
   'delete-tx': [data: EvmChainAndTxHash];
@@ -30,13 +31,22 @@ const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
 
 const { event } = toRefs(props);
 
-const evmEvent = isEvmEventRef(event);
+const evmEvent = computed<EventInfo | undefined>(() => {
+  const currentEvent = get(event);
+  if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
+    return {
+      location: currentEvent.location,
+      txHash: currentEvent.txHash,
+    };
+  }
+  return undefined;
+});
 const { getChain } = useSupportedChains();
 
 const { t } = useI18n();
 
 function addEvent(event: HistoryEvent) {
-  if (isDependentHistoryEvent(event)) {
+  if (isGroupEditableHistoryEvent(event)) {
     return;
   }
   emit('add-event', event);
@@ -44,12 +54,12 @@ function addEvent(event: HistoryEvent) {
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 
-function deleteTxAndEvents({ location, txHash }: EvmHistoryEvent) {
+function deleteTxAndEvents({ location, txHash }: EventInfo) {
   return emit('delete-tx', { evmChain: getChain(location), txHash });
 }
 
 function hideAddAction(item: HistoryEvent): boolean {
-  return isDependentHistoryEvent(item);
+  return isGroupEditableHistoryEvent(item);
 }
 </script>
 

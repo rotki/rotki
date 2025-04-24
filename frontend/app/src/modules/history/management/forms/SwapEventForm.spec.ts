@@ -1,4 +1,4 @@
-import type { DependentEventData } from '@/modules/history/management/forms/form-types';
+import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { AddSwapEventPayload, EditSwapEventPayload, SwapEvent } from '@/types/history/events';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { Pinia } from 'pinia';
@@ -37,7 +37,7 @@ describe('forms/SwapEventForm', () => {
   let wrapper: VueWrapper<InstanceType<typeof SwapEventForm>>;
   let pinia: Pinia;
 
-  const data: DependentEventData<SwapEvent> = {
+  const data: GroupEventData<SwapEvent> = {
     eventsInGroup: [{
       amount: bigNumberify('0.01'),
       asset: 'ETH',
@@ -145,8 +145,8 @@ describe('forms/SwapEventForm', () => {
     expect(wrapper.find('[data-cy=spend-amount]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=spend-asset]').exists()).toBe(true);
 
-    expect(wrapper.find('[data-cy=received-amount]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=received-asset]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=receive-amount]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=receive-asset]').exists()).toBe(true);
 
     expect(wrapper.find('[data-cy=unique-id]').exists()).toBe(true);
 
@@ -168,8 +168,8 @@ describe('forms/SwapEventForm', () => {
     const locationField = wrapper.find('[data-cy=location] input');
     const spendAmountField = wrapper.find('[data-cy=spend-amount] input');
     const spendAssetField = wrapper.find('[data-cy=spend-asset] input');
-    const receiveAmountField = wrapper.find('[data-cy=received-amount] input');
-    const receiveAssetField = wrapper.find('[data-cy=received-asset] input');
+    const receiveAmountField = wrapper.find('[data-cy=receive-amount] input');
+    const receiveAssetField = wrapper.find('[data-cy=receive-asset] input');
     const uniqueIdField = wrapper.find('[data-cy=unique-id] input');
 
     const now = dayjs();

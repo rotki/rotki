@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import type {
-  DependentEventData,
-  IndependentEventData,
+  GroupEventData,
+  StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { useTemplateRef } from 'vue';
 
-const modelValue = defineModel<DependentEventData | IndependentEventData | undefined>({ required: true });
+const modelValue = defineModel<GroupEventData | StandaloneEventData | undefined>({ required: true });
 
 withDefaults(defineProps<HistoryEventFormDialogProps>(), {
   loading: false,

@@ -108,7 +108,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
 
     const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
     const locationLabel = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(eventIdentifierInput.element.value).toBe('');
     expect(locationLabel.element.value).toBe('');
@@ -126,7 +126,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
     expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
@@ -147,7 +147,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     const eventIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=eventIdentifier] input');
     const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
     expect(eventIdentifierInput.element.value).toBe(event.eventIdentifier);
@@ -212,7 +212,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     await wrapper.find('[data-cy=eventSubtype] input').setValue(event.eventSubtype);
     await wrapper.find('[data-cy=asset] input').setValue(asset.symbol);
     await wrapper.find('[data-cy=amount] input').setValue(event.amount.toString());
-    await wrapper.find('[data-cy=sequenceIndex] input').setValue(event.sequenceIndex.toString());
+    await wrapper.find('[data-cy=sequence-index] input').setValue(event.sequenceIndex.toString());
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(event.userNotes);
 
     const saveMethod = wrapper.vm.save;

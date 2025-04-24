@@ -121,10 +121,10 @@ describe('forms/EvmEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=txHash] input');
-    const locationInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const locationInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] .input-value');
     const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(txHashInput.element.value).toBe('');
     expect(locationInput.element.value).toBe('');
@@ -137,11 +137,11 @@ describe('forms/EvmEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=txHash] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] .input-value');
     const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
     expect(txHashInput.element.value).toBe(group.txHash);
@@ -157,11 +157,11 @@ describe('forms/EvmEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
-    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=txHash] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value');
+    const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] .input-value');
     const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
-    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequenceIndex] input');
+    const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
 
     expect(txHashInput.element.value).toBe(group.txHash);
@@ -256,14 +256,14 @@ describe('forms/EvmEventForm.vue', () => {
     await nextTick();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=txHash] input').setValue(group.txHash);
+    await wrapper.find('[data-cy=tx-hash] input').setValue(group.txHash);
     await wrapper.find('[data-cy=location] input').setValue(group.location);
-    await wrapper.find('[data-cy=locationLabel] input').setValue(group.locationLabel);
+    await wrapper.find('[data-cy=location-label] input').setValue(group.locationLabel);
     await wrapper.find('[data-cy=eventType] input').setValue(group.eventType);
     await wrapper.find('[data-cy=asset] input').setValue(group.asset);
     await wrapper.find('[data-cy=amount] input').setValue('610'); // Using the numeric value from group.amount
     await wrapper.find('[data-cy=address] input').setValue(group.address);
-    await wrapper.find('[data-cy=sequenceIndex] input').setValue(group.sequenceIndex);
+    await wrapper.find('[data-cy=sequence-index] input').setValue(group.sequenceIndex);
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
 
@@ -321,7 +321,7 @@ describe('forms/EvmEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-cy=amount] input').setValue('650'); // Using the numeric value from group.amount
-    await wrapper.find('[data-cy=sequenceIndex] input').setValue('2111');
+    await wrapper.find('[data-cy=sequence-index] input').setValue('2111');
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('user note');
 
     const saveMethod = wrapper.vm.save;

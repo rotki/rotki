@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import type { DependentEventData } from '@/modules/history/management/forms/form-types';
+import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
+import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import SwapEventAssetAmount from '@/modules/history/management/forms/swap/SwapEventAssetAmount.vue';
+import SwapEventFee from '@/modules/history/management/forms/swap/SwapEventFee.vue';
+import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { useDateTime } from '@/modules/history/management/forms/utils';
 import { useMessageStore } from '@/store/message';
-import { DateFormat } from '@/types/date-format';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
@@ -23,7 +22,7 @@ type FormData = Required<AddSwapEventPayload>;
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: DependentEventData<SwapEvent> }>();
+const props = defineProps<{ data: GroupEventData<SwapEvent> }>();
 
 function emptyEvent(): FormData {
   return {
@@ -46,17 +45,7 @@ const hasFee = ref<boolean>(false);
 const identifiers = ref<{ eventIdentifier: string; identifier: number }>();
 const errorMessages = ref<Record<string, string[]>>({});
 
-const datetime = computed<string>({
-  get() {
-    return convertFromTimestamp(get(states, 'timestamp'), DateFormat.DateMonthYearHourMinuteSecond, true);
-  },
-  set(value?: string) {
-    const timestamp = !value
-      ? dayjs().valueOf()
-      : convertToTimestamp(value, DateFormat.DateMonthYearHourMinuteSecond, true);
-    set(states, { ...get(states), timestamp });
-  },
-});
+const datetime = useDateTime(states);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -208,67 +197,38 @@ defineExpose({
 
 <template>
   <div>
-    <div class="grid md:grid-cols-2 gap-4 mb-4">
-      <DateTimePicker
-        v-model="datetime"
-        :label="t('common.datetime')"
-        persistent-hint
-        limit-now
-        milliseconds
-        data-cy="datetime"
-        :hint="t('transactions.events.form.datetime.hint')"
-        :error-messages="toMessages(v$.timestamp)"
-        @blur="v$.timestamp.$touch()"
-      />
-      <LocationSelector
-        v-model="states.location"
-        :disabled="data.type !== 'add'"
-        data-cy="location"
-        :label="t('common.location')"
-        :error-messages="toMessages(v$.location)"
-        @blur="v$.location.$touch()"
-      />
-    </div>
+    <EventDateLocation
+      v-model:datetime="datetime"
+      v-model:location="states.location"
+      :location-disabled="data.type !== 'add'"
+      :error-messages="{
+        location: toMessages(v$.location),
+        datetime: toMessages(v$.timestamp),
+      }"
+      @blur="v$[$event].$touch()"
+    />
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <div class="grid md:grid-cols-2 gap-4">
-      <AmountInput
-        v-model="states.spendAmount"
-        clearable
-        variant="outlined"
-        data-cy="spend-amount"
-        :label="t('swap_event_form.spend_amount')"
-        :error-messages="toMessages(v$.spendAmount)"
-      />
-      <AssetSelect
-        v-model="states.spendAsset"
-        outlined
-        clearable
-        data-cy="spend-asset"
-        :label="t('swap_event_form.spend_asset')"
-        :error-messages="toMessages(v$.spendAsset)"
-      />
-    </div>
+    <SwapEventAssetAmount
+      v-model:asset="states.spendAsset"
+      v-model:amount="states.spendAmount"
+      type="spend"
+      :error-messages="{
+        asset: toMessages(v$.spendAsset),
+        amount: toMessages(v$.spendAmount),
+      }"
+    />
 
-    <div class="grid md:grid-cols-2 gap-4">
-      <AmountInput
-        v-model="states.receiveAmount"
-        clearable
-        variant="outlined"
-        data-cy="received-amount"
-        :label="t('swap_event_form.receive_amount')"
-        :error-messages="toMessages(v$.receiveAmount)"
-      />
-      <AssetSelect
-        v-model="states.receiveAsset"
-        outlined
-        clearable
-        data-cy="received-asset"
-        :label="t('swap_event_form.receive_asset')"
-        :error-messages="toMessages(v$.receiveAsset)"
-      />
-    </div>
+    <SwapEventAssetAmount
+      v-model:asset="states.receiveAsset"
+      v-model:amount="states.receiveAmount"
+      type="receive"
+      :error-messages="{
+        asset: toMessages(v$.receiveAsset),
+        amount: toMessages(v$.receiveAmount),
+      }"
+    />
 
     <RuiTextField
       v-if="data.type !== 'edit-group'"
@@ -283,88 +243,21 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <RuiCheckbox
+    <SwapEventFee
       v-model="hasFee"
-      label="Has Fee"
-      data-cy="has-fee"
-      color="primary"
+      v-model:amount="states.feeAmount"
+      v-model:asset="states.feeAsset"
+      :error-messages="{
+        fee: toMessages(v$.feeAmount),
+        amount: toMessages(v$.feeAsset),
+      }"
     />
 
-    <div class="grid md:grid-cols-2 gap-4">
-      <AmountInput
-        v-model="states.feeAmount"
-        clearable
-        :disabled="!hasFee"
-        variant="outlined"
-        data-cy="fee-amount"
-        :label="t('common.fee')"
-        :error-messages="toMessages(v$.feeAmount)"
-      />
-      <AssetSelect
-        v-model="states.feeAsset"
-        outlined
-        :disabled="!hasFee"
-        clearable
-        data-cy="fee-asset"
-        :label="t('transactions.events.form.fee_asset.label')"
-        :error-messages="toMessages(v$.feeAsset)"
-      />
-    </div>
-
-    <RuiAccordions>
-      <RuiAccordion
-        data-cy="advanced-accordion"
-        header-class="py-4"
-        eager
-      >
-        <template #header>
-          {{ t('transactions.events.form.advanced') }}
-        </template>
-
-        <div class="py-2">
-          <RuiTextArea
-            v-model="states.userNotes[0]"
-            prepend-icon="lu-sticky-note"
-            data-cy="spend-notes"
-            variant="outlined"
-            color="primary"
-            max-rows="5"
-            min-rows="3"
-            auto-grow
-            :label="t('swap_event_form.spend_notes')"
-            :error-messages="toMessages(v$.userNotes)"
-            @blur="v$.userNotes.$touch()"
-          />
-          <RuiTextArea
-            v-model="states.userNotes[1]"
-            prepend-icon="lu-sticky-note"
-            data-cy="receive-notes"
-            variant="outlined"
-            color="primary"
-            max-rows="5"
-            min-rows="3"
-            auto-grow
-            :label="t('swap_event_form.receive_notes')"
-            :error-messages="toMessages(v$.userNotes)"
-            @blur="v$.userNotes.$touch()"
-          />
-          <RuiTextArea
-            v-if="hasFee && states.userNotes.length === 3"
-            v-model="states.userNotes[2]"
-            prepend-icon="lu-sticky-note"
-            data-cy="fee-notes"
-            :disabled="!hasFee"
-            variant="outlined"
-            color="primary"
-            max-rows="5"
-            min-rows="3"
-            auto-grow
-            :label="t('swap_event_form.fee_notes')"
-            :error-messages="toMessages(v$.userNotes)"
-            @blur="v$.userNotes.$touch()"
-          />
-        </div>
-      </RuiAccordion>
-    </RuiAccordions>
+    <SwapEventNotes
+      v-model="states.userNotes"
+      :has-fee="hasFee"
+      :error-messages="toMessages(v$.userNotes)"
+      @blur="v$.userNotes.$touch()"
+    />
   </div>
 </template>

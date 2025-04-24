@@ -47,7 +47,6 @@ function createSwapEvents(
     identifier: commonData.identifier++,
     location: commonData.location || 'ethereum',
     locationLabel: commonData.locationLabel,
-    product: null,
     sequenceIndex: startingSequenceIndex + sequenceIndex,
     timestamp: commonData.timestamp,
     txHash: commonData.txHash,
