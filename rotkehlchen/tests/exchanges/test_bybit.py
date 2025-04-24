@@ -305,7 +305,7 @@ def test_assets_are_known(bybit_exchange: Bybit):
         try:
             bybit_symbol_to_base_quote(
                 symbol=ticker['symbol'],
-                four_letter_assets={'USDC', 'USDE', 'USDT'},
+                four_letter_assets={'USDC', 'USDE', 'USDT', 'USDQ', 'USDR'},
             )
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
