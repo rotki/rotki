@@ -2779,6 +2779,10 @@
     "hint_zero": "All the assets without price will be hidden",
     "lt": "<"
   },
+  "history_events_list_swap": {
+    "fee_description": "{notes} with fee {feeAmount} {feeAsset}",
+    "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}"
+  },
   "ignore": {
     "confirm": {
       "message": "Are you sure you want to ignore {asset}?\n\nIgnoring {asset} will prevent rotki from displaying any balances across all locations and will hide all events related to it.",
@@ -4514,7 +4518,6 @@
         "eth_withdrawal_event": "Withdrawal for validator {validatorIndex}",
         "event_identifier": "Event information",
         "evm_event": "Transaction {txHash}",
-        "evm_swap_event": "Swap on {location} transaction {txHash}",
         "history_event": "{location} event",
         "swap_event": "Swap on {location}"
       },

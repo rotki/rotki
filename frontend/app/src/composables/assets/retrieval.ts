@@ -38,6 +38,7 @@ interface UseAssetInfoRetrievalReturn {
   refetchAssetInfo: (key: string) => void;
   assetSymbol: AssetSymbolReturn;
   assetName: AssetNameReturn;
+  getAssetSymbol: (identifier: string | undefined, options?: AssetResolutionOptions) => string;
   tokenAddress: (identifier: MaybeRef<string>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
   assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>;
 }
@@ -127,6 +128,12 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     return symbol || '';
   });
 
+  const getAssetSymbol = (identifier: string | undefined, options?: AssetResolutionOptions): string => {
+    if (!identifier)
+      return '';
+    return get(assetInfo(identifier, options))?.symbol ?? '';
+  };
+
   const assetName = (
     identifier: MaybeRef<string | undefined>,
     options?: MaybeRef<AssetResolutionOptions>,
@@ -204,6 +211,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     assetSearch,
     assetSymbol,
     fetchTokenDetails,
+    getAssetSymbol,
     getAssociatedAssetIdentifier,
     refetchAssetInfo: queueIdentifier,
     tokenAddress,

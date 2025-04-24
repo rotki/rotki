@@ -1,12 +1,8 @@
 <script setup lang="ts" generic="">
+import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events';
 import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
-
-interface DeleteData {
-  canDelete: boolean;
-  item: HistoryEventEntry;
-}
 
 const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;
@@ -20,7 +16,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
-  'delete-event': [data: DeleteData];
+  'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
 }>();
 

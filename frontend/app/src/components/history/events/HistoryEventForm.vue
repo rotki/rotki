@@ -32,7 +32,22 @@ const { data } = toRefs(props);
 
 const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 const form = useTemplateRef<ComponentPublicInstance<FormComponent>>('form');
-const historyEventEntryTypes = Object.values(HistoryEventEntryType);
+
+const isEvmGroupAdd = computed<boolean>(() => {
+  const data = props.data;
+  if (data.type !== 'group-add') {
+    return false;
+  }
+  const type = data.group.entryType;
+  return type === HistoryEventEntryType.EVM_EVENT || type === HistoryEventEntryType.EVM_SWAP_EVENT;
+});
+
+const historyEventEntryTypes = computed(() => {
+  if (get(isEvmGroupAdd)) {
+    return [HistoryEventEntryType.EVM_SWAP_EVENT, HistoryEventEntryType.EVM_EVENT];
+  }
+  return Object.values(HistoryEventEntryType);
+});
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.ASSET_MOVEMENT_EVENT]: AssetMovementEventForm,
@@ -75,7 +90,7 @@ defineExpose({
       v-model="entryType"
       data-cy="entry-type"
       :options="historyEventEntryTypes"
-      :disabled="data.type !== 'add'"
+      :disabled="data.type !== 'add' && !isEvmGroupAdd"
       :label="t('common.entry_type')"
       hide-details
       variant="outlined"

@@ -173,9 +173,9 @@ export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
   .or(SwapEventSchema)
   .or(EvmSwapEventSchema);
 
-export type DependentHistoryEvent = AssetMovementEvent | SwapEvent | EvmSwapEvent;
+export type DependentHistoryEvent = AssetMovementEvent | SwapEvent;
 
-export type IndependentHistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent;
+export type IndependentHistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | EvmSwapEvent;
 
 export type HistoryEvent = IndependentHistoryEvent | DependentHistoryEvent;
 
