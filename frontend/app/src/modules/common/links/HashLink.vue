@@ -179,12 +179,7 @@ const tags = useAccountTags(text);
 </script>
 
 <template>
-  <div
-    class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px]"
-    :class="{
-      'pl-2': showIcon && !hideText,
-    }"
-  >
+  <div class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px]">
     <EnsAvatar
       v-if="showIcon"
       :address="displayText"

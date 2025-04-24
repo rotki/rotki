@@ -2786,7 +2786,7 @@
     "lt": "<"
   },
   "history_events_list_swap": {
-    "fee_description": "{notes} with fee {feeAmount} {feeAsset}",
+    "fee_description": "{notes} with fee: {feeText}",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}"
   },
   "ignore": {

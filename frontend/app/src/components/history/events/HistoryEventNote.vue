@@ -73,7 +73,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
       <HashLink
         v-else-if="note.showHashLink && note.address && isLinkType(note.type)"
         :key="index"
-        class="inline-flex pl-2"
+        class="inline-flex"
         :class="{
           [$style.address]: true,
         }"
