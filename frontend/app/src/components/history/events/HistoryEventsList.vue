@@ -1,12 +1,17 @@
-<script setup lang="ts" generic="">
+<script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events';
 import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
+import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
+import { get, set } from '@vueuse/core';
+import { flatten } from 'es-toolkit';
+import { computed, ref, toRefs, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;
-  allEvents: HistoryEventEntry[];
+  allEvents: HistoryEventRow[];
   hasIgnoredEvent?: boolean;
   loading?: boolean;
   highlightedIdentifiers?: string[];
@@ -20,71 +25,84 @@ const emit = defineEmits<{
   'show:missing-rule-action': [data: HistoryEventEditData];
 }>();
 
+const { t } = useI18n();
+
 const PER_BATCH = 6;
 const currentLimit = ref<number>(PER_BATCH);
-const { t } = useI18n();
-const { allEvents, eventGroup } = toRefs(props);
+const containerRef = ref<HTMLElement>();
 
-const events = computed<HistoryEventEntry[]>(() => {
+const {
+  allEvents,
+  eventGroup,
+  hasIgnoredEvent,
+  highlightedIdentifiers,
+  loading,
+} = toRefs(props);
+
+const combinedAllEvents = computed<HistoryEventRow[]>(() => {
   const all = get(allEvents);
-  const eventHeader = get(eventGroup);
-  if (all.length === 0)
-    return [eventHeader];
+  const group = get(eventGroup);
+  if (all.length === 0) {
+    return [group];
+  }
 
-  return all
-    .filter(({ hidden }) => !hidden)
-    .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
+  if (isSwapEvent(group)) {
+    return [flatten(all)];
+  }
+  return all;
 });
 
-const ignoredInAccounting = computed(() => get(eventGroup).ignoredInAccounting);
-
-const showDropdown = computed(() => {
-  const length = get(events).length;
-  return (get(ignoredInAccounting) || length > PER_BATCH) && length > 0;
-});
-
-watch([eventGroup, ignoredInAccounting], ([current, currentIgnored], [old, oldIgnored]) => {
-  if (current.eventIdentifier !== old.eventIdentifier || currentIgnored !== oldIgnored)
-    set(currentLimit, currentIgnored ? 0 : PER_BATCH);
-});
-
-const limitedEvents = computed(() => {
+const limitedEvents = computed<HistoryEventRow[]>(() => {
   const limit = get(currentLimit);
-  return limit === 0 ? [] : get(events).slice(0, limit);
+  const arr = get(combinedAllEvents);
+  return arr.slice(0, limit);
 });
 
-const hasMoreEvents = computed(() => get(currentLimit) < get(events).length);
+const totalBlocks = computed<number>(() => get(combinedAllEvents).length);
 
-const containerRef = ref<HTMLElement | null>(null);
+const hasMoreEvents = computed<boolean>(() => get(limitedEvents).length < get(totalBlocks));
+
+const buttonText = computed<string>(() => {
+  const shownCount = get(limitedEvents).length;
+  const total = get(totalBlocks);
+
+  if (shownCount === 0) {
+    return t('transactions.events.view.show', { length: total });
+  }
+  if (shownCount >= total) {
+    return t('transactions.events.view.hide');
+  }
+  const remain = total - shownCount;
+  return t('transactions.events.view.load_more', { length: remain });
+});
+
+function handleMoreClick() {
+  const limit = get(currentLimit);
+
+  // If none currently shown, show up to PER_BATCH blocks
+  if (limit === 0) {
+    set(currentLimit, PER_BATCH);
+    return;
+  }
+
+  // If all are shown, hide them by setting the limit to 0
+  if (!get(hasMoreEvents)) {
+    set(currentLimit, 0);
+    scrollToTop();
+    return;
+  }
+
+  // Otherwise, add PER_BATCH more
+  const nextLimit = limit + PER_BATCH;
+  set(currentLimit, Math.min(nextLimit, get(totalBlocks)));
+}
 
 function scrollToTop() {
   get(containerRef)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function handleMoreClick() {
-  const eventsLength = get(events).length;
-  const oldLimit = get(currentLimit);
-  if (oldLimit === 0) {
-    set(currentLimit, PER_BATCH);
-  }
-  else if (oldLimit >= eventsLength) {
-    set(currentLimit, 0);
-    scrollToTop();
-  }
-  else {
-    set(currentLimit, Math.min(oldLimit + PER_BATCH, eventsLength));
-  }
-}
-
-const buttonText = computed(() => {
-  const limit = get(currentLimit);
-  const eventsLength = get(events).length;
-  if (limit === 0)
-    return t('transactions.events.view.show', { length: eventsLength });
-  else if (!get(hasMoreEvents))
-    return t('transactions.events.view.hide');
-  else
-    return t('transactions.events.view.load_more', { length: eventsLength - limit });
+watch(() => get(eventGroup), () => {
+  set(currentLimit, PER_BATCH);
 });
 </script>
 
@@ -97,15 +115,16 @@ const buttonText = computed(() => {
       :key="eventGroup.eventIdentifier"
       :event-group="eventGroup"
       :events="limitedEvents"
-      :total="events.length"
+      :total="totalBlocks"
       :loading="loading"
       :highlighted-identifiers="highlightedIdentifiers"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
       @edit-event="emit('edit-event', $event)"
     />
+
     <RuiButton
-      v-if="showDropdown"
+      v-if="hasMoreEvents || currentLimit === 0"
       color="primary"
       variant="text"
       class="text-rui-primary font-bold my-2"

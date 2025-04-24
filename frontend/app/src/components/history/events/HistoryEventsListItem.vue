@@ -19,6 +19,7 @@ const props = defineProps<{
   eventGroup: HistoryEventEntry;
   isLast: boolean;
   isHighlighted?: boolean;
+  compact?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -76,33 +77,48 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 <template>
   <LazyLoader
     min-height="5rem"
+    class="border-default"
     :class="{
       'bg-rui-error/[0.05]': isHighlighted,
-      'border-b border-default': !isLast,
+      'border-b': !isLast && !compact,
+      'md:pl-2': compact,
     }"
   >
-    <div class="transition-all duration-300 ease-in-out grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:px-3">
+    <div
+      class="transition-all duration-300 ease-in-out"
+      :class="{
+        'grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:pl-3': !compact,
+        'py-2 md:p-2': compact,
+      }"
+    >
       <HistoryEventType
+        v-if="!compact"
         :event="item"
         :chain="getChain(item.location)"
-        class="md:col-span-2 lg:col-span-6 transition-opacity duration-300"
+        class="md:col-span-2 lg:col-span-6"
       />
 
       <HistoryEventAsset
         :event="item"
-        class="transition-all duration-300 md:col-span-2 lg:col-span-4"
+        class="transition-all duration-300"
+        :class="{
+          'md:col-span-2 lg:col-span-4': !compact,
+          'w-full !py-0': compact,
+        }"
       />
 
       <HistoryEventNote
+        v-if="!compact"
         v-bind="getEventNoteAttrs(item)"
         :amount="item.amount"
         :chain="getChain(item.location)"
         :no-tx-hash="isNoTxHash(item)"
-        class="break-words leading-6 md:col-span-3 lg:col-span-7 transition-opacity duration-300"
+        class="break-words leading-6 md:col-span-3 lg:col-span-7"
       />
 
       <HistoryEventsListItemAction
-        class="lg:col-span-3 transition-opacity duration-300"
+        v-if="!compact"
+        class="lg:col-span-3"
         :item="item"
         :index="index"
         :events="events"

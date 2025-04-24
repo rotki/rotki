@@ -8,8 +8,11 @@ import type {
 } from '@/types/history/events';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
-import { isSwap } from '@/modules/history/events/utils';
-import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
+import {
+  isEvmSwapEvent,
+  isGroupEditableHistoryEvent,
+  isSwapTypeEvent,
+} from '@/modules/history/management/forms/form-guards';
 import {
   isAssetMovementEvent,
   isEventAccountingRuleProcessed,
@@ -32,7 +35,7 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 function hideActions(item: HistoryEventEntry, index: number): boolean {
-  const isSwapButNotSpend = isSwap(item) && index !== 0;
+  const isSwapButNotSpend = isSwapTypeEvent(item.entryType) && index !== 0;
   const isAssetMovementFee = isAssetMovementEvent(item) && item.eventSubtype === 'fee';
   return isAssetMovementFee || isSwapButNotSpend;
 }
@@ -63,7 +66,7 @@ function deleteEvent(item: HistoryEventEntry) {
         type: 'ignore',
       }
     : {
-        ids: isGroupEditableHistoryEvent(item) || isSwap(item) ? props.events.map(event => event.identifier) : [item.identifier],
+        ids: isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType) ? props.events.map(event => event.identifier) : [item.identifier],
         type: 'delete',
       };
 

@@ -126,16 +126,17 @@ const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
   lazy: true,
 });
 
-const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventEntry[]>>(() => {
-  const mapping: Record<string, HistoryEventEntry[]> = {};
+const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventRow[]>>(() => {
+  const mapping: Record<string, HistoryEventRow[]> = {};
   for (const event of get(events)) {
     if (Array.isArray(event)) {
-      for (const subevent of event) {
+      if (event.length > 0) {
+        const subevent = event[0];
         if (mapping[subevent.eventIdentifier]) {
-          mapping[subevent.eventIdentifier].push(subevent);
+          mapping[subevent.eventIdentifier].push(event);
         }
         else {
-          mapping[subevent.eventIdentifier] = [subevent];
+          mapping[subevent.eventIdentifier] = [event];
         }
       }
     }
@@ -236,7 +237,7 @@ const deleteCustom = ref<boolean>(false);
 const redecodePayload = ref<EvmChainAndTxHash>();
 
 function redecode(payload: EvmChainAndTxHash, eventIdentifier: string): void {
-  const childEvents = get(eventsGroupedByEventIdentifier)[eventIdentifier] || [];
+  const childEvents = flatten(get(eventsGroupedByEventIdentifier)[eventIdentifier] || []);
   const isAnyCustom = childEvents.some(item => item.customized);
 
   if (!isAnyCustom) {

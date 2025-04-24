@@ -81,8 +81,9 @@ export function compareTextByKeyword(a: string, b: string, keyword: string): num
   const keywordBHaystackIndex = keywordB.indexOf(search);
   const keywordBNeedleIndex = search.indexOf(keywordB);
 
-  const keywordAIncludes = keywordA.includes(search);
-  const keywordBIncludes = keywordB.includes(search);
+  const clearedSearch = getTextToken(search);
+  const keywordAIncludes = getTextToken(keywordA).includes(clearedSearch);
+  const keywordBIncludes = getTextToken(keywordB).includes(clearedSearch);
 
   const length = search.length;
 
