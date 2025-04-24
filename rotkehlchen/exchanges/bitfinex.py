@@ -619,19 +619,22 @@ class Bitfinex(ExchangeInterface):
                 for bfx_symbol, symbol in response_list[0]:
                     if bfx_symbol in test_assets:
                         continue  # skip test assets
-                    try:
-                        asset = symbol_to_asset_or_token(symbol)
+                    try:  # First check if we have a mapping already.
+                        asset_from_bitfinex(bfx_symbol)
                     except UnknownAsset:
-                        log.info(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
-                        continue  # skip unknown assets
+                        try:
+                            asset = symbol_to_asset_or_token(symbol)
+                        except UnknownAsset:
+                            log.warning(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
+                            continue  # skip unknown assets
 
-                    bindings.append((
-                        bfx_db_serialized,
-                        bfx_symbol,
-                        asset.serialize(),
-                        bfx_db_serialized,
-                        bfx_symbol,
-                    ))
+                        bindings.append((
+                            bfx_db_serialized,
+                            bfx_symbol,
+                            asset.serialize(),
+                            bfx_db_serialized,
+                            bfx_symbol,
+                        ))
 
                 # insert the mapping, and skip unsupported assets
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:
