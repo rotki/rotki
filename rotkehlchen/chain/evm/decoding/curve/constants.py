@@ -41,6 +41,7 @@ TOKEN_EXCHANGE_NG: Final = b'\x14?\x1f\x8e\x86\x1f\xbd\xed\xdd[F\xe8D\xb7\xd3\xa
 EXCHANGE_MULTIPLE: Final = b'\x14\xb5a\x17\x8a\xe0\xf3h\xf4\x0f\xaf\xd0H\\Oq)\xeaq\xcd\xc0\x0bL\xe1\xe5\x94\x0f\x9b\xc6Y\xc8\xb2'  # noqa: E501
 # token exchange topic of new generation (NG) router
 EXCHANGE_NG: Final = b'V\xd0f\x1e$\r\xfb\x19\x9e\xf1\x96\xe1noBG9\x906c\x14\xf0"j\xc9x\xf7\xbe<\xd9\xee\x83'  # noqa: E501
+MINTED_CRV: Final = b'\x9d"\x8di\xb5\xfd\xb8\xd2s\xa23o\x8f\xb8a-\x03\x961\x02N\xa9\xbf\t\xc4$\xa9P:\xa0x\xf0'  # noqa: E501
 
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
@@ -75,3 +76,4 @@ CURVE_METAREGISTRY_METHODS = [
 CURVE_ADDRESS_PROVIDER: Final = string_to_evm_address('0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98')
 CURVE_SWAP_ROUTER_NG: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')
 DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD')
+CHILD_LIQUIDITY_GAUGE_FACTORY: Final = string_to_evm_address('0xabC000d88f23Bb45525E447528DBF656A9D55bf5')  # noqa: E501
