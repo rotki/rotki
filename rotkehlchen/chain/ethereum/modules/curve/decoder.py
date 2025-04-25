@@ -5,6 +5,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
+    CHILD_LIQUIDITY_GAUGE_FACTORY,
     CPT_CURVE,
     CURVE_SWAP_ROUTER_NG,
     GAUGE_VOTE,
@@ -66,6 +67,7 @@ class CurveDecoder(CurveCommonDecoder):
             aave_pools=AAVE_POOLS,
             curve_deposit_contracts=CURVE_DEPOSIT_CONTRACTS | {DEPOSIT_AND_STAKE_ZAP},
             curve_swap_routers={CURVE_SWAP_ROUTER, CURVE_SWAP_ROUTER_NG},
+            gauge_factory_address=CHILD_LIQUIDITY_GAUGE_FACTORY,
         )
 
     def _decode_gauge_bribe(

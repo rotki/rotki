@@ -4,8 +4,13 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import TokenEncounterInfo
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
+from rotkehlchen.chain.ethereum.utils import (
+    asset_normalized_value,
+)
+from rotkehlchen.chain.evm.constants import (
+    ETH_SPECIAL_ADDRESS,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2, CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
@@ -17,6 +22,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     EXCHANGE_NG,
     GAUGE_DEPOSIT,
     GAUGE_WITHDRAW,
+    MINTED_CRV,
     REMOVE_LIQUIDITY_EVENTS,
     REMOVE_LIQUIDITY_IMBALANCE,
     TOKEN_EXCHANGE,
@@ -77,6 +83,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             aave_pools: set['ChecksumEvmAddress'],
             curve_deposit_contracts: set['ChecksumEvmAddress'],
             curve_swap_routers: set['ChecksumEvmAddress'],
+            gauge_factory_address: 'ChecksumEvmAddress | None' = None,
     ) -> None:
         self.native_currency = native_currency
         super().__init__(
@@ -95,6 +102,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         self.aave_pools = aave_pools
         self.curve_deposit_contracts = curve_deposit_contracts
         self.curve_swap_routers = curve_swap_routers
+        self.gauge_factory_address = gauge_factory_address  # https://docs.curve.fi/deployments/crosschain/#old-implementation  # noqa: E501
 
     def _read_curve_asset(
             self: 'CurveCommonDecoder',
@@ -782,6 +790,30 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             return TransferEnrichmentOutput(matched_counterparty=CPT_CURVE)
         return FAILED_ENRICHMENT_OUTPUT
 
+    def decode_gauge_mints(self, context: DecoderContext) -> DecodingOutput:
+        """Decodes minting of CRV happening in L2s via the ChildLiquidityGaugeFactory contract"""
+        if (
+            context.tx_log.topics[0] != MINTED_CRV or
+            not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1]))
+        ):
+            return DEFAULT_DECODING_OUTPUT
+
+        for event in context.decoded_events:
+            if (
+                event.location_label == user_address and
+                event.address == self.gauge_factory_address and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.notes = f'Claim {event.amount} CRV rewards from curve gauge {bytes_to_address(context.tx_log.topics[2])}'  # noqa: E501
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_CURVE
+                break
+        else:
+            log.error(f'Failed to match curve mint event in {context.transaction}. Skipping...')
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     @staticmethod
@@ -789,7 +821,11 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         return {CPT_CURVE: [EvmProduct.GAUGE]}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(self.curve_swap_routers, (self._decode_pool_events,))
+        mappings = dict.fromkeys(self.curve_swap_routers, (self._decode_pool_events,))
+        if self.gauge_factory_address is not None:
+            mappings |= {self.gauge_factory_address: (self.decode_gauge_mints,)}
+
+        return mappings
 
     def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_curve_transfers]

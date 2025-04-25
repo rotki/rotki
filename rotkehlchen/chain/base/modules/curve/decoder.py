@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.evm.decoding.curve.constants import CHILD_LIQUIDITY_GAUGE_FACTORY
 from rotkehlchen.chain.evm.decoding.curve.decoder import CurveCommonDecoder
 from rotkehlchen.constants.assets import A_ETH
 
@@ -27,4 +28,5 @@ class CurveDecoder(CurveCommonDecoder):
             aave_pools=set(),
             curve_deposit_contracts={DEPOSIT_AND_STAKE_ZAP},
             curve_swap_routers={CURVE_SWAP_ROUTER_NG},
+            gauge_factory_address=CHILD_LIQUIDITY_GAUGE_FACTORY,
         )
