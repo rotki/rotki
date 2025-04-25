@@ -28,8 +28,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
-UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp', 'ethgusdperp', 'pepegusdperp'}
-
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 def test_gemini_validate_key(sandbox_gemini):
@@ -88,7 +86,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini, globaldb):
             assert quote is not None
 
         except UnprocessableTradePair as e:
-            if symbol not in UNSUPPORTED_GEMINI_PAIRS:
+            if symbol[-4:] != 'perp':
                 test_warnings.warn(UserWarning(
                     f'UnprocessableTradePair in Gemini. {e}',
                 ))
