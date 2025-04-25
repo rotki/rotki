@@ -339,13 +339,19 @@ const HistoryEventEntryWithMeta = z
 
 export type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
 
+const HistoryEventCollectionRowSchema = z.array(HistoryEventEntryWithMeta.or(z.array(HistoryEventEntryWithMeta)));
+
+export type HistoryEventCollectionRow = HistoryEventEntryWithMeta | HistoryEventEntryWithMeta[];
+
 export const HistoryEventsCollectionResponse = CollectionCommonFields.extend({
-  entries: z.array(HistoryEventEntryWithMeta),
+  entries: HistoryEventCollectionRowSchema,
 });
 
 export type HistoryEventsCollectionResponse = z.infer<typeof HistoryEventsCollectionResponse>;
 
 export type HistoryEventEntry = HistoryEvent & HistoryEventMeta;
+
+export type HistoryEventRow = HistoryEventEntry | HistoryEventEntry[];
 
 export enum OnlineHistoryEventsQueryType {
   ETH_WITHDRAWALS = 'eth_withdrawals',

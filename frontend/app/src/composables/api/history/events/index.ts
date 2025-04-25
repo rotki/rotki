@@ -15,8 +15,8 @@ import {
 import {
   type AddHistoryEventPayload,
   type AddTransactionHashPayload,
+  type HistoryEventCollectionRow,
   HistoryEventDetail,
-  type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
   type ModifyHistoryEventPayload,
@@ -48,7 +48,7 @@ interface UseHistoryEventsApiReturn {
   getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
   getHistoryEventProductsData: () => Promise<HistoryEventProductData>;
-  fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventEntryWithMeta>>;
+  fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventCollectionRow>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
   queryExchangeEvents: (payload: QueryExchangePayload) => Promise<PendingTask>;
   exportHistoryEventsCSV: (filters: HistoryEventRequestPayload, directoryPath?: string) => Promise<PendingTask>;
@@ -231,8 +231,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload,
-  ): Promise<CollectionResponse<HistoryEventEntryWithMeta>> => {
-    const response = await api.instance.post<ActionResult<CollectionResponse<HistoryEventEntryWithMeta>>>(
+  ): Promise<CollectionResponse<HistoryEventCollectionRow>> => {
+    const response = await api.instance.post<ActionResult<CollectionResponse<HistoryEventCollectionRow>>>(
       '/history/events',
       snakeCaseTransformer(payload),
       {
