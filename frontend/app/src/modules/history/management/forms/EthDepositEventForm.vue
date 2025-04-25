@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
+import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
@@ -20,7 +20,7 @@ import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface EthDepositEventFormProps {
-  data: IndependentEventData<EthDepositEvent>;
+  data: StandaloneEventData<EthDepositEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -205,7 +205,7 @@ defineExpose({
       v-model="txHash"
       variant="outlined"
       color="primary"
-      data-cy="txHash"
+      data-cy="tx-hash"
       :label="t('common.tx_hash')"
       :error-messages="toMessages(v$.txHash)"
       @blur="v$.txHash.$touch()"
@@ -239,7 +239,7 @@ defineExpose({
         v-model="sequenceIndex"
         variant="outlined"
         integer
-        data-cy="sequenceIndex"
+        data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"

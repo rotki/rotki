@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type {
-  DependentEventData,
+  GroupEventData,
   HistoryEventEditData,
-  IndependentEventData,
   ShowEventHistoryForm,
+  ShowFormData,
+  StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
@@ -101,7 +102,7 @@ const {
   validators,
 } = toRefs(props);
 
-const formData = ref<DependentEventData | IndependentEventData>();
+const formData = ref<GroupEventData | StandaloneEventData>();
 const missingRuleData = ref<HistoryEventEditData>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
@@ -331,7 +332,7 @@ function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSu
   });
 }
 
-function editMissingRulesEntry(data: DependentEventData | IndependentEventData): void {
+function editMissingRulesEntry(data: ShowFormData): void {
   startPromise(nextTick(() => {
     showForm({ data, type: 'event' });
   }));

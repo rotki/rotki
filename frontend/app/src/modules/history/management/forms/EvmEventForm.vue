@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
+import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
@@ -13,7 +12,7 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
@@ -21,13 +20,13 @@ import { DateFormat } from '@/types/date-format';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
-import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
+import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface HistoryEventFormProps {
-  data: IndependentEventData<EvmHistoryEvent>;
+  data: StandaloneEventData<EvmHistoryEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -98,7 +97,6 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
-const { getAddresses } = useAccountAddresses();
 const { txChainsToLocation } = useSupportedChains();
 
 const states = {
@@ -127,8 +125,6 @@ const v$ = useVuelidate(
   },
 );
 useFormStateWatcher(states, stateUpdated);
-
-const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
@@ -288,7 +284,7 @@ defineExpose({
       variant="outlined"
       color="primary"
       :disabled="data.type !== 'add'"
-      data-cy="txHash"
+      data-cy="tx-hash"
       :label="t('common.tx_hash')"
       :error-messages="toMessages(v$.txHash)"
       @blur="v$.txHash.$touch()"
@@ -316,35 +312,22 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <div class="grid md:grid-cols-2 gap-4">
-      <AutoCompleteWithSearchSync
-        v-model="locationLabel"
-        :items="addressSuggestions"
-        clearable
-        data-cy="locationLabel"
-        :label="t('transactions.events.form.location_label.label')"
-        :error-messages="toMessages(v$.locationLabel)"
-        auto-select-first
-        @blur="v$.locationLabel.$touch()"
-      />
+    <EvmLocation
+      v-model:location-label="locationLabel"
+      v-model:address="address"
+      :error-messages="{
+        locationLabel: toMessages(v$.locationLabel),
+        address: toMessages(v$.address),
+      }"
+      @blur="v$[$event].$touch()"
+    />
 
-      <AutoCompleteWithSearchSync
-        v-model="address"
-        :items="addressSuggestions"
-        clearable
-        data-cy="address"
-        :label="t('transactions.events.form.address.label')"
-        :error-messages="toMessages(v$.address)"
-        auto-select-first
-        @blur="v$.address.$touch()"
-      />
-    </div>
     <div class="grid md:grid-cols-3 gap-4">
       <AmountInput
         v-model="sequenceIndex"
         variant="outlined"
         integer
-        data-cy="sequenceIndex"
+        data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"

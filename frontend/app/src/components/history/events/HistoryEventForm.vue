@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {
-  DependentEventData,
-  IndependentEventData,
+  GroupEventData,
+  StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
@@ -20,7 +20,7 @@ interface FormComponent {
 }
 
 interface HistoryEventFormProps {
-  data: DependentEventData | IndependentEventData;
+  data: GroupEventData | StandaloneEventData;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -46,7 +46,7 @@ const historyEventEntryTypes = computed(() => {
   if (get(isEvmGroupAdd)) {
     return [HistoryEventEntryType.EVM_SWAP_EVENT, HistoryEventEntryType.EVM_EVENT];
   }
-  return Object.values(HistoryEventEntryType);
+  return Object.values(HistoryEventEntryType).filter(value => value !== HistoryEventEntryType.EVM_SWAP_EVENT);
 });
 
 const formComponents: Record<HistoryEventEntryType, Component> = {

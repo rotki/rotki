@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { IndependentEventData } from '@/modules/history/management/forms/form-types';
+import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -23,7 +23,7 @@ import { isEmpty } from 'es-toolkit/compat';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: IndependentEventData<OnlineHistoryEvent> }>();
+const props = defineProps<{ data: StandaloneEventData<OnlineHistoryEvent> }>();
 
 const { t } = useI18n();
 
@@ -271,7 +271,7 @@ defineExpose({
         v-model="sequenceIndex"
         variant="outlined"
         integer
-        data-cy="sequenceIndex"
+        data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"

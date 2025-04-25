@@ -1,45 +1,51 @@
-import type { DependentHistoryEvent, IndependentHistoryEvent } from '@/types/history/events';
+import type {
+  EvmSwapEvent,
+  GroupEditableHistoryEvents,
+  StandaloneEditableEvents,
+} from '@/types/history/events';
 
 export interface AddEventData {
   type: 'add';
   nextSequenceId: string;
 }
 
-export interface GroupAddEventData<I extends IndependentHistoryEvent> {
+export interface GroupAddEventData<I extends StandaloneEditableEvents | EvmSwapEvent> {
   type: 'group-add';
   nextSequenceId: string;
   group: I;
 }
 
-export interface EditIndependentEventData<I extends IndependentHistoryEvent = IndependentHistoryEvent> {
+export interface EditStandaloneEventData<I extends StandaloneEditableEvents = StandaloneEditableEvents> {
   type: 'edit';
   event: I;
   nextSequenceId: string;
 }
 
-export interface EditDependentEventData<D extends DependentHistoryEvent = DependentHistoryEvent> {
+export interface EditGroupEventData<D extends GroupEditableHistoryEvents = GroupEditableHistoryEvents> {
   type: 'edit-group';
   eventsInGroup: D[];
 }
 
-export type DependentEventData<
-  D extends DependentHistoryEvent = DependentHistoryEvent,
-> = AddEventData | EditDependentEventData<D>;
+export type GroupEventData<
+  D extends GroupEditableHistoryEvents = GroupEditableHistoryEvents,
+> = AddEventData | EditGroupEventData<D> | (D extends EvmSwapEvent ? GroupAddEventData<D> : never);
 
-export type IndependentEventData<
-  I extends IndependentHistoryEvent = IndependentHistoryEvent,
-> = AddEventData | GroupAddEventData<I> | EditIndependentEventData<I>;
+export type StandaloneEventData<
+  I extends StandaloneEditableEvents = StandaloneEditableEvents,
+> = AddEventData | GroupAddEventData<I> | EditStandaloneEventData<I>;
 
-export type HistoryEventEditData = EditDependentEventData | EditIndependentEventData;
+export type HistoryEventEditData = EditGroupEventData | EditStandaloneEventData;
 
 export interface ShowMissingRuleForm {
   readonly type: 'missingRule';
   readonly data: HistoryEventEditData;
 }
 
+export type ShowFormData = GroupEventData | StandaloneEventData;
+
 export interface ShowEventForm {
   readonly type: 'event';
-  readonly data: DependentEventData | IndependentEventData;
+  readonly data: ShowFormData;
 }
 
 export type ShowEventHistoryForm = ShowEventForm | ShowMissingRuleForm;

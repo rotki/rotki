@@ -159,7 +159,6 @@ export const EvmSwapEventSchema = CommonHistoryEvent.extend({
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.EVM_SWAP_EVENT),
   extraData: z.unknown().nullable(),
-  product: z.string().nullable(),
   txHash: z.string(),
 });
 
@@ -173,11 +172,11 @@ export const HistoryEvent = EvmHistoryEvent.or(AssetMovementEvent)
   .or(SwapEventSchema)
   .or(EvmSwapEventSchema);
 
-export type DependentHistoryEvent = AssetMovementEvent | SwapEvent;
+export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent;
 
-export type IndependentHistoryEvent = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | EvmSwapEvent;
+export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent;
 
-export type HistoryEvent = IndependentHistoryEvent | DependentHistoryEvent;
+export type HistoryEvent = StandaloneEditableEvents | GroupEditableHistoryEvents;
 
 export interface AddSwapEventPayload {
   entryType: typeof HistoryEventEntryType.SWAP_EVENT;
@@ -196,6 +195,21 @@ export interface AddSwapEventPayload {
 export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueId'> {
   eventIdentifier: string;
   identifier: number;
+}
+
+export interface AddEvmSwapEventPayload extends Omit<AddSwapEventPayload, 'entryType' | 'uniqueId'> {
+  entryType: typeof HistoryEventEntryType.EVM_SWAP_EVENT;
+  address?: string;
+  locationLabel: string;
+  counterparty: string;
+  sequenceIndex: string;
+  txHash: string;
+  eventIdentifier?: string;
+}
+
+export interface EditEvmSwapEventPayload extends AddEvmSwapEventPayload {
+  identifier: number;
+  eventIdentifier: string;
 }
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
@@ -307,9 +321,9 @@ export type NewHistoryEventPayload =
   | NewEthWithdrawalEventPayload
   | NewAssetMovementEventPayload;
 
-export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload;
+export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload;
 
-export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload;
+export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload | EditEvmSwapEventPayload;
 
 export enum HistoryEventAccountingRuleStatus {
   HAS_RULE = 'has rule',

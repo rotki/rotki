@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DependentEventData } from '@/modules/history/management/forms/form-types';
+import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -25,7 +25,7 @@ import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface AssetMovementEventFormProps {
-  data: DependentEventData<AssetMovementEvent>;
+  data: GroupEventData<AssetMovementEvent>;
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
