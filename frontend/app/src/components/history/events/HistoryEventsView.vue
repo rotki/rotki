@@ -8,8 +8,8 @@ import type {
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
-  HistoryEventEntry,
   HistoryEventRequestPayload,
+  HistoryEventRow,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
 } from '@/types/history/events';
@@ -50,7 +50,7 @@ import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/hi
 import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { not } from '@vueuse/math';
-import { isEqual } from 'es-toolkit';
+import { flatten, isEqual } from 'es-toolkit';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -195,7 +195,7 @@ const {
   updateFilter,
   userAction,
 } = usePaginationFilters<
-  HistoryEventEntry,
+  HistoryEventRow,
   HistoryEventRequestPayload,
   Filters,
   Matcher
@@ -364,7 +364,7 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
 }
 
 async function redecodePageTransactions(): Promise<void> {
-  const evmEvents = get(groups).data.filter(isEvmEvent);
+  const evmEvents = flatten(get(groups).data).filter(isEvmEvent);
   const transactions = evmEvents.map(item => toEvmChainAndTxHash(item));
 
   await pullAndRedecodeTransactions({ transactions });

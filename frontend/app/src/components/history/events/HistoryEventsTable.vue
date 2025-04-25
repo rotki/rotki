@@ -5,6 +5,7 @@ import type { Collection } from '@/types/collection';
 import type {
   EvmChainAndTxHash,
   HistoryEventEntry,
+  HistoryEventRow,
   PullEvmTransactionPayload,
 } from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
@@ -26,14 +27,14 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { isTaskCancelled } from '@/utils';
-import { groupBy } from 'es-toolkit';
+import { flatten } from 'es-toolkit';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
 
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
 const props = defineProps<{
-  groups: Collection<HistoryEventEntry>;
+  groups: Collection<HistoryEventRow>;
   excludeIgnored: boolean;
   groupLoading: boolean;
   identifiers?: string[];
@@ -103,14 +104,14 @@ const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [{
 
 useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
 
-const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
+const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
   const data = get(groups, 'data');
 
   if (data.length === 0)
     return [];
 
   const response = await fetchHistoryEvents({
-    eventIdentifiers: data.map(item => item.eventIdentifier),
+    eventIdentifiers: data.flatMap(item => Array.isArray(item) ? item.map(i => i.eventIdentifier) : item.eventIdentifier),
     excludeIgnoredAssets: props.excludeIgnored,
     groupByEventIds: false,
     identifiers: props.identifiers,
@@ -124,10 +125,33 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
   lazy: true,
 });
 
-const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventEntry[]>>(() => groupBy(get(events), item => item.eventIdentifier));
+const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventEntry[]>>(() => {
+  const mapping: Record<string, HistoryEventEntry[]> = {};
+  for (const event of get(events)) {
+    if (Array.isArray(event)) {
+      for (const subevent of event) {
+        if (mapping[subevent.eventIdentifier]) {
+          mapping[subevent.eventIdentifier].push(subevent);
+        }
+        else {
+          mapping[subevent.eventIdentifier] = [subevent];
+        }
+      }
+    }
+    else {
+      if (mapping[event.eventIdentifier]) {
+        mapping[event.eventIdentifier].push(event);
+      }
+      else {
+        mapping[event.eventIdentifier] = [event];
+      }
+    }
+  }
+  return mapping;
+});
 
 const loading = refDebounced(logicOr(groupLoading, eventsLoading), 300);
-const hasIgnoredEvent = useArraySome(events, event => event.ignoredInAccounting);
+const hasIgnoredEvent = useArraySome(events, event => Array.isArray(event) && event.some(item => item.ignoredInAccounting));
 
 function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
   return item.ignoredInAccounting ? 'opacity-50' : '';
@@ -170,7 +194,7 @@ function suggestNextSequenceId(group: HistoryEventEntry): string {
     return (Number(group.sequenceIndex) + 1).toString();
 
   const eventIdentifierHeader = group.eventIdentifier;
-  const filtered = all
+  const filtered = flatten(all)
     .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
     .map(({ sequenceIndex }) => Number(sequenceIndex))
     .sort((a, b) => b - a);
@@ -247,9 +271,9 @@ function forceRedecode(): void {
       <RuiDataTable
         v-model:pagination.external="pagination"
         v-model:sort.external="sort"
-        :expanded="rows"
+        :expanded="flatten(rows)"
         :cols="cols"
-        :rows="rows"
+        :rows="flatten(rows)"
         :loading="loading"
         :item-class="getItemClass"
         :empty="{ label: t('data_table.no_data') }"

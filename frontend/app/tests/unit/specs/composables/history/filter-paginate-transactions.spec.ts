@@ -1,5 +1,5 @@
 import type { Collection } from '@/types/collection';
-import type { HistoryEvent, HistoryEventRequestPayload } from '@/types/history/events';
+import type { HistoryEvent, HistoryEventRequestPayload, HistoryEventRow } from '@/types/history/events';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type * as Vue from 'vue';
@@ -40,7 +40,7 @@ vi.mock('vue', async () => {
 });
 
 describe('composables::history/filter-paginate', () => {
-  let fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEvent>>;
+  let fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventRow>>;
   const mainPage = ref<boolean>(false);
   const protocols = ref<string[]>([]);
   const eventTypes = ref<string[]>([]);
@@ -90,7 +90,7 @@ describe('composables::history/filter-paginate', () => {
 
     it('initialize composable correctly', async () => {
       const { userAction, filters, sort, state, fetchData, isLoading } = usePaginationFilters<
-        HistoryEvent,
+        HistoryEventRow,
         HistoryEventRequestPayload,
         Filters,
         Matcher
@@ -124,7 +124,7 @@ describe('composables::history/filter-paginate', () => {
 
     it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
-        HistoryEvent,
+        HistoryEventRow,
         HistoryEventRequestPayload,
         Filters,
         Matcher
@@ -138,8 +138,8 @@ describe('composables::history/filter-paginate', () => {
 
       expect(get(isLoading)).toBe(false);
 
-      expectTypeOf(get(state)).toEqualTypeOf<Collection<HistoryEvent>>();
-      expectTypeOf(get(state).data).toEqualTypeOf<HistoryEvent[]>();
+      expectTypeOf(get(state)).toEqualTypeOf<Collection<HistoryEventRow>>();
+      expectTypeOf(get(state).data).toEqualTypeOf<HistoryEventRow[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<Filters>();
       expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
@@ -150,7 +150,7 @@ describe('composables::history/filter-paginate', () => {
       const query = { sort: ['timestamp'], sortOrder: ['asc'] };
 
       const { isLoading, state, pageParams, sort } = usePaginationFilters<
-        HistoryEvent,
+        HistoryEventRow,
         HistoryEventRequestPayload,
         Filters,
         Matcher
@@ -178,8 +178,8 @@ describe('composables::history/filter-paginate', () => {
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      assertType<Collection<HistoryEvent>>(get(state));
-      assertType<HistoryEvent[]>(get(state).data);
+      assertType<Collection<HistoryEventRow>>(get(state));
+      assertType<HistoryEventRow[]>(get(state).data);
       assertType<number>(get(state).found);
 
       expect(get(pageParams).locationLabels).toEqual(get(accounts)[0].address);
@@ -206,7 +206,7 @@ describe('composables::history/filter-paginate', () => {
       };
 
       const { isLoading, filters } = usePaginationFilters<
-        HistoryEvent,
+        HistoryEventRow,
         HistoryEventRequestPayload,
         Filters,
         Matcher

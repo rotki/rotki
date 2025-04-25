@@ -2,7 +2,7 @@ import type { EvmChainInfo } from '@/types/api/chains';
 import type {
   EditEvmHistoryEventPayload,
   EvmHistoryEvent,
-  HistoryEventEntry,
+  HistoryEventRow,
 } from '@/types/history/events';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryEvents } from '@/composables/history/events';
@@ -67,7 +67,7 @@ vi.mock('@/composables/info/chains', async () => {
 });
 
 describe('composables::history/events/tx', () => {
-  let events: HistoryEventEntry[];
+  let events: HistoryEventRow[];
 
   beforeAll(async () => {
     setActivePinia(createPinia());
@@ -96,6 +96,7 @@ describe('composables::history/events/tx', () => {
     const queryEvSpy = vi.spyOn(eventsApi, 'queryOnlineHistoryEvents');
 
     const event = events[0];
+    assert(!Array.isArray(event));
     assert(isOfEventType<EvmHistoryEvent>(event, 'evm event'));
 
     const editEvent: EditEvmHistoryEventPayload = { ...event, identifier: 1 };

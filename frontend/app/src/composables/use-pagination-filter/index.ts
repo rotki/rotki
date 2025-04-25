@@ -20,12 +20,12 @@ import { isEmpty } from 'es-toolkit/compat';
 
 type Params<
   TItem extends NonNullable<unknown>,
-  TPayload extends PaginationRequestPayload<TItem>,
-> = Partial<Omit<TPayload, keyof PaginationRequestPayload<TItem>>>;
+  TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
+> = Partial<Omit<TPayload, keyof PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>>>;
 
 interface UsePaginationFiltersOptions<
   TItem extends NonNullable<unknown>,
-  TPayload extends PaginationRequestPayload<TItem> = PaginationRequestPayload<TItem>,
+  TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem> = PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
   TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
@@ -43,7 +43,7 @@ interface UsePaginationFiltersOptions<
 
 interface UsePaginationFilterReturn<
   TItem extends NonNullable<unknown>,
-  TPayload extends PaginationRequestPayload<TItem> = PaginationRequestPayload<TItem>,
+  TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem> = PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
   TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
@@ -70,7 +70,7 @@ interface UsePaginationFilterReturn<
  */
 export function usePaginationFilters<
   TItem extends NonNullable<unknown>,
-  TPayload extends PaginationRequestPayload<TItem> = PaginationRequestPayload<TItem>,
+  TPayload extends PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem> = PaginationRequestPayload<TItem extends Array<infer U> ? U : TItem>,
   TFilter extends MatchedKeywordWithBehaviour<string> | void = undefined,
   TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 >(
