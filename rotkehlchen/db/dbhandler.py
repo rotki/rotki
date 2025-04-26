@@ -3124,49 +3124,6 @@ class DBHandler:
                 # mapping already exists
                 continue
 
-    def _ensure_data_integrity(
-            self,
-            cursor: 'DBCursor',
-            table_name: str,
-            klass: type[MarginPosition],
-    ) -> None:
-        updates: list[tuple[str, str]] = []
-        log.debug(f'db integrity: start {table_name}')
-        cursor.execute(f'SELECT * from {table_name};')
-        for result in cursor:
-            try:
-                obj = klass.deserialize_from_db(result)
-            except (DeserializationError, UnknownAsset):
-                continue
-
-            db_id = result[0]
-            actual_id = obj.identifier
-            if actual_id != db_id:
-                updates.append((actual_id, db_id))
-
-        log.debug(f'db integrity: check updates {table_name}')
-        if len(updates) != 0:
-            log.debug(
-                f'Found {len(updates)} identifier discrepancies in the DB '
-                f'for {table_name}. Correcting...',
-            )
-            with self.user_write() as write_cursor:
-                write_cursor.executemany(f'UPDATE {table_name} SET id = ? WHERE id =?;', updates)
-        log.debug(f'db integrity: end {table_name}')
-
-    def ensure_data_integrity(self) -> None:
-        """Runs some checks for data integrity of the DB that can't be verified by SQLite
-
-        For now it mostly tackles https://github.com/rotki/rotki/issues/3010 ,
-        the problem of identifiers of margin positions
-        changing and no longer corresponding to the calculated id.
-        """
-        start_time = ts_now()
-        log.debug('Starting DB data integrity check')
-        with self.conn.read_ctx() as cursor:
-            self._ensure_data_integrity(cursor, 'margin_positions', MarginPosition)
-        log.debug(f'DB data integrity check finished after {ts_now() - start_time} seconds')
-
     def get_db_info(self, cursor: 'DBCursor') -> dict[str, Any]:
         filepath = self.user_data_dir / USERDB_NAME
         size = Path(self.user_data_dir / USERDB_NAME).stat().st_size

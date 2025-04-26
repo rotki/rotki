@@ -313,14 +313,6 @@ class Rotkehlchen:
             initial_settings=initial_settings,
             resume_from_backup=resume_from_backup,
         )
-        # Run the DB integrity check due to https://github.com/rotki/rotki/issues/3010
-        # TODO: Hopefully once 3010 is handled this can go away
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='user DB data integrity check',
-            exception_is_error=False,
-            method=self.data.db.ensure_data_integrity,
-        )
         if create_new:
             self._perform_new_db_actions()
 
