@@ -952,7 +952,11 @@ class RestAPI:
         result_dict = _wrap_in_ok_result({'identifier': main_identifier})
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    def edit_history_events(self, events: list['HistoryBaseEntry']) -> Response:
+    def edit_history_events(
+            self,
+            events: list['HistoryBaseEntry'],
+            identifiers: dict[str, list[int]] | None,
+    ) -> Response:
         events_db = DBHistoryEvents(self.rotkehlchen.data.db)
         if (events_type := events[0].entry_type) in {
             HistoryBaseEntryType.ASSET_MOVEMENT_EVENT,
@@ -966,6 +970,7 @@ class RestAPI:
                         write_cursor=write_cursor,
                         events=events,
                         events_type=events_type,
+                        identifiers=identifiers,
                     )
             except InputError as e:
                 return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
@@ -3621,10 +3626,7 @@ class RestAPI:
                 event_accounting_rule_status=event_accounting_rule_status,
                 grouped_events_num=grouped_events_num,
             )
-            if (
-                event.event_type == HistoryEventType.MULTI_TRADE or
-                event.entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT
-            ):
+            if event.entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT:
                 if (event_subtype_index := EVENT_GROUPING_ORDER[event.event_type].get(event.event_subtype)) is None:  # noqa: E501
                     log.error(
                         'Unable to determine group order for event type/subtype '

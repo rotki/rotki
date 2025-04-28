@@ -1253,8 +1253,8 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_patch_schema, location='json')
-    def patch(self, events: list['HistoryBaseEntry']) -> Response:
-        return self.rest_api.edit_history_events(events)
+    def patch(self, events: list['HistoryBaseEntry'], identifiers: dict[str, list[int]] | None = None) -> Response:  # noqa: E501
+        return self.rest_api.edit_history_events(events, identifiers)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')

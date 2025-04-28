@@ -1,9 +1,9 @@
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -15,6 +15,7 @@ def edit_grouped_events_with_optional_fee(
         write_cursor: 'DBCursor',
         events: list[HistoryBaseEntry],
         events_type: HistoryBaseEntryType,
+        identifiers: dict[str, list[int]] | None = None,
 ) -> None:
     """
     Handle grouped events, including fee-related modifications:
@@ -22,38 +23,34 @@ def edit_grouped_events_with_optional_fee(
     - Create fee entry if it wasn't present before
     - Update existing events when modifications occur
 
+    Evm swaps are more complex and must rely on the identifiers specified. This is handled
+    in edit_grouped_evm_swap_events.
+
     May raise:
     - InputError
     """
-    db = events_db.db
-    with db.conn.read_ctx() as read_cursor:
-        if (result := read_cursor.execute(  # Get the event_identifier and beginning sequence index of the group, selecting by the identifier of the first event.  # noqa: E501
-            'SELECT event_identifier, sequence_index FROM history_events WHERE identifier=?',
-            (events[0].identifier,),
-        ).fetchone()) is not None:
-            event_identifier, sequence_index = result
-        else:
-            raise InputError(f'Tried to edit event with id {events[0].identifier} but could not find it in the DB')  # noqa: E501
+    if (result := write_cursor.execute(  # Get the event_identifier, selecting by the identifier of the first event.  # noqa: E501
+        'SELECT event_identifier FROM history_events WHERE identifier=?',
+        (events[0].identifier,),
+    ).fetchone()) is not None:
+        event_identifier = result[0]
+    else:
+        raise InputError(f'Tried to edit event with id {events[0].identifier} but could not find it in the DB')  # noqa: E501
 
-        if (entry_type := events[0].entry_type) == HistoryBaseEntryType.EVM_SWAP_EVENT:
-            # There can be multiple groups of EvmSwapEvents in a single transaction.
-            # Only count events in this group using the consecutive sequence indexes of the
-            # spend/receive/fee events.
-            existing_event_count = read_cursor.execute(
-                'SELECT COUNT(*) FROM history_events WHERE event_identifier=? AND entry_type=? '
-                'AND ((subtype=? AND sequence_index=?) OR (subtype=? AND sequence_index=?) '
-                'OR (subtype=? AND sequence_index=?))',
-                (event_identifier, entry_type.serialize_for_db(),
-                 HistoryEventSubType.SPEND.serialize(), sequence_index,
-                 HistoryEventSubType.RECEIVE.serialize(), sequence_index + 1,
-                 HistoryEventSubType.FEE.serialize(), sequence_index + 2),
-            ).fetchone()[0]
-        else:  # Other types of grouped events will only have one group per event_identifier.
-            existing_event_count = read_cursor.execute(
-                'SELECT COUNT(*) FROM history_events WHERE event_identifier=?',
-                (event_identifier,),
-            ).fetchone()[0]
+    if events_type == HistoryBaseEntryType.EVM_SWAP_EVENT:
+        edit_grouped_evm_swap_events(  # Evm swaps must be handled differently.
+            events_db=events_db,
+            write_cursor=write_cursor,
+            events=events,
+            identifiers=identifiers,  # type: ignore[arg-type]  # will not be none for evm swaps
+            event_identifier=event_identifier,
+        )
+        return
 
+    existing_event_count = write_cursor.execute(
+        'SELECT COUNT(*) FROM history_events WHERE event_identifier=?',
+        (event_identifier,),
+    ).fetchone()[0]
     no_fee_num = 1 if events_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else 2
     with_fee_num = no_fee_num + 1
 
@@ -78,3 +75,61 @@ def edit_grouped_events_with_optional_fee(
 
     for event in events_to_edit:
         events_db.edit_history_event(write_cursor=write_cursor, event=event)
+
+
+def edit_grouped_evm_swap_events(
+        events_db: 'DBHistoryEvents',
+        write_cursor: 'DBCursor',
+        events: list[HistoryBaseEntry],
+        identifiers: dict[str, list[int]],
+        event_identifier: str,
+) -> None:
+    """Handle editing of grouped evm swap events.
+    Determines which events to add, edit, or remove using the `identifiers` dict
+    and the `events` list as follows:
+    - Inserts events that have no identifier.
+    - Edits events whose identifier is set.
+    - Removes events whose identifier is present in `identifiers`,
+       but have no corresponding event in `events`.
+
+    May raise InputError if a new event is added that collides
+    with the sequence index of an existing event.
+    """
+    edited_identifiers, new_events = defaultdict(list), []
+    for event in events:
+        if event.identifier is None:  # No existing identifier - this is a new event.
+            new_events.append(event)
+        else:  # Already has an identifier - edit existing event.
+            events_db.edit_history_event(write_cursor=write_cursor, event=event)
+            edited_identifiers[event.event_subtype.serialize()].append(event.identifier)
+
+    if identifiers != edited_identifiers:  # There are identifiers with no corresponding events - these events need to be deleted.  # noqa: E501
+        ids_to_delete = []
+        for key, id_list in identifiers.items():
+            if id_list == edited_identifiers[key]:
+                continue
+
+            ids_to_delete.extend(list(set(id_list) - set(edited_identifiers[key])))
+
+        write_cursor.executemany(
+            'DELETE FROM history_events WHERE identifier=?',
+            [(identifier,) for identifier in ids_to_delete],
+        )
+
+    for event in new_events:
+        if write_cursor.execute(  # Check if this event will hit a sequence_index that is already in use.  # noqa: E501
+            'SELECT COUNT(*) FROM history_events WHERE event_identifier=? AND sequence_index=?',
+            (event_identifier, event.sequence_index),
+        ).fetchone()[0] != 0:
+            raise InputError(
+                f'Tried to insert an event with event_identifier {event_identifier} and '
+                f'sequence_index {event.sequence_index}, but an event already exists at '
+                'that sequence_index.',
+            )
+
+        # Add the new event marking it as customized since its being manually added by the user.
+        events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=event,
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},
+        )

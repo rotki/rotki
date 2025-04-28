@@ -221,7 +221,7 @@ def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Revoke SAPO spending approval of {ethereum_accounts[0]} by {ETH_ROUTER}',
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=225,
         timestamp=timestamp,
@@ -234,7 +234,7 @@ def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount_barron} BARRON in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=226,
         timestamp=timestamp,
@@ -247,7 +247,7 @@ def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount_sapo} SAPO in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=227,
         timestamp=timestamp,
@@ -260,7 +260,7 @@ def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount} ETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=228,
         timestamp=timestamp,
@@ -295,7 +295,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_fees} ETH for gas',
         counterparty=CPT_GAS,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=timestamp,
@@ -308,7 +308,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount} ETH in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,
@@ -321,7 +321,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount_sfrax} sFRAX as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=3,
         timestamp=timestamp,
@@ -334,7 +334,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount_rgusd} rgUSD as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=4,
         timestamp=timestamp,
@@ -347,7 +347,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Spend {odos_fees_sfrax} sFRAX as an Odos v2 fee',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=5,
         timestamp=timestamp,
@@ -394,7 +394,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Revoke swETH spending approval of {ethereum_accounts[0]} by {ETH_ROUTER}',
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=248,
         timestamp=timestamp,
@@ -407,7 +407,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount_sweth} swETH in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=249,
         timestamp=timestamp,
@@ -420,7 +420,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Swap {swap_amount_usdc} USDC in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=250,
         timestamp=timestamp,
@@ -433,7 +433,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount_eth} ETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=251,
         timestamp=timestamp,
@@ -446,7 +446,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {received_amount_cbeth} cbETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=252,
         timestamp=timestamp,
@@ -459,7 +459,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         notes=f'Spend {odos_fees_cbeth} cbETH as an Odos v2 fee',
         counterparty=CPT_ODOS_V2,
         address=ETH_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=253,
         timestamp=timestamp,
@@ -625,7 +625,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         location_label=optimism_accounts[0],
         notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by {OP_ROUTER} to {approval_amount}',  # noqa: E501
         address=OP_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=89,
         timestamp=timestamp,
@@ -638,7 +638,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount_usdc} USDC in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=OP_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=90,
         timestamp=timestamp,
@@ -651,7 +651,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Swap {swap_amount_usdce} USDC.e in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=OP_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=91,
         timestamp=timestamp,
@@ -664,7 +664,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         notes=f'Receive {received_amount} ETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
         address=OP_ROUTER,
-    ), EvmEvent(
+    ), EvmSwapEvent(
         tx_hash=tx_hash,
         sequence_index=92,
         timestamp=timestamp,

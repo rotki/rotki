@@ -34,6 +34,10 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             ],
             asset: Asset,
             amount: 'FVal',
+            event_type: Literal[
+                HistoryEventType.TRADE,
+                HistoryEventType.MULTI_TRADE,
+            ] = HistoryEventType.TRADE,
             location_label: str | None = None,
             notes: str | None = None,
             identifier: int | None = None,
@@ -49,7 +53,7 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
-            event_type=HistoryEventType.TRADE,
+            event_type=event_type,
             event_subtype=event_subtype,
             asset=asset,
             amount=amount,
@@ -88,7 +92,8 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
             notes=entry[8] or None,
-            event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore  # should always be correct from the DB
+            event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore  # event type and subtype should always be correct from the DB
+            event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
             tx_hash=deserialize_evm_tx_hash(entry[12]),
             counterparty=entry[13],
