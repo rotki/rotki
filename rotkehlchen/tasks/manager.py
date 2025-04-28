@@ -20,6 +20,10 @@ from rotkehlchen.chain.evm.decoding.morpho.utils import (
     query_morpho_reward_distributors,
     query_morpho_vaults,
 )
+from rotkehlchen.chain.evm.decoding.pendle.constants import (
+    PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM,
+)
+from rotkehlchen.chain.evm.decoding.pendle.utils import query_pendle_yield_tokens
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -74,8 +78,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
-from ..chain.evm.decoding.pendle.constants import PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM
-from ..chain.evm.decoding.pendle.utils import query_pendle_yield_tokens
 from .events import process_events
 
 if TYPE_CHECKING:
@@ -719,7 +721,7 @@ class TaskManager:
                 task_name=f'Update Pendle yield tokens for {chain.to_name()}',
                 exception_is_error=False,
                 method=self.query_pendle_yield_tokens,
-                database=self.chains_aggregator.get_chain_manager(chain.to_blockchain()),  # type: ignore[arg-type]  # chain is supported
+                evm_inquirer=self.chains_aggregator.get_evm_manager(chain).node_inquirer,  # type: ignore[arg-type]  # chain is supported
             )
             for chain in PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM | {ChainID.ETHEREUM}
             if should_update_protocol_cache(CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
