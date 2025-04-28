@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { Blockchain } from '@rotki/common';
 
 const locationLabel = defineModel<string>('locationLabel', { required: true });
 const address = defineModel<string>('address', { required: true });
 
-defineProps<{
+const props = defineProps<{
+  location: string;
   errorMessages: {
     address: string[];
     locationLabel: string[];
@@ -19,8 +20,14 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 const { getAddresses } = useAccountAddresses();
+const { matchChain } = useSupportedChains();
 
-const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
+const addressSuggestions = computed(() => {
+  const chain = matchChain(props.location);
+  if (!chain)
+    return [];
+  return getAddresses(chain);
+});
 </script>
 
 <template>
@@ -30,20 +37,19 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
       :items="addressSuggestions"
       clearable
       data-cy="location-label"
-      :label="t('transactions.events.form.location_label.label')"
+      :label="t('transactions.events.form.account_address.label')"
       :error-messages="errorMessages.locationLabel"
       auto-select-first
       @blur="emit('blur', 'locationLabel')"
     />
 
-    <AutoCompleteWithSearchSync
+    <RuiTextField
       v-model="address"
-      :items="addressSuggestions"
       clearable
+      variant="outlined"
       data-cy="address"
-      :label="t('transactions.events.form.address.label')"
+      :label="t('transactions.events.form.contract_address.label')"
       :error-messages="errorMessages.address"
-      auto-select-first
       @blur="emit('blur', 'address')"
     />
   </div>

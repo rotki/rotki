@@ -3,7 +3,12 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const model = defineModel<string>({ required: true });
+const model = defineModel<string>({
+  required: true,
+  set(value) {
+    return value === undefined ? '' : value;
+  },
+});
 
 const props = defineProps<{
   items: string[];
@@ -11,7 +16,7 @@ const props = defineProps<{
 
 const { items } = toRefs(props);
 
-const search = ref<string>();
+const search = ref<string>('');
 
 watch(search, (search) => {
   if (search === undefined)
