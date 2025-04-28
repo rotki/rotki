@@ -3696,7 +3696,7 @@ class RestAPI:
         grouped_events_nums: list[int | None]
         grouped_events_nums, events = (
             zip(*events_result, strict=False)  # type: ignore  # mypy doesn't understand significance of boolean check.
-            if group_by_event_ids is True else
+            if group_by_event_ids is True and len(events_result) != 0 else
             ([None] * len(events_result), events_result)
         )
         result = {
