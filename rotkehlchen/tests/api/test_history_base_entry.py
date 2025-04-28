@@ -1139,6 +1139,14 @@ def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
     - group of MULTI_TRADE events: spend, spend, receive, receive, fee
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    # First check that querying history events grouped by id with no events works correctly.
+    # Regression test for a problem that was introduced in the changes for event grouping.
+    assert assert_proper_sync_response_with_result(response=requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'group_by_event_ids': True},
+    ))['entries_found'] == 0
+
     db = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.write_ctx() as write_cursor:
         db.add_history_events(
