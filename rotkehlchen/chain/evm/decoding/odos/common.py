@@ -6,11 +6,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_DECODING_OUTPUT,
-    DecoderContext,
-    DecodingOutput,
-)
+from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants.misc import ZERO
@@ -178,15 +174,7 @@ class OdosCommonDecoderBase(DecoderInterface):
             output_tokens=output_tokens,
         ))
         maybe_reshuffle_events(
-            ordered_events=(out_in_fee_events := out_events + in_events + fee_events),
+            ordered_events=out_events + in_events + fee_events,
             events_list=context.decoded_events,
         )
-        if len(out_events) > 1 or len(in_events) > 1 or len(fee_events) > 1:
-            # Multiple events of a single type is incompatible with normal swaps,
-            # so convert to type MULTI_TRADE, and don't set the process_swaps flag.
-            for event in out_in_fee_events:
-                event.event_type = HistoryEventType.MULTI_TRADE
-
-            return DEFAULT_DECODING_OUTPUT
-
         return DecodingOutput(process_swaps=True)
