@@ -19,7 +19,6 @@ import { defaultCollectionState, mapCollectionResponse } from '@/utils/collectio
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 import { startPromise } from '@shared/utils';
-import { omit } from 'es-toolkit';
 
 interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventRow>>;
@@ -77,10 +76,10 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
   }
 
   const fetchHistoryEvents = async (
-    payload: MaybeRef<HistoryEventRequestPayload & { accounts?: [] }>,
+    payload: MaybeRef<HistoryEventRequestPayload>,
   ): Promise<Collection<HistoryEventRow>> => {
     try {
-      const requestData = omit(get(payload), ['accounts']);
+      const requestData = get(payload);
       const collection = mapCollectionResponse<
         HistoryEventCollectionRow,
         HistoryEventsCollectionResponse

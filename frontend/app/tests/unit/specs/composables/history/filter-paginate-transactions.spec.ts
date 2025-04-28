@@ -171,6 +171,8 @@ describe('composables::history/filter-paginate', () => {
         query,
       });
 
+      await nextTick();
+
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
       expect(get(route).query).toEqual(query);
@@ -221,6 +223,8 @@ describe('composables::history/filter-paginate', () => {
       await router.push({
         query,
       });
+
+      await nextTick();
 
       expect(get(isLoading)).toBe(true);
       await flushPromises();

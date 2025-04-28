@@ -212,7 +212,6 @@ const {
     return {};
   }),
   extraParams: computed(() => ({
-    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
     customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
     eventIdentifiers: get(eventIdentifiers),
     excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
@@ -235,6 +234,9 @@ const {
     else
       set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
   },
+  queryParamsOnly: computed(() => ({
+    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
+  })),
   requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
     const params: Writeable<Partial<HistoryEventRequestPayload>> = {
       counterparties: get(protocols),

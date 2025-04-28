@@ -154,6 +154,7 @@ describe('composables::history/filter-paginate', () => {
       await router.push({
         query,
       });
+      await nextTick();
 
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
