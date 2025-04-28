@@ -143,6 +143,8 @@ describe('composables::assets/filter-paginate', () => {
         query,
       });
 
+      await nextTick();
+
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
       expect(route.query).toEqual(query);
