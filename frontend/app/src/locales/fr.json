@@ -3503,7 +3503,6 @@
       },
       "form": {
         "address": {
-          "label": "Adresse",
           "validation": {
             "valid": "L'adresse est invalide, remplissez-la avec une adresse valide"
           }

@@ -283,6 +283,7 @@ defineExpose({
     <EvmLocation
       v-model:location-label="states.locationLabel"
       v-model:address="states.address"
+      :location="states.location"
       :error-messages="{
         locationLabel: toMessages(v$.locationLabel),
         address: toMessages(v$.address),

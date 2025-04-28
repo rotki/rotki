@@ -122,8 +122,8 @@ describe('forms/EvmEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
-    const locationInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] .input-value');
-    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
+    const locationInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] input');
+    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
 
     expect(txHashInput.element.value).toBe('');
@@ -138,8 +138,8 @@ describe('forms/EvmEventForm.vue', () => {
     await wrapper.setProps({ data: { group, nextSequenceId: '10', type: 'group-add' } });
 
     const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] .input-value');
-    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] input');
+    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] input');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const noteTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');
@@ -158,8 +158,8 @@ describe('forms/EvmEventForm.vue', () => {
     await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
 
     const txHashInput = wrapper.find<HTMLInputElement>('[data-cy=tx-hash] input');
-    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] .input-value');
-    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] .input-value');
+    const locationLabelInput = wrapper.find<HTMLInputElement>('[data-cy=location-label] input');
+    const addressInput = wrapper.find<HTMLInputElement>('[data-cy=address] input');
     const amountInput = wrapper.find<HTMLInputElement>('[data-cy=amount] input');
     const sequenceIndexInput = wrapper.find<HTMLInputElement>('[data-cy=sequence-index] input');
     const notesTextArea = wrapper.find<HTMLTextAreaElement>('[data-cy=notes] textarea:not([aria-hidden="true"])');

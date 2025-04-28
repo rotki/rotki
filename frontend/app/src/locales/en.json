@@ -4372,8 +4372,10 @@
         "confirmation_message": "Are you sure you want to export the list of events with the selected filters applied?"
       },
       "form": {
+        "account_address": {
+          "label": "Account Address"
+        },
         "address": {
-          "label": "Address",
           "validation": {
             "valid": "The address is invalid, fill it with valid address"
           }
@@ -4398,6 +4400,9 @@
           "validation": {
             "non_empty": "The block number field cannot be empty."
           }
+        },
+        "contract_address": {
+          "label": "Contract Address"
         },
         "counterparty": {
           "validation": {
