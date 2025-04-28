@@ -1259,6 +1259,69 @@ def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_arbitrum_deposit_eth_gatewayv3(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:
+    """Test that deposit ETH in Aave in Arbitrum gets decoded properly when using gateway v3"""
+    tx_hash = deserialize_evm_tx_hash('0xc951183a146d91b996d36632fc8dbe994378da8af88d3c63631a14fcf2f16ca4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1745789183000)),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := FVal('0.00000215106')),
+            location_label=(user := arbitrum_one_accounts[0]),
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'),  # weth  # noqa: E501
+            amount=ZERO,
+            location_label=user,
+            notes='Enable WETH as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=(weth_gateway := string_to_evm_address('0x5283BEcEd7ADF6D003225C13896E536f2D4264FF')),  # noqa: E501
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=(amount := FVal('1.59584956103024626')),
+            location_label=user,
+            notes=f'Deposit {amount} WETH into AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=weth_gateway,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=10,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:42161/erc20:0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8'),  # aArbWETH  # noqa: E501
+            amount=FVal(amount),
+            location_label=user,
+            notes=f'Receive {amount} aArbWETH from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2013b74bdbd2Adf3eBF39E5112a9f794144Aeb15']])
 def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x301885bdc8998d0e6d5c0064b3b92f5ee34f81ebbd14ca2b796579981ff8df31')  # noqa: E501
