@@ -3082,7 +3082,7 @@
         }
       },
       "export": {
-        "confirmation_message": "¿Estás seguro de que deseas exportar este documento con los filtros seleccionados aplicados?"
+        "confirmation_message": "¿Estás seguro de que deseas exportar la lista de eventos con los filtros seleccionados aplicados?"
       },
       "form": {
         "amount": {

@@ -4369,7 +4369,7 @@
         }
       },
       "export": {
-        "confirmation_message": "Are you sure you want to export this document with the selected filters applied?"
+        "confirmation_message": "Are you sure you want to export the list of events with the selected filters applied?"
       },
       "form": {
         "address": {
