@@ -3499,7 +3499,7 @@
         }
       },
       "export": {
-        "confirmation_message": "Êtes-vous sûr de vouloir exporter ce document avec les filtres sélectionnés appliqués?"
+        "confirmation_message": "Êtes-vous sûr de vouloir exporter la liste des événements avec les filtres sélectionnés appliqués?"
       },
       "form": {
         "address": {

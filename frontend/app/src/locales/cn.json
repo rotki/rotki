@@ -3224,7 +3224,7 @@
         }
       },
       "export": {
-        "confirmation_message": "您确定要导出此文档并应用所选的过滤器吗？"
+        "confirmation_message": "您确定要导出已应用所选筛选器的事件列表吗？"
       },
       "form": {
         "amount": {
