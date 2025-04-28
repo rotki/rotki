@@ -36,21 +36,16 @@ import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { RouterAccountsSchema } from '@/types/route';
-import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { toEvmChainAndTxHash } from '@/utils/history';
 import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
 import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { not } from '@vueuse/math';
 import { flatten, isEqual } from 'es-toolkit';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
@@ -118,31 +113,16 @@ const currentAction = ref<'decode' | 'query'>('query');
 const addTransactionModelValue = ref<AddTransactionHashPayload>();
 const repullingTransactionModelValue = ref<RepullingTransactionPayload>();
 
-const { useIsTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
 const { decodingStatus } = storeToRefs(useHistoryStore());
 const { getAccountByAddress } = useBlockchainAccountsStore();
-const { isAllFinished: isQueryingTxsFinished } = toRefs(useTxQueryStatusStore());
-const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
-const { isLoading: isSectionLoading } = useStatusStore();
-
 const { fetchHistoryEvents } = useHistoryEvents();
-
 const { refreshTransactions } = useHistoryTransactions();
 const { fetchUndecodedTransactionsStatus, pullAndRedecodeTransactions, redecodeTransactions } = useHistoryTransactionDecoding();
+const { eventTaskLoading, processing, refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
 const historyEventMappings = useHistoryEventMappings();
-
-const sectionLoading = isSectionLoading(Section.HISTORY);
-const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
-const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
-const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
-const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
-
-const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
-const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
-const shouldFetchEventsRegularly = logicOr(querying, refreshing);
-const processing = logicOr(isTransactionsLoading, querying, refreshing);
+useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
 
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
@@ -323,10 +303,6 @@ function showForm(payload: ShowEventHistoryForm): void {
   }
 }
 
-const { isActive, pause, resume } = useIntervalFn(() => {
-  startPromise(fetchDataAndLocations());
-}, 20000);
-
 function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>): void {
   router.push({
     path: '/settings/accounting',
@@ -417,14 +393,6 @@ watch(eventTaskLoading, async (isLoading, wasLoading) => {
     await fetchDataAndLocations();
 });
 
-watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
-  const active = get(isActive);
-  if (shouldFetchEventsRegularly && !active)
-    resume();
-  else if (!shouldFetchEventsRegularly && active)
-    pause();
-});
-
 watch([filters, usedAccounts], ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
   const filterChanged = !isEqual(filters, oldFilters);
   const accountsChanged = !isEqual(usedAccounts, oldAccounts);
@@ -445,10 +413,6 @@ watch([filters, usedAccounts], ([filters, usedAccounts], [oldFilters, oldAccount
 
 onMounted(async () => {
   await refresh();
-});
-
-onUnmounted(() => {
-  pause();
 });
 </script>
 
