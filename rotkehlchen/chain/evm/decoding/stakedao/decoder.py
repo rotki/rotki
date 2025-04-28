@@ -149,6 +149,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             amount=deposited_raw_amount,
             asset=(received_asset := self.base.get_or_create_evm_token(context.tx_log.address)),
         )
+        out_event = None
         for event in context.decoded_events:
             if (
                     # we compare raw amounts and not the received amount because
@@ -161,6 +162,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                         asset=(deposited_asset := event.asset.resolve_to_crypto_asset()),
                     ) == deposited_raw_amount
             ):
+                out_event = event
                 event.counterparty = CPT_STAKEDAO
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
@@ -176,6 +178,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             from_event_subtype=HistoryEventSubType.NONE,
             to_event_type=HistoryEventType.RECEIVE,
             to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            paired_events_data=([out_event], True),
             amount=received_amount,
             asset=received_asset,
             to_notes=f'Receive {received_amount} {received_asset.symbol} after depositing in StakeDAO',  # noqa: E501

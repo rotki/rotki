@@ -213,7 +213,7 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         address=None,
     ), EvmEvent(
         tx_hash=evmhash,
-        sequence_index=800,
+        sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
@@ -226,7 +226,7 @@ def test_deposit(ethereum_inquirer, ethereum_accounts, stakedao_gauges):
         address=string_to_evm_address('0x3BC2512fAa5074fFdA24DCb4994e264Cb8C64BB8'),
     ), EvmEvent(
         tx_hash=evmhash,
-        sequence_index=811,
+        sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.RECEIVE,
@@ -338,7 +338,7 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
-        sequence_index=9,
+        sequence_index=1,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
         event_type=HistoryEventType.DEPOSIT,
@@ -351,7 +351,7 @@ def test_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts, stakedao_gaug
         address=string_to_evm_address('0xfc072ead21DdA7260008aa4165907Bc27cC59329'),
     ), EvmEvent(
         tx_hash=evmhash,
-        sequence_index=15,
+        sequence_index=2,
         timestamp=timestamp,
         location=Location.ARBITRUM_ONE,
         event_type=HistoryEventType.RECEIVE,
