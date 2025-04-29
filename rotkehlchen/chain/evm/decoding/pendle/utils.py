@@ -84,7 +84,7 @@ def query_pendle_yield_tokens(evm_inquirer: 'EvmNodeInquirer') -> None:
     """Queries all Pendle yield tokens(LP, SY, PT, YT) and saves them to allow price queries."""
     all_tokens: set[ChecksumEvmAddress] = set()
     try:
-        all_tokens.update(deserialize_evm_address(entry['address']) for entry in request_get_dict(f'https://api-v2.pendle.finance/core/v3/{evm_inquirer.chain_id.serialize()}/assets/all'))
+        all_tokens.update(deserialize_evm_address(entry['address']) for entry in request_get_dict(f'https://api-v2.pendle.finance/core/v3/{evm_inquirer.chain_id.serialize()}/assets/all')['assets'])
     except (RemoteError, UnableToDecryptRemoteData, DeserializationError, IndexError, KeyError) as e:  # noqa: E501
         msg = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!r}'
         log.error(f'Unable to fetch pendle data for {evm_inquirer.chain_name} due to {msg}')

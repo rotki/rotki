@@ -18,7 +18,7 @@ from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
     EthStakingEventFilterQuery,
     EthWithdrawalFilterQuery,
-    EvmEventFilterQuery,
+    HistoryEventFilterQuery,
 )
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
@@ -372,7 +372,7 @@ class DBEth2:
             withdrawals_filter_query: EthWithdrawalFilterQuery,
             exits_filter_query: EthWithdrawalFilterQuery,
             blocks_execution_filter_query: EthStakingEventFilterQuery,
-            mev_execution_filter_query: EvmEventFilterQuery,
+            mev_execution_filter_query: HistoryEventFilterQuery,
             to_filter_indices: set[int] | None,
     ) -> tuple[dict[int, FVal], dict[int, FVal], dict[int, FVal], dict[int, FVal]]:
         """Query withdrawals, exits, EL rewards amounts for the given filter.
