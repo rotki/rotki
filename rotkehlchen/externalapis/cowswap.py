@@ -92,7 +92,7 @@ class CowswapAPI:
                 raw_fee_amount = int(data['executedFeeAmount'])
                 order_type = data['class']
             else:
-                raw_fee_amount = int(data.get('executedSurplusFee', 0))
+                raw_fee_amount = int(data.get('executedSurplusFee', data.get('executedFee', 0)))
                 metadata = json.loads(data['fullAppData'])['metadata']
                 order_type = metadata['orderClass']['orderClass'] if 'orderClass' in metadata else 'limit'  # noqa: E501
         except (KeyError, json.decoder.JSONDecodeError, ValueError, DeserializationError) as e:
