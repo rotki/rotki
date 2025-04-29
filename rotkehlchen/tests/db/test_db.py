@@ -65,7 +65,6 @@ from rotkehlchen.db.settings import (
     DEFAULT_SSF_GRAPH_MULTIPLIER,
     DEFAULT_TREAT_ETH2_AS_ETH,
     DEFAULT_UI_FLOATING_PRECISION,
-    DEFAULT_USE_UNIFIED_ETHERSCAN_API,
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
@@ -522,7 +521,6 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'ask_user_upon_size_discrepancy': DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
         'auto_detect_tokens': DEFAULT_AUTO_DETECT_TOKENS,
         'csv_export_delimiter': DEFAULT_CSV_EXPORT_DELIMITER,
-        'use_unified_etherscan_api': DEFAULT_USE_UNIFIED_ETHERSCAN_API,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

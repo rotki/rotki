@@ -69,7 +69,6 @@ DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 DEFAULT_AUTO_DETECT_TOKENS = True
 DEFAULT_CSV_EXPORT_DELIMITER = ','
-DEFAULT_USE_UNIFIED_ETHERSCAN_API = False
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -95,7 +94,6 @@ BOOLEAN_KEYS = (
     'auto_create_calendar_reminders',
     'ask_user_upon_size_discrepancy',
     'auto_detect_tokens',
-    'use_unified_etherscan_api',
 )
 INTEGER_KEYS = (
     'version',
@@ -225,7 +223,6 @@ class DBSettings:
     ask_user_upon_size_discrepancy: bool = DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY
     auto_detect_tokens: bool = DEFAULT_AUTO_DETECT_TOKENS
     csv_export_delimiter: str = DEFAULT_CSV_EXPORT_DELIMITER
-    use_unified_etherscan_api: bool = DEFAULT_USE_UNIFIED_ETHERSCAN_API
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -286,7 +283,6 @@ class ModifiableDBSettings(NamedTuple):
     ask_user_upon_size_discrepancy: bool | None = None
     auto_detect_tokens: bool | None = None
     csv_export_delimiter: str | None = None
-    use_unified_etherscan_api: bool | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

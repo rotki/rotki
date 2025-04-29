@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
-from rotkehlchen.types import ExternalService, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -19,6 +19,4 @@ class ScrollEtherscan(L2WithL1FeesEtherscan):
             database=database,
             msg_aggregator=msg_aggregator,
             chain=SupportedBlockchain.SCROLL,
-            base_url='scrollscan.com',
-            service=ExternalService.SCROLL_ETHERSCAN,
         )

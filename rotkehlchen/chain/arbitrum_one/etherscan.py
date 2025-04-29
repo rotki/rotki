@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.externalapis.etherscan import Etherscan
-from rotkehlchen.types import ExternalService, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -19,6 +19,4 @@ class ArbitrumOneEtherscan(Etherscan):
             database=database,
             msg_aggregator=msg_aggregator,
             chain=SupportedBlockchain.ARBITRUM_ONE,
-            base_url='arbiscan.io',
-            service=ExternalService.ARBITRUM_ONE_ETHERSCAN,
         )
