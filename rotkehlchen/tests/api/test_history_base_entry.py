@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -62,7 +63,9 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.types import EVMTxHash
 
 
 def assert_editing_works(
@@ -147,14 +150,50 @@ def assert_editing_works(
     assert_event_got_edited(entry)
 
 
+def add_test_evm_tx(database: 'DBHandler', tx_hash: 'EVMTxHash') -> None:
+    """Add a blank tx so evm events can be added/edited without the tx_hash validation failing."""
+    with database.conn.write_ctx() as write_cursor:
+        DBEvmTx(database).add_evm_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=Timestamp(0),
+                block_number=0,
+                from_address=ZERO_ADDRESS,
+                to_address=ZERO_ADDRESS,
+                value=0,
+                gas=0,
+                gas_price=0,
+                gas_used=0,
+                input_data=b'',
+                nonce=0,
+            )],
+            relevant_address=None,
+        )
+
+
 @pytest.mark.parametrize('have_decoders', [True])  # so we can run redecode after add/edit/delete
 @pytest.mark.parametrize('ethereum_accounts', [['0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990']])
 def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = DBHistoryEvents(rotki.data.db)
     entries = predefined_events_to_insert()
-    for group in (grouped_entries := maybe_group_entries(entries=entries.copy())):
+    grouped_entries = maybe_group_entries(entries=entries.copy())
+    # Check that adding evm events fails when the tx_hash is not present.
+    assert_error_response(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entries_to_input_dict(grouped_entries[0], include_identifier=False),
+        ),
+        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    for group in grouped_entries:
         json_data = entries_to_input_dict(group, include_identifier=False)
+        if isinstance(event := group[0], EvmEvent):
+            add_test_evm_tx(database=rotki.data.db, tx_hash=event.tx_hash)
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=json_data,
@@ -213,6 +252,18 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='Failed to add event to the DB. It already exists',
         status_code=HTTPStatus.CONFLICT,
     )
+    # test setting tx_hash to a hash not in the db fails.
+    original_tx_hash = entry.tx_hash
+    entry.tx_hash = deserialize_evm_tx_hash('0x51a331dc069f6f7ed6e02e259ff31131799e1fad632c72d15b9d138ec43e2a87')  # noqa: E501
+    assert_error_response(
+        response=requests.patch(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entries_to_input_dict(entries=[entry], include_identifier=True),
+        ),
+        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    entry.tx_hash = original_tx_hash
     assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=True)  # evm event
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
     assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
@@ -1033,7 +1084,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         },
         'user_notes': {'spend': ['Example note', '']},
         'sequence_index': 0,
-        'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'tx_hash': (tx_hash_str := '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f'),  # noqa: E501
         'counterparty': 'some counterparty',
         'address': '0xA090e606E30bD747d4E6245a1517EbE430F0057e',
     }, {
@@ -1049,11 +1100,15 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             'receive': ['0x6e15887E2CEC81434C16D587709f64603b39b545'],
         },
         'sequence_index': 123,
-        'tx_hash': '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
+        'tx_hash': tx_hash_str,
         'counterparty': 'some counterparty',
         'product': 'pool',
         'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
     }]
+    add_test_evm_tx(
+        database=rotki.data.db,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(tx_hash_str)),
+    )
     for entry in entries:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -1099,6 +1154,19 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         status_code=HTTPStatus.CONFLICT,
     )
 
+    # Try setting tx_hash to a hash not in the db.
+    entry = entries[0].copy()
+    entry['tx_hash'] = '0x51a331dc069f6f7ed6e02e259ff31131799e1fad632c72d15b9d138ec43e2a87'
+    entry['identifiers'] = identifiers
+    assert_error_response(
+        response=requests.patch(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=entry,
+        ),
+        contained_in_msg='The provided transaction hash does not exist in the DB.',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
     # Edit the event identifier of the first entry, add a receive event, and remove a fee event.
     entry = entries[0].copy()
     entry['event_identifier'] = 'test_id'
@@ -1130,7 +1198,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             amount=FVal('0.16'),
             location_label=(location_label := '0x6e15887E2CEC81434C16D587709f64603b39b545'),
             notes='Example note',
-            tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f')),  # noqa: E501
+            tx_hash=tx_hash,
             counterparty=(counterparty := 'some counterparty'),
             address=(addr1 := string_to_evm_address('0xA090e606E30bD747d4E6245a1517EbE430F0057e')),
         ), EvmSwapEvent(
