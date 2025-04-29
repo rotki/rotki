@@ -684,7 +684,7 @@ class HistoryEventSchema(
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
             'event_identifiers': data['event_identifiers'],
-            'location_labels': data['location_labels'],
+            'location_labels': (location_labels := data['location_labels']),
             'assets': [data['asset']] if data['asset'] is not None else None,
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
@@ -694,7 +694,7 @@ class HistoryEventSchema(
         }
 
         filter_query: HistoryEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)
-        if should_query_evm_event:
+        if should_query_evm_event or location_labels is not None:  # use evm event filter since only evm events have the "address" column for counterparty checks  # noqa: E501
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
                 tx_hashes=data['tx_hashes'],

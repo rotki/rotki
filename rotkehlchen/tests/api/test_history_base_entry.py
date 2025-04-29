@@ -604,6 +604,45 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         'Try redecoding the event(s) or check the logs for more details.',
     ]
 
+    # check that address filter shows incoming transactions to the filtered address.
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_hash=deserialize_evm_tx_hash('0x9a76e51e6feb83690b4f0ecb257adbceb73b6f8b38d7d5c5d3f5e22fd10e3c71'),
+                sequence_index=1,
+                timestamp=TimestampMS(1639924590000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('2.5'),
+                location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+                address=(address := string_to_evm_address('0xA7C8F1e13eDC5FBfB768f55ECF2Fee5d4C5BF964')),  # noqa: E501,
+                notes=f'Send 2.5 ETH to {address}',
+            ), EvmEvent(
+                tx_hash=deserialize_evm_tx_hash('0x9a76e51e6feb83690b4f0ecb257adbceb73b6f8b38d7d5c5d3f5e22fd10e3c72'),
+                sequence_index=100,
+                timestamp=TimestampMS(1639924590000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('2.5'),
+                location_label=address,
+                notes='Receive 2.5 ETH from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+                address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
+            )],
+        )
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'location_labels': [address], 'group_by_event_ids': True, 'offset': 0, 'limit': 5, 'exclude_ignored_assets': False},  # noqa: E501
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 2
+    assert result['entries'][0]['entry']['user_notes'] == f'Send 2.5 ETH to {address}'
+    assert result['entries'][1]['entry']['user_notes'] == 'Receive 2.5 ETH from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # noqa: E501
+
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:

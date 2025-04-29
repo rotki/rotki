@@ -9,7 +9,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 from rotkehlchen.db.filtering import (
     EthStakingEventFilterQuery,
     EthWithdrawalFilterQuery,
-    EvmEventFilterQuery,
+    HistoryEventFilterQuery,
     WithdrawalTypesFilter,
 )
 from rotkehlchen.fval import FVal
@@ -62,7 +62,7 @@ def create_profit_filter_queries(
         to_ts: Timestamp,
         validator_indices: list[int] | None,
         tracked_addresses: Sequence[ChecksumEvmAddress],
-) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery, EvmEventFilterQuery]:  # noqa: E501
+) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery, HistoryEventFilterQuery]:  # noqa: E501
     """Create the Filter queries for withdrawal events and execution layer reward events"""
     withdrawals_filter_query = EthWithdrawalFilterQuery.make(
         from_ts=from_ts,
@@ -93,7 +93,7 @@ def create_profit_filter_queries(
     )
     # Unfortunately here at the moment we can't filter by validator index. But since it's
     # in the extra data we do it where this filter is used
-    mev_execution_filter_query = EvmEventFilterQuery.make(
+    mev_execution_filter_query = HistoryEventFilterQuery.make(
         from_ts=from_ts,
         to_ts=to_ts,
         event_types=[HistoryEventType.STAKING],

@@ -853,12 +853,8 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 operator='NOT IN',
             ))
         if location_labels is not None:
-            filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='location_label',
-                values=location_labels,
-                operator='IN',
-            ))
+            cls.match_location_label(filters=filters, labels=location_labels)
+
         if ignored_ids is not None:
             filters.append(
                 DBIgnoreValuesFilter(
@@ -920,6 +916,19 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
     def get_columns() -> str:
         """Returns all the fields/columns of this query. There is places where just using
         * does not work due to ambiguous fields. This method helps with that."""
+
+    @staticmethod
+    def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
+        """Add filters to match the given location labels.
+
+       Subclasses can override this method to provide additional filtering logic.
+       """
+        filters.append(DBMultiStringFilter(
+            and_op=True,
+            column='location_label',
+            values=labels,
+            operator='IN',
+        ))
 
 
 class HistoryEventFilterQuery(HistoryBaseEntryFilterQuery):
@@ -1032,6 +1041,27 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
     @staticmethod
     def get_columns() -> str:
         return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}'
+
+    @staticmethod
+    def match_location_label(filters: list[DBFilter], labels: list[str]) -> None:
+        """Check if labels match either location_label or address fields.
+
+        In EVM events, addresses can appear in both fields, so we need to check both.
+        """
+        filters.append(DBNestedFilter(
+            and_op=False,
+            filters=[DBMultiStringFilter(
+                and_op=True,
+                column='location_label',
+                values=labels,
+                operator='IN',
+            ), DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=labels,
+                operator='IN',
+            )],
+        ))
 
 
 class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
