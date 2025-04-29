@@ -167,7 +167,7 @@ def test_get_vault_balance(
     assert vault.get_balance() == expected_result
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])

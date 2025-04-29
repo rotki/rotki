@@ -420,7 +420,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
     assert price is not None
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
@@ -939,7 +939,7 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
         assert patched_gecko.call_args.kwargs['from_assets'] == [Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')]  # POL token  # noqa: E501
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
