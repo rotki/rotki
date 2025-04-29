@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.types import WeightedNode
     from rotkehlchen.db.dbhandler import DBHandler
 
-ETHERSCAN_API_URL: Final = 'https://api.etherscan.io/api'
+ETHERSCAN_API_URL: Final = 'https://api.etherscan.io/v2/api'
 
 
 def assert_btc_balances_result(

@@ -4,13 +4,11 @@ from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.modules.airdrops.decoder import ARBITRUM_ONE_AIRDROP
 from rotkehlchen.chain.arbitrum_one.modules.arbitrum_governor.constants import GOVERNOR_ADDRESSES
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ARB, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 

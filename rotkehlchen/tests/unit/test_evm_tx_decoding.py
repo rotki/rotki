@@ -310,7 +310,7 @@ def test_genesis_remove_address(
     assert len(genesis_tx) == 0, 'Genesis transaction should have been deleted'
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcBe21204C4b9F1810363D69773b74203376681a2']])
 def test_token_detection_after_decoding(
         database: 'DBHandler',

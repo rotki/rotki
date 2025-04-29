@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.ethereum import (
-    ANKR_NODE,
+    INFURA_ETH_NODE,
     get_decoded_events_of_transaction,
 )
 from rotkehlchen.types import deserialize_evm_tx_hash
@@ -55,7 +55,7 @@ def test_get_balances_module_not_activated(
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(ANKR_NODE,)])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_get_balances(
         rotkehlchen_api_server: 'APIServer',
         start_with_valid_premium: bool,
