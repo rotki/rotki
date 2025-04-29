@@ -17,7 +17,6 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0c5b7A89b3689d86Ed473caE4E7CB00381949861']])
-@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(ONE),)])  # noqa: E501
 def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
     """Data taken from
     https://arbiscan.io/tx/0xa230fc4d5e61db1d9be044215b00cb6ad1775b413a240ea23a98117153f6264e

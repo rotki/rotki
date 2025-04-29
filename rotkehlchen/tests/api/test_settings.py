@@ -689,41 +689,26 @@ def test_etherscan_unified_api_setting(
     request_count = 0
 
     def mock_request(url: str, params: dict[str, str], timeout: int) -> requests.Response:
-        if CachedSettings().get_settings().use_unified_etherscan_api is True:
-            assert url == 'https://api.etherscan.io/v2/api'
-            assert 'chainid' in params
-        else:
-            assert url in (
-                'https://api.etherscan.io/api',
-                'https://api.gnosisscan.io/api',
-            )
-
+        assert url == 'https://api.etherscan.io/v2/api'
+        assert 'chainid' in params
         nonlocal original_request, request_count
         request_count += 1
         return original_request(url=url, params=params, timeout=timeout)
 
-    for i in range(2):
-        if i == 1:  # Change the setting and then do the etherscan queries again
-            response = requests.put(
-                api_url_for(rotkehlchen_api_server, 'settingsresource'),
-                json={'settings': {'use_unified_etherscan_api': True}},
-            )
-            assert_proper_response(response)
+    request_count = 0
+    with patch.object(etherscan.session, 'get', wraps=mock_request):
+        assert etherscan.has_activity(
+            account=string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),
+        ) == HasChainActivity.TRANSACTIONS
+        assert request_count == 1  # confirm the asserts in mock_request were hit
 
-        request_count = 0
-        with patch.object(etherscan.session, 'get', wraps=mock_request):
-            assert etherscan.has_activity(
-                account=string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),
-            ) == HasChainActivity.TRANSACTIONS
-            assert request_count == 1  # confirm the asserts in mock_request were hit
-
-        # Check it works for an L2 chain as well (Gnosis)
-        request_count = 0
-        with patch.object(gnosisscan.session, 'get', wraps=mock_request):
-            assert gnosisscan.has_activity(
-                account=string_to_evm_address('0x95e62E8FF84ed8456fDc9739eE4A9597Bb6E4c1f'),
-            ) == HasChainActivity.TRANSACTIONS
-            assert request_count == 1  # confirm the asserts in mock_request were hit
+    # Check it works for an L2 chain as well (Gnosis)
+    request_count = 0
+    with patch.object(gnosisscan.session, 'get', wraps=mock_request):
+        assert gnosisscan.has_activity(
+            account=string_to_evm_address('0x95e62E8FF84ed8456fDc9739eE4A9597Bb6E4c1f'),
+        ) == HasChainActivity.TRANSACTIONS
+        assert request_count == 1  # confirm the asserts in mock_request were hit
 
 
 def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> None:
