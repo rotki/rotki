@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import type {
-  GroupEventData,
-  StandaloneEventData,
-} from '@/modules/history/management/forms/form-types';
+import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
+import { EVM_EVENTS, isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 import { HistoryEventEntryType } from '@rotki/common';
@@ -38,15 +36,14 @@ const isEvmGroupAdd = computed<boolean>(() => {
   if (data.type !== 'group-add') {
     return false;
   }
-  const type = data.group.entryType;
-  return type === HistoryEventEntryType.EVM_EVENT || type === HistoryEventEntryType.EVM_SWAP_EVENT;
+  return isEvmTypeEvent(data.group.entryType);
 });
 
-const historyEventEntryTypes = computed(() => {
+const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
   if (get(isEvmGroupAdd)) {
-    return [HistoryEventEntryType.EVM_SWAP_EVENT, HistoryEventEntryType.EVM_EVENT];
+    return [...EVM_EVENTS];
   }
-  return Object.values(HistoryEventEntryType).filter(value => value !== HistoryEventEntryType.EVM_SWAP_EVENT);
+  return Object.values(HistoryEventEntryType).filter(value => !isEvmTypeEvent(value));
 });
 
 const formComponents: Record<HistoryEventEntryType, Component> = {
