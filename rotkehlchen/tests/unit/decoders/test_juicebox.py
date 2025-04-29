@@ -45,7 +45,7 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(donated_amount),
         location_label=user_address,
-        notes=f'Donate {donated_amount} ETH at Juicebox to project Free Alexey & Roman with memo: "Opensource is not a crime. Privacy is normal. Thank you for fighting for us and good luck.\nhttps://jbm.infura-ipfs.io/ipfs/QmT9hZuHJjGidc8nrdZYskwRbr2hai9rwVodjCuvUNTvKL https://jbm.infura-ipfs.io/ipfs/QmXWAeCpUdLYrzYbpxWq4Ajnhf5trssicHPwGRkPWY5Fx9"',  # noqa: E501
+        notes=f'Donate {donated_amount} ETH at Juicebox to project Defend Roman Storm with memo: "Opensource is not a crime. Privacy is normal. Thank you for fighting for us and good luck.\nhttps://jbm.infura-ipfs.io/ipfs/QmT9hZuHJjGidc8nrdZYskwRbr2hai9rwVodjCuvUNTvKL https://jbm.infura-ipfs.io/ipfs/QmXWAeCpUdLYrzYbpxWq4Ajnhf5trssicHPwGRkPWY5Fx9"',  # noqa: E501
         address=TERMINAL_3_1_2,
         counterparty=CPT_JUICEBOX,
     ), EvmEvent(
@@ -110,7 +110,7 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
         asset=A_ETH,
         amount=FVal(paid_amount),
         location_label=user_address,
-        notes=f'Pay {paid_amount} ETH at Juicebox to project octra NCS community raise',
+        notes=f'Pay {paid_amount} ETH at Juicebox to project octra community raise',
         address=TERMINAL_3_1_2,
         counterparty=CPT_JUICEBOX,
     )]

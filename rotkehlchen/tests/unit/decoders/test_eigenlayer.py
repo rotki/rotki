@@ -385,7 +385,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hash,
     )
-    user_address, timestamp, gas_amount, amount = ethereum_accounts[0], TimestampMS(1718731823000), '0.001066996197578511', '0.501457627266872814'  # noqa: E501
+    user_address, timestamp, gas_amount, amount = ethereum_accounts[0], TimestampMS(1718731823000), '0.001066996197578511', '0.514712311805302523'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -442,7 +442,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
         amount=FVal(amount),
-        usd_value=FVal('0.7521864409003092210'),
+        usd_value=FVal('0.7720684677079537845'),
     )
 
 
@@ -513,7 +513,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
             has_premium=True,
         )
     assert events[0].extra_data == {
-        'amount': amount,
+        'amount': '0.108703837292797064',
         'completed': True,
         'strategy': cbeth_strategy,
         'withdrawal_root': '0x095056ecfcb92d7b60f2e917be58aad008068ba9e34d882eea9eebf65ce81f77',

@@ -11,7 +11,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import ChecksumEvmAddress, ExternalService, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import from_gwei, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -33,8 +33,6 @@ class EthereumEtherscan(Etherscan):
             database=database,
             msg_aggregator=msg_aggregator,
             chain=SupportedBlockchain.ETHEREUM,
-            base_url='etherscan.io',
-            service=ExternalService.ETHERSCAN,
         )
 
     def get_withdrawals(
