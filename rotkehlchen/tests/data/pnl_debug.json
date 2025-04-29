@@ -233,8 +233,7 @@
     "auto_create_calendar_reminders": true,
     "ask_user_upon_size_discrepancy": true,
     "auto_detect_tokens": true,
-    "csv_export_delimiter": ",",
-    "use_unified_etherscan_api": false
+    "csv_export_delimiter": ","
   },
   "ignored_events_ids": {
     "history_event": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
