@@ -8,9 +8,8 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
 import { useLocations } from '@/composables/locations';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
-import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
+import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -19,12 +18,6 @@ import { nextTick } from 'vue';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
-}));
-
-vi.mock('@/store/balances/prices', () => ({
-  useBalancePricesStore: vi.fn().mockReturnValue({
-    getHistoricPrice: vi.fn(),
-  }),
 }));
 
 vi.mock('@/composables/history/events', () => ({
@@ -84,7 +77,6 @@ describe('forms/EvmEventForm.vue', () => {
     addHistoryEventMock = vi.fn();
     editHistoryEventMock = vi.fn();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
-    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
     (useLocations as Mock).mockReturnValue({
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'ethereum',

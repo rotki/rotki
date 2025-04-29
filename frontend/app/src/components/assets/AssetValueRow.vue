@@ -8,7 +8,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalances } from '@/composables/balances';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { useLatestPrices } from '@/composables/price-manager/latest';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -34,7 +34,7 @@ const refreshingPrices = isLoading(Section.PRICES);
 
 const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
 
-const { isManualAssetPrice } = useBalancePricesStore();
+const { isManualAssetPrice, useExchangeRate } = usePriceUtils();
 const isManualPrice = isManualAssetPrice(identifier);
 
 const { t } = useI18n();
@@ -46,15 +46,13 @@ const { show } = useConfirmStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { exchangeRate } = useBalancePricesStore();
-
 function setPriceForm() {
   const toAsset = get(currencySymbol);
   set(customPrice, {
     fromAsset: get(identifier),
     price: get(info)
       .usdPrice
-      .multipliedBy(get(exchangeRate(toAsset)) ?? One)
+      .multipliedBy(get(useExchangeRate(toAsset)) ?? One)
       .toFixed(),
     toAsset,
   });

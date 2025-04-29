@@ -5,8 +5,8 @@ import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { mergeAssociatedAssets, sumAssetBalances } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
 import { assetSum } from '@/utils/calculation';
@@ -20,7 +20,7 @@ interface UseExchangeDataReturn {
 export function useExchangeData(): UseExchangeDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
-  const { assetPrice } = useBalancePricesStore();
+  const { assetPrice } = usePriceUtils();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 

@@ -4,8 +4,8 @@ import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { aggregateTotals } from '@/utils/blockchain/accounts';
 
 interface UseBlockchainAggregatedBalancesReturn {
@@ -15,7 +15,7 @@ interface UseBlockchainAggregatedBalancesReturn {
 export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { assetAssociationMap } = useAssetInfoRetrieval();
-  const { assetPrice } = useBalancePricesStore();
+  const { assetPrice } = usePriceUtils();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const { balances } = storeToRefs(useBalancesStore());
 

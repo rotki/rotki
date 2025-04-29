@@ -3,7 +3,7 @@ import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/type
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';
 
@@ -14,7 +14,7 @@ interface UseManualBalancePaginationReturn {
 
 export function useManualBalancePagination(): UseManualBalancePaginationReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { assetPrice, exchangeRate, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+  const { assetPrice, isAssetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
   const resolvers: {
@@ -35,7 +35,7 @@ export function useManualBalancePagination(): UseManualBalancePaginationReturn {
       if (inCurrentCurrency)
         return price;
 
-      const currentExchangeRate = get(exchangeRate(get(currencySymbol)));
+      const currentExchangeRate = get(useExchangeRate(get(currencySymbol)));
 
       if (!currentExchangeRate)
         return price;

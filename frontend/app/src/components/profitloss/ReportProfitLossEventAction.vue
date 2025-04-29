@@ -5,7 +5,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { convertFromTimestamp } from '@/utils/date';
@@ -21,7 +21,7 @@ const props = defineProps<{
 const { currency, event } = toRefs(props);
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
-const { getHistoricPrice } = useBalancePricesStore();
+const { getHistoricPrice } = usePriceTaskManager();
 const { addHistoricalPrice } = useAssetPricesApi();
 
 const fetchingPrice = ref<boolean>(false);

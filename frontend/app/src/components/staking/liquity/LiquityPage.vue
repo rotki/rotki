@@ -5,7 +5,7 @@ import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDe
 import LiquityStakingPagePlaceholder from '@/components/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useStatusStore } from '@/store/status';
@@ -19,7 +19,7 @@ const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { shouldShowLoadingScreen } = useStatusStore();
 const moduleEnabled = isModuleEnabled(modules[0]);
 const premium = usePremium();
-const { fetchPrices } = useBalancePricesStore();
+const { fetchPrices } = usePriceTaskManager();
 
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const LQTY_ID = 'eip155:1/erc20:0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D';

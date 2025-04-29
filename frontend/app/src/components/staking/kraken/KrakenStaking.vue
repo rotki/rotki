@@ -4,7 +4,7 @@ import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
@@ -18,7 +18,7 @@ defineProps<{
 const { t } = useI18n();
 
 const { events } = toRefs(useKrakenStakingStore());
-const { assetPrice } = useBalancePricesStore();
+const { assetPrice } = usePriceUtils();
 
 const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');

@@ -6,8 +6,8 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -69,8 +69,8 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
 
 useRememberTableSorting<LocationDataSnapshot>(TableId.EDIT_LOCATION_DATA_SNAPSHOT, sort, tableHeaders);
 
-const { exchangeRate } = useBalancePricesStore();
-const fiatExchangeRate = computed<BigNumber>(() => get(exchangeRate(get(currencySymbol))) ?? One);
+const { useExchangeRate } = usePriceUtils();
+const fiatExchangeRate = computed<BigNumber>(() => get(useExchangeRate(get(currencySymbol))) ?? One);
 
 const data = computed<IndexedLocationDataSnapshot[]>(() =>
   props.modelValue.map((item, index) => ({ ...item, index })).filter(item => item.location !== 'total'),

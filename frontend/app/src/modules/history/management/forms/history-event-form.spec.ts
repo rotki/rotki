@@ -1,19 +1,11 @@
 import type { EvmHistoryEvent } from '@/types/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { setupDayjs } from '@/utils/date';
-import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
+import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@/store/balances/prices', () => ({
-  useBalancePricesStore: vi.fn().mockReturnValue({
-    fetchHistoricPrices: vi.fn(),
-    getHistoricPrice: vi.fn(),
-  }),
-}));
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
@@ -52,7 +44,6 @@ describe('component/HistoryEventForm.vue', () => {
 
   beforeAll(() => {
     setupDayjs();
-    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
     vi.useFakeTimers();
   });
 

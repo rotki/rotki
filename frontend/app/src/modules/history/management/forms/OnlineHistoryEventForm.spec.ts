@@ -6,7 +6,7 @@ import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useLocations } from '@/composables/locations';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
@@ -15,8 +15,8 @@ import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { nextTick } from 'vue';
 
-vi.mock('@/store/balances/prices', () => ({
-  useBalancePricesStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/prices/use-price-task-manager', () => ({
+  usePriceTaskManager: vi.fn().mockReturnValue({
     getHistoricPrice: vi.fn(),
   }),
 }));
@@ -73,7 +73,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     addHistoryEventMock = vi.fn();
     editHistoryEventMock = vi.fn();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
-    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+    vi.mocked(usePriceTaskManager().getHistoricPrice).mockResolvedValue(One);
     (useHistoryEvents as Mock).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
       editHistoryEvent: editHistoryEventMock,

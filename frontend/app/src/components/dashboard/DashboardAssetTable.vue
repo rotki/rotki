@@ -12,9 +12,9 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -55,7 +55,7 @@ const pagination = ref({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { exchangeRate } = useBalancePricesStore();
+const { useExchangeRate } = usePriceUtils();
 const { assetInfo, assetName, assetSymbol } = useAssetInfoRetrieval();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { missingCustomAssets } = useManualBalanceData();
@@ -74,7 +74,7 @@ function isAssetMissing(item: AssetBalanceWithPrice) {
 const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
-  return get(totalInUsd).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
+  return get(totalInUsd).multipliedBy(get(useExchangeRate(mainCurrency)) ?? One);
 });
 
 function percentageOfTotalNetValue(value: BigNumber) {
