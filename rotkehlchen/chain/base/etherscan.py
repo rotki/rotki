@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ExternalService, SupportedBlockchain
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -24,6 +24,4 @@ class BaseEtherscan(L2WithL1FeesEtherscan):
             database=database,
             msg_aggregator=msg_aggregator,
             chain=SupportedBlockchain.BASE,
-            base_url='basescan.org',
-            service=ExternalService.BASE_ETHERSCAN,
         )

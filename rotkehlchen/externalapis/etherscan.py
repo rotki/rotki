@@ -79,16 +79,7 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
     return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
 
 
-ROTKI_INCLUDED_KEYS: Final = {
-    SupportedBlockchain.ETHEREUM: 'W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR',
-    SupportedBlockchain.OPTIMISM: 'KQ54A7R984F1SU3HP1K7CE4JW5WVGCPCSM',
-    SupportedBlockchain.ARBITRUM_ONE: 'CED6CY1RYKISNURT4KGYBS867KC8642TXJ',
-    SupportedBlockchain.BASE: '2VR29FVKEJ1YUIT3AAJB8TQ73HDHQYWYZK',
-    SupportedBlockchain.POLYGON_POS: 'BGT3NM5T4UWNETFWITQWZQWFGZMF8MFAZF',
-    SupportedBlockchain.SCROLL: '5EBTU13S94SNPR77TUXMD8944ADFD5ZY15',
-    SupportedBlockchain.GNOSIS: 'SPF6XYXSKY7Y2IK9KHVAA25DQW35ZRQC39',
-    SupportedBlockchain.BINANCE_SC: 'IWEN68QT1H18TS9N39VRVSV9XGX37UN7NN',
-}
+ROTKI_PACKAGED_KEY: Final = 'W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR'
 
 
 class Etherscan(ExternalServiceWithApiKey, ABC):
@@ -98,55 +89,35 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
             chain: SUPPORTED_EVM_CHAINS_TYPE,
-            base_url: str,
-            service: Literal[
-                ExternalService.ETHERSCAN,
-                ExternalService.OPTIMISM_ETHERSCAN,
-                ExternalService.POLYGON_POS_ETHERSCAN,
-                ExternalService.ARBITRUM_ONE_ETHERSCAN,
-                ExternalService.BASE_ETHERSCAN,
-                ExternalService.GNOSIS_ETHERSCAN,
-                ExternalService.SCROLL_ETHERSCAN,
-                ExternalService.BINANCE_SC_ETHERSCAN,
-            ],
     ) -> None:
-        super().__init__(database=database, service_name=service)
+        super().__init__(database=database, service_name=ExternalService.ETHERSCAN)
         self.msg_aggregator = msg_aggregator
-        self.original_service = service  # Used to reset service_name when switching from unified api back to legacy api  # noqa: E501
         self.chain = chain
-        self.legacy_api_domain = f'api.{base_url}' if chain in (
-            SupportedBlockchain.ETHEREUM,
-            SupportedBlockchain.POLYGON_POS,
-            SupportedBlockchain.ARBITRUM_ONE,
-            SupportedBlockchain.BASE,
-            SupportedBlockchain.GNOSIS,
-            SupportedBlockchain.SCROLL,
-            SupportedBlockchain.BINANCE_SC,
-        ) else f'api-{base_url}'
-        self.api_url: str = ''
-        self.base_query_args: dict[str, str] = {}
-        self.toggle_base_attributes()
         self.session = create_session()
         self.warning_given = False
         set_user_agent(self.session)
         self.timestamp_to_block_cache: LRUCacheWithRemove[Timestamp, int] = LRUCacheWithRemove(maxsize=32)  # noqa: E501
         # set per-chain earliest timestamps that can be turned to blocks. Never returns block 0
-        if service == ExternalService.ETHERSCAN:
-            self.earliest_ts = 1438269989
-        elif service == ExternalService.OPTIMISM_ETHERSCAN:
-            self.earliest_ts = 1636665399
-        elif service == ExternalService.ARBITRUM_ONE_ETHERSCAN:
-            self.earliest_ts = 1622243344
-        elif service == ExternalService.BASE_ETHERSCAN:
-            self.earliest_ts = 1686789347
-        elif service == ExternalService.GNOSIS_ETHERSCAN:
-            self.earliest_ts = 1539024185
-        elif service == ExternalService.SCROLL_ETHERSCAN:
-            self.earliest_ts = SCROLL_GENESIS
-        elif service == ExternalService.BINANCE_SC_ETHERSCAN:
-            self.earliest_ts = BINANCE_SC_GENESIS
-        else:  # Polygon POS
-            self.earliest_ts = 1590856200
+        match self.chain:
+            case SupportedBlockchain.ETHEREUM:
+                self.earliest_ts = 1438269989
+            case SupportedBlockchain.OPTIMISM:
+                self.earliest_ts = 1636665399
+            case SupportedBlockchain.ARBITRUM_ONE:
+                self.earliest_ts = 1622243344
+            case SupportedBlockchain.BASE:
+                self.earliest_ts = 1686789347
+            case SupportedBlockchain.GNOSIS:
+                self.earliest_ts = 1539024185
+            case SupportedBlockchain.SCROLL:
+                self.earliest_ts = SCROLL_GENESIS
+            case SupportedBlockchain.BINANCE_SC:
+                self.earliest_ts = BINANCE_SC_GENESIS
+            case SupportedBlockchain.POLYGON_POS:
+                self.earliest_ts = 1590856200
+
+        self.api_url = 'https://api.etherscan.io/v2/api'
+        self.base_query_args = {'chainid': str(self.chain.to_chain_id().serialize())}
 
     @overload
     def _query(
@@ -260,11 +231,10 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 )
                 self.warning_given = True
 
-            api_key = ApiKey(ROTKI_INCLUDED_KEYS[self.chain])
+            api_key = ApiKey(ROTKI_PACKAGED_KEY)
             log.debug(f'Using default etherscan key for {self.chain}')
 
-        params = {'module': module, 'action': action, 'apikey': api_key}
-        params.update(self.base_query_args)
+        params = {'module': module, 'action': action, 'apikey': api_key} | self.base_query_args
         if options:
             params.update(options)
 
@@ -405,19 +375,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         last_block = result[-1]['blockNumber']
         options['startBlock'] = last_block
         return options
-
-    def toggle_base_attributes(self) -> None:
-        """Toggle url, arguments, and service name depending on the unified api setting."""
-        if CachedSettings().get_settings().use_unified_etherscan_api:
-            self.service_name = ExternalService.ETHERSCAN
-            self.api_url = 'https://api.etherscan.io/v2/api'
-            self.base_query_args = {'chainid': str(self.chain.to_chain_id().serialize())}
-        else:
-            self.service_name = self.original_service
-            self.api_url = f'https://{self.legacy_api_domain}/api'
-            self.base_query_args = {}
-
-        self.last_ts = Timestamp(0)  # force api key reload
 
     @overload
     def get_transactions(
