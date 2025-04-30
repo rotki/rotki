@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
 
 
@@ -286,7 +287,11 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
 
         return serialized_data
 
-    def serialize_for_csv(self, fiat_value: FVal) -> dict[str, Any]:
+    def serialize_for_csv(
+            self,
+            fiat_value: FVal,
+            settings: 'DBSettings',
+    ) -> dict[str, Any]:
         """Serialize event data for CSV export.
 
         This method serializes event data, adding 'amount' and 'fiat_value'
@@ -295,6 +300,11 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         """
         new_dict: dict[str, Any] = {}
         entry = self.serialize()
+        entry['timestamp'] = timestamp_to_date(
+            ts_ms_to_sec(entry['timestamp']),
+            formatstr=settings.date_display_format,
+            treat_as_local=settings.display_date_in_localtime,
+        )
         for key, value in entry.items():
             new_dict[key] = value
             if key == 'asset':

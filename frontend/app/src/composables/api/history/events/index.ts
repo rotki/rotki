@@ -3,6 +3,7 @@ import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import type { AxiosRequestConfig } from 'axios';
+import path from 'node:path';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -293,7 +294,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     try {
       const fullUrl = api.instance.getUri({ params: snakeCaseTransformer({ filePath }), url: '/history/events/export/download' });
 
-      downloadFileByUrl(fullUrl, 'history_events.csv');
+      downloadFileByUrl(fullUrl, path.basename(filePath));
       return { success: true };
     }
     catch (error: any) {
