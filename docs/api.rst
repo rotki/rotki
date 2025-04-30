@@ -5398,39 +5398,51 @@ Dealing with History Events
                 "entry_type": "evm swap event",
                 "timestamp": 1569924575000,
                 "location": "ethereum",
-                "spend_amounts": ["0.16", "0.07"],
-                "spend_assets": ["ETH", "eip155:1/ erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"],
-                "receive_amounts": ["0.003"],
-                "receive_assets": ["eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"],
-                "fee_amounts": ["0.0002"],
-                "fee_assets": ["ETH"],
-                "user_notes": {
-                    "spend": ["Swap 0.16 ETH", "Swap 0.07 WETH"],
-                    "receive": ["Receive 0.003 WBTC after swap"],
-                    "fee": ["Pay 0.0002 ETH as swap fee"]
-                },
-                "location_labels": {
-                    "spend": ["0x6e15887E2CEC81434C16D587709f64603b39b545", "0x6e15887E2CEC81434C16D587709f64603b39b545"],
-                    "receive": ["0x213B71067BE19cd5dBea3600Db0626859Ff15E78"],
-                    "fee": ["0x6e15887E2CEC81434C16D587709f64603b39b545"]
-                },
+                "spend": [{
+                    "amount": "0.16",
+                    "asset": "ETH",
+                    "user_notes": "Swap 0.16 ETH",
+                    "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545"
+                }, {
+                    "amount": "0.07",
+                    "asset": "eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    "user_notes": "Swap 0.07 WETH",
+                    "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545"
+                }],
+                "receive": [{
+                    "amount": "0.003",
+                    "asset": "eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                    "user_notes": "Receive 0.003 WBTC after swap",
+                    "location_label": "0x213B71067BE19cd5dBea3600Db0626859Ff15E78"
+                }],
+                "fee": [{
+                    "amount": "0.0002",
+                    "asset": "ETH",
+                    "user_notes": "Pay 0.0002 ETH as swap fee",
+                    "location_label": "0x6e15887E2CEC81434C16D587709f64603b39b545"
+                }],
                 "sequence_index": 0,
                 "tx_hash": "0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f",
                 "counterparty": "some counterparty",
                 "address": "0xA090e606E30bD747d4E6245a1517EbE430F0057e"
             }
 
+         Sub-event schema (objects in the ``spend``, ``receive``, and ``fee`` lists):
+
+         :reqjson list[int][optional] identifier: Identifier of the existing event (only used when editing).
+         :reqjson string amount: The amounts being spent
+         :reqjson string asset: The identifiers of the assets being spent (e.g. "USD", "BTC")
+         :reqjson string[optional] user_notes: Custom notes for the event
+         :reqjson string[optional] location_label: The user address associated with the event
+
+         Main schema:
+
          :reqjson string tx_hash: This is the transaction hash of the evm event
          :reqjson int sequence_index: This is an index that tries to provide the order of history entries for a single event_identifier. This value will be the index of the first event in the swap event group, and other events in the group will be given consecutive indexes after this value.
          :reqjson string location: The location/exchange where the swap occurred
-         :reqjson list[string] spend_amounts: The amounts being spent
-         :reqjson list[string] spend_assets: The identifiers of the assets being spent (e.g. "USD", "BTC")
-         :reqjson list[string] receive_amounts: The amounts being received
-         :reqjson list[string] receive_assets: The identifiers of the assets being received (e.g. "USD", "BTC")
-         :reqjson list[string][optional] fee_amounts: The fees charged for the swap. If provided, fee_assets must also be provided.
-         :reqjson list[string][optional] fee_assets: The identifiers of the assets in which the fees were paid. If provided, fee_amounts must also be provided
-         :reqjson object[optional] user_notes: Custom notes for each of the underlying events. Organized in lists under the keys ``spend``, ``receive``, and ``fee``.
-         :reqjson object[optional] location_labels: The user addresses that performed the swap. Organized in lists under the keys ``spend``, ``receive``, and ``fee``.
+         :reqjson list[object] spend: List of spend events. See above for sub-event object specification.
+         :reqjson list[object] receive: List of receive events.
+         :reqjson list[object][optional] fee: List of fee events.
          :reqjson string[optional] event_identifier: Custom identifier for the event.
          :reqjson string[optional] counterparty: An identifier for a potential counterparty of the event entry. For evm swaps this is the protocol that the swap interacted with.
          :reqjson string[optional] product: A defi product that this event is associated with (pool, gauge, etc).
@@ -5488,7 +5500,7 @@ Dealing with History Events
 
    The request object uses all the same arguments for each entry type as the `add event endpoint <add_event_args_label_>`_, with the addition of the identifier which signifies which entry will be edited.
    When dealing with event types where all the events for an event_identifier are added/edited as a group (such as swap events and asset movements), use the identifier of the primary event in the group, i.e. for asset movements, the identifier of the deposit/withdrawal event, and for swap events, the identifier of the spend event.
-   For events that are edited as a group but may have other events/groups with the same event_identifier (such as evm swap events), specify the identifiers of all the events in the group, for example: ``"identifiers: {"spend": [1,2], "receive": [3], "fee": [4]}``
+   For events that are edited as a group but may have other events/groups with the same event_identifier (such as evm swap events), specify the identifiers of all the events in the group, for example: ``"identifiers": [1,2,3,4]``
 
    **Example Response**:
 

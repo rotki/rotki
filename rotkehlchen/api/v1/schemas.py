@@ -1034,33 +1034,22 @@ class CreateHistoryEventSchema(Schema):
             return {'events': events}
 
     class CreateEvmSwapEventSchema(BaseEvmEventSchema):
+
+        class EvmSwapSubEventSchema(Schema):
+            identifier = fields.Integer(required=False, load_default=None)
+            amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
+            asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
+            user_notes = fields.String(required=False, load_default=None)
+            location_label = fields.String(required=False, load_default=None)
+
+        identifiers = fields.List(fields.Integer(), required=True)
         sequence_index = fields.Integer(required=True)
         timestamp = TimestampMSField(required=True)
         location = LocationField(required=True)
         event_identifier = fields.String(required=False, load_default=None)
-        spend_amounts = fields.List(AmountField(validate=validate.Range(min=ZERO, min_inclusive=False)), required=True, validate=validate.Length(min=1))  # noqa: E501
-        spend_assets = fields.List(AssetField(expected_type=Asset, form_with_incomplete_data=True), required=True, validate=validate.Length(min=1))  # noqa: E501
-        receive_amounts = fields.List(AmountField(validate=validate.Range(min=ZERO, min_inclusive=False)), required=True, validate=validate.Length(min=1))  # noqa: E501
-        receive_assets = fields.List(AssetField(expected_type=Asset, form_with_incomplete_data=True), required=True, validate=validate.Length(min=1))  # noqa: E501
-        fee_amounts = fields.List(AmountField(validate=validate.Range(min=ZERO, min_inclusive=False)), required=False, load_default=[])  # noqa: E501
-        fee_assets = fields.List(AssetField(expected_type=Asset, form_with_incomplete_data=True), required=False, load_default=[])  # noqa: E501
-        identifiers = fields.Dict(
-            keys=fields.String(validate=validate.OneOf(['spend', 'receive', 'fee'])),
-            values=fields.List(fields.Integer()),
-            required=True,
-        )
-        location_labels = fields.Dict(
-            keys=fields.String(validate=validate.OneOf(['spend', 'receive', 'fee'])),
-            values=fields.List(fields.String(required=False, load_default=None)),
-            required=False,
-            load_default={},
-        )
-        user_notes = fields.Dict(
-            keys=fields.String(validate=validate.OneOf(['spend', 'receive', 'fee'])),
-            values=fields.List(fields.String(required=False, load_default=None)),
-            required=False,
-            load_default={},
-        )
+        spend = fields.List(fields.Nested(EvmSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
+        receive = fields.List(fields.Nested(EvmSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
+        fee = fields.List(fields.Nested(EvmSwapSubEventSchema), required=False, load_default=[])
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
@@ -1073,11 +1062,9 @@ class CreateHistoryEventSchema(Schema):
             product = data['product']
             address = data['address']
             extra_data = data['extra_data']
-            # Use get with a default value instead of load_default since identifiers is a required
-            # field that sometimes gets excluded in the post_load of CreateHistoryEventSchema.
-            identifiers = data.get('identifiers', {})
-            location_labels = data['location_labels']
-            user_notes = data['user_notes']
+            # Use .get() here since identifiers may have been excluded from the schema in the
+            # post load of CreateHistoryEventSchema.
+            identifiers = data.get('identifiers')
 
             events, is_multi = [], False
             for subtype in (
@@ -1085,50 +1072,22 @@ class CreateHistoryEventSchema(Schema):
                 HistoryEventSubType.RECEIVE,
                 HistoryEventSubType.FEE,
             ):
-                subtype_identifiers = identifiers.get(subtype_str := subtype.serialize(), [])
-                try:
-                    amounts_and_assets = zip(
-                        (amounts_list := data[f'{subtype_str}_amounts']),
-                        data[f'{subtype_str}_assets'],
-                        strict=True,
-                    )
-                except ValueError as e:
-                    raise ValidationError(
-                        message=f'Number of {subtype_str} amounts and assets must correlate.',
-                        field_name=f'{subtype_str}_amounts',
-                    ) from e
+                if len(subtype_data_list := data[subtype.serialize()]) > 1:
+                    is_multi = True
 
-                default_list = [None] * len(amounts_list)
-                for subtype_data, field_name in (
-                    ((subtype_notes := user_notes.get(subtype_str, default_list)), 'user_notes'),
-                    ((subtype_location_labels := location_labels.get(subtype_str, default_list)), 'location_labels'),  # noqa: E501
-                ):
-                    if len(subtype_data) != len(amounts_list):  # Use amounts_list instead of amounts_and_assets since `len()` doesn't work on a zip object  # noqa: E501
-                        raise ValidationError(
-                            message=(
-                                f'Number of {subtype_str} {field_name} must correlate '
-                                f'with the number of {subtype_str} amounts and assets.'
-                            ),
-                            field_name=field_name,
-                        )
-
-                subtype_events = []
-                for idx, (amount, asset) in enumerate(amounts_and_assets):
-                    subtype_events.append(EvmSwapEvent(
-                        # Set the identifier if present. No identifiers are present when adding a
-                        # new swap group. When editing an existing group and possibly adding or
-                        # removing events within the group, some may be present and some not.
-                        identifier=subtype_identifiers[idx] if len(subtype_identifiers) > idx else None,  # noqa: E501
+                for idx, subtype_data in enumerate(subtype_data_list):
+                    events.append(EvmSwapEvent(
+                        identifier=subtype_data['identifier'],
                         tx_hash=tx_hash,
                         sequence_index=sequence_index,
                         timestamp=timestamp,
                         location=location,
                         event_type=HistoryEventType.TRADE,
                         event_subtype=subtype,
-                        asset=asset,
-                        amount=amount,
-                        location_label=subtype_location_labels[idx],
-                        notes=subtype_notes[idx],
+                        asset=subtype_data['asset'],
+                        amount=subtype_data['amount'],
+                        location_label=subtype_data['location_label'],
+                        notes=subtype_data['user_notes'],
                         event_identifier=event_identifier,
                         extra_data=extra_data if subtype == HistoryEventSubType.SPEND and idx == 0 else None,  # Only set extra_data on first spend event  # noqa: E501
                         counterparty=counterparty,
@@ -1137,18 +1096,13 @@ class CreateHistoryEventSchema(Schema):
                     ))
                     sequence_index += 1
 
-                if len(subtype_events) > 1:
-                    is_multi = True
-
-                events.extend(subtype_events)
-
             if is_multi:
                 for event in events:
                     event.event_type = HistoryEventType.MULTI_TRADE
 
             return (
                 {'events': events}
-                if len(identifiers) == 0 else
+                if identifiers is None else
                 {'events': events, 'identifiers': identifiers}
             )
 
@@ -1181,7 +1135,7 @@ class CreateHistoryEventSchema(Schema):
         entry_type = data.pop('entry_type')  # already used to decide schema
         # Exclude the identifier field unless `include_identifier` is True. Most event types
         # have the same field name of `identifier` but for evm swaps it is plural since this
-        # field is an object containing multiple identifiers in that case.
+        # field is a list containing multiple identifiers in that case.
         exclude = () if self.include_identifier else (
             ('identifiers',)
             if entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT else
