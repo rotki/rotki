@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.modules.gearbox.constants import (
-    GEAR_IDENTIFIER,
     GEAR_STAKING_CONTRACT,
+    GEAR_TOKEN,
 )
 from rotkehlchen.chain.evm.decoding.gearbox.balances import GearboxCommonBalances
 
@@ -21,5 +21,5 @@ class GearboxBalances(GearboxCommonBalances):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             staking_contract=GEAR_STAKING_CONTRACT,
-            native_token_id=GEAR_IDENTIFIER,
+            gear_token=GEAR_TOKEN,
         )

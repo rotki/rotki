@@ -1,7 +1,10 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.gearbox.decoder import GearboxCommonDecoder
-from rotkehlchen.chain.optimism.modules.gearbox.constants import GEAR_STAKING_CONTRACT
+from rotkehlchen.chain.optimism.modules.gearbox.constants import (
+    GEAR_STAKING_CONTRACT,
+    GEAR_TOKEN_OPT,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -21,4 +24,5 @@ class GearboxDecoder(GearboxCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             staking_contract=GEAR_STAKING_CONTRACT,
+            gear_token_identifier=GEAR_TOKEN_OPT.identifier,
         )

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Gearbox rewards transactions are now decoded properly on all supported chains.
 * :feature:`-` Aave v3 ETH deposit transactions in arbitrum using the new v3 gateway will now be decoded correctly.
 * :feature:`-` Users will now see Umami protocol fees as separate entries when depositing or withdrawing on Arbitrum.
 * :bug:`-` rotki will now exclude Superfluid's Constant Inflow and Outflow NFTs from your balances, fixing misleading balance summaries.

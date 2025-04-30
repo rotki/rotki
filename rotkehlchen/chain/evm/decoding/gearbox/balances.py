@@ -30,7 +30,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
             evm_inquirer: 'EvmNodeInquirer',
             tx_decoder: 'EVMTransactionDecoder',
             staking_contract: 'ChecksumEvmAddress',
-            native_token_id: str,
+            gear_token: Asset,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -38,7 +38,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
             counterparty=CPT_GEARBOX,
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
-        self.native_token_id = native_token_id
+        self.gear_token = gear_token
         self.staking_contract = staking_contract
 
     def query_balances(self) -> 'BalancesSheetType':
@@ -69,7 +69,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
         if len(results) == 0:
             return balances
 
-        gear_price = Inquirer.find_usd_price(asset := Asset(self.native_token_id))
+        gear_price = Inquirer.find_usd_price(self.gear_token)
         for idx, result in enumerate(results):
             staked_amount_raw = staking_contract.decode(
                 result=result,
@@ -80,7 +80,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
                 token_amount=staked_amount_raw[0],
                 token_decimals=DEFAULT_TOKEN_DECIMALS,
             )
-            balances[user_address].assets[asset] += Balance(
+            balances[user_address].assets[self.gear_token] += Balance(
                 amount=amount,
                 usd_value=amount * gear_price,
             )
