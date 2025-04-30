@@ -131,32 +131,6 @@ function onUpdateModelValue(value: string) {
   emit('update:asset', getVisibleAsset(value));
 }
 
-watch(search, (search) => {
-  if (search)
-    set(loading, true);
-  else if (!pending)
-    set(loading, false);
-});
-
-watchDebounced(
-  search,
-  async (search) => {
-    if (!search)
-      return set(loading, false);
-
-    if (pending) {
-      pending.abort();
-      pending = null;
-    }
-    set(error, '');
-    pending = new AbortController();
-    await searchAssets(search, pending.signal);
-  },
-  {
-    debounce: 800,
-  },
-);
-
 async function retainSelectedValueInOptions(newAssets: (AssetInfoWithId | NftAsset)[]) {
   try {
     const val = get(modelValue);
@@ -183,18 +157,45 @@ async function checkValue() {
   await retainSelectedValueInOptions(get(assets));
 }
 
-onMounted(async () => {
-  await checkValue();
-});
-
 watch(modelValue, async () => {
   await checkValue();
 });
+
+watch(search, (search) => {
+  if (search)
+    set(loading, true);
+  else if (!pending)
+    set(loading, false);
+});
+
+watchDebounced(search, async (search) => {
+  if (!search)
+    return set(loading, false);
+
+  if (pending) {
+    pending.abort();
+    pending = null;
+  }
+  set(error, '');
+  pending = new AbortController();
+  await searchAssets(search, pending.signal);
+}, { debounce: 800 });
 
 watch(visibleAssets, () => {
   const identifier = get(modelValue);
   if (identifier && !getVisibleAsset(identifier))
     onUpdateModelValue('');
+});
+
+onMounted(async () => {
+  await checkValue();
+});
+
+onUnmounted(() => {
+  if (!isDefined(pending)) {
+    return;
+  }
+  get(pending).abort();
 });
 </script>
 
