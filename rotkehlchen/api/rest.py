@@ -32,7 +32,6 @@ from rotkehlchen.accounting.constants import (
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
 from rotkehlchen.accounting.export.csv import (
-    FILENAME_HISTORY_EVENTS_CSV,
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
     CSVWriteError,
     dict_to_csv_file,
@@ -206,7 +205,10 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.history.events.utils import history_event_to_staking_for_api
+from rotkehlchen.history.events.utils import (
+    generate_events_export_filename,
+    history_event_to_staking_for_api,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.skipped import (
     export_skipped_external_events,
@@ -4737,14 +4739,18 @@ class RestAPI:
             else:
                 fiat_value = event.amount * price
 
-            serialized_event = event.serialize_for_csv(fiat_value)
+            serialized_event = event.serialize_for_csv(
+                fiat_value=fiat_value,
+                settings=settings,
+            )
             serialized_history_events.append(serialized_event)
             # maintain insertion order without storing extra info
             headers.update(dict.fromkeys(serialized_event))
 
         try:
+            filename = generate_events_export_filename(filter_query)
             if directory_path is None:  # file will be downloaded later via download_history_events_csv endpoint  # noqa: E501
-                file_path = Path(tempfile.mkdtemp()) / FILENAME_HISTORY_EVENTS_CSV
+                file_path = Path(tempfile.mkdtemp()) / filename
                 dict_to_csv_file(
                     path=file_path,
                     dictionary_list=serialized_history_events,
@@ -4759,7 +4765,7 @@ class RestAPI:
 
             # else do a direct export to filesystem
             directory_path.mkdir(parents=True, exist_ok=True)
-            file_path = directory_path / FILENAME_HISTORY_EVENTS_CSV
+            file_path = directory_path / filename
             dict_to_csv_file(
                 path=file_path,
                 dictionary_list=serialized_history_events,
@@ -4771,14 +4777,15 @@ class RestAPI:
 
         return OK_RESULT
 
-    def download_history_events_csv(self, file_path: str) -> Response:
+    @staticmethod
+    def download_history_events_csv(file_path: str) -> Response:
         """Download history events data CSV file."""
-        register_post_download_cleanup(Path(file_path))
+        register_post_download_cleanup(path := Path(file_path))
         return send_file(
             path_or_file=file_path,
             mimetype='text/csv',
             as_attachment=True,
-            download_name=FILENAME_HISTORY_EVENTS_CSV,
+            download_name=path.name,
         )
 
     def _invalidate_cache_for_accounting_rule(

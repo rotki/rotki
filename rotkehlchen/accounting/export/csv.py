@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 FILENAME_ALL_CSV = 'all_events.csv'
-FILENAME_HISTORY_EVENTS_CSV = 'history_events.csv'
 FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV = 'skipped_external_events.csv'
 ETHERSCAN_EXPLORER_TX_URL = 'https://{base_url}/tx/'
 
