@@ -1090,6 +1090,12 @@
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
   },
+  "asset_mappings": {
+    "error": {
+      "message": "Failed to retrieve the asset mappings for the following identifiers {identifiers} ({message})",
+      "title": "Caching asset mappings"
+    }
+  },
   "asset_search": {
     "error": {
       "message": "Failed to search asset: {message}",

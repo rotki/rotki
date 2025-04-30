@@ -20,10 +20,11 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
       logger.error(error);
       notify({
         display: true,
-        message: t('asset_search.error.message', {
+        message: t('asset_mappings.error.message', {
+          identifiers: identifiers.join(', '),
           message: error.message,
         }),
-        title: t('asset_search.error.title'),
+        title: t('asset_mappings.error.title'),
       });
       return undefined;
     }
