@@ -112,6 +112,10 @@ onClickOutside(editInput, () => {
   }, 100);
 });
 
+onBeforeUnmount(() => {
+  cancelEdit();
+});
+
 watch(search, (value) => {
   emit('update:search', value);
 });

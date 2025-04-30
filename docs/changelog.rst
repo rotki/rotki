@@ -29,7 +29,11 @@ Changelog
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
 * :bug:`-` rotki will now correctly decode mints of CRV as result of claiming from Curve gauges in L2.
 * :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
+* :bug:`-` Users will now be able to use the filter properly after deleting the selected filter that is being edited.
+* :bug:`9793` Users will now be able to add a missing accounting rule by clicking the menu on the history events page.
+* :bug:`9777` Bitstamp asset movements with a fee will now load correctly.
 * :bug:`9730` Fix the issue where the app breaks when the user clicks on "Ethereum Staking" in the blockchain balance summary on the dashboard.
+* :bug:`-` Addresses tracked only on non-mainnet EVM networks should now also be checked for airdrop eligibility.
 * :bug:`-` Fix a rare issue where the manual balance page becomes empty.
 * :bug:`-` Fix a rare issue calling RPC nodes when there is an error connecting to them.
 * :bug:`-` Users will now be able to see exchange locations when expanding the ETH entry under Multi Chain Assets.

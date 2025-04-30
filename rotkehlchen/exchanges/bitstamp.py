@@ -326,6 +326,8 @@ class Bitstamp(ExchangeInterface):
                     indices_to_delete.append(idx)
                     break
 
+            asset_movement.extra_data.pop('fee', None)  # don't let this get to the DB
+
         for idx in sorted(indices_to_delete, reverse=True):
             del crypto_asset_movements[idx]  # remove the crypto asset movements whose data we already correlated  # noqa: E501
 

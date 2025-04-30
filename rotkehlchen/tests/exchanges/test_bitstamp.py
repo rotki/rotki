@@ -1151,6 +1151,31 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         assert mock_api_query_paginated.call_args == expected_call
 
 
+def test_asset_movement_with_fee_works_correctly(mock_bitstamp: 'Bitstamp') -> None:
+    """Regression test for https://github.com/rotki/rotki/issues/9777"""
+    def mock_query(endpoint, **kwargs):
+        if endpoint == 'user_transactions':
+            return MockResponse(HTTPStatus.OK, """[{
+                "id": 5,
+                "type": "1",
+                "datetime": "2018-03-21 06:46:06.559877",
+                "btc": "0",
+                "usd": "0",
+                "btc_usd": "0.00",
+                "fee": "0.1",
+                "order_id": 2,
+                "eur": "500"
+            }]""")
+
+        return MockResponse(HTTPStatus.OK, '{}')
+
+    with patch.object(mock_bitstamp, '_api_query', side_effect=mock_query):
+        mock_bitstamp.query_history_events()
+
+    assert len(mock_bitstamp.msg_aggregator.consume_warnings()) == 0
+    assert len(mock_bitstamp.msg_aggregator.consume_errors()) == 0
+
+
 @pytest.mark.freeze_time(datetime.datetime(2020, 12, 3, 12, 0, 0, tzinfo=datetime.UTC))
 @pytest.mark.parametrize('bitstamp_api_key', ['123456'])
 @pytest.mark.parametrize('bitstamp_api_secret', [str.encode('abcdefg')])
