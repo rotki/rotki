@@ -955,7 +955,7 @@ class RestAPI:
     def edit_history_events(
             self,
             events: list['HistoryBaseEntry'],
-            identifiers: dict[str, list[int]] | None,
+            identifiers: list[int] | None,
     ) -> Response:
         events_db = DBHistoryEvents(self.rotkehlchen.data.db)
         if (events_type := events[0].entry_type) in {

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
@@ -15,7 +14,7 @@ def edit_grouped_events_with_optional_fee(
         write_cursor: 'DBCursor',
         events: list[HistoryBaseEntry],
         events_type: HistoryBaseEntryType,
-        identifiers: dict[str, list[int]] | None = None,
+        identifiers: list[int] | None = None,
 ) -> None:
     """
     Handle grouped events, including fee-related modifications:
@@ -81,12 +80,12 @@ def edit_grouped_evm_swap_events(
         events_db: 'DBHistoryEvents',
         write_cursor: 'DBCursor',
         events: list[HistoryBaseEntry],
-        identifiers: dict[str, list[int]],
+        identifiers: list[int],
         event_identifier: str,
 ) -> None:
     """Handle editing of grouped evm swap events.
-    Determines which events to add, edit, or remove using the `identifiers` dict
-    and the `events` list as follows:
+    Determines which events to add, edit, or remove using the `identifiers`
+    and `events` lists as follows:
     - Inserts events that have no identifier.
     - Edits events whose identifier is set.
     - Removes events whose identifier is present in `identifiers`,
@@ -95,25 +94,18 @@ def edit_grouped_evm_swap_events(
     May raise InputError if a new event is added that collides
     with the sequence index of an existing event.
     """
-    edited_identifiers, new_events = defaultdict(list), []
+    edited_identifiers, new_events = [], []
     for event in events:
         if event.identifier is None:  # No existing identifier - this is a new event.
             new_events.append(event)
         else:  # Already has an identifier - edit existing event.
             events_db.edit_history_event(write_cursor=write_cursor, event=event)
-            edited_identifiers[event.event_subtype.serialize()].append(event.identifier)
+            edited_identifiers.append(event.identifier)
 
     if identifiers != edited_identifiers:  # There are identifiers with no corresponding events - these events need to be deleted.  # noqa: E501
-        ids_to_delete = []
-        for key, id_list in identifiers.items():
-            if id_list == edited_identifiers[key]:
-                continue
-
-            ids_to_delete.extend(list(set(id_list) - set(edited_identifiers[key])))
-
         write_cursor.executemany(
             'DELETE FROM history_events WHERE identifier=?',
-            [(identifier,) for identifier in ids_to_delete],
+            [(identifier,) for identifier in set(identifiers) - set(edited_identifiers)],
         )
 
     for event in new_events:
