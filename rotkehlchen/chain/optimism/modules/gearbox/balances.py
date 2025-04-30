@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.gearbox.balances import GearboxCommonBalances
 from rotkehlchen.chain.optimism.modules.gearbox.constants import (
-    GEAR_IDENTIFIER_OPT,
     GEAR_STAKING_CONTRACT,
+    GEAR_TOKEN_OPT,
 )
 
 if TYPE_CHECKING:
@@ -21,5 +21,5 @@ class GearboxBalances(GearboxCommonBalances):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             staking_contract=GEAR_STAKING_CONTRACT,
-            native_token_id=GEAR_IDENTIFIER_OPT,
+            gear_token=GEAR_TOKEN_OPT,
         )

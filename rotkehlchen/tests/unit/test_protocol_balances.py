@@ -15,7 +15,7 @@ from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
 )
-from rotkehlchen.chain.arbitrum_one.modules.gearbox.constants import GEAR_IDENTIFIER_ARB
+from rotkehlchen.chain.arbitrum_one.modules.gearbox.constants import GEAR_TOKEN_ARB
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.balances import HyperliquidBalances
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import CPT_HYPER
@@ -34,7 +34,7 @@ from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
-from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_IDENTIFIER
+from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_TOKEN
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
@@ -866,7 +866,7 @@ def test_gearbox_balances(
     )
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[ethereum_accounts[0]]
-    assert user_balance.assets[Asset(GEAR_IDENTIFIER)] == Balance(
+    assert user_balance.assets[GEAR_TOKEN] == Balance(
         amount=amount,
         usd_value=amount * FVal(1.5),
     )
@@ -892,7 +892,7 @@ def test_gearbox_balances_arb(
     )
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
-    assert user_balance.assets[Asset(GEAR_IDENTIFIER_ARB)] == Balance(
+    assert user_balance.assets[GEAR_TOKEN_ARB] == Balance(
         amount=amount,
         usd_value=amount * FVal(1.5),
     )

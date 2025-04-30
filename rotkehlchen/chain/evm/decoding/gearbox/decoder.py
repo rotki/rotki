@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     GearboxPoolData,
     query_gearbox_data,
@@ -16,9 +17,12 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
+    EnricherContext,
+    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_WETH, A_WETH_ARB, A_WETH_OPT
@@ -30,6 +34,7 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    ANGLE_PROTOCOL_CLAIMED_TOPIC,
     CLAIM_GEAR_WITHDRAWAL,
     CPT_GEARBOX,
     DEPOSIT,
@@ -43,6 +48,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -54,6 +60,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             staking_contract: ChecksumEvmAddress,
+            gear_token_identifier: 'str',
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -69,6 +76,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             chain_id=self.evm_inquirer.chain_id,
         )
         self.staking_contract = staking_contract
+        self.gear_token_identifier = gear_token_identifier
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, GearboxPoolData]:
@@ -281,8 +289,36 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _maybe_enrich_gearbox_claims(self, context: EnricherContext) -> TransferEnrichmentOutput:
+        """Identifies and enriches Gearbox reward claims.
+
+        Matches when a transfer comes from a known Gearbox pool or when an Angle Protocol claim
+        event is detected in the transaction logs.
+        """
+        if not (
+                context.event.asset == self.gear_token_identifier and
+                context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                self.base.is_tracked(context.event.location_label) and  # type: ignore[arg-type]  # it is a  valid checksum address
+                (
+                    context.event.address in self.pools or
+                    any((
+                        tx_log.topics[0] == ANGLE_PROTOCOL_CLAIMED_TOPIC and
+                        context.event.amount == token_normalized_value_decimals(token_amount=int.from_bytes(tx_log.data), token_decimals=DEFAULT_TOKEN_DECIMALS)  # noqa: E501
+                    ) for tx_log in context.all_logs)
+                )
+        ):
+            return FAILED_ENRICHMENT_OUTPUT
+
+        context.event.counterparty = CPT_GEARBOX
+        context.event.event_subtype = HistoryEventSubType.REWARD
+        context.event.notes = f'Claim {context.event.amount} GEAR reward from Gearbox'
+        return TransferEnrichmentOutput(matched_counterparty=CPT_GEARBOX)
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.staking_contract: (self._decode_staking_events,)}
+
+    def enricher_rules(self) -> list[Callable]:
+        return [self._maybe_enrich_gearbox_claims]
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:
