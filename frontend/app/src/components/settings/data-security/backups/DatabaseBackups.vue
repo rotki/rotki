@@ -8,8 +8,8 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getFilepath } from '@/utils/backups';
 import { size } from '@/utils/data';
+import { getFilepath } from '@/utils/file';
 
 const props = withDefaults(
   defineProps<{

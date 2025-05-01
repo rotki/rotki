@@ -6,7 +6,7 @@ import { useBackupApi } from '@/composables/api/backup';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
-import { getFilepath } from '@/utils/backups';
+import { getFilepath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 import { Severity } from '@rotki/common';
 

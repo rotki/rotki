@@ -3,7 +3,6 @@ import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import type { AxiosRequestConfig } from 'axios';
-import path from 'node:path';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -30,6 +29,7 @@ import {
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
 import { nonEmptyProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
+import { getFilename } from '@/utils/file';
 import { omit } from 'es-toolkit';
 
 interface QueryExchangePayload { name: string; location: string }
@@ -294,7 +294,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     try {
       const fullUrl = api.instance.getUri({ params: snakeCaseTransformer({ filePath }), url: '/history/events/export/download' });
 
-      downloadFileByUrl(fullUrl, path.basename(filePath));
+      downloadFileByUrl(fullUrl, getFilename(filePath));
       return { success: true };
     }
     catch (error: any) {

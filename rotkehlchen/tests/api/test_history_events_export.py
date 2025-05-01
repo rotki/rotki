@@ -1,4 +1,5 @@
 import csv
+import re
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
@@ -85,6 +86,7 @@ def assert_csv_export_response(
     )
 
     # check the csv files were generated successfully
+    timestamp_check = re.compile(r'\d{2}/\d{2}/\d{4}')
     with csv_path.open(newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
         count = 0
@@ -92,6 +94,9 @@ def assert_csv_export_response(
             assert tuple(row.keys())[:len(base_headers)] == base_headers, 'order of columns does not match'  # noqa: E501
 
             for attr in base_headers:
+                if attr == 'timestamp':
+                    assert timestamp_check.search(row['timestamp']), 'timestamp is not properly formatted'  # noqa: E501
+
                 assert row[attr] is not None
             if includes_extra_headers:
                 for attr in extra_headers:
@@ -102,6 +107,7 @@ def assert_csv_export_response(
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
+@pytest.mark.freeze_time('2025-04-30')
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
@@ -119,7 +125,7 @@ def test_history_export_download_csv(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
         json={'async_query': False, 'directory_path': str(csv_dir)},
     )
-    assert_csv_export_response(response, csv_dir / 'historyevents_till_20250430.csv')
+    assert_csv_export_response(response, csv_dir / 'historyevents_until_20250430.csv')
 
     # now query the export endpoint with query params
     response = requests.post(api_url_for(
@@ -149,12 +155,13 @@ def test_history_export_download_csv(
         json={'file_path': file_path},
     )
 
-    temp_csv_file = Path(download_dir, 'historyevents_till_20250430.csv')
+    temp_csv_file = Path(download_dir, 'historyevents_until_20250430.csv')
     temp_csv_file.write_bytes(response.content)
     assert_csv_export_response(response, temp_csv_file, is_download=True)
 
 
 @pytest.mark.parametrize('db_settings', [{'csv_export_delimiter': ';'}])
+@pytest.mark.freeze_time('2025-04-30')
 def test_history_export_csv_custom_delimiter(
         rotkehlchen_api_server_with_exchanges: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
@@ -171,7 +178,7 @@ def test_history_export_csv_custom_delimiter(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
         json={'async_query': False, 'directory_path': str(csv_dir)},
     )
-    assert_csv_export_response(response, csv_dir / 'historyevents_till_20250430.csv', csv_delimiter=csv_delimiter)  # noqa: E501
+    assert_csv_export_response(response, csv_dir / 'historyevents_until_20250430.csv', csv_delimiter=csv_delimiter)  # noqa: E501
 
 
 def test_history_export_csv_errors(
@@ -229,6 +236,7 @@ def test_history_export_csv_errors(
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.freeze_time('2025-04-30')
 def test_history_export_csv_free_limit(
         rotkehlchen_api_server_with_exchanges: APIServer,
         start_with_valid_premium: bool,
@@ -262,7 +270,7 @@ def test_history_export_csv_free_limit(
             sequence_index=0,
             timestamp=TimestampMS(1720000000000),
             location=Location.OPTIMISM,
-            event_type=HistoryEventType.TRADE,
+            event_type=HistoryEventType.TRANSFER,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             amount=FVal(3),
@@ -284,7 +292,7 @@ def test_history_export_csv_free_limit(
         ))
         assert_csv_export_response(
             response=response,
-            csv_path=csv_dir / 'historyevents_till_20250430.csv',
+            csv_path=csv_dir / 'historyevents_until_20250430.csv',
             expected_count=3 if start_with_valid_premium else 1,
             includes_extra_headers=False,
         )
@@ -299,5 +307,20 @@ def test_history_export_csv_free_limit(
             response=response,
             csv_path=csv_dir / 'historyevents_20240309_to_20250430.csv',
             expected_count=2 if start_with_valid_premium else 1,
+            includes_extra_headers=False,
+        )
+
+        response = requests.post(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'exporthistoryeventresource',
+        ), json={
+            'directory_path': str(csv_dir),
+            'event_types': [HistoryEventType.TRADE.serialize(), HistoryEventType.TRANSFER.serialize()],  # noqa: E501
+            'event_subtypes': [HistoryEventSubType.NONE.serialize()],
+        })
+        assert_csv_export_response(
+            response=response,
+            csv_path=csv_dir / 'historyevents_until_20250430_types_trade-transfer_subtypes_none.csv',  # noqa: E501
+            expected_count=3 if start_with_valid_premium else 1,
             includes_extra_headers=False,
         )

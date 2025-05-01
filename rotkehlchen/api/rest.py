@@ -4748,7 +4748,7 @@ class RestAPI:
             headers.update(dict.fromkeys(serialized_event))
 
         try:
-            filename = generate_events_export_filename(filter_query)
+            filename = generate_events_export_filename(filter_query=filter_query, use_localtime=settings.display_date_in_localtime)  # noqa: E501
             if directory_path is None:  # file will be downloaded later via download_history_events_csv endpoint  # noqa: E501
                 file_path = Path(tempfile.mkdtemp()) / filename
                 dict_to_csv_file(
