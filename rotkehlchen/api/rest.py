@@ -65,7 +65,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
-from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -232,7 +232,6 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
-    ETHERSCAN_TO_CHAINID,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_EVMLIKE_LOCATIONS,
@@ -623,14 +622,10 @@ class RestAPI:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
         response_dict: dict[str, Any] = {}
         response_dict['blockscout'] = {chain_id.to_name(): None for _, chain_id in BLOCKSCOUT_TO_CHAINID.items()}  # noqa: E501
-        response_dict['etherscan'] = {chain_id.to_name(): None for _, chain_id in ETHERSCAN_TO_CHAINID.items()}  # noqa: E501
         for credential in credentials_list:
             name, key_info = credential.serialize_for_api()
-            if (chain := credential.service.get_chain_for_etherscan()) is not None:
-                response_dict['etherscan'][chain.to_name()] = key_info
-            elif (chain := credential.service.get_chain_for_blockscout()) is not None:
+            if (chain := credential.service.get_chain_for_blockscout()) is not None:
                 response_dict['blockscout'][chain.to_name()] = key_info
-
             else:
                 response_dict[name] = key_info
 
@@ -2483,16 +2478,15 @@ class RestAPI:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
         errors = []
         for row in db_entries:
-            node = NodeName(
+            if row[0] == ETHEREUM_ETHERSCAN_NODE_NAME:
+                continue
+
+            success, msg = manager.node_inquirer.attempt_connect(node=(node := NodeName(
                 name=row[0],
                 endpoint=row[1],
                 owned=bool(row[2]),
                 blockchain=blockchain,  # type: ignore  # we have already limited the set of blockchains
-            )
-            if node.name == manager.node_inquirer.etherscan_node_name:
-                continue
-
-            success, msg = manager.node_inquirer.attempt_connect(node=node)
+            )))
             if success is False:
                 errors.append({'name': node.name, 'error': msg})
 

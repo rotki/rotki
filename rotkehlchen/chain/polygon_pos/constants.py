@@ -1,21 +1,9 @@
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
-POLYGON_POS_ETHERSCAN_NODE_NAME = 'polygon pos etherscan'
 POLYGON_POS_GENESIS = Timestamp(1590824836)
 POLYGON_POS_POL_HARDFORK = Timestamp(1725451200)
-POLYGON_POS_ETHERSCAN_NODE = WeightedNode(
-    node_info=NodeName(
-        name=POLYGON_POS_ETHERSCAN_NODE_NAME,
-        endpoint='',
-        owned=False,
-        blockchain=SupportedBlockchain.POLYGON_POS,
-    ),
-    weight=ONE,
-    active=True,
-)
 
 ARCHIVE_NODE_CHECK_ADDRESS = string_to_evm_address('0xc3F60BC338E0Af8f46F52650C813FBD3C071E165')
 ARCHIVE_NODE_CHECK_BLOCK = 447

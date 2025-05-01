@@ -11,7 +11,6 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.chain.evm.constants import LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
@@ -290,7 +289,6 @@ def test_detect_evm_accounts_spam_tx(polygon_pos_manager: 'PolygonPOSManager') -
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-05-03 10:45:00 GMT')
-@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(GNOSIS_ETHERSCAN_NODE,)])
 @pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])  # to connect to nodes
 def test_detect_evm_accounts_spam_tx_gnosis(gnosis_manager: 'GnosisManager') -> None:
     """

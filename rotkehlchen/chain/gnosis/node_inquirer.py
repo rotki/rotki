@@ -17,8 +17,6 @@ from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-    GNOSIS_ETHERSCAN_NODE,
-    GNOSIS_ETHERSCAN_NODE_NAME,
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from .etherscan import GnosisEtherscan
@@ -48,8 +46,6 @@ class GnosisInquirer(EvmNodeInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.GNOSIS,
-            etherscan_node=GNOSIS_ETHERSCAN_NODE,
-            etherscan_node_name=GNOSIS_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),

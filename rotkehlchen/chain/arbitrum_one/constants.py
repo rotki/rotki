@@ -1,22 +1,9 @@
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
-ARBITRUM_ONE_ETHERSCAN_NODE_NAME = 'arbitrum one etherscan'
 ARBITRUM_ONE_GENESIS = Timestamp(1622240000)
-ARBITRUM_ONE_ETHERSCAN_NODE = WeightedNode(
-    node_info=NodeName(
-        name=ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
-        endpoint='',
-        owned=False,
-        blockchain=SupportedBlockchain.ARBITRUM_ONE,
-    ),
-    weight=ONE,
-    active=True,
-)
-
 CPT_ARBITRUM_ONE = 'arbitrum_one'
 
 ARCHIVE_NODE_CHECK_ADDRESS = string_to_evm_address('0x2EE4bD21803cdb62B1457949450d0753ca84fada')

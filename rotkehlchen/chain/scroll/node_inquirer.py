@@ -17,8 +17,6 @@ from .constants import (
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
     PRUNED_NODE_CHECK_TX_HASH,
-    SCROLL_ETHERSCAN_NODE,
-    SCROLL_ETHERSCAN_NODE_NAME,
 )
 from .etherscan import ScrollEtherscan
 
@@ -47,8 +45,6 @@ class ScrollInquirer(L2WithL1FeesInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.SCROLL,
-            etherscan_node=SCROLL_ETHERSCAN_NODE,
-            etherscan_node_name=SCROLL_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),

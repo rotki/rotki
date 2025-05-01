@@ -374,30 +374,16 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
     )
     assert_proper_sync_response_with_result(response)
 
-    response = requests.patch(  # test that editing optimism etherscan weight works
-        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='OPTIMISM'),
-        json={
-            'identifier': 6,
-            'name': 'optimism etherscan',
-            'endpoint': '',
-            'owned': False,
-            'weight': '20',
-            'active': True,
-        },
+    # try to delete normal etherscan and see it fails
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
+        json={'identifier': 1},
     )
-    assert_proper_sync_response_with_result(response)
-
-    # try to delete normal etherscan and optimism etherscan and see it fails
-    for identifier in (1, 6):
-        response = requests.delete(
-            api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
-            json={'identifier': identifier},
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg="Can't delete an etherscan node",
-            status_code=HTTPStatus.BAD_REQUEST,
-        )
+    assert_error_response(
+        response=response,
+        contained_in_msg="Can't delete an etherscan node",
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
 
     # and now let's replicate https://github.com/rotki/rotki/issues/4769 by
     # editing all nodes to have 0% weight.
@@ -534,7 +520,7 @@ def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patched_connection:
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 24})
+        response = requests.post(url=rpc_url, json={'identifier': 1})
         assert_proper_sync_response_with_result(response)
 
         # check case of a bad identifier
@@ -579,7 +565,7 @@ def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
     ):
         # check error during connection
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 24})
+        response = requests.post(url=rpc_url, json={'identifier': 20})
         assert response.json()['result'] == {
             'errors': [{'name': 'base BlockPi', 'error': 'Custom error'}],
         }

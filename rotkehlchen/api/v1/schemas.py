@@ -20,9 +20,6 @@ from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracl
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.base.constants import BASE_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
     validate_bch_address_input,
@@ -38,10 +35,6 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_potential_ens_name
 from rotkehlchen.chain.evm.types import EvmAccount, EvmlikeAccount
-from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -3332,16 +3325,7 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
                     field_name='endpoint',
                     message='It is not allowed to modify the etherscan node endpoint',
                 )
-            if data['name'] not in (
-                ETHEREUM_ETHERSCAN_NODE_NAME,
-                OPTIMISM_ETHERSCAN_NODE_NAME,
-                POLYGON_POS_ETHERSCAN_NODE_NAME,
-                ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
-                BASE_ETHERSCAN_NODE_NAME,
-                GNOSIS_ETHERSCAN_NODE_NAME,
-                SCROLL_ETHERSCAN_NODE_NAME,
-                BINANCE_SC_ETHERSCAN_NODE_NAME,
-            ):
+            if data['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
                 raise ValidationError(
                     message="Can't change the etherscan node name",
                     field_name='name',

@@ -17,8 +17,6 @@ from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-    BASE_ETHERSCAN_NODE,
-    BASE_ETHERSCAN_NODE_NAME,
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from .etherscan import BaseEtherscan
@@ -48,8 +46,6 @@ class BaseInquirer(L2WithL1FeesInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.BASE,
-            etherscan_node=BASE_ETHERSCAN_NODE,
-            etherscan_node_name=BASE_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),

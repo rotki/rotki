@@ -28,6 +28,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
@@ -3208,11 +3209,12 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
+                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE (blockchain=? OR name=?) AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value, ETHEREUM_ETHERSCAN_NODE_NAME))  # noqa: E501
             else:
                 cursor.execute(
-                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
+                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE (blockchain=? OR NAME=?) ORDER BY name;', (blockchain.value, ETHEREUM_ETHERSCAN_NODE_NAME),  # noqa: E501
                 )
+
             return [
                 WeightedNode(
                     identifier=entry[0],
@@ -3220,7 +3222,7 @@ class DBHandler:
                         name=entry[1],
                         endpoint=entry[2],
                         owned=bool(entry[3]),
-                        blockchain=SupportedBlockchain.deserialize(entry[6]),  # type: ignore
+                        blockchain=SupportedBlockchain.deserialize(entry[6]) if entry[1] != ETHEREUM_ETHERSCAN_NODE_NAME else blockchain,  # type: ignore  # noqa: E501
                     ),
                     weight=FVal(entry[4]),
                     active=bool(entry[5]),
@@ -3266,7 +3268,7 @@ class DBHandler:
         )
 
     def is_etherscan_node(self, node_identifier: int) -> bool:
-        """Checks if a given node is an etherscan node (ethereum, optimism, etc)"""
+        """Checks if a given node identifier is the etherscan node"""
         with self.conn.read_ctx() as cursor:
             return bool(cursor.execute(
                 "SELECT COUNT(*) FROM rpc_nodes WHERE identifier=? AND endpoint=''",
