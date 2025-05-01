@@ -11,7 +11,6 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
-from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import APPDIR_NAME, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
@@ -106,9 +105,9 @@ def assert_add_addresses_migration_ws_messages(
 
         if migration_version == 10:
             if i == 1:
-                assert_progress_message(msg, i, 'Fetching new spam assets info', migration_version, migration_steps)  # noqa: E501
-            elif i == 2:
                 assert_progress_message(msg, i, 'Ensuring polygon node consistency', migration_version, migration_steps)  # noqa: E501
+            elif i == 2:
+                assert_progress_message(msg, i, 'Fetching new spam assets and rpc data info', migration_version, migration_steps)  # noqa: E501
             if 3 <= i <= 6:
                 assert_progress_message(msg, i, 'EVM chain activity', migration_version, migration_steps)  # noqa: E501
             elif i == 7:
@@ -486,7 +485,6 @@ def test_migration_13(
 ]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('scroll_manager_connect_at_start', [(SCROLL_ETHERSCAN_NODE,)])
 def test_migration_14(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],

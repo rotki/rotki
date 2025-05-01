@@ -1,20 +1,8 @@
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
-GNOSIS_ETHERSCAN_NODE_NAME = 'gnosis etherscan'
 GNOSIS_GENESIS = Timestamp(1539024185)
-GNOSIS_ETHERSCAN_NODE = WeightedNode(
-    node_info=NodeName(
-        name=GNOSIS_ETHERSCAN_NODE_NAME,
-        endpoint='',
-        owned=False,
-        blockchain=SupportedBlockchain.GNOSIS,
-    ),
-    weight=ONE,
-    active=True,
-)
 
 ARCHIVE_NODE_CHECK_ADDRESS = string_to_evm_address('0xCace5b3c29211740E595850E80478416eE77cA21')
 ARCHIVE_NODE_CHECK_BLOCK = 36600

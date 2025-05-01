@@ -1,21 +1,8 @@
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
-OPTIMISM_ETHERSCAN_NODE_NAME = 'optimism etherscan'
 OPTIMISM_GENESIS = Timestamp(1636666246)
-OPTIMISM_ETHERSCAN_NODE = WeightedNode(
-    node_info=NodeName(
-        name=OPTIMISM_ETHERSCAN_NODE_NAME,
-        endpoint='',
-        owned=False,
-        blockchain=SupportedBlockchain.OPTIMISM,
-    ),
-    weight=ONE,
-    active=True,
-)
-
 CPT_OPTIMISM = 'optimism'
 
 ARCHIVE_NODE_CHECK_ADDRESS = string_to_evm_address('0x76a05Df20bFEF5EcE3eB16afF9cb10134199A921')

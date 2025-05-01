@@ -17,8 +17,6 @@ from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-    POLYGON_POS_ETHERSCAN_NODE,
-    POLYGON_POS_ETHERSCAN_NODE_NAME,
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from .etherscan import PolygonPOSEtherscan
@@ -48,8 +46,6 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.POLYGON_POS,
-            etherscan_node=POLYGON_POS_ETHERSCAN_NODE,
-            etherscan_node_name=POLYGON_POS_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x275617327c958bD06b5D6b871E7f491D76113dd8')),

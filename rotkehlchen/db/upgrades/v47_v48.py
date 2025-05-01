@@ -202,6 +202,34 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             """,
         )
 
+    @progress_step(description='Migrating etherscan configuration')
+    def _migrate_etherscan_keys(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'DELETE FROM external_service_credentials WHERE name IN (?, ?, ?, ?, ?, ?, ?)',
+            (
+                'optimism_etherscan',
+                'polygon_pos_etherscan',
+                'arbitrum_one_etherscan',
+                'base_etherscan',
+                'gnosis_etherscan',
+                'scroll_etherscan',
+                'binance_sc_etherscan',
+            ),
+        )
+        write_cursor.execute(
+            'DELETE FROM rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?)',
+            (
+                'optimism etherscan',
+                'polygon pos etherscan',
+                'arbitrum one etherscan',
+                'base etherscan',
+                'gnosis etherscan',
+                'scroll etherscan',
+                'bsc etherscan',
+            ),
+        )
+        write_cursor.execute('DELETE FROM settings WHERE name=?', ('use_unified_etherscan_api',))
+
     @progress_step(description='Resetting asset movement notes')
     def _reset_asset_movement_notes(write_cursor: 'DBCursor') -> None:
         """Clears auto-generated asset movement notes.

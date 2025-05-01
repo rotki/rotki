@@ -1,21 +1,8 @@
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
-BASE_ETHERSCAN_NODE_NAME = 'base etherscan'
 BASE_GENESIS = Timestamp(1686789347)
-BASE_ETHERSCAN_NODE = WeightedNode(
-    node_info=NodeName(
-        name=BASE_ETHERSCAN_NODE_NAME,
-        endpoint='',
-        owned=False,
-        blockchain=SupportedBlockchain.BASE,
-    ),
-    weight=ONE,
-    active=True,
-)
-
 CPT_BASE = 'base'
 
 ARCHIVE_NODE_CHECK_ADDRESS = string_to_evm_address('0x3a9e669d9e2d0171c8a057031a9e9C048b7FEE60')

@@ -24,6 +24,10 @@ from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.ethereum.constants import (
+    ETHEREUM_ETHERSCAN_NODE,
+    ETHEREUM_ETHERSCAN_NODE_NAME,
+)
 from rotkehlchen.chain.ethereum.types import LogIterationCallback
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
@@ -204,8 +208,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             database: 'DBHandler',
             etherscan: Etherscan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
@@ -217,8 +219,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
-        self.etherscan_node = etherscan_node
-        self.etherscan_node_name = etherscan_node_name
+        self.etherscan_node = ETHEREUM_ETHERSCAN_NODE
         self.contracts = contracts
         self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
@@ -305,7 +306,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         """
         open_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
         if skip_etherscan:
-            selection = [wnode for wnode in open_nodes if wnode.node_info.name != self.etherscan_node_name and wnode.node_info.owned is False]  # noqa: E501
+            selection = [wnode for wnode in open_nodes if wnode.node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME and wnode.node_info.owned is False]  # noqa: E501
         else:
             selection = [wnode for wnode in open_nodes if wnode.node_info.owned is False]
 
@@ -507,7 +508,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         # Remove etherscan nodes and return if all nodes use etherscan,
         # so we don't query the highest block unnecessarily.
-        nodes = [node for node in nodes if node.node_info.name != self.etherscan_node_name]
+        nodes = [node for node in nodes if node.node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME]
         if len(nodes) == 0:
             return
 
@@ -535,7 +536,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 if node_info.name in self.failed_to_connect_nodes:
                     continue
 
-                if node_info.name != self.etherscan_node_name:
+                if node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME:
                     success, _ = self.attempt_connect(node=node_info)
                     if success is False:
                         self.failed_to_connect_nodes.add(node_info.name)
@@ -1484,8 +1485,6 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             database: 'DBHandler',
             etherscan: Etherscan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
@@ -1499,8 +1498,6 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=blockchain,
-            etherscan_node=etherscan_node,
-            etherscan_node_name=etherscan_node_name,
             contracts=contracts,
             contract_scan=contract_scan,
             contract_multicall=contract_multicall,
@@ -1525,8 +1522,6 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy):
             database: 'DBHandler',
             etherscan: Etherscan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
             contracts: EvmContracts,
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
@@ -1540,8 +1535,6 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy):
             database=database,
             etherscan=etherscan,
             blockchain=blockchain,
-            etherscan_node=etherscan_node,
-            etherscan_node_name=etherscan_node_name,
             contracts=contracts,
             contract_scan=contract_scan,
             contract_multicall=contract_multicall,

@@ -10,10 +10,7 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_ETHERSCAN_NODE
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE
-from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.errors.misc import RemoteError
@@ -376,9 +373,6 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-@pytest.mark.parametrize('scroll_manager_connect_at_start', [(SCROLL_ETHERSCAN_NODE,)])
-@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(GNOSIS_ETHERSCAN_NODE,)])
-@pytest.mark.parametrize('binance_sc_manager_connect_at_start', [(BINANCE_SC_ETHERSCAN_NODE,)])
 def test_detect_evm_accounts(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],

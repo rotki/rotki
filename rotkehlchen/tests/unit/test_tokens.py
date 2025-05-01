@@ -1,6 +1,6 @@
 import datetime
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, patch
 
 import gevent
@@ -25,7 +25,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE, A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    ETHERSCAN_TO_CHAINID,
+    SUPPORTED_CHAIN_IDS,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -552,7 +552,7 @@ def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
         blockchain: 'ChainsAggregator',
         globaldb: 'GlobalDBHandler',
 ) -> None:
-    for chain_id in ETHERSCAN_TO_CHAINID.values():
+    for chain_id in get_args(SUPPORTED_CHAIN_IDS):
         manager = getattr(blockchain, chain_id.to_name())
         for token in manager.tokens.token_exceptions:
             get_or_create_evm_token(
