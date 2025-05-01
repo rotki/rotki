@@ -4,7 +4,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/aggregated';
 import { usePremium } from '@/composables/premium';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -45,7 +45,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
-  const { exchangeRate } = useBalancePricesStore();
+  const { useExchangeRate } = usePriceUtils();
   const { assetName } = useAssetInfoRetrieval();
   const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
   const premium = usePremium();
@@ -67,13 +67,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorth = computed<BigNumber>(() => {
     const mainCurrency = get(currencySymbol);
-    const rate = get(exchangeRate(mainCurrency)) ?? One;
+    const rate = get(useExchangeRate(mainCurrency)) ?? One;
     return get(calculateTotalValue(get(nftsInNetValue))).multipliedBy(rate);
   });
 
   const overall = computed<Overall>(() => {
     const currency = get(currencySymbol);
-    const rate = get(exchangeRate(currency)) ?? One;
+    const rate = get(useExchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix());
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
@@ -121,7 +121,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   function getNetValue(startingDate: number): ComputedRef<NetValue> {
     return computed<NetValue>(() => {
       const currency = get(currencySymbol);
-      const rate = get(exchangeRate(currency)) ?? One;
+      const rate = get(useExchangeRate(currency)) ?? One;
 
       const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
 

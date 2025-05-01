@@ -2,7 +2,7 @@
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
@@ -21,7 +21,7 @@ const props = withDefaults(
 );
 
 const { pool, statistic } = toRefs(props);
-const { assetPrice } = useBalancePricesStore();
+const { assetPrice } = usePriceUtils();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPrice(LUSD_ID);
 

@@ -11,8 +11,8 @@ import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { appendAssetBalance, mergeAssetBalances } from '@/utils/balances';
 import { aggregateTotals } from '@/utils/blockchain/accounts';
@@ -26,7 +26,7 @@ interface UseLocationBalancesBreakdownReturn {
 export function useLocationBalancesBreakdown(): UseLocationBalancesBreakdownReturn {
   const { manualBalanceByLocation } = useManualBalanceData();
   const { balances: blockchainBalances, exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
-  const { assetPrice, toSelectedCurrency } = useBalancePricesStore();
+  const { assetPrice, toSelectedCurrency } = usePriceUtils();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const { assetAssociationMap } = useAssetInfoRetrieval();

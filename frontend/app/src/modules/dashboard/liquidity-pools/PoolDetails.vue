@@ -6,8 +6,8 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortAssetBalances } from '@/utils/balances';
 import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
@@ -27,7 +27,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice } = useBalancePricesStore();
+const { assetPrice } = usePriceUtils();
 const { assetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
 const { t } = useI18n();

@@ -2,7 +2,7 @@ import type { BalanceByLocation, LocationBalance } from '@/types/balances';
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortDesc } from '@/utils/bignumbers';
 
@@ -14,7 +14,7 @@ interface UseManualBalanceDataReturn {
 
 export function useManualBalanceData(): UseManualBalanceDataReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { exchangeRate } = useBalancePricesStore();
+  const { useExchangeRate } = usePriceUtils();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
   const manualLabels = computed<string[]>(() => {
@@ -48,7 +48,7 @@ export function useManualBalanceData(): UseManualBalanceDataReturn {
   const manualBalanceByLocation = computed<LocationBalance[]>(() => {
     const mainCurrency = get(currencySymbol);
     const balances = get(manualBalances);
-    const currentExchangeRate = get(exchangeRate(mainCurrency));
+    const currentExchangeRate = get(useExchangeRate(mainCurrency));
     if (currentExchangeRate === undefined)
       return [];
 

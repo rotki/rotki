@@ -4,7 +4,8 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = withDefaults(
@@ -27,7 +28,8 @@ const fiatPriceHint = ref<BigNumber | null>();
 const { asset } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice, fetchPrices, isAssetPriceInCurrentCurrency, toSelectedCurrency } = useBalancePricesStore();
+const { assetPrice, isAssetPriceInCurrentCurrency, toSelectedCurrency } = usePriceUtils();
+const { fetchPrices } = usePriceTaskManager();
 const { addLatestPrice } = useAssetPricesApi();
 
 const { fetchLatestPrices } = useAssetPricesApi();

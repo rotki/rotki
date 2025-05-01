@@ -7,21 +7,12 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
 import { BalanceType } from '@/types/balances';
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('@/store/balances/prices', async () => {
-  const { bigNumberify } = await import('@rotki/common');
-  return ({
-    useBalancePricesStore: vi.fn().mockReturnValue({
-      assetPrice: vi.fn().mockReturnValue(bigNumberify(1)),
-      exchangeRate: vi.fn().mockReturnValue(1),
-    }),
-  });
-});
 
 vi.mock('@/composables/api/balances/manual', () => ({
   useManualBalancesApi: vi.fn().mockReturnValue({
@@ -111,12 +102,24 @@ async function updateBalances(balances: ManualBalance[]): Promise<void> {
   await nextTick();
 }
 
+const ethPrice = {
+  isManualPrice: false,
+  oracle: 'coingecko',
+  value: bigNumberify(1),
+};
+
 describe('store::balances/manual', () => {
   let store: ReturnType<typeof useBalancesStore>;
 
   beforeAll(() => {
     setActivePinia(createPinia());
     store = useBalancesStore();
+    const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+    set(exchangeRates, { USD: bigNumberify(1) });
+    set(prices, {
+      ETH: ethPrice,
+      ETH2: ethPrice,
+    });
   });
 
   beforeEach(async () => {

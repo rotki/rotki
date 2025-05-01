@@ -5,7 +5,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
@@ -50,7 +50,7 @@ const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { useIsTaskRunning } = useTaskStore();
 
-const { getHistoricPrice } = useBalancePricesStore();
+const { getHistoricPrice } = usePriceTaskManager();
 const { addHistoricalPrice } = useAssetPricesApi();
 
 const isCurrentCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);

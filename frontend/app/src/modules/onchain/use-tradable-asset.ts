@@ -4,7 +4,7 @@ import type BigNumber from 'bignumber.js';
 import type { ComputedRef } from 'vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { sortDesc } from '@/utils/bignumbers';
@@ -18,7 +18,7 @@ interface UseTradableAssetReturn {
 
 export function useTradableAsset(address: MaybeRef<string | undefined>): UseTradableAssetReturn {
   const { balances } = storeToRefs(useBalancesStore());
-  const { assetPrice, exchangeRate, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+  const { assetPrice, isAssetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { isEvm } = useSupportedChains();
@@ -36,7 +36,7 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
         return price;
       }
 
-      const currentExchangeRate = get(exchangeRate(currency));
+      const currentExchangeRate = get(useExchangeRate(currency));
       return price.multipliedBy(currentExchangeRate || One);
     });
   }

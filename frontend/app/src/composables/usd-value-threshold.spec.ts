@@ -1,10 +1,11 @@
-import type { useBalancePricesStore } from '@/store/balances/prices';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useCurrencies } from '@/types/currencies';
 import { BalanceSource } from '@/types/settings/frontend-settings';
-import { type BigNumber, bigNumberify } from '@rotki/common';
+import { bigNumberify } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, ref, type ToRefs } from 'vue';
+import { ref, type ToRefs } from 'vue';
 import { useUsdValueThreshold } from './usd-value-threshold';
 
 type MockedStore<T extends (...args: any[]) => any> = ToRefs<Partial<ReturnType<T>>>;
@@ -22,30 +23,14 @@ vi.mock('@/store/settings/frontend', () => ({
   })),
 }));
 
-vi.mock('@/store/balances/prices', () => ({
-  useBalancePricesStore: (): Partial<ReturnType<typeof useBalancePricesStore>> => ({
-    exchangeRate: vi.fn((currency: string): ComputedRef<BigNumber | undefined> => computed(() => {
-      const rates: Record<string, number> = {
-        EUR: 1.1,
-        JPY: 0.008,
-      };
-
-      const rate = rates[currency];
-      return rate ? bigNumberify(rate) : undefined;
-    }),
-    ),
-  }),
-}));
-
-vi.mock('@/store/settings/general', () => ({
-  useGeneralSettingsStore: vi.fn((): MockedStore<typeof useGeneralSettingsStore> => ({
-    currencySymbol: ref('USD'),
-  })),
-}));
-
 describe('useUsdValueThreshold', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    const { exchangeRates } = storeToRefs(useBalancePricesStore());
+    set(exchangeRates, {
+      EUR: bigNumberify(1.1),
+      JPY: bigNumberify(0.008),
+    });
   });
 
   it('should return the threshold as is when currency is USD and value exists', () => {
@@ -54,9 +39,8 @@ describe('useUsdValueThreshold', () => {
   });
 
   it('should convert the threshold value based on exchange rate when currency is not USD', () => {
-    vi.mocked(useGeneralSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useGeneralSettingsStore>>({
-      currencySymbol: ref('EUR'),
-    }));
+    const currencies = useCurrencies();
+    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('EUR');
     const result = useUsdValueThreshold(BalanceSource.EXCHANGES);
     expect(result.value).toBe('11'); // 200 * 1.1
   });
@@ -65,9 +49,8 @@ describe('useUsdValueThreshold', () => {
     vi.mocked(useFrontendSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useFrontendSettingsStore>>({
       balanceUsdValueThreshold: ref({ BLOCKCHAIN: '0' }),
     }));
-    vi.mocked(useGeneralSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useGeneralSettingsStore>>({
-      currencySymbol: ref('TRY'),
-    }));
+    const currencies = useCurrencies();
+    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('TRY');
     const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
     expect(result.value).toBe('0');
   });
@@ -76,9 +59,8 @@ describe('useUsdValueThreshold', () => {
     vi.mocked(useFrontendSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useFrontendSettingsStore>>({
       balanceUsdValueThreshold: ref({ }),
     }));
-    vi.mocked(useGeneralSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useGeneralSettingsStore>>({
-      currencySymbol: ref('TRY'),
-    }));
+    const currencies = useCurrencies();
+    useGeneralSettingsStore().settings.mainCurrency = currencies.findCurrency('TRY');
     const result = useUsdValueThreshold(BalanceSource.BLOCKCHAIN);
     expect(result.value).toBeUndefined();
   });

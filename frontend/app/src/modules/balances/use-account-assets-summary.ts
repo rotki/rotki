@@ -4,8 +4,8 @@ import type { ComputedRef, Ref } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
 import { isEmpty } from 'es-toolkit/compat';
@@ -23,7 +23,7 @@ interface SummaryFilters {
 export function useAccountAssetsSummary(): UseAccountAssetsSummaryReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { assetPrice } = useBalancePricesStore();
+  const { assetPrice } = usePriceUtils();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
   const { assetAssociationMap, assetInfo } = useAssetInfoRetrieval();
 

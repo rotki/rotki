@@ -14,8 +14,8 @@ import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/comp
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -37,7 +37,7 @@ const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { showConfirmation } = useAccountDelete();
 const { fetchEthStakingValidators } = useEthStaking();
-const { exchangeRate } = useBalancePricesStore();
+const { useExchangeRate } = usePriceUtils();
 const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const {
@@ -172,7 +172,7 @@ function confirmDelete(item: EthereumValidator) {
 
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
-  return (get(rows).totalUsdValue || Zero).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
+  return (get(rows).totalUsdValue || Zero).multipliedBy(get(useExchangeRate(mainCurrency)) ?? One);
 });
 
 watchImmediate(ethStakingValidators, async () => {

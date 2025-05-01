@@ -5,7 +5,7 @@ import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composable
 import { useCopy } from '@/composables/copy';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { displayAmountFormatter } from '@/data/amount-formatter';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -89,7 +89,7 @@ const { currency, currencySymbol: currentCurrency, floatingPrecision } = storeTo
 
 const { scrambleData, scrambleMultiplier, shouldShowAmount } = storeToRefs(useSessionSettingsStore());
 
-const { assetPrice, exchangeRate, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
+const { assetPrice, isAssetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
 
 const {
   abbreviateNumber,
@@ -131,8 +131,8 @@ const latestFiatValue = computed<BigNumber>(() => {
   if (!from || to === from)
     return currentValue;
 
-  const multiplierRate = to === CURRENCY_USD ? One : get(exchangeRate(to));
-  const dividerRate = from === CURRENCY_USD ? One : get(exchangeRate(from));
+  const multiplierRate = to === CURRENCY_USD ? One : get(useExchangeRate(to));
+  const dividerRate = from === CURRENCY_USD ? One : get(useExchangeRate(from));
 
   if (!multiplierRate || !dividerRate)
     return currentValue;
@@ -375,7 +375,7 @@ const { copied, copy } = useCopy(copyValue);
 
 const anyLoading = logicOr(loading, evaluating);
 const info = assetInfo(asset, resolutionOptions);
-const { getAssetPriceOracle, isManualAssetPrice } = useBalancePricesStore();
+const { getAssetPriceOracle, isManualAssetPrice } = usePriceUtils();
 const isManualPrice = isManualAssetPrice(priceAsset);
 
 const assetOracle = computed<string | undefined>(() => {

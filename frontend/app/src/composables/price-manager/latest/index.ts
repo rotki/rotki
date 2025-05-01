@@ -3,7 +3,7 @@ import type { ComputedRef, Ref } from 'vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useBalances } from '@/composables/balances';
 import { useStatusUpdater } from '@/composables/status';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -30,7 +30,7 @@ export function useLatestPrices(
   const refreshing = ref(false);
 
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
-  const { assetPrice } = useBalancePricesStore();
+  const { assetPrice } = usePriceUtils();
   const { refreshPrices } = useBalances();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();

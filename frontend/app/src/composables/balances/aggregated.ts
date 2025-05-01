@@ -7,8 +7,8 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { samePriceAssets } from '@/types/blockchain';
 import { sumAssetBalances } from '@/utils/balances';
 import { aggregateTotals } from '@/utils/blockchain/accounts';
@@ -40,7 +40,7 @@ interface UseAggregatedBalancesReturn {
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
-  const { assetPrice } = useBalancePricesStore();
+  const { assetPrice } = usePriceUtils();
   const { balances: exchangeBalances } = useExchangeData();
   const { balances: blockchainBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
 

@@ -6,8 +6,8 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
 import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
@@ -37,7 +37,7 @@ const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
-const { getHistoricPrice } = useBalancePricesStore();
+const { getHistoricPrice } = usePriceTaskManager();
 
 function createKey(item: MissingPrice) {
   return item.fromAsset + item.toAsset + item.time;

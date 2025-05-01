@@ -7,7 +7,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
@@ -45,7 +45,7 @@ const fetchedAssetToFiatPrice = ref<string>('');
 
 const { useIsTaskRunning } = useTaskStore();
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
-const { getHistoricPrice } = useBalancePricesStore();
+const { getHistoricPrice } = usePriceTaskManager();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { addHistoricalPrice } = useAssetPricesApi();
 
