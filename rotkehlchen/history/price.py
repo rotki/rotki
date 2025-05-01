@@ -330,7 +330,6 @@ class PriceHistorian:
         send_ws_every_prices = msg_aggregator.how_many_events_per_ws(
             total_events=(total_events := len(assets_timestamp)),
         )
-        price_historian = PriceHistorian()
         for idx, (asset, timestamp) in enumerate(assets_timestamp):
             if idx % send_ws_every_prices == 0:
                 msg_aggregator.add_message(
@@ -343,7 +342,7 @@ class PriceHistorian:
                 )
 
             try:
-                assets_price[asset][timestamp] = price_historian.query_historical_price(
+                assets_price[asset][timestamp] = PriceHistorian.query_historical_price(
                     from_asset=asset,
                     to_asset=target_asset,
                     timestamp=timestamp,

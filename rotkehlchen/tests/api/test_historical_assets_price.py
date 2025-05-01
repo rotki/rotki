@@ -26,22 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
-@pytest.mark.parametrize('mocked_price_queries', [{
-    'BTC': {
-        'USD': {
-            1579543935: FVal('30000'),
-            1611166335: FVal('35000'),
-        },
-    },
-    'USD': {'USD': {1579543935: FVal('1')}},
-    'GBP': {
-        'USD': {
-            1548007935: FVal('1.25'),
-            1611166335: FVal('1.27'),
-        },
-    },
-    'XRP': {'USD': {1611166335: FVal('0')}},
-}])
+@pytest.mark.vcr
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_get_historical_assets_price(
         rotkehlchen_api_server: APIServer,
@@ -78,15 +63,15 @@ def test_get_historical_assets_price(
 
     assert len(result) == 2
     assert result['assets']['BTC'] == {
-        '1579543935': '30000',
-        '1611166335': '35000',
+        '1579543935': '8827.25596417741',
+        '1611166335': '35538.1364151362',
     }
     assert result['assets']['USD'] == {'1579543935': '1'}
     assert result['assets']['GBP'] == {
-        '1548007935': '1.25',
-        '1611166335': '1.27',
+        '1548007935': '1.287451',
+        '1611166335': '1.365793',
     }
-    assert result['assets']['XRP'] == {'1611166335': '0'}
+    assert result['assets']['XRP'] == {'1611166335': '0.295715040703119'}
     assert result['target_asset'] == 'USD'
     websocket_connection.wait_until_messages_num(num=3, timeout=2)
     for expected_processed_events in (0, 5, 6):
