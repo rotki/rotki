@@ -104,7 +104,7 @@ from rotkehlchen.chain.evm.types import (
 )
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.limits import (
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_USER_NOTES_LIMIT,
@@ -182,7 +182,7 @@ from rotkehlchen.errors.misc import (
     SystemPermissionError,
     TagConstraintError,
 )
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
@@ -4719,28 +4719,34 @@ class RestAPI:
 
         serialized_history_events = []
         headers: dict[str, None] = {}
+        query_data, unique_data = [], set()
         for event in history_events:
-            try:  # ask oracles for the price in the given timestamp and currency
-                price = PriceHistorian.query_historical_price(
-                    from_asset=event.asset,
-                    to_asset=currency,
-                    timestamp=ts_ms_to_sec(event.timestamp),
-                )
-            except (PriceQueryUnsupportedAsset, RemoteError):
-                fiat_value = ZERO
-            except NoPriceForGivenTimestamp as e:
-                # In the case of NoPriceForGivenTimestamp when we got rate limited
-                if e.rate_limited is True:
-                    return wrap_in_fail_result(
-                        message='Price query got rate limited for all the oracles. Try again later',  # noqa: E501
-                        status_code=HTTPStatus.BAD_GATEWAY,
-                    )
-                fiat_value = ZERO
-            else:
-                fiat_value = event.amount * price
+            if (entry := (event.asset, currency, ts_ms_to_sec(event.timestamp))) not in unique_data:  # noqa: E501
+                unique_data.add(entry)
+                query_data.append(entry)
 
+        prices_from_db = GlobalDBHandler.get_historical_prices(
+            query_data=query_data,  # type: ignore[arg-type]  # currency is a subclass of Asset
+            max_seconds_distance=HOUR_IN_SECONDS,
+        )
+        missing_prices: list[tuple[Asset, Timestamp]] = []
+        cached_db_prices: defaultdict[Asset, defaultdict[Timestamp, FVal]] = defaultdict(lambda: defaultdict(lambda: ZERO))  # noqa: E501
+        for idx, (asset, _, timestamp) in enumerate(query_data):
+            if (db_price := prices_from_db[idx]) is not None:
+                cached_db_prices[db_price.from_asset][db_price.timestamp] = db_price.price
+            elif (asset, timestamp) not in missing_prices:
+                missing_prices.append((asset, timestamp))
+
+        for asset, timestamped_prices in PriceHistorian.query_multiple_prices(
+            assets_timestamp=missing_prices,
+            target_asset=currency,
+            msg_aggregator=self.rotkehlchen.msg_aggregator,
+        ).items():
+            cached_db_prices[asset].update(timestamped_prices)
+
+        for event in history_events:
             serialized_event = event.serialize_for_csv(
-                fiat_value=fiat_value,
+                fiat_value=event.amount * cached_db_prices[event.asset][ts_ms_to_sec(event.timestamp)],  # noqa: E501
                 settings=settings,
             )
             serialized_history_events.append(serialized_event)
