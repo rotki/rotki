@@ -18,7 +18,6 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import AgnosticAddressAccountForm from '@/components/accounts/management/types/AgnosticAddressAccountForm.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
@@ -43,37 +42,18 @@ const chain = useRefPropVModel(modelValue, 'chain');
 const { isEvm } = useSupportedChains();
 const { t } = useI18n();
 const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
-const { useUnifiedEtherscanApi } = storeToRefs(useGeneralSettingsStore());
-const router = useRouter();
 
-const etherscanApiKeyAlert = computed(() => {
+const showEtherscanApiKeysAlert = computed(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
-  if (
+  return (
     selectedChain
     && (selectedChain === 'evm' || get(isEvm(selectedChain)))
     && currentModelValue.mode === 'add'
-  ) {
-    const unified = get(useUnifiedEtherscanApi);
-    const chainName = [Blockchain.ETH, 'evm'].includes(selectedChain) ? 'ethereum' : selectedChain;
-    const displayChain = unified ? undefined : toHumanReadable(selectedChain, 'sentence');
-
-    if (!get(apiKey('etherscan', unified ? 'ethereum' : chainName))) {
-      return {
-        action: t('notification_messages.missing_api_key.action'),
-        chainName,
-        message: t('external_services.etherscan.api_key_message', { chain: displayChain }),
-      };
-    }
-  }
-
-  return null;
+    && !get(apiKey('etherscan'))
+  );
 });
-
-function navigateToApiKeySettings(chainName: string) {
-  router.push({ hash: `#${chainName}`, path: '/api-keys/external' });
-}
 
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
@@ -106,10 +86,17 @@ watchImmediate(chain, (chain) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    set(modelValue, {
+    const newModelValue = {
       ...account,
       chain,
-    });
+    };
+
+    const data = get(modelValue).data;
+    if (data && Array.isArray(data)) {
+      newModelValue.data = data;
+    }
+
+    set(modelValue, newModelValue);
   }
 });
 
@@ -136,6 +123,7 @@ watch(inputMode, (mode) => {
   }
   else {
     const account = createNewBlockchainAccount();
+
     set(modelValue, {
       ...account,
       chain: selectedChain,
@@ -154,20 +142,9 @@ defineExpose({
 
 <template>
   <div data-cy="blockchain-balance-form">
-    <RuiAlert
-      v-if="etherscanApiKeyAlert"
-      type="warning"
-      class="mb-4"
-    >
-      {{ etherscanApiKeyAlert.message }}
-      <a
-        href="#"
-        class="font-medium underline"
-        @click.prevent="navigateToApiKeySettings(etherscanApiKeyAlert.chainName)"
-      >
-        {{ etherscanApiKeyAlert.action }}
-      </a>
-    </RuiAlert>
+    <AccountFormEtherscanAlert
+      v-if="showEtherscanApiKeysAlert"
+    />
 
     <AccountSelector
       v-if="chain"

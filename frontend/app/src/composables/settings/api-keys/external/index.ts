@@ -8,7 +8,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 
 function getName(name: ExternalServiceName, chain?: string): string {
-  if (name === 'etherscan' || name === 'blockscout') {
+  if (name === 'blockscout') {
     assert(chain, `chain is missing for ${name}`);
     if (chain === 'ethereum')
       return name;
@@ -52,7 +52,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     if (!items)
       return '';
 
-    if (service === 'etherscan' || service === 'blockscout') {
+    if (service === 'blockscout') {
       const itemService = items[service];
       const chainId = get(chain);
       assert(chainId, `missing chain for ${service}`);
@@ -79,7 +79,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     const items = get(keys);
     const service = get(name);
 
-    if (!items || service === 'etherscan' || service === 'blockscout')
+    if (!items || service === 'blockscout')
       return null;
 
     const itemService = items[service];

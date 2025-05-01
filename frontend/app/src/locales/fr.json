@@ -1985,9 +1985,8 @@
       "description": "Erreur lors de la suppression des clés API des services externes : {message}"
     },
     "etherscan": {
-      "delete_tooltip": "Supprime la clé Etherscan {chain}",
       "description": "Recommandé pour les soldes et transactions EVM sur toute blockchain autre que Ethereum si vous n'utilisez pas votre propre nœud.",
-      "hint": "Entrer votre clé Etherscan {chain}",
+      "hint": "Entrer votre clé Etherscan",
       "title": "Etherscan"
     },
     "get_api_key": "Vous pouvez demander une clé API {link}",

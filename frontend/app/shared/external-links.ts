@@ -10,16 +10,7 @@ export const TWITTER_URL = 'https://twitter.com/rotkiapp';
 
 // Cannot be checked with fetch because it always returns 403, because it needs authentication,
 // and will be redirected to the register page instead
-export const etherscanLinks = {
-  ethereum: 'https://etherscan.io/myapikey',
-  optimism: 'https://optimistic.etherscan.io/myapikey',
-  polygonPos: 'https://polygonscan.com/myapikey',
-  arbitrumOne: 'https://arbiscan.io/myapikey',
-  base: 'https://basescan.org/myapikey',
-  gnosis: 'https://gnosisscan.io/myapikey',
-  scroll: 'https://scrollscan.com/myapikey',
-  binanceSc: 'https://bscscan.com/myapikey',
-};
+export const etherscanLink = 'https://etherscan.io/myapikey';
 
 export const blockscoutLinks = {
   ethereum: 'https://eth.blockscout.com/account/api-key',

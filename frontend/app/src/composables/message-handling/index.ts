@@ -1,5 +1,5 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
-import { backoff } from '@shared/utils';
+import { backoff, startPromise } from '@shared/utils';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,
@@ -128,7 +128,7 @@ export function useMessageHandling(): UseMessageHandling {
     }
   };
 
-  const handleProgressUpdates = (rawData: ProgressUpdateResultData): Notification | null => {
+  const handleProgressUpdates = async (rawData: ProgressUpdateResultData): Promise<Notification | null> => {
     const subtype = rawData.subtype;
 
     if (subtype === SocketMessageProgressUpdateSubType.CSV_IMPORT_RESULT) {
@@ -167,7 +167,7 @@ export function useMessageHandling(): UseMessageHandling {
     };
 
     if (type === SocketMessageType.MISSING_API_KEY) {
-      addNotification(handleMissingApiKeyMessage(message.data));
+      addNotification(await handleMissingApiKeyMessage(message.data));
     }
     else if (type === SocketMessageType.BALANCES_SNAPSHOT_ERROR) {
       addNotification(handleSnapshotError(message.data));
@@ -214,10 +214,10 @@ export function useMessageHandling(): UseMessageHandling {
       addNotification(handleExchangeUnknownAsset(message.data));
     }
     else if (type === SocketMessageType.PROGRESS_UPDATES) {
-      addNotification(handleProgressUpdates(message.data));
+      addNotification(await handleProgressUpdates(message.data));
     }
     else {
-      logger.warn(`Unsupported socket message received: '${type}'`);
+      logger.warn(`Unsupported socket message received: '${type.toString()}'`);
     }
 
     notifications.forEach(notify);
@@ -239,7 +239,7 @@ export function useMessageHandling(): UseMessageHandling {
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
         updateDataMigrationStatus(object);
       else if (object.type === SocketMessageType.PROGRESS_UPDATES)
-        handleProgressUpdates(object);
+        startPromise(handleProgressUpdates(object));
       else logger.error('unsupported message:', message);
     }
     catch {

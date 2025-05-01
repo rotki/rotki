@@ -1809,9 +1809,8 @@
       "description": "删除外部服务 api 密钥时出错： {message}"
     },
     "etherscan": {
-      "delete_tooltip": "删除 {chain} Etherscan API 密钥",
       "description": "如果您不使用自己的节点，建议用于任何 EVM 区块链余额或交易。",
-      "hint": "输入您的 {chain} Etherscan API 密钥",
+      "hint": "输入您的 Etherscan API 密钥",
       "title": "Etherscan"
     },
     "get_api_key": "您可以申请 an API key {link}",
