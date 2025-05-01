@@ -239,7 +239,7 @@ const disabledRows = computed(() => {
 <template>
   <div data-cy="managed-assets-table">
     <div class="flex flex-row flex-wrap items-center gap-2 mb-4">
-      <div class="flex flex-row gap-2">
+      <div class="flex flex-row gap-3">
         <IgnoreButtons
           :disabled="selected.length === 0"
           :disabled-actions="disabledIgnoreActions"
@@ -247,14 +247,20 @@ const disabledRows = computed(() => {
         />
         <div
           v-if="selected.length > 0"
-          class="flex flex-row items-center gap-2"
+          class="flex gap-2 items-center text-sm"
         >
           {{ t('asset_table.selected', { count: selected.length }) }}
           <RuiButton
             size="sm"
-            variant="text"
+            class="!py-0 !px-1.5 !gap-0.5 dark:!bg-opacity-30 dark:!text-white"
             @click="selected = []"
           >
+            <template #prepend>
+              <RuiIcon
+                name="lu-x"
+                size="14"
+              />
+            </template>
             {{ t('common.actions.clear_selection') }}
           </RuiButton>
         </div>

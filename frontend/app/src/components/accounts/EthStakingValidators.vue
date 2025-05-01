@@ -31,6 +31,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
+const selected = ref<number[]>([]);
+
 const blockchainValidatorsStore = useBlockchainValidatorsStore();
 const { fetchValidators } = blockchainValidatorsStore;
 const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
@@ -165,7 +167,15 @@ async function refresh() {
 
 function confirmDelete(item: EthereumValidator) {
   showConfirmation({
-    data: item,
+    data: [item],
+    type: 'validator',
+  });
+}
+
+function deleteSelectedValidators() {
+  const items = get(rows).data.filter(item => get(selected).includes(item.index));
+  showConfirmation({
+    data: items,
     type: 'validator',
   });
 }
@@ -187,20 +197,57 @@ defineExpose({
 <template>
   <RuiCard>
     <template #header>
-      {{ t('blockchain_balances.validators') }}
+      {{ t('blockchain_balances.validators.title') }}
     </template>
-    <div class="flex w-full">
-      <div class="grow" />
-      <div>
-        <TableFilter
-          v-model:matches="filters"
-          :matchers="matchers"
-          class="max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem]"
-          :location="SavedFilterLocation.ETH_VALIDATORS"
-        />
+    <div class="flex flex-row flex-wrap items-center gap-2">
+      <div class="flex flex-row gap-3">
+        <RuiButton
+          :disabled="selected.length === 0"
+          class="h-10"
+          variant="outlined"
+          color="error"
+          :loading="accountOperation"
+          @click="deleteSelectedValidators()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-trash-2"
+              size="16"
+            />
+          </template>
+          {{ t('common.actions.delete') }}
+        </RuiButton>
+        <div
+          v-if="selected.length > 0"
+          class="flex gap-2 items-center text-sm"
+        >
+          {{ t('blockchain_balances.validators.selected', { count: selected.length }) }}
+          <RuiButton
+            size="sm"
+            class="!py-0 !px-1.5 !gap-0.5 dark:!bg-opacity-30 dark:!text-white"
+            @click="selected = []"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-x"
+                size="14"
+              />
+            </template>
+            {{ t('common.actions.clear_selection') }}
+          </RuiButton>
+        </div>
       </div>
+      <div class="grow" />
+
+      <TableFilter
+        v-model:matches="filters"
+        :matchers="matchers"
+        class="max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem]"
+        :location="SavedFilterLocation.ETH_VALIDATORS"
+      />
     </div>
     <RuiDataTable
+      v-model="selected"
       v-model:sort.external="sort"
       v-model:pagination.external="pagination"
       class="mt-4"
@@ -210,6 +257,8 @@ defineExpose({
       :cols="cols"
       :rows="rows.data"
       sticky-header
+      show-select
+      return-object
       :empty="{ description: t('data_table.no_data') }"
     >
       <template #item.index="{ row }">

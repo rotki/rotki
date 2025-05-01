@@ -32,6 +32,7 @@
       },
       "description_address": "Are you sure you want to delete {address} address from {chain} chain",
       "description_multiple_address": "Are you sure you want to delete {address} address from {length} chains: {chains}",
+      "description_multiple_validator": "Are you sure you want to delete {length} selected validators?",
       "description_validator": "Are you sure you want to delete validator with public key: {publicKey} ({index})",
       "description_xpub": "Are you sure you want to delete {address}",
       "title": "Account delete"
@@ -1437,7 +1438,10 @@
     },
     "title": "Blockchain Balances per asset",
     "validator_index_label": "Ethereum validator No. {index}",
-    "validators": "Ethereum Validators"
+    "validators": {
+      "selected": "{count} validator(s) selected",
+      "title": "Ethereum Validators"
+    }
   },
   "calendar": {
     "add_error": "Could not add event: {message}",

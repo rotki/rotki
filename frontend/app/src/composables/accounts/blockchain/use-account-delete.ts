@@ -20,7 +20,7 @@ type ShowConfirmationParams = {
   data: BlockchainAccountBalance;
 } | {
   type: 'validator';
-  data: EthereumValidator;
+  data: EthereumValidator[];
 };
 
 interface EvmPayloadData {
@@ -31,7 +31,7 @@ interface EvmPayloadData {
 
 type Payload = {
   type: 'validator';
-  data: string;
+  data: string[];
 } | {
   type: 'evm';
   data: EvmPayloadData;
@@ -49,7 +49,7 @@ type Payload = {
 function toPayload(params: ShowConfirmationParams): Payload {
   if (params.type === 'validator') {
     return {
-      data: params.data.publicKey,
+      data: params.data.map(item => item.publicKey),
       type: 'validator',
     };
   }
@@ -171,9 +171,9 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     set(balances, knownBalances);
   };
 
-  async function removeValidator(publicKey: string): Promise<void> {
-    await deleteEth2Validators([publicKey]);
-    removeAccounts({ addresses: [publicKey], chains: [Blockchain.ETH2] });
+  async function removeValidator(publicKeys: string[]): Promise<void> {
+    await deleteEth2Validators(publicKeys);
+    removeAccounts({ addresses: publicKeys, chains: [Blockchain.ETH2] });
   }
 
   async function removeGroupAccounts(
@@ -220,12 +220,17 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   }
 
   function getConfirmationMessage(params: ShowConfirmationParams): string {
-    const address = params.type === 'validator' ? params.data.publicKey : getAccountAddress(params.data);
-
     if (params.type === 'validator') {
-      const { index, publicKey } = params.data;
+      const length = params.data.length;
+      if (length > 1) {
+        return t('account_balances.confirm_delete.description_multiple_validator', { length });
+      }
+
+      const { index, publicKey } = params.data[0];
       return t('account_balances.confirm_delete.description_validator', { index, publicKey });
     }
+
+    const address = getAccountAddress(params.data);
 
     const account = params.data;
 
