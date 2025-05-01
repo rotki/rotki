@@ -2752,6 +2752,61 @@ def test_withdraw_eure_arb(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_remove_liquidity_single_token(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x047c4283007fb778632f75c01984cd9f8a9847b03d9753cb37eb7530bd16615c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1744886719000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000229125'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xec090cf6DD891D2d014beA6edAda6e05E025D93d'),
+        amount=FVal(returned_amount := '870.17551855514354715'),
+        location_label=user_address,
+        notes=f'Return {returned_amount} crvUSDC',
+        counterparty=CPT_CURVE,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal(withdraw_amount := '886.525625'),
+        location_label=user_address,
+        address=(pool_addr := string_to_evm_address('0xec090cf6DD891D2d014beA6edAda6e05E025D93d')),
+        notes=f'Remove {withdraw_amount} USDC from {pool_addr} curve pool',
+        counterparty=CPT_CURVE,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xfA0Bd4E927a5C2F04f387633E108A2A104C993c1']])
 def test_mint_crv_arb(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
