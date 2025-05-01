@@ -1712,7 +1712,6 @@
       "description": "Error while removing the external service api keys: {message}"
     },
     "etherscan": {
-      "delete_tooltip": "Deletes the Etherscan API key",
       "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
       "hint": "Enter your Etherscan API key",
       "title": "Etherscan"

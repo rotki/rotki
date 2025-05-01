@@ -1,33 +1,20 @@
 <script setup lang="ts">
+import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import { useNotificationsStore } from '@/store/notifications';
-import { isEtherscanKey } from '@/types/external';
 import { NotificationCategory } from '@rotki/common';
-import { etherscanLinks } from '@shared/external-links';
-import { camelCase } from 'es-toolkit';
-
-const props = withDefaults(
-  defineProps<{
-    evmChain: string;
-    chainName: string;
-    unified?: boolean;
-  }>(),
-  {
-    unified: false,
-  },
-);
-const { evmChain } = toRefs(props);
+import { etherscanLink } from '@shared/external-links';
 
 const name = 'etherscan';
 const { t } = useI18n();
 
-const { actionStatus, apiKey, confirmDelete, getName, loading, save } = useExternalApiKeys(t);
+const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
+const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
-const key = apiKey(name, evmChain);
-const status = actionStatus(name, evmChain);
-const identifier = computed(() => getName(name, get(evmChain)));
+const key = apiKey(name);
+const status = actionStatus(name);
 
 const { prioritized, remove: removeNotification } = useNotificationsStore();
 
@@ -37,63 +24,72 @@ const { prioritized, remove: removeNotification } = useNotificationsStore();
 function removeEtherscanNotification() {
   // using prioritized list here, because the actionable notifications are always on top (index 0|1)
   // so it is faster to find
-  const notifications = prioritized.filter((data) => {
-    const isEtherscanNotification = data.category === NotificationCategory.ETHERSCAN;
-    if (props.unified)
-      return isEtherscanNotification;
-    return data.i18nParam?.props?.key === get(evmChain);
-  });
+  const notifications = prioritized.filter(data => data.category === NotificationCategory.ETHERSCAN);
 
   notifications.forEach((notification) => {
     removeNotification(notification.id);
   });
 }
-
-const link = computed(() => {
-  const location = camelCase(get(evmChain));
-  if (isEtherscanKey(location))
-    return etherscanLinks[location];
-
-  return undefined;
-});
 </script>
 
 <template>
-  <ServiceKey
-    :api-key="key"
-    :name="identifier"
-    :data-cy="identifier"
-    :label="t('external_services.api_key')"
-    :hint="
-      t('external_services.etherscan.hint', {
-        chain: chainName,
-      })
-    "
-    :loading="loading"
-    :tooltip="
-      t('external_services.etherscan.delete_tooltip', {
-        chain: chainName,
-      })
-    "
-    :status="status"
-    class="pt-2"
-    @save="save($event, removeEtherscanNotification)"
-    @delete-key="confirmDelete($event)"
+  <ServiceKeyCard
+    :name="name"
+    :key-set="!!key"
+    data-cy="etherscan-api-keys"
+    :title="t('external_services.etherscan.title')"
+    :subtitle="t('external_services.etherscan.description')"
+    image-src="./assets/images/services/etherscan.svg"
+    :primary-action="key
+      ? t('external_services.replace_key')
+      : t('external_services.save_key')"
+    :action-disabled="!serviceKeyRef?.currentValue"
+    @confirm="saveHandler()"
   >
-    <i18n-t
-      v-if="link"
-      tag="div"
-      class="text-rui-text-secondary text-body-2"
-      keypath="external_services.get_api_key"
+    <template #left-buttons>
+      <RuiButton
+        :disabled="loading || !key"
+        color="error"
+        variant="text"
+        data-cy="delete-button"
+        @click="confirmDelete(name)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-trash-2"
+            size="16"
+          />
+        </template>
+        {{ t('external_services.delete_key') }}
+      </RuiButton>
+    </template>
+
+    <ServiceKey
+      ref="serviceKeyRef"
+      hide-actions
+      :api-key="key"
+      :name="name"
+      :data-cy="name"
+      :label="t('external_services.api_key')"
+      :hint="t('external_services.etherscan.hint')"
+      :loading="loading"
+      :status="status"
+      @save="save($event, removeEtherscanNotification)"
     >
-      <template #link>
-        <ExternalLink
-          color="primary"
-          :url="link"
-        >
-          {{ t('common.here') }}
-        </ExternalLink>
-      </template>
-    </i18n-t>
-  </ServiceKey>
+      <i18n-t
+        tag="div"
+        class="text-rui-text-secondary text-body-2"
+        keypath="external_services.get_api_key"
+      >
+        <template #link>
+          <ExternalLink
+            color="primary"
+            :url="etherscanLink"
+          >
+            {{ t('common.here') }}
+          </ExternalLink>
+        </template>
+      </i18n-t>
+    </ServiceKey>
+  </ServiceKeyCard>
 </template>

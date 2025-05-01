@@ -138,7 +138,7 @@ export function useMessageHandling(): UseMessageHandling {
     action: {
       action: async () => router.push({
         path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
-        query: { service: 'gnosisPay' },
+        query: { service: 'gnosis_pay' },
       }),
       icon: 'lu-arrow-right',
       label: t('notification_messages.gnosis_pay_session_key_expired.replace_key'),

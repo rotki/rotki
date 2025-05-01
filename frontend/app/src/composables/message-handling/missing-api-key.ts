@@ -1,18 +1,15 @@
 import type { CommonMessageHandler, MissingApiKey } from '@/types/websocket-messages';
 import { useInterop } from '@/composables/electron-interop';
-import { useSupportedChains } from '@/composables/info/chains';
 import { getServiceRegisterUrl } from '@/utils/url';
-import { type Blockchain, type Notification, type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
+import { type Notification, type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 
 export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<MissingApiKey> {
-  const { getChainName } = useSupportedChains();
   const router = useRouter();
 
   const handle = (data: MissingApiKey): Notification => {
-    const { location, service } = data;
-    const { external, route } = getServiceRegisterUrl(service, location) ?? { external: undefined, route: undefined };
-    const locationName = get(getChainName(location as Blockchain));
+    const { service } = data;
+    const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
 
     const actions: NotificationAction[] = [];
 
@@ -36,7 +33,6 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
     }
 
     const metadata = {
-      location: toHumanReadable(locationName, 'capitalize'),
       service: toHumanReadable(service, 'capitalize'),
     };
 
@@ -52,7 +48,6 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
           : 'notification_messages.missing_api_key.etherscan.message',
         props: {
           ...metadata,
-          key: location,
           url: external ?? '',
           ...(theGraphWarning && { docsUrl: externalLinks.usageGuideSection.theGraphApiKey }),
         },

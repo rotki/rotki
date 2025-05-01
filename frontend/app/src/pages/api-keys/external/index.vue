@@ -10,7 +10,7 @@ const { load } = useExternalApiKeys(t);
 
 const services = [
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKeys.vue')),
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKey.vue')),
     name: 'etherscan',
   },
   {
