@@ -246,8 +246,8 @@ const nftLimited = computed(() => get(error).includes('limit'));
       <template #link>
         <InternalLink
           :to="{
-            path: `${Routes.API_KEYS_EXTERNAL_SERVICES}`,
-            hash: '#open-sea-api-key',
+            path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+            query: { service: 'opensea' },
           }"
         >
           {{ t('nft_gallery.open_sea') }}

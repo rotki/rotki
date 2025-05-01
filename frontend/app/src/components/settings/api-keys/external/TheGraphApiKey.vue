@@ -36,6 +36,7 @@ const link = externalLinks.applyTheGraphApiKey;
 
 <template>
   <ServiceKeyCard
+    :name="name"
     :key-set="!!key"
     :title="t('external_services.thegraph.title')"
     :subtitle="t('external_services.thegraph.description')"
