@@ -2816,7 +2816,15 @@
         "unmark_message": "Token could not be removed from spam assets list: {message}",
         "unmark_title": "Failed to remove token from spam assets list"
       },
-      "hint": "The asset is marked as a spam asset. To be able to unignore this asset, you need to remove it from the spam assets list."
+      "hint": "The asset is marked as a spam asset. To be able to unignore this asset, you need to remove it from the spam assets list.",
+      "warning": {
+        "manual_balances_message": "Cannot mark this asset(s) as spam because they are added as manual balances: {assets}",
+        "manual_balances_title": "Some assets can't be marked as spam"
+      }
+    },
+    "warning": {
+      "manual_balances_message": "Cannot ignore this asset(s) because they are added as manual balances: {assets}",
+      "manual_balances_title": "Some assets can't be ignored"
     },
     "whitelist": {
       "action": {

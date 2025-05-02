@@ -2,7 +2,9 @@ import { useBalances } from '@/composables/balances';
 import { useMessageHandling } from '@/composables/message-handling';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -28,6 +30,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { fetchManualBalances } = useManualBalances();
   const { fetchConnectedExchangeBalances } = useExchanges();
   const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { removeIgnoredAssets } = useBalancesStore();
 
   const frontendStore = useFrontendSettingsStore();
   const { balanceUsdValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
@@ -121,6 +124,20 @@ export const useMonitorStore = defineStore('monitor', () => {
 
     if (!isEqual(current[BalanceSource.BLOCKCHAIN], old[BalanceSource.BLOCKCHAIN])) {
       startPromise(fetchBlockchainBalances());
+    }
+  });
+
+  const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
+
+  watch(ignoredAssets, (curr, prev) => {
+    const removedAssets = prev.filter(asset => !curr.includes(asset));
+    if (removedAssets.length > 0) {
+      startPromise(fetchBlockchainBalances());
+    }
+
+    const addedAssets = curr.filter(asset => !prev.includes(asset));
+    if (addedAssets.length > 0) {
+      removeIgnoredAssets(curr);
     }
   });
 

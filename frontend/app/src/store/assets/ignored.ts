@@ -1,7 +1,10 @@
 import type { ActionStatus } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
@@ -13,6 +16,10 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
 
   const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
   const { show } = useConfirmStore();
+
+  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { manualBalancesAssets } = useManualBalanceData();
+  const { setMessage } = useMessageStore();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
     try {
@@ -33,16 +40,41 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   };
 
   const ignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
+    const assetsArray = arrayify(assets);
     try {
-      const { noAction, successful } = await addIgnoredAssets(arrayify(assets));
-      set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
+      const includedInManualBalances: string[] = [];
+      const notIncludedInManualBalances: string[] = [];
+
+      for (const asset of assetsArray) {
+        if (get(manualBalancesAssets).includes(asset)) {
+          includedInManualBalances.push(asset);
+        }
+        else {
+          notIncludedInManualBalances.push(asset);
+        }
+      }
+
+      // Display a warning message if any assets are included in manual balances
+      if (includedInManualBalances.length > 0) {
+        setMessage({
+          description: t('ignore.warning.manual_balances_message', {
+            assets: includedInManualBalances.map(item => getAssetSymbol(item)).join(', '),
+          }),
+          title: t('ignore.warning.manual_balances_title'),
+        });
+      }
+
+      if (notIncludedInManualBalances) {
+        const { noAction, successful } = await addIgnoredAssets(notIncludedInManualBalances);
+        set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
+      }
       return { success: true };
     }
     catch (error: any) {
       notify({
         display: true,
         message: t('ignore.failed.ignore_message', {
-          length: Array.isArray(assets) ? assets.length : 1,
+          length: assetsArray.length,
           message: error.message,
         }),
         title: t('ignore.failed.ignore_title'),
