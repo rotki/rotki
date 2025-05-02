@@ -4,7 +4,6 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from importlib import import_module
-from itertools import starmap
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, get_args, overload
 
@@ -76,6 +75,7 @@ from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
@@ -1671,10 +1671,17 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if progress_handler is not None:
             progress_handler.new_step('Potentially write migrated addresses to the DB')
 
+        account_data, unique_addresses = [], set()
+        for chain, account in added_accounts:
+            account_data.append(BlockchainAccountData(chain=chain, address=account))
+            if account not in unique_addresses:
+                DBAddressbook(self.database).maybe_make_entry_name_multichain(address=account)
+                unique_addresses.add(account)
+
         with self.database.user_write() as write_cursor:
             self.database.add_blockchain_accounts(
                 write_cursor=write_cursor,
-                account_data=list(starmap(BlockchainAccountData, added_accounts)),  # not duplicating label and tags as it's chain specific  # noqa: E501
+                account_data=account_data,
             )
 
         self.msg_aggregator.add_message(
