@@ -119,8 +119,6 @@ useRememberTableSorting<NonFungibleBalance>(TableId.NON_FUNGIBLE_BALANCES, sort,
 
 const { show } = useConfirmStore();
 
-const isIgnored = (identifier: string) => useIsAssetIgnored(identifier);
-
 function refreshCallback() {
   if (get(ignoredAssetsHandling) !== 'none') {
     fetchData();
@@ -129,7 +127,7 @@ function refreshCallback() {
 
 async function toggleIgnoreAsset(balance: NonFungibleBalance) {
   const { id, name } = balance;
-  if (get(isIgnored(id))) {
+  if (get(useIsAssetIgnored(id))) {
     const response = await unignoreAsset(id);
     if (response.success) {
       refreshCallback();
@@ -143,7 +141,7 @@ async function toggleIgnoreAsset(balance: NonFungibleBalance) {
 async function massIgnore(ignored: boolean) {
   const ids = get(selected)
     .filter((item) => {
-      const isItemIgnored = get(isIgnored(item));
+      const isItemIgnored = get(useIsAssetIgnored(item));
       return ignored ? !isItemIgnored : isItemIgnored;
     })
     .filter(uniqueStrings);
@@ -282,7 +280,7 @@ watch(loading, async (isLoading, wasLoading) => {
                 <RuiSwitch
                   color="primary"
                   hide-details
-                  :model-value="isIgnored(row.id).value"
+                  :model-value="useIsAssetIgnored(row.id).value"
                   @update:model-value="toggleIgnoreAsset(row)"
                 />
               </div>

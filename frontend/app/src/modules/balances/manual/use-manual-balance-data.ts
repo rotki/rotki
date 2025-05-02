@@ -5,10 +5,12 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortDesc } from '@/utils/bignumbers';
+import { uniqueStrings } from '@/utils/data';
 
 interface UseManualBalanceDataReturn {
   manualBalanceByLocation: ComputedRef<LocationBalance[]>;
   manualLabels: ComputedRef<string[]>;
+  manualBalancesAssets: ComputedRef<string[]>;
   missingCustomAssets: ComputedRef<string[]>;
 }
 
@@ -27,6 +29,18 @@ export function useManualBalanceData(): UseManualBalanceDataReturn {
       labels.push(balance.label);
     }
     return labels;
+  });
+
+  const manualBalancesAssets = computed<string[]>(() => {
+    const assets: string[] = [];
+    for (const balance of get(manualBalances)) {
+      assets.push(balance.asset);
+    }
+
+    for (const balance of get(manualLiabilities)) {
+      assets.push(balance.asset);
+    }
+    return assets.filter(uniqueStrings);
   });
 
   const missingCustomAssets = computed<string[]>(() => {
@@ -96,6 +110,7 @@ export function useManualBalanceData(): UseManualBalanceDataReturn {
 
   return {
     manualBalanceByLocation,
+    manualBalancesAssets,
     manualLabels,
     missingCustomAssets,
   };

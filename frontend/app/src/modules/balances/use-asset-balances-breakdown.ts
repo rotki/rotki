@@ -94,7 +94,7 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
       const chainAccounts = accountData[chain] ?? {};
       const chainBalanceData = balanceData[chain];
       if (!chainBalanceData)
-        return [];
+        continue;
 
       for (const address in chainBalanceData) {
         if (groupId && address !== groupId)
