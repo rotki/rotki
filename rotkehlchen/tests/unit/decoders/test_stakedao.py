@@ -426,3 +426,63 @@ def test_withdraw_bsc(binance_sc_inquirer, binance_sc_accounts, stakedao_gauges)
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0xE36c375AD28C0822ab476Bd62A8BEAd88d9a4e34'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x811e8f6d80F38A2f0f8b606cB743A950638f0aD4']])
+def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x7ce0becce93ff093c51f33c2012fd3d2dfa5118cedb1c60d9cad339ceb3e4ae4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746073890000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000393857'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:42161/erc20:0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5'),
+        amount=FVal(claim_amount_1 := '0.008202419557833013'),
+        location_label=user_address,
+        notes=f'Claim {claim_amount_1} crvUSD from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x115E05063B1F0a74b2233043694930bC703E2981'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:42161/erc20:0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978'),
+        amount=FVal(claim_amount_2 := '0.245424060931860907'),
+        location_label=user_address,
+        notes=f'Claim {claim_amount_2} CRV from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0xFC24Afa035010B4878F8ffBC94BC1ae21279cfA3'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:42161/erc20:0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978'),
+        amount=FVal(claim_amount_3 := '0.477704588685622413'),
+        location_label=user_address,
+        notes=f'Claim {claim_amount_3} CRV from StakeDAO',
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x533C72541B918280E3492e4106e7262b8b5B1811'),
+    )]
