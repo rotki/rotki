@@ -11,7 +11,6 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
-from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
 )
@@ -337,22 +336,16 @@ def test_thegraph_balances_arbitrum_one(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(ARBITRUM_ONE_ETHERSCAN_NODE,)])
 def test_thegraph_balances_vested_arbitrum_one(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
         ethereum_inquirer: 'EthereumInquirer',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-        arbitrum_one_manager_connect_at_start,
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check that balances of GRT currently vested are properly detected."""
     expected_grt_balance = FVal('246914.881548572905')
     # decode the delegation transfer event which has the vested contract address as delegator_l2
-    wait_until_all_nodes_connected(
-        connect_at_start=arbitrum_one_manager_connect_at_start,
-        evm_inquirer=arbitrum_one_inquirer,
-    )
     for tx_hash in (
         '0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78',
         '0xed80711e4cb9c428790f0d9b51f79473bf5253d5d03c04d958d411e7fa34a92e',
@@ -380,7 +373,7 @@ def test_thegraph_balances_vested_arbitrum_one(
     with patch(
         'rotkehlchen.chain.arbitrum_one.modules.thegraph.balances.ThegraphBalances.process_staking_events',
         new=mock_process_staking_events,
-    ) as mock_process_staking_events:
+    ):
         thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
             evm_inquirer=arbitrum_one_inquirer,
             tx_decoder=arbitrum_one_transaction_decoder,

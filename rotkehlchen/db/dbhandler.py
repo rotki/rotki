@@ -3213,6 +3213,7 @@ class DBHandler:
                 cursor.execute(
                     'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
                 )
+
             return [
                 WeightedNode(
                     identifier=entry[0],
@@ -3264,14 +3265,6 @@ class DBHandler:
             'UPDATE rpc_nodes SET weight=? WHERE identifier=?',
             new_weights,
         )
-
-    def is_etherscan_node(self, node_identifier: int) -> bool:
-        """Checks if a given node is an etherscan node (ethereum, optimism, etc)"""
-        with self.conn.read_ctx() as cursor:
-            return bool(cursor.execute(
-                "SELECT COUNT(*) FROM rpc_nodes WHERE identifier=? AND endpoint=''",
-                (node_identifier,),
-            ).fetchone()[0])
 
     def add_rpc_node(self, node: WeightedNode) -> None:
         """

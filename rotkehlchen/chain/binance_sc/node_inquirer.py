@@ -14,8 +14,6 @@ from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-    BINANCE_SC_ETHERSCAN_NODE,
-    BINANCE_SC_ETHERSCAN_NODE_NAME,
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from .etherscan import BinanceSCEtherscan
@@ -40,8 +38,6 @@ class BinanceSCInquirer(EvmNodeInquirer):
                 msg_aggregator=database.msg_aggregator,
             ),
             blockchain=SupportedBlockchain.BINANCE_SC,
-            etherscan_node=BINANCE_SC_ETHERSCAN_NODE,
-            etherscan_node_name=BINANCE_SC_ETHERSCAN_NODE_NAME,
             contracts=(contracts := EvmContracts[Literal[ChainID.BINANCE_SC]](chain_id=ChainID.BINANCE_SC)),  # noqa: E501
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),

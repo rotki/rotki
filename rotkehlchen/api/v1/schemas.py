@@ -20,9 +20,6 @@ from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracl
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.base.constants import BASE_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
     validate_bch_address_input,
@@ -30,7 +27,6 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
 from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -38,10 +34,6 @@ from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_potential_ens_name
 from rotkehlchen.chain.evm.types import EvmAccount, EvmlikeAccount
-from rotkehlchen.chain.gnosis.constants import GNOSIS_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.optimism.constants import OPTIMISM_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_ETHERSCAN_NODE_NAME
-from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -3294,9 +3286,9 @@ class RpcAddNodeSchema(Schema):
     blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
     name = fields.String(
         required=True,
-        validate=webargs.validate.NoneOf(
-            iterable=['', ETHEREUM_ETHERSCAN_NODE_NAME],
-            error=f"Name can't be empty or {ETHEREUM_ETHERSCAN_NODE_NAME}",
+        validate=webargs.validate.Length(
+            min=1,
+            error="Name can't be empty",
         ),
     )
     endpoint = fields.String(required=True)
@@ -3312,45 +3304,12 @@ class RpcNodeEditSchema(RpcAddNodeSchema):
 
     name = fields.String(
         required=True,
-        validate=webargs.validate.NoneOf(
-            iterable=[''],
+        validate=webargs.validate.Length(
+            min=1,
             error="Name can't be empty",
         ),
     )
     identifier = fields.Integer(required=True)
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        endpoint_is_given = len(data['endpoint'].strip()) != 0
-        if self.dbhandler.is_etherscan_node(data['identifier']):
-            if endpoint_is_given:
-                raise ValidationError(
-                    field_name='endpoint',
-                    message='It is not allowed to modify the etherscan node endpoint',
-                )
-            if data['name'] not in (
-                ETHEREUM_ETHERSCAN_NODE_NAME,
-                OPTIMISM_ETHERSCAN_NODE_NAME,
-                POLYGON_POS_ETHERSCAN_NODE_NAME,
-                ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
-                BASE_ETHERSCAN_NODE_NAME,
-                GNOSIS_ETHERSCAN_NODE_NAME,
-                SCROLL_ETHERSCAN_NODE_NAME,
-                BINANCE_SC_ETHERSCAN_NODE_NAME,
-            ):
-                raise ValidationError(
-                    message="Can't change the etherscan node name",
-                    field_name='name',
-                )
-        elif endpoint_is_given is False:
-            raise ValidationError(
-                field_name='endpoint',
-                message='endpoint can be empty only for etherscan',
-            )
 
 
 class RpcNodeListDeleteSchema(Schema):
@@ -3360,18 +3319,6 @@ class RpcNodeListDeleteSchema(Schema):
     def __init__(self, dbhandler: 'DBHandler') -> None:
         super().__init__()
         self.dbhandler = dbhandler
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if self.dbhandler.is_etherscan_node(data['identifier']):
-            raise ValidationError(
-                message="Can't delete an etherscan node",
-                field_name='identifier',
-            )
 
 
 class DetectTokensSchema(

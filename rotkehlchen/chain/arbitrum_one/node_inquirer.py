@@ -14,8 +14,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
 from .constants import (
-    ARBITRUM_ONE_ETHERSCAN_NODE,
-    ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
@@ -48,8 +46,6 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.ARBITRUM_ONE,
-            etherscan_node=ARBITRUM_ONE_ETHERSCAN_NODE,
-            etherscan_node_name=ARBITRUM_ONE_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),

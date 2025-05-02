@@ -12,7 +12,9 @@ from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.binance_sc.decoding.decoder import BinanceSCTransactionDecoder
 from rotkehlchen.chain.binance_sc.transactions import BinanceSCTransactions
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import (
+    ETHEREUM_ETHERSCAN_NODE,
+)
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -146,7 +148,6 @@ ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED = (
     [(
         PRUNED_AND_NOT_ARCHIVED_NODE,
         INFURA_ETH_NODE,
-        ETHEREUM_ETHERSCAN_NODE,
         ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
     )],
 )
@@ -171,7 +172,6 @@ def wait_until_all_nodes_connected(
         timeout: int = NODE_CONNECTION_TIMEOUT,
 ):
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
-    connect_at_start = [x for x in connect_at_start if x.node_info.name != evm_inquirer.etherscan_node_name]  # noqa: E501
     connected = [False] * len(connect_at_start)
     try:
         with gevent.Timeout(timeout):

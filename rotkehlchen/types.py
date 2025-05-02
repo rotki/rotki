@@ -134,12 +134,6 @@ class ExternalService(SerializableEnumNameMixin):
     BEACONCHAIN = auto()
     LOOPRING = auto()
     OPENSEA = auto()
-    OPTIMISM_ETHERSCAN = auto()
-    POLYGON_POS_ETHERSCAN = auto()
-    ARBITRUM_ONE_ETHERSCAN = auto()
-    BASE_ETHERSCAN = auto()
-    GNOSIS_ETHERSCAN = auto()
-    SCROLL_ETHERSCAN = auto()
     BINANCE_SC_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
@@ -153,10 +147,6 @@ class ExternalService(SerializableEnumNameMixin):
     DEFILLAMA = auto()
     COINGECKO = auto()
     ALCHEMY = auto()
-
-    def get_chain_for_etherscan(self) -> Optional['ChainID']:
-        """If the service is an etherscan service return its chain"""
-        return ETHERSCAN_TO_CHAINID.get(self)
 
     def get_chain_for_blockscout(self) -> Optional['ChainID']:
         """If the service is a blockscout service return its chain"""
@@ -355,17 +345,6 @@ BLOCKSCOUT_TO_CHAINID = {
     ExternalService.ARBITRUM_ONE_BLOCKSCOUT: ChainID.ARBITRUM_ONE,
     ExternalService.BASE_BLOCKSCOUT: ChainID.BASE,
     ExternalService.GNOSIS_BLOCKSCOUT: ChainID.GNOSIS,
-}
-
-ETHERSCAN_TO_CHAINID = {
-    ExternalService.ETHERSCAN: ChainID.ETHEREUM,
-    ExternalService.OPTIMISM_ETHERSCAN: ChainID.OPTIMISM,
-    ExternalService.POLYGON_POS_ETHERSCAN: ChainID.POLYGON_POS,
-    ExternalService.ARBITRUM_ONE_ETHERSCAN: ChainID.ARBITRUM_ONE,
-    ExternalService.BASE_ETHERSCAN: ChainID.BASE,
-    ExternalService.GNOSIS_ETHERSCAN: ChainID.GNOSIS,
-    ExternalService.SCROLL_ETHERSCAN: ChainID.SCROLL,
-    ExternalService.BINANCE_SC_ETHERSCAN: ChainID.BINANCE_SC,
 }
 
 

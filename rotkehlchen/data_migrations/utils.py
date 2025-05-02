@@ -2,8 +2,14 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import UpdateType
+from rotkehlchen.externalapis.etherscan import ROTKI_PACKAGED_KEY
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ExternalServiceApiCredentials
+from rotkehlchen.types import (
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    ApiKey,
+    ExternalService,
+    ExternalServiceApiCredentials,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -14,8 +20,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def update_data_and_detect_accounts(
-        chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE],
-        external_service_credentials: list[ExternalServiceApiCredentials],
+        chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None,
         rotki: 'Rotkehlchen',
         progress_handler: 'MigrationProgressHandler',
 ) -> None:
@@ -31,15 +36,21 @@ def update_data_and_detect_accounts(
     progress_handler.new_step('Fetching new spam assets and rpc data info')
     rotki.data_updater.check_for_updates(updates=[UpdateType.SPAM_ASSETS, UpdateType.RPC_NODES])
 
-    with rotki.data.db.conn.write_ctx() as write_cursor:
-        rotki.data.db.add_external_service_credentials(
-            write_cursor=write_cursor,  # add temporary etherscan key for the given chains
-            credentials=external_service_credentials,
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT COUNT(*) FROM external_service_credentials WHERE name=?',
+            (ExternalService.ETHERSCAN.name.lower(),),
         )
+        if (etherscan_api_key_not_present := cursor.fetchone()[0] == 0):
+            with rotki.data.db.conn.write_ctx() as write_cursor:
+                rotki.data.db.add_external_service_credentials(
+                    write_cursor=write_cursor,  # add temporary etherscan key for the given chains
+                    credentials=[ExternalServiceApiCredentials(
+                        service=ExternalService.ETHERSCAN,
+                        api_key=ApiKey(ROTKI_PACKAGED_KEY),
+                    )],
+                )
 
     rotki.chains_aggregator.detect_evm_accounts(progress_handler, chains=chains)
-    external_services = []
-    for external_service, _, _ in external_service_credentials:
-        external_services.append(external_service)
-
-    rotki.data.db.delete_external_service_credentials(external_services)
+    if etherscan_api_key_not_present:
+        rotki.data.db.delete_external_service_credentials([ExternalService.ETHERSCAN])

@@ -19,8 +19,6 @@ from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-    OPTIMISM_ETHERSCAN_NODE,
-    OPTIMISM_ETHERSCAN_NODE_NAME,
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from .etherscan import OptimismEtherscan
@@ -50,8 +48,6 @@ class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.OPTIMISM,
-            etherscan_node=OPTIMISM_ETHERSCAN_NODE,
-            etherscan_node_name=OPTIMISM_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x2DC0E2aa608532Da689e89e237dF582B783E552C')),

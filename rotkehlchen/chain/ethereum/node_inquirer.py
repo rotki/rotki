@@ -15,7 +15,6 @@ from rotkehlchen.chain.ethereum.constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
     ARCHIVE_NODE_CHECK_BLOCK,
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
-    ETHEREUM_ETHERSCAN_NODE,
     PRUNED_NODE_CHECK_TX_HASH,
 )
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
@@ -42,7 +41,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import get_chunks
 
-from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
+from .constants import ETH2_DEPOSIT_ADDRESS, WeightedNode
 from .etherscan import EthereumEtherscan
 
 if TYPE_CHECKING:
@@ -72,8 +71,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.ETHEREUM,
-            etherscan_node=ETHEREUM_ETHERSCAN_NODE,
-            etherscan_node_name=ETHEREUM_ETHERSCAN_NODE_NAME,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contracts.contract(string_to_evm_address('0x5BA1e12693Dc8F9c48aAD8770482f4739bEeD696')),

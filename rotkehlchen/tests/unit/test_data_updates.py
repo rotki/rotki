@@ -462,7 +462,7 @@ def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
     """Test that rpc nodes for different blockchains are updated correctly.."""
-    default_rpc_nodes_count = 41
+    default_rpc_nodes_count = 33
     # check db state of the default rpc nodes before updating
     with GlobalDBHandler().conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
@@ -496,7 +496,7 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
         nodes = cursor.execute('SELECT * FROM rpc_nodes').fetchall()
 
     assert nodes == [
-        (7, 'optimism official', 'https://mainnet.optimism.io', 0, 1, '0.20', 'OPTIMISM'),
+        (5, 'optimism official', 'https://mainnet.optimism.io', 0, 1, '0.20', 'OPTIMISM'),
         (default_rpc_nodes_count + 1, *custom_node_tuple),
         (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]

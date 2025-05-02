@@ -59,4 +59,20 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
             ('CURVE\\_LENDING\\_VAULT\\_COLLATERAL\\_TOKEN%', '\\'),
         ])
 
+    @progress_step(description='Deleting etherscan nodes')
+    def _delete_etherscan_nodes(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'DELETE FROM default_rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                'etherscan',
+                'optimism etherscan',
+                'polygon pos etherscan',
+                'arbitrum one etherscan',
+                'base etherscan',
+                'gnosis etherscan',
+                'scroll etherscan',
+                'bsc etherscan',
+            ),
+        )
+
     perform_globaldb_upgrade_steps(connection, progress_handler)

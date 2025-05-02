@@ -8,7 +8,6 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEthersca
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import SupportedL2WithL1FeesType
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -32,8 +31,6 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             database: 'DBHandler',
             etherscan: L2WithL1FeesEtherscan,
             blockchain: SupportedL2WithL1FeesType,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
             contracts: EvmContracts,
             rpc_timeout: int,
             contract_scan: 'EvmContract',
@@ -46,8 +43,6 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             database=database,
             etherscan=etherscan,
             blockchain=blockchain,
-            etherscan_node=etherscan_node,
-            etherscan_node_name=etherscan_node_name,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contract_multicall,
@@ -75,8 +70,6 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             database: 'DBHandler',
             etherscan: L2WithL1FeesEtherscan,
             blockchain: SupportedL2WithL1FeesType,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
             contracts: EvmContracts,
             rpc_timeout: int,
             contract_scan: 'EvmContract',
@@ -90,8 +83,6 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             database=database,
             etherscan=etherscan,
             blockchain=blockchain,
-            etherscan_node=etherscan_node,
-            etherscan_node_name=etherscan_node_name,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
             contract_multicall=contract_multicall,

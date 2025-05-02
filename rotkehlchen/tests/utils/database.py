@@ -45,48 +45,6 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
                 service=ExternalService.ETHERSCAN,
                 api_key=ApiKey(eth_api_key),
             )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.OPTIMISM_ETHERSCAN,
-                api_key=ApiKey('IK3GCCMPQXTRIEGBAXQ9DUFWIUR524K3MW'),
-            )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,  # Added by Alexey on 2023-05-22
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.POLYGON_POS_ETHERSCAN,
-                api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),
-            )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,  # Added by dimyG on 2023-07-21
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.ARBITRUM_ONE_ETHERSCAN,
-                api_key=ApiKey('VQUFYKKJR4RK8HFHYIJ9I93FIUVP44TN99'),
-            )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,  # Added by 0xGusMcCrae on 2023-09-16
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.BASE_ETHERSCAN,
-                api_key=ApiKey('7UXQPEFX2RIQPN42VPTG72XD4E1HJS8IS6'),
-            )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,  # Added by dimyG on 2023-10-05
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.GNOSIS_ETHERSCAN,
-                api_key=ApiKey('J3XEY27VIT7377G34PVPHKWG74NG9PXNSM'),
-            )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,  # Added by zinkkrysty on 2024-03-13
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.SCROLL_ETHERSCAN,
-                api_key=ApiKey('W7QNAANTDB92HZ8ZSYEH8AU33HDZIE3MD4'),
-            )])
-        db.add_external_service_credentials(
-            write_cursor=write_cursor,  # Added by nicholasyoder on 2025-01-03
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.BINANCE_SC_ETHERSCAN,
-                api_key=ApiKey('RPPD2UX7CAR89FPITMP3QDEX1I9Z7PCV4S'),
-            )])
 
 
 def maybe_include_cryptocompare_key(db: DBHandler, include_cryptocompare_key: bool) -> None:

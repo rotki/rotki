@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.db.updates import UpdateType
+from rotkehlchen.data_migrations.utils import update_data_and_detect_accounts
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import enter_exit_debug_log
-from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -22,11 +21,6 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     # steps are: ethereum accounts + 4 (potentially write to db + updating spam assets + polygon rpc + new round msg)  # noqa: E501
     progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 4)
 
-    # Check updates for spam assets. This happens before accounts detection to avoid
-    # detecting accounts that only have spam assets.
-    progress_handler.new_step('Fetching new spam assets info')
-    rotki.data_updater.check_for_updates(updates=[UpdateType.SPAM_ASSETS])
-
     # we published a data version of the rpc nodes that contained a wrong etherscan name for
     # polygon. this ensure that the name is correct both in the globaldb and the user db
     # after the upgrade
@@ -36,14 +30,8 @@ def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         # or the wrong name since when updating nodes in the globaldb we delete all the nodes
         write_cursor.execute("UPDATE default_rpc_nodes SET name='polygon pos etherscan' WHERE name='polygon etherscan'")  # noqa: E501
 
-    with rotki.data.db.conn.write_ctx() as write_cursor:
-        rotki.data.db.add_external_service_credentials(
-            write_cursor=write_cursor,  # add temporary etherscan polygon key
-            credentials=[ExternalServiceApiCredentials(
-                service=ExternalService.POLYGON_POS_ETHERSCAN,
-                api_key=ApiKey('1M4TM28QKJHED9QPDWXFCBEX5CK5ID3ESG'),  # same one in tests
-            )])
-    rotki.chains_aggregator.detect_evm_accounts(progress_handler)
-
-    # remove temporary etherscan polygon key
-    rotki.data.db.delete_external_service_credentials([ExternalService.POLYGON_POS_ETHERSCAN])
+    update_data_and_detect_accounts(
+        chains=None,
+        rotki=rotki,
+        progress_handler=progress_handler,
+    )

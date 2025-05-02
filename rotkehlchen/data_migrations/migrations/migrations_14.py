@@ -3,9 +3,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.data_migrations.utils import update_data_and_detect_accounts
 from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.types import (
-    ApiKey,
-    ExternalService,
-    ExternalServiceApiCredentials,
     SupportedBlockchain,
 )
 
@@ -25,12 +22,6 @@ def data_migration_14(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     progress_handler.set_total_steps(len(rotki.chains_aggregator.accounts.eth) + 3)
     update_data_and_detect_accounts(
         chains=[SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE],
-        external_service_credentials=[  # Added by lefteris. rotki specific account
-            ExternalServiceApiCredentials(
-                service=ExternalService.SCROLL_ETHERSCAN,
-                api_key=ApiKey('3UXQ8UG4NA37E7BE1647H7HYDE3QT6UBYD'),
-            ),
-        ],
         rotki=rotki,
         progress_handler=progress_handler,
     )

@@ -3131,6 +3131,21 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('gemini_trades_gemini', 1672531200, 1704067200),
         ]
         assert table_exists(cursor, 'action_type')
+        assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes').fetchone()[0] == 51
+        assert {row[0] for row in cursor.execute('SELECT name FROM rpc_nodes WHERE endpoint=""')} == {  # noqa: E501
+            'arbitrum one etherscan',
+            'base etherscan',
+            'bsc etherscan',
+            'etherscan',
+            'gnosis etherscan',
+            'optimism etherscan',
+            'polygon pos etherscan',
+            'scroll etherscan',
+        }
+        assert cursor.execute(
+            'SELECT value FROM settings where name=?',
+            ('use_unified_etherscan_api',),
+        ).fetchone()[0] == 'True'
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3184,6 +3199,12 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         ]
         assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "%_trades_%"').fetchone()[0] == 0  # noqa: E501
         assert not table_exists(cursor, 'action_type')
+        assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes').fetchone()[0] == 43
+        assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE endpoint=""').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute(
+            'SELECT value FROM settings where name=?',
+            ('use_unified_etherscan_api',),
+        ).fetchall() == []
 
     db.logout()
 
