@@ -39,6 +39,7 @@ from .constants import (
     CLAIMED_WITH_BOUNTY,
     CLAIMED_WITH_BRIBE,
     CPT_STAKEDAO,
+    REWARDS_CLAIMED_TOPIC,
     STAKEDAO_DEPOSIT,
     STAKEDAO_GAUGE_ABI,
     STAKEDAO_VAULT_ABI,
@@ -125,14 +126,28 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_claim_with_bounty(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != CLAIMED_WITH_BOUNTY:
-            return DEFAULT_DECODING_OUTPUT
+    def _decode_reward_claim_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == CLAIMED_WITH_BOUNTY:
+            reward_token_address = bytes_to_address(context.tx_log.data[0:32])
+            amount = int.from_bytes(context.tx_log.data[32:64])
+            period = Timestamp(int.from_bytes(context.tx_log.data[96:128]))
+            return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
+        elif context.tx_log.topics[0] == REWARDS_CLAIMED_TOPIC:
+            gauge_addresses = {
+                bytes_to_address(context.tx_log.data[x:x + 32])
+                for x in range(64, len(context.tx_log.data), 32)  # the first 64 bytes are ABI metadata (offset + array length), so we skip them.  # noqa: E501
+            }
+            for event in context.decoded_events:
+                if (
+                        event.address in gauge_addresses and
+                        event.event_type == HistoryEventType.RECEIVE and
+                        event.event_subtype == HistoryEventSubType.NONE
+                ):
+                    event.counterparty = CPT_STAKEDAO
+                    event.event_subtype = HistoryEventSubType.REWARD
+                    event.notes = f'Claim {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from StakeDAO'  # noqa: E501
 
-        reward_token_address = bytes_to_address(context.tx_log.data[0:32])
-        amount = int.from_bytes(context.tx_log.data[32:64])
-        period = Timestamp(int.from_bytes(context.tx_log.data[96:128]))
-        return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_claim_with_bribe(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != CLAIMED_WITH_BRIBE:
@@ -286,7 +301,7 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         decoders = dict.fromkeys(self.gauges, (self._decode_deposit_withdrawal_events, ))
         if self.claim_bounty_addresses is not None:
-            decoders.update(dict.fromkeys(self.claim_bounty_addresses, (self._decode_claim_with_bounty, )))  # noqa: E501
+            decoders.update(dict.fromkeys(self.claim_bounty_addresses, (self._decode_reward_claim_events, )))  # noqa: E501
 
         if self.claim_bribe_addresses is not None:
             decoders.update(dict.fromkeys(self.claim_bribe_addresses, (self._decode_claim_with_bribe, )))  # noqa: E501
