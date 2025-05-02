@@ -27,7 +27,11 @@ SUPPORTED_STAKEDAO_STRATEGIES: Final = {'curve', 'balancer', 'pendle', 'pancakes
 
 
 def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
-    """Query StakeDAO gauges for lockers and strategies from the API and cache them."""
+    """Query StakeDAO gauges for lockers and strategies from the API and cache them.
+
+    Note that item['token'] in lockers and item['lpToken'] in strategies refer
+    to the same concept —- the underlying protocol's pool token.
+    """
     all_gauges: set[tuple[ChecksumEvmAddress, ChecksumEvmAddress]] = set()
     chain_id = evm_inquirer.chain_id.serialize()
     try:  # Query lockers
@@ -39,7 +43,7 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
 
                 all_gauges.add((
                     deserialize_evm_address(item['modules']['gauge']),
-                    deserialize_evm_address(item['sdToken']['address']),  # underlying token
+                    deserialize_evm_address(item['token']['address']),
                 ))
             except (KeyError, DeserializationError) as e:
                 msg = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
@@ -55,7 +59,7 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
 
                     all_gauges.add((
                         deserialize_evm_address(item['sdGauge']['address']),
-                        deserialize_evm_address(item['vault']),  # underlying token
+                        deserialize_evm_address(item['lpToken']['address']),
                     ))
                 except (KeyError, DeserializationError) as e:
                     msg = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
