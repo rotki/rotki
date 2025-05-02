@@ -178,6 +178,14 @@ export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | Et
 
 export type HistoryEvent = StandaloneEditableEvents | GroupEditableHistoryEvents;
 
+export interface SwapSubEventModel {
+  identifier?: number;
+  amount: string;
+  asset: string;
+  userNotes?: string;
+  locationLabel?: string;
+}
+
 export interface AddSwapEventPayload {
   entryType: typeof HistoryEventEntryType.SWAP_EVENT;
   feeAmount?: string;
@@ -197,19 +205,21 @@ export interface EditSwapEventPayload extends Omit<AddSwapEventPayload, 'uniqueI
   identifier: number;
 }
 
-export interface AddEvmSwapEventPayload extends Omit<AddSwapEventPayload, 'entryType' | 'uniqueId'> {
+export interface AddEvmSwapEventPayload {
   entryType: typeof HistoryEventEntryType.EVM_SWAP_EVENT;
   address?: string;
-  locationLabel: string;
+  location: string;
+  timestamp: number;
+  fee?: SwapSubEventModel[];
+  spend: SwapSubEventModel[];
+  receive: SwapSubEventModel[];
   counterparty: string;
   sequenceIndex: string;
   txHash: string;
-  eventIdentifier?: string;
 }
 
 export interface EditEvmSwapEventPayload extends AddEvmSwapEventPayload {
-  identifier: number;
-  eventIdentifier: string;
+  identifiers: number[];
 }
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
@@ -345,11 +355,7 @@ export const HistoryEventMeta = EntryMeta.merge(
 
 export type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
 
-const HistoryEventEntryWithMeta = z
-  .object({
-    entry: HistoryEvent,
-  })
-  .merge(HistoryEventMeta);
+const HistoryEventEntryWithMeta = z.object({ entry: HistoryEvent }).merge(HistoryEventMeta);
 
 export type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
 

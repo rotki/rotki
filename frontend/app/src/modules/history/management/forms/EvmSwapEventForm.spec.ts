@@ -1,7 +1,4 @@
-import type {
-  GroupAddEventData,
-  GroupEventData,
-} from '@/modules/history/management/forms/form-types';
+import type { GroupAddEventData, GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { AddEvmSwapEventPayload, EditEvmSwapEventPayload, EvmSwapEvent } from '@/types/history/events';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { Pinia } from 'pinia';
@@ -46,7 +43,7 @@ describe('forms/EvmSwapEventForm', () => {
 
   const txHash = '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f';
   const address = '0xA090e606E30bD747d4E6245a1517EbE430F0057e';
-  const locationLabel = '0x6e15887E2CEC81434C16D587709f64603b39b54';
+  const locationLabel = '0x6e15887E2CEC81434C16D587709f64603b39b541';
   const eventIdentifier = `1${txHash}`;
 
   const data: GroupEventData<EvmSwapEvent> = {
@@ -196,24 +193,22 @@ describe('forms/EvmSwapEventForm', () => {
 
     expect(wrapper.find('[data-cy=spend-notes]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=receive-notes]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(false);
+    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
   });
 
   it('should enable fee-related fields when "Has Fee" checkbox is toggled', async () => {
     wrapper = createWrapper();
 
-    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
-    const feeAsset = wrapper.find('[data-cy=fee-asset] input');
     const feeToggle = wrapper.find('[data-cy=has-fee] input');
 
-    expect(feeAmount.attributes('disabled')).toBe('');
-    expect(feeAsset.attributes('disabled')).toBe('');
+    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBe('');
+    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBe('');
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(feeAmount.attributes('disabled')).toBeUndefined();
-    expect(feeAsset.attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeUndefined();
     expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
   });
 
@@ -239,7 +234,7 @@ describe('forms/EvmSwapEventForm', () => {
     await receiveAmountField.setValue('300');
     await receiveAssetField.setValue('USDC');
     await addressField.setValue('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
-    await locationLabelField.setValue('Uniswap V3');
+    await locationLabelField.setValue(locationLabel);
     await counterpartyField.setValue('aave');
 
     await vi.advanceTimersToNextTimerAsync();
@@ -257,15 +252,18 @@ describe('forms/EvmSwapEventForm', () => {
         counterparty: 'aave',
         entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
         location: 'ethereum',
-        locationLabel: 'Uniswap V3',
-        receiveAmount: '300',
-        receiveAsset: 'USDC',
+        receive: [{
+          amount: '300',
+          asset: 'USDC',
+        }],
         sequenceIndex: '3',
-        spendAmount: '0.1',
-        spendAsset: 'ETH',
+        spend: [{
+          amount: '0.1',
+          asset: 'ETH',
+          locationLabel,
+        }],
         timestamp: 1742901211000,
         txHash,
-        userNotes: ['', ''],
       } satisfies AddEvmSwapEventPayload),
     );
   });
@@ -315,20 +313,161 @@ describe('forms/EvmSwapEventForm', () => {
         address,
         counterparty: 'uniswap-v3',
         entryType: 'evm swap event',
-        eventIdentifier,
-        feeAmount: '0.01',
-        feeAsset: 'ETH',
-        identifier: 3456,
+        fee: [{
+          amount: '0.01',
+          asset: 'ETH',
+          identifier: 3458,
+          locationLabel,
+          userNotes: 'updated fee note',
+        }],
+        identifiers: [3456, 3457, 3458],
         location: 'ethereum',
-        locationLabel,
-        receiveAmount: '300',
-        receiveAsset: 'USDC',
+        receive: [{
+          amount: '300',
+          asset: 'USDC',
+          identifier: 3457,
+          locationLabel,
+          userNotes: 'updated receive note',
+        }],
         sequenceIndex: '0',
-        spendAmount: '0.1',
-        spendAsset: 'ETH',
+        spend: [{
+          amount: '0.1',
+          asset: 'ETH',
+          identifier: 3456,
+          locationLabel,
+          userNotes: 'spend note',
+        }],
         timestamp: 1742901211000,
         txHash,
-        userNotes: ['spend note', 'updated receive note', 'updated fee note'],
+      } satisfies EditEvmSwapEventPayload),
+    );
+    expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('should add extra values to make a swap multi-swap', async () => {
+    wrapper = createWrapper({
+      props: {
+        data,
+      },
+    });
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    const feeAmount = wrapper.find('[data-cy=fee-amount] input');
+    await feeAmount.setValue('0.01');
+
+    const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-cy=fee-notes] textarea:not([aria-hidden="true"])');
+    await receiveNotes.setValue('updated receive note');
+    await feeNotes.setValue('updated fee note');
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    const saveMethod = wrapper.vm.save;
+
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+
+    await wrapper.find('[data-cy=spend-add]').trigger('click');
+    await wrapper.find('[data-cy=receive-add]').trigger('click');
+
+    await wrapper.findAll('[data-cy=spend-amount] input')[1].setValue('0.2');
+    await wrapper.findAll('[data-cy=spend-asset] input')[1].setValue('DAI');
+
+    await wrapper.findAll('[data-cy=receive-amount] input')[1].setValue('0.19');
+    await wrapper.findAll('[data-cy=receive-asset] input')[1].setValue('USDC');
+
+    await wrapper.find('[data-cy=spend-add]').trigger('click');
+    expect(wrapper.findAll('[data-cy=spend-amount]')).toHaveLength(3);
+    await wrapper.findAll('[data-cy=spend-remove]')[2].trigger('click');
+    expect(wrapper.findAll('[data-cy=spend-amount]')).toHaveLength(2);
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+    expect(editHistoryEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address,
+        counterparty: 'uniswap-v3',
+        entryType: 'evm swap event',
+        fee: [{
+          amount: '0.01',
+          asset: 'ETH',
+          identifier: 3458,
+          locationLabel,
+          userNotes: 'updated fee note',
+        }],
+        identifiers: [3456, 3457, 3458],
+        location: 'ethereum',
+        receive: [{
+          amount: '300',
+          asset: 'USDC',
+          identifier: 3457,
+          locationLabel,
+          userNotes: 'updated receive note',
+        }, {
+          amount: '0.19',
+          asset: 'USDC',
+        }],
+        sequenceIndex: '0',
+        spend: [{
+          amount: '0.1',
+          asset: 'ETH',
+          identifier: 3456,
+          locationLabel,
+          userNotes: 'spend note',
+        }, {
+          amount: '0.2',
+          asset: 'DAI',
+        }],
+        timestamp: 1742901211000,
+        txHash,
+      } satisfies EditEvmSwapEventPayload),
+    );
+    expect(addHistoryEventMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('should remove the fee', async () => {
+    wrapper = createWrapper({
+      props: {
+        data,
+      },
+    });
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    const saveMethod = wrapper.vm.save;
+
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+
+    await wrapper.find('[data-cy=has-fee] input').setValue(false);
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+    expect(editHistoryEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address,
+        counterparty: 'uniswap-v3',
+        entryType: 'evm swap event',
+        identifiers: [3456, 3457, 3458],
+        location: 'ethereum',
+        receive: [{
+          amount: '300',
+          asset: 'USDC',
+          identifier: 3457,
+          locationLabel,
+          userNotes: 'receive note',
+        }],
+        sequenceIndex: '0',
+        spend: [{
+          amount: '0.1',
+          asset: 'ETH',
+          identifier: 3456,
+          locationLabel,
+          userNotes: 'spend note',
+        }],
+        timestamp: 1742901211000,
+        txHash,
       } satisfies EditEvmSwapEventPayload),
     );
     expect(addHistoryEventMock).toHaveBeenCalledTimes(0);

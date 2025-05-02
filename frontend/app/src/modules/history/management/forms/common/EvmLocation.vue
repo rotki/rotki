@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 
 const locationLabel = defineModel<string>('locationLabel', { required: true });
 const address = defineModel<string>('address', { required: true });
 
-const props = defineProps<{
+defineProps<{
   location: string;
   errorMessages: {
     address: string[];
@@ -19,27 +17,14 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { getAddresses } = useAccountAddresses();
-const { matchChain } = useSupportedChains();
-
-const addressSuggestions = computed(() => {
-  const chain = matchChain(props.location);
-  if (!chain)
-    return [];
-  return getAddresses(chain);
-});
 </script>
 
 <template>
   <div class="grid md:grid-cols-2 gap-4">
-    <AutoCompleteWithSearchSync
+    <EventLocationLabel
       v-model="locationLabel"
-      :items="addressSuggestions"
-      clearable
-      data-cy="location-label"
-      :label="t('transactions.events.form.account_address.label')"
+      :location="location"
       :error-messages="errorMessages.locationLabel"
-      auto-select-first
       @blur="emit('blur', 'locationLabel')"
     />
 

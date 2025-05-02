@@ -1,7 +1,7 @@
 import type { ValidationRuleCollection, ValidationRuleWithoutParams } from '@vuelidate/core';
 import type { Ref } from 'vue';
 import { isValidEthAddress, isValidTxHash } from '@rotki/common';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { helpers, minLength, required, requiredIf } from '@vuelidate/validators';
 
 interface CreateCommonRules {
   createExternalValidationRule: <T>() => ValidationRuleCollection<T>;
@@ -19,6 +19,7 @@ interface CreateCommonRules {
   createRequiredValidDepositorRule: <T>() => ValidationRuleCollection<T>;
   createRequiredValidFeeRecipientRule: <T>() => ValidationRuleCollection<T>;
   createRequiredValidWithdrawalAddressRule: <T>() => ValidationRuleCollection<T>;
+  createRequiredAtLeastOne: <T>() => ValidationRuleCollection<T>;
   createValidCounterpartyRule: <T>(counterparties: Ref<string[]>) => ValidationRuleCollection<T>;
   createValidEthAddressRule: <T>() => ValidationRuleCollection<T>;
   createValidProductRule: <T>(products: Ref<string[]>) => ValidationRuleCollection<T>;
@@ -43,6 +44,10 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
     }),
     createRequiredAssetRule: () => ({
       required: helpers.withMessage(t('transactions.events.form.asset.validation.non_empty'), required),
+    }),
+    createRequiredAtLeastOne: () => ({
+      minLength: minLength(1),
+      required,
     }),
     createRequiredBlockNumberRule: () => ({
       required: helpers.withMessage(t('transactions.events.form.block_number.validation.non_empty'), required),
