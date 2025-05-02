@@ -889,7 +889,6 @@
     },
     "name_non_empty": "Le nom de l'actif ne peut pas être vide",
     "optional": "Champs facultatifs",
-    "oracle_disable": "Désactiver/Activer la récupération des prix à partir de l'oracle de prix. Si l'oracle n'est pas désactivé, et qu'aucune valeur n'est spécifiée, rotki tentera de récupérer un prix en utilisant le symbole de l'actif.",
     "replaced": "Cette icône sera appliquée après avoir cliqué sur \"Enregistrer\".",
     "type_non_empty": "Le type d'actif ne peut pas être vide",
     "types": {

@@ -1019,7 +1019,6 @@
     },
     "name_non_empty": "The name of the asset cannot be empty",
     "optional": "Optional Fields",
-    "oracle_disable": "Disable/Enable the price fetching from the price oracle. If the oracle is not disabled, and there is no value specified, rotki will attempt to fetch a price using the asset symbol.",
     "replaced": "This icon will be applied after you click \"Save\".",
     "type_non_empty": "The type of the asset cannot be empty",
     "types": {
