@@ -150,7 +150,6 @@ export const NewDetectedToken = z.object({
 export type NewDetectedToken = z.infer<typeof NewDetectedToken>;
 
 export const MissingApiKey = z.object({
-  location: z.string(),
   service: z.string(),
 });
 

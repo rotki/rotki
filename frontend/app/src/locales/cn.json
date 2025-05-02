@@ -766,7 +766,6 @@
     },
     "name_non_empty": "资产名称不能为空",
     "optional": "可选字段",
-    "oracle_disable": "禁用/启用从价格 oracle 获取价格。如果 oracle 未禁用且未指定值,rotki 将尝试使用资产符号获取价格。",
     "replaced": "点击\"保存\"后，该图标将被应用。",
     "type_non_empty": "资产类型不能为空",
     "types": {

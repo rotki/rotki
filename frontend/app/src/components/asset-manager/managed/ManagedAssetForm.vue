@@ -85,8 +85,6 @@ const decimalsModel = computed({
   },
 });
 
-const coingeckoEnabled = ref<boolean>(false);
-const cryptocompareEnabled = ref<boolean>(false);
 const fetching = ref<boolean>(false);
 const dontAutoFetch = ref<boolean>(false);
 
@@ -220,8 +218,8 @@ async function saveAsset() {
 
   const payload: SupportedAsset = omit({
     ...data,
-    coingecko: get(coingeckoEnabled) ? onlyIfTruthy(get(coingecko)) : null,
-    cryptocompare: get(cryptocompareEnabled) ? onlyIfTruthy(get(cryptocompare)) : '',
+    coingecko: get(coingecko),
+    cryptocompare: get(cryptocompare),
     evmChain: get(evmChain) || null,
     protocol: onlyIfTruthy(get(protocol)),
     swappedFor: onlyIfTruthy(get(swappedFor)),
@@ -378,74 +376,44 @@ defineExpose({
             :disabled="loading || fetching"
           />
         </div>
-        <div class="md:col-span-2 flex items-start gap-3 pl-2">
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiCheckbox
-                v-model="coingeckoEnabled"
-                class="mt-2"
-                color="primary"
-              />
-            </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
-          </RuiTooltip>
-          <RuiTextField
-            v-model="coingecko"
-            variant="outlined"
-            color="primary"
-            clearable
-            class="flex-1"
-            :hint="t('asset_form.labels.coingecko_hint')"
-            :label="t('asset_form.labels.coingecko')"
-            :error-messages="toMessages(v$.coingecko)"
-            :disabled="loading || !coingeckoEnabled"
-          >
-            <template #append>
-              <HelpLink
-                small
-                :url="externalLinks.contributeSection.coingecko"
-                :tooltip="t('asset_form.help_coingecko')"
-              />
-            </template>
-          </RuiTextField>
-        </div>
-        <div class="md:col-span-2 flex items-start gap-3 pl-2">
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiCheckbox
-                v-model="cryptocompareEnabled"
-                class="mt-2"
-                color="primary"
-              />
-            </template>
-            <span> {{ t('asset_form.oracle_disable') }}</span>
-          </RuiTooltip>
-          <RuiTextField
-            v-model="cryptocompare"
-            variant="outlined"
-            color="primary"
-            clearable
-            class="flex-1"
-            :label="t('asset_form.labels.cryptocompare')"
-            :hint="t('asset_form.labels.cryptocompare_hint')"
-            :error-messages="toMessages(v$.cryptocompare)"
-            :disabled="loading || !cryptocompareEnabled"
-          >
-            <template #append>
-              <HelpLink
-                small
-                :url="externalLinks.contributeSection.cryptocompare"
-                :tooltip="t('asset_form.help_cryptocompare')"
-              />
-            </template>
-          </RuiTextField>
-        </div>
+        <RuiTextField
+          v-model="coingecko"
+          variant="outlined"
+          color="primary"
+          clearable
+          class="col-span-2"
+          :hint="t('asset_form.labels.coingecko_hint')"
+          :label="t('asset_form.labels.coingecko')"
+          :error-messages="toMessages(v$.coingecko)"
+          :disabled="loading"
+        >
+          <template #append>
+            <HelpLink
+              small
+              :url="externalLinks.contributeSection.coingecko"
+              :tooltip="t('asset_form.help_coingecko')"
+            />
+          </template>
+        </RuiTextField>
+        <RuiTextField
+          v-model="cryptocompare"
+          variant="outlined"
+          color="primary"
+          clearable
+          class="col-span-2"
+          :label="t('asset_form.labels.cryptocompare')"
+          :hint="t('asset_form.labels.cryptocompare_hint')"
+          :error-messages="toMessages(v$.cryptocompare)"
+          :disabled="loading"
+        >
+          <template #append>
+            <HelpLink
+              small
+              :url="externalLinks.contributeSection.cryptocompare"
+              :tooltip="t('asset_form.help_cryptocompare')"
+            />
+          </template>
+        </RuiTextField>
       </div>
     </div>
 
