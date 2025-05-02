@@ -12,6 +12,7 @@ from rotkehlchen.chain.aggregator import ChainsAggregator, _module_name_to_class
 from rotkehlchen.chain.evm.constants import LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.constants import ONE
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -19,8 +20,10 @@ from rotkehlchen.tests.utils.polygon_pos import ALCHEMY_RPC_ENDPOINT
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     SPAM_PROTOCOL,
+    AddressbookType,
     ChainID,
     ChecksumEvmAddress,
+    OptionalChainAddress,
     SupportedBlockchain,
 )
 
@@ -76,31 +79,41 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     # Is an EOA in ethereum mainnet. Has activity only in ethereum and in optimism. Should be
     # added to optimism and should not be added to avax
     addy_eoa_2 = make_evm_address()
-    # polygon and mainnet address
+    # polygon and mainnet - auto-detected on most of the other chains.
     addy_eoa_3 = make_evm_address()
+    # arbitrum and mainnet - auto-detected on polygon
+    addy_eoa_4 = make_evm_address()
 
     # Is an EOA that is initially already added everywhere. Has activity in all chains.
     # Since is already added, should not be added again.
     everywhere_addy = make_evm_address()
 
+    # Labels are as follows:
+    # addy_eoa_2 - same label set on both ethereum and polygon initially - Updated to multichain
+    # addy_eoa_3 - label set only on ethereum initially - Updated to multichain
+    # addy_eoa_4 - different labels on ethereum and arbitrum one - Not updated to multichain
+
     initial_accounts_data = []
     addies_to_start_with = [
-        (SupportedBlockchain.ETHEREUM, eth_addy_contract),
-        (SupportedBlockchain.OPTIMISM, addy_eoa_1),
-        (SupportedBlockchain.ETHEREUM, addy_eoa_2),
-        (SupportedBlockchain.ETHEREUM, addy_eoa_3),
-        (SupportedBlockchain.ETHEREUM, everywhere_addy),
-        (SupportedBlockchain.OPTIMISM, everywhere_addy),
-        (SupportedBlockchain.AVALANCHE, everywhere_addy),
-        (SupportedBlockchain.POLYGON_POS, everywhere_addy),
-        (SupportedBlockchain.ARBITRUM_ONE, everywhere_addy),
-        (SupportedBlockchain.BASE, everywhere_addy),
-        (SupportedBlockchain.GNOSIS, everywhere_addy),
-        (SupportedBlockchain.SCROLL, everywhere_addy),
-        (SupportedBlockchain.BINANCE_SC, everywhere_addy),
+        (SupportedBlockchain.ETHEREUM, eth_addy_contract, None),
+        (SupportedBlockchain.OPTIMISM, addy_eoa_1, None),
+        (SupportedBlockchain.ETHEREUM, addy_eoa_2, (label1 := 'Label 1')),
+        (SupportedBlockchain.POLYGON_POS, addy_eoa_2, label1),
+        (SupportedBlockchain.ETHEREUM, addy_eoa_3, (label2 := 'Label 2')),
+        (SupportedBlockchain.ETHEREUM, addy_eoa_4, 'Label 3'),
+        (SupportedBlockchain.ARBITRUM_ONE, addy_eoa_4, 'Label 4'),
+        (SupportedBlockchain.ETHEREUM, everywhere_addy, None),
+        (SupportedBlockchain.OPTIMISM, everywhere_addy, None),
+        (SupportedBlockchain.AVALANCHE, everywhere_addy, None),
+        (SupportedBlockchain.POLYGON_POS, everywhere_addy, None),
+        (SupportedBlockchain.ARBITRUM_ONE, everywhere_addy, None),
+        (SupportedBlockchain.BASE, everywhere_addy, None),
+        (SupportedBlockchain.GNOSIS, everywhere_addy, None),
+        (SupportedBlockchain.SCROLL, everywhere_addy, None),
+        (SupportedBlockchain.BINANCE_SC, everywhere_addy, None),
     ]
 
-    for chain, addy in addies_to_start_with:
+    for chain, addy, label in addies_to_start_with:
         blockchain.modify_blockchain_accounts(
             blockchain=chain,
             accounts=[addy],
@@ -109,6 +122,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         initial_accounts_data.append(BlockchainAccountData(
             chain=chain,
             address=addy,
+            label=label,
         ))
 
     with blockchain.database.user_write() as write_cursor:
@@ -125,7 +139,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             ethereum_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1, addy_eoa_2],
             optimism_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1, addy_eoa_2],
             avalanche_addresses=[eth_addy_contract, everywhere_addy, addy_eoa_1],
-            polygon_pos_addresses=[everywhere_addy, addy_eoa_3],
+            polygon_pos_addresses=[everywhere_addy, addy_eoa_3, addy_eoa_4],
             arbitrum_one_addresses=[everywhere_addy, addy_eoa_3],
             base_addresses=[everywhere_addy, addy_eoa_3],
             gnosis_addresses=[everywhere_addy, addy_eoa_3],
@@ -135,11 +149,11 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
 
         blockchain.detect_evm_accounts()
 
-    assert set(blockchain.accounts.eth) == {addy_eoa_1, addy_eoa_2, addy_eoa_3, eth_addy_contract, everywhere_addy}  # noqa: E501
+    assert set(blockchain.accounts.eth) == {addy_eoa_1, addy_eoa_2, addy_eoa_3, addy_eoa_4, eth_addy_contract, everywhere_addy}  # noqa: E501
     assert set(blockchain.accounts.optimism) == {addy_eoa_1, addy_eoa_2, everywhere_addy}
     assert set(blockchain.accounts.avax) == {addy_eoa_1, everywhere_addy}
-    assert set(blockchain.accounts.polygon_pos) == {addy_eoa_3, everywhere_addy}
-    assert set(blockchain.accounts.arbitrum_one) == {addy_eoa_3, everywhere_addy}
+    assert set(blockchain.accounts.polygon_pos) == {addy_eoa_2, addy_eoa_3, addy_eoa_4, everywhere_addy}  # noqa: E501
+    assert set(blockchain.accounts.arbitrum_one) == {addy_eoa_3, addy_eoa_4, everywhere_addy}
     assert set(blockchain.accounts.base) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.gnosis) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.scroll) == {addy_eoa_3, everywhere_addy}
@@ -147,82 +161,45 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
 
     # Also check the db
     expected_accounts_data = initial_accounts_data + [
-        BlockchainAccountData(
-            chain=SupportedBlockchain.ETHEREUM,
-            address=addy_eoa_1,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.AVALANCHE,
-            address=addy_eoa_1,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.OPTIMISM,
-            address=addy_eoa_2,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.POLYGON_POS,
-            address=addy_eoa_3,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.ARBITRUM_ONE,
-            address=addy_eoa_3,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.BASE,
-            address=addy_eoa_3,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.GNOSIS,
-            address=addy_eoa_3,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.SCROLL,
-            address=addy_eoa_3,
-        ),
-        BlockchainAccountData(
-            chain=SupportedBlockchain.BINANCE_SC,
-            address=addy_eoa_3,
-        ),
+        BlockchainAccountData(chain=chain, address=address, label=label)
+        for chain, address, label in (
+            (SupportedBlockchain.ETHEREUM, addy_eoa_1, None),
+            (SupportedBlockchain.AVALANCHE, addy_eoa_1, None),
+            (SupportedBlockchain.OPTIMISM, addy_eoa_2, label1),
+            (SupportedBlockchain.POLYGON_POS, addy_eoa_4, None),
+            (SupportedBlockchain.POLYGON_POS, addy_eoa_3, label2),
+            (SupportedBlockchain.ARBITRUM_ONE, addy_eoa_3, label2),
+            (SupportedBlockchain.BASE, addy_eoa_3, label2),
+            (SupportedBlockchain.GNOSIS, addy_eoa_3, label2),
+            (SupportedBlockchain.SCROLL, addy_eoa_3, label2),
+            (SupportedBlockchain.BINANCE_SC, addy_eoa_3, label2),
+        )
     ]
-    accounts_in_db = []
+
     with blockchain.database.conn.read_ctx() as cursor:
         raw_accounts = blockchain.database.get_blockchain_accounts(cursor)
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.ETHEREUM,
+
+    accounts_in_db = [
+        BlockchainAccountData(
+            chain=chain,
             address=account,
-        ) for account in raw_accounts.eth])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.OPTIMISM,
-            address=account,
-        ) for account in raw_accounts.optimism])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.AVALANCHE,
-            address=account,
-        ) for account in raw_accounts.avax])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.POLYGON_POS,
-            address=account,
-        ) for account in raw_accounts.polygon_pos])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.ARBITRUM_ONE,
-            address=account,
-        ) for account in raw_accounts.arbitrum_one])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.BASE,
-            address=account,
-        ) for account in raw_accounts.base])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.GNOSIS,
-            address=account,
-        ) for account in raw_accounts.gnosis])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.SCROLL,
-            address=account,
-        ) for account in raw_accounts.scroll])
-        accounts_in_db.extend([BlockchainAccountData(
-            chain=SupportedBlockchain.BINANCE_SC,
-            address=account,
-        ) for account in raw_accounts.binance_sc])
+            label=DBAddressbook(blockchain.database).get_addressbook_entry_name(
+                book_type=AddressbookType.PRIVATE,
+                chain_address=OptionalChainAddress(address=account, blockchain=chain),  # type: ignore[arg-type]  # account will be ChecksumAddress here
+            ),
+        )
+        for chain in (
+            SupportedBlockchain.ETHEREUM,
+            SupportedBlockchain.OPTIMISM,
+            SupportedBlockchain.AVALANCHE,
+            SupportedBlockchain.POLYGON_POS,
+            SupportedBlockchain.ARBITRUM_ONE,
+            SupportedBlockchain.BASE,
+            SupportedBlockchain.GNOSIS,
+            SupportedBlockchain.SCROLL,
+            SupportedBlockchain.BINANCE_SC,
+        ) for account in raw_accounts.get(chain)
+    ]
 
     assert set(accounts_in_db) == set(expected_accounts_data)
     assert len(accounts_in_db) == len(expected_accounts_data)

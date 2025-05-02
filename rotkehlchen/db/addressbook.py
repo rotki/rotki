@@ -193,3 +193,32 @@ class DBAddressbook:
             result = read_cursor.fetchone()
 
         return None if result is None else result[0]
+
+    def maybe_make_entry_name_multichain(
+            self,
+            address: ChecksumEvmAddress,
+            book_type: AddressbookType = AddressbookType.PRIVATE,
+    ) -> None:
+        """Make the existing name for the specified address apply to all chains.
+        If there is no existing name or if there are different names for it in different chains,
+        then no action is taken.
+        """
+        with self.read_ctx(book_type) as cursor:
+            if (entry_count := len(names := cursor.execute(
+                'SELECT name FROM address_book WHERE address=?',
+                (address,),
+            ).fetchall())) == 0 or len(set(names)) > 1:
+                return  # If no name, or different names on different chains, leave as is.
+
+        # else, make the name multichain
+        with self.write_ctx(book_type) as write_cursor:
+            if entry_count == 1:  # Only one entry. Just update it.
+                write_cursor.execute(
+                    'UPDATE address_book SET blockchain=? WHERE address=?',
+                    (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, address),
+                )
+            else:  # Same label is set on multiple chains. Delete existing entries and add new one.
+                self.add_or_update_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=[AddressbookEntry(address=address, name=names[0][0], blockchain=None)],
+                )
