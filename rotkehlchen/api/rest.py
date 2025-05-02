@@ -4990,6 +4990,25 @@ class RestAPI:
                 )
                 AssetResolver.clean_memory_cache(token.identifier)
 
+                # Finally if the token was in any cached balances, that cache is cleared,
+                # so it can be requeried later without the ignored token.
+                for balances in self.rotkehlchen.chains_aggregator.balances.get(
+                    chain=(blockchain := token.chain_id.to_blockchain()),
+                ).values():
+                    # variables below can only be dicts because we mark as spam only evm tokens
+                    in_assets = balances.assets.pop(token, None)  # type: ignore
+                    in_liabilities = balances.liabilities.pop(token, None)  # type: ignore
+
+                    if in_assets is not None or in_liabilities is not None:
+                        # If the token was found in balances, flush relevant caches so
+                        # subsequent calls reflect its removal without re-querying the chain.
+                        self.rotkehlchen.chains_aggregator.flush_cache('query_balances')
+                        self.rotkehlchen.chains_aggregator.flush_cache(
+                            name='query_balances',
+                            blockchain=blockchain,
+                        )
+                        log.debug(f'Flushed query_balances cache after setting {token} as spam')
+
         # add to ignored assets if it wasn't there
         self.rotkehlchen.data.add_ignored_assets(assets=tokens)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
