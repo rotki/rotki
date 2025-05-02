@@ -217,8 +217,9 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             ),
         )
         write_cursor.execute(
-            'DELETE FROM rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?)',
+            'DELETE FROM rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?, ?)',
             (
+                'etherscan',
                 'optimism etherscan',
                 'polygon pos etherscan',
                 'arbitrum one etherscan',

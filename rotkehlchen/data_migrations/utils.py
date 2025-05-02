@@ -41,7 +41,7 @@ def update_data_and_detect_accounts(
             'SELECT COUNT(*) FROM external_service_credentials WHERE name=?',
             (ExternalService.ETHERSCAN.name.lower(),),
         )
-        if (needs_etherscan_key := cursor.fetchone()[0] == 0):
+        if (etherscan_api_key_not_present := cursor.fetchone()[0] == 0):
             with rotki.data.db.conn.write_ctx() as write_cursor:
                 rotki.data.db.add_external_service_credentials(
                     write_cursor=write_cursor,  # add temporary etherscan key for the given chains
@@ -52,5 +52,5 @@ def update_data_and_detect_accounts(
                 )
 
     rotki.chains_aggregator.detect_evm_accounts(progress_handler, chains=chains)
-    if needs_etherscan_key:
+    if etherscan_api_key_not_present:
         rotki.data.db.delete_external_service_credentials([ExternalService.ETHERSCAN])

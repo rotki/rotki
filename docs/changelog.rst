@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will now use the Etherscan V2 api. Users won't need to create a different api key for each chain since the one from https://etherscan.io will be used for all the supported chains. Finally all non mainnet etherscan api keys are removed from the app. More information available at https://docs.etherscan.io/etherscan-v2
 * :feature:`-` Users will be able to delete multiple validators at once.
 * :feature:`-` rotki will now correctly decode single token withdrawals from Curve pools.
 * :feature:`-` Gearbox rewards transactions are now decoded properly on all supported chains.

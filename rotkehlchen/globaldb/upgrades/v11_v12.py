@@ -62,8 +62,9 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
     @progress_step(description='Deleting etherscan nodes')
     def _delete_etherscan_nodes(write_cursor: 'DBCursor') -> None:
         write_cursor.execute(
-            'DELETE FROM default_rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?)',
+            'DELETE FROM default_rpc_nodes WHERE name IN (?, ?, ?, ?, ?, ?, ?, ?)',
             (
+                'etherscan',
                 'optimism etherscan',
                 'polygon pos etherscan',
                 'arbitrum one etherscan',

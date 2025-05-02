@@ -65,7 +65,7 @@ from rotkehlchen.balances.manual import (
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
-from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -2478,9 +2478,6 @@ class RestAPI:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
         errors = []
         for row in db_entries:
-            if row[0] == ETHEREUM_ETHERSCAN_NODE_NAME:
-                continue
-
             success, msg = manager.node_inquirer.attempt_connect(node=(node := NodeName(
                 name=row[0],
                 endpoint=row[1],

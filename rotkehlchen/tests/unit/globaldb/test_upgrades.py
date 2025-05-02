@@ -993,6 +993,17 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
             ('CURVE\\_LENDING\\_VAULT\\_COLLATERAL\\_TOKEN%', '\\'),
         ).fetchone()[0] == 2
         assert table_exists(cursor=cursor, name='counterparty_asset_mappings') is False
+        assert cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes').fetchone()[0] == 41
+        assert {row[0] for row in cursor.execute('SELECT name FROM default_rpc_nodes WHERE endpoint=""')} == {  # noqa: E501
+            'arbitrum one etherscan',
+            'base etherscan',
+            'bsc etherscan',
+            'etherscan',
+            'gnosis etherscan',
+            'optimism etherscan',
+            'polygon pos etherscan',
+            'scroll etherscan',
+        }
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 12)
@@ -1026,6 +1037,10 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute(
             'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ? ESCAPE ?',
             ('CURVE\\_LENDING\\_VAULT\\_COLLATERAL\\_TOKEN%', '\\'),
+        ).fetchone()[0] == 0
+        assert cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes').fetchone()[0] == 33
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM default_rpc_nodes WHERE endpoint=""',
         ).fetchone()[0] == 0
 
 

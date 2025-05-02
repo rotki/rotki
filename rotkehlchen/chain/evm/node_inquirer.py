@@ -305,7 +305,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         ---> Average: 70 seconds
         """
         open_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
-        selection = [wnode for wnode in open_nodes if wnode.node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME and wnode.node_info.owned is False]  # noqa: E501
+        selection = [wnode for wnode in open_nodes if wnode.node_info.owned is False]
         ordered_list = []
         while len(selection) != 0:
             weights = [float(entry.weight) for entry in selection]
@@ -313,7 +313,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             ordered_list.append(node[0])
             selection.remove(node[0])
 
-        if not skip_etherscan:
+        if not skip_etherscan:  # explicitly adding at the end to minimize etherscan API queries
             ordered_list.append(self.etherscan_node)
 
         owned_nodes = [node.node_info for node in open_nodes if node.node_info.owned]
@@ -503,14 +503,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         return False, message
 
     def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
-        self.web3_mapping = {}
-
-        # Remove etherscan nodes and return if all nodes use etherscan,
-        # so we don't query the highest block unnecessarily.
-        nodes = [node for node in nodes if node.node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME]
-        if len(nodes) == 0:
-            return
-
         for weighted_node in nodes:
             task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
             self.greenlet_manager.spawn_and_track(

@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -166,8 +166,7 @@ def test_use_open_nodes(ethereum_inquirer, database):
     Change test to use a more recent transaction.
     """
     # Wait until all nodes are connected
-    rpc_nodes_all = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)  # noqa: E501
-    rpc_nodes = [node for node in rpc_nodes_all if node.node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME]  # noqa: E501
+    rpc_nodes = database.get_rpc_nodes(blockchain=SupportedBlockchain.ETHEREUM, only_active=True)
     ethereum_inquirer.connect_to_multiple_nodes(rpc_nodes)
     wait_until_all_nodes_connected(
         connect_at_start=rpc_nodes,
@@ -405,18 +404,13 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         assert tx_or_tx_receipt_calls == 2
 
     # now reduce the rpc to just a pruned node & etherscan and see that etherscan is called.
-    pruned_node_and_etherscan = [
-        ethereum_manager_connect_at_start[0],
-        ethereum_manager_connect_at_start[2],
-    ]
-    call_order = pruned_node_and_etherscan
-    ethereum_inquirer.connect_to_multiple_nodes(pruned_node_and_etherscan)
+    pruned_node = [ethereum_manager_connect_at_start[0]]
+    ethereum_inquirer.connect_to_multiple_nodes(pruned_node)
     wait_until_all_nodes_connected(
-        connect_at_start=pruned_node_and_etherscan,
+        connect_at_start=pruned_node,
         evm_inquirer=ethereum_inquirer,
     )
-    assert len(ethereum_inquirer.web3_mapping) == 1
-
+    assert len(ethereum_inquirer.web3_mapping) == 2
     etherscan_tx_or_tx_receipt_calls = 0
 
     def mock_etherscan_get_tx(tx_hash):
@@ -436,6 +430,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         side_effect=mock_etherscan_get_tx,
         autospec=True,
     )
+    call_order = pruned_node + [ETHEREUM_ETHERSCAN_NODE]
     with etherscan_get_tx_patch, etherscan_get_tx_receipt_patch:
         ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
         ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)

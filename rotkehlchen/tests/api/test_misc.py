@@ -173,7 +173,7 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 5
+    assert len(result) == 4
     for node in result:
         if node['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
             assert node['endpoint'] != ''
@@ -185,7 +185,7 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
     # try to delete a node
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
-        json={'identifier': 2},
+        json={'identifier': 1},
     )
     assert_proper_response(response)
     # check that is not anymore in the returned list
@@ -220,12 +220,12 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
             assert node['blockchain'] == blockchain_key
             break
 
-    # Try to add etherscan as node
+    # Try to add an empty name
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
         json={
-            'name': 'etherscan',
-            'endpoint': 'ewarwae',
+            'name': '',
+            'endpoint': '1inch.io',
             'owned': False,
             'weight': '0.3',
             'active': True,
@@ -233,7 +233,7 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
     )
     assert_error_response(
         response=response,
-        contained_in_msg="Name can't be empty or etherscan",
+        contained_in_msg="Name can't be empty",
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -359,31 +359,6 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
         if node['name'] == 'anchor':
             assert FVal(node['weight']) == 20
             break
-
-    # Try to edit etherscan weight
-    response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
-        json={
-            'identifier': 1,
-            'name': 'etherscan',
-            'endpoint': '',
-            'owned': False,
-            'weight': '20',
-            'active': True,
-        },
-    )
-    assert_proper_sync_response_with_result(response)
-
-    # try to delete normal etherscan and see it fails
-    response = requests.delete(
-        api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
-        json={'identifier': 1},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg="Can't delete an etherscan node",
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
 
     # and now let's replicate https://github.com/rotki/rotki/issues/4769 by
     # editing all nodes to have 0% weight.
@@ -520,7 +495,7 @@ def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
 
     with patched_connection:
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 1})
+        response = requests.post(url=rpc_url, json={'identifier': 19})
         assert_proper_sync_response_with_result(response)
 
         # check case of a bad identifier
@@ -565,7 +540,7 @@ def test_connecting_to_node(rotkehlchen_api_server: 'APIServer') -> None:
     ):
         # check error during connection
         rpc_url = api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='base')
-        response = requests.post(url=rpc_url, json={'identifier': 20})
+        response = requests.post(url=rpc_url, json={'identifier': 19})
         assert response.json()['result'] == {
             'errors': [{'name': 'base BlockPi', 'error': 'Custom error'}],
         }
