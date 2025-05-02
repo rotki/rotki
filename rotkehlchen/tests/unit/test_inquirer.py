@@ -17,7 +17,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
-from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     CurvePoolData,
     _query_curve_data_from_api,
@@ -1089,7 +1089,7 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_stakedao_gauge_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
     """Test that we get the correct prices for StakeDAO gauges"""
     sdcrv_gauge = get_or_create_evm_token(
         userdb=database,
@@ -1116,9 +1116,26 @@ def test_find_stakedao_gauge_price(database: 'DBHandler', inquirer_defi: 'Inquir
             ),
         ],
     )
-
-    price = inquirer_defi.find_usd_price(asset=sdcrv_gauge)
-    assert price == FVal('0.359282')
+    oeth_weth_gauge = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_inquirer=ethereum_inquirer,
+        evm_address=string_to_evm_address('0x3311bfA7853892CAaBA24C58B4365AAeD6fe64e4'),
+        chain_id=ChainID.ETHEREUM,
+        protocol=CPT_STAKEDAO,
+        underlying_tokens=[UnderlyingToken(
+            address=get_or_create_evm_token(
+                userdb=ethereum_inquirer.database,
+                evm_inquirer=ethereum_inquirer,
+                evm_address=string_to_evm_address('0xcc7d5785AD5755B6164e21495E07aDb0Ff11C2A8'),
+                chain_id=ChainID.ETHEREUM,
+                protocol=CPT_CURVE,
+            ).evm_address,
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    assert inquirer_defi.find_usd_price(oeth_weth_gauge) == FVal('1846.5254044791955')
+    assert inquirer_defi.find_usd_price(sdcrv_gauge) == FVal('0.506007')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
