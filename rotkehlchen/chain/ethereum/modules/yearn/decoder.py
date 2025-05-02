@@ -3,6 +3,7 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.modules.curve.savings.constants import SCRV_TOKEN_ADDRESS
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V1,
     CPT_YEARN_V2,
@@ -380,13 +381,18 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
-        return dict.fromkeys(
+        mappings = dict.fromkeys(
             (self.vaults[CPT_YEARN_V1] | self.vaults[CPT_YEARN_V2]),
             (self._decode_vault_event,),
         ) | dict.fromkeys(
             self.vaults[CPT_YEARN_V3],
             (self._decode_v3_vault_event,),
         ) | {YEARN_PARTNER_TRACKER: (self._decode_v2_increase_deposit,)}
+
+        # While technically a Yearn vault, we need to exclude the scrvUSD token
+        # from yearn decoding since Curve Savings has its own decoder.
+        mappings.pop(SCRV_TOKEN_ADDRESS, None)
+        return mappings
 
     def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
         return (

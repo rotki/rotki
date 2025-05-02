@@ -2,17 +2,27 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    YEARN_VAULTS_V3_PROTOCOL,
+    ChainID,
+    EvmTokenKind,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -26,6 +36,24 @@ def test_deposit_into_crvusd_savings(
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x516d98ed5c091bb2f452742b1a4079f2084f525be3662b026159a1ed7a9bef66')  # noqa: E501
+    # Ensure decoding works correctly when the scrvUSD token has the yearn v3 protocol.
+    # Regression test for https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=108905483  # noqa: E501
+    get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='scrvUSD',
+        name='Savings crvUSD',
+        decimals=18,
+        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        started=Timestamp(1713104219),
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, approval_amount, deposit_amount, receive_amount = TimestampMS(1741194983000), ethereum_accounts[0], '0.00019683257061538', '9999900000', '27292.191642525541816366', '26201.448750994790858145'  # noqa: E501
     assert events == [
