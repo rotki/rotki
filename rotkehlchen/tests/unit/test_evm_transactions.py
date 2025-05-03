@@ -72,6 +72,17 @@ def test_delete_transactions_by_chain(
         tx_hash=deserialize_evm_tx_hash('0xafce539bd7fb898c5f03fdccf4c34e2c5c9ca321d612142953a7baf2849caafd'),
         relevant_address=gnosis_accounts[0],
     )
+
+    with database.conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT tx_id, topic_id FROM evmtx_receipt_log_topics JOIN '
+            'evmtx_receipt_logs ON evmtx_receipt_log_topics.log=evmtx_receipt_logs.identifier ',
+        )
+        # We have two transactions, the first one uses topic_ids [1, 2] from evmtx_topics_index
+        # and the second transaction uses topics_ids [2, 3, 4]. The topic with id 2 is
+        # common to both transactions.
+        assert cursor.fetchall() == [(1, 1), (1, 2), (2, 3), (2, 4), (2, 2)]
+
     ethereum_events, gnosis_events = 3, 2
     dbevmtx = DBEvmTx(database)
     with database.user_write() as write_cursor:
@@ -91,6 +102,14 @@ def test_delete_transactions_by_chain(
         )
 
     with database.conn.read_ctx() as cursor:
+        topic_ids_in_use = [
+            row[0] for row in cursor.execute('SELECT topic_id FROM evmtx_topics_index')
+        ]
+        # After deleting the second transaction we keep the topic_id that was being used only
+        # by the first transaction and the topic that was common to both.
+        assert topic_ids_in_use == [1, 2]
+
+    with database.conn.read_ctx() as cursor:
         events = DBHistoryEvents(database).get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
@@ -99,3 +118,16 @@ def test_delete_transactions_by_chain(
         )
         assert len(events) == ethereum_events
         assert all(event.location == Location.ETHEREUM for event in events)
+
+    # delete all the transactions and check that the evmtx_topics_index table
+    # gets emptied
+    with database.conn.write_ctx() as write_cursor:
+        dbevmtx.delete_transactions(
+            write_cursor=write_cursor,
+            address=gnosis_accounts[0],
+            chain=SupportedBlockchain.ETHEREUM,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        # after deleting the first transaction added we don't keep any topic indexed.
+        assert cursor.execute('SELECT COUNT(*) FROM evmtx_topics_index').fetchone()[0] == 0

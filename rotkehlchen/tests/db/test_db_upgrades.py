@@ -3146,6 +3146,13 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'SELECT value FROM settings where name=?',
             ('use_unified_etherscan_api',),
         ).fetchone()[0] == 'True'
+        assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == 22
+        unique_log_topics = cursor.execute(
+            'SELECT COUNT(*)  FROM (SELECT * FROM evmtx_receipt_log_topics GROUP by hex(topic))',
+        ).fetchone()[0]
+        prev_topic_values = cursor.execute(
+            'SELECT topic FROM evmtx_receipt_log_topics WHERE log=113754 ORDER BY topic_index',
+        ).fetchall()
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3205,6 +3212,16 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'SELECT value FROM settings where name=?',
             ('use_unified_etherscan_api',),
         ).fetchall() == []
+        # check the migration of log topics
+        assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == 22
+        assert unique_log_topics == cursor.execute(
+            'SELECT COUNT(*) FROM evmtx_topics_index',
+        ).fetchone()[0]
+        assert prev_topic_values == cursor.execute(
+            'SELECT topic_value FROM evmtx_receipt_log_topics JOIN evmtx_topics_index '
+            'ON evmtx_receipt_log_topics.topic_id = evmtx_topics_index.topic_id '
+            'WHERE log=113754 ORDER BY topic_index',
+        ).fetchall()
 
     db.logout()
 
@@ -3219,10 +3236,10 @@ def test_latest_upgrade_correctness(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v43_rotkehlchen.db'
+    base_database = f'v{ROTKEHLCHEN_DB_VERSION - 1}_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
-        target_version=43,
+        target_version=ROTKEHLCHEN_DB_VERSION - 1,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -3262,7 +3279,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = {'action_type', 'asset_movements', 'asset_movement_category', 'trade_type', 'trades'}  # noqa: E501
+    removed_tables = {'action_type', 'trade_type', 'trades'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3271,7 +3288,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'cowswap_orders', 'gnosispay_data'}
+    assert new_tables == {'evmtx_topics_index'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
