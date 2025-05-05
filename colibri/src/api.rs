@@ -1,17 +1,18 @@
 mod constants;
 pub mod database;
+pub mod globaldb_endpoints;
 pub mod health;
 pub mod icons;
 mod utils;
 
-use std::collections::HashSet;
-use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
 use crate::blockchain::EvmInquirerManager;
 use crate::coingecko;
 use crate::database::DBHandler;
 use crate::globaldb;
+use std::collections::HashSet;
+use std::path::PathBuf;
+use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
 
 #[derive(Clone)]
 pub struct AppState {

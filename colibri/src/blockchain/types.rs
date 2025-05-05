@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 /// Represents supported EVM-compatible blockchains
-/// 
+///
 /// Note: This implementation only includes EVM chains and is not identical to Python's implementation
 /// which may include additional non-EVM blockchains.
 pub enum SupportedBlockchain {

@@ -1,4 +1,6 @@
-use crate::blockchain::{parse_asset_identifier, EvmInquirerManager, EvmNodeInquirer, SupportedBlockchain};
+use crate::blockchain::{
+    parse_asset_identifier, EvmInquirerManager, EvmNodeInquirer, SupportedBlockchain,
+};
 use crate::coingecko;
 use crate::globaldb;
 use alloy::{
@@ -20,7 +22,6 @@ const SMOLDAPP_BASE_URL: &str =
 pub enum FileTypeError {
     UnsupportedFileType,
 }
-
 
 sol! {
     #[sol(rpc)]
@@ -119,10 +120,16 @@ async fn query_uniswap_v3_position_icon(
     contract_address: Address,
     inquirer: Arc<EvmNodeInquirer>,
 ) -> Option<(Bytes, &'static str)> {
-    let token_id: U256 = token_id.parse()
+    let token_id: U256 = token_id
+        .parse()
         .map_err(|e| {
-            error!("Invalid token ID '{}' for NFT position on chain ID {} ({}): {}", 
-            token_id, chain_id, inquirer.blockchain.as_str(), e)
+            error!(
+                "Invalid token ID '{}' for NFT position on chain ID {} ({}): {}",
+                token_id,
+                chain_id,
+                inquirer.blockchain.as_str(),
+                e
+            )
         })
         .ok()?;
 
@@ -145,9 +152,12 @@ async fn query_uniswap_v3_position_icon(
                 let error_patterns = [
                     "function selector was not recognized",
                     "invalid function signature",
-                    "contract code"
+                    "contract code",
                 ];
-                if error_patterns.iter().any(|&pattern| error_message.contains(pattern)) {
+                if error_patterns
+                    .iter()
+                    .any(|&pattern| error_message.contains(pattern))
+                {
                     error!(
                         "Contract appears to be malformed or not a valid UniswapV3NFTManager: {} - token ID {} on contract {}",
                         e, token_id, contract_address
@@ -172,14 +182,16 @@ async fn query_uniswap_v3_position_icon(
 
         // transform the base64 data into json in order to retrieve the image.
         let json_data: serde_json::Value = match STANDARD.decode(base64_str) {
-            Ok(bytes) => match serde_json::from_slice(&bytes) {
-                Ok(json) => json,
-                Err(e) => {
-                    error!("Failed to parse JSON from node '{}' for token ID {} on contract {}: {}",
+            Ok(bytes) => {
+                match serde_json::from_slice(&bytes) {
+                    Ok(json) => json,
+                    Err(e) => {
+                        error!("Failed to parse JSON from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
-                    break;
+                        break;
+                    }
                 }
-            },
+            }
             Err(e) => {
                 error!("Failed to decode base64 JSON from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
@@ -198,17 +210,19 @@ async fn query_uniswap_v3_position_icon(
                 }
             },
             None => {
-                error!("No 'image' field in JSON from node '{}' for token ID {} on contract {}",
-                       node.name, token_id, contract_address);
+                error!(
+                    "No 'image' field in JSON from node '{}' for token ID {} on contract {}",
+                    node.name, token_id, contract_address
+                );
                 break;
             }
         };
-        
+
         // convert the base64 image into bytes
         match STANDARD.decode(image_base64) {
             Ok(image_data) => {
                 return Some((Bytes::from(image_data), "svg"));
-            },
+            }
             Err(e) => {
                 error!("Failed to decode base64 SVG image from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
@@ -218,7 +232,6 @@ async fn query_uniswap_v3_position_icon(
     }
     None
 }
-
 
 fn url_encode_identifier(input: &str) -> String {
     input
@@ -384,7 +397,11 @@ pub async fn query_icon_remotely(
     if let Some(asset_info) = parse_asset_identifier(&asset_id) {
         // Handle NFTs - only check for Uniswap V3 if we have a token ID
         if let Some(token_id) = &asset_info.token_id {
-            if let Ok(true) = evm_inquirer_manager.globaldb.is_uniswap_v3_position(&asset_id).await {
+            if let Ok(true) = evm_inquirer_manager
+                .globaldb
+                .is_uniswap_v3_position(&asset_id)
+                .await
+            {
                 debug!("Detected potential Uniswap V3 position NFT: {}", asset_id);
                 if let Some(blockchain) = SupportedBlockchain::from_chain_id(asset_info.chain_id) {
                     let inquirer = evm_inquirer_manager.get_or_init_inquirer(blockchain).await;
@@ -394,19 +411,26 @@ pub async fn query_icon_remotely(
                         asset_info.contract_address,
                         inquirer,
                     )
-                        .await
+                    .await
                     {
                         return write_icon_to_file(&path, extension, &icon_bytes).await;
                     }
                 } else {
-                    debug!("Unsupported chain ID {} for Uniswap NFT: {}", asset_info.chain_id, asset_id);
+                    debug!(
+                        "Unsupported chain ID {} for Uniswap NFT: {}",
+                        asset_info.chain_id, asset_id
+                    );
                 }
             }
         }
 
         // For all token types, try SmolDapp
-        if let Some((icon_bytes, extension)) =
-            query_token_icon_and_extension(asset_info.chain_id, asset_info.contract_address, SMOLDAPP_BASE_URL).await
+        if let Some((icon_bytes, extension)) = query_token_icon_and_extension(
+            asset_info.chain_id,
+            asset_info.contract_address,
+            SMOLDAPP_BASE_URL,
+        )
+        .await
         {
             return write_icon_to_file(&path, extension, &icon_bytes).await;
         }
@@ -418,20 +442,25 @@ pub async fn query_icon_remotely(
     }
 
     // If all attempts failed, write a zero-byte file to mark that we tried
-    debug!("Icon not found for asset {}. Writing zero bytes file", asset_id);
+    debug!(
+        "Icon not found for asset {}. Writing zero bytes file",
+        asset_id
+    );
     write_zero_bytes_file(path.as_path()).await;
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
-    use std::sync::Arc;
-    use alloy::primitives::address;
+    use crate::blockchain::{EvmNodeInquirer, SupportedBlockchain};
     use crate::create_globaldb;
-    use crate::icons::{get_asset_path, query_token_icon_and_extension, query_uniswap_v3_position_icon};
+    use crate::icons::{
+        get_asset_path, query_token_icon_and_extension, query_uniswap_v3_position_icon,
+    };
+    use alloy::primitives::address;
     use axum::body::Bytes;
     use base64::{engine::general_purpose::STANDARD, Engine as _};
-    use crate::blockchain::{EvmNodeInquirer, SupportedBlockchain};
+    use std::path::Path;
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn test_smoldapp_icons() {
@@ -442,7 +471,15 @@ mod tests {
 
         // mock successful query
         server
-            .mock("GET", format!("/{}/{}/logo.svg", chain, address.to_string().to_ascii_lowercase()).as_str())
+            .mock(
+                "GET",
+                format!(
+                    "/{}/{}/logo.svg",
+                    chain,
+                    address.to_string().to_ascii_lowercase()
+                )
+                .as_str(),
+            )
             .with_body(data)
             .create();
 
@@ -474,10 +511,7 @@ mod tests {
         // the base64 image extracted by manually calling tokenURI on etherscan for token_id=150 and converting it to JSON.
         let expected_image_bytes =  Bytes::from(STANDARD.decode("PHN2ZyB3aWR0aD0iMjkwIiBoZWlnaHQ9IjUwMCIgdmlld0JveD0iMCAwIDI5MCA1MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9J2h0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsnPjxkZWZzPjxmaWx0ZXIgaWQ9ImYxIj48ZmVJbWFnZSByZXN1bHQ9InAwIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMG5Namt3SnlCb1pXbG5hSFE5SnpVd01DY2dkbWxsZDBKdmVEMG5NQ0F3SURJNU1DQTFNREFuSUhodGJHNXpQU2RvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeWMrUEhKbFkzUWdkMmxrZEdnOUp6STVNSEI0SnlCb1pXbG5hSFE5SnpVd01IQjRKeUJtYVd4c1BTY2paRGxoWVdWakp5OCtQQzl6ZG1jKyIvPjxmZUltYWdlIHJlc3VsdD0icDEiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwYUQwbk1qa3dKeUJvWldsbmFIUTlKelV3TUNjZ2RtbGxkMEp2ZUQwbk1DQXdJREk1TUNBMU1EQW5JSGh0Ykc1elBTZG9kSFJ3T2k4dmQzZDNMbmN6TG05eVp5OHlNREF3TDNOMlp5YytQR05wY21Oc1pTQmplRDBuTVRJeUp5QmplVDBuTVRBd0p5QnlQU2N4TWpCd2VDY2dabWxzYkQwbkl6UXlNREF3TUNjdlBqd3ZjM1puUGc9PSIvPjxmZUltYWdlIHJlc3VsdD0icDIiIHhsaW5rOmhyZWY9ImRhdGE6aW1hZ2Uvc3ZnK3htbDtiYXNlNjQsUEhOMlp5QjNhV1IwYUQwbk1qa3dKeUJvWldsbmFIUTlKelV3TUNjZ2RtbGxkMEp2ZUQwbk1DQXdJREk1TUNBMU1EQW5JSGh0Ykc1elBTZG9kSFJ3T2k4dmQzZDNMbmN6TG05eVp5OHlNREF3TDNOMlp5YytQR05wY21Oc1pTQmplRDBuTWpJNEp5QmplVDBuTVRBd0p5QnlQU2N4TWpCd2VDY2dabWxzYkQwbkl6RXdZalpqWVNjdlBqd3ZjM1puUGc9PSIgLz48ZmVJbWFnZSByZXN1bHQ9InAzIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3N2Zyt4bWw7YmFzZTY0LFBITjJaeUIzYVdSMGFEMG5Namt3SnlCb1pXbG5hSFE5SnpVd01DY2dkbWxsZDBKdmVEMG5NQ0F3SURJNU1DQTFNREFuSUhodGJHNXpQU2RvZEhSd09pOHZkM2QzTG5jekxtOXlaeTh5TURBd0wzTjJaeWMrUEdOcGNtTnNaU0JqZUQwbk1UZ3lKeUJqZVQwbk1UQXdKeUJ5UFNjeE1EQndlQ2NnWm1sc2JEMG5JekF3TURBd05pY3ZQand2YzNablBnPT0iIC8+PGZlQmxlbmQgbW9kZT0ib3ZlcmxheSIgaW49InAwIiBpbjI9InAxIiAvPjxmZUJsZW5kIG1vZGU9ImV4Y2x1c2lvbiIgaW4yPSJwMiIgLz48ZmVCbGVuZCBtb2RlPSJvdmVybGF5IiBpbjI9InAzIiByZXN1bHQ9ImJsZW5kT3V0IiAvPjxmZUdhdXNzaWFuQmx1ciBpbj0iYmxlbmRPdXQiIHN0ZERldmlhdGlvbj0iNDIiIC8+PC9maWx0ZXI+IDxjbGlwUGF0aCBpZD0iY29ybmVycyI+PHJlY3Qgd2lkdGg9IjI5MCIgaGVpZ2h0PSI1MDAiIHJ4PSI0MiIgcnk9IjQyIiAvPjwvY2xpcFBhdGg+PHBhdGggaWQ9InRleHQtcGF0aC1hIiBkPSJNNDAgMTIgSDI1MCBBMjggMjggMCAwIDEgMjc4IDQwIFY0NjAgQTI4IDI4IDAgMCAxIDI1MCA0ODggSDQwIEEyOCAyOCAwIDAgMSAxMiA0NjAgVjQwIEEyOCAyOCAwIDAgMSA0MCAxMiB6IiAvPjxwYXRoIGlkPSJtaW5pbWFwIiBkPSJNMjM0IDQ0NEMyMzQgNDU3Ljk0OSAyNDIuMjEgNDYzIDI1MyA0NjMiIC8+PGZpbHRlciBpZD0idG9wLXJlZ2lvbi1ibHVyIj48ZmVHYXVzc2lhbkJsdXIgaW49IlNvdXJjZUdyYXBoaWMiIHN0ZERldmlhdGlvbj0iMjQiIC8+PC9maWx0ZXI+PGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVwIiB4MT0iMSIgeDI9IjAiIHkxPSIxIiB5Mj0iMCI+PHN0b3Agb2Zmc2V0PSIwLjAiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9IjEiIC8+PHN0b3Agb2Zmc2V0PSIuOSIgc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMCIgLz48L2xpbmVhckdyYWRpZW50PjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZC1kb3duIiB4MT0iMCIgeDI9IjEiIHkxPSIwIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwLjAiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9IjEiIC8+PHN0b3Agb2Zmc2V0PSIwLjkiIHN0b3AtY29sb3I9IndoaXRlIiBzdG9wLW9wYWNpdHk9IjAiIC8+PC9saW5lYXJHcmFkaWVudD48bWFzayBpZD0iZmFkZS11cCIgbWFza0NvbnRlbnRVbml0cz0ib2JqZWN0Qm91bmRpbmdCb3giPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InVybCgjZ3JhZC11cCkiIC8+PC9tYXNrPjxtYXNrIGlkPSJmYWRlLWRvd24iIG1hc2tDb250ZW50VW5pdHM9Im9iamVjdEJvdW5kaW5nQm94Ij48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ1cmwoI2dyYWQtZG93bikiIC8+PC9tYXNrPjxtYXNrIGlkPSJub25lIiBtYXNrQ29udGVudFVuaXRzPSJvYmplY3RCb3VuZGluZ0JveCI+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0id2hpdGUiIC8+PC9tYXNrPjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZC1zeW1ib2wiPjxzdG9wIG9mZnNldD0iMC43IiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIxIiAvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSJ3aGl0ZSIgc3RvcC1vcGFjaXR5PSIwIiAvPjwvbGluZWFyR3JhZGllbnQ+PG1hc2sgaWQ9ImZhZGUtc3ltYm9sIiBtYXNrQ29udGVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHJlY3Qgd2lkdGg9IjI5MHB4IiBoZWlnaHQ9IjIwMHB4IiBmaWxsPSJ1cmwoI2dyYWQtc3ltYm9sKSIgLz48L21hc2s+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjb3JuZXJzKSI+PHJlY3QgZmlsbD0iZDlhYWVjIiB4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjI5MHB4IiBoZWlnaHQ9IjUwMHB4IiAvPjxyZWN0IHN0eWxlPSJmaWx0ZXI6IHVybCgjZjEpIiB4PSIwcHgiIHk9IjBweCIgd2lkdGg9IjI5MHB4IiBoZWlnaHQ9IjUwMHB4IiAvPiA8ZyBzdHlsZT0iZmlsdGVyOnVybCgjdG9wLXJlZ2lvbi1ibHVyKTsgdHJhbnNmb3JtOnNjYWxlKDEuNSk7IHRyYW5zZm9ybS1vcmlnaW46Y2VudGVyIHRvcDsiPjxyZWN0IGZpbGw9Im5vbmUiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMjkwcHgiIGhlaWdodD0iNTAwcHgiIC8+PGVsbGlwc2UgY3g9IjUwJSIgY3k9IjBweCIgcng9IjE4MHB4IiByeT0iMTIwcHgiIGZpbGw9IiMwMDAiIG9wYWNpdHk9IjAuODUiIC8+PC9nPjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIyOTAiIGhlaWdodD0iNTAwIiByeD0iNDIiIHJ5PSI0MiIgZmlsbD0icmdiYSgwLDAsMCwwKSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIC8+PC9nPjx0ZXh0IHRleHQtcmVuZGVyaW5nPSJvcHRpbWl6ZVNwZWVkIj48dGV4dFBhdGggc3RhcnRPZmZzZXQ9Ii0xMDAlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IidDb3VyaWVyIE5ldycsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMHB4IiB4bGluazpocmVmPSIjdGV4dC1wYXRoLWEiPjB4NDIwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwNiDigKIgV0VUSCA8YW5pbWF0ZSBhZGRpdGl2ZT0ic3VtIiBhdHRyaWJ1dGVOYW1lPSJzdGFydE9mZnNldCIgZnJvbT0iMCUiIHRvPSIxMDAlIiBiZWdpbj0iMHMiIGR1cj0iMzBzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgLz48L3RleHRQYXRoPiA8dGV4dFBhdGggc3RhcnRPZmZzZXQ9IjAlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IidDb3VyaWVyIE5ldycsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMHB4IiB4bGluazpocmVmPSIjdGV4dC1wYXRoLWEiPjB4NDIwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwNiDigKIgV0VUSCA8YW5pbWF0ZSBhZGRpdGl2ZT0ic3VtIiBhdHRyaWJ1dGVOYW1lPSJzdGFydE9mZnNldCIgZnJvbT0iMCUiIHRvPSIxMDAlIiBiZWdpbj0iMHMiIGR1cj0iMzBzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIgLz4gPC90ZXh0UGF0aD48dGV4dFBhdGggc3RhcnRPZmZzZXQ9IjUwJSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSInQ291cmllciBOZXcnLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTBweCIgeGxpbms6aHJlZj0iI3RleHQtcGF0aC1hIj4weGQ5YWFlYzg2YjY1ZDg2ZjZhN2I1YjFiMGM0MmZmYTUzMTcxMGI2Y2Eg4oCiIFVTRGJDIDxhbmltYXRlIGFkZGl0aXZlPSJzdW0iIGF0dHJpYnV0ZU5hbWU9InN0YXJ0T2Zmc2V0IiBmcm9tPSIwJSIgdG89IjEwMCUiIGJlZ2luPSIwcyIgZHVyPSIzMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiAvPjwvdGV4dFBhdGg+PHRleHRQYXRoIHN0YXJ0T2Zmc2V0PSItNTAlIiBmaWxsPSJ3aGl0ZSIgZm9udC1mYW1pbHk9IidDb3VyaWVyIE5ldycsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMHB4IiB4bGluazpocmVmPSIjdGV4dC1wYXRoLWEiPjB4ZDlhYWVjODZiNjVkODZmNmE3YjViMWIwYzQyZmZhNTMxNzEwYjZjYSDigKIgVVNEYkMgPGFuaW1hdGUgYWRkaXRpdmU9InN1bSIgYXR0cmlidXRlTmFtZT0ic3RhcnRPZmZzZXQiIGZyb209IjAlIiB0bz0iMTAwJSIgYmVnaW49IjBzIiBkdXI9IjMwcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiIC8+PC90ZXh0UGF0aD48L3RleHQ+PGcgbWFzaz0idXJsKCNmYWRlLXN5bWJvbCkiPjxyZWN0IGZpbGw9Im5vbmUiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMjkwcHgiIGhlaWdodD0iMjAwcHgiIC8+IDx0ZXh0IHk9IjcwcHgiIHg9IjMycHgiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlIiBmb250LXdlaWdodD0iMjAwIiBmb250LXNpemU9IjM2cHgiPlVTRGJDL1dFVEg8L3RleHQ+PHRleHQgeT0iMTE1cHgiIHg9IjMycHgiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iJ0NvdXJpZXIgTmV3JywgbW9ub3NwYWNlIiBmb250LXdlaWdodD0iMjAwIiBmb250LXNpemU9IjM2cHgiPjAuMyU8L3RleHQ+PC9nPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjI1OCIgaGVpZ2h0PSI0NjgiIHJ4PSIyNiIgcnk9IjI2IiBmaWxsPSJyZ2JhKDAsMCwwLDApIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgLz48ZyBtYXNrPSJ1cmwoI25vbmUpIiBzdHlsZT0idHJhbnNmb3JtOnRyYW5zbGF0ZSg3MnB4LDE4OXB4KSI+PHJlY3QgeD0iLTE2cHgiIHk9Ii0xNnB4IiB3aWR0aD0iMTgwcHgiIGhlaWdodD0iMTgwcHgiIGZpbGw9Im5vbmUiIC8+PHBhdGggZD0iTTEgMUMxIDk3IDQ5IDE0NSAxNDUgMTQ1IiBzdHJva2U9InJnYmEoMCwwLDAsMC4zKSIgc3Ryb2tlLXdpZHRoPSIzMnB4IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiIC8+PC9nPjxnIG1hc2s9InVybCgjbm9uZSkiIHN0eWxlPSJ0cmFuc2Zvcm06dHJhbnNsYXRlKDcycHgsMTg5cHgpIj48cmVjdCB4PSItMTZweCIgeT0iLTE2cHgiIHdpZHRoPSIxODBweCIgaGVpZ2h0PSIxODBweCIgZmlsbD0ibm9uZSIgLz48cGF0aCBkPSJNMSAxQzEgOTcgNDkgMTQ1IDE0NSAxNDUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwxKSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiAvPjwvZz48Y2lyY2xlIGN4PSI3M3B4IiBjeT0iMTkwcHgiIHI9IjRweCIgZmlsbD0id2hpdGUiIC8+PGNpcmNsZSBjeD0iMjE3cHgiIGN5PSIzMzRweCIgcj0iNHB4IiBmaWxsPSJ3aGl0ZSIgLz4gPGcgc3R5bGU9InRyYW5zZm9ybTp0cmFuc2xhdGUoMjlweCwgMzg0cHgpIj48cmVjdCB3aWR0aD0iNzdweCIgaGVpZ2h0PSIyNnB4IiByeD0iOHB4IiByeT0iOHB4IiBmaWxsPSJyZ2JhKDAsMCwwLDAuNikiIC8+PHRleHQgeD0iMTJweCIgeT0iMTdweCIgZm9udC1mYW1pbHk9IidDb3VyaWVyIE5ldycsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMnB4IiBmaWxsPSJ3aGl0ZSI+PHRzcGFuIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC42KSI+SUQ6IDwvdHNwYW4+MTUwPC90ZXh0PjwvZz4gPGcgc3R5bGU9InRyYW5zZm9ybTp0cmFuc2xhdGUoMjlweCwgNDE0cHgpIj48cmVjdCB3aWR0aD0iMTQ3cHgiIGhlaWdodD0iMjZweCIgcng9IjhweCIgcnk9IjhweCIgZmlsbD0icmdiYSgwLDAsMCwwLjYpIiAvPjx0ZXh0IHg9IjEycHgiIHk9IjE3cHgiIGZvbnQtZmFtaWx5PSInQ291cmllciBOZXcnLCBtb25vc3BhY2UiIGZvbnQtc2l6ZT0iMTJweCIgZmlsbD0id2hpdGUiPjx0c3BhbiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuNikiPk1pbiBUaWNrOiA8L3RzcGFuPi04ODcyMjA8L3RleHQ+PC9nPiA8ZyBzdHlsZT0idHJhbnNmb3JtOnRyYW5zbGF0ZSgyOXB4LCA0NDRweCkiPjxyZWN0IHdpZHRoPSIxNDBweCIgaGVpZ2h0PSIyNnB4IiByeD0iOHB4IiByeT0iOHB4IiBmaWxsPSJyZ2JhKDAsMCwwLDAuNikiIC8+PHRleHQgeD0iMTJweCIgeT0iMTdweCIgZm9udC1mYW1pbHk9IidDb3VyaWVyIE5ldycsIG1vbm9zcGFjZSIgZm9udC1zaXplPSIxMnB4IiBmaWxsPSJ3aGl0ZSI+PHRzcGFuIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC42KSI+TWF4IFRpY2s6IDwvdHNwYW4+ODg3MjIwPC90ZXh0PjwvZz48ZyBzdHlsZT0idHJhbnNmb3JtOnRyYW5zbGF0ZSgyMjZweCwgNDMzcHgpIj48cmVjdCB3aWR0aD0iMzZweCIgaGVpZ2h0PSIzNnB4IiByeD0iOHB4IiByeT0iOHB4IiBmaWxsPSJub25lIiBzdHJva2U9InJnYmEoMjU1LDI1NSwyNTUsMC4yKSIgLz48cGF0aCBzdHJva2UtbGluZWNhcD0icm91bmQiIGQ9Ik04IDlDOC4wMDAwNCAyMi45NDk0IDE2LjIwOTkgMjggMjcgMjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIC8+PGNpcmNsZSBzdHlsZT0idHJhbnNmb3JtOnRyYW5zbGF0ZTNkKDEzcHgsIDIzcHgsIDBweCkiIGN4PSIwcHgiIGN5PSIwcHgiIHI9IjRweCIgZmlsbD0id2hpdGUiLz48L2c+PGcgc3R5bGU9InRyYW5zZm9ybTp0cmFuc2xhdGUoMjI2cHgsIDM5MnB4KSI+PHJlY3Qgd2lkdGg9IjM2cHgiIGhlaWdodD0iMzZweCIgcng9IjhweCIgcnk9IjhweCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMikiIC8+PGc+PHBhdGggc3R5bGU9InRyYW5zZm9ybTp0cmFuc2xhdGUoNnB4LDZweCkiIGQ9Ik0xMiAwTDEyLjY1MjIgOS41NjU4N0wxOCAxLjYwNzdMMTMuNzgxOSAxMC4yMTgxTDIyLjM5MjMgNkwxNC40MzQxIDExLjM0NzhMMjQgMTJMMTQuNDM0MSAxMi42NTIyTDIyLjM5MjMgMThMMTMuNzgxOSAxMy43ODE5TDE4IDIyLjM5MjNMMTIuNjUyMiAxNC40MzQxTDEyIDI0TDExLjM0NzggMTQuNDM0MUw2IDIyLjM5MjNMMTAuMjE4MSAxMy43ODE5TDEuNjA3NyAxOEw5LjU2NTg3IDEyLjY1MjJMMCAxMkw5LjU2NTg3IDExLjM0NzhMMS42MDc3IDZMMTAuMjE4MSAxMC4yMTgxTDYgMS42MDc3TDExLjM0NzggOS41NjU4N0wxMiAwWiIgZmlsbD0id2hpdGUiIC8+PGFuaW1hdGVUcmFuc2Zvcm0gYXR0cmlidXRlTmFtZT0idHJhbnNmb3JtIiB0eXBlPSJyb3RhdGUiIGZyb209IjAgMTggMTgiIHRvPSIzNjAgMTggMTgiIGR1cj0iMTBzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPjwvZz48L2c+PC9zdmc+").unwrap());
         let globaldb = create_globaldb!().await.unwrap();
-        let evm_inquirer = EvmNodeInquirer::new(
-            SupportedBlockchain::Base,
-            Arc::new(globaldb),
-        );
+        let evm_inquirer = EvmNodeInquirer::new(SupportedBlockchain::Base, Arc::new(globaldb));
         evm_inquirer.update_rpc_nodes().await.unwrap();
 
         let result = query_uniswap_v3_position_icon(
@@ -485,7 +519,8 @@ mod tests {
             "150",
             address!("0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1"),
             Arc::new(evm_inquirer),
-        ).await;
+        )
+        .await;
 
         match result {
             Some((bytes, extension)) => {
