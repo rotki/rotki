@@ -73,13 +73,12 @@ mod test {
 
     #[tokio::test]
     async fn test_coingecko_query() {
-        let globaldb = create_globaldb!().await.expect("Failed to create globaldb for coingecko");
+        let globaldb = create_globaldb!()
+            .await
+            .expect("Failed to create globaldb for coingecko");
         let mut server = mockito::Server::new_async().await;
 
-        let coingecko = Coingecko::new(
-            Arc::new(globaldb),
-            server.url(),
-        );
+        let coingecko = Coingecko::new(Arc::new(globaldb), server.url());
         let json = format!(
             r#"{{"image": {{"small": "{}/coins/images/279/thumb/ethereum.png"}}}}"#,
             server.url()
@@ -92,10 +91,7 @@ mod test {
             .with_body(json)
             .create();
         server
-            .mock(
-                "GET",
-                "/coins/images/279/thumb/ethereum.png",
-            )
+            .mock("GET", "/coins/images/279/thumb/ethereum.png")
             .with_body(b"Image bytes")
             .create();
 
