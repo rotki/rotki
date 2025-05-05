@@ -84,13 +84,28 @@ impl GlobalDB {
             })
     }
 
+    pub async fn get_assets_in_collection(&self, collection_id: u32) -> Result<Vec<String>> {
+        let conn = self.conn.lock().await;
+        conn.prepare("SELECT asset FROM multiasset_mappings WHERE collection_id=?")
+            .and_then(|mut stmt| {
+                let mut rows = stmt.query(rusqlite::params![collection_id])?;
+                let mut assets_in_collection = Vec::new();
+                while let Some(row) = rows.next()? {
+                    let asset_id: String = row.get(0)?;
+                    assets_in_collection.push(asset_id)
+                }
+
+                Ok(assets_in_collection)
+            })
+    }
+
     pub async fn is_uniswap_v3_position(&self, asset_id: &str) -> Result<bool> {
         let conn = self.conn.lock().await;
         let mut stmt = conn.prepare(
             "SELECT 1 FROM evm_tokens
              WHERE identifier = ?
              AND protocol = 'UNI-V3'
-             LIMIT 1"
+             LIMIT 1",
         )?;
         let result = stmt.exists(rusqlite::params![asset_id])?;
         Ok(result)
@@ -113,7 +128,9 @@ macro_rules! create_globaldb {
             .as_nanos();
         let pid = std::process::id();
         let tmp_dir = env::temp_dir().join(format!("global_{}_{}", timestamp, pid));
-        fs::create_dir_all(tmp_dir.clone()).await.expect("Failed to create temp folder for globaldb");
+        fs::create_dir_all(tmp_dir.clone())
+            .await
+            .expect("Failed to create temp folder for globaldb");
         let root_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         fs::copy(
             (root_path.parent())
@@ -156,6 +173,26 @@ mod test {
                 .await
                 .unwrap(),
             None,
+        );
+    }
+
+    #[tokio::test]
+    async fn test_query_asset_collection() {
+        let globaldb = create_globaldb!().await.unwrap();
+        assert_eq!(
+            // 44 is GNO
+            globaldb.get_assets_in_collection(44).await.unwrap(),
+            vec![
+                "eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96",
+                "eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb",
+                "eip155:42161/erc20:0xa0b862F60edEf4452F25B4160F177db44DeB6Cf1"
+            ]
+        );
+
+        assert_eq!(
+            // case for unknown collection
+            globaldb.get_assets_in_collection(99999).await.unwrap(),
+            Vec::<String>::new(),
         );
     }
 }
