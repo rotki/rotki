@@ -42,6 +42,8 @@ export const router = createRouter({
 const userRoutes: RouteLocationRaw[] = ['/user/create', '/user/login', '/user'];
 
 router.beforeEach((to, from, next) => {
+  document.title = to.meta?.title ? to.meta.title.toString() : 'rotki';
+
   const store = useSessionAuthStore();
   const logged = store.logged;
   if (logged) {

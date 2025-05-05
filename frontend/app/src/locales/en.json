@@ -4278,17 +4278,18 @@
       "insufficient": "Insufficient Funds",
       "sending": "I'm sending"
     },
-    "available_balances": "Available Balances",
     "bridge": {
       "connect_browser_wallet": "Open Browser Wallet Bridge",
+      "connect_the_signer": "Connect the signer",
       "connecting": "Connecting...",
       "connection_logs": "Connection Logs",
       "disconnect_session": "Disconnect Session",
       "hint": "In Electron App, choose \"Wallet Connect\" and then \"Copy link\"",
       "label": "Paste the Pair URI here",
+      "link_session": "Link session using Wallet Connect Pair URI",
       "start_pairing": "Start Pairing",
-      "subtitle": "Paste Wallet Connect Pair URI from Electron App:",
-      "title": "Browser Wallet Bridge"
+      "title": "rotki Browser Wallet Bridge",
+      "warning": "Keep this page open! Otherwise, you will need to create a new session to connect."
     },
     "never_interacted": "You have never interacted with this address before.",
     "recent_transactions": {

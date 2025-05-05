@@ -29,7 +29,6 @@ const chain = computed(() => {
   <RuiButton
     v-if="!connected && !appBar"
     color="primary"
-    class="!py-2"
     @click="open()"
   >
     <template #prepend>
@@ -44,7 +43,8 @@ const chain = computed(() => {
   <RuiMenu
     v-else-if="connectedAddress"
     full-width
-    class="flex"
+    close-on-content-click
+    class="flex min-h-9"
   >
     <template #activator="{ attrs }">
       <div
@@ -61,6 +61,7 @@ const chain = computed(() => {
         />
         <HashLink
           class="!pl-0"
+          :location="chain"
           :text="connectedAddress"
           copy-only
         />

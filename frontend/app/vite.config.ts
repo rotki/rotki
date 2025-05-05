@@ -80,6 +80,8 @@ export default defineConfig({
       '@reown/appkit-adapter-wagmi',
       '@reown/walletkit',
       '@walletconnect/core',
+      '@walletconnect/jsonrpc-utils',
+      '@walletconnect/utils',
       'ethers',
     ],
   },
