@@ -33,6 +33,7 @@ Changelog
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
 * :bug:`-` rotki will now correctly decode mints of CRV from various gauges.
+* :bug:`-` rotki will now correctly decode crvUSD claims from the Curve fees distributor.
 * :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
 * :bug:`-` Users will now be able to use the filter properly after deleting the selected filter that is being edited.
 * :bug:`9793` Users will now be able to add a missing accounting rule by clicking the menu on the history events page.

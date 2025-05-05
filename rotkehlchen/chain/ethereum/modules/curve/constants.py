@@ -3,7 +3,8 @@ from typing import Final
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 GAUGE_BRIBE_V2: Final = string_to_evm_address('0x7893bbb46613d7a4FbcC31Dab4C9b823FfeE1026')
-FEE_DISTRIBUTOR: Final = string_to_evm_address('0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc')
+FEE_DISTRIBUTOR_3CRV: Final = string_to_evm_address('0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc')
+FEE_DISTRIBUTOR_CRVUSD: Final = string_to_evm_address('0xD16d5eC345Dd86Fb63C6a9C43c517210F1027914')
 VOTING_ESCROW: Final = string_to_evm_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2')
 CURVE_MINTER: Final = string_to_evm_address('0xd061D61a4d941c39E5453435B6345Dc261C2fcE0')
 CLAIMED: Final = b'\x9c\xdc\xf2\xf7qL\xca5\x08\xc7\xf0\x11\x0b\x04\xa9\n\x80\xa3\xa8\xdd\x0e5\xde\x99h\x9d\xb7M(\xc58>'  # noqa: E501
