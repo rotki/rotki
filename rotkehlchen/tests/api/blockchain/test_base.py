@@ -699,10 +699,7 @@ def test_no_etherscan_is_detected(
     msg = websocket_connection.pop_message()
     assert msg == {
         'type': 'missing_api_key',
-        'data': {
-            'service': 'etherscan',
-            'location': 'ethereum',
-        },
+        'data': {'service': 'etherscan'},
     }
 
 
