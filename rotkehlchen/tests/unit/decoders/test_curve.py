@@ -10,6 +10,7 @@ from rotkehlchen.chain.binance_sc.modules.curve.constants import (
     CURVE_SWAP_ROUTER_NG as CURVE_SWAP_ROUTER_NG_BSC,
 )
 from rotkehlchen.chain.ethereum.modules.curve.constants import (
+    CURVE_MINTER,
     FEE_DISTRIBUTOR,
     GAUGE_BRIBE_V2,
     VOTING_ESCROW,
@@ -2206,6 +2207,47 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Withdraw {amount} CRV from vote escrow',
             counterparty=CPT_CURVE,
             address=VOTING_ESCROW,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x98C5adD2e63C02beB8CCAA0156E4FefD480C3267']])
+def test_crv_minter(ethereum_transaction_decoder, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x05b5da4f6f0def6075c2cb51b8c46553144424368c69b9ad9f986cf925ac0fae')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        tx_hash=tx_hex,
+    )
+    user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1746419195000), '0.000161308740471675', '86.51016103664373998'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas),
+            location_label=user_address,
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=161,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_CRV,
+            amount=FVal(amount),
+            location_label=user_address,
+            notes=f'Claim {amount} CRV rewards from curve gauge 0x156527deF9a2AB4F54C849575f23dC4BB439d9d9',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=CURVE_MINTER,
         ),
     ]
     assert events == expected_events

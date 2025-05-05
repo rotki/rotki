@@ -32,5 +32,5 @@ class CurveDecoder(CurveCommonDecoder):
             aave_pools=AAVE_POOLS,
             curve_deposit_contracts={DEPOSIT_AND_STAKE_ZAP},
             curve_swap_routers={CURVE_SWAP_ROUTER_NG},
-            gauge_factory_address=CHILD_LIQUIDITY_GAUGE_FACTORY,
+            crv_minter_addresses={CHILD_LIQUIDITY_GAUGE_FACTORY},
         )
