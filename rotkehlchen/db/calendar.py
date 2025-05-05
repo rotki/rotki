@@ -125,30 +125,37 @@ class BaseReminderData:
 class ReminderEntry(BaseReminderData):
     """Store basic information to warn the user based on the event timestamp"""
     event_id: int
+    acknowledged: bool
 
     def serialize(self) -> dict[str, Any]:
-        return super().serialize() | {'event_id': self.event_id}
+        return super().serialize() | {
+            'event_id': self.event_id,
+            'acknowledged': self.acknowledged,
+        }
 
     def serialize_for_db(self) -> tuple[
         int,  # event_id
         int,  # secs_before
+        int,  # acknowledged
         int,  # identifier
     ]:
         return (
             self.event_id,
             self.secs_before,
+            self.acknowledged,
             self.identifier,
         )
 
     @classmethod
     def deserialize_from_db(
             cls,
-            row: tuple[int, int, int],
+            row: tuple[int, int, int, int],
     ) -> 'ReminderEntry':
         return cls(
             identifier=row[0],
             event_id=row[1],
             secs_before=row[2],
+            acknowledged=bool(row[3]),
         )
 
 
@@ -322,8 +329,8 @@ class DBCalendar:
             for entry in reminders:
                 try:
                     write_cursor.execute(
-                        'INSERT OR IGNORE INTO calendar_reminders(event_id, secs_before) '
-                        'VALUES (?, ?) RETURNING identifier',
+                        'INSERT OR IGNORE INTO calendar_reminders(event_id, secs_before, acknowledged) '  # noqa: E501
+                        'VALUES (?, ?, ?) RETURNING identifier',
                         entry.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
                     )
                 except (sqlcipher.IntegrityError, sqlcipher.OperationalError):  # pylint: disable=no-member
@@ -340,7 +347,7 @@ class DBCalendar:
         with self.db.user_write() as write_cursor:
             try:
                 write_cursor.execute(
-                    'UPDATE calendar_reminders SET event_id=?, secs_before=? WHERE identifier=?',
+                    'UPDATE calendar_reminders SET event_id=?, secs_before=?, acknowledged=? WHERE identifier=?',  # noqa: E501
                     reminder.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -352,7 +359,7 @@ class DBCalendar:
         """Query reminder using the id of the linked event"""
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT identifier, event_id, secs_before FROM calendar_reminders '
+                'SELECT identifier, event_id, secs_before, acknowledged FROM calendar_reminders '
                 'WHERE event_id=? ORDER BY secs_before ASC',
                 (event_id,),
             )

@@ -383,9 +383,11 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer) -> None:
         json={'reminders': [{
             'event_id': calendar_id,
             'secs_before': DAY_IN_SECONDS * 3,
+            'acknowledged': False,
         }, {
             'event_id': 100,  # must fail
             'secs_before': DAY_IN_SECONDS * 3,
+            'acknowledged': False,
         }]},
     )
     result = assert_proper_sync_response_with_result(response)
@@ -403,6 +405,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer) -> None:
             'identifier': 1,
             'event_id': 1,
             'secs_before': DAY_IN_SECONDS * 3,
+            'acknowledged': False,
         }],
     }
 
@@ -426,6 +429,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer) -> None:
             'identifier': 1,
             'event_id': 1,
             'secs_before': DAY_IN_SECONDS,
+            'acknowledged': False,
         }],
     }
 
