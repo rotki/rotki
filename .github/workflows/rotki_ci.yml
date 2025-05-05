@@ -229,6 +229,8 @@ jobs:
           persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@clippy
+        with:
+          toolchain: 1.86.0
 
       - uses: Swatinem/rust-cache@v2
         with:

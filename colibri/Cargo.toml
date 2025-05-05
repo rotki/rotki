@@ -9,7 +9,7 @@ log = "0.4.22"
 simplelog = "0.12.2"
 # For the asynchronous Rest API
 reqwest = { version = "0.12.2", features = ["json"]}
-tokio = { version = "1.43.0", features = ["rt-multi-thread", "fs"]}
+tokio = { version = "1.44.2", features = ["rt-multi-thread", "fs"]}
 axum = "0.7"
 # for serialization of structs via the API
 serde = { version = "1.0.217", features = ["derive"] }
@@ -22,8 +22,8 @@ dirs = "6.0.0"
 # for CLI args parsing
 clap = { version = "4.5.26", features = ["string"] }
 # for globalDB and other sqlite operations
-rusqlite = { version = "0.32.1", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
-async-sqlite = {version = "0.4.0" }
+rusqlite = { version = "0.35.0", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
+async-sqlite = {version = "0.5.1" }
 # for cors and network
 tower-http = {version = "0.6.2", features = ["cors", "trace"]}
 http = "1.0"
