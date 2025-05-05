@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_1INCH, A_DAI, A_ETH, A_USDC, A_YFI
@@ -31,8 +32,28 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+@pytest.fixture(name='curve_savings_vault')
+def fixture_yearn_v3_curve_savings_vault(database: 'DBHandler') -> 'EvmToken':
+    return get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='scrvUSD',
+        name='Curve Savings',
+        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -762,3 +783,117 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
             address=vault_address,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xBFF9C95D12eA2661bbC9ea2d18C4D1b3868C9Fe0']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_yearn_v3_curve_savings_deposit(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        curve_savings_vault: 'EvmToken',
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x516d98ed5c091bb2f452742b1a4079f2084f525be3662b026159a1ed7a9bef66')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1741194983000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.00019683257061538')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=285,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=(a_crvusd := Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')),
+        amount=(approve_amount := FVal('9999900000')),
+        location_label=user_address,
+        notes=f'Set crvUSD spending approval of {user_address} by {curve_savings_vault.evm_address} to {approve_amount}',  # noqa: E501
+        address=curve_savings_vault.evm_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=286,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=a_crvusd,
+        amount=(deposit_amount := FVal('27292.191642525541816366')),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} crvUSD in Curve Savings',
+        counterparty=CPT_CURVE,
+        address=curve_savings_vault.evm_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=287,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=curve_savings_vault,
+        amount=(receive_amount := FVal('26201.448750994790858145')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} scrvUSD after deposit in Curve Savings',
+        counterparty=CPT_CURVE,
+        address=curve_savings_vault.evm_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x5275817b74021E97c980E95EdE6bbAc0D0d6f3a2']])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_yearn_v3_curve_savings_withdraw(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        curve_savings_vault: 'EvmToken',
+):
+    tx_hash = deserialize_evm_tx_hash('0x1d5db358dfdec9f554e81dedf0395b857db30fdca838c36c05cceaae00768cad')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1741204907000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000056238373116988')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=curve_savings_vault,
+        amount=(spend_amount := FVal('53747.564298310073222919')),
+        location_label=user_address,
+        notes=f'Return {spend_amount} scrvUSD to Curve Savings',
+        counterparty=CPT_CURVE,
+        address=curve_savings_vault.evm_address,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
+        amount=(withdraw_amount := FVal('55985.692533876701394441')),
+        location_label=user_address,
+        notes=f'Withdraw {withdraw_amount} crvUSD from Curve Savings',
+        counterparty=CPT_CURVE,
+        address=curve_savings_vault.evm_address,
+    )]

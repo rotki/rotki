@@ -17,6 +17,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache, token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -311,7 +312,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def _decode_v3_vault_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode yearn v3 vault events."""
-        out_event, in_event = None, None
+        out_event, in_event, is_deposit = None, None, False
         if context.tx_log.topics[0] == YEARN_V3_WITHDRAW_TOPIC:
             out_event, in_event = self._handle_withdraw_events(
                 events=context.decoded_events,
@@ -322,12 +323,30 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
                 events=context.decoded_events,
                 counterparty=CPT_YEARN_V3,
             )
+            is_deposit = True
+        else:
+            return DEFAULT_DECODING_OUTPUT
+
+        if out_event is None or in_event is None:
+            log.error(f'Failed to find both out and in events for yearn v3 vault transaction {context.transaction}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        # Special case for Curve Savings - it's actually a yearn v3 vault, so we can simply update
+        # the events here and avoid needing a separate Curve Savings decoder.
+        if (vault_address := context.tx_log.address) == string_to_evm_address('0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'):  # scrvUSD token  # noqa: E501
+            out_event.counterparty = in_event.counterparty = CPT_CURVE
+            out_event.address = in_event.address = vault_address
+            if is_deposit:
+                out_event.notes = f'Deposit {out_event.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in Curve Savings'  # noqa: E501
+                in_event.notes = f'Receive {in_event.amount} {in_event.asset.resolve_to_asset_with_symbol().symbol} after deposit in Curve Savings'  # noqa: E501
+            else:
+                out_event.notes = f'Return {out_event.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} to Curve Savings'  # noqa: E501
+                in_event.notes = f'Withdraw {in_event.amount} {in_event.asset.resolve_to_asset_with_symbol().symbol} from Curve Savings'  # noqa: E501
 
         maybe_reshuffle_events(
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_v2_increase_deposit(self, context: DecoderContext) -> DecodingOutput:
