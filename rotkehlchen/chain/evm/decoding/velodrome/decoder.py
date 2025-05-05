@@ -182,13 +182,11 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         spend_event, receive_event = None, None
         for event in context.decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
-            if ((
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE
-            ) or ((
-                event.event_type == HistoryEventType.TRADE and
-                event.event_subtype == HistoryEventSubType.SPEND
-            ) and event.address in self.protocol_addresses)):
+            if (
+                    ((event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND))  # noqa: E501
+                    and event.address in self.protocol_addresses
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = self.counterparty
