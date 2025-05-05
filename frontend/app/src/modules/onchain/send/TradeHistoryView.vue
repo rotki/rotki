@@ -32,33 +32,41 @@ const tabs = computed<{ label: string; transactions: RecentTransaction[] }[]>(()
 
 <template>
   <div>
-    <RuiButton
-      variant="outlined"
-      color="primary"
-      size="sm"
+    <RuiTooltip
       class="h-full"
-      @click="openDialog = true"
+      :open-delay="200"
     >
-      <div
-        v-if="pendingTransactions.length > 0"
-        class="flex items-center"
-      >
-        <RuiProgress
-          circular
-          variant="indeterminate"
+      <template #activator>
+        <RuiButton
+          variant="outlined"
           color="primary"
-          class="flex"
-          thickness="2"
-          size="16"
-        />
-      </div>
+          size="sm"
+          class="h-full"
+          @click="openDialog = true"
+        >
+          <div
+            v-if="pendingTransactions.length > 0"
+            class="flex items-center"
+          >
+            <RuiProgress
+              circular
+              variant="indeterminate"
+              color="primary"
+              class="flex"
+              thickness="2"
+              size="16"
+            />
+          </div>
 
-      <RuiIcon
-        v-else
-        name="lu-history"
-        size="18"
-      />
-    </RuiButton>
+          <RuiIcon
+            v-else
+            name="lu-history"
+            size="18"
+          />
+        </RuiButton>
+      </template>
+      {{ t('trade.recent_transactions.title') }}
+    </RuiTooltip>
 
     <RuiDialog
       v-model="openDialog"

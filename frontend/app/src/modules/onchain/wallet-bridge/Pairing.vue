@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SessionTypes } from '@walletconnect/types';
 import type { TransactionRequest, TransactionResponse } from 'ethers';
+import AppImage from '@/components/common/AppImage.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { EIP155, ROTKI_DAPP_METADATA, useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { type IWalletKit, WalletKit, type WalletKitTypes } from '@reown/walletkit';
@@ -11,18 +12,51 @@ import { formatJsonRpcError } from '@walletconnect/jsonrpc-utils';
 import { buildApprovedNamespaces, getSdkError } from '@walletconnect/utils';
 import { ref } from 'vue';
 
+const props = defineProps<{
+  connected?: boolean;
+  address?: string;
+  connectedChainId?: number;
+}>();
+
+const COMPATIBLE_METHODS = [
+  'eth_accounts',
+  'net_version',
+  'eth_chainId',
+  'personal_sign',
+  'eth_sign',
+  'eth_signTypedData',
+  'eth_signTypedData_v4',
+  'eth_sendTransaction',
+  'eth_blockNumber',
+  'eth_getBalance',
+  'eth_getCode',
+  'eth_getTransactionCount',
+  'eth_getStorageAt',
+  'eth_getBlockByNumber',
+  'eth_getBlockByHash',
+  'eth_getTransactionByHash',
+  'eth_getTransactionReceipt',
+  'eth_estimateGas',
+  'eth_call',
+  'eth_getLogs',
+  'eth_gasPrice',
+  'wallet_switchEthereumChain',
+  'wallet_sendCalls',
+  'wallet_getCallsStatus',
+  'wallet_showCallsStatus',
+  'wallet_getCapabilities',
+  'safe_setSettings',
+];
+
+const COMPATIBLE_EVENTS = ['chainChanged', 'accountsChanged'];
+
 interface LogEntry {
   message: string;
   timestamp: string;
   type: 'info' | 'success' | 'error';
 }
 
-const props = defineProps<{
-  address: string;
-  connectedChainId: number;
-}>();
-
-const { address, connectedChainId } = toRefs(props);
+const { address, connected, connectedChainId } = toRefs(props);
 
 const { t } = useI18n();
 const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
@@ -46,6 +80,7 @@ async function initializeWalletKit() {
     return;
 
   const core = new Core({
+    customStoragePrefix: 'ROTKI_WALLET_BRIDGE',
     projectId,
   });
 
@@ -79,7 +114,8 @@ async function pair() {
     const kit = get(walletKit);
 
     // Connect using the URI
-    await kit.core.pairing.pair({ uri: pairUriVal });
+    await disconnectAllSessions();
+    await kit.pair({ uri: pairUriVal });
     addLog('Successfully paired with the Electron app, you can now perform transactions in the app.', 'success');
 
     set(pairUri, '');
@@ -99,6 +135,10 @@ function getActiveSessions(): SessionTypes.Struct[] {
 
   const sessionsMap = kit.getActiveSessions() || {};
   return Object.values(sessionsMap);
+}
+
+function refreshActiveSessions() {
+  set(activeSessions, getActiveSessions());
 }
 
 async function chainChanged(topic: string, chainId: string) {
@@ -155,10 +195,11 @@ async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal)
   const addressVal = get(address);
   const chainId = get(connectedChainId);
 
-  if (!kit || !addressVal)
+  if (!kit || !addressVal || !chainId)
     return;
 
   const chainIds = [chainId];
+
   try {
     // ------- namespaces builder util ------------ //
     const approvedNamespaces = buildApprovedNamespaces({
@@ -167,8 +208,8 @@ async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal)
         eip155: {
           accounts: chainIds.map(item => getEip155ChainId(`${item}:${addressVal}`)),
           chains: chainIds.map(item => getEip155ChainId(item)),
-          events: ['accountsChanged', 'chainChanged'],
-          methods: ['eth_sendTransaction', 'eth_requestAccounts', 'personal_sign'],
+          events: COMPATIBLE_EVENTS,
+          methods: COMPATIBLE_METHODS,
         },
       },
     });
@@ -179,7 +220,7 @@ async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal)
       namespaces: approvedNamespaces,
     });
 
-    set(activeSessions, getActiveSessions());
+    refreshActiveSessions();
   }
   catch (error) {
     console.error(error);
@@ -212,10 +253,24 @@ function setupListeners() {
 
   kit.on('session_proposal', onSessionProposal);
   kit.on('session_request', onSessionRequest);
+  kit.on('session_delete', refreshActiveSessions);
+}
+
+function clearListeners() {
+  const kit = get(walletKit);
+
+  if (kit) {
+    kit.off('session_proposal', onSessionProposal);
+    kit.off('session_request', onSessionRequest);
+    kit.off('session_delete', refreshActiveSessions);
+  }
 }
 
 async function updateSession(session: SessionTypes.Struct, chainId: string, address: string) {
   const kit = get(walletKit);
+  if (!kit) {
+    return;
+  }
 
   const currentEip155ChainIds = session.namespaces[EIP155]?.chains || [];
   const currentEip155Accounts = session.namespaces[EIP155]?.accounts || [];
@@ -234,10 +289,12 @@ async function updateSession(session: SessionTypes.Struct, chainId: string, addr
       },
     };
 
-    await kit!.updateSession({
+    const { acknowledged } = await kit.updateSession({
       namespaces,
       topic: session.topic,
     });
+
+    await acknowledged();
   }
 
   // Switch to the new chain
@@ -247,13 +304,16 @@ async function updateSession(session: SessionTypes.Struct, chainId: string, addr
   await accountsChanged(session.topic, chainId, address);
 }
 
-async function updateSessions(chainId: string, address: string) {
+async function updateSessions(chainId?: string, address?: string) {
+  if (!chainId || !address) {
+    return;
+  }
   for await (const session of get(activeSessions)) {
     await updateSession(session, chainId, address);
   }
 }
 
-async function disconnectSession(topic: string) {
+async function disconnectSession(topic: string, skipRefresh = false) {
   const kit = get(walletKit);
 
   await kit!.disconnectSession({
@@ -261,50 +321,125 @@ async function disconnectSession(topic: string) {
     topic,
   });
 
-  set(activeSessions, getActiveSessions());
+  if (!skipRefresh) {
+    refreshActiveSessions();
+  }
+}
+
+async function disconnectAllSessions() {
+  for await (const session of get(activeSessions)) {
+    await disconnectSession(session.topic, true);
+  }
+  refreshActiveSessions();
+}
+
+function clear() {
+  clearListeners();
+  disconnectAllSessions();
 }
 
 watch([walletKit, address, connectedChainId], ([walletKit, address, connectedChainId]) => {
-  if (walletKit && address) {
-    set(activeSessions, getActiveSessions());
-    updateSessions(connectedChainId.toString(), address);
+  if (!walletKit || !address || !connectedChainId) {
+    return;
   }
+
+  refreshActiveSessions();
+  updateSessions(connectedChainId.toString(), address);
 });
 
 watch(activeSessions, () => {
-  updateSessions(get(connectedChainId).toString(), get(address));
+  updateSessions(get(connectedChainId)?.toString(), get(address));
+});
+
+watch(connected, (connected) => {
+  if (!connected) {
+    disconnectAllSessions();
+  }
 });
 
 onBeforeMount(initializeWalletKit);
+onBeforeUnmount(clear);
+
+const secondStep = '2';
 </script>
 
 <template>
   <div>
-    <div class="space-y-4">
-      <label
-        for="pairUri"
-        class="block font-semibold"
-      >
-        {{ t('trade.bridge.subtitle') }}
-      </label>
-      <RuiTextArea
-        v-model="pairUri"
-        :label="t('trade.bridge.label')"
-        variant="outlined"
-        color="primary"
-        min-rows="6"
-        clearable
-        :hint="t('trade.bridge.hint')"
-      />
+    <div
+      class="py-4 border-t border-default"
+      :class="{ 'opacity-30': !connected }"
+    >
+      <div class="flex gap-2">
+        <div
+          class="rounded-full bg-rui-primary text-white size-8 flex items-center justify-center font-bold"
+        >
+          {{ secondStep }}
+        </div>
+        <div class="mt-1 flex-1">
+          <div class="mb-4 font-bold">
+            {{ t('trade.bridge.link_session') }}
+          </div>
 
-      <RuiButton
-        :disabled="!pairUri.trim() || isConnecting"
-        class="disabled:cursor-not-allowed"
-        color="primary"
-        @click="pair()"
-      >
-        {{ isConnecting ? t('trade.bridge.connecting') : t('trade.bridge.start_pairing') }}
-      </RuiButton>
+          <div
+            v-if="activeSessions.length === 0"
+            class="space-y-4"
+          >
+            <RuiTextArea
+              v-model="pairUri"
+              :label="t('trade.bridge.label')"
+              :disabled="!connected"
+              variant="outlined"
+              color="primary"
+              min-rows="6"
+              clearable
+              :hint="t('trade.bridge.hint')"
+            />
+            <div class="flex justify-end">
+              <RuiButton
+                :disabled="!pairUri.trim() || isConnecting || !connected"
+                class="disabled:cursor-not-allowed"
+                color="primary"
+                @click="pair()"
+              >
+                {{ isConnecting ? t('trade.bridge.connecting') : t('trade.bridge.start_pairing') }}
+              </RuiButton>
+            </div>
+          </div>
+
+          <div v-else>
+            <div class="border border-default rounded-md p-2">
+              <div
+                v-for="session in activeSessions"
+                :key="session.topic"
+                class="p-1 flex items-center justify-between"
+              >
+                <div class="flex items-center gap-3">
+                  <AppImage
+                    v-if="session.peer.metadata.icons[0]"
+                    :src="session.peer.metadata.icons[0]"
+                    size="24px"
+                  />
+                  {{ session.peer.metadata.name }}
+                </div>
+                <RuiButton
+                  variant="text"
+                  color="error"
+                  size="sm"
+                  @click="disconnectSession(session.topic)"
+                >
+                  {{ t('trade.bridge.disconnect_session') }}
+                </RuiButton>
+              </div>
+            </div>
+            <RuiAlert
+              type="warning"
+              class="mt-4"
+            >
+              {{ t('trade.bridge.warning') }}
+            </RuiAlert>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="mt-4 pt-4 border-t border-default">
@@ -315,7 +450,7 @@ onBeforeMount(initializeWalletKit);
         <p
           v-for="(log, index) in logs"
           :key="index"
-          class="mb-2 pb-2 border-b border-default font-mono last:mb-0 last:pb-0 last:border-0 text-sm"
+          class="mb-2 pb-2 border-b border-default font-mono last:mb-0 last:pb-0 last:border-0 text-sm break-words"
           :class="{
             'text-rui-primary': log.type === 'info',
             'text-rui-success': log.type === 'success',
@@ -325,23 +460,6 @@ onBeforeMount(initializeWalletKit);
           <span class="text-gray-500 mr-1">{{ log.timestamp }}</span>
           {{ log.message }}
         </p>
-      </div>
-    </div>
-    <div>
-      <div
-        v-for="session in activeSessions"
-        :key="session.topic"
-        class="py-3 flex items-center justify-between border-b border-default"
-      >
-        {{ session.peer.metadata.name }}
-        <RuiButton
-          variant="text"
-          color="error"
-          size="sm"
-          @click="disconnectSession(session.topic)"
-        >
-          {{ t('trade.bridge.disconnect_session') }}
-        </RuiButton>
       </div>
     </div>
   </div>

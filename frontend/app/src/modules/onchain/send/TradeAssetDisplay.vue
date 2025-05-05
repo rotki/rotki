@@ -4,7 +4,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
-import { isEvmNativeToken } from '@/types/asset';
 
 const props = defineProps<{
   data: TradableAsset;
@@ -14,23 +13,10 @@ const props = defineProps<{
 const { t } = useI18n();
 
 const { assetName, assetSymbol } = useAssetInfoRetrieval();
-const { getChainName, getEvmChainName } = useSupportedChains();
+const { getEvmChainName } = useSupportedChains();
 
 const symbol = assetSymbol(props.data.asset, { collectionParent: false });
 const name = assetName(props.data.asset, { collectionParent: false });
-
-const mainName = computed(() => {
-  const asset = props.data.asset;
-  const isNative = isEvmNativeToken(asset);
-  const symbolVal = get(symbol);
-
-  if (isNative && props.list) {
-    const chain = props.data.chain;
-    const chainName = get(getChainName(chain));
-    return `${symbolVal} (in ${chainName} chain)`;
-  }
-  return symbolVal;
-});
 </script>
 
 <template>
@@ -51,7 +37,7 @@ const mainName = computed(() => {
     >
       <div class="font-medium text-sm -mb-0.5 overflow-hidden truncate">
         <div class="truncate">
-          {{ mainName }}
+          {{ symbol }}
         </div>
         <div
           v-if="list || !(data.price && data.fiatValue)"

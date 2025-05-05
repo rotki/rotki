@@ -6,6 +6,7 @@ import type {
   TransactionParams,
 } from '@/modules/onchain/types';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
@@ -38,8 +39,8 @@ export const supportedNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
 
 const DEFAULT_GAS_LIMIT = 21000n; // for native transfers
 
-function buildAppKit(): AppKit {
-  const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
+function buildAppKit(isPackaged: boolean): AppKit {
+  const projectId = isPackaged ? import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string : 'a8a07e2bdf6f30c0f749ba31504766bf';
 
   const wagmiAdapter = new WagmiAdapter({
     networks: supportedNetworks,
@@ -72,8 +73,9 @@ export const useWalletStore = defineStore('wallet', () => {
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
   const isWalletConnect = ref<boolean>(false);
+  const { isPackaged } = useInterop();
 
-  let appKit: AppKit | undefined;
+  const appKit: AppKit = buildAppKit(isPackaged);
 
   const { assetSymbol } = useAssetInfoRetrieval();
   const { getChainFromChainId, getChainIdFromNamespace, updateStatePostTransaction } = useWalletHelper();
@@ -101,11 +103,17 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   };
 
+  const getBrowserProvider = (): BrowserProvider => {
+    const { walletProvider } = useAppKitProvider(EIP155);
+    return new BrowserProvider(walletProvider as any);
+  };
+
   const setupAppKitListener = (): void => {
     assert(appKit);
 
     appKit.subscribeAccount((account) => {
       assert(appKit);
+
       set(connected, account.isConnected);
       set(connectedAddress, account.isConnected ? account.address : undefined);
 
@@ -127,7 +135,6 @@ export const useWalletStore = defineStore('wallet', () => {
     });
   };
 
-  appKit = buildAppKit();
   setupAppKitListener();
 
   const open = async (): Promise<void> => {
@@ -158,11 +165,6 @@ export const useWalletStore = defineStore('wallet', () => {
     if (network) {
       await appKit.switchNetwork(network);
     }
-  };
-
-  const getBrowserProvider = (): BrowserProvider => {
-    const { walletProvider } = useAppKitProvider(EIP155);
-    return new BrowserProvider(walletProvider as any);
   };
 
   const getGasFeeForChain = async (): Promise<GasFeeEstimation> => {
@@ -205,7 +207,7 @@ export const useWalletStore = defineStore('wallet', () => {
       ? params.assetIdentifier
       : get(assetSymbol(params.assetIdentifier));
 
-    return `Send ${amount} ${asset} from ${fromAddress} to ${params.to}`;
+    return `Send ${amount} ${asset || params.assetIdentifier} from ${fromAddress} to ${params.to}`;
   };
 
   const addRecentTransaction = (hash: string, chain: string, params: TransactionParams): void => {

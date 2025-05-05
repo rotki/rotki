@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { GasFeeEstimation, TradableAsset } from '@/modules/onchain/types';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import TradeAmountInput from '@/modules/onchain/send/TradeAmountInput.vue';
@@ -12,7 +11,6 @@ import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { CURRENCY_USD } from '@/types/currencies';
 import { logger } from '@/utils/logging';
 import { bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
 import { useTradeApi } from './use-trade-api';
@@ -47,7 +45,7 @@ const {
   waitingForWalletConfirmation,
 } = storeToRefs(walletStore);
 const { getGasFeeForChain, open, sendTransaction, switchNetwork } = walletStore;
-const { addressTracked, availableBalance, useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
+const { addressTracked, useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
 
 const { getAssetDetail } = useTradableAsset(connectedAddress);
 const { getIsInteractedBefore } = useTradeApi();
@@ -285,25 +283,7 @@ watchImmediate(connectedChainId, (curr, prev) => {
       >
         {{ t('trade.warning.query_on_progress') }}
       </RuiAlert>
-      <div class="flex justify-between items-center">
-        <div class="min-h-[2.75rem]">
-          <template v-if="connected">
-            <div class="text-rui-text-secondary text-sm">
-              {{ t('trade.available_balances') }}
-            </div>
-            <div v-if="!addressTracked">
-              -
-            </div>
-            <AmountDisplay
-              v-else
-              v-model="amount"
-              :value="availableBalance"
-              :fiat-currency="CURRENCY_USD"
-              show-currency="symbol"
-            />
-          </template>
-        </div>
-
+      <div class="flex justify-end items-center">
         <div class="flex gap-2">
           <RuiButton
             v-if="isPackaged && !connected"
