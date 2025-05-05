@@ -56,7 +56,6 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Curve',
         'Curvelend',
         'Curvecrvusd',
-        'Curvesavings',
         'Diva',
         'Defisaver',
         'Dripsv1',
