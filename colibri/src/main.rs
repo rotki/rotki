@@ -1,3 +1,4 @@
+use crate::blockchain::EvmInquirerManager;
 use axum::{http::Request, routing, Router};
 use database::DBHandler;
 use glob::Pattern;
@@ -12,7 +13,6 @@ use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
 };
-use crate::blockchain::EvmInquirerManager;
 
 mod api;
 mod args;
@@ -56,6 +56,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app_routes = Router::new()
         .route("/assets/icon", routing::get(api::icons::get_icon))
         .route("/assets/icon", routing::head(api::icons::check_icon))
+        .route(
+            "/assets/collections",
+            routing::get(api::globaldb_endpoints::assets_collections::query_collection_assets),
+        )
         .route("/user", routing::post(api::database::unlock_user))
         .route(
             "/assets/ignored",
@@ -66,15 +70,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cors_patterns: Vec<Pattern> = args
         .api_cors
         .iter()
-        .filter_map(|pattern| {
-            match Pattern::new(pattern) {
-                Ok(glob) => {
-                    Some(glob)
-                },
-                Err(e) => {
-                    error!("Found pattern {} not valid for API CORS due to {}", pattern, e);
-                    None
-                }
+        .filter_map(|pattern| match Pattern::new(pattern) {
+            Ok(glob) => Some(glob),
+            Err(e) => {
+                error!(
+                    "Found pattern {} not valid for API CORS due to {}",
+                    pattern, e
+                );
+                None
             }
         })
         .collect();

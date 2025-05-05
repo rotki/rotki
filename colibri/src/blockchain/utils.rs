@@ -34,21 +34,26 @@ pub fn parse_asset_identifier(identifier: &str) -> Option<AssetIdentifier> {
     if asset_parts.len() != 2 {
         return None;
     }
-    let contract_address = asset_parts.get(1).filter(|&addr| !addr.is_empty())?.to_string();
-    let parsed_address = Address::parse_checksummed(contract_address, None)
-        .ok()?;
+    let contract_address = asset_parts
+        .get(1)
+        .filter(|&addr| !addr.is_empty())?
+        .to_string();
+    let parsed_address = Address::parse_checksummed(contract_address, None).ok()?;
 
     // Parse token ID if present (for ERC-721)
     let token_id = parts.get(2).map(|s| s.to_string());
 
-    Some(AssetIdentifier{chain_id, contract_address: parsed_address, token_id})
+    Some(AssetIdentifier {
+        chain_id,
+        contract_address: parsed_address,
+        token_id,
+    })
 }
-
 
 #[cfg(test)]
 mod tests {
-    use alloy::primitives::address;
     use super::*;
+    use alloy::primitives::address;
 
     #[test]
     fn test_parse_asset_identifier_valid() {
@@ -74,16 +79,28 @@ mod tests {
     #[test]
     fn test_parse_asset_identifier_invalid() {
         // Missing prefix
-        assert_eq!(parse_asset_identifier("1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"), None);
+        assert_eq!(
+            parse_asset_identifier("1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"),
+            None
+        );
 
         // Invalid prefix
-        assert_eq!(parse_asset_identifier("eip123:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"), None);
+        assert_eq!(
+            parse_asset_identifier("eip123:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"),
+            None
+        );
 
         // Invalid chain ID
-        assert_eq!(parse_asset_identifier("eip155:abc/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"), None);
+        assert_eq!(
+            parse_asset_identifier("eip155:abc/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"),
+            None
+        );
 
         // Missing asset type
-        assert_eq!(parse_asset_identifier("eip155:1:0x6B175474E89094C44Da98b954EedeAC495271d0F"), None);
+        assert_eq!(
+            parse_asset_identifier("eip155:1:0x6B175474E89094C44Da98b954EedeAC495271d0F"),
+            None
+        );
 
         // Missing contract address
         assert_eq!(parse_asset_identifier("eip155:1/erc20:"), None);
@@ -93,8 +110,11 @@ mod tests {
 
         // Too few parts
         assert_eq!(parse_asset_identifier("eip155:1"), None);
-        
+
         // Invalid hex address
-        assert_eq!(parse_asset_identifier("eip155:1/erc20:0xInvalidAddress"), None);
+        assert_eq!(
+            parse_asset_identifier("eip155:1/erc20:0xInvalidAddress"),
+            None
+        );
     }
 }
