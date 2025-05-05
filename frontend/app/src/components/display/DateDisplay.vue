@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
-import { useCopy } from '@/composables/copy';
 import { useScramble } from '@/composables/scramble';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -62,18 +61,15 @@ const showTooltip = computed(() => {
 });
 
 const splitByMillisecondsPart = computed(() => get(formattedDate).split('.'));
-
-const { copied, copy } = useCopy(formattedDate);
 </script>
 
 <template>
   <CopyTooltip
     class="items-baseline"
-    :copied="copied"
     :tooltip="showTooltip ? formattedDateWithTimezone : null"
     :class="{ blur: !shouldShowAmount }"
     :disabled="hideTooltip"
-    @click="copy()"
+    :value="formattedDate"
   >
     {{ splitByMillisecondsPart[0] }}
     <span
