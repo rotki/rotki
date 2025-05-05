@@ -162,6 +162,23 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
         write_cursor.execute('DROP TABLE action_type')
 
+    @progress_step(description='Updating calendar reminders schema')
+    def _update_calendar_reminders_schema(write_cursor: 'DBCursor') -> None:
+        """Upgrades the calendar_reminders table to include acknowledged column."""
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='calendar_reminders',
+            schema="""
+            identifier INTEGER PRIMARY KEY NOT NULL,
+            event_id INTEGER NOT NULL,
+            secs_before INTEGER NOT NULL,
+            acknowledged INTEGER NOT NULL CHECK (acknowledged IN (0, 1)) DEFAULT 0,
+            FOREIGN KEY(event_id) REFERENCES calendar(identifier) ON DELETE CASCADE
+            """,
+            insert_columns='identifier, event_id, secs_before, 0',
+            insert_order='(identifier, event_id, secs_before, acknowledged)',
+        )
+
     @progress_step(description='Converting trades to history events')
     def _convert_trades_to_swap_events(write_cursor: 'DBCursor') -> None:
         new_events: list[SwapEvent] = []

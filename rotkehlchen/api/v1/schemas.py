@@ -3945,6 +3945,7 @@ class CalendarReminderCommonEntrySchema(Schema):
         required=True,
         validate=webargs.validate.Range(min=0, error='secs_before has to be >= 0'),
     )
+    acknowledged = fields.Boolean(required=False, load_default=False)
 
 
 class NewCalendarReminderSchema(CalendarReminderCommonEntrySchema):
@@ -3955,6 +3956,7 @@ class NewCalendarReminderSchema(CalendarReminderCommonEntrySchema):
             identifier=data.get('identifier', 0),  # not present when creating a new reminder but used in UpdateCalendarReminderSchema. Using default 0 since it is ignored when doing the creation  # noqa: E501
             secs_before=data['secs_before'],
             event_id=data['event_id'],
+            acknowledged=data['acknowledged'],
         )
 
     @post_load

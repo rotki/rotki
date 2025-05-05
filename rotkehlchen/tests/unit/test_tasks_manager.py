@@ -25,7 +25,7 @@ from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -963,6 +963,10 @@ def test_send_ws_calendar_reminder(
     assert msg == {
         'data': {
             'identifier': 2,
+            'reminder': {
+                'identifier': 1,
+                'secs_before': WEEK_IN_SECONDS,
+            },
             'name': 'CRV unlock',
             'description': 'Unlock date for CRV',
             'timestamp': 1713621899,
@@ -987,6 +991,10 @@ def test_send_ws_calendar_reminder(
     assert msg == {
         'data': {
             'identifier': 3,
+            'reminder': {
+                'identifier': 2,
+                'secs_before': DAY_IN_SECONDS * 5,
+            },
             'name': 'ENS renewal',
             'description': 'renew yabir.eth',
             'timestamp': 1714399499,
@@ -1010,14 +1018,14 @@ def test_calendar_entries_get_deleted(
         freezer,
 ) -> None:
     """
-    Test that reminders work correctly by:
-    - Checking we get the notifications
-    - Checking we remove the reminders once fired
-    - Checking that starting the app after an event with a reminder passes, triggers the reminder
-    """
+    Tests the auto-deletion of calendar entries based on settings and reminder status:
+    - Verifies entries are not deleted when auto_delete_calendar_entries is False
+    - Confirms entries with auto_delete=True remain when their reminders are unacknowledged
+    - Validates that entries with auto_delete=True are removed after their reminders are acknowledged
+    """  # noqa: E501
     database = task_manager.database
     calendar_db = DBCalendar(database)
-    calendar_db.create_calendar_entry(
+    calendar_id = calendar_db.create_calendar_entry(
         calendar=CalendarEntry(
             name='ENS renewal',
             description='renew yabir.eth',
@@ -1041,6 +1049,12 @@ def test_calendar_entries_get_deleted(
             auto_delete=False,
         ),
     )
+    calendar_db.create_reminder_entries([ReminderEntry(
+        identifier=1,
+        event_id=calendar_id,
+        secs_before=0,
+        acknowledged=False,
+    )])
     with database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM calendar').fetchone()[0] == 2
 
@@ -1063,6 +1077,21 @@ def test_calendar_entries_get_deleted(
     task_manager.schedule()
     gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
 
+    with database.conn.read_ctx() as cursor:  # the calendar should still be present as the reminder has not been acknowledged  # noqa: E501
+        assert cursor.execute(
+            'SELECT description FROM calendar',
+        ).fetchall() == [('renew yabir.eth',), ('renew hania.eth',)]
+
+    # acknowledge the reminder, move the time again and see that calendar entries that can be auto-deleted are removed  # noqa: E501
+    freezer.move_to(datetime.datetime(2024, 6, 5, 20, 0, 1, tzinfo=datetime.UTC))
+    calendar_db.update_reminder_entry(ReminderEntry(
+            identifier=1,
+            event_id=calendar_id,
+            secs_before=0,
+            acknowledged=True,
+    ))
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
     with database.conn.read_ctx() as cursor:  # events that are allowed to be deleted shouldn't be there anymore  # noqa: E501
         assert cursor.execute(
             'SELECT description FROM calendar',

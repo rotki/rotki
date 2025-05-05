@@ -49,6 +49,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
+    column_exists,
     mock_db_schema_sanity_check,
     mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
@@ -3124,6 +3125,12 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('B', 'some-deposit-id'),
             ('C', 'some-withdrawal-id'),
         ]
+        assert not column_exists(cursor, 'calendar_reminders', 'acknowledged')
+        assert cursor.execute('SELECT * from calendar_reminders').fetchall() == [
+            (1, 1, 3600),
+            (2, 1, 900),
+            (3, 2, 86400),
+        ]
         assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE "%_trades_%"').fetchall() == [  # noqa: E501
             ('kraken_trades_kraken', 1577836800, 1609459200),
             ('binance_trades_binance', 1609459200, 1640995200),
@@ -3203,6 +3210,12 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('8ad05838-6b0e-50a8-8665-c784fd4d85fd',),
             ('some-deposit-id',),
             ('some-withdrawal-id',),
+        ]
+        assert column_exists(cursor, 'calendar_reminders', 'acknowledged')
+        assert cursor.execute('SELECT * from calendar_reminders').fetchall() == [
+            (1, 1, 3600, 0),
+            (2, 1, 900, 0),
+            (3, 2, 86400, 0),
         ]
         assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "%_trades_%"').fetchone()[0] == 0  # noqa: E501
         assert not table_exists(cursor, 'action_type')

@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from eth_typing import ChecksumAddress
 
@@ -62,8 +62,8 @@ class CalendarNotification(BaseReminderData):
     """Basic reminder information along the calendar event linked to it"""
     event: CalendarEntry
 
-    def serialize(self) -> dict[str, str | int]:
-        return self.event.serialize()
+    def serialize(self) -> dict[str, Any]:
+        return self.event.serialize() | {'reminder': super().serialize()}
 
 
 def notify_reminders(
@@ -91,10 +91,15 @@ def notify_reminders(
 
 
 def delete_past_calendar_entries(database: DBHandler) -> None:
-    """delete old calendar entries that the user has allowed to delete"""
+    """Delete past calendar events that are marked for auto-deletion,
+    but only if all associated reminders (if any) have been acknowledged."""
     now = ts_now()
     with database.conn.write_ctx() as write_cursor:
-        write_cursor.execute('DELETE FROM calendar WHERE timestamp < ? AND auto_delete=1', (now,))
+        write_cursor.execute(
+            'DELETE FROM calendar WHERE timestamp < ? AND auto_delete = 1 '
+            'AND identifier IN (SELECT event_id FROM calendar_reminders WHERE acknowledged = 1);',
+            (now,),
+        )
         write_cursor.execute(  # remember last time this task ran
             'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
             (DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS.value, str(now)),
@@ -274,6 +279,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 identifier=calendar_identifier,  # this is only used for logging below, it's auto generated in db  # noqa: E501
                 event_id=calendar_identifier,
                 secs_before=entry,
+                acknowledged=False,
             )
             for calendar_identifier in calendar_identifiers
             for entry in secs_before

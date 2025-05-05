@@ -13349,11 +13349,13 @@ Managing calendar reminders
             {
               "identifier":1,
               "event_id": 1,
-              "secs_before": 213234124
+              "secs_before": 213234124,
+              "acknowledged": true
             }, {
               "identifier":2,
               "event_id": 1,
-              "secs_before": 2132341253
+              "secs_before": 2132341253,
+              "acknowledged": false
             },
           ]
         }
@@ -13424,7 +13426,8 @@ Managing calendar reminders
       {
         "identifier": 1,
         "secs_before": 1869737344,
-        "event_id": 1
+        "event_id": 1,
+        "acknowledged": true
       }
 
   :ref:`calendar_reminder_fields`

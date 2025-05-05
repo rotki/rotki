@@ -691,6 +691,7 @@ CREATE TABLE IF NOT EXISTS calendar_reminders (
     identifier INTEGER PRIMARY KEY NOT NULL,
     event_id INTEGER NOT NULL,
     secs_before INTEGER NOT NULL,
+    acknowledged INTEGER NOT NULL CHECK (acknowledged IN (0, 1)) DEFAULT 0,
     FOREIGN KEY(event_id) REFERENCES calendar(identifier) ON DELETE CASCADE
 );
 """
