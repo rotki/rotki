@@ -11,7 +11,8 @@ from rotkehlchen.chain.binance_sc.modules.curve.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.curve.constants import (
     CURVE_MINTER,
-    FEE_DISTRIBUTOR,
+    FEE_DISTRIBUTOR_3CRV,
+    FEE_DISTRIBUTOR_CRVUSD,
     GAUGE_BRIBE_V2,
     VOTING_ESCROW,
 )
@@ -2090,7 +2091,7 @@ def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5e216ceCB65E1E1B86fE8C46c730af287c4492Dc']])
-def test_fee_distributor(ethereum_transaction_decoder, ethereum_accounts):
+def test_fee_distributor_3crv(ethereum_transaction_decoder, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xae8a3781fc8f8b032f4e14db7745f9e4297f61e58a3deebc93d55ef4ed99d728')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
@@ -2123,7 +2124,48 @@ def test_fee_distributor(ethereum_transaction_decoder, ethereum_accounts):
             location_label=user_address,
             notes=f'Claim {amount} 3CRV as part of curve fees distribution',
             counterparty=CPT_CURVE,
-            address=FEE_DISTRIBUTOR,
+            address=FEE_DISTRIBUTOR_3CRV,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6544df975cF58A0b2C9a361a8db2e00D338e10c1']])
+def test_fee_distributor_crvusd(ethereum_transaction_decoder, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x200c154d4206ece5b7c4075064991d10afdcc488da29c88b366409b0d7e348c1')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        tx_hash=tx_hex,
+    )
+    user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1746466763000), '0.000382962892805733', '13.357652880447616117'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas),
+            location_label=user_address,
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=139,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),  # crvUSD
+            amount=FVal(amount),
+            location_label=user_address,
+            notes=f'Claim {amount} crvUSD as part of curve fees distribution',
+            counterparty=CPT_CURVE,
+            address=FEE_DISTRIBUTOR_CRVUSD,
         ),
     ]
     assert events == expected_events
