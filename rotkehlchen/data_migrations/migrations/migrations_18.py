@@ -74,37 +74,38 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     JOIN evmtx_receipt_logs erl ON er.tx_id = erl.tx_id
     JOIN evmtx_receipt_log_topics erlt0 ON erl.identifier = erlt0.log
     JOIN evmtx_receipt_log_topics erlt2 ON erl.identifier = erlt2.log
+    JOIN evmtx_topics_index ON evmtx_topics_index.topic_id = erlt0.topic_id
     WHERE erl.address = '0xF55041E37E12cD407ad00CE2910B8269B01263b9'
       AND
         (erlt0.topic_index = 0  /* DelegationTransferredToL2 */
-      AND erlt0.topic = X'231E5CFEFF7759A468241D939AB04A60D603B17E359057ABBB8F52AFC3E4986B'
+      AND topic_value = X'231E5CFEFF7759A468241D939AB04A60D603B17E359057ABBB8F52AFC3E4986B'
     AND ((
          erlt2.topic_index = 2
-         AND erlt2.topic IN ({tracked_placeholders}))"""
+         AND topic_value IN ({tracked_placeholders}))"""
         query_bindings = [address_to_bytes32(x) for x in tracked_addresses]
 
         if len(approved_delegators) != 0:
-            querystr += f' OR (erlt2.topic_index = 1 AND erlt2.topic IN({delegators_placeholders}))'  # noqa: E501
+            querystr += f' OR (erlt2.topic_index = 1 AND topic_value IN({delegators_placeholders}))'  # noqa: E501
             query_bindings += [address_to_bytes32(x) for x in approved_delegators]
 
         querystr += f"""
         ))OR
         ((erlt0.topic_index = 0  /* StakeDelegationWithdrawn */
-        AND erlt0.topic = X'1B2E7737E043C5CF1B587CEB4DAEB7AE00148B9BDA8F79F1093EEAD08F141952') AND (erlt2.topic_index = 2 AND erlt2.topic IN ({all_placeholders})))
+        AND topic_value = X'1B2E7737E043C5CF1B587CEB4DAEB7AE00148B9BDA8F79F1093EEAD08F141952') AND (erlt2.topic_index = 2 AND topic_value IN ({all_placeholders})))
         """  # noqa: E501
         query_bindings += [address_to_bytes32(x) for x in all_addresses]
 
         querystr += f"""
         OR
         ((erlt0.topic_index = 0  /* StakeDelegated */
-        AND erlt0.topic = X'CD0366DCE5247D874FFC60A762AA7ABBB82C1695BBB171609C1B8861E279EB73') AND (erlt2.topic_index = 2 AND erlt2.topic IN ({all_placeholders})))
+        AND topic_value = X'CD0366DCE5247D874FFC60A762AA7ABBB82C1695BBB171609C1B8861E279EB73') AND (erlt2.topic_index = 2 AND topic_value IN ({all_placeholders})))
         """  # noqa: E501
         query_bindings += [address_to_bytes32(x) for x in all_addresses]
 
         querystr += f"""
         OR
         ((erlt0.topic_index = 0  /* StakeDelegatedLocked */
-        AND erlt0.topic = X'0430183F84D9C4502386D499DA806543DEE1D9DE83C08B01E39A6D2116C43B25') AND (erlt2.topic_index = 2 AND erlt2.topic IN ({all_placeholders})))
+        AND topic_value = X'0430183F84D9C4502386D499DA806543DEE1D9DE83C08B01E39A6D2116C43B25') AND (erlt2.topic_index = 2 AND topic_value IN ({all_placeholders})))
         """  # noqa: E501
         query_bindings += [address_to_bytes32(x) for x in all_addresses]
 

@@ -67,6 +67,20 @@ class DBEvmTx:
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
+    def get_or_create_topic_id(self, write_cursor: 'DBCursor', topic_value: bytes) -> int:
+        """Inserts a topic_value if it doesn't exist or returns the existing topic_id"""
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO evmtx_topics_index (topic_value) VALUES (?) RETURNING topic_id;',  # noqa: E501
+            (topic_value,),
+        )
+        if (row := write_cursor.fetchone()) is not None:
+            return row[0]
+        else:
+            return write_cursor.execute(
+                'SELECT topic_id FROM evmtx_topics_index WHERE topic_value=?',
+                (topic_value,),
+            ).fetchone()[0]
+
     def add_evm_transactions(
             self,
             write_cursor: 'DBCursor',
@@ -380,12 +394,15 @@ class DBEvmTx:
             for idx, topic in enumerate(log_entry['topics']):
                 topic_tuples.append((
                     log_id,
-                    hexstring_to_bytes(topic),
+                    self.get_or_create_topic_id(
+                        write_cursor=write_cursor,
+                        topic_value=hexstring_to_bytes(topic),
+                    ),
                     idx,
                 ))
             if len(topic_tuples) != 0:
                 write_cursor.executemany(
-                    'INSERT INTO evmtx_receipt_log_topics (log, topic, topic_index) '
+                    'INSERT INTO evmtx_receipt_log_topics (log, topic_id, topic_index) '
                     'VALUES(? ,? ,?)',
                     topic_tuples,
                 )
@@ -431,7 +448,8 @@ class DBEvmTx:
                     address=result[3],
                 )
                 other_cursor.execute(
-                    'SELECT topic from evmtx_receipt_log_topics '
+                    'SELECT topic_value from evmtx_receipt_log_topics JOIN evmtx_topics_index ON '
+                    'evmtx_topics_index.topic_id = evmtx_receipt_log_topics.topic_id '
                     'WHERE log=? ORDER BY topic_index ASC',
                     (result[0],),
                 )
@@ -516,6 +534,20 @@ class DBEvmTx:
             if genesis_tx_id is not None:
                 tx_ids.append(genesis_tx_id)
 
+        # get the topic_ids linked to the events in the transactions that we are going
+        # to delete so we can delete them if they get orphaned.
+        used_topic_ids = [row[0] for row in write_cursor.execute(
+            f"""
+            SELECT DISTINCT erlt.topic_id
+            FROM evm_transactions AS et
+            JOIN evmtx_receipts AS er ON et.identifier = er.tx_id
+            JOIN evmtx_receipt_logs AS erl ON er.tx_id = erl.tx_id
+            JOIN evmtx_receipt_log_topics AS erlt ON erl.identifier = erlt.log
+            WHERE et.identifier IN ({",".join("?" * len(tx_ids))})
+            """,
+            tx_ids,
+        )]
+
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(
@@ -532,6 +564,25 @@ class DBEvmTx:
             'DELETE FROM key_value_cache WHERE name LIKE ?',
             [(f'{EXTRAINTERNALTXPREFIX}_{chain_id.value}_%_{tx_hash.hex()}',) for tx_hash in tx_hashes],  # noqa: E501
         )
+
+        try:  # delete orphan topic ids
+            write_cursor.execute(
+                f"""
+                DELETE FROM evmtx_topics_index
+                WHERE topic_id IN ({",".join("?" * len(used_topic_ids))})
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM evmtx_receipt_log_topics
+                    WHERE evmtx_receipt_log_topics.topic_id = evmtx_topics_index.topic_id
+                );
+                """,
+                used_topic_ids,
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            log.error(
+                f'Failed to delete topics {used_topic_ids} when deleting '
+                f'transactions {tx_hashes} from {chain} due to {e}. Skipping',
+            )
 
     def get_queried_range(
             self,
