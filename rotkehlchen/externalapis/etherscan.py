@@ -224,10 +224,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             if not self.warning_given:
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.MISSING_API_KEY,
-                    data={
-                        'service': ExternalService.ETHERSCAN.serialize(),
-                        'location': self.chain.to_chain_id().to_name(),
-                    },
+                    data={'service': ExternalService.ETHERSCAN.serialize()},
                 )
                 self.warning_given = True
 
