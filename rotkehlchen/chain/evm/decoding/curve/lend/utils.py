@@ -85,13 +85,14 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         )],
         encounter=TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False),  # noqa: E501
     )
-    if (gauge_address := vault.get('gaugeAddress')) is not None:
+    gauge_address = None
+    if (raw_gauge_address := vault.get('gaugeAddress')) is not None:
         get_or_create_evm_token(
             userdb=database,
             chain_id=vault_chain_id,
             name=f'Curve.fi {vault_token.name} Gauge Deposit',
             symbol=f'{vault_token.symbol}-gauge',
-            evm_address=deserialize_evm_address(gauge_address),
+            evm_address=(gauge_address := deserialize_evm_address(raw_gauge_address)),
             encounter=TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False),  # noqa: E501
         )
 
@@ -101,14 +102,14 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=[CacheType.CURVE_LENDING_VAULT_CONTROLLER, vault_token.evm_address],
-            value=(controller_address := vault['controllerAddress']),
+            value=(controller_address := deserialize_evm_address(vault['controllerAddress'])),
         )
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
             key_parts=[CacheType.CURVE_CRVUSD_AMM, controller_address],
-            value=vault['ammAddress'],
+            value=deserialize_evm_address(vault['ammAddress']),
         )
-        if gauge_address:
+        if gauge_address is not None:
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
                 key_parts=[CacheType.CURVE_LENDING_VAULT_GAUGE, vault_token.evm_address],

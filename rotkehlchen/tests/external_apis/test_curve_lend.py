@@ -59,6 +59,14 @@ def test_curve_lend_api(database: 'DBHandler') -> None:
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5'
 
+    # check that the gauge was added properly
+    assert (gauge_token := GlobalDBHandler.get_evm_token(
+        address=string_to_evm_address('0xBE543fC11B6Eb4aE1A80cb4e06828f06dC3791DA'),
+        chain_id=ChainID.ARBITRUM_ONE,
+    )) is not None
+    assert gauge_token.name == 'Curve.fi Borrow crvUSD (WETH collateral) Gauge Deposit'
+    assert gauge_token.symbol == 'cvcrvUSD-gauge'
+
     # trigger the query again and check that the timestamp was updated
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), patch.object(requests, 'get', wraps=mock_curve_api):
