@@ -2,7 +2,6 @@
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useCopy } from '@/composables/copy';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { displayAmountFormatter } from '@/data/amount-formatter';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
@@ -371,8 +370,6 @@ function fixExponentialSeparators(value: string, thousands: string, decimals: st
   return value;
 }
 
-const { copied, copy } = useCopy(copyValue);
-
 const anyLoading = logicOr(loading, evaluating);
 const info = assetInfo(asset, resolutionOptions);
 const { getAssetPriceOracle, isManualAssetPrice } = usePriceUtils();
@@ -464,10 +461,9 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
         />
         <CopyTooltip
           :disabled="!shouldShowAmount"
-          :copied="copied"
           :tooltip="tooltip"
           data-cy="display-amount"
-          @click="copy()"
+          :value="copyValue"
         >
           <template v-if="numberParts.full">
             {{ numberParts.full }}
