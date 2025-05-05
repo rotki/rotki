@@ -11,6 +11,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -530,3 +531,83 @@ def test_vote(base_accounts, base_transaction_decoder):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
+@pytest.mark.parametrize('base_accounts', [['0x7264A62ae2f2BbE5Fe003F29108afB3C3dA0Bc16']])
+def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
+    """Test swapping fBOMB tokens on Aerodrome with decoded transaction events.
+
+    fBOMB token has a 1% burn tax on transfers so it as appears a second transfer and isn't part of the swap.
+    https://basescan.org/address/0x266c8f8cda4360506b8d32dc5c4102350a069acd#code#F1#L95
+    """  # noqa: E501
+    evmhash = deserialize_evm_tx_hash('0x260538961f3f2e17a43d26732f1105f739f9cf79622a3df8986c279c6d69a450')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1731334851000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000002909074528395'),
+        location_label=(user_address := base_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=425,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:8453/erc20:0x74ccbe53F77b08632ce0CB91D3A545bF6B8E0979'),
+        amount=FVal(burn_amount := '47.190173008930536473'),
+        location_label=user_address,
+        address=ZERO_ADDRESS,
+        notes=f'Send {burn_amount} fBOMB from {user_address} to {ZERO_ADDRESS}',
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=426,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:8453/erc20:0x74ccbe53F77b08632ce0CB91D3A545bF6B8E0979'),
+        amount=ZERO,
+        location_label=user_address,
+        address=string_to_evm_address('0x6Cb442acF35158D5eDa88fe602221b67B400Be3E'),
+        notes=f'Revoke fBOMB spending approval of {user_address} by 0x6Cb442acF35158D5eDa88fe602221b67B400Be3E',  # noqa: E501
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=427,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x74ccbe53F77b08632ce0CB91D3A545bF6B8E0979'),
+        amount=FVal(spend_amount := '4671.827127884123110821'),
+        location_label=user_address,
+        counterparty=CPT_AERODROME,
+        address=string_to_evm_address('0x4F9Dc2229f2357B27C22db56cB39582c854Ad6d5'),
+        notes=f'Swap {spend_amount} fBOMB in aerodrome',
+    ), EvmSwapEvent(
+        tx_hash=evmhash,
+        sequence_index=428,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:8453/erc20:0x4200000000000000000000000000000000000006'),
+        amount=FVal(receive_amount := '0.070849955500013335'),
+        location_label=user_address,
+        counterparty=CPT_AERODROME,
+        address=string_to_evm_address('0x4F9Dc2229f2357B27C22db56cB39582c854Ad6d5'),
+        notes=f'Receive {receive_amount} WETH as the result of a swap in aerodrome',
+    )]
