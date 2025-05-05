@@ -83,7 +83,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             aave_pools: set['ChecksumEvmAddress'],
             curve_deposit_contracts: set['ChecksumEvmAddress'],
             curve_swap_routers: set['ChecksumEvmAddress'],
-            gauge_factory_address: 'ChecksumEvmAddress | None' = None,
+            crv_minter_addresses: set['ChecksumEvmAddress'] | None = None,
     ) -> None:
         self.native_currency = native_currency
         super().__init__(
@@ -102,7 +102,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         self.aave_pools = aave_pools
         self.curve_deposit_contracts = curve_deposit_contracts
         self.curve_swap_routers = curve_swap_routers
-        self.gauge_factory_address = gauge_factory_address  # https://docs.curve.fi/deployments/crosschain/#old-implementation  # noqa: E501
+        self.crv_minter_addresses = crv_minter_addresses
 
     def _read_curve_asset(
             self: 'CurveCommonDecoder',
@@ -798,16 +798,22 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         ):
             return DEFAULT_DECODING_OUTPUT
 
+        if len(context.tx_log.topics) == 2:  # CRV minter, gauge adddres not indexed
+            gauge_address = bytes_to_address(context.tx_log.data[:32])
+        else:
+            gauge_address = bytes_to_address(context.tx_log.topics[2])
+
         for event in context.decoded_events:
             if (
                 event.location_label == user_address and
-                event.address == self.gauge_factory_address and
+                (event.address in self.crv_minter_addresses or event.address == ZERO_ADDRESS) and  # type: ignore # if we get here crv_minter_addresses are not none
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                event.notes = f'Claim {event.amount} CRV rewards from curve gauge {bytes_to_address(context.tx_log.topics[2])}'  # noqa: E501
+                event.notes = f'Claim {event.amount} CRV rewards from curve gauge {gauge_address}'
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_CURVE
+                event.address = context.tx_log.address
                 break
         else:
             log.error(f'Failed to match curve mint event in {context.transaction}. Skipping...')
@@ -822,8 +828,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mappings = dict.fromkeys(self.curve_swap_routers, (self._decode_pool_events,))
-        if self.gauge_factory_address is not None:
-            mappings |= {self.gauge_factory_address: (self.decode_gauge_mints,)}
+        if self.crv_minter_addresses is not None:
+            mappings |= dict.fromkeys(self.crv_minter_addresses, (self.decode_gauge_mints,))
 
         return mappings
 

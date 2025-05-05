@@ -30,6 +30,7 @@ from .constants import (
     AAVE_POOLS,
     CLAIMED,
     CURVE_DEPOSIT_CONTRACTS,
+    CURVE_MINTER,
     CURVE_SWAP_ROUTER,
     DEPOSIT_AND_STAKE_ZAP,
     FEE_DISTRIBUTOR,
@@ -67,7 +68,7 @@ class CurveDecoder(CurveCommonDecoder):
             aave_pools=AAVE_POOLS,
             curve_deposit_contracts=CURVE_DEPOSIT_CONTRACTS | {DEPOSIT_AND_STAKE_ZAP},
             curve_swap_routers={CURVE_SWAP_ROUTER, CURVE_SWAP_ROUTER_NG},
-            gauge_factory_address=CHILD_LIQUIDITY_GAUGE_FACTORY,
+            crv_minter_addresses={CHILD_LIQUIDITY_GAUGE_FACTORY, CURVE_MINTER},
         )
 
     def _decode_gauge_bribe(

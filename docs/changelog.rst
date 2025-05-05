@@ -32,7 +32,7 @@ Changelog
 * :feature:`9496` rotki will now correctly decode Curve Lend staking deposits, withdrawals and reward claims in all supported EVM chains.
 * :feature:`9267` rotki now supports decoding of Aerodrome and Velodrome lock transactions, tracking locked balances, and automatic reminders for lock expirations.
 * :feature:`9145` Deposits and withdrawals from Hyperliquid will be decoded. Balances will also be queried.
-* :bug:`-` rotki will now correctly decode mints of CRV as result of claiming from Curve gauges in L2.
+* :bug:`-` rotki will now correctly decode mints of CRV from various gauges.
 * :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
 * :bug:`-` Users will now be able to use the filter properly after deleting the selected filter that is being edited.
 * :bug:`9793` Users will now be able to add a missing accounting rule by clicking the menu on the history events page.
