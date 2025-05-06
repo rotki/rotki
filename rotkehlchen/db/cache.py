@@ -52,7 +52,9 @@ class IndexArgType(TypedDict):
 class ExtraTxArgType(TypedDict):
     """Type of kwargs, used to get the value of `DBCacheDynamic.EXTRA_INTERNAL_TX`"""
     chain_id: int
-    receiver: ChecksumEvmAddress
+    # Receiver is optional since in at least one decoder (rainbow) the receiver address
+    # of the needed internal transaction is unknown.
+    receiver: ChecksumEvmAddress | None
     tx_hash: str  # using str instead of EVMTxHash because DB schema is in TEXT
 
 
