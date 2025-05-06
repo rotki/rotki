@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`-` Account labels will now be applied to all chains for which activity is auto-detected unless the existing labels differ between chains.
 * :feature:`-` rotki will now use the Etherscan V2 api. Users won't need to create a different api key for each chain since the one from https://etherscan.io will be used for all the supported chains. Finally all non mainnet etherscan api keys are removed from the app. More information available at https://docs.etherscan.io/etherscan-v2
+* :bug:`-` Newer interactions with MakerDAO (now Sky) vaults will now be properly decoded.
 * :feature:`-` Users will be able to delete multiple validators at once.
 * :feature:`-` rotki will now correctly decode single token withdrawals from Curve pools.
 * :feature:`-` Gearbox rewards transactions are now decoded properly on all supported chains.
