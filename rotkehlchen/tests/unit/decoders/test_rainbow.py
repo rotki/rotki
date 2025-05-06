@@ -1,20 +1,29 @@
 from typing import Final
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.rainbow.constants import (
     CPT_RAINBOW_SWAPS,
     RAINBOW_ROUTER_CONTRACT,
 )
+from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_POLYGON_POS_MATIC
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    EvmInternalTransaction,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 A_AIT: Final = Asset('eip155:1/erc20:0x89d584A1EDB3A70B3B07963F9A3eA5399E38b136')
 A_BUOY: Final = Asset('eip155:1/erc20:0x289Ff00235D2b98b0145ff5D4435d3e92f9540a6')
@@ -322,8 +331,51 @@ def test_rainbow_swap_on_base(base_inquirer, base_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xe733D0155F460DC8574855293Fbd4E6b44699374']])
 def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
+    """Test that a rainbow swap on binance_sc works correctly.
+    Also a regression test for https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=109177215
+    Rainbow swap fees are calculated from the internal transactions, but the app only queries
+    transactions linked to user addresses, which omits the transactions needed here. The tests
+    overlooked this since `get_decoded_events_of_transaction` queries all internal transactions
+    for a given tx_hash. To verify that the fix for this works, mock the initial internal
+    transaction query, and rely on the Rainbow decoder to query the needed internal transactions.
+    """
     tx_hash = deserialize_evm_tx_hash('0x68b7935786f6281c2774c6e4f7c0146cd9e4a0e40f0a2f49368e92fc5d2844c5')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+    call_count = 0
+    original_query_and_save = EvmTransactions(
+        evm_inquirer=binance_sc_inquirer,
+        database=binance_sc_inquirer.database,
+    )._query_and_save_internal_transactions_for_range_or_parent_hash
+
+    def mock_query_and_save_internal_txs(*args, **kwargs):
+        """On the initial attempt to query, add an unrelated internal tx to ensure all needed
+        transactions get queried later even when some are already present for this tx_hash.
+        On any subsequent attempts to query simply call the original query function.
+        """
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            with binance_sc_inquirer.database.conn.write_ctx() as write_cursor:
+                DBEvmTx(binance_sc_inquirer.database).add_evm_internal_transactions(
+                    write_cursor=write_cursor,
+                    transactions=[EvmInternalTransaction(
+                        parent_tx_hash=tx_hash,
+                        chain_id=binance_sc_inquirer.chain_id,
+                        trace_id=0,
+                        from_address=ZERO_ADDRESS,
+                        to_address=ZERO_ADDRESS,
+                        value=10000,
+                    )],
+                    relevant_address=binance_sc_accounts[0],
+                )
+        elif call_count > 1:
+            original_query_and_save(*args, **kwargs)
+
+    with patch(
+        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash',
+        side_effect=mock_query_and_save_internal_txs,
+    ):
+        events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
+
     gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.000561831', '0.0579036', '15021.487938841009576268', '0.0004964', TimestampMS(1742292986000), binance_sc_accounts[0]  # noqa: E501
     assert events == [EvmEvent(
         tx_hash=tx_hash,

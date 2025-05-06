@@ -633,8 +633,8 @@ class EvmTransactions(ABC):  # noqa: B024
             self,
             tx_hash: 'EVMTxHash',
             chain_id: ChainID,
-            to_address: 'ChecksumEvmAddress',
             user_address: 'ChecksumEvmAddress',
+            to_address: 'ChecksumEvmAddress | None' = None,
             from_address: 'ChecksumEvmAddress | None' = None,
     ) -> list[EvmInternalTransaction]:
         """Queries the internal transactions of a parent tx_hash, saves them in the DB and returns
@@ -644,15 +644,6 @@ class EvmTransactions(ABC):  # noqa: B024
         May raise:
         - RemoteError if there is a problem querying the data sources or transaction hash does
         not exist."""
-        db_internal_txs = self.dbevmtx.get_evm_internal_transactions(
-            parent_tx_hash=tx_hash,
-            blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[self.evm_inquirer.chain_id],
-            from_address=from_address,
-            to_address=to_address,
-        )
-        if len(db_internal_txs) > 0:
-            return db_internal_txs
-
         # check cache if this parent hash was queried before for this receiver and affected address
         with self.database.conn.read_ctx() as cursor:
             affected_address = self.database.get_dynamic_cache(
@@ -663,7 +654,12 @@ class EvmTransactions(ABC):  # noqa: B024
                 tx_hash=tx_hash.hex(),
             )
         if affected_address == user_address:  # if we have queried them before
-            return []
+            return self.dbevmtx.get_evm_internal_transactions(
+                parent_tx_hash=tx_hash,
+                blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[self.evm_inquirer.chain_id],
+                from_address=from_address,
+                to_address=to_address,
+            )
 
         # else query again and save the DB cache to avoid querying it again
         self._query_and_save_internal_transactions_for_range_or_parent_hash(

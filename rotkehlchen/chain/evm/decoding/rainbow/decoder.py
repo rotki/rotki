@@ -13,7 +13,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -23,14 +24,30 @@ from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from .constants import CPT_RAINBOW_SWAPS, RAINBOW_ROUTER_CONTRACT
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class RainbowDecoder(DecoderInterface):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.evm_txns = EvmTransactions(self.evm_inquirer, self.base.database)
 
     def _create_and_append_fee_event(
             self,
@@ -131,9 +148,10 @@ class RainbowDecoder(DecoderInterface):
         # if we are dealing with eth swaps check the internal transfers of eth from/to
         # the rainbow router
         if self.evm_inquirer.native_token in {out_event.asset, in_event.asset}:
-            for internal_tx in DBEvmTx(self.evm_inquirer.database).get_evm_internal_transactions(
-                parent_tx_hash=transaction.tx_hash,
-                blockchain=self.evm_inquirer.blockchain,
+            for internal_tx in self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
+                tx_hash=transaction.tx_hash,
+                chain_id=self.base.evm_inquirer.chain_id,
+                user_address=string_to_evm_address(out_event.location_label),  # type: ignore[arg-type]  # location_label should always be set
             ):
                 if ((
                     internal_tx.from_address == RAINBOW_ROUTER_CONTRACT and
