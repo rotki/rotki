@@ -172,6 +172,7 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             amount=abs(int.from_bytes(context.tx_log.data[32:64], signed=True)),
             asset=token_1,
         )
+        out_event, in_event = None, None
         for event in context.decoded_events:
             if event.asset == token_0 and event.amount == amount_0:
                 # When zapping into PT/YT, a swap event is followed by a deposit event.
@@ -185,11 +186,13 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.extra_data = {'market': market}
                     event.notes = f'Deposit {event.amount} {token_0.symbol} to Pendle'
+                    out_event = event
                 elif event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
                     event.counterparty = CPT_PENDLE
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     event.notes = f'Withdraw {event.amount} {token_0.symbol} from Pendle'
+                    in_event = event
 
             elif event.asset == token_1 and event.amount == amount_1:
                 if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
@@ -197,12 +200,18 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_type = HistoryEventType.RECEIVE
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     event.notes = f'Receive {amount_1} {token_1.symbol} from depositing into Pendle'  # noqa: E501
+                    in_event = event
                 elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
                     event.counterparty = CPT_PENDLE
                     event.event_type = HistoryEventType.SPEND
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.notes = f'Return {event.amount} {token_1.symbol} to Pendle'
+                    out_event = event
 
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_pendle_swap(self, context: DecoderContext) -> DecodingOutput:

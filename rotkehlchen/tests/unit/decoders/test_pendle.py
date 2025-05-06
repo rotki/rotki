@@ -195,7 +195,7 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=233,
+            sequence_index=232,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -209,7 +209,7 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=245,
+            sequence_index=233,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -223,6 +223,64 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xFd83CCCecef02a334e6A86e7eA8D0aa0F61f1Faf']])
+def test_return_pt(ethereum_inquirer, ethereum_accounts, pendle_cache):
+    tx_hash = deserialize_evm_tx_hash('0xcdd9f5254bf8d451a924f350e325eae55d4fadba52d277e47d1218ce08108c5b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1722695627000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.001992209924447032')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=215,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:1/erc20:0xd4e75971eAF78a8d93D96df530f1FFf5f9F53288'),
+        amount=(approve_amount := FVal('0.015')),
+        location_label=user_address,
+        address=(pendle_router := string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946')),  # noqa: E501
+        notes=f'Set PT-pufETH-26SEP2024 spending approval of {user_address} by {pendle_router} to {approve_amount}',  # noqa: E501
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=216,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xd4e75971eAF78a8d93D96df530f1FFf5f9F53288'),
+        amount=(out_amount := FVal('1.5')),
+        location_label=user_address,
+        notes=f'Return {out_amount} PT-pufETH-26SEP2024 to Pendle',
+        counterparty=CPT_PENDLE,
+        address=string_to_evm_address('0xA54FC268101c8b97DE19eF3141d34751a11996B2'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=217,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_ETH,
+        amount=(in_amount := FVal('1.454109932546059185')),
+        location_label=user_address,
+        notes=f'Withdraw {in_amount} ETH from Pendle',
+        counterparty=CPT_PENDLE,
+        address=pendle_router,
+    )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -263,7 +321,7 @@ def test_buy_yt(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=355,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -315,7 +373,7 @@ def test_sell_yt(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=254,
+            sequence_index=253,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -328,7 +386,7 @@ def test_sell_yt(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=273,
+            sequence_index=254,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
