@@ -188,13 +188,18 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     event.extra_data = {'vault_type': vault_type}
                     return DEFAULT_DECODING_OUTPUT
 
+            # not found, perhaps the transfer comes after
+            from_event_type = HistoryEventType.SPEND
+            to_event_type = HistoryEventType.DEPOSIT
+            to_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            to_notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'
+
         elif context.tx_log.topics[0] == GENERIC_EXIT:
             raw_amount = int.from_bytes(context.tx_log.topics[3])
             amount = asset_normalized_value(
                 amount=raw_amount,
                 asset=vault_asset,
             )
-
             # Go through decoded events to find and edit the transfer event
             for event in context.decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE and event.asset == vault_asset and event.amount == amount:  # noqa: E501
@@ -205,7 +210,28 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     event.extra_data = {'vault_type': vault_type}
                     return DEFAULT_DECODING_OUTPUT
 
-        return DEFAULT_DECODING_OUTPUT
+            # not found, perhaps the transfer comes after
+            from_event_type = HistoryEventType.RECEIVE
+            to_event_type = HistoryEventType.WITHDRAWAL
+            to_event_subtype = HistoryEventSubType.REMOVE_ASSET
+            to_notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'
+
+        else:
+            return DEFAULT_DECODING_OUTPUT
+
+        # if we get here we are looking at trying to find transfer later
+        return DecodingOutput(action_items=[ActionItem(
+            action='transform',
+            from_event_type=from_event_type,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=vault_asset,
+            amount=amount,
+            to_event_type=to_event_type,
+            to_event_subtype=to_event_subtype,
+            to_counterparty=CPT_VAULT,
+            to_notes=to_notes,
+            extra_data={'vault_type': vault_type},
+        )])
 
     def decode_makerdao_debt_payback(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == GENERIC_JOIN:
