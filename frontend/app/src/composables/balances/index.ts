@@ -30,8 +30,8 @@ export const useBalances = createSharedComposable(() => {
   const { assets } = useAggregatedBalances();
   const { queryBalancesAsync } = useBalancesApi();
   const { prices } = storeToRefs(useBalancePricesStore());
-  const { assetPrice } = usePriceUtils();
-  const { fetchExchangeRates, fetchPrices } = usePriceTaskManager();
+  const { hasCachedPrice } = usePriceUtils();
+  const { cacheEuroCollectionAssets, fetchExchangeRates, fetchPrices } = usePriceTaskManager();
   const { notify } = useNotificationsStore();
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n();
@@ -50,12 +50,13 @@ export const useBalances = createSharedComposable(() => {
     const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
+    await cacheEuroCollectionAssets();
     if (ignoreCache)
       await fetchExchangeRates();
 
     await fetchPrices({
       ignoreCache,
-      selectedAssets: filterMissingAssets(unique && unique.length > 0 ? unique : get(assets())),
+      selectedAssets: filterMissingAssets(unique && unique.length > 0 ? unique : get(assets)),
     });
     adjustPrices(get(prices));
     setStatus(Status.LOADED);
@@ -73,7 +74,7 @@ export const useBalances = createSharedComposable(() => {
   };
 
   const pendingAssets = ref<string[]>([]);
-  const noPriceAssets = useArrayFilter(assets(), asset => !get(assetPrice(asset)));
+  const noPriceAssets = useArrayFilter(assets, asset => !hasCachedPrice(asset));
 
   watchDebounced(
     noPriceAssets,

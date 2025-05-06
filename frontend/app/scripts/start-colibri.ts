@@ -32,6 +32,7 @@ const args = [
   `--data-directory=${dataDir}`,
   `--logfile-path=${path.join(logDir, 'colibri.log')}`,
   `--port=${port}`,
+  `--api-cors=http://localhost:*`,
 ];
 
 let backend: ChildProcess;

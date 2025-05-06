@@ -4,15 +4,10 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum } from '@/utils/calculation';
-import { type AssetBalance, type AssetBalanceWithPrice, type Balance, type BigNumber, NoPrice } from '@rotki/common';
+import { type AssetBalanceWithPrice, type Balance, type BigNumber, NoPrice } from '@rotki/common';
 import { groupBy } from 'es-toolkit';
 
 interface UseBalanceSortingReturn {
-  toSortedAssetBalanceArray: (
-    ownedAssets: AssetBalances,
-    isIgnored: (asset: string) => boolean,
-    groupMultiChain?: boolean
-  ) => AssetBalance[];
   toSortedAssetBalanceWithPrice: (
     ownedAssets: AssetBalances,
     isIgnored: (asset: string) => boolean,
@@ -91,19 +86,7 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
       usdValue: ownedAssets[asset].usdValue,
     }));
 
-  const toSortedAssetBalanceArray = (
-    ownedAssets: AssetBalances,
-    isIgnored: (asset: string) => boolean,
-    groupMultiChain = false,
-  ): AssetBalance[] =>
-    toSortedAndGroupedArray(ownedAssets, isIgnored, groupMultiChain, asset => ({
-      amount: ownedAssets[asset].amount,
-      asset,
-      usdValue: ownedAssets[asset].usdValue,
-    }));
-
   return {
-    toSortedAssetBalanceArray,
     toSortedAssetBalanceWithPrice,
   };
 }

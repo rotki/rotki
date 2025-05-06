@@ -28,7 +28,7 @@ const { assets } = useAggregatedBalances();
 
 async function refresh() {
   emit('click');
-  await refreshPrices(true, get(assets()));
+  await refreshPrices(true, get(assets));
 }
 
 const disabled = computed<boolean>(() => get(refreshing) || get(loadingData));

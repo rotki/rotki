@@ -3,6 +3,7 @@ import type { FetchPricePayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
+import { useCollectionIdentifiers } from '@/modules/assets/use-collection-identifiers';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
@@ -27,13 +28,14 @@ interface UsePriceTaskManagerReturn {
   fetchExchangeRates: () => Promise<void>;
   fetchPrices: (payload: FetchPricePayload) => Promise<void>;
   getHistoricPrice: (payload: HistoricPricePayload) => Promise<BigNumber>;
+  cacheEuroCollectionAssets: () => Promise<void>;
 }
 
 export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+  const { euroCollectionAssets, euroCollectionAssetsLoaded, exchangeRates, prices } = storeToRefs(useBalancePricesStore());
   const {
     createPriceCache,
     queryFiatExchangeRates,
@@ -41,6 +43,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     queryPrices,
   } = usePriceApi();
   const { currencies } = useCurrencies();
+  const { getCollectionAssets } = useCollectionIdentifiers();
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const taskType = TaskType.UPDATE_PRICES;
@@ -200,7 +203,23 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     }
   };
 
+  async function cacheEuroCollectionAssets(): Promise<void> {
+    if (get(euroCollectionAssetsLoaded)) {
+      return;
+    }
+    try {
+      const assets = await getCollectionAssets('240');
+      set(euroCollectionAssets, assets);
+      set(euroCollectionAssetsLoaded, true);
+      logger.info(`${assets.length} Euro collection assets cached`);
+    }
+    catch (error: any) {
+      logger.error(error);
+    }
+  }
+
   return {
+    cacheEuroCollectionAssets,
     createOracleCache,
     fetchExchangeRates,
     fetchPrices,

@@ -13,7 +13,6 @@ import { samePriceAssets } from '@/types/blockchain';
 import { sumAssetBalances } from '@/utils/balances';
 import { aggregateTotals } from '@/utils/blockchain/accounts';
 import { balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
 import { type AssetBalanceWithPrice, type Balance, type ExclusionSource, Zero } from '@rotki/common';
 
 function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
@@ -26,7 +25,8 @@ function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
     };
     if (!ownedAssets[asset])
       ownedAssets[asset] = balance;
-    else ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
+    else
+      ownedAssets[asset] = balanceSum(ownedAssets[asset], balance);
   }
   return ownedAssets;
 }
@@ -35,7 +35,7 @@ interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;
   liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   assetPriceInfo: (identifier: MaybeRef<string>, groupMultiChain?: MaybeRef<boolean>) => ComputedRef<AssetPriceInfo>;
-  assets: (hideIgnored?: boolean) => ComputedRef<string[]>;
+  assets: ComputedRef<string[]>;
 }
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
@@ -93,25 +93,28 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       );
     });
 
-  const assets = (hideIgnored = true): ComputedRef<string[]> => computed<string[]>(() => {
-    const additional: string[] = [];
-    const liabilitiesAsset = get(liabilities(hideIgnored)).map(({ asset }) => {
+  const assets = computed<string[]>(() => {
+    const assetSet = new Set<string>();
+
+    const processAsset = (asset: string): void => {
+      assetSet.add(asset);
       const samePrices = samePriceAssets[asset];
       if (samePrices)
-        additional.push(...samePrices);
+        samePrices.forEach(asset => assetSet.add(asset));
+    };
 
-      return asset;
-    });
-    const assets = get(balances(hideIgnored, false)).map(({ asset }) => {
-      const samePrices = samePriceAssets[asset];
-      if (samePrices)
-        additional.push(...samePrices);
+    const processAssetBalances = (balances: AssetBalances): void => {
+      Object.keys(balances).forEach(processAsset);
+    };
 
-      return asset;
-    });
+    processAssetBalances(aggregateTotals(get(blockchainBalances)));
+    processAssetBalances(aggregateTotals(get(blockchainBalances), 'liabilities'));
+    processAssetBalances(get(exchangeBalances));
 
-    assets.push(...liabilitiesAsset, ...additional);
-    return assets.filter(uniqueStrings);
+    get(manualBalances).forEach(({ asset }) => processAsset(asset));
+    get(manualLiabilities).forEach(({ asset }) => processAsset(asset));
+
+    return Array.from(assetSet);
   });
 
   const assetPriceInfo = (

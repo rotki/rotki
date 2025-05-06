@@ -9,6 +9,9 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const exchangeRates = ref<ExchangeRates>({});
   const assetPricesWithCurrentCurrency = ref<AssetPrices>({});
 
+  const euroCollectionAssets = ref<string[]>([]);
+  const euroCollectionAssetsLoaded = ref(false);
+
   const { notify } = useNotificationsStore();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryCachedPrices } = usePriceApi();
@@ -42,6 +45,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
   return {
     assetPricesWithCurrentCurrency,
+    euroCollectionAssets,
+    euroCollectionAssetsLoaded,
     exchangeRates,
     prices,
   };
