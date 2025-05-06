@@ -306,8 +306,9 @@ class Eth2(EthereumModule):
             deposit_events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
-                    event_types=[HistoryEventType.STAKING],
-                    event_subtypes=[HistoryEventSubType.DEPOSIT_ASSET],
+                    type_and_subtype_combinations=[
+                        (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
+                    ],
                     counterparties=[CPT_ETH2],
                 ),
                 has_premium=True,  # need all events here

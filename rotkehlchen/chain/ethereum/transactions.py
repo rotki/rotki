@@ -81,8 +81,9 @@ class EthereumTransactions(EvmTransactions):
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_THEGRAPH],
             location=Location.ETHEREUM,
-            event_types=[HistoryEventType.INFORMATIONAL],
-            event_subtypes=[HistoryEventSubType.APPROVE],
+            type_and_subtype_combinations=[
+                (HistoryEventType.INFORMATIONAL, HistoryEventSubType.APPROVE),
+            ],
             location_labels=addresses,  # type: ignore  # sequence[address] == list[str]
             order_by_rules=[('timestamp', True)],  # order by timestamp in ascending order
         )

@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Generic, Literal, NamedTuple, Self, TypeVar
@@ -124,7 +124,7 @@ class DBNestedFilter(DBFilter):
                 continue
 
             operator = ' AND ' if single_filter.and_op else ' OR '
-            filterstrings.append(f'({operator.join(filters)})')
+            filterstrings.append(f'{operator.join(filters)}')
             bindings.extend(single_bindings)
 
         operator = ' AND ' if self.and_op else ' OR '
@@ -770,6 +770,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             assets: tuple[Asset, ...] | None = None,
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
@@ -835,6 +836,23 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 values=[x.serialize() for x in event_subtypes],
                 operator='IN',
             ))
+        if type_and_subtype_combinations is not None:
+            filters.append(DBNestedFilter(and_op=False, filters=[
+                DBNestedFilter(
+                    and_op=True,
+                    filters=[DBEqualsFilter(
+                        and_op=True,
+                        column='type',
+                        value=type_combination[0].serialize(),
+                    ), DBEqualsFilter(
+                        and_op=True,
+                        column='subtype',
+                        value=type_combination[1].serialize(),
+                    )],
+                )
+                for type_combination in type_and_subtype_combinations
+            ]))
+
         if exclude_subtypes is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
@@ -956,6 +974,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             assets: tuple[Asset, ...] | None = None,
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
@@ -987,6 +1006,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             assets=assets,
             event_types=event_types,
             event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
@@ -1078,6 +1098,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             assets: tuple[Asset, ...] | None = None,
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
@@ -1106,6 +1127,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             assets=assets,
             event_types=event_types,
             event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
@@ -1158,6 +1180,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             assets: tuple[Asset, ...] | None = None,
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
@@ -1187,6 +1210,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             assets=assets,
             event_types=event_types,
             event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
@@ -1236,6 +1260,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             assets: tuple[Asset, ...] | None = None,
             event_types: list[HistoryEventType] | None = None,
             event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
@@ -1265,6 +1290,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             assets=assets,
             event_types=event_types,
             event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
