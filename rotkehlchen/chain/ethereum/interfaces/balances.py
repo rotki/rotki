@@ -93,7 +93,7 @@ class ProtocolWithBalance(abc.ABC):
         db_filter = EvmEventFilterQuery.make(
             counterparties=[self.counterparty],
             products=products,
-            event_subtypes=[entry[1] for entry in event_types],
+            type_and_subtype_combinations=event_types,
             location=Location.from_chain_id(self.evm_inquirer.chain_id),
             entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT]),
         )
@@ -105,11 +105,8 @@ class ProtocolWithBalance(abc.ABC):
             )
 
         addresses_with_activity = defaultdict(list)
-        for event in events:  # TODO: HistoryEventFilterquery should allow querying by type/subtype combos to avoid this  # noqa: E501
-            if (
-                (event.event_type, event.event_subtype) in event_types and
-                event.location_label is not None
-            ):
+        for event in events:
+            if event.location_label is not None:
                 addresses_with_activity[string_to_evm_address(event.location_label)].append(event)
 
         return addresses_with_activity

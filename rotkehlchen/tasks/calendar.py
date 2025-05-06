@@ -119,23 +119,17 @@ class CalendarReminderCreator(CustomizableDateMixin):
 
     def get_history_events(self, event_types: list[tuple[HistoryEventType, HistoryEventSubType]], counterparties: list[str]) -> list['EvmEvent']:  # noqa: E501
         """Get history events by event_type, event_subtype, and counterparty"""
-        db_history_events = DBHistoryEvents(database=self.database)
-        events: list[EvmEvent] = []
         with self.database.conn.read_ctx() as cursor:
-            for event_type, event_subtype in event_types:
-                events.extend(db_history_events.get_history_events(
-                    cursor=cursor,
-                    has_premium=True,  # not limiting here
-                    group_by_event_ids=False,
-                    filter_query=EvmEventFilterQuery.make(
-                        and_op=True,
-                        counterparties=counterparties,
-                        event_types=[event_type],
-                        event_subtypes=[event_subtype],
-                    ),
-                ))
-
-        return events
+            return DBHistoryEvents(database=self.database).get_history_events(
+                cursor=cursor,
+                has_premium=True,  # not limiting here
+                group_by_event_ids=False,
+                filter_query=EvmEventFilterQuery.make(
+                    and_op=True,
+                    counterparties=counterparties,
+                    type_and_subtype_combinations=event_types,
+                ),
+            )
 
     def get_existing_calendar_entry(
             self,
