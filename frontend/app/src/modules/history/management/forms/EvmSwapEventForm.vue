@@ -1,56 +1,52 @@
 <script lang="ts" setup>
+import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent } from '@/types/history/events';
+import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
-import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
-import SwapEventAssetAmount from '@/modules/history/management/forms/swap/SwapEventAssetAmount.vue';
-import SwapEventFee from '@/modules/history/management/forms/swap/SwapEventFee.vue';
-import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
+import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { useDateTime } from '@/modules/history/management/forms/utils';
+import { toSubEvent, useDateTime } from '@/modules/history/management/forms/utils';
 import { useMessageStore } from '@/store/message';
 import { toMessages } from '@/utils/validation';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
-import { omit, pick } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-
-type FormData = Required<Omit<AddEvmSwapEventPayload, 'eventIdentifier'>>;
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = defineProps<{ data: StandaloneEventData<EvmHistoryEvent> | GroupEventData<EvmSwapEvent> }>();
 
-function emptyEvent(): FormData {
+function emptySubEvent(): SwapSubEventModel {
+  return {
+    amount: '',
+    asset: '',
+  };
+}
+
+function emptyEvent(): EvmSwapFormData {
   return {
     address: '',
     counterparty: '',
     entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
-    feeAmount: '',
-    feeAsset: '',
+    fee: [],
     location: '',
-    locationLabel: '',
-    receiveAmount: '',
-    receiveAsset: '',
+    receive: [emptySubEvent()],
     sequenceIndex: '0',
-    spendAmount: '',
-    spendAsset: '',
+    spend: [emptySubEvent()],
     timestamp: dayjs().valueOf(),
     txHash: '',
-    userNotes: ['', '', ''],
   };
 }
 
-const states = ref<FormData>(emptyEvent());
+const states = ref<EvmSwapFormData>(emptyEvent());
 const hasFee = ref<boolean>(false);
-const identifier = ref<number>();
-const eventIdentifier = ref<string>();
+const identifiers = ref<number[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
 
 const datetime = useDateTime(states);
@@ -59,22 +55,17 @@ const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
-const rules = {
+const rules = computed(() => ({
   address: commonRules.createValidEthAddressRule(),
   counterparty: commonRules.createExternalValidationRule(),
-  feeAmount: commonRules.createExternalValidationRule(),
-  feeAsset: commonRules.createExternalValidationRule(),
+  fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
   location: commonRules.createRequiredLocationRule(),
-  locationLabel: commonRules.createExternalValidationRule(),
-  receiveAmount: commonRules.createRequiredAmountRule(),
-  receiveAsset: commonRules.createRequiredAssetRule(),
+  receive: commonRules.createRequiredAtLeastOne(),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  spendAmount: commonRules.createRequiredAmountRule(),
-  spendAsset: commonRules.createRequiredAssetRule(),
+  spend: commonRules.createRequiredAtLeastOne(),
   timestamp: commonRules.createExternalValidationRule(),
   txHash: commonRules.createValidTxHashRule(),
-  userNotes: commonRules.createExternalValidationRule(),
-};
+}));
 
 const v$ = useVuelidate(
   rules,
@@ -105,34 +96,28 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const model = get(states);
-  let payload: AddEvmSwapEventPayload;
-  if (get(hasFee)) {
-    payload = model;
-  }
-  else {
-    payload = omit(model, ['feeAmount', 'feeAsset']);
-    payload.userNotes = [model.userNotes[0], model.userNotes[1]];
+  const payload: AddEvmSwapEventPayload = { ...get(states) };
+
+  if (!get(hasFee)) {
+    delete payload.fee;
   }
 
   if (payload.address === '') {
     payload.address = undefined;
   }
 
-  const result = isDefined(eventIdentifier) && isDefined(identifier)
+  const result = get(identifiers).length > 0
     ? await editHistoryEvent({
       ...payload,
       ...{
-        eventIdentifier: get(eventIdentifier),
-        identifier: get(identifier),
+        identifiers: get(identifiers),
       },
     })
     : await addHistoryEvent(payload);
 
   if (result.success) {
     set(states, emptyEvent());
-    set(eventIdentifier, undefined);
-    set(identifier, undefined);
+    set(identifiers, []);
     set(hasFee, false);
   }
   else {
@@ -143,13 +128,6 @@ async function save(): Promise<boolean> {
   }
 
   return result.success;
-}
-
-function getNotes(event?: EvmSwapEvent): string {
-  if (!event || !event.userNotes) {
-    return '';
-  }
-  return event.userNotes;
 }
 
 watchImmediate(() => props.data, (data) => {
@@ -165,47 +143,34 @@ watchImmediate(() => props.data, (data) => {
     });
   }
   else if (data.type === 'edit-group') {
-    const spend = data.eventsInGroup.find(item => item.eventSubtype === 'spend');
-    const receive = data.eventsInGroup.find(item => item.eventSubtype === 'receive');
-    const fee = data.eventsInGroup.find(item => item.eventSubtype === 'fee');
+    const spend = data.eventsInGroup.filter(item => item.eventSubtype === 'spend');
+    const receive = data.eventsInGroup.filter(item => item.eventSubtype === 'receive');
+    const fee = data.eventsInGroup.filter(item => item.eventSubtype === 'fee');
 
-    assert(spend);
-    assert(receive);
+    assert(spend.length > 0);
+    assert(receive.length > 0);
 
-    set(hasFee, fee !== undefined);
-    const identifiers = pick(spend, ['eventIdentifier', 'identifier']);
-    set(eventIdentifier, identifiers.eventIdentifier);
-    set(identifier, identifiers.identifier);
+    set(hasFee, fee.length > 0);
+    set(identifiers, data.eventsInGroup.map(item => item.identifier));
 
-    const userNotes: [string, string, string] | [string, string] = fee !== undefined
-      ? [
-          getNotes(spend),
-          getNotes(receive),
-          getNotes(fee),
-        ]
-      : [
-          getNotes(spend),
-          getNotes(receive),
-        ];
-
+    const firstSpend = spend[0];
     set(states, {
-      address: spend.address ?? '',
-      counterparty: spend.counterparty ?? '',
+      address: firstSpend.address ?? '',
+      counterparty: firstSpend.counterparty ?? '',
       entryType: HistoryEventEntryType.EVM_SWAP_EVENT,
-      feeAmount: fee?.amount?.toString() ?? '',
-      feeAsset: fee?.asset ?? '',
-      location: spend.location,
-      locationLabel: spend.locationLabel ?? '',
-      receiveAmount: receive.amount.toString(),
-      receiveAsset: receive.asset,
-      sequenceIndex: spend.sequenceIndex.toString(),
-      spendAmount: spend.amount.toString(),
-      spendAsset: spend.asset,
-      timestamp: spend.timestamp,
-      txHash: spend.txHash,
-      userNotes,
+      fee: fee.map(event => toSubEvent(event)),
+      location: firstSpend.location,
+      receive: receive.map(event => toSubEvent(event)),
+      sequenceIndex: firstSpend.sequenceIndex.toString(),
+      spend: spend.map(event => toSubEvent(event)),
+      timestamp: firstSpend.timestamp,
+      txHash: firstSpend.txHash,
     });
   }
+});
+
+watch(hasFee, (hasFee) => {
+  set(states, { ...get(states), fee: hasFee ? [emptySubEvent()] : [] });
 });
 
 watch(errorMessages, (errors) => {
@@ -246,49 +211,49 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <SwapEventAssetAmount
-      v-model:asset="states.spendAsset"
-      v-model:amount="states.spendAmount"
-      type="spend"
-      :error-messages="{
-        asset: toMessages(v$.spendAsset),
-        amount: toMessages(v$.spendAmount),
-      }"
-    />
-
-    <SwapEventAssetAmount
-      v-model:asset="states.receiveAsset"
-      v-model:amount="states.receiveAmount"
-      type="receive"
-      :error-messages="{
-        asset: toMessages(v$.receiveAsset),
-        amount: toMessages(v$.receiveAmount),
-      }"
-    />
-
-    <RuiDivider class="mb-6 mt-2" />
-
-    <SwapEventFee
-      v-model="hasFee"
-      v-model:amount="states.feeAmount"
-      v-model:asset="states.feeAsset"
-      :error-messages="{
-        fee: toMessages(v$.feeAmount),
-        amount: toMessages(v$.feeAsset),
-      }"
-    />
-
-    <RuiDivider class="mb-6 mt-2" />
-
-    <EvmLocation
-      v-model:location-label="states.locationLabel"
-      v-model:address="states.address"
+    <SwapSubEventList
+      v-model="states.spend"
+      data-cy="spend"
       :location="states.location"
-      :error-messages="{
-        locationLabel: toMessages(v$.locationLabel),
-        address: toMessages(v$.address),
-      }"
-      @blur="v$[$event].$touch()"
+      type="spend"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <SwapSubEventList
+      v-model="states.receive"
+      data-cy="receive"
+      :location="states.location"
+      type="receive"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <RuiCheckbox
+      v-model="hasFee"
+      :label="t('transactions.events.form.has_fee.label')"
+      data-cy="has-fee"
+      color="primary"
+    />
+
+    <SwapSubEventList
+      v-model="states.fee"
+      data-cy="fee"
+      :location="states.location"
+      :disabled="!hasFee"
+      type="fee"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <RuiTextField
+      v-model="states.address"
+      clearable
+      variant="outlined"
+      data-cy="address"
+      :label="t('transactions.events.form.contract_address.label')"
+      :error-messages="errorMessages.address"
+      @blur="v$.address.$touch()"
     />
 
     <div class="grid md:grid-cols-2 gap-4">
@@ -311,12 +276,5 @@ defineExpose({
         @blur="v$.counterparty.$touch()"
       />
     </div>
-
-    <SwapEventNotes
-      v-model="states.userNotes"
-      :has-fee="hasFee"
-      :error-messages="toMessages(v$.userNotes)"
-      @blur="v$.userNotes.$touch()"
-    />
   </div>
 </template>

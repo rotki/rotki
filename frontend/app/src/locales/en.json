@@ -4452,6 +4452,9 @@
             "non_empty": "The fee cannot be empty when fee asset is inputted"
           }
         },
+        "fee_amount": {
+          "label": "Fee Amount"
+        },
         "fee_asset": {
           "label": "Fee Asset",
           "validation": {
@@ -4464,6 +4467,9 @@
             "non_empty": "The fee recipient field cannot be empty.",
             "valid": "The fee recipient is invalid, fill it with valid address"
           }
+        },
+        "has_fee": {
+          "label": "Has Fee"
         },
         "is_exit": {
           "label": "Is Exited?"
