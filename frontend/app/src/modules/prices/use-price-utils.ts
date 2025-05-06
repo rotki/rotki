@@ -1,7 +1,6 @@
 import type { ExchangeRates } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PriceOracle } from '@/types/settings/price-oracle';
@@ -29,12 +28,17 @@ interface UsePriceUtilsReturn {
   isAssetPriceInCurrentCurrency: (asset: MaybeRef<string>) => ComputedRef<boolean>;
   isManualAssetPrice: (asset: MaybeRef<string>) => ComputedRef<boolean>;
   toSelectedCurrency: (value: MaybeRef<BigNumber>) => ComputedRef<BigNumber>;
+  hasCachedPrice: (asset: string) => boolean;
 }
 
 export function usePriceUtils(): UsePriceUtilsReturn {
-  const { assetPricesWithCurrentCurrency, exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+  const {
+    assetPricesWithCurrentCurrency,
+    euroCollectionAssets,
+    exchangeRates,
+    prices,
+  } = storeToRefs(useBalancePricesStore());
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { assetInfo } = useAssetInfoRetrieval();
 
   function getExchangeRate(rates: ExchangeRates, currency: string): BigNumber | undefined {
     return rates[currency];
@@ -66,7 +70,8 @@ export function usePriceUtils(): UsePriceUtilsReturn {
      */
   const isAssetPriceEqualToCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> => computed(() => {
     const currency = get(currencySymbol);
-    return get(asset) === currency || (currency === 'EUR' && get(assetInfo(asset))?.collectionId === '240');
+    const assetIdentifier = get(asset);
+    return assetIdentifier === currency || (currency === 'EUR' && get(euroCollectionAssets).includes(assetIdentifier));
   });
 
   /**
@@ -99,9 +104,14 @@ export function usePriceUtils(): UsePriceUtilsReturn {
   const isAssetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> =>
     computed(() => (get(isAssetPriceEqualToCurrentCurrency(asset)) || !!get(assetPricesWithCurrentCurrency)[get(asset)]?.value));
 
+  function hasCachedPrice(asset: string): boolean {
+    return (get(assetPricesWithCurrentCurrency)[asset]?.value ?? get(prices)[asset]?.value) !== undefined;
+  }
+
   return {
     assetPrice,
     getAssetPriceOracle,
+    hasCachedPrice,
     isAssetPriceInCurrentCurrency,
     isManualAssetPrice,
     toSelectedCurrency,
