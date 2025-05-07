@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`9966` Blockscout will now be prioritized when querying block number.
+* :bug:`-` Users should no longer experience a loading loop for asset information (name, symbol) on different areas of the application.
 * :bug:`-` rotki password will no longer appear in the debug logs.
 * :bug:`-` Ethereum and Base transaction decoding should now work fine again after the Morpho API deserialization problems.
 

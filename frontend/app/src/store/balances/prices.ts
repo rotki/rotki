@@ -18,7 +18,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useCollectionIdentifiers } from '@/modules/assets/use-collection-identifiers';
 import type { TaskMeta } from '@/types/task';
 import type { Balances } from '@/types/blockchain/balances';
 import type { MaybeRef } from '@vueuse/core';
@@ -30,9 +30,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = ref<AssetPrices>({});
   const exchangeRates = ref<ExchangeRates>({});
 
+  const euroCollectionAssets = ref<string[]>([]);
+  const euroCollectionAssetsLoaded = ref(false);
+
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
   const {
     createPriceCache,
@@ -45,6 +47,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { currencies } = useCurrencies();
+  const { getCollectionAssets } = useCollectionIdentifiers();
 
   const assetPricesWithCurrentCurrency = ref<AssetPrices>({});
 
@@ -237,6 +240,21 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
   };
 
+  async function cacheEuroCollectionAssets(): Promise<void> {
+    if (get(euroCollectionAssetsLoaded)) {
+      return;
+    }
+    try {
+      const assets = await getCollectionAssets('240');
+      set(euroCollectionAssets, assets);
+      set(euroCollectionAssetsLoaded, true);
+      logger.info(`${assets.length} Euro collection assets cached`);
+    }
+    catch (error: any) {
+      logger.error(error);
+    }
+  }
+
   const toSelectedCurrency = (value: MaybeRef<BigNumber>): ComputedRef<BigNumber> =>
     computed(() => {
       const mainCurrency = get(currencySymbol);
@@ -254,7 +272,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
    */
   const isAssetPriceEqualToCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> => computed(() => {
     const currency = get(currencySymbol);
-    return get(asset) === currency || (currency === 'EUR' && get(assetInfo(asset))?.collectionId === '240');
+    const assetIdentifier = get(asset);
+    return assetIdentifier === currency || (currency === 'EUR' && get(euroCollectionAssets).includes(assetIdentifier));
   });
 
   /**
@@ -300,8 +319,11 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
 
   return {
     assetPrice,
+    cacheEuroCollectionAssets,
     createOracleCache,
     deletePriceCache,
+    euroCollectionAssets,
+    euroCollectionAssetsLoaded,
     exchangeRate,
     exchangeRates,
     fetchExchangeRates,
