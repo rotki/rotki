@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
 import type { EditableMissingPrice } from '@/types/reports';
-import type { FailedHistoricalAssetPriceResponse } from '@rotki/common';
+import type { BigNumber, FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type BigNumber from 'bignumber.js';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';

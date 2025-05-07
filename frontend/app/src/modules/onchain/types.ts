@@ -31,8 +31,7 @@ export interface RecentTransaction {
 }
 
 export interface GasFeeEstimation {
-  gasPrice: bigint;
-  formatted: string;
+  gasFee: string;
   maxAmount: string;
 }
 
@@ -70,3 +69,9 @@ export const PrepareNativeTransferResponse = z.object({
 });
 
 export type PrepareNativeTransferResponse = z.infer<typeof PrepareNativeTransferResponse>;
+
+export interface GetAssetBalancePayload {
+  evmChain: string;
+  address: string;
+  asset: string;
+}

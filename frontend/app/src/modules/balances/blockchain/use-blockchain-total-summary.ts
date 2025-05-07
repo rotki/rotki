@@ -1,5 +1,5 @@
 import type { BlockchainTotal } from '@/types/blockchain';
-import type BigNumber from 'bignumber.js';
+import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/utils/bignumbers';

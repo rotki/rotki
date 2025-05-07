@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TradableAsset } from '@/modules/onchain/types';
+import type { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -8,6 +9,11 @@ import { useSupportedChains } from '@/composables/info/chains';
 const props = defineProps<{
   data: TradableAsset;
   list?: boolean;
+  amount?: BigNumber;
+}>();
+
+const emit = defineEmits<{
+  refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -47,23 +53,41 @@ const name = assetName(props.data.asset, { collectionParent: false });
         </div>
       </div>
       <div
-        v-if="data.price && data.fiatValue"
-        class="text-xs text-rui-text-secondary flex gap-1 whitespace-nowrap"
-        :class="{
-          '!text-sm !text-rui-text': list,
-        }"
+        v-if="!list && data.price"
+        class="text-sm text-rui-text flex items-center gap-1 whitespace-nowrap"
       >
-        <span v-if="!list">{{ t('trade.select_asset.balance') }}:</span>
-        <div>
-          <AmountDisplay :value="data.amount" />
-        </div>
-        <div>
-          (<AmountDisplay
-            force-currency
-            show-currency="symbol"
-            :value="data.fiatValue"
-          />)
-        </div>
+        <span>{{ t('trade.select_asset.balance') }}:</span>
+        <RuiSkeletonLoader
+          v-if="!amount"
+          class="w-28 flex"
+        />
+
+        <template v-else>
+          <div>
+            <AmountDisplay :value="amount" />
+          </div>
+          <div>
+            (<AmountDisplay
+              force-currency
+              show-currency="symbol"
+              :value="data.price.multipliedBy(amount)"
+            />)
+          </div>
+          <div>
+            <RuiButton
+              icon
+              variant="text"
+              size="sm"
+              class="!p-1"
+              @click.stop="emit('refresh')"
+            >
+              <RuiIcon
+                name="lu-refresh-ccw"
+                size="12"
+              />
+            </RuiButton>
+          </div>
+        </template>
       </div>
     </div>
   </div>

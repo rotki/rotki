@@ -1,6 +1,5 @@
 import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain/types';
 import type { MaybeRef } from '@vueuse/core';
-import type BigNumber from 'bignumber.js';
 import type { ComputedRef } from 'vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -8,7 +7,7 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { sortDesc } from '@/utils/bignumbers';
-import { One, Zero } from '@rotki/common';
+import { type BigNumber, One, Zero } from '@rotki/common';
 import { useWalletStore } from './use-wallet-store';
 
 interface UseTradableAssetReturn {

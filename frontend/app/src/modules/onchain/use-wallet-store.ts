@@ -175,6 +175,7 @@ export const useWalletStore = defineStore('wallet', () => {
       const gasPrice = feeData.gasPrice ?? feeData.maxFeePerGas ?? 0n;
 
       let maxAmount = '0';
+      let gasFee = '0';
       const address = get(connectedAddress);
       if (address) {
         const balance = await provider.getBalance(address);
@@ -183,14 +184,16 @@ export const useWalletStore = defineStore('wallet', () => {
         if (balance > gasCost) {
           // Add 10% buffer for gas price fluctuations
           const buffer = gasCost * 10n / 100n;
-          const maxSendable = balance - gasCost - buffer;
+          const diff = gasCost + buffer;
+
+          const maxSendable = balance - diff;
+          gasFee = formatUnits(diff);
           maxAmount = formatUnits(maxSendable, 18);
         }
       }
 
       return {
-        formatted: formatUnits(gasPrice, 'gwei'),
-        gasPrice,
+        gasFee,
         maxAmount,
       };
     }
