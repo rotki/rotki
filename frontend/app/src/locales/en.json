@@ -1628,6 +1628,7 @@
     "status": "Status",
     "tags": "Tags",
     "total": "Total",
+    "trades": "Trade|Trades",
     "tx_hash": "Tx Hash",
     "type": "Type",
     "unclaimed": "Unclaimed",
