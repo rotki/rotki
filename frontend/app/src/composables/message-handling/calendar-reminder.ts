@@ -65,7 +65,6 @@ export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): 
           });
         },
         label: t('notification_messages.reminder.open_calendar'),
-        persist: true,
       },
       category: NotificationCategory.CALENDAR_REMINDER,
       display: true,

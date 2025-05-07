@@ -32,6 +32,7 @@ const visibleDate = ref<Dayjs>(dayjs());
 
 const today = ref<Dayjs>(dayjs());
 const range = ref<[number, number]>([0, 0]);
+const rangeDebounced = refDebounced(range, 300);
 const selectedDateEvents = ref<CalendarEvent[]>([]);
 const upcomingEvents = ref<CalendarEvent[]>([]);
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
@@ -59,14 +60,14 @@ function emptyEventForm(date?: Dayjs) {
   };
 }
 
-const extraParams = refDebounced(computed(() => {
-  const rangeVal = get(range);
+const extraParams = computed(() => {
+  const rangeVal = get(rangeDebounced);
   return {
     accounts: get(accounts).map(account => `${getAccountAddress(account)}#${account.chain}`),
     fromTimestamp: rangeVal[0].toString(),
     toTimestamp: rangeVal[1].toString(),
   };
-}), 300);
+});
 
 const {
   fetchData,

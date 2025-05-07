@@ -257,8 +257,8 @@ defineExpose({
       </div>
     </RuiAlert>
 
-    <div class="flex gap-2 -mb-4 items-start">
-      <div class="mt-2 mr-4 font-semibold">
+    <div class="flex flex-col md:flex-row md:grid-cols-4 gap-2 -mb-4 md:items-start">
+      <div class="my-2 mr-4 font-semibold">
         {{ t('wrapped.filter_by_date') }}
       </div>
       <DateTimePicker
@@ -281,7 +281,7 @@ defineExpose({
       />
       <RuiButton
         color="primary"
-        class="h-10"
+        class="h-10 mb-4"
         :disabled="refreshing"
         @click="fetchData()"
       >
