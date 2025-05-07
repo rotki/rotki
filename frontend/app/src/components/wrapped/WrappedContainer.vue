@@ -366,7 +366,7 @@ defineExpose({
         </template>
         <template #label="{ item }">
           <HashLink
-            class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1"
+            class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1 pl-2"
             :text="item[0]"
           />
         </template>
@@ -404,7 +404,7 @@ defineExpose({
             :value="item[1]"
             integer
           />
-          {{ t('actions.trades.task.title') }}
+          {{ t('common.trades', item[1].toNumber()) }}
         </template>
       </WrappedCard>
 
