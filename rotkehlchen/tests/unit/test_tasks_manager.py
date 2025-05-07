@@ -912,9 +912,9 @@ def test_send_ws_calendar_reminder(
 ) -> None:
     """
     Test that reminders work correctly by:
-    - Checking we get the notifications
-    - Checking we remove the reminders once fired
-    - Checking that starting the app after an event with a reminder passes, triggers the reminder
+    - Checking we get notifications.
+    - Checking that older reminders for the same event are deleted.
+    - Checking that unacknowledged reminders remain in the database.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
@@ -944,6 +944,7 @@ def test_send_ws_calendar_reminder(
             'INSERT INTO calendar_reminders(event_id, secs_before) VALUES (?, ?)',
             [
                 (2, WEEK_IN_SECONDS),  # 13/04/2024
+                (2, DAY_IN_SECONDS * 2),  # Added a second reminder for event 2
                 (3, DAY_IN_SECONDS * 5),  # 24/04/2024
             ],
         )
@@ -964,8 +965,8 @@ def test_send_ws_calendar_reminder(
         'data': {
             'identifier': 2,
             'reminder': {
-                'identifier': 1,
-                'secs_before': WEEK_IN_SECONDS,
+                'identifier': 2,
+                'secs_before': DAY_IN_SECONDS * 2,
             },
             'name': 'CRV unlock',
             'description': 'Unlock date for CRV',
@@ -975,24 +976,41 @@ def test_send_ws_calendar_reminder(
         'type': 'calendar_reminder',
     }
 
-    # check that the reminder got deleted
+    # check that the older reminder for that event got deleted.
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT COUNT(*) FROM calendar_reminders WHERE event_id=1',
-        ).fetchone()[0] == 0
+            'SELECT COUNT(*) FROM calendar_reminders WHERE event_id=2',
+        ).fetchone()[0] == 1
 
     # move to the timestamp to trigger the second reminder. Even though we are after
     # the event, we should still get the notification
     freezer.move_to(datetime.datetime(2024, 5, 20, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
     gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
-    websocket_connection.wait_until_messages_num(num=1, timeout=2)
+    websocket_connection.wait_until_messages_num(num=2, timeout=5)
+    msg = websocket_connection.pop_message()
+    # first, we get the previous reminder since it was never acknowledged
+    assert msg == {
+        'data': {
+            'identifier': 2,
+            'reminder': {
+                'identifier': 2,
+                'secs_before': DAY_IN_SECONDS * 2,
+            },
+            'name': 'CRV unlock',
+            'description': 'Unlock date for CRV',
+            'timestamp': 1713621899,
+            'auto_delete': False,
+        },
+        'type': 'calendar_reminder',
+    }
+    # the next websocket message will be the ens renewal reminder
     msg = websocket_connection.pop_message()
     assert msg == {
         'data': {
             'identifier': 3,
             'reminder': {
-                'identifier': 2,
+                'identifier': 3,
                 'secs_before': DAY_IN_SECONDS * 5,
             },
             'name': 'ENS renewal',
@@ -1003,9 +1021,9 @@ def test_send_ws_calendar_reminder(
         'type': 'calendar_reminder',
     }
 
-    # check that the reminder got deleted
+    # ensure that we still have two reminders since they never got acknowledged
     with database.conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT COUNT(*) FROM calendar_reminders').fetchone()[0] == 0
+        assert cursor.execute('SELECT COUNT(*) FROM calendar_reminders').fetchone()[0] == 2
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

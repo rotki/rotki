@@ -67,26 +67,33 @@ class CalendarNotification(BaseReminderData):
 
 
 def notify_reminders(
-        reminders: list[CalendarNotification],
+        reminders: dict[int, list[CalendarNotification]],
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
 ) -> None:
-    """Send a ws notification for the calendar reminders and delete them once processed"""
-    notified_events = set()
-    for reminder in reminders:
-        if reminder.event.identifier in notified_events:
-            continue  # avoid sending notifications for the same event multiple times
+    """Send websocket notifications for calendar reminders.
+
+    The reminders dictionary maps each calendar event ID to a list of associated
+    notifications, with the most recent reminder listed first.
+
+    For events with multiple reminders, only the newest reminder (closest to event time)
+    is processed and older ones are deleted. This ensures users don't get redundant
+    notifications for the same event.
+    """
+    reminders_to_delete = []
+    for event_reminders in reminders.values():
+        if len(event_reminders) > 1:
+            reminders_to_delete.extend([(r.identifier,) for r in event_reminders[1:]])
 
         msg_aggregator.add_message(
             message_type=WSMessageType.CALENDAR_REMINDER,
-            data=reminder.serialize(),
+            data=event_reminders[0].serialize(),
         )
-        notified_events.add(reminder.event.identifier)
 
     with database.conn.write_ctx() as write_cursor:
         write_cursor.executemany(
             'DELETE FROM calendar_reminders WHERE identifier=?',
-            [(event.identifier,) for event in reminders],
+            reminders_to_delete,
         )
 
 
