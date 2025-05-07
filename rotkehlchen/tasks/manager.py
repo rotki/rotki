@@ -933,6 +933,7 @@ class TaskManager:
         if (now := ts_now()) - self.last_calendar_reminder_check < 60 * 5:
             return None
 
+        reminders: dict[int, list[CalendarNotification]] = defaultdict(list)
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT event.identifier, event.name, event.description, event.counterparty, '
@@ -940,14 +941,16 @@ class TaskManager:
                 'event.auto_delete, reminder.identifier, reminder.secs_before FROM '
                 'calendar_reminders AS reminder LEFT JOIN calendar AS event '
                 'ON reminder.event_id = event.identifier WHERE '
-                '? > event.timestamp - reminder.secs_before',
+                '? > event.timestamp - reminder.secs_before '
+                'ORDER BY event.identifier, reminder.secs_before ASC',
                 (now,),
             )
-            reminders = [CalendarNotification(
-                event=CalendarEntry.deserialize_from_db(row[:9]),
-                identifier=row[9],
-                secs_before=row[10],
-            ) for row in cursor]
+            for row in cursor:
+                reminders[row[0]].append(CalendarNotification(
+                    event=CalendarEntry.deserialize_from_db(row[:9]),
+                    identifier=row[9],
+                    secs_before=row[10],
+                ))
 
         if len(reminders) == 0:
             return None
