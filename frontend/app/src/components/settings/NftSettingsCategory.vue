@@ -6,7 +6,7 @@ import NftsInNetValueSetting from '@/components/settings/general/nft/NftsInNetVa
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { externalLinks } from '@shared/external-links';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -34,6 +34,7 @@ const { t } = useI18n();
       </template>
       <template #subtitle>
         <i18n-t
+          scope="global"
           tag="div"
           keypath="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"
         >

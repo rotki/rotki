@@ -14,7 +14,7 @@ const refreshEnabled = ref<boolean>(false);
 const minRefreshPeriod = 30;
 const maxRefreshPeriod = Constraints.MAX_MINUTES_DELAY;
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   refreshPeriod: {

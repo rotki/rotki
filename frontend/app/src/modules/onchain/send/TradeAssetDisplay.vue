@@ -10,7 +10,7 @@ const props = defineProps<{
   list?: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { assetName, assetSymbol } = useAssetInfoRetrieval();
 const { getEvmChainName } = useSupportedChains();

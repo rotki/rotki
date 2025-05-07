@@ -19,7 +19,7 @@ const props = defineProps<{
   exchange: 'binance' | 'binanceus';
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { exchange } = toRefs(props);
 

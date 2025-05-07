@@ -12,7 +12,7 @@ const { address, chain } = toRefs(props);
 
 const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(chain, address);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -52,6 +52,7 @@ const { t } = useI18n();
         </div>
         <div v-if="detectedTokens.timestamp">
           <i18n-t
+            scope="global"
             keypath="account_balances.detect_tokens.tooltip.last_detected"
             tag="span"
           >

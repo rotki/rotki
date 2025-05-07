@@ -7,7 +7,7 @@ import { useNotificationsStore } from '@/store/notifications';
 export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () => {
   const whitelistedAssets = ref<string[]>([]);
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const { addAssetToWhitelist, getWhitelistedAssets, removeAssetFromWhitelist } = useAssetWhitelistApi();
 

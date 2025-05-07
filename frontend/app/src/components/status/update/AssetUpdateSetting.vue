@@ -8,7 +8,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{ (e: 'check'): void }>();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -22,6 +22,7 @@ const { t } = useI18n();
     <div class="flex items-center gap-4 justify-end">
       <i18n-t
         v-if="skipped"
+        scope="global"
         keypath="asset_update.manual.skipped"
         tag="div"
         class="flex flex-wrap gap-x-2 gap-y-1"

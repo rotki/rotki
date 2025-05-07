@@ -21,7 +21,7 @@ type LocationKey = typeof LOCATION_KEYS[number];
 
 type LocationConfig = Partial<Record<LocationKey, SlotProps>>;
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const COINBASE_FORMATS = {
   apiKeyNameFormat: 'organizations/{org_id}/apiKeys/{key_id}',

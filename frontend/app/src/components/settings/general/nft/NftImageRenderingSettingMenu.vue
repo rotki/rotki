@@ -3,7 +3,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
 import { externalLinks } from '@shared/external-links';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const dialogOpen = ref(false);
 </script>
@@ -26,6 +26,7 @@ const dialogOpen = ref(false);
     </template>
     <div class="p-4">
       <i18n-t
+        scope="global"
         tag="div"
         class="mb-3 text-body-2 text-rui-text-secondary"
         keypath="general_settings.nft_setting.subtitle.nft_images_rendering_setting_hint"

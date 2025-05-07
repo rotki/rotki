@@ -30,7 +30,7 @@ type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNu
 
 type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
 const ETH = Blockchain.ETH;
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();

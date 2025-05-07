@@ -21,7 +21,7 @@ const contentWrapper = ref();
 const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
 const initialAppear = ref<boolean>(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const confirmStore = useConfirmStore();
 const { visible: dialogVisible } = storeToRefs(confirmStore);

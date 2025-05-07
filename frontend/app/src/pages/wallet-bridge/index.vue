@@ -10,7 +10,7 @@ definePage({
   },
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const walletStore = useWalletStore();
 const { connected, connectedAddress, connectedChainId } = storeToRefs(walletStore);
 const { disconnect } = walletStore;

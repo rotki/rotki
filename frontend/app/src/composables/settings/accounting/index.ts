@@ -42,7 +42,7 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     uploadAccountingRulesData,
   } = useAccountingApi();
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const { notify } = useNotificationsStore();
 

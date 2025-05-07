@@ -40,7 +40,7 @@ function unlockTask(lockedTasks: Ref<number[]>, taskId: number): number[] {
 }
 
 function useError(): { error: ErrorHandler } {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const error: ErrorHandler = (task, error) => ({
     message: t('task_manager.error', {
       error,

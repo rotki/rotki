@@ -9,7 +9,7 @@ import { assert } from '@rotki/common';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
 enum KrakenStakingFilterKeys {

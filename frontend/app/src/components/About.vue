@@ -12,7 +12,7 @@ import { useMainStore } from '@/store/main';
 
 const store = useMainStore();
 const { isPackaged, openPath, version: getVersion } = useInterop();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { dataDirectory, version } = toRefs(store);
 const versionInfo = asyncComputed<SystemVersion | WebVersion>(() => getVersion());

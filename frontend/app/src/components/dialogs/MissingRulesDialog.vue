@@ -14,7 +14,7 @@ const emit = defineEmits<{
   'dismiss': [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function canRedecode(data?: HistoryEventEditData): boolean {
   if (!data || data.type === 'edit-group') {

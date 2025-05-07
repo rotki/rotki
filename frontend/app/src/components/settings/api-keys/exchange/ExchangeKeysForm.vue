@@ -22,7 +22,7 @@ const editKeys = ref<boolean>(false);
 const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(useLocationStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { getLocationData } = useLocations();
-const { t, te } = useI18n();
+const { t, te } = useI18n({ useScope: 'global' });
 
 const requiresApiSecret = computed(() => {
   const { location } = get(modelValue);

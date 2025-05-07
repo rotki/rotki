@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'cancel'): void;
   (e: 'confirm'): void;
 }>();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { snapshot } = toRefs(props);
 

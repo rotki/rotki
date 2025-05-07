@@ -31,7 +31,7 @@ interface AssetLocation extends AssetBreakdown {
 
 const props = defineProps<{ identifier: string }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { identifier } = toRefs(props);
 

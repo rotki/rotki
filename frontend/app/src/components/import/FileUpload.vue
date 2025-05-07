@@ -31,7 +31,7 @@ const wrapper = ref<HTMLDivElement>();
 
 const error = ref('');
 const select = ref<HTMLInputElement>();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function isValidFile(file: File, acceptString: string) {
   // Extract the file extension
@@ -248,6 +248,7 @@ defineExpose({
 
         <div class="font-bold text-subtitle-1 pt-4">
           <i18n-t
+            scope="global"
             keypath="file_upload.drag_and_drop"
             tag="div"
             class="flex justify-center"

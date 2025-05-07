@@ -20,7 +20,7 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});

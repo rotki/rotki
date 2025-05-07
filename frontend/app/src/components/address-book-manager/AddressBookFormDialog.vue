@@ -32,7 +32,7 @@ const emit = defineEmits<{
 
 const { editableItem, editMode, location, selectedChain } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const modelValue = ref<AddressBookPayload>();
 const loading = ref(false);

@@ -2,7 +2,7 @@
 import DatabaseInformation from '@/components/settings/database/DatabaseInformation.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

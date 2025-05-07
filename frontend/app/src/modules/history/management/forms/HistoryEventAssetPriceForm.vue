@@ -36,7 +36,7 @@ const props = withDefaults(defineProps<HistoryEventAssetPriceFormProps>(), {
 
 const { datetime, disableAsset, hidePriceFields } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const fiatValue = ref<string>('');
 const assetToFiatPrice = ref<string>('');

@@ -26,7 +26,7 @@ import { getPlaceholderRule } from '@/utils/settings';
 import { toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
 

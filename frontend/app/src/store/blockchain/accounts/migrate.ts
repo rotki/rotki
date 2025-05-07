@@ -21,7 +21,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   const { fetchAccounts } = useBlockchains();
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
 
   const handleMigratedAccounts = (): void => {

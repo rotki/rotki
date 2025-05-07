@@ -2,7 +2,7 @@
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 
 const { progress, progressPercentage } = storeToRefs(useAccountImportProgressStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

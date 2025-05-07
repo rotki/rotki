@@ -9,7 +9,7 @@ import { between, helpers, numeric, required } from '@vuelidate/validators';
 
 const modelValue = defineModel<UnderlyingToken[]>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const underlyingAddress = ref<string>('');
 const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);

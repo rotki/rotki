@@ -41,7 +41,7 @@ const reportDebugDataUploader = ref<InstanceType<typeof FileUpload>>();
 const router = useRouter();
 const route = useRoute();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { appSession, getPath, openDirectory } = useInterop();
 
 onMounted(async () => {

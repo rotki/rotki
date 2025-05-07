@@ -20,7 +20,7 @@ export type Filters = MatchedKeyword<AddressBookFilterValueKeys>;
 export function useAddressBookFilter(): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => [{
     description: t('assets.filter.name'),

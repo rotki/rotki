@@ -47,7 +47,7 @@ const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
 
 const chains = [Blockchain.ETH];
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const accountFilter = useArrayMap(selectedAccounts, account => ({
   address: getAccountAddress(account),

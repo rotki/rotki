@@ -11,7 +11,7 @@ const emit = defineEmits<{
   (e: 'update:addresses', addresses: string[]): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const [DefineButton, ReuseButton] = createReusableTemplate<{ buttonDisabled?: boolean; onClick?: () => void }>();
 const { isPackaged, metamaskImport } = useInterop();

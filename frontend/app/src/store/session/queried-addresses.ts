@@ -7,7 +7,7 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
 
   const { setMessage } = useMessageStore();
   const api = useQueriedAddressApi();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   async function addQueriedAddress(payload: QueriedAddressPayload): Promise<void> {
     try {

@@ -3,7 +3,7 @@ import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import ServiceWithAuth from '@/components/settings/api-keys/ServiceWithAuth.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const understand = ref<boolean>(false);
 

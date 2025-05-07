@@ -15,7 +15,7 @@ const { refreshPrices } = useBalances();
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.PRICES);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const loadingData = logicOr(
   useIsTaskRunning(TaskType.QUERY_BALANCES),

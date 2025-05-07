@@ -31,7 +31,7 @@ defineSlots<{
   default: () => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { credential, status } = toRefs(props);
 
 const username = ref<string>('');

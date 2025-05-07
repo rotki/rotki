@@ -32,7 +32,7 @@ const emit = defineEmits<{
   'redecode-page': [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');

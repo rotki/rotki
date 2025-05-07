@@ -14,7 +14,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useRefPropVModel } from '@/utils/model';
 import dayjs from 'dayjs';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const sort = ref<DataTableSortData<HistoricalPrice>>([
   {

@@ -130,7 +130,7 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
     })));
 }, { immediate: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 watch(selectedSuggestion, async () => {
   await nextTick(() => {
@@ -172,6 +172,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
       >
         <i18n-t
           v-if="!('asset' in selectedMatcher)"
+          scope="global"
           keypath="table_filter.start_typing"
           tag="div"
         >

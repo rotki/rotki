@@ -39,7 +39,7 @@ const assetStyle = computed<Record<string, string | undefined>>(() => {
   };
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

@@ -3,7 +3,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 const animationsEnabled = ref<boolean>(true);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { animationsEnabled: enabled } = storeToRefs(useSessionSettingsStore());
 const transform = (value: boolean) => !value;

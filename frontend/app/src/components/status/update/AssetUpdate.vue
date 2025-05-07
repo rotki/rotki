@@ -50,7 +50,7 @@ const { applyUpdates, checkForUpdate } = useAssets();
 const { connect, setConnected } = useMainStore();
 const { restartBackend } = useBackendManagement();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { setMessage } = useMessageStore();
 
 async function check() {

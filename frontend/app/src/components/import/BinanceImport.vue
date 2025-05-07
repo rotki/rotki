@@ -3,12 +3,13 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ImportSource from '@/components/import/ImportSource.vue';
 import { externalLinks } from '@shared/external-links';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <ImportSource source="binance">
     <i18n-t
+      scope="global"
       tag="span"
       keypath="import_data.note"
     >
@@ -18,6 +19,7 @@ const { t } = useI18n();
       <li>{{ t('import_data.binance.line_one') }}</li>
       <li>
         <i18n-t
+          scope="global"
           keypath="import_data.binance.line_two"
           tag="span"
         >

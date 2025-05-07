@@ -3,7 +3,7 @@ const model = defineModel<boolean>({ required: true });
 defineProps<{
   count: number;
 }>();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

@@ -15,7 +15,7 @@ import { logger } from '@/utils/logging';
 import { bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
 import { useTradeApi } from './use-trade-api';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const amount = ref<string>('');
 const asset = ref<string>('');

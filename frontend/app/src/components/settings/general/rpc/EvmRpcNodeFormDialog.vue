@@ -20,7 +20,7 @@ function resetForm() {
   set(model, undefined);
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const errorMessages = ref<ValidationErrors>({});
 const submitting = ref<boolean>(false);

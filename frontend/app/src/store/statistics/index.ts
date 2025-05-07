@@ -38,7 +38,7 @@ interface Overall {
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const { nftsInNetValue } = storeToRefs(useFrontendSettingsStore());
   const { notify } = useNotificationsStore();

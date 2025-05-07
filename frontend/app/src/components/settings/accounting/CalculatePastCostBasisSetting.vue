@@ -4,7 +4,7 @@ import { useAccountingSettingsStore } from '@/store/settings/accounting';
 
 const calculatePastCostBasis = ref(false);
 const { calculatePastCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function switchSuccessMessage(enabled: boolean) {
   return enabled

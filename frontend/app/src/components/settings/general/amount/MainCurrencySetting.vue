@@ -9,7 +9,7 @@ const { currencies } = useCurrencies();
 const selectedCurrency = ref<SupportedCurrency>(get(currencies)[0].tickerSymbol);
 
 const { currency } = storeToRefs(useGeneralSettingsStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { onCurrencyUpdate } = useCurrencyUpdate();
 
 function successMessage(symbol: string) {

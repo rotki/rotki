@@ -18,7 +18,7 @@ function containsValidDirectives(v: string) {
   return displayDateFormatter.containsValidDirectives(v);
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   dateDisplayFormat: {

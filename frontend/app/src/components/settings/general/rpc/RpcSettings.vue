@@ -9,7 +9,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { isOfEnum } from '@/utils';
 import { assert, Blockchain } from '@rotki/common';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 interface ChainRpcSettingTab {
   chain: Blockchain;

@@ -42,7 +42,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
   const { updateBalances } = useBalancesStore();
   const { updateAccounts } = useBlockchainAccountsStore();
   const { getChainName, supportedChains } = useSupportedChains();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { queryLoopringBalances } = useBlockchainBalancesApi();

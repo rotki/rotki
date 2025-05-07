@@ -26,7 +26,7 @@ export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
 
   const { historyEventSubTypes, historyEventTypes } = useHistoryEventMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => [{
     description: t('accounting_settings.rule.filter.event_type'),

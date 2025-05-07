@@ -34,7 +34,7 @@ defineProps<{ modules: Module[] }>();
 const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNftBalances();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { notify } = useNotificationsStore();
 const { deleteLatestPrice } = useAssetPricesApi();
 

@@ -58,7 +58,7 @@ interface LogEntry {
 
 const { address, connected, connectedChainId } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
 
 const pairUri = ref('');

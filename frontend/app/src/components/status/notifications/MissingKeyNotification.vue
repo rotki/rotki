@@ -6,11 +6,12 @@ defineProps<{
   params: I18nParam;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <i18n-t
+    scope="global"
     :keypath="params.message"
     :plural="params.choice"
     tag="div"

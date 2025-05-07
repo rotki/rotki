@@ -11,7 +11,7 @@ const decimalSeparator = ref<string>('');
 
 const { decimalSeparator: decimals, thousandSeparator: thousands } = storeToRefs(useFrontendSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   decimalSeparator: {

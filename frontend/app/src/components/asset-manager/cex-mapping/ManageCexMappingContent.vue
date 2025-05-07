@@ -9,7 +9,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { omit } from 'es-toolkit';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
 

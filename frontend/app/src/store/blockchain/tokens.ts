@@ -32,7 +32,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const massDetecting = ref<string>();
 
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { balances } = storeToRefs(useBalancesStore());
   const { addresses } = useAccountAddresses();
   const { fetchDetectedTokens: fetchDetectedTokensCaller, fetchDetectedTokensTask } = useBlockchainBalancesApi();

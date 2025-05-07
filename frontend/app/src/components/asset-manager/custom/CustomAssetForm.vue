@@ -27,7 +27,7 @@ const notes = refOptional(useRefPropVModel(modelValue, 'notes'), '');
 
 const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   name: {

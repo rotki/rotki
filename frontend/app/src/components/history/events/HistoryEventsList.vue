@@ -25,7 +25,7 @@ const emit = defineEmits<{
   'show:missing-rule-action': [data: HistoryEventEditData];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const PER_BATCH = 6;
 const currentLimit = ref<number>(PER_BATCH);

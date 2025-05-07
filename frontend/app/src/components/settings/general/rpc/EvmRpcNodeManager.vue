@@ -22,7 +22,7 @@ const props = defineProps<{
   chain: Blockchain;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { chain } = toRefs(props);
 

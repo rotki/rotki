@@ -5,7 +5,7 @@ const props = defineProps<{
   items: T[];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const INITIAL_LENGTH = 5;
 

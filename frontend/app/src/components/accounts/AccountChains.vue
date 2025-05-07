@@ -9,7 +9,7 @@ const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { requi
 
 const props = defineProps<{ row: Row }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const chains = computed<string[]>(() => {
   const row = props.row;
@@ -109,6 +109,7 @@ function reset() {
         <template v-if="chains.length > 1">
           <i18n-t
             v-if="item.enabled"
+            scope="global"
             keypath="account_balances.chain_filter.remove"
             tag="span"
           >
@@ -118,6 +119,7 @@ function reset() {
           </i18n-t>
           <i18n-t
             v-else
+            scope="global"
             keypath="account_balances.chain_filter.add"
             tag="span"
           >

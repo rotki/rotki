@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
 
 const { account, useAliasName } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { addressNameSelector } = useAddressesNamesStore();
 

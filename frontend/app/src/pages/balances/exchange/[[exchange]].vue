@@ -29,7 +29,7 @@ definePage({
 
 const props = defineProps<{ exchange?: string }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
@@ -276,6 +276,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         class="p-2"
       >
         <i18n-t
+          scope="global"
           keypath="exchange_balances.no_connected_exchanges"
           tag="span"
         >

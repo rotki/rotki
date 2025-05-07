@@ -32,7 +32,7 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const props = defineProps<AssetMovementEventFormProps>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { data } = toRefs(props);
 

@@ -5,7 +5,7 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 
 defineProps<{ tokens: UnderlyingToken[] }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const tableHeaders = computed<DataTableColumn<UnderlyingToken>[]>(() => [
   {

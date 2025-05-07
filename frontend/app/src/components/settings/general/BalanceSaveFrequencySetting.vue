@@ -14,7 +14,7 @@ const balanceSaveFrequency = ref<string>(DEFAULT_FREQUENCY.toString());
 
 const { balanceSaveFrequency: frequency } = storeToRefs(useGeneralSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
 const rules = {

@@ -16,7 +16,7 @@ const emit = defineEmits<{
   (e: 'resolve', resolution: ConflictResolution): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { conflicts } = toRefs(props);
 
@@ -158,6 +158,7 @@ onMounted(() => {
   >
     <template #subtitle>
       <i18n-t
+        scope="global"
         keypath="conflict_dialog.subtitle"
         tag="span"
       >
@@ -176,6 +177,7 @@ onMounted(() => {
         type="warning"
       >
         <i18n-t
+          scope="global"
           keypath="conflict_dialog.duplicate_warn"
           tag="span"
         >

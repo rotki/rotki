@@ -5,7 +5,7 @@ import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import { externalLinks } from '@shared/external-links';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const name = 'opensea';
 
@@ -58,6 +58,7 @@ const status = actionStatus(name);
       @save="save($event)"
     >
       <i18n-t
+        scope="global"
         tag="div"
         class="text-rui-text-secondary text-body-2"
         keypath="external_services.get_api_key"

@@ -57,7 +57,7 @@ const { groupLoading, groups } = toRefs(props);
 const eventsLoading = ref(false);
 const selected = ref<HistoryEventEntry[]>([]);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { notify } = useNotificationsStore();
 const { show } = useConfirmStore();

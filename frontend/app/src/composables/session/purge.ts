@@ -20,7 +20,7 @@ export function useSessionPurge(): UseSessionPurge {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const purgeCache = (purgeable: Purgeable): void => {
     if (purgeable === Purgeable.CENTRALIZED_EXCHANGES || purgeable === Purgeable.TRANSACTIONS) {

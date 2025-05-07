@@ -22,7 +22,7 @@ const emit = defineEmits<{
   (e: 'update:xpub', xpub: XpubPayload | undefined): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { blockchain, disabled, xpub } = toRefs(props);
 

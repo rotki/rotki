@@ -16,7 +16,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { isNft } from '@/utils/nft';
 import { omit } from 'es-toolkit';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const filter = ref<string>();
 const { editableItem, openDialog } = useCommonTableProps<ManualPriceFormPayload>();

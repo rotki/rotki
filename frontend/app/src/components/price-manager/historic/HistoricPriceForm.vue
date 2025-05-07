@@ -46,7 +46,7 @@ const toAssetSymbol = assetSymbol(toAsset);
 
 const numericPrice = bigNumberifyFromRef(price);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   fromAsset: {
@@ -115,6 +115,7 @@ defineExpose({
     />
     <i18n-t
       v-if="price && fromAssetSymbol && toAssetSymbol"
+      scope="global"
       tag="div"
       keypath="price_form.historic.hint"
       class="text-caption text-rui-success -mt-9 pl-3"

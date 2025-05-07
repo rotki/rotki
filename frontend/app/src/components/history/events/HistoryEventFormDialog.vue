@@ -21,7 +21,7 @@ interface HistoryEventFormDialogProps {
   loading?: boolean;
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const stateUpdated = ref<boolean>(false);
 const loading = ref<boolean>(false);

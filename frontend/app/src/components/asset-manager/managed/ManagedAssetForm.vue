@@ -38,7 +38,7 @@ const props = withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { fetchTokenDetails } = useAssetInfoRetrieval();
 
 const types = ref<SelectOptions>([{ key: EVM_TOKEN, label: toSentenceCase(EVM_TOKEN) }]);

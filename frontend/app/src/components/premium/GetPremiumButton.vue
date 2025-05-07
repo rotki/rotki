@@ -11,7 +11,7 @@ withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { isLgAndDown } = useBreakpoint();
 </script>

@@ -74,7 +74,7 @@ export function useHistoryEventFilter(
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => {
     let selectedLocation = get(filters)?.location;

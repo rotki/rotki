@@ -9,7 +9,7 @@ const emit = defineEmits<{
   (e: 'delete'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

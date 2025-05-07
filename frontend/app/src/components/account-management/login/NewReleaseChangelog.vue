@@ -2,7 +2,7 @@
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useUpdateMessage } from '@/composables/update-message';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { link, version } = useUpdateMessage();
 </script>

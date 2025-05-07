@@ -11,7 +11,7 @@ const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;
 const maxQueryPeriod = 3600;
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   queryPeriod: {

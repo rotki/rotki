@@ -66,7 +66,7 @@ export const Routes = {
 } as const;
 
 export const useAppRoutes = createSharedComposable(() => {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const appRoutes = computed(() => ({
     ACCOUNTS: {
       icon: 'lu-wallet' as const,

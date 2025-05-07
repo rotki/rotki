@@ -28,7 +28,7 @@ const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
 
 const name = computed(() => (get(item).name ? get(item).name : get(item).collection.name));
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
 

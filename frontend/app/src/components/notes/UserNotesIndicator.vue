@@ -8,7 +8,7 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'update:visible', visible: boolean): void }>();
 
 const { visible } = toRefs(props);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function toggleVisibility() {
   emit('update:visible', !get(visible));

@@ -6,7 +6,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { transformCase } from '@rotki/common';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { keys } = useExternalApiKeys(t);
 const tabIndex = ref<number>(0);
 const route = useRoute();

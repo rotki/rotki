@@ -9,7 +9,7 @@ import { helpers, required } from '@vuelidate/validators';
 const modelValue = defineModel<Partial<UserNote>>({ required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const title = refOptional(useRefPropVModel(modelValue, 'title'), '');
 const content = refOptional(useRefPropVModel(modelValue, 'content'), '');

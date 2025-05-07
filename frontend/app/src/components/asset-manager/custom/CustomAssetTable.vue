@@ -33,7 +33,7 @@ const emit = defineEmits<{
   (e: 'delete-asset', asset: CustomAsset): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
   {

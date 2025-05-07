@@ -6,7 +6,7 @@ import { Section } from '@/types/status';
 
 defineProps<{ pool: LiquityPoolDetailEntry | null }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STAKING_POOLS);

@@ -16,7 +16,7 @@ const importFile = ref<File>();
 const importDialogOpen = ref<boolean>(false);
 const loading = ref<boolean>(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { importAddressBook } = useAddressBookImport();
 const { notify } = useNotificationsStore();
 
@@ -90,7 +90,10 @@ async function doImport() {
           file-filter=".csv"
         />
         <div class="mt-2 text-caption text-rui-text-secondary">
-          <i18n-t keypath="blockchain_balances.import_csv_example">
+          <i18n-t
+            scope="global"
+            keypath="blockchain_balances.import_csv_example"
+          >
             <template #here>
               <ExternalLink
                 color="primary"

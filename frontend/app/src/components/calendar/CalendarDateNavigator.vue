@@ -15,7 +15,7 @@ const emit = defineEmits<{
   (e: 'set-today'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const datePicker = ref();
 const datetime = ref<string>('0');

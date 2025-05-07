@@ -20,7 +20,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryHistoricalRates } = usePriceApi();
   const { awaitTask, cancelTaskByTaskType } = useTaskStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
 
   const createKey = (fromAsset: string, timestamp: number | string): string => `${fromAsset}#${timestamp}`;

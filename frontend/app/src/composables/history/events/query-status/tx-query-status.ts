@@ -30,7 +30,7 @@ interface UseTransactionQueryStatusReturn {
 }
 
 export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = []): UseTransactionQueryStatusReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const store = useTxQueryStatusStore();
   const { isStatusFinished, resetQueryStatus } = store;
   const { isAllFinished, queryStatus } = storeToRefs(store);

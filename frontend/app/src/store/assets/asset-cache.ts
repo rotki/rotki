@@ -9,7 +9,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const fetchedAssetCollections = ref<Record<string, AssetCollection>>({});
 
   const { assetMapping } = useAssetInfoApi();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
 
   const getAssetMappingHandler = async (identifiers: string[]): Promise<AssetMap | undefined> => {

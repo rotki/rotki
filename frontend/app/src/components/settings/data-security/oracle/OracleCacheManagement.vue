@@ -21,7 +21,7 @@ import { Severity } from '@rotki/common';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const sort = ref<DataTableSortData<OracleCacheEntry>>([]);
 

@@ -37,7 +37,7 @@ defineSlots<{
   'left-buttons': () => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const openDialog = ref<boolean>(false);
 

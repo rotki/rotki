@@ -14,7 +14,7 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: EthStakingFilter): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const chain = Blockchain.ETH;
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);

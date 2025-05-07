@@ -27,7 +27,7 @@ const directionIcon = computed<RuiIcons>(() => {
   }
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -64,6 +64,7 @@ const { t } = useI18n();
           </div>
         </template>
         <i18n-t
+          scope="global"
           tag="span"
           keypath="backend_mappings.events.type_direction.title"
           class="whitespace-break-spaces"

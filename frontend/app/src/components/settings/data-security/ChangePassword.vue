@@ -11,7 +11,7 @@ const newPassword = ref('');
 const newPasswordConfirm = ref('');
 const loading = ref(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   currentPassword: {

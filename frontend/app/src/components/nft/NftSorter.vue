@@ -15,7 +15,7 @@ function toggleSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const sortProperties = [
   {

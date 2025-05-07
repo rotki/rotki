@@ -35,7 +35,7 @@ export function useSavedFilter(
     );
   });
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const saveFilters = async (filters: BaseSuggestion[][]): Promise<ActionStatus> => {
     const allSaved = { ...get(allSavedFilters) };

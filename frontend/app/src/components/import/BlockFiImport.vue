@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ImportSource from '@/components/import/ImportSource.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -10,6 +10,7 @@ const { t } = useI18n();
       <ImportSource source="blockfi_trades">
         <template #upload-title>
           <i18n-t
+            scope="global"
             tag="span"
             keypath="import_data.blockfi.import"
           >
@@ -20,6 +21,7 @@ const { t } = useI18n();
       <ImportSource source="blockfi_transactions">
         <template #upload-title>
           <i18n-t
+            scope="global"
             tag="span"
             keypath="import_data.blockfi.import"
           >
@@ -33,6 +35,7 @@ const { t } = useI18n();
 
     <div class="mt-4 text-sm leading-7 text-rui-text-secondary">
       <i18n-t
+        scope="global"
         tag="span"
         keypath="import_data.note"
       >

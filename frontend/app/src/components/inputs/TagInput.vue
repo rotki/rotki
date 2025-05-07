@@ -18,7 +18,7 @@ withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const store = useTagStore();
 const { tags } = storeToRefs(store);
 

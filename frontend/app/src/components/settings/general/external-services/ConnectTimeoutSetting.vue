@@ -3,7 +3,7 @@ import CommonExternalServiceSetting
   from '@/components/settings/general/external-services/CommonExternalServiceSetting.vue';
 import { Defaults } from '@/data/defaults';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function minValueMessage(min: number) {
   return t('general_settings.external_service_setting.validation.connect_timeout.invalid_range', { min });

@@ -27,7 +27,7 @@ const ReportMissingAcquisitions = defineAsyncComponent(
 );
 const ReportMissingPrices = defineAsyncComponent(() => import('@/components/profitloss/ReportMissingPrices.vue'));
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { isPinned, report } = toRefs(props);
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
 

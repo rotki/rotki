@@ -16,7 +16,7 @@ const emit = defineEmits<{
   'show:repulling-transactions-form': [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

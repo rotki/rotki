@@ -31,7 +31,7 @@ const close = () => emit('close');
 
 const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccountingSettings();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { fetchData, isLoading, pagination, setPage, state } = usePaginationFilters<
   AccountingRuleConflict,
@@ -234,6 +234,7 @@ async function save() {
       <div class="text-caption pt-4 pb-1">
         <i18n-t
           v-if="!solveAllUsing"
+          scope="global"
           keypath="conflict_dialog.hint"
           tag="span"
         >
@@ -246,6 +247,7 @@ async function save() {
         </i18n-t>
         <i18n-t
           v-else
+          scope="global"
           keypath="conflict_dialog.resolve_all_hint"
           tag="span"
         >

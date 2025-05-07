@@ -7,7 +7,7 @@ import { toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{ item: EvmTransactionQueryData }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { getStatusData } = useTransactionQueryStatus();
 const { useIsTaskRunning } = useTaskStore();
 const { isMdAndDown } = useBreakpoint();

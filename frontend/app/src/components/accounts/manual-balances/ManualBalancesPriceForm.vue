@@ -132,7 +132,7 @@ watch(asset, () => {
   searchAssetPrice();
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 defineExpose({
   savePrice,

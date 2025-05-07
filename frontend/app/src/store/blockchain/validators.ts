@@ -27,7 +27,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
   const { getNativeAsset } = useSupportedChains();
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const stakingValidatorsLimits = ref<{
     limit: number;

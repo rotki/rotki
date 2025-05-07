@@ -21,7 +21,7 @@ const expanded = ref<ReportData[]>([]);
 const reportStore = useReportsStore();
 const { deleteReport, fetchReports, isLatestReport } = reportStore;
 const { reports } = storeToRefs(reportStore);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const items = computed<(ReportData & { id: number })[]>(() =>
   get(reports).entries.map((value, index) => ({

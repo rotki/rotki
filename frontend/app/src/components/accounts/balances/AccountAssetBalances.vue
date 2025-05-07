@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<AccountAssetBalancesProps>(), {
   flat: false,
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { assets } = toRefs(props);
 
 const { assetPrice } = usePriceUtils();

@@ -7,7 +7,7 @@ type CostBasicRef = ComputedRef<ActionDataEntry<CostBasisMethod>[]>;
 export function useCostBasisMethod(): {
   costBasisMethodData: CostBasicRef;
 } {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const costBasisMethodData: CostBasicRef = computed(() => [
     {
       identifier: CostBasisMethod.FIFO,

@@ -12,7 +12,7 @@ const emit = defineEmits<{
 
 const { message } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const icon = computed<RuiIcons>(() => (get(props.message.success) ? 'lu-circle-check' : 'lu-circle-alert'));
 </script>

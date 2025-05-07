@@ -77,7 +77,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { save } = useAccountManage();
   const { notify } = useNotificationsStore();
   const { generateCSV, parseCSV } = useCsvImportExport();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { allTags } = useTagStore();
   const progressStore = useAccountImportProgressStore();
   const { increment, setTotal, skip } = progressStore;

@@ -28,7 +28,7 @@ const emit = defineEmits<{
   (e: 'remove', backup: UserDbBackupWithId): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const sort = ref<DataTableSortData<UserDbBackupWithId>>({
   column: 'size',

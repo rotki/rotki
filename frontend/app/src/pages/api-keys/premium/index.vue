@@ -17,7 +17,7 @@ const store = usePremiumStore();
 const { premium, premiumSync } = storeToRefs(store);
 const { deletePremium, setup } = store;
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { premiumUserLoggedIn } = useInterop();
 
@@ -144,6 +144,7 @@ function showDeleteConfirmation() {
         <div class="flex flex-row-reverse">
           <HintMenuIcon>
             <i18n-t
+              scope="global"
               tag="div"
               keypath="premium_settings.subtitle"
             >

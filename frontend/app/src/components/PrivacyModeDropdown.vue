@@ -6,7 +6,7 @@ import { usePrivacyMode } from '@/composables/privacy';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const isDemo = import.meta.env.VITE_DEMO_MODE !== undefined;
 

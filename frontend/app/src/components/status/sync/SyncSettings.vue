@@ -3,7 +3,7 @@ import AskUserUponSizeDiscrepancySetting from '@/components/settings/general/Ask
 
 const model = defineModel<boolean>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { isMdAndUp } = useBreakpoint();
 </script>
 

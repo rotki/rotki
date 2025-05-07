@@ -95,7 +95,7 @@ export const useHistoryStore = defineStore('history', () => {
 
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi } = useHistoryApi();
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const getUndecodedTransactionStatus = (): EvmUnDecodedTransactionsData[] =>
     Object.values(get(undecodedTransactionsStatus));

@@ -47,7 +47,7 @@ const props = withDefaults(defineProps<DateTimePickerProps>(), {
 const { allowEmpty, dateOnly, errorMessages, limitNow, milliseconds } = toRefs(props);
 const iMask = ref<InputMask<any>>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 

@@ -78,7 +78,7 @@ const props = withDefaults(defineProps<{
   validators: undefined,
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
 

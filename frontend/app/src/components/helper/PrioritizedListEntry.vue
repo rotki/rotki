@@ -18,7 +18,7 @@ const props = withDefaults(
 
 const { data } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const labels: { [keys in PrioritizedListId]: string } = {
   [AddressNamePriority.BLOCKCHAIN_ACCOUNT]: t('address_book.hint.priority.list.blockchain_account_labels'),

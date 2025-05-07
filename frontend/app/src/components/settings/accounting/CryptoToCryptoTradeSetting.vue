@@ -9,7 +9,7 @@ onMounted(() => {
   set(crypto2CryptoTrades, get(includeCrypto2crypto));
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

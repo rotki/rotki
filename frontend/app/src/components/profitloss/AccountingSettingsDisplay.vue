@@ -7,7 +7,7 @@ import { useCostBasisMethod } from '@/composables/reports';
 const props = defineProps<{ accountingSettings: BaseAccountingSettings }>();
 
 const { accountingSettings } = toRefs(props);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { costBasisMethodData } = useCostBasisMethod();
 
 function taxFreePeriod(period: number) {

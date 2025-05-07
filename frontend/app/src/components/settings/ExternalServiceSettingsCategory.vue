@@ -4,7 +4,7 @@ import QueryRetryLimitSetting from '@/components/settings/general/external-servi
 import ReadTimeoutSetting from '@/components/settings/general/external-services/ReadTimeoutSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

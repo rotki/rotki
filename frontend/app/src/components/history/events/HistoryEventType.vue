@@ -26,7 +26,7 @@ const { event } = toRefs(props);
 const { getEventTypeData } = useHistoryEventMappings();
 const attrs = getEventTypeData(event);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefined>(() => {
   const event = props.event;

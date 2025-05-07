@@ -42,7 +42,7 @@ const amount = useRefPropVModel(model, 'amount');
 const usdValue = useRefPropVModel(model, 'usdValue');
 const location = useRefPropVModel(model, 'location');
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const assetType = ref<string>('token');
 const assetPriceForm = ref<InstanceType<typeof EditBalancesSnapshotAssetPriceForm>>();

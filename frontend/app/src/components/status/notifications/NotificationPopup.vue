@@ -4,7 +4,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { createNotification } from '@/utils/notifications';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();

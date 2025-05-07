@@ -35,7 +35,7 @@ function onSelectionChange(value: string[]) {
   updateSelection(value);
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const api = useExchangeApi();
 
 const { notify } = useNotificationsStore();

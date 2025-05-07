@@ -19,7 +19,7 @@ const props = withDefaults(
   { identifier: null, mainPage: false },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { identifier, mainPage } = toRefs(props);
 

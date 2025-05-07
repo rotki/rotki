@@ -19,7 +19,7 @@ const props = defineProps<{
   chartData: NetValue;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { chartData } = toRefs(props);
 const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());

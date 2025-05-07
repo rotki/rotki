@@ -47,7 +47,7 @@ export function useEthStaking(): UseEthStakingReturn {
   const premium = usePremium();
   const { awaitTask } = useTaskStore();
   const { setMessage } = useMessageStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
 
   const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);

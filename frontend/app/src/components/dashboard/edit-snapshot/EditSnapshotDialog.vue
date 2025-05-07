@@ -27,7 +27,7 @@ const { fetchNetValue } = useStatisticsStore();
 
 const api = useSnapshotApi();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const balancesSnapshot = computed<BalanceSnapshot[]>(() => {
   const data = get(snapshotData);
@@ -185,6 +185,7 @@ const steps = computed(() => [
 
         <h5 class="pl-2 text-h5 flex items-center">
           <i18n-t
+            scope="global"
             keypath="dashboard.snapshot.edit.dialog.title"
             tag="span"
           >

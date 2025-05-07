@@ -63,7 +63,7 @@ const SUPPORTED_CURRENCIES = [
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const useCurrencies = createSharedComposable(() => {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const currencies = computed<Currency[]>(() => [
     new Currency(t('currencies.usd'), CURRENCY_USD, '$'),
     new Currency(t('currencies.eur'), CURRENCY_EUR, '€'),

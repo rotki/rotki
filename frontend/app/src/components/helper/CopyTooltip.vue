@@ -13,7 +13,7 @@ defineSlots<{
   label: () => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { value } = toRefs(props);
 

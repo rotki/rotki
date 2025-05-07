@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'save-data', value?: string): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function saveData(value?: string) {
   emit('save-data', value);

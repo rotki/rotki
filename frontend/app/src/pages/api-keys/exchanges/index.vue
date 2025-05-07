@@ -32,7 +32,7 @@ const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
 const { show } = useConfirmStore();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/api-keys/exchanges/');
 const { exchangeName } = useLocations();
@@ -190,6 +190,7 @@ onMounted(async () => {
       <div class="flex flex-row-reverse mb-2">
         <HintMenuIcon>
           <i18n-t
+            scope="global"
             keypath="exchange_settings.subtitle"
             tag="div"
           >

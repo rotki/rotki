@@ -12,7 +12,7 @@ const { currency } = storeToRefs(useGeneralSettingsStore());
 const filter = ref<string>('');
 const visible = ref<boolean>(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { currencies } = useCurrencies();
 const { onCurrencyUpdate } = useCurrencyUpdate();
 

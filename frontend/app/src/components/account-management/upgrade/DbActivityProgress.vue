@@ -8,7 +8,7 @@ const props = withDefaults(defineProps<{
   dataMigration: false,
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { progress } = toRefs(props);
 

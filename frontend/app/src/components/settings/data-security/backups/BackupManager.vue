@@ -10,7 +10,7 @@ import { getFilepath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 import { Severity } from '@rotki/common';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const backupInfo = ref<DatabaseInfo>();
 const selected = ref<UserDbBackupWithId[]>([]);

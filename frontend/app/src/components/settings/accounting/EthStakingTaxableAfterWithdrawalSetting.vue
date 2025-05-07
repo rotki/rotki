@@ -9,7 +9,7 @@ onMounted(() => {
   set(ethStakingTaxableAfterWithdrawalEnabled, get(enabled));
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function getSuccessMessage(enabled: boolean) {
   return enabled

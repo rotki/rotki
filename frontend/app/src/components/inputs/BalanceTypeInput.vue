@@ -7,7 +7,7 @@ defineOptions({
 
 const model = defineModel<BalanceType>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const balanceTypes = computed(() => [
   {

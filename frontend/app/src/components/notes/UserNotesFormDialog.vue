@@ -23,7 +23,7 @@ function resetForm() {
   emit('reset');
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);

@@ -5,7 +5,7 @@ import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-sett
 
 const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

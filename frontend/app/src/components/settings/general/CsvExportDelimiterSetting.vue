@@ -10,7 +10,7 @@ import { helpers, maxLength, required } from '@vuelidate/validators';
 const DEFAULT_DELIMITER = Defaults.DEFAULT_CSV_EXPORT_DELIMITER;
 const csvExportDelimiter = ref<string>(DEFAULT_DELIMITER);
 const { csvExportDelimiter: delimiter } = storeToRefs(useGeneralSettingsStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   csvExportDelimiter: {

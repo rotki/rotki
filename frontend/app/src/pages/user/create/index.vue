@@ -23,7 +23,7 @@ const { upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { navigateToUserLogin } = useAppNavigation();
 const { createNewAccount, error, loading } = useAccountManagement();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const step = ref<number>(1);
 const steps = [

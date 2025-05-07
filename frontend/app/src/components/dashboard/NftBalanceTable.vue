@@ -36,7 +36,7 @@ const { totalNetWorthUsd } = storeToRefs(statistics);
 const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNftBalances();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const group = DashboardTableType.NFT;
 

@@ -10,7 +10,7 @@ const filterType = ref<EthStakingFilterType>('validator');
 
 watch(filterType, type => set(model, type === 'validator' ? { validators: [] } : { accounts: [] }));
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const disableStatus = computed<boolean>(() => {
   const modelFilter = get(model);

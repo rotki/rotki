@@ -23,7 +23,7 @@ definePage({
   },
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { navigateToDashboard, navigateToUserCreation } = useAppNavigation();
 const { canRequestData, checkForAssetUpdate, upgradeVisible } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();

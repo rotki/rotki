@@ -6,7 +6,7 @@ import { CurrencyLocation } from '@/types/currency-location';
 const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
 const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function successMessage(currencyLocation: CurrencyLocation) {
   return t('general_settings.validation.currency_location.success', {

@@ -30,7 +30,7 @@ const props = defineProps<{
   highlightedYear?: number;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { apiKey } = useExternalApiKeys(t);
 const { useIsTaskRunning } = useTaskStore();
@@ -215,6 +215,7 @@ defineExpose({
       type="info"
     >
       <i18n-t
+        scope="global"
         keypath="wrapped.history_events_nudge"
       >
         <template #link>

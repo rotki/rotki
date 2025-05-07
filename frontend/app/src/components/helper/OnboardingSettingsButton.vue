@@ -2,7 +2,7 @@
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const visible = ref<boolean>(false);
 const { connected } = toRefs(useMainStore());
 </script>

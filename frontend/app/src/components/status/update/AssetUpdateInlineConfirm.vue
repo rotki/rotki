@@ -5,7 +5,7 @@ defineProps<{ remoteVersion: number }>();
 
 const emit = defineEmits<{ (e: 'confirm'): void }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

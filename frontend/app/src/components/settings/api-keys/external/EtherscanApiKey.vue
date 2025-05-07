@@ -8,7 +8,7 @@ import { NotificationCategory } from '@rotki/common';
 import { etherscanLink } from '@shared/external-links';
 
 const name = 'etherscan';
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
@@ -77,6 +77,7 @@ function removeEtherscanNotification() {
       @save="save($event, removeEtherscanNotification)"
     >
       <i18n-t
+        scope="global"
         tag="div"
         class="text-rui-text-secondary text-body-2"
         keypath="external_services.get_api_key"

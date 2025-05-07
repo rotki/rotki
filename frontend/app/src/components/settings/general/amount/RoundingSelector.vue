@@ -14,7 +14,7 @@ defineProps<{
   hint: string;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const selections: { value: RoundingMode; text: string; description: string }[] = [
   {

@@ -29,7 +29,7 @@ const events = [
 
 type EventType = (typeof events)[number];
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const headers = computed<DataTableColumn<PoapDeliveryDetails>[]>(() => [
   {

@@ -78,7 +78,7 @@ const childSort = ref<DataTableSortData<MissingAcquisition>>({
 
 const tableContainer = computed(() => get(tableRef)?.$el);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [{
   cellClass: '!py-0 !pr-0 !pl-3',

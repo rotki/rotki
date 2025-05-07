@@ -8,7 +8,7 @@ import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting
 import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

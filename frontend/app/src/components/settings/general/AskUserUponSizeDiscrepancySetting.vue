@@ -17,7 +17,7 @@ watchImmediate(askUserUponSizeDiscrepancy, (askUser) => {
   set(value, !get(askUser));
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

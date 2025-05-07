@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const { category } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');

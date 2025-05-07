@@ -4,7 +4,7 @@ import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 
 const name = 'cryptocompare';
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();

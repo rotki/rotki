@@ -28,7 +28,7 @@ const token = ref<string>('');
 
 const store = useFrontendSettingsStore();
 const { explorers } = storeToRefs(store);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const [CreateSelection, ReuseSelection] = createReusableTemplate<{ item: SupportedExplorers }>();
 

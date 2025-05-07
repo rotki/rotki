@@ -16,7 +16,7 @@ const props = defineProps<{
 
 const { filters } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { appSession, openDirectory } = useInterop();
 

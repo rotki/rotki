@@ -25,7 +25,7 @@ const { deleteModuleData } = useBlockchainBalancesApi();
 const { deleteTransactions } = useHistoryEventsApi();
 const { deleteExchangeData } = useExchangeApi();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const source = ref<Purgeable>(Purgeable.TRANSACTIONS);
 

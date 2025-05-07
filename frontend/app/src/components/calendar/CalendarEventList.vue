@@ -33,7 +33,7 @@ const description = computed(() => {
   return `${description.slice(0, MAX_LENGTH)}...`;
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function onEventClicked(event: CalendarEvent) {
   if (!get(selectedDate).isSame(props.visibleDate, 'month')) {

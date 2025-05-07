@@ -21,7 +21,7 @@ defineSlots<{
   }) => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref<boolean>(true);
 const providers = ref<EIP6963ProviderDetail[]>([]);

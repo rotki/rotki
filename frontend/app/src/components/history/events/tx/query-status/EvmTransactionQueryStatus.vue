@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<{
   transactions: () => [],
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { isMdAndUp } = useBreakpoint();
 const { transactions } = toRefs(props);

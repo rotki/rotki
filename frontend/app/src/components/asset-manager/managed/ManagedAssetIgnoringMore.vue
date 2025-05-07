@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const { identifier } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { isAssetWhitelisted } = useWhitelistedAssetsStore();
 const isWhitelisted = isAssetWhitelisted(identifier);

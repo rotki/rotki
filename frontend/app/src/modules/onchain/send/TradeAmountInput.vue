@@ -17,7 +17,7 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { address, asset, chain } = toRefs(props);
 

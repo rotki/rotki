@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const { identifier, item } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 

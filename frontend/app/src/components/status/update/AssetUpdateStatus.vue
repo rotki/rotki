@@ -6,7 +6,7 @@ const props = defineProps<{
 
 const { remoteVersion, status } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const title = computed(() => {
   const updateStatus = get(status);

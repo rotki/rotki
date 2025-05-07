@@ -45,7 +45,7 @@ const visibleEvents = computed(() => {
 
 const hidden = computed(() => get(events).length - get(visibleEvents).length);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { isDark } = useRotkiTheme();
 

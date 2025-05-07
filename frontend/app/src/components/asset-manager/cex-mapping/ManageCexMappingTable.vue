@@ -27,7 +27,7 @@ const emit = defineEmits<{
   delete: [mapping: CexMapping];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
   align: 'center',
   cellClass: 'py-3',

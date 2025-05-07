@@ -38,7 +38,7 @@ const actionableItemsLength = computed(() => {
   return total;
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

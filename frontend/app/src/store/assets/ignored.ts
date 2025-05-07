@@ -12,7 +12,7 @@ import { uniqueStrings } from '@/utils/data';
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const ignoredAssets = ref<string[]>([]);
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
   const { show } = useConfirmStore();

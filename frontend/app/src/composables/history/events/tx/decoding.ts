@@ -22,7 +22,7 @@ import { logger } from '@/utils/logging';
 import { groupBy } from 'es-toolkit';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
 
   const { decodeTransactions, getUndecodedTransactionsBreakdown, pullAndRecodeTransactionRequest }

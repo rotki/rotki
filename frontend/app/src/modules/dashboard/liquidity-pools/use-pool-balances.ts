@@ -68,7 +68,7 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
   const premium = usePremium();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { isLoading } = useStatusStore();
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
   const { assetSymbol } = useAssetInfoRetrieval();

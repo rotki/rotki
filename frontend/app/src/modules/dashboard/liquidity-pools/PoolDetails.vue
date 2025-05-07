@@ -30,7 +30,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetPrice } = usePriceUtils();
 const { assetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   cellClass: 'text-no-wrap',

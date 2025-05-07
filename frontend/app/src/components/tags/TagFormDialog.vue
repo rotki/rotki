@@ -22,7 +22,7 @@ const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
 const form = useTemplateRef<ComponentExposed<typeof TagForm>>('form');
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 async function save() {
   const newTag = get(modelValue);

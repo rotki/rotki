@@ -9,7 +9,7 @@ const emit = defineEmits<{
   (event: 'action', action: SyncAction): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const premium = usePremium();
 const UPLOAD: SyncAction = SYNC_UPLOAD;

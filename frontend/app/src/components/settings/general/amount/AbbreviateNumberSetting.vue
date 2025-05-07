@@ -4,7 +4,7 @@ import { abbreviationList } from '@/data/amount-formatter';
 import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const abbreviate = ref<boolean>(false);
 const minimumDigit = ref<string>(MINIMUM_DIGIT_TO_BE_ABBREVIATED.toString());

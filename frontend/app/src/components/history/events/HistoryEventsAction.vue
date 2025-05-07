@@ -43,7 +43,7 @@ const evmEvent = computed<EventInfo | undefined>(() => {
 });
 const { getChain } = useSupportedChains();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function addEvent(event: HistoryEvent) {
   if (isGroupEditableHistoryEvent(event)) {

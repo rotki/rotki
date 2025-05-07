@@ -6,7 +6,7 @@ import { bigNumberify } from '@rotki/common';
 import { RuiIcon } from '@rotki/ui-library';
 import SettingsOption from '../../controls/SettingsOption.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const frontendSettingsStore = useFrontendSettingsStore();
 const { subscriptDecimals } = storeToRefs(frontendSettingsStore);
 const subscriptEnabled = ref<boolean>(false);

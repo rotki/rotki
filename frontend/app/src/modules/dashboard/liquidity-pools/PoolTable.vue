@@ -33,7 +33,7 @@ const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore()
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
 const { balances, fetch, getPoolName, loading, total: totalInUsd } = usePoolBalances();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const tableHeaders = computed<DataTableColumn<PoolLiquidityBalance>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[LIQUIDITY_POSITION];

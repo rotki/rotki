@@ -25,7 +25,7 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const props = defineProps<HistoryEventFormProps>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { data } = toRefs(props);
 
 const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);

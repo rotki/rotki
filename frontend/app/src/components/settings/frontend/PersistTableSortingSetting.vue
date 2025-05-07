@@ -3,7 +3,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const persist = ref<boolean>(false);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { persistTableSorting: enabled } = storeToRefs(useFrontendSettingsStore());
 

@@ -23,7 +23,7 @@ const locationDataSnapshotFile = ref<File>();
 const importSnapshotLoading = ref<boolean>(false);
 const importSnapshotDialog = ref<boolean>(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { logout } = useLogout();
 const { lastBalanceSave } = storeToRefs(usePeriodicStore());

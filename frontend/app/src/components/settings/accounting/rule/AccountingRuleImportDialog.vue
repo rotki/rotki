@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const importFileUploader = ref<InstanceType<typeof FileUpload>>();
 const importFile = ref<File>();

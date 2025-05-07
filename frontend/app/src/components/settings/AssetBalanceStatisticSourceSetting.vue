@@ -21,7 +21,7 @@ const {
   useHistoricalAssetBalances,
 } = useAssetStatisticState(asset);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 watch(useHistoricalAssetBalances, () => {
   if (!isDefined(asset) || !get(rememberStateForAsset)) {

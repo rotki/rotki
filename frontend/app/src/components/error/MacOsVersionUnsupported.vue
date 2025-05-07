@@ -2,7 +2,7 @@
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import { useInterop } from '@/composables/electron-interop';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { closeApp } = useInterop();
 </script>
 

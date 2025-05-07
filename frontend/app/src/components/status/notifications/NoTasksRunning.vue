@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

@@ -7,7 +7,7 @@ const formatter = displayDateFormatter;
 const directives: string[] = displayDateFormatter.directives;
 const now: Date = new Date('2018-03-09T21:09:08');
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function description(directive: string): string {
   const descriptions: Record<string, string> = {

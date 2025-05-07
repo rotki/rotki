@@ -12,7 +12,7 @@ const props = withDefaults(
   { groupLabel: undefined },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { group, groupLabel } = toRefs(props);
 

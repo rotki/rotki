@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const { address, chain } = toRefs(props);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { useAccountDetails } = useBlockchainAccountData();
 
 const details = useAccountDetails(chain, address);

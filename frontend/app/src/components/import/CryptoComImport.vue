@@ -5,12 +5,13 @@ import ImportSource from '@/components/import/ImportSource.vue';
 import { Routes } from '@/router/routes';
 import { externalLinks } from '@shared/external-links';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <ImportSource source="cryptocom">
     <i18n-t
+      scope="global"
       tag="span"
       keypath="import_data.note"
     >
@@ -19,6 +20,7 @@ const { t } = useI18n();
     <ul class="list-disc">
       <li>
         <i18n-t
+          scope="global"
           tag="span"
           keypath="import_data.cryptocom.line_one"
         >
@@ -32,6 +34,7 @@ const { t } = useI18n();
       </li>
       <li>
         <i18n-t
+          scope="global"
           tag="span"
           keypath="import_data.cryptocom.line_two"
         >
@@ -41,6 +44,7 @@ const { t } = useI18n();
       <li>{{ t('import_data.cryptocom.line_three') }}</li>
       <li>
         <i18n-t
+          scope="global"
           keypath="import_data.cryptocom.line_four"
           tag="span"
         >

@@ -28,7 +28,7 @@ const props = defineProps<{
 
 const balance = ref<ManualBalance | RawManualBalance>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('balances-manual');
 

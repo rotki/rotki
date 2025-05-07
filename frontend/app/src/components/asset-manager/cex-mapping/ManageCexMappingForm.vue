@@ -23,7 +23,7 @@ withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const asset = useRefPropVModel(modelValue, 'asset');
 const locationSymbol = useRefPropVModel(modelValue, 'locationSymbol');

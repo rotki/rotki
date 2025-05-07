@@ -27,7 +27,7 @@ defineProps<{
   editMode: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const name = useRefPropVModel(modelValue, 'name');
 const description = useRefPropVModel(modelValue, 'description');

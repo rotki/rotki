@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 const { form, premiumEnabled } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const valid = ref<boolean>(false);
 
@@ -32,6 +32,7 @@ const premiumSelectionButtons = computed(() => [
 <template>
   <div class="space-y-6">
     <i18n-t
+      scope="global"
       tag="div"
       keypath="create_account.premium.premium_question"
       class="text-center text-rui-text-secondary whitespace-break-spaces"

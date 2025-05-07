@@ -27,7 +27,7 @@ const emit = defineEmits<{
   delete: [mapping: CounterpartyMapping];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const cols = computed<DataTableColumn<CounterpartyMapping>[]>(() => [{
   align: 'center',
   cellClass: 'py-3',

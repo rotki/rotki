@@ -8,7 +8,7 @@ import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { taxfreeAfterPeriod: period } = storeToRefs(useAccountingSettingsStore());
 

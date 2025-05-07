@@ -12,7 +12,7 @@ const props = defineProps<{
   editMode: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const showReminders = ref<boolean>(false);
 const temporaryData = ref<CalendarReminderTemporaryPayload[]>([]);

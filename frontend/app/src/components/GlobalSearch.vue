@@ -36,7 +36,7 @@ interface SearchItem {
 
 type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { appRoutes } = useAppRoutes();
 const Routes = get(appRoutes);
 const open = ref<boolean>(false);

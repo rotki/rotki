@@ -7,7 +7,7 @@ import { TaskType } from '@/types/task-type';
 
 const props = defineProps<{ item: EvmUnDecodedTransactionsData }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { useIsTaskRunning } = useTaskStore();
 

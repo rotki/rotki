@@ -5,7 +5,7 @@ import TimeFrameSetting from '@/components/settings/frontend/TimeFrameSetting.vu
 import ZeroBasedGraphSetting from '@/components/settings/frontend/ZeroBasedGraphSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

@@ -3,7 +3,7 @@ defineSlots<{
   default: (props: { copyright: string }) => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const copyright = computed<string>(() => t('app.copyright', { year: new Date().getFullYear() }));
 </script>

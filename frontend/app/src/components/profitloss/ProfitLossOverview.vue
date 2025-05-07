@@ -22,7 +22,7 @@ const { report } = toRefs(props);
 
 const total = computed<ProfitLossOverviewItem>(() => calculateTotalProfitLoss(get(report)));
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

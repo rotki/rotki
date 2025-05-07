@@ -77,7 +77,7 @@ export function usePaginationFilters<
   requestData: (payload: MaybeRef<TPayload>) => Promise<Collection<TItem>>,
   options: UsePaginationFiltersOptions<TItem, TPayload, TFilter, TSuggestionMatcher> = {},
 ): UsePaginationFilterReturn<TItem, TPayload, TFilter, TSuggestionMatcher> {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
   const itemsPerPage = useItemsPerPage();
   const router = useRouter();

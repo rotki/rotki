@@ -5,7 +5,7 @@ import { usePremium } from '@/composables/premium';
 import ThemeManagerPlaceholder from '@/modules/theme/ThemeManagerPlaceholder.vue';
 import { ThemeManager } from '@/premium/premium';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 </script>
 

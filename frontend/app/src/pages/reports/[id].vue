@@ -24,7 +24,7 @@ defineOptions({
   name: 'ReportDetail',
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref(true);
 const refreshing = ref(false);
@@ -94,6 +94,7 @@ async function regenerateReport() {
         type="warning"
       >
         <i18n-t
+          scope="global"
           tag="div"
           keypath="profit_loss_report.upgrade"
           class="text-subtitle-1"
@@ -109,6 +110,7 @@ async function regenerateReport() {
           </template>
         </i18n-t>
         <i18n-t
+          scope="global"
           tag="div"
           keypath="profit_loss_report.upgrade2"
         >
