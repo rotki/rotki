@@ -36,22 +36,22 @@ vi.mock('@/composables/info/chains', async () => {
   };
 });
 
-vi.mock('@/composables/assets/retrieval', () => ({
-  useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetInfo: vi.fn().mockImplementation((identifier) => {
-      const collectionId = identifier.endsWith('USDC') ? 'USDC' : identifier;
-      return {
-        collectionId,
-        evmChain: 'ethereum',
-        identifier,
-        isCustomAsset: false,
-        name: `Name ${identifier}`,
-        symbol: identifier,
-      };
+vi.mock('@/modules/assets/use-collection-info', () => {
+  const mockComputed = (identifier: string): ComputedRef<string> => computed(() => {
+    if (identifier.endsWith('USDC')) {
+      return 'USDC';
+    }
+    else {
+      return identifier;
+    }
+  });
+  return ({
+    useCollectionInfo: vi.fn().mockReturnValue({
+      useCollectionId: vi.fn().mockImplementation(mockComputed),
+      useCollectionMainAsset: vi.fn().mockImplementation(mockComputed),
     }),
-    assetSymbol: vi.fn().mockImplementation(identifier => identifier),
-  }),
-}));
+  });
+});
 
 const testManualBalances: ManualBalanceWithValue[] = [{
   amount: bigNumberify(500),

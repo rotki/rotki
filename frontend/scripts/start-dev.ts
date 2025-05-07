@@ -238,6 +238,7 @@ async function startColibriService(colibriPort: number, logDir: string): Promise
   const colibriArgs: string[] = [
     `--logfile-path=${path.join(logDir, 'colibri.log')}`,
     `--port=${availableColibriPort}`,
+    '--api-cors=http://localhost:*',
   ];
 
   startProcess('cargo run -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {

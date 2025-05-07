@@ -3,6 +3,7 @@ import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
+import { useCollectionInfo } from '@/modules/assets/use-collection-info';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -25,7 +26,8 @@ export function useAccountAssetsSummary(): UseAccountAssetsSummaryReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { assetPrice } = usePriceUtils();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
-  const { assetAssociationMap, assetInfo } = useAssetInfoRetrieval();
+  const { assetAssociationMap } = useAssetInfoRetrieval();
+  const { useCollectionId } = useCollectionInfo();
 
   function summarizeAssetsForAddress(
     balances: Balances,
@@ -100,8 +102,8 @@ export function useAccountAssetsSummary(): UseAccountAssetsSummaryReturn {
       { address, chains },
       assetAssociationMap,
       (asset) => {
-        const info = get(assetInfo(asset));
-        return info?.collectionId ? `collection-${info.collectionId}` : asset;
+        const collectionId = get(useCollectionId(asset));
+        return collectionId ? `collection-${collectionId}` : asset;
       },
     );
 
