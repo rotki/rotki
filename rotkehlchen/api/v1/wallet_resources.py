@@ -4,10 +4,15 @@ from flask import Response
 from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.common_resources import BaseMethodView
-from rotkehlchen.api.v1.schemas import AddressesInteraction, NativeAssetTransfer, TokenTransfer
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.api.v1.schemas import (
+    AccountTokenBalanceSchema,
+    AddressesInteraction,
+    NativeAssetTransfer,
+    TokenTransfer,
+)
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.types import ChainID, ChecksumEvmAddress, FVal
 
 
@@ -20,7 +25,7 @@ class PrepareTokenTransferResource(BaseMethodView):
             self,
             from_address: 'ChecksumEvmAddress',
             to_address: 'ChecksumEvmAddress',
-            token: EvmToken,
+            token: 'EvmToken',
             amount: 'FVal',
     ) -> Response:
         return self.rest_api.prepare_token_transfer(
@@ -65,4 +70,23 @@ class AddressesInteractedResource(BaseMethodView):
         return self.rest_api.addresses_interacted_before(
             from_address=from_address,
             to_address=to_address,
+        )
+
+
+class AccountTokenBalanceResource(BaseMethodView):
+    post_schema = AccountTokenBalanceSchema()
+
+    @use_kwargs(post_schema, location='json_and_view_args')
+    def post(
+            self,
+            asset: 'CryptoAsset',
+            evm_chain: 'ChainID',
+            address: 'ChecksumEvmAddress',
+            async_query: bool,
+    ) -> Response:
+        return self.rest_api.fetch_token_balance_for_address(
+            asset=asset,
+            address=address,
+            evm_chain=evm_chain,
+            async_query=async_query,
         )

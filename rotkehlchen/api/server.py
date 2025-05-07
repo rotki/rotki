@@ -156,6 +156,7 @@ from rotkehlchen.api.v1.resources import (
     create_blueprint,
 )
 from rotkehlchen.api.v1.wallet_resources import (
+    AccountTokenBalanceResource,
     AddressesInteractedResource,
     PrepareNativeTransferResource,
     PrepareTokenTransferResource,
@@ -333,6 +334,7 @@ URLS_V1: URLS = [
     ('/wallet/transfer/token', PrepareTokenTransferResource),
     ('/wallet/transfer/native', PrepareNativeTransferResource),
     ('/wallet/interacted', AddressesInteractedResource),
+    ('/wallet/balance', AccountTokenBalanceResource),
 ]
 
 logger = logging.getLogger(__name__)

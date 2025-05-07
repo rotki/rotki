@@ -14025,3 +14025,62 @@ Active management
     :statuscode 200: Interaction check successful.
     :statuscode 400: Malformed request.
     :statuscode 500: Internal Rotki error.
+
+  .. http:post:: /api/(version)/wallet/balance
+
+    Queries the token or native asset balance for a given EVM chain and address.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request (Native Balance):**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/wallet/balance HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "evm_chain": "ethereum",
+          "address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+          "asset": "ETH",
+          "async_query": false
+        }
+
+    **Example Request (ERC20 Balance):**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/wallet/balance HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "evm_chain": "ethereum",
+          "address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+          "asset": "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
+          "async_query": false
+        }
+
+    :reqjson string evm_chain: The EVM chain to query (e.g., `"ethereum"`, `"optimism"`).
+    :reqjson string address: The address whose balance should be queried.
+    :reqjson string asset: The asset identifier. Use the native symbol (e.g., `"ETH"`) or an ERC20 format like `"eip155:1/erc20:0x..."`.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "result": "23.755147",
+          "message": ""
+        }
+
+    :resjson string result: The balance with decimals already adjusted to the asset's precision.
+    :statuscode 200: Balance retrieved successfully.
+    :statuscode 400: Malformed request.
+    :statuscode 409: Error querying the RPC or mismatch between asset and chain provided.
+    :statuscode 500: Internal Rotki error.
