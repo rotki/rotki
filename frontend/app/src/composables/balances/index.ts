@@ -29,7 +29,7 @@ export const useBalances = createSharedComposable(() => {
   const { queryBalancesAsync } = useBalancesApi();
   const priceStore = useBalancePricesStore();
   const { prices } = storeToRefs(priceStore);
-  const { assetPrice, fetchExchangeRates, fetchPrices } = priceStore;
+  const { assetPrice, cacheEuroCollectionAssets, fetchExchangeRates, fetchPrices } = priceStore;
   const { notify } = useNotificationsStore();
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n();
@@ -51,6 +51,7 @@ export const useBalances = createSharedComposable(() => {
     const unique = selectedAssets ? selectedAssets.filter(uniqueStrings) : null;
     const { setStatus } = useStatusUpdater(Section.PRICES);
     setStatus(Status.LOADING);
+    await cacheEuroCollectionAssets();
     if (ignoreCache)
       await fetchExchangeRates();
 
