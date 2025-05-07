@@ -5,16 +5,20 @@ import TradeAssetDisplay from '@/modules/onchain/send/TradeAssetDisplay.vue';
 import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { Blockchain } from '@rotki/common';
+import { type BigNumber, Blockchain } from '@rotki/common';
 
 const asset = defineModel<string>({ required: true });
 const chain = defineModel<string>('chain', { required: true });
 
 const props = defineProps<{
   address?: string;
+  amount: BigNumber | undefined;
 }>();
 
-const emit = defineEmits<{ 'set-max': [] }>();
+const emit = defineEmits<{
+  'set-max': [];
+  'refresh': [];
+}>();
 
 const { address } = toRefs(props);
 
@@ -98,6 +102,8 @@ watchImmediate(chain, (chain) => {
       :key="asset + chain"
       class="py-2 -my-2 flex-1 overflow-hidden"
       :data="assetDetail"
+      :amount="amount"
+      @refresh="emit('refresh')"
     />
     <div
       v-else

@@ -217,7 +217,7 @@ export const useAppRoutes = createSharedComposable(() => {
       text: t('navigation_menu.nfts'),
     },
     ONCHAIN: {
-      icon: 'lu-coins' as const,
+      icon: 'lu-onchain' as const,
       route: Routes.ONCHAIN,
       text: t('navigation_menu.onchain'),
     },

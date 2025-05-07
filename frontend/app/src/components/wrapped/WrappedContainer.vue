@@ -46,6 +46,8 @@ const end = ref('');
 const start = ref('');
 const summary = ref<WrapStatisticsResult>();
 
+const { isMdAndDown } = useBreakpoint();
+
 const { getEarliestEventTimestamp } = useHistoryEvents();
 
 const { isFirstLoad, loading: sectionLoading } = useStatusUpdater(Section.HISTORY);
@@ -369,6 +371,7 @@ defineExpose({
           <HashLink
             class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1 pl-2"
             :text="item[0]"
+            :truncate-length="isMdAndDown ? 4 : 10"
           />
         </template>
         <template #value="{ item }">
