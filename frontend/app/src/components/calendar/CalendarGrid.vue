@@ -15,7 +15,7 @@ const emit = defineEmits<{
   (e: 'update:selected-date', selectedDate: Dayjs): void;
   (e: 'update:range', range: [number, number]): void;
   (e: 'edit', event: CalendarEvent): void;
-  (e: 'add'): void;
+  (e: 'add', selectedDate: Dayjs): void;
 }>();
 
 function setSelectedDate(day: Dayjs) {
@@ -26,8 +26,8 @@ function edit(event: CalendarEvent) {
   emit('edit', event);
 }
 
-function add() {
-  emit('add');
+function add(day: Dayjs) {
+  emit('add', day);
 }
 
 const { eventsWithDate, selectedDate, today, visibleDate } = toRefs(props);
@@ -116,7 +116,7 @@ function getEvents(day: Dayjs) {
         class="border-default"
         @edit="edit($event)"
         @select-date="setSelectedDate(day.date)"
-        @add="add()"
+        @add="add(day.date)"
       />
     </div>
   </div>

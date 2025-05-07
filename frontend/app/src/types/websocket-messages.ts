@@ -1,4 +1,4 @@
-import { CalendarEventPayload } from '@/types/history/calendar';
+import { CalendarEventWithReminder } from '@/types/history/calendar';
 import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { Blockchain, CommonQueryStatusData, type MaybePromise, type Notification } from '@rotki/common';
 import { z } from 'zod';
@@ -333,7 +333,7 @@ const AccountingRuleConflictMessage = z.object({
 });
 
 const CalendarReminderMessage = z.object({
-  data: CalendarEventPayload,
+  data: CalendarEventWithReminder,
   type: z.literal(SocketMessageType.CALENDAR_REMINDER),
 });
 

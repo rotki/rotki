@@ -32,6 +32,7 @@ const visibleDate = ref<Dayjs>(dayjs());
 
 const today = ref<Dayjs>(dayjs());
 const range = ref<[number, number]>([0, 0]);
+const rangeDebounced = refDebounced(range, 300);
 const selectedDateEvents = ref<CalendarEvent[]>([]);
 const upcomingEvents = ref<CalendarEvent[]>([]);
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
@@ -42,8 +43,8 @@ const { deleteCalendarEvent, fetchCalendarEvents } = useCalendarApi();
 const { getAccountByAddress } = useBlockchainAccountsStore();
 const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
-function emptyEventForm() {
-  const startOfTheDate = selectedDate.value.set('hours', 0).set('minutes', 0).set('seconds', 0);
+function emptyEventForm(date?: Dayjs) {
+  const startOfTheDate = (date || get(selectedDate)).set('hours', 0).set('minutes', 0).set('seconds', 0);
   const timestamp = startOfTheDate.unix();
 
   return {
@@ -60,7 +61,7 @@ function emptyEventForm() {
 }
 
 const extraParams = computed(() => {
-  const rangeVal = get(range);
+  const rangeVal = get(rangeDebounced);
   return {
     accounts: get(accounts).map(account => `${getAccountAddress(account)}#${account.chain}`),
     fromTimestamp: rangeVal[0].toString(),
@@ -163,8 +164,8 @@ function setToday() {
   setSelectedDate(now);
 }
 
-function add() {
-  set(modelValue, emptyEventForm());
+function add(selectedDate?: Dayjs) {
+  set(modelValue, emptyEventForm(selectedDate));
   set(editMode, false);
 }
 
@@ -279,7 +280,7 @@ onMounted(async () => {
           @update:selected-date="setSelectedDate($event)"
           @update:range="range = $event"
           @edit="edit($event)"
-          @add="add()"
+          @add="add($event)"
         />
 
         <CalendarFormDialog
