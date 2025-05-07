@@ -59,14 +59,14 @@ function emptyEventForm() {
   };
 }
 
-const extraParams = computed(() => {
+const extraParams = refDebounced(computed(() => {
   const rangeVal = get(range);
   return {
     accounts: get(accounts).map(account => `${getAccountAddress(account)}#${account.chain}`),
     fromTimestamp: rangeVal[0].toString(),
     toTimestamp: rangeVal[1].toString(),
   };
-});
+}), 300);
 
 const {
   fetchData,

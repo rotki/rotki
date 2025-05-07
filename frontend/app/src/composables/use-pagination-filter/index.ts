@@ -33,7 +33,7 @@ interface UsePaginationFiltersOptions<
   locationOverview?: Ref<string>;
   filterSchema?: () => FilterSchema<TFilter, TSuggestionMatcher>;
   onUpdateFilters?: (query: LocationQuery) => void;
-  extraParams?: ComputedRef<RawLocationQuery>;
+  extraParams?: ComputedRef<RawLocationQuery> | Ref<RawLocationQuery>;
   requestParams?: ComputedRef<Params<TItem, TPayload>>;
   defaultParams?: ComputedRef<Params<TItem, TPayload>>;
   defaultSortBy?: DataTableSortData<TItem>;
