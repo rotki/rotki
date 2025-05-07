@@ -171,6 +171,7 @@ async function updateData(index: number, { secsBefore }: CalendarReminderTempora
     if (!data.isTemporary) {
       try {
         await editCalendarReminder({
+          acknowledged: false,
           eventId: item.identifier,
           identifier: data.identifier,
           secsBefore,

@@ -49,7 +49,7 @@ function edit(event: CalendarEvent) {
         :timestamp="calendarEvents[0].timestamp"
         no-time
         hide-tooltip
-        class="cursor-pointer text-sm font-bold underline hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800 px-1 transition-all"
+        class="rounded-sm cursor-pointer text-sm font-bold underline hover:bg-rui-grey-200 dark:hover:bg-rui-grey-800 px-1 transition-all"
         @click="handleDateClick(calendarEvents[0].timestamp)"
       />
 

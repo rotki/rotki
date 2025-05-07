@@ -23,6 +23,7 @@ export enum NotificationGroup {
 
 export const NotificationCategory = {
   ADDRESS_MIGRATION: 'address_migration',
+  CALENDAR_REMINDER: 'calendar_reminder',
   DEFAULT: 'default',
   ETHERSCAN: 'etherscan',
 } as const;
@@ -73,3 +74,7 @@ export interface NotificationData extends NotificationBase {
 }
 
 export type Notification = SemiPartial<NotificationPayload, 'title' | 'message'>;
+
+export interface CalendarReminderNotification extends Notification {
+  eventId: number;
+}

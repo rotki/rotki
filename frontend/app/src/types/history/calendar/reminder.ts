@@ -8,6 +8,7 @@ export const CalenderReminderPayload = z.object({
 export type CalenderReminderPayload = z.infer<typeof CalenderReminderPayload>;
 
 export const CalendarReminderEntry = CalenderReminderPayload.extend({
+  acknowledged: z.boolean(),
   identifier: z.number(),
 });
 
