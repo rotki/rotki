@@ -31,6 +31,7 @@ export type AssetSymbolReturn = (identifier: MaybeRef<string | undefined>, optio
 export type AssetNameReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
 
 interface UseAssetInfoRetrievalReturn {
+  assetAssociationMap: ComputedRef<Record<string, string>>;
   fetchTokenDetails: (payload: EvmChainAddress) => Promise<ERC20Token>;
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>;
   getAssetAssociationIdentifiers: (identifier: string) => string[];
@@ -211,6 +212,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   };
 
   return {
+    assetAssociationMap,
     assetInfo,
     assetName,
     assetSearch,

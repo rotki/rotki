@@ -2,22 +2,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useBalancesBreakdown } from '@/composables/balances/breakdown';
 
-vi.mock('@/composables/assets/retrieval', () => ({
-  useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetInfo: vi.fn().mockImplementation((identifier) => {
-      const collectionId = identifier.endsWith('USDC') ? 'USDC' : identifier;
-      return {
-        identifier,
-        evmChain: 'ethereum',
-        symbol: identifier,
-        isCustomAsset: false,
-        name: `Name ${identifier}`,
-        collectionId,
-      };
+vi.mock('@/modules/assets/use-collection-info', () => {
+  const mockComputed = (identifier: string): ComputedRef<string> => computed(() => {
+    if (identifier.endsWith('USDC')) {
+      return 'USDC';
+    }
+    else {
+      return identifier;
+    }
+  });
+  return ({
+    useCollectionInfo: vi.fn().mockReturnValue({
+      useCollectionId: vi.fn().mockImplementation(mockComputed),
+      useCollectionMainAsset: vi.fn().mockImplementation(mockComputed),
     }),
-    assetSymbol: vi.fn().mockImplementation(identifier => identifier),
-  }),
-}));
+  });
+});
 
 vi.mock('@/store/balances/manual', async () => {
   const { ref, computed } = await import('vue');
