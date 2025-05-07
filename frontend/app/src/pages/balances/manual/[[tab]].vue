@@ -57,7 +57,7 @@ watchImmediate(route, (route) => {
   const { params } = route;
 
   if (!params.tab || params.tab === '0')
-    router.push('/balances/manual/assets');
+    router.replace('/balances/manual/assets');
 }, { deep: true });
 
 onBeforeMount(async () => {
