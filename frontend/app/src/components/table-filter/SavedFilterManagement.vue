@@ -150,7 +150,7 @@ async function addToSavedFilter() {
             >
               <RuiIcon
                 size="20"
-                name="lu-filter"
+                name="lu-list-filter"
               />
             </RuiButton>
           </template>
