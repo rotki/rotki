@@ -16,7 +16,13 @@ from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import (
+    Asset,
+    AssetWithNameAndType,
+    AssetWithOracles,
+    CryptoAsset,
+    EvmToken,
+)
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -4081,3 +4087,7 @@ class TokenTransfer(AssetTransferSchema):
 
 class NativeAssetTransfer(AssetTransferSchema):
     chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
+
+
+class AccountTokenBalanceSchema(ERC20InfoSchema):
+    asset = AssetField(required=True, expected_type=CryptoAsset, form_with_incomplete_data=True)

@@ -78,7 +78,10 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
-from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
+from rotkehlchen.chain.ethereum.utils import (
+    token_normalized_value,
+    try_download_ens_avatar,
+)
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
@@ -167,7 +170,7 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
     AccountingError,
     AlreadyExists,
@@ -281,6 +284,7 @@ from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
@@ -5420,3 +5424,34 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
 
         return _wrap_in_ok_result(result=payload)
+
+    @async_api_call()
+    def fetch_token_balance_for_address(
+            self,
+            address: ChecksumEvmAddress,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            asset: 'CryptoAsset',
+    ) -> dict[str, Any]:
+        node_inquirer = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain).node_inquirer
+        try:
+            if asset == node_inquirer.native_token:
+                balance = node_inquirer.get_multi_balance([address])[address]
+            elif (token := asset.resolve_to_evm_token()).chain_id == evm_chain:
+                balance = token_normalized_value(
+                    token_amount=node_inquirer.call_contract(
+                        contract_address=token.evm_address,
+                        abi=node_inquirer.contracts.erc20_abi,
+                        method_name='balanceOf',
+                        arguments=[address],
+                    ),
+                    token=token,
+                )
+            else:
+                return wrap_in_fail_result(
+                    message='Token exists on different chain than requested',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+        except (RemoteError, WrongAssetType, InputError) as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(result=balance)
