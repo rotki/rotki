@@ -1,8 +1,6 @@
 import logging
 from typing import Any
 
-from eth_utils import encode_hex
-
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -12,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -19,9 +18,9 @@ from rotkehlchen.history.events.structures.eth2 import EthDepositEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey
-from rotkehlchen.utils.misc import from_gwei
+from rotkehlchen.utils.misc import bytes_to_address, bytes_to_hexstr, from_gwei
 
-from .constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
+from .constants import CONSOLIDATION_REQUEST_CONTRACT, CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 
 DEPOSIT_EVENT = b'd\x9b\xbcb\xd0\xe3\x13B\xaf\xeaN\\\xd8-@I\xe7\xe1\xee\x91/\xc0\x88\x9a\xa7\x90\x80;\xe3\x908\xc5'  # noqa: E501
 
@@ -31,39 +30,54 @@ log = RotkehlchenLogsAdapter(logger)
 
 class Eth2Decoder(DecoderInterface):
 
+    def _query_validator_indexes(self, public_keys: list[Eth2PubKey]) -> list[int]:
+        """Retrieve the validator indexes of the specified public keys
+        from either the db or beaconchain.
+        """
+        with self.base.database.conn.read_ctx() as cursor:
+            found_indexes = dict(cursor.execute(
+                'SELECT public_key, validator_index FROM eth2_validators '
+                f"WHERE public_key IN ({','.join(['?'] * len(public_keys))})",
+                public_keys,
+            ))
+
+        unknown_keys = [key for key in public_keys if key not in found_indexes]
+        if len(unknown_keys) != 0:  # Query beaconchain.
+            # Instead of pushing it to decoders, recreating here.
+            # this is not good practise since if it shares any backoff logic it breaks,
+            # but yoloing it since it's a single query that won't happen often
+            # and the alternative of pushing beaconchain as an argument across all
+            # decoders seems wrong, dirty and breaking abstraction
+            beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
+            try:
+                for result in beaconchain.get_validator_data(unknown_keys):
+                    validator_index = result['validatorindex']
+                    if isinstance(validator_index, int) and validator_index >= 0:
+                        found_indexes[result['pubkey']] = validator_index
+            except RemoteError as e:
+                log.error(f'Failed to query validator index for {unknown_keys} due to {e!s}')
+
+        return [found_indexes.get(key, UNKNOWN_VALIDATOR_INDEX) for key in public_keys]
+
+    def _get_indexes_or_public_keys(self, public_keys: list[Eth2PubKey]) -> list[int | Eth2PubKey]:
+        """Query the validator indexes but fall back to the public key if the index is unknown."""
+        return [
+            validator_index if validator_index != UNKNOWN_VALIDATOR_INDEX else public_key
+            for validator_index, public_key in zip(
+                self._query_validator_indexes(public_keys=public_keys),
+                public_keys,
+                strict=False,  # the list from _query_validator_indexes will be the same length as the original list  # noqa: E501
+            )
+        ]
+
     def _decode_eth2_deposit_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != DEPOSIT_EVENT:
             return DEFAULT_DECODING_OUTPUT
 
-        public_key = Eth2PubKey(encode_hex(context.tx_log.data[192:240]))
+        public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[192:240]))
         amount = from_gwei(int.from_bytes(context.tx_log.data[352:360], byteorder='little'))
-
-        validator_index = UNKNOWN_VALIDATOR_INDEX
-        extra_data = None
-        with self.base.database.conn.read_ctx() as cursor:
-            result = cursor.execute(
-                'SELECT validator_index FROM eth2_validators WHERE public_key=?',
-                (public_key,),
-            ).fetchone()
-            if result is not None:
-                validator_index = result[0]
-            else:  # We ask beaconchain. Instead of pushing it to decoders, recreating here
-                # this is not good practise since if it shares any backoff logic it breaks,
-                # but yoloing it since it's a single query that won't happen often
-                # and the alternative of pushing beaconchain as an argument across all
-                # decoders seems wrong, dirty and breaking abstraction
-                beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
-                try:
-                    result = beaconchain.get_validator_data([public_key])
-                except RemoteError as e:
-                    log.error(f'Failed to query validator index for {public_key} due to {e!s}')
-                    extra_data = {'public_key': public_key}
-                else:
-                    validator_index = result[0]['validatorindex']
-                    if not isinstance(validator_index, int) or validator_index < 0:
-                        validator_index = UNKNOWN_VALIDATOR_INDEX
-                        extra_data = {'public_key': public_key}
-
+        validator_index = self._query_validator_indexes(public_keys=[public_key])[0]
+        extra_data = {'public_key': public_key} if validator_index == UNKNOWN_VALIDATOR_INDEX else None  # noqa: E501
         for idx, event in enumerate(context.decoded_events):
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -94,11 +108,62 @@ class Eth2Decoder(DecoderInterface):
         )
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_eth2_consolidation_request(self, context: DecoderContext) -> DecodingOutput:
+        """Decode a request to consolidate validators.
+        Handles two types of requests:
+        - Self consolidation - changes the withdrawal credentials to 0x02 (accumulating validator)
+          See https://epf.wiki/?ref=blog.obol.org#/wiki/pectra-faq?id=q-i-have-a-validator-with-0x01-credentials-how-do-i-move-to-0x02
+        - Normal consolidation - consolidates the source validator into the target validator
+        """
+        if len(context.tx_log.data) != 116:  # This an anonymous tx log so can't check topic[0]
+            log.warning(
+                f'Encountered ETH2 consolidation request with unexpected '
+                f'data length in transaction {context.transaction}',
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        for event in context.decoded_events:
+            if (
+                event.address == CONSOLIDATION_REQUEST_CONTRACT and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == A_ETH
+            ):
+                event.event_subtype = HistoryEventSubType.FEE
+                event.counterparty = CPT_ETH2
+                event.notes = f'Spend {event.amount} ETH as validator consolidation fee'
+
+        caller_address = bytes_to_address(b'\x00' * 12 + context.tx_log.data[:20])
+        source_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
+        target_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[68:116]))
+        if source_public_key == target_public_key:
+            target = self._get_indexes_or_public_keys(public_keys=[target_public_key])[0]
+            notes = f'Request to convert validator {target} into an accumulating validator'
+        else:
+            source, target = self._get_indexes_or_public_keys(
+                public_keys=[source_public_key, target_public_key],
+            )
+            notes = f'Request to consolidate validator {source} into {target}'
+
+        return DecodingOutput(event=self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=caller_address,
+            notes=notes,
+            address=context.tx_log.address,
+            counterparty=CPT_ETH2,
+        ))
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ETH2_DEPOSIT_ADDRESS: (self._decode_eth2_deposit_event,),
+            CONSOLIDATION_REQUEST_CONTRACT: (self._decode_eth2_consolidation_request,),
         }
 
     @staticmethod
