@@ -18,7 +18,7 @@ const { darkModeEnabled } = toRefs(props);
 
 const automaticSymbol = 'A';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { isPackaged, setSelectedTheme } = useInterop();
 
 const frontendSettingsStore = useFrontendSettingsStore();

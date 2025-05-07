@@ -37,7 +37,7 @@ const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCol
 const { isManualAssetPrice, useExchangeRate } = usePriceUtils();
 const isManualPrice = isManualAssetPrice(identifier);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const openPriceDialog = ref<boolean>(false);
 const customPrice = ref<ManualPriceFormPayload | null>(null);

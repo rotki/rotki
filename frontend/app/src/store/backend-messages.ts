@@ -15,7 +15,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const isDevelopment = checkIfDevelopment();
   const { setupListeners } = useInterop();
   const { restartBackend } = useBackendManagement();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { start } = useMonitorStore();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());

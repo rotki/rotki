@@ -10,7 +10,7 @@ const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(us
 const scrambleData = ref<boolean>(false);
 const scrambleMultiplier = ref<string>('0');
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function randomMultiplier() {
   set(scrambleMultiplier, generateRandomScrambleMultiplier().toString());

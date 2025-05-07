@@ -59,7 +59,7 @@ const {
   extraParams,
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 async function fetchNotes(loadingIndicator = false) {
   if (loadingIndicator)
@@ -232,6 +232,7 @@ watch(shouldIncreasePage, (increasePage) => {
           class="mb-4"
         >
           <i18n-t
+            scope="global"
             keypath="notes_menu.limit_warning"
             tag="span"
           >
@@ -329,6 +330,7 @@ watch(shouldIncreasePage, (increasePage) => {
                   class="flex justify-between items-center pt-2"
                 >
                   <i18n-t
+                    scope="global"
                     keypath="notes_menu.last_updated"
                     class="note__datetime text-rui-text-secondary font-italic flex-1"
                     tag="span"

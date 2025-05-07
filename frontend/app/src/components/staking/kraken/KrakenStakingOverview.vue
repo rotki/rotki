@@ -17,7 +17,7 @@ const totalUsdCurrent = computed<BigNumber>(() => {
   return sum(earnedAssets);
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

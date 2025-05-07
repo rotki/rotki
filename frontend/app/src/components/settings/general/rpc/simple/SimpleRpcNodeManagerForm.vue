@@ -10,7 +10,7 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const modelValue = defineModel<string>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   modelValue: { required },

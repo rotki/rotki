@@ -14,7 +14,7 @@ const emit = defineEmits<{
   (e: 'update-tab', tab: string | number): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const loading = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});

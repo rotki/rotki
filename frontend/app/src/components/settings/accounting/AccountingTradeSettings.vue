@@ -8,7 +8,7 @@ import GasCostSetting from '@/components/settings/accounting/GasCostSetting.vue'
 import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

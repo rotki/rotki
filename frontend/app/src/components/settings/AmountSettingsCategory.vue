@@ -11,7 +11,7 @@ import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { bigNumberify } from '@rotki/common';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const amountExample = bigNumberify(123456.789);
 </script>

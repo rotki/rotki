@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<HistoryEventsQueryStatusProps>(), {
 
 const { events } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const itemHeight = 40;
 const wrapperComponentStyle = {

@@ -9,7 +9,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag, type Tag } from '@/types/tags';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const tag = ref<Tag | undefined>(undefined);
 const editMode = ref<boolean>(false);

@@ -3,7 +3,7 @@ import InternalLink from '@/components/helper/InternalLink.vue';
 import ImportSource from '@/components/import/ImportSource.vue';
 import { Routes } from '@/router/routes';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -12,6 +12,7 @@ const { t } = useI18n();
       {{ t('import_data.cointracking.preferred') }}
     </template>
     <i18n-t
+      scope="global"
       tag="span"
       keypath="import_data.note"
     >
@@ -21,6 +22,7 @@ const { t } = useI18n();
       <li>{{ t('import_data.cointracking.line_one') }}</li>
       <li>{{ t('import_data.cointracking.line_two') }}</li>
       <i18n-t
+        scope="global"
         keypath="import_data.cointracking.line_three"
         tag="span"
       >

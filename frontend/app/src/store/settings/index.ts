@@ -18,7 +18,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const generalStore = useGeneralSettingsStore();
   const accountingStore = useAccountingSettingsStore();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const api = useSettingsApi();
 

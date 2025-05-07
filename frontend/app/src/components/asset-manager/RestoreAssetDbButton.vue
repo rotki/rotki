@@ -27,7 +27,7 @@ const { restoreAssetsDatabase } = useAssets();
 
 const { restartBackend } = useBackendManagement();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { useIsTaskRunning } = useTaskStore();
 const loading = useIsTaskRunning(TaskType.RESET_ASSET);

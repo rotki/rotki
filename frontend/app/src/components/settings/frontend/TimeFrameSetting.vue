@@ -10,7 +10,7 @@ const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);
 const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { timeframe } = useSessionSettingsStore();
 const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(useFrontendSettingsStore());

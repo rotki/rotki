@@ -32,7 +32,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const ensNames = ref<EthNames>({});
 
   const { awaitTask } = useTaskStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
   const { supportedChains } = useSupportedChains();
 

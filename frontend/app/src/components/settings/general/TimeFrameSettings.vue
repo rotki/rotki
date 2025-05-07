@@ -21,7 +21,7 @@ const emit = defineEmits<{
 const { currentSessionTimeframe, message, value, visibleTimeframes } = toRefs(props);
 
 const timeframes = Object.values(TimeFramePeriod);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 
 const appendedVisibleTimeframes = computed(() => [TimeFramePersist.REMEMBER, ...get(visibleTimeframes)]);

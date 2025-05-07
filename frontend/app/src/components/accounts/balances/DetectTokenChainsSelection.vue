@@ -10,7 +10,7 @@ const emit = defineEmits<{
   'redetect:all': [];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const open = ref<boolean>(false);
 const search = ref<string>('');

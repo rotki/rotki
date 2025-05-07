@@ -13,7 +13,7 @@ definePage({
   name: 'import',
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -29,6 +29,7 @@ const { t } = useI18n();
       :title="t('common.important_notice')"
     >
       <i18n-t
+        scope="global"
         tag="span"
         keypath="import_data.notice"
       >

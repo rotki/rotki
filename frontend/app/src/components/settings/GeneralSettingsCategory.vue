@@ -14,7 +14,7 @@ import UsageAnalyticsSetting from '@/components/settings/general/UsageAnalyticsS
 import VersionUpdateFrequencySetting from '@/components/settings/general/VersionUpdateFrequencySetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

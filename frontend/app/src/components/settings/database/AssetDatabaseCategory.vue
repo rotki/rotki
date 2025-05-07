@@ -3,7 +3,7 @@ import RestoreAssetsDatabase from '@/components/settings/data-security/RestoreAs
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

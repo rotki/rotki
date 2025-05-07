@@ -7,7 +7,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { externalLinks } from '@shared/external-links';
 
 const name = 'thegraph';
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
@@ -78,6 +78,7 @@ const link = externalLinks.applyTheGraphApiKey;
     >
       <i18n-t
         v-if="link"
+        scope="global"
         tag="div"
         class="text-rui-text-secondary text-body-2"
         keypath="external_services.get_api_key"

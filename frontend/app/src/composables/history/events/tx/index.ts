@@ -37,7 +37,7 @@ import { startPromise } from '@shared/utils';
 import { groupBy, omit } from 'es-toolkit';
 
 export const useHistoryTransactions = createSharedComposable(() => {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
   const queue = new LimitedParallelizationQueue(1);
 

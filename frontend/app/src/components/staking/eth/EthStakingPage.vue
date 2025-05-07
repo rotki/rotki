@@ -83,7 +83,7 @@ const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(useBlockch
 const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const premium = usePremium();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function shouldRefreshDailyStats() {
   if (!get(shouldRefreshValidatorDailyStats))

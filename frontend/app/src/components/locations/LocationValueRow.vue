@@ -6,7 +6,7 @@ import { type BigNumber, Zero } from '@rotki/common';
 
 const props = defineProps<{ identifier: string }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { balancesByLocation } = useLocationBalancesBreakdown();

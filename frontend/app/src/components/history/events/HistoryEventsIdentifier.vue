@@ -12,7 +12,7 @@ const props = defineProps<{
   event: HistoryEventEntry;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { event } = toRefs(props);
 
@@ -64,6 +64,7 @@ const key = computed(() => {
 <template>
   <i18n-t
     :key="key"
+    scope="global"
     :keypath="translationKey"
     tag="div"
     class="flex flex-wrap items-center gap-x-1.5 gap-y-1"

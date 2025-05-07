@@ -8,7 +8,7 @@ const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
 
 const btcDerivationGapLimit = ref<string>(DEFAULT.toString());
 const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function successMessage(limit: string) {
   return t('general_settings.validation.btc_derivation_gap.success', {

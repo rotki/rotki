@@ -15,7 +15,7 @@ const modelValue = defineModel<AccountingRuleEntry>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const counterparty = refOptional(useRefPropVModel(modelValue, 'counterparty'), '');
 const accountingTreatment = useRefPropVModel(modelValue, 'accountingTreatment');

@@ -4,7 +4,7 @@ import { useSessionAuthStore } from '@/store/session/auth';
 
 const emit = defineEmits<{ (e: 'confirm'): void; (e: 'cancel'): void }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { incompleteUpgradeConflict } = storeToRefs(useSessionAuthStore());
 </script>

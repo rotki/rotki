@@ -29,7 +29,7 @@ function worksWithoutPremium(period: TimeFrameSetting): boolean {
   return isPeriodAllowed(period) || period === TimeFramePersist.REMEMBER;
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

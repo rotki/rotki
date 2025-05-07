@@ -20,7 +20,7 @@ interface UseAccountManagementReturn {
 }
 
 export function useAccountManagement(): UseAccountManagementReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const loading = ref<boolean>(false);
   const error = ref<string>('');
   const errors = ref<string[]>([]);

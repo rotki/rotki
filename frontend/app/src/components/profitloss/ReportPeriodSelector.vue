@@ -31,7 +31,7 @@ const QUARTER_ENDS: { [quarter in Quarter]: string } = {
 
 const { quarter, year } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function updatePeriod(period: PeriodChangedEvent | null) {
   emit('update:period', period);

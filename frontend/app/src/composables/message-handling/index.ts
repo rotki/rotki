@@ -52,7 +52,7 @@ export function useMessageHandling(): UseMessageHandling {
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
   const { notify } = notificationsStore;
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
   const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();

@@ -20,7 +20,7 @@ export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 export function useCustomAssetFilter(suggestions: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => [{
     description: t('assets.filter.name'),

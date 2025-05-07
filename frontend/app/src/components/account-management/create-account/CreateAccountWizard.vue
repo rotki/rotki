@@ -44,7 +44,7 @@ function nextStep() {
   setStep(get(step) + 1);
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const premiumEnabled = ref<boolean>(false);
 const premiumSetupForm = ref<PremiumSetup>({

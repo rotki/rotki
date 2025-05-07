@@ -9,7 +9,7 @@ onMounted(() => {
   set(treatEth2asEth, get(enabled));
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

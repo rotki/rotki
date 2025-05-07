@@ -15,7 +15,7 @@ const emit = defineEmits<{
   (e: 'update:valid', valid: boolean): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { enabled, form } = toRefs(props);
 

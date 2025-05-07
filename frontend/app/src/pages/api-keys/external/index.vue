@@ -3,7 +3,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { getTextToken } from '@rotki/common';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const search = ref<string>('');
 const { load } = useExternalApiKeys(t);

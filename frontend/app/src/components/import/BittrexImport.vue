@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ImportSource from '@/components/import/ImportSource.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -9,6 +9,7 @@ const { t } = useI18n();
     <ImportSource source="bittrex">
       <template #upload-title>
         <i18n-t
+          scope="global"
           tag="span"
           keypath="import_data.bittrex.import"
         >

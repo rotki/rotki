@@ -6,7 +6,7 @@ import { useSessionAuthStore } from '@/store/session/auth';
 
 const emit = defineEmits<{ (e: 'proceed', approval: 'yes' | 'no'): void }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { syncConflict } = storeToRefs(useSessionAuthStore());
 
@@ -41,6 +41,7 @@ const lastModified = useRefMap(syncConflict, (conflict) => {
       >
         <li>
           <i18n-t
+            scope="global"
             keypath="login.sync_error.local_modified"
             class="font-medium"
           >
@@ -49,6 +50,7 @@ const lastModified = useRefMap(syncConflict, (conflict) => {
         </li>
         <li class="mt-2">
           <i18n-t
+            scope="global"
             keypath="login.sync_error.remote_modified"
             class="font-medium"
           >

@@ -5,7 +5,7 @@ import { NoteLocation } from '@/types/notes';
 
 const display = defineModel<boolean>({ required: true });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const tab = ref<number>(0);
 

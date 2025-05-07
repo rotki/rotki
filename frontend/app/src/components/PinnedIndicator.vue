@@ -8,7 +8,7 @@ const emit = defineEmits<{ (e: 'update:visible', visible: boolean): void }>();
 
 const { visible } = toRefs(props);
 const { pinned } = storeToRefs(useAreaVisibilityStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function toggleVisibility() {
   emit('update:visible', !get(visible));

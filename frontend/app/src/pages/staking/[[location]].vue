@@ -34,7 +34,7 @@ const pages = {
   liquity: defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
 };
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 

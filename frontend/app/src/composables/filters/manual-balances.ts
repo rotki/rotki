@@ -25,7 +25,7 @@ export type Filters = MatchedKeyword<ManualBalanceFilterValueKeys>;
 export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
 
   const matchers = computed<Matcher[]>(() => [

@@ -41,7 +41,7 @@ const form = ref<
 const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm } = useSupportedChains();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
 
 const showEtherscanApiKeysAlert = computed(() => {

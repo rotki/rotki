@@ -32,7 +32,7 @@ const { updateSetting } = frontendStore;
 
 const balanceData = assetInfo(identifier);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const imageUrlSource = computed<string | null>(() => get(balanceData)?.imageUrl || null);
 

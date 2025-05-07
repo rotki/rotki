@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

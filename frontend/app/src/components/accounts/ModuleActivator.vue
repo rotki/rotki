@@ -38,7 +38,7 @@ const visibleModules = computed(() =>
 
 onMounted(async () => await queriedAddressesStore.fetchQueriedAddresses());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { isAccountOperationRunning } = useAccountLoading();
 const loading = isAccountOperationRunning();
 </script>

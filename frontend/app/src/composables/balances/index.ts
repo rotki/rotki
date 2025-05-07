@@ -34,7 +34,7 @@ export const useBalances = createSharedComposable(() => {
   const { cacheEuroCollectionAssets, fetchExchangeRates, fetchPrices } = usePriceTaskManager();
   const { notify } = useNotificationsStore();
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsStore();
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {

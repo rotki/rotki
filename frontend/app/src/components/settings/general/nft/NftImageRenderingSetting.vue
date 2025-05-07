@@ -11,7 +11,7 @@ type RenderOption = 'all' | 'whitelisted';
 
 const emit = defineEmits<{ (e: 'dialog-open', value: boolean): void }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const confirmStore = useConfirmStore();
 const frontendStore = useFrontendSettingsStore();

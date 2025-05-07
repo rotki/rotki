@@ -19,7 +19,7 @@ const modelValue = defineModel<AddTransactionHashPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const lastChain = useLocalStorage('rotki.history_event.add_by_tx_hash.chain', Blockchain.ETH);
 const txHash = useRefPropVModel(modelValue, 'txHash');

@@ -13,7 +13,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
   const { scrambleAddress, scrambleData } = useScramble();
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const fetchCounterparties = async (): Promise<void> => {
     try {

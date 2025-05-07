@@ -23,7 +23,7 @@ interface UseAddressBookImport {
 export function useAddressBookImport(): UseAddressBookImport {
   const { parseCSV } = useCsvImportExport();
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { addAddressBook } = useAddressesNamesStore();
 
   async function handleAddressBookImport(rows: CSVRow[]): Promise<number> {

@@ -5,7 +5,7 @@ import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings
 
 const name = 'beaconchain';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();

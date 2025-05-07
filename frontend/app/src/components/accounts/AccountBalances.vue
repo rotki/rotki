@@ -37,7 +37,7 @@ const emit = defineEmits<{
 }>();
 
 const { category } = toRefs(props);
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const visibleTags = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});

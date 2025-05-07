@@ -33,7 +33,7 @@ const props = withDefaults(defineProps<{
   total: undefined,
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { blockchainOnly, showPercentage, total } = toRefs(props);
 const { useAssetBreakdown } = useAssetBalancesBreakdown();

@@ -15,7 +15,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   const { notify } = useNotificationsStore();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryCachedPrices } = usePriceApi();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const assetWithManualPrices = computed(() => Object.entries(prices.value)
     .filter(([, price]) => price.isManualPrice)

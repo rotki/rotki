@@ -30,7 +30,7 @@ const errorMessage = ref('');
 const formatHelp = ref<boolean>(false);
 const file = ref<File>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { getPath } = useInterop();
 
 const rules = {

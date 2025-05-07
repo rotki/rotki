@@ -22,7 +22,7 @@ defineSlots<{
   actions: (props: { items: EditableMissingPrice[] }) => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { isPinned, items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});

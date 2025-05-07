@@ -50,7 +50,7 @@ const filters = ref<Filters>({});
 
 const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const matchers = computed<Matcher[]>(
   () =>

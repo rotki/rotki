@@ -26,7 +26,7 @@ const emit = defineEmits<{
   (e: 'import'): boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const complete = logicAnd(balanceFile, locationFile);
 </script>

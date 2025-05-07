@@ -11,6 +11,7 @@ const { getItemTranslationKey, getLabel } = useTransactionQueryStatus();
 
 <template>
   <i18n-t
+    scope="global"
     :keypath="getItemTranslationKey(item)"
     tag="div"
     class="flex items-center py-2 text-no-wrap flex-wrap text-body-2 gap-x-2 gap-y-1"

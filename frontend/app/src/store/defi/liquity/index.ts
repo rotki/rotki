@@ -28,7 +28,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const isPremium = usePremium();
   const { activeModules } = useModules();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const {
     fetchLiquityBalances,
     fetchLiquityStaking,

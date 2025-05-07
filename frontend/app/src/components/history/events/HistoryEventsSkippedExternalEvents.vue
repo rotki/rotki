@@ -29,7 +29,7 @@ const { execute: refreshSkippedEvents, state: skippedEvents } = useAsyncState<Sk
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const headers: DataTableColumn<Location>[] = [
   {

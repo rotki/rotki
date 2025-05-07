@@ -18,7 +18,7 @@ defineSlots<{
   default: () => any;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const parentScroller = ref<HTMLDivElement>();
 const currentId = ref<string>(props.navigation[0]?.id ?? '');

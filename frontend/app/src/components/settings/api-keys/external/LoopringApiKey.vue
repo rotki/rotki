@@ -9,7 +9,7 @@ import { Module } from '@/types/modules';
 
 const name = 'loopring';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());

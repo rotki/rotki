@@ -17,7 +17,7 @@ interface GlobalDbInfo {
   assets: string;
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const backupInfo = ref<DatabaseInfo>();
 const loading = ref(false);

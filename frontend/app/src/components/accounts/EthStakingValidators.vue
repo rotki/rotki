@@ -29,7 +29,7 @@ const emit = defineEmits<{
   (e: 'edit', value: StakingValidatorManage): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const selected = ref<number[]>([]);
 

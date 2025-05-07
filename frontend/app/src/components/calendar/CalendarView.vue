@@ -25,7 +25,7 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import dayjs, { type Dayjs } from 'dayjs';
 import { isEqual, omit } from 'es-toolkit';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const selectedDate = ref<Dayjs>(dayjs());
 const visibleDate = ref<Dayjs>(dayjs());

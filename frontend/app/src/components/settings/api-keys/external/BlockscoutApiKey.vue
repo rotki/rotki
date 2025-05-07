@@ -11,7 +11,7 @@ const props = defineProps<{ evmChain: string; chainName: string }>();
 const { evmChain } = toRefs(props);
 
 const name = 'blockscout';
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, apiKey, confirmDelete, getName, loading, save } = useExternalApiKeys(t);
 
@@ -63,6 +63,7 @@ const link = computed(() => {
   >
     <i18n-t
       v-if="link"
+      scope="global"
       tag="div"
       class="text-rui-text-secondary text-body-2"
       keypath="external_services.get_api_key"

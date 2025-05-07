@@ -14,7 +14,7 @@ import { isPeriodAllowed } from '@/utils/settings';
 import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
 const sessionStore = useSessionSettingsStore();
 const { update } = sessionStore;

@@ -3,7 +3,7 @@ import PnlCsvSummarySetting from '@/components/settings/accounting/PnlCsvSummary
 import PnlCsvWithFormulasSetting from '@/components/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

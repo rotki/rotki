@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: EvmRpcNodeManageState): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const node = useSimplePropVModel(props, 'node', emit);
 const owned = useRefPropVModel(node, 'owned');

@@ -4,7 +4,7 @@ import { useMainStore } from '@/store/main';
 import { externalLinks } from '@shared/external-links';
 
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { usageGuideSection } = externalLinks;
 
 function proceed() {
@@ -15,7 +15,10 @@ function proceed() {
 <template>
   <div class="max-w-[27.5rem] mx-auto">
     <RuiAlert type="warning">
-      <i18n-t keypath="docker_warning.title">
+      <i18n-t
+        scope="global"
+        keypath="docker_warning.title"
+      >
         <ExternalLink
           :text="t('docker_warning.documentation')"
           :url="usageGuideSection.dockerWarning"

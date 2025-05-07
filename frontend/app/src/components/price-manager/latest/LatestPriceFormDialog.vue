@@ -26,7 +26,7 @@ const emit = defineEmits<{
 
 const { editableItem, editMode } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const modelValue = ref<ManualPriceFormPayload>();
 const loading = ref(false);

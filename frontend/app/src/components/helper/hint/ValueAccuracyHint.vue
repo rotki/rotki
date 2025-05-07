@@ -2,7 +2,7 @@
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);

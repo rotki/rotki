@@ -50,7 +50,7 @@ const props = withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { balances } = toRefs(props);
 const expanded = ref<AssetBalanceWithPrice[]>([]);

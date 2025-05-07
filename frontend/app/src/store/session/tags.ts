@@ -13,7 +13,7 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const { removeTag } = useBlockchainAccountsStore();
   const { setMessage } = useMessageStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
 
   const addTag = async (tag: Tag): Promise<ActionStatus> => {

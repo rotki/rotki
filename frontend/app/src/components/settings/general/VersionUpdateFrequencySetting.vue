@@ -12,7 +12,7 @@ const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
 const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(useFrontendSettingsStore());
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   versionUpdateCheckFrequency: {

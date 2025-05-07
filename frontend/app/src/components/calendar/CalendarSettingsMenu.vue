@@ -2,7 +2,7 @@
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const showMenu = ref(false);
 const autoDelete = ref(true);

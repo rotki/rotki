@@ -21,7 +21,7 @@ const { address } = toRefs(props);
 const openDialog = ref(false);
 const internalChain = ref<string>(Blockchain.ETH);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { allOwnedAssets, getAssetDetail } = useTradableAsset(address);
 

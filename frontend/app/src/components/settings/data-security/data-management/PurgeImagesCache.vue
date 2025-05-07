@@ -9,7 +9,7 @@ import { useAssetIconStore } from '@/store/assets/icon';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { PurgeableImageCache } from '@/types/session/purge';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const purgeable = [
   {

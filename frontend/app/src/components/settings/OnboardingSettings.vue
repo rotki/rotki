@@ -21,7 +21,7 @@ const emit = defineEmits<{
   (e: 'dismiss'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { dataDirectory, defaultBackendArguments } = storeToRefs(useMainStore());
 

@@ -51,7 +51,7 @@ const { display, primaryAction, promptOnClose, secondaryAction, subtitle } = toR
 const wrapper = useTemplateRef('wrapper');
 
 const { show } = useConfirmStore();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const primary = computed(() => get(primaryAction) || t('common.actions.confirm'));
 const secondary = computed(() => get(secondaryAction) || t('common.actions.cancel'));

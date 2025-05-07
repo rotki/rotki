@@ -8,7 +8,7 @@ import { helpers, required } from '@vuelidate/validators';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const rules = {
   floatingPrecision: {
     required: helpers.withMessage(t('general_settings.validation.floating_precision.non_empty'), required),

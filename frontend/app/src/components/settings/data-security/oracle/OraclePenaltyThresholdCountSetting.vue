@@ -10,7 +10,7 @@ const oraclePenaltyThresholdCount = ref<string>('0');
 
 const { oraclePenaltyThresholdCount: frequency } = storeToRefs(useGeneralSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const min = 1;
 const rules = {

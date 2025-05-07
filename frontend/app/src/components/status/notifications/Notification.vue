@@ -15,7 +15,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'dismiss', id: number): void }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { copy: copyToClipboard } = useClipboard();
 
 const { notification } = toRefs(props);

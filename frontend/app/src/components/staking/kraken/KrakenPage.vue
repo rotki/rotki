@@ -26,7 +26,7 @@ const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
 const { refreshPrices } = useBalances();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const addKrakenApiKeysLink: RouteLocationRaw = {
   path: `${Routes.API_KEYS_EXCHANGES}`,
@@ -105,6 +105,7 @@ onUnmounted(() => {
       </InternalLink>
 
       <i18n-t
+        scope="global"
         tag="h6"
         keypath="kraken_page.page.description"
         class="font-light text-h6 text-rui-text-secondary"

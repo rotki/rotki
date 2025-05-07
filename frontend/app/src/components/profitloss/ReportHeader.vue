@@ -9,6 +9,7 @@ defineProps<{
 
 <template>
   <i18n-t
+    scope="global"
     tag="div"
     keypath="profit_loss_report.report_period"
     class="text-h5 mt-6"

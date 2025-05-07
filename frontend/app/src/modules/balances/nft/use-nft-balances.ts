@@ -29,7 +29,7 @@ export function useNftBalances(): NftBalancesReturn {
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
 
   const fetchNonFungibleBalances = async (

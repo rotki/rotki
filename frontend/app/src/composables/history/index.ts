@@ -23,7 +23,7 @@ export function useIgnore<T extends EntryMeta>(
   refresh: () => any,
 ): UseIgnoreReturn<T> {
   const { setMessage } = useMessageStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const api = useHistoryIgnoringApi();
 
   const ignoreInAccounting = async (payload: IgnorePayload, ignore: boolean): Promise<ActionStatus> => {

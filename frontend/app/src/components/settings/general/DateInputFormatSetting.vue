@@ -11,7 +11,7 @@ import { helpers, required } from '@vuelidate/validators';
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(useFrontendSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function containsValidDirectives(v: string) {
   return displayDateFormatter.containsValidDirectives(v);

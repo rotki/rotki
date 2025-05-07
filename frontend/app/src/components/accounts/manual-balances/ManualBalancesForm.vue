@@ -27,7 +27,7 @@ defineProps<{
   submitting: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
 const openCustomAssetDialog = ref<boolean>(false);

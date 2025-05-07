@@ -14,7 +14,7 @@ interface UseSpamAssetReturn {
 
 export function useSpamAsset(): UseSpamAssetReturn {
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const {
     markAssetsAsSpam: markAssetAsSpamCaller,

@@ -16,7 +16,7 @@ function click() {
 
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

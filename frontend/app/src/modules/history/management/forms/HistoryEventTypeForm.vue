@@ -62,7 +62,7 @@ const historyEventSubTypeFilteredData = computed<ActionDataEntry[]>(() => {
   return allData.filter((data: ActionDataEntry) => globalMappingKeys.includes(data.identifier));
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

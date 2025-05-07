@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ImportSource from '@/components/import/ImportSource.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

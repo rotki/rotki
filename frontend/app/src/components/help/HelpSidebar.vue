@@ -12,7 +12,7 @@ const emit = defineEmits<{
   (e: 'about'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 interface Entry {
   readonly icon: RuiIcons;

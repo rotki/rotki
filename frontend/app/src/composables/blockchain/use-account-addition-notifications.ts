@@ -16,7 +16,7 @@ interface UseAccountAdditionNotificationsReturn {
 }
 
 export function useAccountAdditionNotifications(): UseAccountAdditionNotificationsReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
   const { getChainName } = useSupportedChains();
 

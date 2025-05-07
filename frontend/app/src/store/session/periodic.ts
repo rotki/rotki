@@ -9,7 +9,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const periodicRunning = ref(false);
 
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { fetchPeriodicData } = useSessionApi();
 
   const check = async (): Promise<void> => {

@@ -17,7 +17,7 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const selectedChain = ref<string>();
 const tab = ref<number>(0);

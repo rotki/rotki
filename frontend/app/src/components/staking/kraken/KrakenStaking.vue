@@ -15,7 +15,7 @@ defineProps<{
   loading: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { events } = toRefs(useKrakenStakingStore());
 const { assetPrice } = usePriceUtils();

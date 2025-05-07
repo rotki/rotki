@@ -8,7 +8,7 @@ export const useLocationStore = defineStore('locations', () => {
 
   const { fetchAllLocations } = useHistoryApi();
   // eslint-disable-next-line @typescript-eslint/unbound-method
-  const { t, te } = useI18n();
+  const { t, te } = useI18n({ useScope: 'global' });
 
   const toTradeLocationData = (locations: AllLocation): TradeLocationData[] =>
     Object.entries(locations).map(([identifier, item]) => {

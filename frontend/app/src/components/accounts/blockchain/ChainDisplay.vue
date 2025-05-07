@@ -15,7 +15,7 @@ const props = withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { chain } = toRefs(props);
 
 const { getChainName } = useSupportedChains();

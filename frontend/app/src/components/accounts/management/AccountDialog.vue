@@ -16,7 +16,7 @@ const emit = defineEmits<{
   (e: 'complete'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const form = ref<InstanceType<typeof AccountForm>>();
 const stateUpdated = ref(false);

@@ -11,7 +11,7 @@ definePage({
   },
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 enum Category {
   PRICE_ORACLE = 'price-oracle',

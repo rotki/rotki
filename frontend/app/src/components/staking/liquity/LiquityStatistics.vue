@@ -25,7 +25,7 @@ const { assetPrice } = usePriceUtils();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPrice(LUSD_ID);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);

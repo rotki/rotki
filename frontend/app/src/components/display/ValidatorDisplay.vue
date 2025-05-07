@@ -16,7 +16,7 @@ const props = withDefaults(
 const { horizontal } = toRefs(props);
 const length = computed(() => (get(horizontal) ? 4 : 10));
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { scrambleAddress, scrambleIdentifier, shouldShowAmount } = useScramble();
 </script>

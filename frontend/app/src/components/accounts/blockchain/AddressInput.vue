@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (e: 'update:error-messages', errorMessages: ValidationErrors): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { addresses, disabled, errorMessages } = toRefs(props);
 
 const address = ref<string>('');

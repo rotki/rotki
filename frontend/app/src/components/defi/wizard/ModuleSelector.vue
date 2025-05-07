@@ -17,7 +17,7 @@ import { transformCase, Zero } from '@rotki/common';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const supportedModules = SUPPORTED_MODULES;
 const loading = ref(false);

@@ -13,7 +13,7 @@ const emit = defineEmits<{ (e: 'cancel', task: Task<TaskMeta>): void }>();
 const { task } = toRefs(props);
 const { progress: taskProgress } = storeToRefs(useReportsStore());
 const { historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const hasDeterminateProgress = computed(() => {
   const { type } = get(task);

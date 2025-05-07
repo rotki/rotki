@@ -29,7 +29,7 @@ export function useAssetFilter(): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
   const { allEvmChains } = useSupportedChains();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => [
     {

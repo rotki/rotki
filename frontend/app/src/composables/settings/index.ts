@@ -98,7 +98,7 @@ interface UseClearableMessagesReturn {
 export function useClearableMessages(): UseClearableMessagesReturn {
   const error = ref('');
   const success = ref('');
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const clear = (): void => {
     set(success, '');

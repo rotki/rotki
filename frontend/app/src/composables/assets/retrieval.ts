@@ -44,7 +44,7 @@ interface UseAssetInfoRetrievalReturn {
 }
 
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { queueIdentifier, retrieve } = useAssetCacheStore();
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());

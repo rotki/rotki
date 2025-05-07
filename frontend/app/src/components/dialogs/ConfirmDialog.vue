@@ -29,7 +29,7 @@ const emit = defineEmits<{
 
 const { confirmType, primaryAction, secondaryAction } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const color = computed(() => themes[get(confirmType)].color);
 const icon = computed(() => themes[get(confirmType)].icon);

@@ -18,7 +18,7 @@ const sourceIdentifier = ref('');
 const pending = ref(false);
 
 const { mergeAssets } = useAssets();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   sourceIdentifier: {

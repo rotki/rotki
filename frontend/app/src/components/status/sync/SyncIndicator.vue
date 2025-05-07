@@ -14,7 +14,7 @@ import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import { TaskType } from '@/types/task-type';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { logout } = useLogout();
 const { lastDataUpload } = storeToRefs(usePeriodicStore());
 const {
@@ -167,6 +167,7 @@ const syncSettingMenuOpen = ref<boolean>(false);
               </div>
               <div class="text-rui-text-secondary text-sm">
                 <i18n-t
+                  scope="global"
                   keypath="sync_indicator.db_upload_result.message"
                   tag="span"
                 >

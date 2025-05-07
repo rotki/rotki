@@ -60,7 +60,7 @@ onMounted(() => {
   set(upToVersion, get(versions).upToVersion.toString());
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -73,6 +73,7 @@ const { t } = useI18n();
         {{ t('asset_update.title') }}
       </template>
       <i18n-t
+        scope="global"
         class="text-body-1"
         tag="div"
         keypath="asset_update.description"

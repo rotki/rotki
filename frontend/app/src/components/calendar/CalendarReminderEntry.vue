@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 const { latest } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 enum Unit {
   MINUTES = 'minutes',

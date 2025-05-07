@@ -64,7 +64,7 @@ defineSlots<{
 
 const { chains, hideOnEmptyUsable, multichain, multiple, unique, usableAddresses } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { addressNameSelector } = useAddressesNamesStore();

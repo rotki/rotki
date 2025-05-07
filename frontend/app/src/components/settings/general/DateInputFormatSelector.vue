@@ -31,7 +31,7 @@ function dateInputFormatExample(format: DateFormat): string {
   return displayDateFormatter.format(new Date(), format);
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

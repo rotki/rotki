@@ -64,7 +64,7 @@ watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS), async (current, 
     await fetchStatistics();
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

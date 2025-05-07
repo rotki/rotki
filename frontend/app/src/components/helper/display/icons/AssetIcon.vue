@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<AssetIconProps>(), {
 
 const emit = defineEmits<{ click: [] }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { chainIconSize, identifier, padding, resolutionOptions, showChain, size } = toRefs(props);
 

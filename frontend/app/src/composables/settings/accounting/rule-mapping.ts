@@ -6,7 +6,7 @@ import { assert, toHumanReadable, transformCase } from '@rotki/common';
 
 export const useAccountingRuleMappings = createSharedComposable(() => {
   // eslint-disable-next-line @typescript-eslint/unbound-method
-  const { t, te } = useI18n();
+  const { t, te } = useI18n({ useScope: 'global' });
 
   const { getAccountingRuleLinkedMapping } = useAccountingApi();
 

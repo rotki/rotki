@@ -27,7 +27,7 @@ defineSlots<{
 
 const { error, message } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const errorText = computed(() => {
   const errorText = get(error);

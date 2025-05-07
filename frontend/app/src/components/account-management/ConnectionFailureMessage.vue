@@ -7,7 +7,7 @@ import { LogLevel } from '@shared/log-level';
 
 const restarting = ref(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { connect } = useMainStore();
 const { restartBackend, saveOptions } = useBackendManagement();

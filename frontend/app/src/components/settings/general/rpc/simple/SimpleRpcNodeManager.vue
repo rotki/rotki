@@ -12,7 +12,7 @@ const props = defineProps<{
   setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint';
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const openDialog = ref<boolean>(false);
 const submitting = ref<boolean>(false);

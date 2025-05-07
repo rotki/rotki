@@ -3,12 +3,13 @@ const emit = defineEmits<{
   (e: 'next'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <div class="space-y-8">
     <i18n-t
+      scope="global"
       keypath="create_account.introduction.description"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
       tag="div"

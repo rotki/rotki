@@ -26,12 +26,13 @@ const emit = defineEmits<{
 
 const valid = ref<boolean>(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <div class="space-y-6">
     <i18n-t
+      scope="global"
       keypath="create_account.credentials.description"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
       tag="div"

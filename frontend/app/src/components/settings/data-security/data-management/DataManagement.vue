@@ -4,7 +4,7 @@ import PurgeImagesCache from '@/components/settings/data-security/data-managemen
 import RefreshCache from '@/components/settings/data-security/data-management/RefreshCache.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

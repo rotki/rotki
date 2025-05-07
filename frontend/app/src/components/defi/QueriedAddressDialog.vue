@@ -29,7 +29,7 @@ const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
 const { getAccounts } = useBlockchainAccountsStore();
 const { getAddresses } = useAccountAddresses();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const accounts = computed<BlockchainAccount[]>(() => getAccounts(ETH));
 

@@ -19,7 +19,7 @@ const emit = defineEmits<{
   (e: 'refresh:ignored'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const showMenu = ref(false);
 
 const handlingSelection = useSimplePropVModel(props, 'ignoredAssetsHandling', emit);

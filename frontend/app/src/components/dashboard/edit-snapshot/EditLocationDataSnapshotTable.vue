@@ -23,7 +23,7 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
 

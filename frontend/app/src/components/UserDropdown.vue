@@ -7,7 +7,7 @@ import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
 

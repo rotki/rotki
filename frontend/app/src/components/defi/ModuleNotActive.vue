@@ -18,7 +18,7 @@ function icon(module: Module): string {
   return data?.icon ?? '';
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const wrapper = ref();
 const { top } = useElementBounding(wrapper);
@@ -44,6 +44,7 @@ const { top } = useElementBounding(wrapper);
         </div>
       </div>
       <i18n-t
+        scope="global"
         tag="span"
         keypath="module_not_active.not_active"
         class="text-center text-rui-text-secondary"

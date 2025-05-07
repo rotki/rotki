@@ -18,7 +18,7 @@ const emit = defineEmits<{
   refresh: [mapping: CounterpartyMapping];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const form = useTemplateRef<InstanceType<typeof ManageCounterpartyMappingForm>>('form');
 const loading = ref(false);

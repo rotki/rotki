@@ -37,7 +37,7 @@ const props = withDefaults(
   { loading: false },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { balances, tableType, title } = toRefs(props);
 const search = ref('');

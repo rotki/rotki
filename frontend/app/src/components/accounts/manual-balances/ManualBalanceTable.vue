@@ -35,7 +35,7 @@ const emit = defineEmits<{
 
 const { type } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const tags = ref<string[]>([]);
 

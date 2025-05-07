@@ -13,7 +13,7 @@ const error = ref('');
 const { checkForUpdate, showUpdatePopup } = useUpdateChecker();
 const { downloadUpdate, installUpdate, isPackaged } = useInterop();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function dismiss() {
   set(showUpdatePopup, false);
@@ -106,6 +106,7 @@ onMounted(async () => {
           </span>
           <div v-else-if="!downloadReady">
             <i18n-t
+              scope="global"
               tag="div"
               keypath="update_popup.messages"
             >

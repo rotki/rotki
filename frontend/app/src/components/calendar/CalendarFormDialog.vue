@@ -20,7 +20,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const submitting = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});

@@ -2,7 +2,7 @@
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

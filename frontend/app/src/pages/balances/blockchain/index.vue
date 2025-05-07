@@ -35,7 +35,7 @@ const account = ref<AccountManageState>();
 const search = ref('');
 const chainsFilter = ref<string[]>([]);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const route = useRoute('balances-blockchain');
 
 const { useBlockchainAssets } = useBlockchainAggregatedBalances();

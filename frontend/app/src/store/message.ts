@@ -4,7 +4,7 @@ export const useMessageStore = defineStore('message', () => {
   const message = ref<Message>();
   const showMessage = computed(() => isDefined(message));
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const setMessage = (msg?: SemiPartial<Message, 'description'>): void => {
     if (!msg) {

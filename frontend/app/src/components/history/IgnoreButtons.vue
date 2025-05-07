@@ -9,7 +9,7 @@ withDefaults(
 
 const emit = defineEmits<{ (e: 'ignore', ignored: boolean): void }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

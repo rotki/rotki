@@ -14,7 +14,7 @@ definePage({
   },
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 enum Category {
   DATABASE_INFO = 'database-info',

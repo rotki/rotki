@@ -10,7 +10,7 @@ export const useLocale = createSharedComposable(() => {
   const lastLanguage = useLocalStorage('rotki.last_language', SupportedLanguage.EN);
   const forceUpdateMachineLanguage = useLocalStorage('rotki.force_update_machine_language', 'true');
 
-  const { locale } = useI18n();
+  const { locale } = useI18n({ useScope: 'global' });
 
   const adaptiveLanguage = computed<SupportedLanguage>(() => {
     const selectedLanguageVal = get(lastLanguage);

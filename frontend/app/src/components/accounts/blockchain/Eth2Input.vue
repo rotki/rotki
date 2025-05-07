@@ -21,7 +21,7 @@ const validatorIndex = refOptional(useRefPropVModel(modelValue, 'validatorIndex'
 const publicKey = refOptional(useRefPropVModel(modelValue, 'publicKey'), '');
 const ownershipPercentage = refOptional(useRefPropVModel(modelValue, 'ownershipPercentage'), '');
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   ownershipPercentage: {

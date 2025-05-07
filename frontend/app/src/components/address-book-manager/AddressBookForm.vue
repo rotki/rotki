@@ -30,7 +30,7 @@ withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const name = useRefPropVModel(modelValue, 'name');
 const location = useRefPropVModel(modelValue, 'location');

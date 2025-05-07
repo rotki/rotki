@@ -8,7 +8,7 @@ import { useTaskStore } from '@/store/tasks';
 
 const expanded = ref(false);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const store = useTaskStore();
 const { hasRunningTasks, tasks } = storeToRefs(store);
 const { cancelTask, useIsTaskRunning } = store;

@@ -11,7 +11,7 @@ onMounted(() => {
   set(costBasisMethod, get(method));
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function getSuccessMessage(method: string) {
   return t('account_settings.messages.cost_basis_method.success', {

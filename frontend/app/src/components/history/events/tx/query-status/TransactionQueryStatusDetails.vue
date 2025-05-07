@@ -35,6 +35,7 @@ defineProps<{ item: EvmTransactionQueryData }>();
       </template>
 
       <i18n-t
+        scope="global"
         :keypath="
           item.period[0] === 0
             ? 'transactions.query_status.latest_period_end_date'

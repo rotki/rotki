@@ -23,7 +23,7 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { balancesSnapshot, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -201,7 +201,10 @@ async function save() {
         </AmountInput>
 
         <div class="text-rui-text-secondary text-caption">
-          <i18n-t keypath="dashboard.snapshot.edit.dialog.total.warning">
+          <i18n-t
+            scope="global"
+            keypath="dashboard.snapshot.edit.dialog.total.warning"
+          >
             <template #amount>
               <AmountDisplay
                 :value="nftsExcludedTotal"

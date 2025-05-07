@@ -28,7 +28,7 @@ interface UseAssetsReturn {
 
 export function useAssets(): UseAssetsReturn {
   const { awaitTask } = useTaskStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { appSession, getPath, openDirectory } = useInterop();
   const {
     checkForAssetUpdate,

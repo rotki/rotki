@@ -32,7 +32,7 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: Snapshot): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
 

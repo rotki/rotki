@@ -19,7 +19,7 @@ const { useIsTaskRunning } = useTaskStore();
 const { getChainName } = useSupportedChains();
 const { refreshGeneralCache } = useSessionPurge();
 const { getRefreshableGeneralCaches } = useSessionApi();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const generalCaches = ref<string[]>([]);
 

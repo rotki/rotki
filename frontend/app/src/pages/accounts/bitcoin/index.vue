@@ -9,7 +9,7 @@ definePage({
   name: 'accounts-bitcoin',
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

@@ -4,7 +4,7 @@ import OraclePenaltyThresholdCountSetting
   from '@/components/settings/data-security/oracle/OraclePenaltyThresholdCountSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

@@ -36,7 +36,7 @@ const { isModuleEnabled } = useModules();
 
 const { isEvm, supportedChains } = useSupportedChains();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const filteredItems = computed(() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));

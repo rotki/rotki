@@ -18,7 +18,7 @@ const emit = defineEmits<{
   refresh: [mapping: CexMapping];
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const form = useTemplateRef<InstanceType<typeof ManageCexMappingForm>>('form');
 const loading = ref(false);

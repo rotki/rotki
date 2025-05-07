@@ -36,7 +36,7 @@ const props = withDefaults(
 
 const { disableAsset, timestamp } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const fiatValue = ref<string>('');
 const assetToUsdPrice = ref<string>('');

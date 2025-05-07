@@ -54,7 +54,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { notify } = useNotificationsStore();
 
   const { resetAddressNamesData } = useAddressesNamesStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { getChainName, getNativeAsset } = useSupportedChains();
 
   const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {

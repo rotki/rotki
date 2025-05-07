@@ -28,7 +28,7 @@ const internalValue = computed({
 const isBitcoin = computed(() => isBtcChain(get(blockchain)));
 const isXpub = computed(() => get(inputMode) === InputMode.XPUB_ADD);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { isAccountOperationRunning } = useAccountLoading();
 const loading = isAccountOperationRunning();
 

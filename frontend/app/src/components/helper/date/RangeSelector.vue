@@ -65,7 +65,7 @@ function onPeriodChange(period: PeriodChangedEvent | null) {
   input({ end, start });
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   end: {

@@ -26,7 +26,7 @@ const value = useRefPropVModel(model, 'usdValue');
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   location: {

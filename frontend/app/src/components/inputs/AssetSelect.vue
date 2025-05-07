@@ -65,7 +65,7 @@ const loading = ref(false);
 let pending: AbortController | null = null;
 
 const { assetMapping, assetSearch } = useAssetInfoApi();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const errors = computed(() => {
   const messages = [...get(errorMessages)];

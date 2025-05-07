@@ -13,7 +13,7 @@ const stateUpdated = ref<boolean>(false);
 const form = useTemplateRef<ComponentExposed<typeof ExchangeKeysForm>>('form');
 
 const { setupExchange } = useExchanges();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const title = computed<string>(() => {
   if (!isDefined(modelValue)) {

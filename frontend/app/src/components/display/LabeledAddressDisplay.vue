@@ -18,7 +18,7 @@ const props = defineProps<{
 const { account } = toRefs(props);
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const accountAddress = computed<string>(() => getAccountAddress(get(account)));
 

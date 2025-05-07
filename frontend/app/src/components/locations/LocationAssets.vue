@@ -11,7 +11,7 @@ const props = defineProps<{
 const { identifier } = toRefs(props);
 const { useIsTaskRunning } = useTaskStore();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { useLocationBreakdown } = useLocationBalancesBreakdown();
 const locationBreakdown = useLocationBreakdown(identifier);

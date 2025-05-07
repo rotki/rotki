@@ -43,7 +43,7 @@ async function openEditHistoricPriceDialog() {
 
 const datetime = computed<string>(() => convertFromTimestamp(get(event).timestamp));
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   price: {

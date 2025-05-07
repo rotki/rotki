@@ -9,7 +9,7 @@ const vueRouter = useRouter();
 
 const { event } = toRefs(props);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function onEditRule() {
   const entry = get(event);

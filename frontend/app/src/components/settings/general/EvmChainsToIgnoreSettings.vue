@@ -4,7 +4,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 const { evmChainsData, evmLikeChainsData } = useSupportedChains();
 const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);

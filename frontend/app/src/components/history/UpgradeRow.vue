@@ -23,7 +23,7 @@ withDefaults(
   },
 );
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
@@ -34,6 +34,7 @@ const { t } = useI18n();
     >
       <i18n-t
         v-if="events"
+        scope="global"
         keypath="upgrade_row.events"
         tag="div"
         class="md:text-center"
@@ -69,6 +70,7 @@ const { t } = useI18n();
       </i18n-t>
       <i18n-t
         v-else
+        scope="global"
         tag="div"
         keypath="upgrade_row.upgrade"
         class="md:text-center"

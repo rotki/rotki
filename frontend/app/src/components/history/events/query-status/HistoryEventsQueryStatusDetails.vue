@@ -37,6 +37,7 @@ defineProps<{ item: HistoryEventsQueryData }>();
       </template>
 
       <i18n-t
+        scope="global"
         :keypath="
           item.period[0] === 0
             ? 'transactions.query_status_events.latest_period_end_date'

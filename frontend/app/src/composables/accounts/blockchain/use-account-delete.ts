@@ -130,7 +130,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { deleteEth2Validators } = useEthStaking();
   const { deleteXpub, removeAccount, removeAgnosticAccount } = useBlockchainAccounts();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
   const { getChainName } = useSupportedChains();
 

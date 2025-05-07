@@ -15,7 +15,7 @@ defineProps<{
   showWarning: boolean;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const openOptionsDialog = ref<boolean>(false);
 

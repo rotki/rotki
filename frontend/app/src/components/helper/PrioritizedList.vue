@@ -89,7 +89,7 @@ function remove(item: PrioritizedListId) {
   input(items);
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const autoCompleteHint = computed<string>(() => {
   const num = get(missing).length;

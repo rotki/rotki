@@ -14,7 +14,7 @@ interface UseNftsReturn {
 
 export function useNfts(): UseNftsReturn {
   const { awaitTask } = useTaskStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const assetsApi = useAssetsApi();
 

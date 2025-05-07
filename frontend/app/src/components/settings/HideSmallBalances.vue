@@ -14,7 +14,7 @@ const props = defineProps<{
   source: BalanceSource;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const open = ref<boolean>(false);
 const hide = ref<boolean>(false);

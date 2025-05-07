@@ -31,7 +31,7 @@ const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(histor
 const { useIsTaskRunning } = useTaskStore();
 const taskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const headers: DataTableColumn<Data>[] = [{
   align: 'center',
@@ -124,6 +124,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
             :value="(data.processed / data.total) * 100"
           />
           <i18n-t
+            scope="global"
             tag="span"
             keypath="transactions.protocol_cache_updates.pools_refreshed"
           >

@@ -46,7 +46,7 @@ function redecodeAllEvents() {
   emit('redecode-all-events');
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 
@@ -183,6 +183,7 @@ onMounted(() => refresh());
         />
         <i18n-t
           v-if="!data.protocolCacheRefreshStatus"
+          scope="global"
           tag="span"
           keypath="transactions.events_decoding.transactions_processed"
         >
@@ -195,6 +196,7 @@ onMounted(() => refresh());
         </i18n-t>
         <i18n-t
           v-else
+          scope="global"
           tag="span"
           keypath="transactions.protocol_cache_updates.protocol_pools_refreshed"
         >

@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<HistoryQueryStatusDialogProps>(), {
   transactions: () => [],
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { loading } = toRefs(props);
 

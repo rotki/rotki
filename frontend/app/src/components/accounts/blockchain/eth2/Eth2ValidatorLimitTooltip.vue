@@ -2,7 +2,7 @@
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 const { validatorsLimitInfo } = useEthStaking();
 </script>
 
@@ -22,6 +22,7 @@ const { validatorsLimitInfo } = useEthStaking();
     </template>
 
     <i18n-t
+      scope="global"
       keypath="eth2_validator_limit_row.complete"
       tag="div"
     >

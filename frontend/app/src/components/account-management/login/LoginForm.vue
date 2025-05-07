@@ -35,7 +35,7 @@ const emit = defineEmits<{
   (e: 'backend-changed', url: string | null): void;
 }>();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const isTest = import.meta.env.VITE_TEST;
 const { errors, isDocker } = toRefs(props);
@@ -317,6 +317,7 @@ function abortLogin() {
             {{ t('login.description.welcome') }}
           </p>
           <i18n-t
+            scope="global"
             keypath="login.description.more_details"
             tag="p"
           >
@@ -375,7 +376,10 @@ function abortLogin() {
                 <div class="flex flex-col items-center py-3">
                   <div>{{ t('login.no_profiles_found') }}</div>
                   <div class="flex items-center gap-1">
-                    <i18n-t keypath="login.no_profiles_found_action">
+                    <i18n-t
+                      scope="global"
+                      keypath="login.no_profiles_found_action"
+                    >
                       <template #refresh_profiles>
                         <RuiButton
                           color="primary"

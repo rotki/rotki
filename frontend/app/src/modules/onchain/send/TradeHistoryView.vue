@@ -6,7 +6,7 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 const openDialog = ref<boolean>(false);
 const tabValue = ref(0);
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { recentTransactions } = storeToRefs(useWalletStore());
 

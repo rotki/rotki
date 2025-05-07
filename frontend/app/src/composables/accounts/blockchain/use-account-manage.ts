@@ -154,7 +154,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const pending = ref(false);
   const errorMessages = ref<ValidationErrors>({});
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const { updateAccountData, updateAccounts } = useBlockchainAccountsStore();
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();

@@ -7,7 +7,7 @@ const { useIsTaskRunning } = useTaskStore();
 const isEvmAccountsDetecting = useIsTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
 const { detectEvmAccounts } = useBlockchains();
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

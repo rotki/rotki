@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const router = useRouter();
 

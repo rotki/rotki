@@ -44,7 +44,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   const api = useKrakenApi();
 
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const events = computed<KrakenStakingEvents>(() => {
     const eventsValue = get(rawEvents);

@@ -33,7 +33,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
   const messageOverflow = ref(false);
 
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
 
   const prioritized = computed<NotificationData[]>(() => {
     const byDate = orderBy(get(data), ['date'], ['desc']);

@@ -7,7 +7,7 @@ definePage({
   redirect: Routes.SETTINGS_ACCOUNT,
 });
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 const { appRoutes } = useAppRoutes();
 

@@ -10,7 +10,7 @@ defineProps<{
 }>();
 
 const selection = ref<'current' | 'historical'>('current');
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>

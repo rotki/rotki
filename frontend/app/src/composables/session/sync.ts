@@ -13,7 +13,7 @@ import { Severity } from '@rotki/common';
 export const useSync = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { t } = useI18n();
+  const { t } = useI18n({ useScope: 'global' });
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
   const displaySyncConfirmation = ref(false);
   const confirmChecked = ref(false);

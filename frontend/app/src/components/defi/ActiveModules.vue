@@ -66,7 +66,7 @@ function icon(module: Module): string {
   return data?.icon ?? '';
 }
 
-const { t } = useI18n();
+const { t } = useI18n({ useScope: 'global' });
 
 function getName(module: Nullable<Module>) {
   return {
