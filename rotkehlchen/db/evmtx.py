@@ -7,6 +7,7 @@ from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.base.constants import BASE_GENESIS
 from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CONSOLIDATION_REQUEST_CONTRACT
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmAccount
@@ -454,7 +455,10 @@ class DBEvmTx:
                     (result[0],),
                 )
                 tx_receipt_log.topics = [x[0] for x in other_cursor]
-                if len(tx_receipt_log.topics) == 0:
+                if (
+                    len(tx_receipt_log.topics) == 0 and
+                    tx_receipt_log.address != CONSOLIDATION_REQUEST_CONTRACT  # keep anonymous consolidation request tx logs  # noqa: E501
+                ):
                     log.debug(f'Ignoring anonymous tx log in {tx_hash.hex()} at {chain_id}')
                     continue
 

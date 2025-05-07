@@ -1,7 +1,12 @@
 import pytest
 
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    CONSOLIDATION_REQUEST_CONTRACT,
+    CPT_ETH2,
+)
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.fval import FVal
@@ -158,3 +163,95 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
             depositor=proxy_address,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x5907fc323d165680fb8141681958A2FdBFA0907e']])
+def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xcc80041642ebd2f62a9d939321a1927f52d2bcb984355accefadcb20f9641d28')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746618551000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000312710325833682')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(fee_amount := FVal('0.000000000000000001')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as validator consolidation fee',
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=557,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Request to convert validator 187176 into an accumulating validator',
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xcECA24BE4585ADadC8f0D95285F65ac44533094C']])
+def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x812eeeb8a786650afa1826d8e9d46aa2073e28f1ed261f0c3da4ea18b7d7cd82')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746620507000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.00041335788646901')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(fee_amount := FVal('0.000000000000000001')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as validator consolidation fee',
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=692,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Request to consolidate validator 67953 into 1073521',
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+    )]
