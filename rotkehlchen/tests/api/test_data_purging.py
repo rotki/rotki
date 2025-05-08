@@ -199,8 +199,8 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
             )
             write_cursor.execute(
                 'INSERT OR IGNORE INTO eth2_validators(validator_index, '
-                'public_key, ownership_proportion) VALUES(?, ?, ?)',
-                (42, '0xfoo', '1.0'),
+                'public_key, validator_type, ownership_proportion) VALUES(?, ?, ?, ?)',
+                (42, '0xfoo', 1, '1.0'),
             )
             write_cursor.execute(
                 'INSERT INTO eth2_daily_staking_details(validator_index, timestamp, pnl) '

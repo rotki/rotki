@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.ethereum.modules.eth2.utils import epoch_to_timestamp, form_withdrawal_notes
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -49,8 +49,8 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     with database.user_write() as write_cursor:
         # Add validators for both addresses so that withdrawals get queried.
         DBEth2(database).add_or_update_validators(write_cursor, [
-            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
-            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[1]),  # noqa: E501
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0], validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[1], validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
         ])
 
     to_ts = ts_now()
@@ -170,10 +170,12 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
         dbeth2.add_or_update_validators(write_cursor, [
             ValidatorDetails(
                 validator_index=vindex1,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
                 ownership_proportion=ONE,
             ), ValidatorDetails(
                 validator_index=vindex2,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x8cd650758f377763bf7ebaf7fe60cb14b4b05f3ffe750820abf4ae70bc4bf25f84ccdff3a92489e1435ebf94768a03f1'),
                 ownership_proportion=ONE,
             ),
@@ -360,12 +362,15 @@ def test_withdrawals_detect_exit(eth2: 'Eth2', database):
         dbeth2.add_or_update_validators(write_cursor=write_cursor, validators=[
             ValidatorDetails(
                 validator_index=active_index,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c'),
             ), ValidatorDetails(
                 validator_index=exited_index,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
             ), ValidatorDetails(
                 validator_index=slashed_index,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
             ),
         ])
@@ -402,7 +407,7 @@ def test_query_no_withdrawals(
     with database.user_write() as write_cursor:
         # Add a validator associated with the address so that withdrawals get queried.
         DBEth2(database).add_or_update_validators(write_cursor, [
-            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0], validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
         ])
 
     etherscan_patch = patch.object(eth2.ethereum.etherscan, 'get_withdrawals', side_effect=eth2.ethereum.etherscan.get_withdrawals)  # noqa: E501
@@ -527,6 +532,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
                 validator_index=vindex,
                 public_key=Eth2PubKey('0xa5a07d88d03f4763b7341cb10c547e128b5a924d4c0b7b1d9ce8294d22584ad97c3092be9c68caad172b058d461a1c6b'),
                 ownership_proportion=ONE,
+                validator_type=ValidatorType.DISTRIBUTING,
             ),
         ])
 

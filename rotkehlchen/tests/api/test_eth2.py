@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDetailsWithStatus,
     ValidatorStatus,
+    ValidatorType,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -261,6 +262,7 @@ def test_staking_performance(
         public_key=Eth2PubKey('0xa2de832511231af4bf98083e68c67aa6429c8c2b08920302d1d6953298f3720c8d5ca22c08a54fffa2efab782e25dba8'),
         withdrawal_address=ethereum_accounts[0],
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     )
     response = requests.get(
         api_url_for(
@@ -546,12 +548,14 @@ def test_add_get_edit_delete_eth2_validators(
         withdrawable_timestamp=Timestamp(1703014103),
         withdrawal_address=string_to_evm_address('0x865c05C13d422310d9421E4Da915B73E5289A6B1'),
         status=ValidatorStatus.EXITED,
+        validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1606824023),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1607118167),
         validator_index=23948,
@@ -559,12 +563,14 @@ def test_add_get_edit_delete_eth2_validators(
         withdrawable_timestamp=Timestamp(1682832983),
         withdrawal_address=string_to_evm_address('0xf604d331d9109253fF63A00EA93DE5c0264314eF'),
         status=ValidatorStatus.EXITED,
+        validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1609038167),
         validator_index=43948,
         public_key=Eth2PubKey('0x922127b0722e0fca3ceeffe78a6d2f91f5b78edff42b65cce438f5430e67f389ff9f8f6a14a26ee6467051ddb1cc21eb'),
         withdrawal_address=string_to_evm_address('0xfA7F89a14d005F057107755cA18345728E2E3938'),
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     )]
     response = requests.put(
         api_url_for(
@@ -708,6 +714,7 @@ def test_add_get_edit_delete_eth2_validators(
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
         ownership_proportion=FVal(0.4025),
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1609038167),
         validator_index=43948,
@@ -715,6 +722,7 @@ def test_add_get_edit_delete_eth2_validators(
         withdrawal_address=string_to_evm_address('0xfA7F89a14d005F057107755cA18345728E2E3938'),
         ownership_proportion=FVal(0.5),
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     )]
     response = requests.put(
         api_url_for(
@@ -908,6 +916,7 @@ def test_query_eth2_balances(
         public_key=Eth2PubKey('0xb0456681ca4dc1a1276a9cab5915af9f9210f0eb104b4bd60164f59243b6159c3f3dab0d712cbae1360c7eb07af6a276'),
         withdrawal_address=string_to_evm_address('0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A'),
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1606824023),
         validator_index=5235,
@@ -915,6 +924,7 @@ def test_query_eth2_balances(
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
         ownership_proportion=ownership_proportion,
         status=ValidatorStatus.ACTIVE,
+        validator_type=ValidatorType.DISTRIBUTING,
     )]
     response = requests.put(
         api_url_for(
@@ -1225,6 +1235,7 @@ def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
         'index': CLEAN_HISTORY_VALIDATOR1,
         'public_key': '0xb324c5869db5a524f9c3e2f3b82a786e7baa6ea150dc8f5c86a5342e6a7a5b4719ee1749c2f79e9e49d18a00f006118b',  # noqa: E501
         'status': 'active',
+        'validator_type': 'distributing',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL1,
     }
     validator2_data = {
@@ -1232,6 +1243,7 @@ def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
         'index': CLEAN_HISTORY_VALIDATOR2,
         'public_key': '0x874df4549e48da22326e3f5c59a2e4e2096861236c8fd9314068f9e142812c216d440ed022371cdc5c3fcc2afac11693',  # noqa: E501
         'status': 'active',
+        'validator_type': 'distributing',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL2,
     }
     validator3_data = {
@@ -1239,6 +1251,7 @@ def test_get_validators(rotkehlchen_api_server: 'APIServer') -> None:
         'index': CLEAN_HISTORY_VALIDATOR3,
         'public_key': '0xa5de79a98e323f28de94fec045407324bbcd19bfddfe84b1cbc64df0f7bc77886f13c5bb639b2441238d2cd9c2b501d5',  # noqa: E501
         'status': 'exited',
+        'validator_type': 'distributing',
         'withdrawal_address': CLEAN_HISTORY_WITHDRAWAL3,
         'withdrawable_timestamp': 1706912087,
     }

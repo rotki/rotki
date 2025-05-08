@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
+    ValidatorType,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -66,6 +67,7 @@ def test_get_validators_to_query_for_stats(database):
             ValidatorDetails(
                 validator_index=1,
                 public_key=Eth2PubKey('0xfoo1'),
+                validator_type=ValidatorType.DISTRIBUTING,
             ),
         ],
         )
@@ -93,9 +95,9 @@ def test_get_validators_to_query_for_stats(database):
     # Now add multiple validators and daily stats and assert on result
     with database.user_write() as cursor:
         db.add_or_update_validators(cursor, [
-            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2')),
-            ValidatorDetails(validator_index=3, public_key=Eth2PubKey('0xfoo3')),
-            ValidatorDetails(validator_index=4, public_key=Eth2PubKey('0xfoo4')),
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
+            ValidatorDetails(validator_index=3, public_key=Eth2PubKey('0xfoo3'), validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
+            ValidatorDetails(validator_index=4, public_key=Eth2PubKey('0xfoo4'), validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
         ])
     db.add_validator_daily_stats([ValidatorDailyStats(
         validator_index=3,
@@ -344,6 +346,7 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             ValidatorDetails(
                 validator_index=validator_index,
                 public_key=public_key,
+                validator_type=ValidatorType.DISTRIBUTING,
             ),
         ])
 
@@ -592,14 +595,17 @@ def test_ownership_proportion(eth2: 'Eth2', database):
             validator_index=9,
             public_key=Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'),
             ownership_proportion=FVal(0.5),
+            validator_type=ValidatorType.BLS,
         ), ValidatorDetails(
             validator_index=1647,
             public_key=Eth2PubKey('0xb80777b022a115579f22674883996d0a904e51afaf0ddef4e577c7bc72ec4e14fc7714b8c58fb77ceb7b5162809d1475'),
             ownership_proportion=FVal(0.7),
+            validator_type=ValidatorType.DISTRIBUTING,
         ), ValidatorDetails(  # This validator is tracked but not owned by any of the addresses
             validator_index=1757,
             public_key=Eth2PubKey('0xac3d4d453d58c6e6fd5186d8f231eb00ff5a753da3669c208157419055c7c562b7e317654d8c67783c656a956927209d'),
             ownership_proportion=FVal(0.9),
+            validator_type=ValidatorType.DISTRIBUTING,
         ),
     ]
     with database.user_write() as write_cursor:
@@ -696,9 +702,11 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
         dbeth2.add_or_update_validators(write_cursor, validators=[
             ValidatorDetails(
                 validator_index=vindex1,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
             ), ValidatorDetails(
                 validator_index=vindex2,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xa41a0224e73270cee8e06a9984aa2cd902a20e66c8bb528caae602a7caf76c417d0bdf2ab3b6e50a579fa7d98c6d240c'),
             ),
         ])
@@ -852,9 +860,11 @@ def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
         dbeth2.add_or_update_validators(write_cursor, validators=[
             ValidatorDetails(
                 validator_index=647202,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x8f1e2e85780c76baede1331c1b5050b7ef752014d24eac669542051ff066dff263753bc033030ccb3c6cfdcc73de0757'),
             ), ValidatorDetails(
                 validator_index=647205,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x845fd413c7c5fc2073437d423167f41a51c7f13343c8beb71d5cad2092036ff8277570aec8ba9467aee7ca352dd19d87'),
             ),
         ])
@@ -914,6 +924,7 @@ def test_combine_block_with_tx_events(eth2, database):
         dbeth2.add_or_update_validators(write_cursor, [
             ValidatorDetails(
                 validator_index=vindex1,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a1322308832065v6fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
             ),
         ])
@@ -1010,14 +1021,17 @@ def test_refresh_activated_validators_deposits(eth2, database):
     dbeth2 = DBEth2(database)
     validator1 = ValidatorDetails(
         validator_index=30932,
+        validator_type=ValidatorType.DISTRIBUTING,
         public_key=Eth2PubKey('0xa7d4c301a02b7dc747c0f8ff32579226588c7771e133e9b2817cc7a9a977f0004dbee4f4f7f89451a1f5f761e3bb8c81'),
     )
     validator2 = ValidatorDetails(
         validator_index=207003,
+        validator_type=ValidatorType.DISTRIBUTING,
         public_key=Eth2PubKey('0x989620ffd512c08907841e28a2c472bbfad2e57c73f474814bf64bab3ae3b44436b1db7b05e4ccc1eb2c3f949a546278'),
     )
     validator3 = ValidatorDetails(
         validator_index=4523,
+        validator_type=ValidatorType.BLS,
         public_key=Eth2PubKey('0x967c17368bcb6a90164d1af369115b3bf265b82c350fc78d9b1fa9389f2a216867ca02121f21c4be121f334ce2ac7f4f'),
     )
     with database.user_write() as write_cursor:
@@ -1112,14 +1126,17 @@ def test_get_active_validator_indices(database):
         dbeth2.add_or_update_validators(write_cursor, [
             ValidatorDetails(
                 validator_index=active_index,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c'),
             ), ValidatorDetails(
                 validator_index=exited_index,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
                 withdrawable_timestamp=Timestamp(1699801559),
                 exited_timestamp=Timestamp(1699976207000),
             ), ValidatorDetails(
                 validator_index=noevents_index,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
             ),
         ])
@@ -1145,11 +1162,11 @@ def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
     with eth2.database.user_write() as write_cursor:
         write_cursor.executemany(
             'INSERT OR IGNORE INTO eth2_validators('
-            'validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',
+            'validator_index, public_key, validator_type, ownership_proportion) VALUES(?, ?, ?, ?)',  # noqa: E501
             [
-                (42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0'),  # noqa: E501
-                (1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35'),  # noqa: E501
-                (5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0'),  # noqa: E501
+                (42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', 1, '1.0'),  # noqa: E501
+                (1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', 1, '0.35'),  # noqa: E501
+                (5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', 1, '1.0'),  # noqa: E501
             ],
         )
         write_cursor.executemany(
@@ -1166,9 +1183,9 @@ def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
 
     with eth2.database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT * from eth2_validators').fetchall() == [
-            (1, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1606824023, None, None),  # noqa: E501
-            (2, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1606824023, None, None),  # noqa: E501
-            (3, 5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0', '0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A', 1606824023, None, None),  # noqa: E501
+            (1, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1, 1606824023, None, None),  # noqa: E501
+            (2, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1, 1606824023, None, None),  # noqa: E501
+            (3, 5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0', '0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A', 1, 1606824023, None, None),  # noqa: E501
         ]
         assert cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3
 

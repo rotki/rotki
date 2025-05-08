@@ -481,6 +481,7 @@ CREATE TABLE IF NOT EXISTS eth2_validators (
     public_key TEXT NOT NULL UNIQUE,
     ownership_proportion TEXT NOT NULL,
     withdrawal_address TEXT,
+    validator_type INTEGER NOT NULL CHECK (validator_type IN (0, 1, 2)),
     activation_timestamp INTEGER,
     withdrawable_timestamp INTEGER,
     exited_timestamp INTEGER

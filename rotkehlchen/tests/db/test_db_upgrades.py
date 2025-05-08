@@ -3131,6 +3131,13 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (2, 1, 900),
             (3, 2, 86400),
         ]
+        assert not column_exists(cursor, 'eth2_validators', 'validator_type')
+        assert cursor.execute('SELECT withdrawal_address from eth2_validators').fetchall() == [
+            ('0xabcd1234abcd1234abcd1234abcd1234abcd1234',),
+            (None,),
+            ('0xefef1234abcd1234abcd1234abcd1234abcd5678',),
+            (None,),
+        ]
         assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE "%_trades_%"').fetchall() == [  # noqa: E501
             ('kraken_trades_kraken', 1577836800, 1609459200),
             ('binance_trades_binance', 1609459200, 1640995200),
@@ -3216,6 +3223,13 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (1, 1, 3600, 0),
             (2, 1, 900, 0),
             (3, 2, 86400, 0),
+        ]
+        assert column_exists(cursor, 'eth2_validators', 'validator_type')
+        assert cursor.execute('SELECT withdrawal_address, validator_type from eth2_validators').fetchall() == [  # noqa: E501
+            ('0xabcd1234abcd1234abcd1234abcd1234abcd1234', 1),
+            (None, 0),
+            ('0xefef1234abcd1234abcd1234abcd1234abcd5678', 1),
+            (None, 0),
         ]
         assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "%_trades_%"').fetchone()[0] == 0  # noqa: E501
         assert not table_exists(cursor, 'action_type')

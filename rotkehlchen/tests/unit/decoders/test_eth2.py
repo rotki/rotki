@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     CPT_ETH2,
     WITHDRAWAL_REQUEST_CONTRACT,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
@@ -23,7 +23,7 @@ from rotkehlchen.types import Eth2PubKey, Location, TimestampMS, deserialize_evm
 def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     """Test a simple beacon chain deposit contract"""
     dbeth2 = DBEth2(database)
-    validator = ValidatorDetails(validator_index=507258, public_key=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'))  # noqa: E501
+    validator = ValidatorDetails(validator_index=507258, public_key=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'), validator_type=ValidatorType.DISTRIBUTING)  # noqa: E501
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(  # add validator in DB so decoder can map pubkey -> index
             write_cursor,
@@ -67,12 +67,15 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     validators = [
         ValidatorDetails(
             validator_index=55750,
+            validator_type=ValidatorType.DISTRIBUTING,
             public_key=Eth2PubKey('0x91108c07526641ad22e91b1038c640b9efce236e9aa8c1c355676a6862e4c082454ceaa599b305ceca9c15984fdbf1a8'),
         ), ValidatorDetails(
             validator_index=55751,
+            validator_type=ValidatorType.DISTRIBUTING,
             public_key=Eth2PubKey('0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641'),
         ), ValidatorDetails(
             validator_index=55752,
+            validator_type=ValidatorType.DISTRIBUTING,
             public_key=Eth2PubKey('0xa01b86a30e5e349dccc04aee560502dd49ba87342c22ea88e462ab2c843c92eed08407150a8eaa849dc9de909c59679a'),
         ),
     ]
@@ -131,7 +134,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
     an anonymous Ping() event in the same transaction.
     """
     dbeth2 = DBEth2(database)
-    validator = ValidatorDetails(validator_index=482198, public_key=Eth2PubKey('0xaa9c8a2653f08b3045fdb63547bfe1ad2a66225f7402717bde9897cc163840ee190ed31c78819db372253332bba3c570'))  # noqa: E501
+    validator = ValidatorDetails(validator_index=482198, public_key=Eth2PubKey('0xaa9c8a2653f08b3045fdb63547bfe1ad2a66225f7402717bde9897cc163840ee190ed31c78819db372253332bba3c570'), validator_type=ValidatorType.DISTRIBUTING)  # noqa: E501
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(  # add validator in DB so decoder can map pubkey -> index
             write_cursor,

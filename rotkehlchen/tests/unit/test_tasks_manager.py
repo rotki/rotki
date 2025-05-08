@@ -11,7 +11,7 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
-from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.pendle.constants import (
@@ -607,8 +607,8 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
     with task_manager.database.user_write() as cursor:
         # Add an active and an exited validator, and also leave one address with no validators
         DBEth2(task_manager.database).add_or_update_validators(cursor, [
-            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
-            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[1], exited_timestamp=Timestamp(1730000000)),  # noqa: E501
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0], validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[1], validator_type=ValidatorType.DISTRIBUTING, exited_timestamp=Timestamp(1730000000)),  # noqa: E501
         ])
 
     def maybe_run_task(
@@ -659,8 +659,8 @@ def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
     with task_manager.database.user_write() as cursor:
         # Add both an active and an exited validator
         DBEth2(task_manager.database).add_or_update_validators(cursor, [
-            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0]),  # noqa: E501
-            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[0], exited_timestamp=Timestamp(1730000000)),  # noqa: E501
+            ValidatorDetails(validator_index=1, public_key=Eth2PubKey('0xfoo1'), withdrawal_address=ethereum_accounts[0], validator_type=ValidatorType.DISTRIBUTING),  # noqa: E501
+            ValidatorDetails(validator_index=2, public_key=Eth2PubKey('0xfoo2'), withdrawal_address=ethereum_accounts[0], validator_type=ValidatorType.DISTRIBUTING, exited_timestamp=Timestamp(1730000000)),  # noqa: E501
         ])
 
     def maybe_run_task(expected_call_count: int, expected_indices: list[int]) -> None:

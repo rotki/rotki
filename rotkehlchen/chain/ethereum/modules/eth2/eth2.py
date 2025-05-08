@@ -734,7 +734,7 @@ class Eth2(EthereumModule):
 
             staking_changes.append((result.validator_index, identifier))
             history_changes.append((f'Deposit {amount_str} ETH to validator {result.validator_index}', identifier))  # noqa: E501
-            validators.append((result.validator_index, result.public_key, '1.0'))
+            validators.append((result.validator_index, result.public_key, result.validator_type.serialize_for_db(), '1.0'))  # noqa: E501
 
         if len(staking_changes) == 0:
             return
@@ -749,7 +749,7 @@ class Eth2(EthereumModule):
                 history_changes,
             )
             write_cursor.executemany(
-                'INSERT OR IGNORE INTO eth2_validators(validator_index, public_key, ownership_proportion) VALUES(?, ?, ?)',  # noqa: E501
+                'INSERT OR IGNORE INTO eth2_validators(validator_index, public_key, validator_type, ownership_proportion) VALUES(?, ?, ?, ?)',  # noqa: E501
                 validators,
             )
 

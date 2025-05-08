@@ -162,6 +162,29 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
         write_cursor.execute('DROP TABLE action_type')
 
+    @progress_step(description='Adding validator_type column to eth2 validators table')
+    def _add_validator_type_column(write_cursor: 'DBCursor') -> None:
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='eth2_validators',
+            schema="""
+                identifier INTEGER NOT NULL PRIMARY KEY,
+                validator_index INTEGER UNIQUE,
+                public_key TEXT NOT NULL UNIQUE,
+                ownership_proportion TEXT NOT NULL,
+                withdrawal_address TEXT,
+                validator_type INTEGER NOT NULL CHECK (validator_type IN (0, 1, 2)),
+                activation_timestamp INTEGER,
+                withdrawable_timestamp INTEGER,
+                exited_timestamp INTEGER
+            """,
+            insert_columns="""identifier, validator_index, public_key, ownership_proportion, withdrawal_address,
+            CASE WHEN withdrawal_address IS NOT NULL THEN 1 ELSE 0 END as validator_type,
+            activation_timestamp, withdrawable_timestamp, exited_timestamp
+            """,  # noqa: E501
+            insert_order='(identifier, validator_index, public_key, ownership_proportion, withdrawal_address, validator_type, activation_timestamp, withdrawable_timestamp, exited_timestamp)',  # noqa: E501
+        )
+
     @progress_step(description='Updating calendar reminders schema')
     def _update_calendar_reminders_schema(write_cursor: 'DBCursor') -> None:
         """Upgrades the calendar_reminders table to include acknowledged column."""
