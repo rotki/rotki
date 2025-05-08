@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
+    ValidatorType,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
@@ -251,6 +252,7 @@ def test_validator_exit_pnl(
         DBEth2(accountant.db).add_or_update_validators(write_cursor, validators=[
             ValidatorDetails(
                 validator_index=vindex1,
+                validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
             ),
         ])

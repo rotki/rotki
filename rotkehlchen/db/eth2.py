@@ -158,7 +158,7 @@ class DBEth2:
 
     def get_validators(self, cursor: 'DBCursor') -> list[ValidatorDetails]:
         cursor.execute(
-            'SELECT validator_index, public_key, ownership_proportion, withdrawal_address, '
+            'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501
             'activation_timestamp, withdrawable_timestamp, exited_timestamp FROM eth2_validators;',
         )
         return [ValidatorDetails.deserialize_from_db(x) for x in cursor]
@@ -171,7 +171,7 @@ class DBEth2:
         result: list[ValidatorDetailsWithStatus] = []
         exited_indices = self.get_exited_validator_indices(cursor)
         cursor.execute(
-            'SELECT validator_index, public_key, ownership_proportion, withdrawal_address, '
+            'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501
             'activation_timestamp, withdrawable_timestamp, exited_timestamp FROM eth2_validators;',
         )
         for entry in cursor:
@@ -262,7 +262,7 @@ class DBEth2:
             self,
             write_cursor: 'DBCursor',
             validators: list[ValidatorDetails],
-            updatable_attributes: tuple[str, ...] = ('validator_index', 'ownership_proportion', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp', 'exited_timestamp'),  # noqa: E501
+            updatable_attributes: tuple[str, ...] = ('validator_index', 'ownership_proportion', 'validator_type', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp', 'exited_timestamp'),  # noqa: E501
     ) -> None:
         """Adds or updates validator data
 
@@ -273,7 +273,7 @@ class DBEth2:
         """
         for validator in validators:
             result = write_cursor.execute(
-                'SELECT validator_index, public_key, ownership_proportion, withdrawal_address, '
+                'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501
                 'activation_timestamp, withdrawable_timestamp, exited_timestamp '
                 'FROM eth2_validators WHERE public_key=?', (validator.public_key,),
             ).fetchone()
@@ -288,7 +288,7 @@ class DBEth2:
             else:  # insertion case
                 write_cursor.execute(
                     'INSERT INTO '
-                    'eth2_validators(validator_index, public_key, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp, exited_timestamp) VALUES(?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
+                    'eth2_validators(validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp, exited_timestamp) VALUES(?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
                     validator.serialize_for_db(),
                 )
 

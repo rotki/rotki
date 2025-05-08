@@ -9,17 +9,19 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Location, Timestamp
+from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.assets.asset import Asset
 
-    VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None, Timestamp | None]  # noqa: E501
+    VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, int, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None, Timestamp | None]  # noqa: E501
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -157,11 +159,29 @@ class ValidatorDailyStats(AccountingEventMixin):
         return 1
 
 
+class ValidatorType(DBIntEnumMixIn):
+    BLS = 0
+    DISTRIBUTING = 1
+    ACCUMULATING = 2
+
+    @classmethod
+    def deserialize(cls, value: str) -> 'ValidatorType':
+        if value == '0x00':
+            return cls.BLS
+        if value == '0x01':
+            return cls.DISTRIBUTING
+        if value == '0x02':
+            return cls.ACCUMULATING
+
+        raise DeserializationError(f'Got unexpected value {value} for validator type')
+
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ValidatorDetails:
-    validator_index: int | None  # can be None if no index has yet been created due to not yet being seen by the consensys layer  # noqa: E501
+    validator_index: int | None  # can be None if no index has yet been created due to not yet being seen by the consensus layer  # noqa: E501
     public_key: Eth2PubKey
-    withdrawal_address: ChecksumEvmAddress | None = None  # only set if user has 0x1 credentials
+    validator_type:  ValidatorType
+    withdrawal_address: ChecksumEvmAddress | None = None  # only set if user has 0x01 or 0x02 credentials.  # noqa: E501
     activation_timestamp: Timestamp | None = None  # activation timestamp. None if not activated yet.  # noqa: E501
     withdrawable_timestamp: Timestamp | None = None  # the timestamp from which on a full withdrawal can happen. None if not exited and fully withdrawable yet  # noqa: E501
     exited_timestamp: Timestamp | None = None  # the timestamp at which the validator exited. None if we don't know it yet  # noqa: E501
@@ -174,6 +194,7 @@ class ValidatorDetails:
         data: dict[str, Any] = {
             'index': self.validator_index,
             'public_key': self.public_key,
+            'validator_type': self.validator_type.serialize(),
         }
         if self.ownership_proportion != ONE:
             data['ownership_percentage'] = self.ownership_proportion.to_percentage(precision=2, with_perc_sign=False)  # noqa: E501
@@ -190,6 +211,7 @@ class ValidatorDetails:
         return (
             self.validator_index,
             self.public_key,
+            self.validator_type.serialize_for_db(),
             str(self.ownership_proportion),
             self.withdrawal_address,
             self.activation_timestamp,
@@ -202,11 +224,12 @@ class ValidatorDetails:
         return cls(
             validator_index=result[0],
             public_key=result[1],
-            ownership_proportion=FVal(result[2]),
-            withdrawal_address=result[3],
-            activation_timestamp=result[4],
-            withdrawable_timestamp=result[5],
-            exited_timestamp=result[6],
+            validator_type=ValidatorType.deserialize_from_db(result[2]),
+            ownership_proportion=FVal(result[3]),
+            withdrawal_address=result[4],
+            activation_timestamp=result[5],
+            withdrawable_timestamp=result[6],
+            exited_timestamp=result[7],
         )
 
 

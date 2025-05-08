@@ -30,7 +30,7 @@ from .constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
     FREE_VALIDATORS_LIMIT,
 )
-from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID
+from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID, ValidatorType
 from .utils import calculate_query_chunks, epoch_to_timestamp
 
 if TYPE_CHECKING:
@@ -275,11 +275,11 @@ class BeaconInquirer:
 
             withdrawal_credentials = deserialize_str(valuegetter(entry, withdrawal_credentials_key))  # noqa: E501
             withdrawal_address = None
-            if withdrawal_credentials.startswith('0x01'):
+            if (validator_type := ValidatorType.deserialize(withdrawal_credentials[:4])) != ValidatorType.BLS:  # noqa: E501
                 try:
                     withdrawal_address = deserialize_evm_address(withdrawal_credentials[26:])
                 except DeserializationError:
-                    log.error(f'Could not deserialize 0x01 withdrawal credentials for {entry}')
+                    log.error(f'Could not deserialize 0x01/0x02 withdrawal credentials for {entry}')  # noqa: E501
 
             if withdrawable_ts is not None:
                 if queried_beaconchain and (exit_epoch := entry.get('exitepoch', 0)) != 0:
@@ -293,6 +293,7 @@ class BeaconInquirer:
                 withdrawal_address=withdrawal_address,
                 activation_timestamp=activation_ts,
                 withdrawable_timestamp=withdrawable_ts,
+                validator_type=validator_type,
                 exited_timestamp=exited_ts,
             ))
 
