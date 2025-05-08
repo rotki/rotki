@@ -32,6 +32,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
@@ -466,7 +467,14 @@ def get_decoded_events_of_transaction(
         if transactions is None:
             transactions = mappings_result[0](evm_inquirer, evm_inquirer.database)
         if evm_decoder is None:
-            decoder: EVMTransactionDecoder = mappings_result[1](evm_inquirer.database, evm_inquirer, transactions)  # noqa: E501
+            decoder_args = [evm_inquirer.database, evm_inquirer, transactions]
+            if evm_inquirer.chain_id == ChainID.ETHEREUM:
+                decoder_args.append(BeaconChain(
+                    database=evm_inquirer.database,
+                    msg_aggregator=evm_inquirer.database.msg_aggregator,
+                ))
+
+            decoder: EVMTransactionDecoder = mappings_result[1](*decoder_args)
         else:
             decoder = evm_decoder
 

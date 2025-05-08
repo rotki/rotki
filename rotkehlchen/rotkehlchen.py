@@ -371,10 +371,13 @@ class Rotkehlchen:
         # Initialize blockchain querying modules
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
-            ethereum_manager=EthereumManager(ethereum_inquirer := EthereumInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-            )),
+            ethereum_manager=EthereumManager(
+                node_inquirer=(ethereum_inquirer := EthereumInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                )),
+                beacon_chain=self.beaconchain,
+            ),
             optimism_manager=OptimismManager(OptimismInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,

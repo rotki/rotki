@@ -10,6 +10,8 @@ from .decoding.decoder import EthereumTransactionDecoder
 from .tokens import EthereumTokens
 
 if TYPE_CHECKING:
+    from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+
     from .node_inquirer import EthereumInquirer
 
 
@@ -21,6 +23,7 @@ class EthereumManager(EvmManager, CurveManagerMixin):
     def __init__(
             self,
             node_inquirer: 'EthereumInquirer',
+            beacon_chain: 'BeaconChain | None' = None,
     ) -> None:
         transactions = EthereumTransactions(
             ethereum_inquirer=node_inquirer,
@@ -37,6 +40,7 @@ class EthereumManager(EvmManager, CurveManagerMixin):
                 database=node_inquirer.database,
                 ethereum_inquirer=node_inquirer,
                 transactions=transactions,
+                beacon_chain=beacon_chain,
             ),
             accounting_aggregator=EthereumAccountingAggregator(
                 node_inquirer=node_inquirer,
