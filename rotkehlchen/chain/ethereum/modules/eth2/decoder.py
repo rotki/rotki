@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -9,17 +9,24 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey
 from rotkehlchen.utils.misc import bytes_to_address, bytes_to_hexstr, from_gwei
 
-from .constants import CONSOLIDATION_REQUEST_CONTRACT, CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
+from .constants import (
+    CONSOLIDATION_REQUEST_CONTRACT,
+    CPT_ETH2,
+    UNKNOWN_VALIDATOR_INDEX,
+    WITHDRAWAL_REQUEST_CONTRACT,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -121,6 +128,54 @@ class Eth2Decoder(DecoderInterface):
         )
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_eth2_request_with_fee(
+            self,
+            context: DecoderContext,
+            expected_data_length: Literal[76, 116],
+    ) -> tuple[EvmEvent, EvmEvent] | None:
+        """Decode a consolidation/withdrawal request with its fee.
+        Returns the fee event and info event in a tuple or None on error.
+        Note: The caller must further populate both events with data specific to the request type.
+        """
+        if len(context.tx_log.data) != expected_data_length:  # This an anonymous tx log so can't check topic[0]  # noqa: E501
+            log.error(
+                f'Encountered ETH2 request with unexpected '
+                f'data length in transaction {context.transaction}',
+            )
+            return None
+
+        for event in context.decoded_events:
+            if (
+                event.address == context.tx_log.address and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == A_ETH
+            ):
+                event.event_subtype = HistoryEventSubType.FEE
+                event.counterparty = CPT_ETH2
+                fee_event = event
+                break
+        else:
+            log.error(f'Failed to find fee event in ETH2 request transaction {context.transaction}')  # noqa: E501
+            return None
+
+        info_event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=bytes_to_address(b'\x00' * 12 + context.tx_log.data[:20]),
+            address=context.tx_log.address,
+            counterparty=CPT_ETH2,
+        )
+        maybe_reshuffle_events(
+            ordered_events=[info_event, fee_event],
+            events_list=context.decoded_events + [info_event],
+        )
+        return fee_event, info_event
+
     def _decode_eth2_consolidation_request(self, context: DecoderContext) -> DecodingOutput:
         """Decode a request to consolidate validators.
         Handles two types of requests:
@@ -128,48 +183,51 @@ class Eth2Decoder(DecoderInterface):
           See https://epf.wiki/?ref=blog.obol.org#/wiki/pectra-faq?id=q-i-have-a-validator-with-0x01-credentials-how-do-i-move-to-0x02
         - Normal consolidation - consolidates the source validator into the target validator
         """
-        if len(context.tx_log.data) != 116:  # This an anonymous tx log so can't check topic[0]
-            log.warning(
-                f'Encountered ETH2 consolidation request with unexpected '
-                f'data length in transaction {context.transaction}',
-            )
+        if (events := self._decode_eth2_request_with_fee(
+            context=context,
+            expected_data_length=116,
+        )) is None:
             return DEFAULT_DECODING_OUTPUT
 
-        for event in context.decoded_events:
-            if (
-                event.address == CONSOLIDATION_REQUEST_CONTRACT and
-                event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                event.asset == A_ETH
-            ):
-                event.event_subtype = HistoryEventSubType.FEE
-                event.counterparty = CPT_ETH2
-                event.notes = f'Spend {event.amount} ETH as validator consolidation fee'
-
-        caller_address = bytes_to_address(b'\x00' * 12 + context.tx_log.data[:20])
+        fee_event, info_event = events
         source_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
         target_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[68:116]))
         if source_public_key == target_public_key:
             target = self._get_indexes_or_public_keys(public_keys=[target_public_key])[0]
-            notes = f'Request to convert validator {target} into an accumulating validator'
+            info_event.notes = f'Request to convert validator {target} into an accumulating validator'  # noqa: E501
         else:
             source, target = self._get_indexes_or_public_keys(
                 public_keys=[source_public_key, target_public_key],
             )
-            notes = f'Request to consolidate validator {source} into {target}'
+            info_event.notes = f'Request to consolidate validator {source} into {target}'
 
-        return DecodingOutput(event=self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
-            amount=ZERO,
-            location_label=caller_address,
-            notes=notes,
-            address=context.tx_log.address,
-            counterparty=CPT_ETH2,
-        ))
+        fee_event.notes = f'Spend {fee_event.amount} ETH as validator consolidation fee'
+        return DecodingOutput(event=info_event)
+
+    def _decode_eth2_withdrawal_request(self, context: DecoderContext) -> DecodingOutput:
+        """Decode a withdrawal/exit request.
+        If amount is greater than zero, it is a partial withdrawal request.
+        If amount is zero, it indicates a request to fully exit the validator.
+        See https://epf.wiki/?ref=blog.obol.org#/wiki/pectra-faq?id=q-how-much-eth-can-i-withdraw-from-my-validator
+        """
+        if (events := self._decode_eth2_request_with_fee(
+            context=context,
+            expected_data_length=76,
+        )) is None:
+            return DEFAULT_DECODING_OUTPUT
+
+        fee_event, info_event = events
+        public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
+        validator = self._get_indexes_or_public_keys(public_keys=[public_key])[0]
+        if (amount := from_gwei(int.from_bytes(context.tx_log.data[68:76]))) == ZERO:
+            info_event.notes = f'Request to exit validator {validator}'
+            request_description = 'exit'
+        else:
+            info_event.notes = f'Request to withdraw {amount} ETH from validator {validator}'
+            request_description = 'withdrawal'
+
+        fee_event.notes = f'Spend {fee_event.amount} ETH as {request_description} request fee'
+        return DecodingOutput(event=info_event)
 
     # -- DecoderInterface methods
 
@@ -177,6 +235,7 @@ class Eth2Decoder(DecoderInterface):
         return {
             ETH2_DEPOSIT_ADDRESS: (self._decode_eth2_deposit_event,),
             CONSOLIDATION_REQUEST_CONTRACT: (self._decode_eth2_consolidation_request,),
+            WITHDRAWAL_REQUEST_CONTRACT: (self._decode_eth2_withdrawal_request,),
         }
 
     @staticmethod
