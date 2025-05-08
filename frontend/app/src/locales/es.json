@@ -878,6 +878,9 @@
     "up_to_version": "Only update up to version"
   },
   "assets": {
+    "action": {
+      "ignore": "Ignorar activo"
+    },
     "amount": "Total en propiedad",
     "backup": {
       "missing_directory": "Please select a directory"
@@ -895,7 +898,6 @@
         "tooltip": "Editar o establecer el precio personalizado"
       }
     },
-    "ignore": "Ignorar activo",
     "multi_chain_assets": "Multi Chain Assets",
     "value": "Valor"
   },

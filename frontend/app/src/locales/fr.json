@@ -1029,6 +1029,9 @@
     }
   },
   "assets": {
+    "action": {
+      "ignore": "Ignorer l'Actif"
+    },
     "amount": "Total détenu",
     "backup": {
       "missing_directory": "Veuillez sélectionner un répertoire"
@@ -1056,7 +1059,6 @@
       "type": "Filtrer par le type d'actif personnalisé",
       "type_hint": "Rechercher en utilisant le type d'actif"
     },
-    "ignore": "Ignorer l'Actif",
     "multi_chain_assets": "Actifs Multi-chaînes",
     "value": "Valeur"
   },

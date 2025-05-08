@@ -887,6 +887,9 @@
     "up_to_version": "Only update up to version"
   },
   "assets": {
+    "action": {
+      "ignore": "Ignore Asset"
+    },
     "amount": "Total Owned",
     "backup": {
       "missing_directory": "Please select a directory"
@@ -912,7 +915,6 @@
       "type": "Filter by the type of the custom asset",
       "type_hint": "Search using the asset type"
     },
-    "ignore": "Ignore Asset",
     "multi_chain_assets": "Multi Chain Assets",
     "value": "Value"
   },

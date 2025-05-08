@@ -183,10 +183,7 @@ async function showInHistoryEvent(identifier: number) {
       :dense="isPinned"
     >
       <template #item.asset="{ row }">
-        <AssetDetails
-          :asset="row.asset"
-          link
-        />
+        <AssetDetails :asset="row.asset" />
         <ReuseDate
           v-if="isPinned"
           :row="row"
@@ -229,7 +226,7 @@ async function showInHistoryEvent(identifier: number) {
               >
                 <template #prepend>
                   <RuiIcon name="lu-eye-off" />
-                  {{ t('assets.ignore') }}
+                  {{ t('assets.action.ignore') }}
                 </template>
               </RuiButton>
             </div>

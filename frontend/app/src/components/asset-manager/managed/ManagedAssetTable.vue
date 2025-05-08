@@ -98,7 +98,7 @@ const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
   {
     cellClass: 'py-0',
     key: 'ignored',
-    label: t('assets.ignore'),
+    label: t('assets.action.ignore'),
   },
   {
     key: 'actions',
@@ -133,9 +133,11 @@ function getAsset(item: SupportedAsset) {
 
   return {
     customAssetType: item.customAssetType ?? '',
+    evmChain: item.evmChain,
     identifier: item.identifier,
     isCustomAsset: item.assetType === CUSTOM_ASSET,
     name,
+    protocol: item.protocol,
     symbol: item.symbol ?? '',
   };
 }
@@ -307,7 +309,6 @@ const disabledRows = computed(() => {
           <template #item.symbol="{ row }">
             <AssetDetailsBase
               :changeable="!loading"
-              opens-details
               :asset="getAsset(row)"
             />
           </template>

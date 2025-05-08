@@ -403,7 +403,6 @@ function confirmDelete() {
           v-if="!isNft(row.assetIdentifier)"
           class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
           :asset="row.assetIdentifier"
-          :opens-details="false"
           :enable-association="false"
         />
         <NftDetails

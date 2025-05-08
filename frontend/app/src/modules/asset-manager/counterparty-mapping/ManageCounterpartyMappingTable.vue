@@ -90,11 +90,7 @@ function setPage(page: number) {
             />
           </template>
           <template #item.asset="{ row }">
-            <AssetDetails
-              opens-details
-              hide-name
-              :asset="row.asset"
-            />
+            <AssetDetails :asset="row.asset" />
           </template>
           <template #item.actions="{ row }">
             <RowActions

@@ -134,11 +134,7 @@ onMounted(async () => {
         row-attr="asset"
       >
         <template #item.asset="{ row }">
-          <AssetDetails
-            opens-details
-            hide-name
-            :asset="row.asset"
-          />
+          <AssetDetails :asset="row.asset" />
         </template>
         <template #item.amount="{ row }">
           <AmountDisplay :value="row.amount" />
@@ -186,11 +182,7 @@ onMounted(async () => {
             :loading="isLoading"
           >
             <template #item.asset="{ row }">
-              <AssetDetails
-                opens-details
-                hide-name
-                :asset="row.asset"
-              />
+              <AssetDetails :asset="row.asset" />
             </template>
             <template #item.amount="{ row }">
               <AmountDisplay :value="row.amount" />

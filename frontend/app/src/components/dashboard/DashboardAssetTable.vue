@@ -258,7 +258,6 @@ watch(search, () => setPage(1));
 
         <AssetDetails
           v-else
-          opens-details
           :asset="row.asset"
           :is-collection-parent="!!row.breakdown"
         />

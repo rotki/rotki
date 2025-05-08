@@ -184,16 +184,10 @@ onMounted(async () => {
       row-attr="fromAsset"
     >
       <template #item.fromAsset="{ row }">
-        <AssetDetails
-          link
-          :asset="row.fromAsset"
-        />
+        <AssetDetails :asset="row.fromAsset" />
       </template>
       <template #item.toAsset="{ row }">
-        <AssetDetails
-          link
-          :asset="row.toAsset"
-        />
+        <AssetDetails :asset="row.toAsset" />
       </template>
       <template #item.time="{ row }">
         <DateDisplay :timestamp="row.time" />

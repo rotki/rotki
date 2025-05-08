@@ -86,10 +86,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     class="bg-white dark:bg-[#1E1E1E] my-2"
   >
     <template #item.asset="{ row }">
-      <AssetDetails
-        opens-details
-        :asset="row.asset"
-      />
+      <AssetDetails :asset="row.asset" />
     </template>
     <template #item.usdPrice="{ row }">
       <AmountDisplay

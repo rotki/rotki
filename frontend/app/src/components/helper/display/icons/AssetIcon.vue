@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { StyleValue } from 'vue';
 import AppImage from '@/components/common/AppImage.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
@@ -13,7 +12,6 @@ import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifie
 interface AssetIconProps {
   identifier: string;
   size: string;
-  styled?: StyleValue;
   noTooltip?: boolean;
   circle?: boolean;
   padding?: string;
@@ -36,7 +34,6 @@ const props = withDefaults(defineProps<AssetIconProps>(), {
   padding: '2px',
   resolutionOptions: () => ({}),
   showChain: true,
-  styled: undefined,
 });
 
 const emit = defineEmits<{ click: [] }>();
@@ -170,7 +167,6 @@ const { copy } = useCopy(identifier);
         </div>
 
         <div
-          :style="styled"
           class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
           :class="{
             [$style.circle]: circle,
@@ -220,7 +216,7 @@ const { copy } = useCopy(identifier);
       v-if="isEvmIdentifier(identifier)"
       class="font-mono flex items-center gap-2 -my-1"
     >
-      {{ (isEvmIdentifier(identifier) ? getAddressFromEvmIdentifier(identifier) : identifier) }}
+      {{ getAddressFromEvmIdentifier(identifier) }}
       <RuiButton
         size="sm"
         variant="text"

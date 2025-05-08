@@ -2,7 +2,7 @@
 import type { TradableAsset } from '@/modules/onchain/types';
 import type { BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 
@@ -27,9 +27,11 @@ const name = assetName(props.data.asset, { collectionParent: false });
 
 <template>
   <div class="flex gap-2 items-center">
-    <AssetIcon
+    <AssetDetails
+      icon-only
       size="32px"
-      :identifier="data.asset"
+      :asset="data.asset"
+      hide-actions
       :force-chain="getEvmChainName(data.chain) || undefined"
       :resolution-options="{
         collectionParent: false,

@@ -203,7 +203,6 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
         <template #item.tokenIdentifier="{ row }">
           <AssetDetails
             :asset="row.tokenIdentifier"
-            opens-details
           />
         </template>
 

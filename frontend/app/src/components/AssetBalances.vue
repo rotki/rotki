@@ -175,7 +175,6 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
   >
     <template #item.asset="{ row }">
       <AssetDetails
-        opens-details
         :asset="row.asset"
         :is-collection-parent="!!row.breakdown"
       />
