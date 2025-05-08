@@ -16,3 +16,4 @@ BEACONCHAIN_MAX_EPOCH: Final = 9223372036854775807  # This is INT64 MAX. Beacon 
 DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE: Final = 100  # Maximum number of validators allowed per beaconcha.in API request  # noqa: E501
 
 CONSOLIDATION_REQUEST_CONTRACT: Final = string_to_evm_address('0x0000BBdDc7CE488642fb579F8B00f3a590007251')  # noqa: E501
+WITHDRAWAL_REQUEST_CONTRACT: Final = string_to_evm_address('0x00000961Ef480Eb55e80D19ad83579A64c007002')  # noqa: E501

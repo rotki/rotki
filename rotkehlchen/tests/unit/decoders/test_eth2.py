@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     CONSOLIDATION_REQUEST_CONTRACT,
     CPT_ETH2,
+    WITHDRAWAL_REQUEST_CONTRACT,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -187,25 +188,25 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_ETH,
-        amount=(fee_amount := FVal('0.000000000000000001')),
-        location_label=user_address,
-        notes=f'Spend {fee_amount} ETH as validator consolidation fee',
-        counterparty=CPT_ETH2,
-        address=CONSOLIDATION_REQUEST_CONTRACT,
-    ), EvmEvent(
-        tx_hash=tx_hash,
-        sequence_index=557,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
         amount=ZERO,
         location_label=user_address,
         notes='Request to convert validator 187176 into an accumulating validator',
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(fee_amount := FVal('0.000000000000000001')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as validator consolidation fee',
         counterparty=CPT_ETH2,
         address=CONSOLIDATION_REQUEST_CONTRACT,
     )]
@@ -233,19 +234,6 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
         sequence_index=1,
         timestamp=timestamp,
         location=Location.ETHEREUM,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_ETH,
-        amount=(fee_amount := FVal('0.000000000000000001')),
-        location_label=user_address,
-        notes=f'Spend {fee_amount} ETH as validator consolidation fee',
-        counterparty=CPT_ETH2,
-        address=CONSOLIDATION_REQUEST_CONTRACT,
-    ), EvmEvent(
-        tx_hash=tx_hash,
-        sequence_index=692,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_ETH,
@@ -254,4 +242,109 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
         notes='Request to consolidate validator 67953 into 1073521',
         counterparty=CPT_ETH2,
         address=CONSOLIDATION_REQUEST_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(fee_amount := FVal('0.000000000000000001')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as validator consolidation fee',
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x86863bC22648d8c2fb02e3fcA314B8ee9ca0A4e0']])
+def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5f038d3775fc27e16d8d5770aa1ba6f962e67ff8db0a194551566418542d60dc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746614447000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000936280934217013')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Request to withdraw 0.0001 ETH from validator 68209',
+        counterparty=CPT_ETH2,
+        address=WITHDRAWAL_REQUEST_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(fee_amount := FVal('0.000000000000000001')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as withdrawal request fee',
+        counterparty=CPT_ETH2,
+        address=WITHDRAWAL_REQUEST_CONTRACT,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3Fb695A1b8Bc5ea18d8A4811eb514a7E17d80695']])
+def test_exit_request(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x6224c1cde536d2488e29be74da6ed907bbeb885ecd38edc99820f35d8c0e136c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746707471000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.001827476471561315')),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        notes='Request to exit validator 1649633',
+        counterparty=CPT_ETH2,
+        address=WITHDRAWAL_REQUEST_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(fee_amount := FVal('0.000000000000000001')),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as exit request fee',
+        counterparty=CPT_ETH2,
+        address=WITHDRAWAL_REQUEST_CONTRACT,
     )]
