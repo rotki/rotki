@@ -114,7 +114,6 @@ function expand(item: CustomAsset) {
       <template #item.name="{ row }">
         <AssetDetailsBase
           :changeable="!loading"
-          opens-details
           :asset="getAsset(row)"
         />
       </template>

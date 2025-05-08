@@ -906,6 +906,9 @@
     }
   },
   "assets": {
+    "action": {
+      "ignore": "忽略资产"
+    },
     "amount": "总拥有量",
     "backup": {
       "missing_directory": "请选择目录"
@@ -931,7 +934,6 @@
       "type": "按自定义资产类型过滤",
       "type_hint": "使用资产类型搜索"
     },
-    "ignore": "忽略资产",
     "multi_chain_assets": "多链资产",
     "value": "价值"
   },

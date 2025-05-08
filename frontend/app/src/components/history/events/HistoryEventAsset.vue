@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/types/history/events';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { useAssetPageNavigation } from '@/composables/assets/navigation';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -22,18 +21,17 @@ const eventAsset = useRefMap(event, ({ asset }) => asset);
 const symbol = assetSymbol(eventAsset, {
   collectionParent: false,
 });
-const { navigateToDetails } = useAssetPageNavigation(eventAsset);
 </script>
 
 <template>
   <div class="py-2 flex items-center gap-2">
-    <AssetIcon
+    <AssetDetails
       size="32px"
-      :identifier="event.asset"
+      icon-only
+      :asset="event.asset"
       :resolution-options="{
         collectionParent: false,
       }"
-      @click="navigateToDetails()"
     />
     <div
       v-if="showBalance"

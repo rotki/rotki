@@ -119,7 +119,6 @@ useRememberTableSorting<AssetWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, sort, he
     >
       <template #item.asset="{ row }">
         <AssetDetails
-          opens-details
           :asset="row.asset"
         />
       </template>

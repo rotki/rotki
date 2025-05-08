@@ -240,7 +240,7 @@ async function toggleWhitelistAsset() {
 
         <template v-if="!isCustomAsset">
           <div class="text-body-2 mr-4">
-            {{ t('assets.ignore') }}
+            {{ t('assets.action.ignore') }}
           </div>
 
           <RuiTooltip

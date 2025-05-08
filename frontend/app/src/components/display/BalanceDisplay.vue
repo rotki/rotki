@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import AssetLink from '@/components/assets/AssetLink.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
@@ -104,15 +103,11 @@ const valueInCurrency = computed(() => {
         class="block text-rui-text-secondary"
       />
     </div>
-    <AssetLink
+    <AssetDetails
       v-if="!noIcon"
       :asset="asset"
-    >
-      <AssetIcon
-        :identifier="asset"
-        :size="iconSize"
-        class="flex"
-      />
-    </AssetLink>
+      icon-only
+      :size="iconSize"
+    />
   </div>
 </template>

@@ -2,10 +2,9 @@
 import type { Collection } from '@/types/collection';
 import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/types/reports';
 import type { DataTableColumn } from '@rotki/ui-library';
-import AssetLink from '@/components/assets/AssetLink.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
@@ -244,17 +243,10 @@ onMounted(async () => {
         <LocationDisplay :identifier="row.location" />
       </template>
       <template #item.asset="{ row }">
-        <AssetLink
-          v-if="row.assetIdentifier"
+        <AssetDetails
           :asset="row.assetIdentifier"
-          link
-        >
-          <AssetIcon
-            class="flex"
-            :identifier="row.assetIdentifier"
-            size="24px"
-          />
-        </AssetLink>
+          icon-only
+        />
       </template>
       <template #item.free_amount="{ row }">
         <AmountDisplay

@@ -271,16 +271,10 @@ onMounted(async () => {
         class="bg-white dark:bg-transparent"
       >
         <template #item.fromAsset="{ row }">
-          <AssetDetails
-            opens-details
-            :asset="row.fromAsset"
-          />
+          <AssetDetails :asset="row.fromAsset" />
         </template>
         <template #item.toAsset="{ row }">
-          <AssetDetails
-            opens-details
-            :asset="row.toAsset"
-          />
+          <AssetDetails :asset="row.toAsset" />
         </template>
         <template #item.toTimestamp="{ row }">
           <DateDisplay :timestamp="row.toTimestamp" />

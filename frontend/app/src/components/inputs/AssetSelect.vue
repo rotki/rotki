@@ -236,6 +236,7 @@ onUnmounted(() => {
           v-else
           class="py-0 pl-1"
           :asset="item"
+          hide-menu
         />
       </template>
     </template>
@@ -251,6 +252,7 @@ onUnmounted(() => {
         :id="`asset-${getValidSelectorFromEvmAddress(item.identifier.toLocaleLowerCase())}`"
         class="py-0 -my-1"
         :asset="item"
+        hide-menu
       />
     </template>
     <template #no-data>
