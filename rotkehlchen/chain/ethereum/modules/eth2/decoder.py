@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -13,7 +13,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -22,6 +21,12 @@ from rotkehlchen.utils.misc import bytes_to_address, bytes_to_hexstr, from_gwei
 
 from .constants import CONSOLIDATION_REQUEST_CONTRACT, CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.user_messages import MessagesAggregator
+
 DEPOSIT_EVENT = b'd\x9b\xbcb\xd0\xe3\x13B\xaf\xeaN\\\xd8-@I\xe7\xe1\xee\x91/\xc0\x88\x9a\xa7\x90\x80;\xe3\x908\xc5'  # noqa: E501
 
 logger = logging.getLogger(__name__)
@@ -29,6 +34,20 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class Eth2Decoder(DecoderInterface):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EthereumInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            beacon_chain: 'BeaconChain',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.beacon_chain = beacon_chain
 
     def _query_validator_indexes(self, public_keys: list[Eth2PubKey]) -> list[int]:
         """Retrieve the validator indexes of the specified public keys
@@ -43,14 +62,8 @@ class Eth2Decoder(DecoderInterface):
 
         unknown_keys = [key for key in public_keys if key not in found_indexes]
         if len(unknown_keys) != 0:  # Query beaconchain.
-            # Instead of pushing it to decoders, recreating here.
-            # this is not good practise since if it shares any backoff logic it breaks,
-            # but yoloing it since it's a single query that won't happen often
-            # and the alternative of pushing beaconchain as an argument across all
-            # decoders seems wrong, dirty and breaking abstraction
-            beaconchain = BeaconChain(self.base.database, self.msg_aggregator)
             try:
-                for result in beaconchain.get_validator_data(unknown_keys):
+                for result in self.beacon_chain.get_validator_data(unknown_keys):
                     validator_index = result['validatorindex']
                     if isinstance(validator_index, int) and validator_index >= 0:
                         found_indexes[result['pubkey']] = validator_index

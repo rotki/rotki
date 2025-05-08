@@ -96,6 +96,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -204,6 +205,7 @@ class EVMTransactionDecoder(ABC):
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
             exceptions_mappings: dict[str, 'Asset'] | None = None,
+            beacon_chain: 'BeaconChain | None' = None,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -229,6 +231,7 @@ class EVMTransactionDecoder(ABC):
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='lu-flame')] + misc_counterparties  # noqa: E501
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
+        self.beacon_chain = beacon_chain
         self.msg_aggregator = database.msg_aggregator
         self.chain_modules_root = f'rotkehlchen.chain.{self.evm_inquirer.chain_name}.modules'
         self.chain_modules_prefix_length = len(self.chain_modules_root)
@@ -314,11 +317,16 @@ class EVMTransactionDecoder(ABC):
         if class_name in self.decoders:
             raise ModuleLoadingError(f'{self.evm_inquirer.chain_name} decoder with name {class_name} already loaded')  # noqa: E501
 
+        extra_args = []
+        if class_name == 'Eth2':
+            extra_args.append(self.beacon_chain)
+
         try:  # not giving kwargs since, kwargs name can differ
             self.decoders[class_name] = decoder_class(
                 self.evm_inquirer,  # evm_inquirer
                 self.base,  # base_tools
                 self.msg_aggregator,  # msg_aggregator
+                *extra_args,
             )
         except (UnknownAsset, WrongAssetType) as e:
             self.msg_aggregator.add_error(
@@ -1464,6 +1472,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderToolsWithDSProxy,
             exceptions_mappings: dict[str, 'Asset'] | None = None,
+            beacon_chain: 'BeaconChain | None' = None,
     ):
         super().__init__(
             database=database,
@@ -1474,6 +1483,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
             exceptions_mappings=exceptions_mappings,
+            beacon_chain=beacon_chain,
         )
         self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type
         self.base: BaseDecoderToolsWithDSProxy  # Set explicit type

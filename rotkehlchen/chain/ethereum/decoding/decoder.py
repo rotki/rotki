@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             database: 'DBHandler',
             ethereum_inquirer: 'EthereumInquirer',
             transactions: 'EthereumTransactions',
+            beacon_chain: 'BeaconChain | None' = None,
     ):
         super().__init__(
             database=database,
@@ -64,6 +66,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 address_is_exchange_fn=self._address_is_exchange,
             ),
             exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
+            beacon_chain=beacon_chain,
         )
 
     def _maybe_enrich_transfers(
