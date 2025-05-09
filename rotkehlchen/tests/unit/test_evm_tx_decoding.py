@@ -5,10 +5,11 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
-from rotkehlchen.chain.evm.constants import GENESIS_HASH
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import CPT_ACCOUNT_DELEGATION, CPT_GAS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.constants import EVMTX_DECODED, EVMTX_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -31,6 +32,7 @@ from rotkehlchen.types import (
     Location,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -327,3 +329,81 @@ def test_token_detection_after_decoding(
         assert save_tokens_mock.call_args_list[0].kwargs['address'] == ethereum_accounts[0]
         assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
         assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [Asset('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c')]  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xf4ae64c5c4fb632D0e0D77097b957941c399d26e']])
+def test_eip7702_transaction(ethereum_transaction_decoder, ethereum_accounts):
+    evmhash = deserialize_evm_tx_hash('0x42402dcf6658abaf2c47593a7ebe1264fb2f331de918239d1717a7a9d2996abf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1746615035000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.0002516693954254'),
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.DELEGATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            address=string_to_evm_address('0x775c8D470CC8d4530b8F233322480649f4FAb758'),
+            notes='Execute account delegation to 0x775c8D470CC8d4530b8F233322480649f4FAb758',
+            counterparty=CPT_ACCOUNT_DELEGATION,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x22d094Fb289DD45B02490F97b015891FD9d4C145']])
+def test_eip7702_revocation_transaction(ethereum_transaction_decoder, ethereum_accounts):
+    evmhash = deserialize_evm_tx_hash('0x8419cf2c21e755a9a3e916749b8356beca49d85fb4fc31f7e5fbb7f36d21fe62')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        tx_hash=evmhash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1746793655000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.0001836334598192'),
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_GAS,
+            notes=f'Burn {gas_amount} ETH for gas',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.DELEGATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            address=ZERO_ADDRESS,
+            notes=f'Revoke account delegation for {user_address}',
+            counterparty=CPT_ACCOUNT_DELEGATION,
+        ),
+    ]
+    assert events == expected_events

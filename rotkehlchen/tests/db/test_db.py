@@ -120,6 +120,7 @@ TABLES_AT_INIT = [
     'evm_accounts_details',
     'multisettings',
     'evm_transactions',
+    'evm_transactions_authorizations',
     'optimism_transactions',
     'evm_internal_transactions',
     'evmtx_receipts',

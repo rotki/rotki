@@ -96,6 +96,7 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     DEPOSIT_FOR_WRAPPED = auto()
     REDEEM_WRAPPED = auto()
     CONSOLIDATE = auto()
+    DELEGATE = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -180,6 +181,7 @@ class EventCategory(Enum):
     MINT_NFT = 49, EventDirection.IN
     BURN_NFT = 50, EventDirection.OUT
     COMBINE = 51, EventDirection.NEUTRAL
+    DELEGATE = 52, EventDirection.NEUTRAL
 
     @property
     def direction(self) -> EventDirection:

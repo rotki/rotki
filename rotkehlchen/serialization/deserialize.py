@@ -21,6 +21,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
+    EvmTransactionAuthorization,
     EVMTxHash,
     HexColorCode,
     Timestamp,
@@ -534,6 +535,19 @@ def deserialize_evm_transaction(
         to_address = deserialize_evm_address(data['to']) if is_empty_to_address else None
         value = read_integer(data, 'value', source)
 
+        if (raw_authorization_list := data.get('authorizationList')) is not None:
+            authorization_list = []
+            for entry in raw_authorization_list:
+                try:
+                    authorization_list.append(EvmTransactionAuthorization(
+                        nonce=read_integer(entry, 'nonce', source),
+                        delegated_address=deserialize_evm_address(entry['address']),
+                    ))
+                except DeserializationError as e:
+                    log.error(f'Unable to deserialize authorization entry {entry} due to {e}')
+        else:
+            authorization_list = None
+
         if internal:
             return EvmInternalTransaction(
                 parent_tx_hash=tx_hash,
@@ -580,6 +594,7 @@ def deserialize_evm_transaction(
                 input_data=input_data,
                 nonce=nonce,
                 l1_fee=l1_fee,
+                authorization_list=authorization_list,
             ), raw_receipt_data
     except KeyError as e:
         raise DeserializationError(
@@ -599,6 +614,7 @@ def deserialize_evm_transaction(
             gas_used=gas_used,
             input_data=input_data,
             nonce=nonce,
+            authorization_list=authorization_list,
         ), raw_receipt_data
 
 

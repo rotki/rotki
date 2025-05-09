@@ -8,6 +8,7 @@ CPT_GAS: Final = 'gas'
 CPT_GITCOIN: Final = 'gitcoin'
 CPT_BASE: Final = 'base'
 CPT_SDAI: Final = 'sDAI'
+CPT_ACCOUNT_DELEGATION: Final = 'account delegation'
 
 OUTGOING_EVENT_TYPES: Final = {
     HistoryEventType.SPEND,

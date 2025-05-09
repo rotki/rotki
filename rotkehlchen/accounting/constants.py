@@ -29,6 +29,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.MEV_REWARD: {DEFAULT: EventCategory.MEV_REWARD},
         HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
         HistoryEventSubType.CONSOLIDATE: {DEFAULT: EventCategory.COMBINE},
+        HistoryEventSubType.DELEGATE: {DEFAULT: EventCategory.DELEGATE},
     },
     HistoryEventType.RECEIVE: {
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.CLAIM_REWARD},
@@ -315,6 +316,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.COMBINE: {DEFAULT: EventCategoryDetails(
         label='Combine',
         icon='lu-combine',
+    )}, EventCategory.DELEGATE: {DEFAULT: EventCategoryDetails(
+        label='delegate',
+        icon='lu-handshake',
     )},
 }
 
