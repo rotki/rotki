@@ -221,7 +221,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         result = None
         api_key = self._get_api_key()
         if api_key is None:
-            if not self.warning_given:
+            if self.chain == SupportedBlockchain.ETHEREUM and not self.warning_given:
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.MISSING_API_KEY,
                     data={'service': ExternalService.ETHERSCAN.serialize()},
