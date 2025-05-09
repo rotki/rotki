@@ -3672,6 +3672,7 @@ class RestAPI:
                 filter_query=filter_query,
                 has_premium=has_premium,
                 group_by_event_ids=group_by_event_ids,
+                match_exact_events=True,  # set to True since the frontend requests the event_identifiers manually in their second call to this endpoint. https://github.com/orgs/rotki/projects/11?pane=issue&itemId=110464193  # noqa: E501
                 entries_limit=entries_limit if entries_limit != -1 else None,
             )
             entries_total = self.rotkehlchen.data.db.get_entries_count(
@@ -4691,6 +4692,7 @@ class RestAPI:
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path | None,
+            match_exact_events: bool,
     ) -> dict[str, Any] | Response:
         """Export history events data to a CSV file."""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
@@ -4699,6 +4701,7 @@ class RestAPI:
                 cursor=cursor,
                 filter_query=filter_query,
                 has_premium=has_premium_check(self.rotkehlchen.premium),
+                match_exact_events=match_exact_events,
                 entries_limit=None,
             )
 

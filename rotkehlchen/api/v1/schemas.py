@@ -3592,16 +3592,18 @@ class SkippedExternalEventsExportSchema(Schema):
 class ExportHistoryEventSchema(HistoryEventSchema, AsyncQueryArgumentSchema):
     """Schema for querying history events"""
     directory_path = DirectoryField(required=True)
+    match_exact_events = fields.Boolean(load_default=False)
 
     def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:
         return {}
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
-        extra_fields = {}
+        extra_fields = {'match_exact_events': data['match_exact_events']}
         if (directory_path := data.get('directory_path')) is not None:
             extra_fields['directory_path'] = directory_path
         if (async_query := data.get('async_query')) is not None:
             extra_fields['async_query'] = async_query
+
         return extra_fields
 
 

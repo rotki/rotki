@@ -4,10 +4,13 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import (
@@ -21,6 +24,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_event,
@@ -501,3 +505,103 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
                 for free_event in free_result:
                     assert free_event.identifier is not None
                     assert free_event.identifier > 3, 'Free sub-events should be from the latest 3 event groups'  # noqa: E501
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
+def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: bool) -> None:
+    """Test that when toggling the match with exact events options
+    we receive the expected number of events in both free and premium tiers
+    """
+    db = DBHistoryEvents(database)
+    timestamp, account = TimestampMS(0), make_evm_address()
+    with database.user_write() as write_cursor:
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                EvmEvent(
+                    tx_hash=(tx_hash := make_evm_tx_hash()),
+                    sequence_index=0,
+                    timestamp=timestamp,
+                    location=Location.BASE,
+                    event_type=HistoryEventType.SPEND,
+                    event_subtype=HistoryEventSubType.FEE,
+                    asset=A_ETH,
+                    amount=FVal(gas := '1.6'),
+                    location_label=account,
+                    notes=f'Burn {gas} ETH for gas',
+                    counterparty=CPT_GAS,
+                ), EvmEvent(
+                    tx_hash=tx_hash,
+                    sequence_index=2,
+                    timestamp=timestamp,
+                    location=Location.BASE,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.APPROVE,
+                    asset=A_DAI,
+                    amount=ZERO,
+                    location_label=account,
+                    notes=f'Revoke DAI spending approval of {account} by {CPT_ONEINCH_V6}',
+                ), EvmSwapEvent(
+                    tx_hash=tx_hash,
+                    sequence_index=3,
+                    timestamp=timestamp,
+                    location=Location.BASE,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    asset=A_DAI,
+                    amount=FVal(swap_amount := FVal(3)),
+                    location_label=account,
+                    notes=f'Swap {swap_amount} DAI in 1inch-v6',
+                    counterparty=CPT_ONEINCH_V6,
+                ), EvmSwapEvent(
+                    tx_hash=tx_hash,
+                    sequence_index=4,
+                    timestamp=timestamp,
+                    location=Location.BASE,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=A_ETH,
+                    amount=FVal(receive_amount := 5),
+                    location_label=account,
+                    notes=f'Receive {receive_amount} ETH as a result of a 1inch-v6 swap',
+                    counterparty=CPT_ONEINCH_V6,
+                ),
+            ],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        result_match = db.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
+            has_premium=start_with_valid_premium,
+            group_by_event_ids=False,
+            match_exact_events=True,
+        )
+        result_no_match = db.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
+            has_premium=start_with_valid_premium,
+            group_by_event_ids=False,
+            match_exact_events=False,
+        )
+
+    assert len(result_match) == 2 and len(result_no_match) == 4
+    assert all(entry.asset == A_DAI for entry in result_match)
+
+    # also check the case of grouping by id
+    with database.conn.read_ctx() as cursor:
+        result_match_grouped = db.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
+            has_premium=start_with_valid_premium,
+            group_by_event_ids=True,
+            match_exact_events=True,
+        )
+        result_no_match_grouped = db.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
+            has_premium=start_with_valid_premium,
+            group_by_event_ids=True,
+            match_exact_events=False,
+        )
+        assert result_match_grouped[0][0] == 2 and result_no_match_grouped[0][0] == 4
+        assert result_match_grouped[0][1].asset == A_DAI
+        assert result_match_grouped[0][1].asset == A_DAI
