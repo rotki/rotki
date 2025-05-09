@@ -354,6 +354,16 @@ class EvmlikeChain(StrEnum):
     ZKSYNC_LITE = auto()
 
 
+class EvmTransactionAuthorization(NamedTuple):
+    """EIP-7702 authorization to delegate EOA execution to a contract.
+
+    When applied, sets EOA code to a delegation indicator pointing to the
+    delegated address, redirecting all calls to that contract's code.
+    """
+    nonce: int
+    delegated_address: ChecksumEvmAddress
+
+
 @dataclass(frozen=True)
 class EvmTransaction:
     """Represent an EVM transaction"""
@@ -370,6 +380,7 @@ class EvmTransaction:
     input_data: bytes
     nonce: int
     db_id: int = -1
+    authorization_list: list[EvmTransactionAuthorization] | None = None
 
     def __hash__(self) -> int:
         return hash(self.identifier)

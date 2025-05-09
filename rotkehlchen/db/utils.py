@@ -329,6 +329,7 @@ DBTupleType = Literal[
     'evm_transaction',
     'evm_internal_transaction',
     'zksynclite_transaction',
+    'evm_transactions_authorization',
 ]
 
 

@@ -3167,6 +3167,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         prev_topic_values = cursor.execute(
             'SELECT topic FROM evmtx_receipt_log_topics WHERE log=113754 ORDER BY topic_index',
         ).fetchall()
+        assert not table_exists(cursor, 'evm_transactions_authorizations')
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3249,6 +3250,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'ON evmtx_receipt_log_topics.topic_id = evmtx_topics_index.topic_id '
             'WHERE log=113754 ORDER BY topic_index',
         ).fetchall()
+        assert table_exists(cursor, 'evm_transactions_authorizations')
 
     db.logout()
 
@@ -3315,7 +3317,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'evmtx_topics_index'}
+    assert new_tables == {'evmtx_topics_index', 'evm_transactions_authorizations'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()

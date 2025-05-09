@@ -1,11 +1,16 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTransactionAuthorization,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -17,6 +22,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class DBL2WithL1FeesTx(DBEvmTx):
+    AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 14
 
     def add_evm_transactions(
             self,
@@ -43,18 +49,29 @@ class DBL2WithL1FeesTx(DBEvmTx):
         write_cursor.executemany(query, tx_tuples)
 
     def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any], has_premium: bool) -> tuple[str, list[tuple]]:  # noqa: E501
-        if has_premium:
-            return (
-                'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee, evm_transactions.identifier FROM evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
-                bindings,
-            )
-        # else
-        return (
-            'SELECT DISTINCT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, evm_transactions.input_data, evm_transactions.nonce, OP.l1_fee, evm_transactions.identifier FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id ' + query,  # noqa: E501
-            [FREE_ETH_TX_LIMIT] + bindings,
+        base_select = (
+            'SELECT evm_transactions.tx_hash, evm_transactions.chain_id, evm_transactions.timestamp, '  # noqa: E501
+            'evm_transactions.block_number, evm_transactions.from_address, evm_transactions.to_address, '  # noqa: E501
+            'evm_transactions.value, evm_transactions.gas, evm_transactions.gas_price, evm_transactions.gas_used, '  # noqa: E501
+            'evm_transactions.input_data, evm_transactions.nonce, evm_transactions.identifier, OP.l1_fee, auth.nonce AS auth_nonce, auth.delegated_address'  # noqa: E501
+        )
+        join_clause = (
+            'LEFT JOIN optimism_transactions AS OP ON evm_transactions.identifier=OP.tx_id '
+            'LEFT JOIN evm_transactions_authorizations AS auth ON evm_transactions.identifier = auth.tx_id'  # noqa: E501
         )
 
-    def _build_evm_transaction(self, result: tuple[Any, ...]) -> L2WithL1FeesTransaction:
+        if has_premium:
+            sql = f'{base_select} FROM evm_transactions {join_clause} {query}'
+        else:
+            sql = (
+                f'{base_select} FROM (SELECT * FROM evm_transactions ORDER BY timestamp DESC LIMIT ?) AS evm_transactions '  # noqa: E501
+                f'{join_clause} {query}'
+            )
+            bindings = [FREE_ETH_TX_LIMIT] + bindings
+
+        return sql, bindings
+
+    def _build_evm_transaction(self, result: tuple[Any, ...], authorization_list_result: list[tuple[int, ChecksumEvmAddress]]) -> L2WithL1FeesTransaction:  # noqa: E501
         return L2WithL1FeesTransaction(
             tx_hash=deserialize_evm_tx_hash(result[0]),
             chain_id=ChainID.deserialize_from_db(result[1]),
@@ -68,6 +85,10 @@ class DBL2WithL1FeesTx(DBEvmTx):
             gas_used=int(result[9]),
             input_data=result[10],
             nonce=result[11],
-            l1_fee=0 if result[12] is None else int(result[12]),  # this check is only needed when _build_evm_transaction is called from a code path that does not call assert_tx_data_is_pulled().  # noqa: E501
-            db_id=result[13],
+            db_id=result[12],
+            l1_fee=0 if result[13] is None else int(result[13]),  # this check is only needed when _build_evm_transaction is called from a code path that does not call assert_tx_data_is_pulled().  # noqa: E501
+            authorization_list=None if len(authorization_list_result) == 0 else [
+                EvmTransactionAuthorization(nonce=entry[0], delegated_address=entry[1])
+                for entry in authorization_list_result
+            ],
         )

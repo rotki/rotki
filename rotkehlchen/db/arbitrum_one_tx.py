@@ -6,7 +6,12 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTransactionAuthorization,
+    deserialize_evm_tx_hash,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -14,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class DBArbitrumOneTx(DBEvmTx):
 
-    def _build_evm_transaction(self, result: tuple[Any, ...]) -> ArbitrumOneTransaction:
+    def _build_evm_transaction(self, result: tuple[Any, ...], authorization_list_result: list[tuple[int, 'ChecksumEvmAddress']]) -> ArbitrumOneTransaction:  # noqa: E501
         """Builds an arbitrum transaction
 
         May raise:
@@ -42,4 +47,8 @@ class DBArbitrumOneTx(DBEvmTx):
             nonce=result[11],
             tx_type=tx_receipt.tx_type,
             db_id=result[12],
+            authorization_list=None if len(authorization_list_result) == 0 else [
+                EvmTransactionAuthorization(nonce=entry[0], delegated_address=entry[1])
+                for entry in authorization_list_result
+            ],
         )

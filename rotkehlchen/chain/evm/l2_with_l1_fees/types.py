@@ -5,6 +5,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
+    EvmTransactionAuthorization,
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
@@ -40,6 +41,7 @@ class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemen
             nonce: int,
             l1_fee: int,
             db_id: int = -1,
+            authorization_list: list[EvmTransactionAuthorization] | None = None,
     ):
         self.l1_fee = l1_fee
         super().__init__(
@@ -56,6 +58,7 @@ class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemen
             input_data=input_data,
             nonce=nonce,
             db_id=db_id,
+            authorization_list=authorization_list,
         )
 
     def __eq__(self, other: object) -> bool:

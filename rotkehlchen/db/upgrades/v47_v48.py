@@ -162,6 +162,17 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
         write_cursor.execute('DROP TABLE action_type')
 
+    @progress_step(description='Adding evm transactions authorization list table')
+    def _add_evm_transaction_authorization_list_table(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS evm_transactions_authorizations (
+            tx_id INTEGER NOT NULL PRIMARY KEY,
+            nonce INTEGER NOT NULL,
+            delegated_address TEXT NOT NULL,
+            FOREIGN KEY(tx_id) REFERENCES evm_transactions(identifier) ON DELETE CASCADE
+        );
+        """)
+
     @progress_step(description='Adding validator_type column to eth2 validators table')
     def _add_validator_type_column(write_cursor: 'DBCursor') -> None:
         update_table_schema(

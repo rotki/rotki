@@ -18,6 +18,7 @@ from web3.exceptions import Web3Exception
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
@@ -74,6 +75,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import (
+    CPT_ACCOUNT_DELEGATION,
     CPT_GAS,
     ERC20_OR_ERC721_APPROVE,
     ERC20_OR_ERC721_TRANSFER,
@@ -792,6 +794,30 @@ class EVMTransactionDecoder(ABC):
         events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
         if process_swaps:
             events = self._process_swaps(transaction=transaction, decoded_events=events)
+
+        if (
+                tx_receipt.tx_type == 4 and
+                transaction.from_address == transaction.to_address and
+                transaction.authorization_list is not None
+        ):  # if the event is an eip-7702 transaction, we need to add an informational event.
+            if (delegated_address := transaction.authorization_list[-1].delegated_address) == ZERO_ADDRESS:  # noqa: E501
+                notes = f'Revoke account delegation for {transaction.from_address}'
+            else:
+                notes = f'Execute account delegation to {delegated_address}'
+
+            events.append(self.base.make_event(
+                tx_hash=transaction.tx_hash,
+                sequence_index=self.base.get_next_sequence_index(),
+                timestamp=transaction.timestamp,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.DELEGATE,
+                asset=self.value_asset,
+                amount=ZERO,
+                location_label=transaction.from_address,
+                address=delegated_address,
+                notes=notes,
+                counterparty=CPT_ACCOUNT_DELEGATION,
+            ))
 
         with self.database.user_write() as write_cursor:
             if len(events) > 0:

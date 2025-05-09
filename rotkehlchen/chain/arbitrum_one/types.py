@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from rotkehlchen.types import EvmTransaction
+from rotkehlchen.types import EvmTransaction, EvmTransactionAuthorization
 
 if TYPE_CHECKING:
     from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, Timestamp
@@ -26,6 +26,7 @@ class ArbitrumOneTransaction(EvmTransaction):  # noqa: PLW1641  # hash implement
             nonce: int,
             tx_type: int,
             db_id: int = -1,
+            authorization_list: list[EvmTransactionAuthorization] | None = None,
     ):
         self.tx_type = tx_type
         super().__init__(
@@ -42,6 +43,7 @@ class ArbitrumOneTransaction(EvmTransaction):  # noqa: PLW1641  # hash implement
             input_data=input_data,
             nonce=nonce,
             db_id=db_id,
+            authorization_list=authorization_list,
         )
 
     def __eq__(self, other: object) -> bool:

@@ -328,6 +328,15 @@ CREATE TABLE IF NOT EXISTS optimism_transactions (
 );
 """
 
+DB_CREATE_EVM_TRANSACTION_AUTHORIZATIONS = """
+CREATE TABLE IF NOT EXISTS evm_transactions_authorizations (
+    tx_id INTEGER NOT NULL PRIMARY KEY,
+    nonce INTEGER NOT NULL,
+    delegated_address TEXT NOT NULL,
+    FOREIGN KEY(tx_id) REFERENCES evm_transactions(identifier) ON DELETE CASCADE
+);
+"""
+
 # from/to address/value is also in the primary key of the internal transactions since
 # trace_id, which is returned by etherscan does not guarantee uniqueness. Example:
 # https://api.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=16779092&endBlock=16779092
@@ -741,6 +750,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MULTISETTINGS}
 {DB_CREATE_MANUALLY_TRACKED_BALANCES}
 {DB_CREATE_EVM_TRANSACTIONS}
+{DB_CREATE_EVM_TRANSACTION_AUTHORIZATIONS}
 {DB_CREATE_OPTIMISM_TRANSACTIONS}
 {DB_CREATE_EVM_INTERNAL_TRANSACTIONS}
 {DB_CREATE_EVMTX_RECEIPTS}
