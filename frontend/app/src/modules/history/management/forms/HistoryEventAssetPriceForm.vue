@@ -162,14 +162,6 @@ defineExpose({
       v-if="v$"
       class="grid md:grid-cols-2 gap-4 mb-4"
     >
-      <AssetSelect
-        v-model="asset"
-        outlined
-        :disabled="disableAsset"
-        data-cy="asset"
-        :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
-        @blur="v$.asset.$touch()"
-      />
       <AmountInput
         v-model="amount"
         variant="outlined"
@@ -177,6 +169,14 @@ defineExpose({
         :label="t('common.amount')"
         :error-messages="toMessages(v$.amount)"
         @blur="v$.amount.$touch()"
+      />
+      <AssetSelect
+        v-model="asset"
+        outlined
+        :disabled="disableAsset"
+        data-cy="asset"
+        :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
+        @blur="v$.asset.$touch()"
       />
     </div>
     <template v-if="!hidePriceFields">
