@@ -5580,6 +5580,7 @@ Exporting History Events
 
    .. _history_export_schema_section:
 
+   :reqjson bool match_exact_events: If set to true only the events that match the filter exactly will be exported otherwise the whole group of events that match the filter will be exported.
    :reqjson string directory_path: The directory in which to write the exported CSV file
    :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
 

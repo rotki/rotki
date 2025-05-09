@@ -335,6 +335,7 @@ class DBHistoryEvents:
             entries_limit: int,
             has_premium: bool,
             group_by_event_ids: bool = False,
+            match_exact_events: bool = True,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
         base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
@@ -351,11 +352,6 @@ class DBHistoryEvents:
             'ORDER BY timestamp DESC,sequence_index ASC LIMIT ?)'  # free query only select the last LIMIT groups  # noqa: E501
         )
 
-        if has_premium:
-            suffix, limit = premium_base_suffix, []
-        else:
-            suffix, limit = free_base_suffix, [entries_limit]
-
         if group_by_event_ids:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
@@ -367,6 +363,17 @@ class DBHistoryEvents:
             filters, query_bindings = filter_query.prepare(with_pagination=False)
             prefix = 'SELECT *'
 
+        if has_premium:
+            suffix, limit = premium_base_suffix, []
+        else:
+            suffix, limit = free_base_suffix, [entries_limit]
+
+        if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
+            return (
+                f'{prefix} FROM (SELECT {base_suffix} WHERE event_identifier IN (SELECT event_identifier FROM (SELECT {suffix}) {filters}))',  # noqa: E501
+                limit + query_bindings,
+            )
+
         return f'{prefix} FROM (SELECT {suffix}) {filters}', limit + query_bindings
 
     @overload
@@ -376,6 +383,7 @@ class DBHistoryEvents:
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
+            match_exact_events: bool = ...,
     ) -> list[tuple[int, HistoryBaseEntry]]:
         ...
 
@@ -386,6 +394,7 @@ class DBHistoryEvents:
             filter_query: HistoryEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
     ) -> list[HistoryBaseEntry]:
         ...
 
@@ -396,6 +405,7 @@ class DBHistoryEvents:
             filter_query: EthDepositEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
+            match_exact_events: bool,
     ) -> list[tuple[int, EthDepositEvent]]:
         ...
 
@@ -406,6 +416,7 @@ class DBHistoryEvents:
             filter_query: EthDepositEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
     ) -> list[EthDepositEvent]:
         ...
 
@@ -416,6 +427,7 @@ class DBHistoryEvents:
             filter_query: EthWithdrawalFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
     ) -> list[EthWithdrawalEvent]:
         ...
 
@@ -426,6 +438,7 @@ class DBHistoryEvents:
             filter_query: EvmEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
+            match_exact_events: bool,
     ) -> list[tuple[int, EvmEvent]]:
         ...
 
@@ -436,6 +449,7 @@ class DBHistoryEvents:
             filter_query: EvmEventFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
     ) -> list[EvmEvent]:
         ...
 
@@ -445,6 +459,7 @@ class DBHistoryEvents:
             filter_query: HistoryEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             has_premium: bool,
             group_by_event_ids: bool = False,
+            match_exact_events: bool = True,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
         list[tuple[int, EvmEvent]] | list[EvmEvent] |
@@ -460,6 +475,7 @@ class DBHistoryEvents:
             has_premium=has_premium,
             filter_query=filter_query,
             group_by_event_ids=group_by_event_ids,
+            match_exact_events=match_exact_events,
             entries_limit=FREE_HISTORY_EVENTS_LIMIT,
         )
         if filter_query.pagination is not None:
@@ -550,6 +566,7 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[True],
+            match_exact_events: bool,
             entries_limit: int | None = None,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]], int, int]:
         ...
@@ -561,6 +578,7 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
             group_by_event_ids: Literal[False] = ...,
+            match_exact_events: bool = ...,
             entries_limit: int | None = None,
     ) -> tuple[list[HistoryBaseEntry], int, int]:
         ...
@@ -572,6 +590,7 @@ class DBHistoryEvents:
             filter_query: HistoryBaseEntryFilterQuery,
             has_premium: bool,
             group_by_event_ids: bool = False,
+            match_exact_events: bool = ...,
             entries_limit: int | None = None,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry], int, int]:
         """
@@ -585,6 +604,7 @@ class DBHistoryEvents:
             filter_query: 'HistoryBaseEntryFilterQuery',
             has_premium: bool,
             group_by_event_ids: bool = False,
+            match_exact_events: bool = False,
             entries_limit: int | None = None,
     ) -> tuple[list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry], int, int]:
         """Gets all history events for all types, based on the filter query.
@@ -597,6 +617,7 @@ class DBHistoryEvents:
             filter_query=filter_query,
             has_premium=has_premium,
             group_by_event_ids=group_by_event_ids,
+            match_exact_events=match_exact_events,
         )
         count_without_limit, count_with_limit = self.get_history_events_count(
             cursor=cursor,
