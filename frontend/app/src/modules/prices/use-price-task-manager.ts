@@ -6,14 +6,10 @@ import { useStatusUpdater } from '@/composables/status';
 import { useCollectionIdentifiers } from '@/modules/assets/use-collection-identifiers';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
-import { CURRENCY_USD, useCurrencies } from '@/types/currencies';
-import {
-  AssetPriceResponse,
-  type HistoricPricePayload,
-  HistoricPrices,
-  type OracleCachePayload,
-} from '@/types/prices';
+import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
+import { AssetPriceResponse, type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
@@ -25,7 +21,7 @@ import { assert, type BigNumber, One } from '@rotki/common';
 
 interface UsePriceTaskManagerReturn {
   createOracleCache: (payload: OracleCachePayload) => Promise<ActionStatus>;
-  fetchExchangeRates: () => Promise<void>;
+  fetchExchangeRates: (symbol?: SupportedCurrency) => Promise<void>;
   fetchPrices: (payload: FetchPricePayload) => Promise<void>;
   getHistoricPrice: (payload: HistoricPricePayload) => Promise<BigNumber>;
   cacheEuroCollectionAssets: () => Promise<void>;
@@ -35,6 +31,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
+  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { euroCollectionAssets, euroCollectionAssetsLoaded, exchangeRates, prices } = storeToRefs(useBalancePricesStore());
   const {
     createPriceCache,
@@ -42,7 +39,6 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     queryHistoricalRate,
     queryPrices,
   } = usePriceApi();
-  const { currencies } = useCurrencies();
   const { getCollectionAssets } = useCollectionIdentifiers();
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
@@ -89,28 +85,43 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     }
   };
 
-  const fetchExchangeRates = async (): Promise<void> => {
+  const fetchExchangeRates = async (symbol?: SupportedCurrency): Promise<void> => {
     try {
-      const { taskId } = await queryFiatExchangeRates(get(currencies).map(value => value.tickerSymbol));
+      const selectedCurrency = symbol ?? get(currencySymbol);
 
-      const meta: TaskMeta = {
+      const { taskId } = await queryFiatExchangeRates([selectedCurrency]);
+      const { result } = await awaitTask<ExchangeRates, TaskMeta>(taskId, TaskType.EXCHANGE_RATES, {
         title: t('actions.balances.exchange_rates.task.title'),
-      };
+      });
 
-      const { result } = await awaitTask<ExchangeRates, TaskMeta>(taskId, TaskType.EXCHANGE_RATES, meta);
+      const rates = ExchangeRates.parse(result);
 
-      set(exchangeRates, ExchangeRates.parse(result));
-    }
-    catch (error: any) {
-      if (!isTaskCancelled(error)) {
+      set(exchangeRates, {
+        ...get(exchangeRates),
+        ...rates,
+      });
+
+      const rate = rates[selectedCurrency];
+
+      if (rate && rate.eq(0)) {
         notify({
           display: true,
-          message: t('actions.balances.exchange_rates.error.message', {
-            message: error.message,
-          }),
-          title: t('actions.balances.exchange_rates.error.title'),
+          message: t('missing_exchange_rate.message'),
+          title: t('missing_exchange_rate.title'),
         });
       }
+    }
+    catch (error: any) {
+      if (isTaskCancelled(error)) {
+        return;
+      }
+      notify({
+        display: true,
+        message: t('actions.balances.exchange_rates.error.message', {
+          message: error.message,
+        }),
+        title: t('actions.balances.exchange_rates.error.title'),
+      });
     }
   };
 
