@@ -333,7 +333,8 @@ defineExpose({
             :error-messages="toMessages(v$.address)"
             :label="t('common.address')"
             :disabled="loading || fetching || editMode"
-            @keydown.space.prevent
+            @keydown.space.
+            @blur="v$.address.$touch()"
           />
         </div>
       </template>
@@ -348,6 +349,7 @@ defineExpose({
           :error-messages="toMessages(v$.name)"
           :label="t('common.name')"
           :disabled="loading || fetching"
+          @blur="v$.name.$touch()"
         />
 
         <RuiTextField
@@ -359,6 +361,7 @@ defineExpose({
           :error-messages="toMessages(v$.symbol)"
           :label="t('asset_form.labels.symbol')"
           :disabled="loading || fetching"
+          @blur="v$.symbol.$touch()"
         />
         <div
           v-if="isEvmToken"
@@ -374,6 +377,7 @@ defineExpose({
             :label="t('asset_form.labels.decimals')"
             :error-messages="toMessages(v$.decimals)"
             :disabled="loading || fetching"
+            @blur="v$.decimals.$touch()"
           />
         </div>
         <RuiTextField
@@ -386,6 +390,7 @@ defineExpose({
           :label="t('asset_form.labels.coingecko')"
           :error-messages="toMessages(v$.coingecko)"
           :disabled="loading"
+          @blur="v$.coingecko.$touch()"
         >
           <template #append>
             <HelpLink
@@ -405,6 +410,7 @@ defineExpose({
           :hint="t('asset_form.labels.cryptocompare_hint')"
           :error-messages="toMessages(v$.cryptocompare)"
           :disabled="loading"
+          @blur="v$.cryptocompare.$touch()"
         >
           <template #append>
             <HelpLink
@@ -449,6 +455,7 @@ defineExpose({
                   :label="t('common.protocol')"
                   :error-messages="toMessages(v$.protocol)"
                   :disabled="loading"
+                  @blur="v$.protocol.$touch()"
                 />
                 <AssetSelect
                   v-model="swappedFor"

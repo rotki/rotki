@@ -74,6 +74,7 @@ defineExpose({
         clearable
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
+        @blur="v$.name.$touch()"
       />
       <AutoCompleteWithSearchSync
         v-model="customAssetType"
@@ -82,6 +83,7 @@ defineExpose({
         clearable
         :label="t('common.type')"
         :error-messages="toMessages(v$.type)"
+        @blur="v$.type.$touch()"
       />
     </div>
     <RuiTextArea
@@ -94,6 +96,7 @@ defineExpose({
       auto-grow
       clearable
       :label="t('common.notes')"
+      @blur="v$.notes.$touch()"
     />
 
     <AssetIconForm
