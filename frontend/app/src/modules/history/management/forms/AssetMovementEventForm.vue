@@ -53,7 +53,7 @@ const locationLabel = ref<string>('');
 const eventType = ref<string>('');
 const asset = ref<string>('');
 const amount = ref<string>('');
-const notes = ref<string>('');
+const notes = ref<[string, string] | [string]>(['']);
 const hasFee = ref<boolean>(false);
 const fee = ref<string>('');
 const feeAsset = ref<string>('');
@@ -127,7 +127,7 @@ function reset() {
   set(eventType, 'deposit');
   set(asset, '');
   set(amount, '0');
-  set(notes, '');
+  set(notes, ['']);
   set(errorMessages, {});
   set(uniqueId, '');
 
@@ -135,6 +135,8 @@ function reset() {
 }
 
 function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
+  const eventNotes = entry.userNotes ?? '';
+
   set(eventIdentifier, entry.eventIdentifier);
   set(datetime, convertFromTimestamp(entry.timestamp, DateFormat.DateMonthYearHourMinuteSecond, true));
   set(location, entry.location);
@@ -142,15 +144,16 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   set(eventType, entry.eventType);
   set(asset, entry.asset ?? '');
   set(amount, entry.amount.toFixed());
-  set(notes, entry.userNotes ?? '');
 
   if (feeEvent) {
     set(fee, feeEvent.amount.toFixed());
     set(feeAsset, feeEvent.asset ?? '');
     set(hasFee, true);
+    set(notes, [eventNotes, feeEvent.userNotes ?? '']);
   }
   else {
     set(hasFee, false);
+    set(notes, [eventNotes]);
   }
 
   if (entry.extraData?.reference) {
@@ -167,7 +170,6 @@ async function save(): Promise<boolean> {
 
   const eventData = get(data);
   const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
-  const userNotes = get(notes).trim();
 
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -181,7 +183,7 @@ async function save(): Promise<boolean> {
     locationLabel: get(locationLabel),
     timestamp,
     uniqueId: get(uniqueId),
-    userNotes: userNotes.length > 0 ? userNotes : null,
+    userNotes: get(notes),
   };
 
   if (get(hasFee)) {
@@ -222,6 +224,17 @@ watchImmediate(data, (data, oldData) => {
 watch(location, (location: string) => {
   if (location)
     set(lastLocation, location);
+});
+
+watch(hasFee, (hasFee: boolean) => {
+  if (!hasFee) {
+    set(fee, '');
+    set(feeAsset, '');
+    set(notes, [get(notes)[0]]);
+  }
+  else {
+    set(notes, [get(notes)[0], '']);
+  }
 });
 
 watch(errorMessages, (errors) => {
@@ -334,7 +347,7 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextArea
-      v-model="notes"
+      v-model="notes[0]"
       prepend-icon="lu-sticky-note"
       data-cy="notes"
       variant="outlined"
@@ -343,6 +356,23 @@ defineExpose({
       min-rows="3"
       auto-grow
       :label="t('common.notes')"
+      :hint="t('transactions.events.form.notes.hint')"
+      :error-messages="toMessages(v$.notes)"
+      @blur="v$.notes.$touch()"
+    />
+
+    <RuiTextArea
+      v-if="notes.length === 2"
+      v-model="notes[1]"
+      prepend-icon="lu-sticky-note"
+      data-cy="fee-notes"
+      variant="outlined"
+      color="primary"
+      max-rows="5"
+      min-rows="3"
+      auto-grow
+      class="mt-4"
+      :label="t('swap_event_form.fee_notes')"
       :hint="t('transactions.events.form.notes.hint')"
       :error-messages="toMessages(v$.notes)"
       @blur="v$.notes.$touch()"

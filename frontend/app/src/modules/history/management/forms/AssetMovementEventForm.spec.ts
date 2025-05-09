@@ -180,7 +180,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       locationLabel: 'Kraken 1',
       timestamp: nowInMs,
       uniqueId: '1234567890',
-      userNotes: 'Test deposit transaction',
+      userNotes: fee ? ['Test deposit transaction', ''] : ['Test deposit transaction'],
     });
   });
 
@@ -241,7 +241,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
         locationLabel: event.locationLabel,
         timestamp: event.timestamp,
         uniqueId: 'TEST123',
-        userNotes: 'Test deposit transaction',
+        userNotes: ['Test deposit transaction'],
       }),
     );
   });
@@ -276,7 +276,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       locationLabel: event.locationLabel,
       timestamp: event.timestamp,
       uniqueId: 'TEST123',
-      userNotes: 'History event notes',
+      userNotes: ['History event notes', ''],
     });
   });
 
@@ -308,7 +308,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
         locationLabel: event.locationLabel,
         timestamp: event.timestamp,
         uniqueId: 'TEST123',
-        userNotes: 'History event notes',
+        userNotes: ['History event notes'],
       }),
     );
   });

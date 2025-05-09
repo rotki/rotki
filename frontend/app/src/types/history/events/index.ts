@@ -309,7 +309,7 @@ export interface EditAssetMovementEventPayload {
   asset: string;
   fee: string | null;
   feeAsset: string | null;
-  userNotes: string | null;
+  userNotes: [string, string] | [string];
   uniqueId: string;
 }
 
