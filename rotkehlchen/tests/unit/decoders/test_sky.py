@@ -1,18 +1,19 @@
-
 import pytest
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.makerdao.constants import MKR_ADDRESS
 from rotkehlchen.chain.ethereum.modules.sky.constants import (
     CPT_SKY,
     DAI_TO_USDS_CONTRACT,
+    MIGRATION_ACTIONS_CONTRACT,
     SKY_ASSET,
     SUSDS_ASSET,
     SUSDS_CONTRACT,
     USDS_ASSET,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MKR
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_SDAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MKR, A_SDAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -65,6 +66,55 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {migrated_amount} USDS from DAI->USDS migration',
         counterparty=CPT_SKY,
         address=ZERO_ADDRESS,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xAe289D2618CcFA247645Dd8e89326c91acEF62e0']])
+def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5d4d8d4c9480ad603c91cd7a7e90fdf6faa2327728602e10b55620b18e642a91')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746824531000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00044435901000267'),
+        location_label=(user := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=780,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_SDAI,
+        amount=FVal(from_amount := '114937.403727239587040651'),
+        location_label=user,
+        notes=f'Migrate {from_amount} sDAI ({(underlying_dai := "133037.184652873382652036")} DAI) to sUSDS',  # noqa: E501
+        counterparty=CPT_SDAI,
+        address=MIGRATION_ACTIONS_CONTRACT,
+        extra_data={'underlying_amount': underlying_dai},
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=790,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),  # sUSDS
+        amount=FVal(to_amount := '126610.495160713536806542'),
+        location_label=user,
+        notes=f'Receive {to_amount} sUSDS ({(underlying_usds := "133037.184652873382652036")} USDS) from sDAI->sUSDS migration',  # noqa: E501
+        counterparty=CPT_SKY,
+        address=MIGRATION_ACTIONS_CONTRACT,
+        extra_data={'underlying_amount': underlying_usds},
     )]
     assert expected_events == events
 
