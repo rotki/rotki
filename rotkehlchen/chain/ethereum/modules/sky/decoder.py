@@ -179,7 +179,7 @@ class SkyDecoder(DecoderInterface):
                         event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
                         event.asset == A_SDAI and
                         event.location_label == received_address
-                ):
+                ):  # sDAI -> sUSDS
                     event.event_type = HistoryEventType.MIGRATE
                     event.event_subtype = HistoryEventSubType.SPEND
                     event.address = MIGRATION_ACTIONS_CONTRACT
@@ -187,12 +187,28 @@ class SkyDecoder(DecoderInterface):
                         if tx_log.topics[0] == SDAI_REDEEM and bytes_to_address(tx_log.topics[1]) == MIGRATION_ACTIONS_CONTRACT and bytes_to_address(tx_log.topics[3]) == received_address:  # noqa: E501
                             event.notes = f'Migrate {event.amount} sDAI ({(underlying_amount := token_normalized_value_decimals(token_amount=int.from_bytes(context.tx_log.data[:32]), token_decimals=DEFAULT_TOKEN_DECIMALS))} DAI) to sUSDS'  # noqa: E501
                             event.extra_data = {'underlying_amount': str(underlying_amount)}
+                            event.counterparty = CPT_SKY
                             break  # found the log
                     else:
                         log.error(f'Could not find the log of the sDAI Withdraw in {context.transaction}')  # noqa: E501
                         event.notes = f'Migrate {event.amount} sDAI to sUSDS'
 
                     break  # found the event
+
+                elif (
+                        event.event_type == HistoryEventType.SPEND and
+                        event.event_subtype == HistoryEventSubType.NONE and
+                        event.asset == A_DAI and
+                        event.location_label == received_address
+                ):  # DAI -> sUSDS
+                    action_items[0].to_notes = f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from DAI->sUSDS migration'  # noqa: E501  # fix the notes of the receival to be DAI
+                    event.event_type = HistoryEventType.MIGRATE
+                    event.event_subtype = HistoryEventSubType.SPEND
+                    event.address = MIGRATION_ACTIONS_CONTRACT
+                    event.notes = f'Migrate {event.amount} DAI to sUSDS'
+                    event.counterparty = CPT_SKY
+                    break  # found the event
+
             else:
                 log.error(f'Could not find the deposit sDAI event in {context.transaction}')
                 return DEFAULT_DECODING_OUTPUT
