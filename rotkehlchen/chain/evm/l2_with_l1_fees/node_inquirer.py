@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
-from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import SupportedL2WithL1FeesType
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
@@ -16,6 +15,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.etherscan import Etherscan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,7 +30,7 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: L2WithL1FeesEtherscan,
+            etherscan: 'Etherscan',
             blockchain: SupportedL2WithL1FeesType,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
@@ -73,7 +73,7 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
-            etherscan: L2WithL1FeesEtherscan,
+            etherscan: 'Etherscan',
             blockchain: SupportedL2WithL1FeesType,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,

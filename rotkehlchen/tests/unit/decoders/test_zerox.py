@@ -1231,7 +1231,7 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
         notes=f'Receive {received_amount} USDC as the result of a cowswap twap order',
         counterparty=CPT_COWSWAP,
         address=address,
-    ), EvmSwapEvent(
+    ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=timestamp,

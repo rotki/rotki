@@ -222,7 +222,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         self.contracts = contracts
         self.web3_mapping: dict[NodeName, Web3Node] = {}
         self.rpc_timeout = rpc_timeout
-        self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()  # type: ignore[assignment]
+        self.chain_id: SUPPORTED_CHAIN_IDS = blockchain.to_chain_id()
         self.chain_name = self.chain_id.to_name()
         self.native_token = native_token
         # BalanceScanner from mycrypto: https://github.com/MyCryptoHQ/eth-scan
@@ -594,7 +594,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             return web3.eth.block_number
 
         # else
-        return self.etherscan.get_latest_block_number()
+        return self.etherscan.get_latest_block_number(chain_id=self.chain_id)
 
     def get_latest_block_number(self, call_order: Sequence[WeightedNode] | None = None) -> int:
         return self._query(
@@ -623,7 +623,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         by web3.eth.get_block().
         """
         if web3 is None:
-            return self.etherscan.get_block_by_number(num)
+            return self.etherscan.get_block_by_number(
+                chain_id=self.chain_id,
+                block_number=num,
+            )
 
         block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
         block_data['hash'] = block_data['hash'].to_0x_hex()
@@ -648,7 +651,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         parsing its response
         """
         if web3 is None:
-            return self.etherscan.get_code(account)
+            return self.etherscan.get_code(chain_id=self.chain_id, account=account)
 
         return web3.eth.get_code(account).to_0x_hex()
 
@@ -670,6 +673,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         contract = web3.eth.contract(address=contract_address, abi=abi)
         input_data = contract.encode_abi(method_name, args=given_arguments)
         result = self.etherscan.eth_call(
+            chain_id=self.chain_id,
             to_address=contract_address,
             input_data=input_data,
         )
@@ -756,7 +760,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
-            tx_receipt = self.etherscan.get_transaction_receipt(tx_hash)
+            tx_receipt = self.etherscan.get_transaction_receipt(
+                chain_id=self.chain_id,
+                tx_hash=tx_hash,
+            )
             if tx_receipt is None:
                 if must_exist:  # fail, so other nodes can be tried
                     raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash.hex()} returned None')  # noqa: E501
@@ -849,7 +856,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             must_exist: bool = False,
     ) -> tuple[EvmTransaction, dict[str, Any]] | None:
         if web3 is None:
-            tx_data = self.etherscan.get_transaction_by_hash(tx_hash=tx_hash)
+            tx_data = self.etherscan.get_transaction_by_hash(
+                chain_id=self.chain_id,
+                tx_hash=tx_hash,
+            )
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
         if tx_data is None:
@@ -998,7 +1008,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             )
         else:  # etherscan
             until_block = (
-                self.etherscan.get_latest_block_number() if to_block == 'latest' else to_block
+                self.etherscan.get_latest_block_number(self.chain_id) if to_block == 'latest' else to_block  # noqa: E501
             )
             blocks_step = 300000
             while start_block <= until_block:
@@ -1006,6 +1016,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     end_block = min(start_block + blocks_step, until_block)
                     try:
                         new_events = self.etherscan.get_logs(
+                            chain_id=self.chain_id,
                             contract_address=contract_address,
                             topics=filter_args['topics'],  # type: ignore
                             from_block=start_block,
@@ -1355,7 +1366,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         May raise:
         - RemoteError: in case of a problem contacting chain/nodes/remotes"""
-        deployed_hash = self.etherscan.get_contract_creation_hash(address)
+        deployed_hash = self.etherscan.get_contract_creation_hash(
+            chain_id=self.chain_id,
+            address=address,
+        )
         if deployed_hash is None:
             return None
 
@@ -1373,7 +1387,11 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         May raise RemoteError
         """
-        return self.etherscan.get_blocknumber_by_time(ts=ts, closest=closest)
+        return self.etherscan.get_blocknumber_by_time(
+            chain_id=self.chain_id,
+            ts=ts,
+            closest=closest,
+        )
 
     # -- methods to be optionally implemented by child classes --
 

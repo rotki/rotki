@@ -14,7 +14,12 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import (
+    CacheType,
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -182,7 +187,10 @@ def update_ilk_registry(
 
             try:
                 deployed_block = ethereum.get_contract_deployed_block(join_address)
-                abi = ethereum.etherscan.get_contract_abi(join_address)
+                abi = ethereum.etherscan.get_contract_abi(
+                    chain_id=ChainID.ETHEREUM,
+                    address=join_address,
+                )
             except RemoteError as e:
                 log.error(f'Did not add ilk {ilk} due to inability to query contract {join_address} metadata: {e!s}')  # noqa: E501
                 continue

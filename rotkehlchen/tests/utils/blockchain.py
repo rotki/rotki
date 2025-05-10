@@ -25,8 +25,8 @@ from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    SUPPORTED_EVM_CHAINS_TYPE,
     BTCAddress,
+    ChainID,
     ChecksumEvmAddress,
     SupportedBlockchain,
 )
@@ -656,8 +656,9 @@ def setup_evm_addresses_activity_mock(
             return {'list': [1, 2]}  # a list with non zero length -- exists
         return {}  # does not exist
 
-    def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE):
-        addresses = saved_locals[f'{chain.to_chain_id().to_name()}_addresses']
+    def mock_chain_has_activity(chain: ChainID | SupportedBlockchain, account: ChecksumEvmAddress):
+        name = chain.to_name() if isinstance(chain, ChainID) else chain.to_chain_id().to_name()
+        addresses = saved_locals[f'{name}_addresses']
         return HasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else HasChainActivity.NONE  # noqa: E501
 
     stack.enter_context(patch.object(
@@ -687,17 +688,17 @@ def setup_evm_addresses_activity_mock(
     ))
 
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:
-        manager = chains_aggregator.get_evm_manager(chain.to_chain_id())  # type: ignore  # chain id is of the expected type here
+        manager = chains_aggregator.get_evm_manager(as_chain_id := chain.to_chain_id())
         stack.enter_context(patch.object(
             manager.node_inquirer.etherscan,
             'has_activity',
-            side_effect=lambda account, i_chain=chain: mock_chain_has_activity(account, i_chain),  # use i_chain to avoid the problem with the lambda late binding  # noqa: E501
+            side_effect=lambda chain_id, account: mock_chain_has_activity(chain_id, account),  # noqa: PLW0108
         ))
         if manager.node_inquirer.blockscout is not None:
             stack.enter_context(patch.object(
                 manager.node_inquirer.blockscout,
                 'has_activity',
-                side_effect=lambda account, i_chain=chain: mock_chain_has_activity(account, i_chain),  # noqa: E501
+                side_effect=lambda account, i_chain=chain: mock_chain_has_activity(i_chain, account),  # noqa: E501
             ))
 
     return stack

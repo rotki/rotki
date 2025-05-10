@@ -419,7 +419,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
 
     etherscan_tx_or_tx_receipt_calls = 0
 
-    def mock_etherscan_get_tx(tx_hash):
+    def mock_etherscan_get_tx(chain_id, tx_hash):
         nonlocal etherscan_tx_or_tx_receipt_calls
         assert tx_hash == txn_hash
         etherscan_tx_or_tx_receipt_calls += 1
@@ -475,7 +475,7 @@ def test_get_logs_graph_delegation(ethereum_inquirer, ethereum_manager_connect_a
 
     original_etherscan_query = ethereum_inquirer.etherscan._query
 
-    def mock_etherscan_query(module, action, options, timeout):
+    def mock_etherscan_query(chain_id, module, action, options, timeout):
         """Mock etherscan query to check the options are formulated correctly."""
         assert options == {
             'address': CONTRACT_STAKING,
@@ -484,7 +484,7 @@ def test_get_logs_graph_delegation(ethereum_inquirer, ethereum_manager_connect_a
             'topic2': f'0x000000000000000000000000{user_address.lower()[2:]}',
             'topic2_3opr': 'and',
         }
-        return original_etherscan_query(module, action, options, timeout)
+        return original_etherscan_query(chain_id, module, action, options, timeout)
 
     original_query_web3_get_logs = _query_web3_get_logs
 
@@ -559,7 +559,7 @@ def test_get_logs_anonymous(ethereum_inquirer, ethereum_manager_connect_at_start
     }
     deployment_block, v_to_block, topic0 = 8928160, 8928170, '0x049878f300000000000000000000000000000000000000000000000000000000'  # noqa: E501
 
-    def mock_etherscan_query(module, action, options=None, timeout=None):
+    def mock_etherscan_query(chain_id, module, action, options=None, timeout=None):
         """Mock etherscan query to check the options are formulated correctly."""
         if action == 'eth_blockNumber':
             return '0x883baa'  # int: 8928170
