@@ -191,7 +191,7 @@ class HistoryQueryingManager:
                 # We need to have history of transactions since before the range
                 from_ts=Timestamp(0),
                 to_ts=end_ts,
-                chain_id=blockchain.to_chain_id(),  # type: ignore[arg-type]
+                chain_id=blockchain.to_chain_id(),
             )
             try:
                 evm_manager.transactions.query_chain(filter_query=tx_filter_query)

@@ -39,7 +39,7 @@ from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_random_b64bytes
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_order
-from rotkehlchen.tests.utils.mock import mock_proxies
+from rotkehlchen.tests.utils.mock import mock_proxies, patch_etherscan_request
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
@@ -577,6 +577,12 @@ def fixture_rotkehlchen_api_server(
     with ExitStack() as stack:
         if start_with_logged_in_user is True:
             if network_mocking is True:
+                if mock_other_web3:  # this allows only to match on ethereum only. To allow other chains we need to improve the logic since etherscan is the same object for all the chains  # noqa: E501
+                    stack.enter_context(patch_etherscan_request(
+                        etherscan=api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer.etherscan,
+                        mock_data=ethereum_mock_data,
+                    ))
+
                 for evm_chain, connect_at_start, mock_data in (
                         ('ethereum', ethereum_manager_connect_at_start, ethereum_mock_data),
                         ('optimism', optimism_manager_connect_at_start, optimism_mock_data),

@@ -17,7 +17,7 @@ SupportedL2WithL1FeesType = Literal[
 ]
 
 L2ChainIdsWithL1FeesType = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
-L2_CHAINIDS_WITH_L1_FEES: tuple[L2ChainIdsWithL1FeesType, ...] = typing.get_args(L2ChainIdsWithL1FeesType)  # noqa: E501
+L2_CHAINIDS_WITH_L1_FEES: set[L2ChainIdsWithL1FeesType] = set(typing.get_args(L2ChainIdsWithL1FeesType))  # noqa: E501
 
 
 class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented by superclass
