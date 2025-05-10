@@ -132,6 +132,7 @@ def test_gnosischain_specific_chain_data_ts_logic(
     counter = 0
 
     def get_logs_first_step(
+            chain_id: ChainID,
             contract_address: ChecksumEvmAddress,
             topics: list[str],
             from_block: int,

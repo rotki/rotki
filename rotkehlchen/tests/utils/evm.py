@@ -1,9 +1,6 @@
 
 from rotkehlchen.chain.evm.types import Web3Node
-from rotkehlchen.tests.utils.mock import (
-    patch_etherscan_request,
-    patch_web3_request,
-)
+from rotkehlchen.tests.utils.mock import patch_web3_request
 
 
 def maybe_mock_evm_inquirer(
@@ -16,7 +13,6 @@ def maybe_mock_evm_inquirer(
     if should_mock is False:
         return
 
-    parent_stack.enter_context(patch_etherscan_request(etherscan=evm_inquirer.etherscan, mock_data=mock_data))  # noqa: E501
     # we have to mock connect to given nodes, and patch their requests
     for mocked_node in manager_connect_at_start:
         web3, _ = evm_inquirer._init_web3(mocked_node.node_info)

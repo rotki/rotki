@@ -381,7 +381,7 @@ class TaskManager:
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
             hash_results = dbevmtx.get_transaction_hashes_no_receipt(
-                tx_filter_query=EvmTransactionsFilterQuery.make(chain_id=blockchain.to_chain_id()),  # type: ignore[arg-type]
+                tx_filter_query=EvmTransactionsFilterQuery.make(chain_id=blockchain.to_chain_id()),
                 limit=TX_RECEIPTS_QUERY_LIMIT,
             )
             if len(hash_results) == 0:

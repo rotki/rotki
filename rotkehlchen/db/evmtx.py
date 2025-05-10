@@ -525,7 +525,7 @@ class DBEvmTx:
         dbevents.delete_events_by_tx_hash(
             write_cursor=write_cursor,
             tx_hashes=tx_hashes,
-            location=Location.from_chain_id(chain_id),  # type: ignore[arg-type] # comes from SUPPORTED_EVM_CHAINS
+            location=Location.from_chain_id(chain_id),
         )
         write_cursor.execute(  # delete genesis tx events related to the provided address
             'DELETE FROM history_events WHERE identifier IN ('

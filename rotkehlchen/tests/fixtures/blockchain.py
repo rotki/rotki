@@ -41,13 +41,14 @@ from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.evm import maybe_mock_evm_inquirer
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.tests.utils.mock import mock_proxies
+from rotkehlchen.tests.utils.mock import mock_proxies, patch_etherscan_request
 from rotkehlchen.tests.utils.substrate import (
     KUSAMA_DEFAULT_OWN_RPC_ENDPOINT,
     KUSAMA_MAIN_ASSET_DECIMALS,
@@ -97,7 +98,17 @@ def _initialize_and_yield_evm_inquirer_fixture(
         inquirer = klass(
             greenlet_manager=greenlet_manager,
             database=database,
+            etherscan=(etherscan := Etherscan(
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+            )),
         )
+
+    if mock_other_web3:  # this allows only to match on ethereum only. To allow other chains we need to improve the logic since etherscan is the same object for all the chains  # noqa: E501
+        parent_stack.enter_context(patch_etherscan_request(
+            etherscan=etherscan,
+            mock_data=mock_data,
+        ))
 
     maybe_mock_evm_inquirer(
         should_mock=mock_other_web3,

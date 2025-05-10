@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal, cast
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
@@ -19,10 +19,10 @@ from .constants import (
     ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
     PRUNED_NODE_CHECK_TX_HASH,
 )
-from .etherscan import ArbitrumOneEtherscan
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.etherscan import Etherscan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -34,12 +34,9 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
+            etherscan: 'Etherscan',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        etherscan = ArbitrumOneEtherscan(
-            database=database,
-            msg_aggregator=database.msg_aggregator,
-        )
         contracts = EvmContracts[Literal[ChainID.ARBITRUM_ONE]](chain_id=ChainID.ARBITRUM_ONE)
         super().__init__(
             greenlet_manager=greenlet_manager,
@@ -57,7 +54,6 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan = cast('ArbitrumOneEtherscan', self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
 

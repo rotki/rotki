@@ -196,6 +196,7 @@ class EvmTransactions(ABC):  # noqa: B024
         Otherwise, data is fetched without updating the query range.
         """
         for new_transactions in self.evm_inquirer.etherscan.get_transactions(
+                chain_id=self.evm_inquirer.chain_id,
                 account=address,
                 action='txlist',
                 period_or_hash=period,
@@ -294,6 +295,7 @@ class EvmTransactions(ABC):  # noqa: B024
         Otherwise, data is fetched without updating the query range.
         """
         for new_internal_txs in self.evm_inquirer.etherscan.get_transactions(
+                chain_id=self.evm_inquirer.chain_id,
                 account=address,
                 period_or_hash=period_or_hash,
                 action='txlistinternal',
@@ -449,6 +451,7 @@ class EvmTransactions(ABC):  # noqa: B024
         Otherwise, data is fetched without updating the query range.
         """  # noqa: E501
         for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
+            chain_id=self.evm_inquirer.chain_id,
             account=address,
             from_ts=Timestamp(period.from_value),
             to_ts=Timestamp(period.to_value),
@@ -507,6 +510,7 @@ class EvmTransactions(ABC):  # noqa: B024
         log.debug(f'Address detection: querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {start_ts} - {end_ts}')  # noqa: E501
         try:
             for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
+                chain_id=self.evm_inquirer.chain_id,
                 account=address,
                 from_ts=start_ts,
                 to_ts=end_ts,
