@@ -1579,9 +1579,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                                 'Failed to check activity using blockscout '
                                 f'for {chain} due to {e}',
                             )
-                            chain_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
+                            chain_activity = chain_manager.node_inquirer.etherscan.has_activity(
+                                chain_id=chain.to_chain_id(),
+                                account=address,
+                            )
                     else:
-                        chain_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
+                        chain_activity = chain_manager.node_inquirer.etherscan.has_activity(
+                            chain_id=chain.to_chain_id(),
+                            account=address,
+                        )
 
                     only_token_spam = (
                         chain_activity == HasChainActivity.TOKENS and

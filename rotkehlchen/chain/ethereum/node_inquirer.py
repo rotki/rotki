@@ -43,10 +43,10 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import get_chunks
 
 from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
-from .etherscan import EthereumEtherscan
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.etherscan import Etherscan
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -60,12 +60,9 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             self,
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
+            etherscan: 'Etherscan',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        etherscan = EthereumEtherscan(
-            database=database,
-            msg_aggregator=database.msg_aggregator,
-        )
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
         super().__init__(
             greenlet_manager=greenlet_manager,
@@ -86,7 +83,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
                 msg_aggregator=database.msg_aggregator,
             ),
         )
-        self.etherscan: EthereumEtherscan
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
         self.blockscout: Blockscout  # for ethereum blockscout is never None since it's used for the withdrawals  # noqa: E501
 
@@ -273,7 +269,11 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             -> queries blocks subgraph
         """
         with suppress(RemoteError):
-            return self.etherscan.get_blocknumber_by_time(ts, closest)
+            return self.etherscan.get_blocknumber_by_time(
+                chain_id=ChainID.ETHEREUM,
+                ts=ts,
+                closest=closest,
+            )
 
         return self.blockscout.get_blocknumber_by_time(ts, closest)
 

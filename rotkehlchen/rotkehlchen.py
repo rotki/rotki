@@ -77,6 +77,7 @@ from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -376,40 +377,55 @@ class Rotkehlchen:
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
+        etherscan = Etherscan(
+            database=self.data.db,
+            msg_aggregator=self.data.db.msg_aggregator,
+        )
+
         # Initialize blockchain querying modules
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
-            ethereum_manager=EthereumManager(ethereum_inquirer := EthereumInquirer(
-                greenlet_manager=self.greenlet_manager,
-                database=self.data.db,
-            )),
+            ethereum_manager=EthereumManager(
+                node_inquirer=(ethereum_inquirer := EthereumInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                )),
+            ),
             optimism_manager=OptimismManager(OptimismInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             polygon_pos_manager=PolygonPOSManager(PolygonPOSInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             arbitrum_one_manager=ArbitrumOneManager(ArbitrumOneInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             base_manager=BaseManager(BaseInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             gnosis_manager=GnosisManager(GnosisInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             scroll_manager=ScrollManager(ScrollInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             binance_sc_manager=BinanceSCManager(BinanceSCInquirer(
                 greenlet_manager=self.greenlet_manager,
                 database=self.data.db,
+                etherscan=etherscan,
             )),
             kusama_manager=SubstrateManager(
                 chain=SupportedBlockchain.KUSAMA,

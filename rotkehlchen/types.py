@@ -578,9 +578,9 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         """
         return getattr(cls, location.name)
 
-    def to_chain_id(self) -> ChainID:
+    def to_chain_id(self) -> SUPPORTED_CHAIN_IDS:
         """Warning: Caller has to make sure this is an evm blockchain"""
-        return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]
+        return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]  # type: ignore
 
     def to_range_prefix(self, range_type: Literal['txs', 'internaltxs', 'tokentxs']) -> str:
         """Provide the appropriate range prefix for the DB for this chain"""
