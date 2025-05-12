@@ -26,9 +26,9 @@ export const externalLinks = {
   usageGuide: USAGE_GUIDE_URL,
   usageGuideSection: {
     dockerWarning: `${USAGE_GUIDE_URL}using-rotki-from-mobile#docker`,
-    addingAnExchange: `${USAGE_GUIDE_URL}importing-data#adding-an-exchange`,
-    theGraphApiKey: `${USAGE_GUIDE_URL}importing-data#the-graph`,
-    gnosisPayKey: `${USAGE_GUIDE_URL}importing-data#gnosis-pay`,
+    addingAnExchange: `${USAGE_GUIDE_URL}api-keys#exchanges-api-keys`,
+    theGraphApiKey: `${USAGE_GUIDE_URL}api-keys#the-graph`,
+    gnosisPayKey: `${USAGE_GUIDE_URL}api-keys#gnosis-pay`,
     importBlockchainAccounts: `${USAGE_GUIDE_URL}accounts-and-balances#import-and-export-blockchain-accounts-csv`,
     importAddressBook: `${USAGE_GUIDE_URL}address-book#importing-address-book-names-csv`,
   },

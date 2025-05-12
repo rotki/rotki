@@ -50,6 +50,10 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
 function isLinkType(t: any): t is keyof ExplorerUrls {
   return [NoteType.TX, NoteType.ADDRESS, NoteType.BLOCK].includes(t);
 }
+
+function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls {
+  return [NoteType.TX, NoteType.BLOCK].includes(t) || chain === Blockchain.ETH2;
+}
 </script>
 
 <template>
@@ -76,6 +80,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         class="inline-flex"
         :class="{
           [$style.address]: true,
+          'pl-2': isLinkTypeWithoutImage(note.type, note.chain ?? chain),
         }"
         :text="note.address"
         :type="note.type"

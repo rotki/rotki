@@ -1,10 +1,10 @@
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
   AddHistoryEventPayload,
   HistoryEventCollectionRow,
-  HistoryEventRequestPayload,
   HistoryEventRow,
   HistoryEventsCollectionResponse,
   ModifyHistoryEventPayload,

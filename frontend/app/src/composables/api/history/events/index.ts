@@ -1,3 +1,4 @@
+import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { ActionDataEntry, ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
@@ -17,7 +18,6 @@ import {
   type AddTransactionHashPayload,
   type HistoryEventCollectionRow,
   HistoryEventDetail,
-  type HistoryEventRequestPayload,
   HistoryEventsCollectionResponse,
   type ModifyHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
@@ -52,7 +52,7 @@ interface UseHistoryEventsApiReturn {
   fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventCollectionRow>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
   queryExchangeEvents: (payload: QueryExchangePayload) => Promise<PendingTask>;
-  exportHistoryEventsCSV: (filters: HistoryEventRequestPayload, directoryPath?: string) => Promise<PendingTask>;
+  exportHistoryEventsCSV: (filters: HistoryEventExportPayload, directoryPath?: string) => Promise<PendingTask>;
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
 }
 
@@ -271,7 +271,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   };
 
   const exportHistoryEventsCSV = async (
-    filters: HistoryEventRequestPayload & { accounts?: [] },
+    filters: HistoryEventExportPayload & { accounts?: [] },
     directoryPath?: string,
   ): Promise<PendingTask> => {
     const requestBody = snakeCaseTransformer({

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type {
   GroupEventData,
   HistoryEventEditData,
@@ -9,7 +10,6 @@ import type {
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
-  HistoryEventRequestPayload,
   HistoryEventRow,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
@@ -101,8 +101,13 @@ const formData = ref<GroupEventData | StandaloneEventData>();
 const missingRuleData = ref<HistoryEventEditData>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
-const toggles = ref<{ customizedEventsOnly: boolean; showIgnoredAssets: boolean }>({
+const toggles = ref<{
+  customizedEventsOnly: boolean;
+  showIgnoredAssets: boolean;
+  matchExactEvents: boolean;
+}>({
   customizedEventsOnly: false,
+  matchExactEvents: false,
   showIgnoredAssets: false,
 });
 const decodingStatusDialogPersistent = ref<boolean>(false);
@@ -498,6 +503,7 @@ onMounted(async () => {
           v-model:pagination="pagination"
           :group-loading="groupLoading"
           :groups="groups"
+          :page-params="toggles.matchExactEvents ? pageParams : undefined"
           :exclude-ignored="!toggles.showIgnoredAssets"
           :identifiers="identifiers"
           :highlighted-identifiers="highlightedIdentifiers"
