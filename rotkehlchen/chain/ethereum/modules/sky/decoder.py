@@ -27,6 +27,7 @@ from .constants import (
     DAI_TO_USDS,
     DAI_TO_USDS_CONTRACT,
     DEPOSIT_USDS,
+    EXIT,
     MIGRATION_ACTIONS_CONTRACT,
     MKR_TO_SKY,
     MKR_TO_SKY_CONTRACT,
@@ -34,6 +35,7 @@ from .constants import (
     SUSDS_ASSET,
     SUSDS_CONTRACT,
     USDS_ASSET,
+    USDS_JOIN_ADDRESS,
     WITHDRAW_USDS,
 )
 
@@ -72,6 +74,7 @@ class SkyDecoder(DecoderInterface):
                 event.event_type = HistoryEventType.MIGRATE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {amount} USDS from DAI to USDS migration'
+                event.address = DAI_TO_USDS_CONTRACT
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -268,6 +271,52 @@ class SkyDecoder(DecoderInterface):
         maybe_reshuffle_events([out_event, in_event], context.decoded_events)
         return DecodingOutput(action_items=action_items)
 
+    def _decode_maybe_migrate_dai(self, context: DecoderContext) -> DecodingOutput:
+        """Similar to _decode_maybe_downgrade_usds in makerdao decoder, There is no useful log
+        event for migrating dai to usds via the migration actions contract. But there is an Exit
+        on USDS join which we can use as a hook to check if it is a migration or not"""
+        if context.tx_log.topics[0] != EXIT:
+            return DEFAULT_DECODING_OUTPUT
+
+        if (
+                bytes_to_address(context.tx_log.topics[1]) != MIGRATION_ACTIONS_CONTRACT or
+                not self.base.is_tracked(location_label := bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
+        ):
+            return DEFAULT_DECODING_OUTPUT
+
+        out_event, in_event = None, None
+        for event in context.decoded_events:
+            if (
+                    event.asset == A_DAI and
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == MIGRATION_ACTIONS_CONTRACT and
+                    event.location_label == location_label
+            ):
+                out_event = event
+                location_label = event.location_label  # type: ignore[assignment]
+            elif (
+                    event.asset == USDS_ASSET and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == location_label
+            ):
+                in_event = event
+                event.address = MIGRATION_ACTIONS_CONTRACT
+
+        if out_event is None or in_event is None:
+            return DEFAULT_DECODING_OUTPUT
+
+        out_event.event_type = HistoryEventType.MIGRATE
+        out_event.event_subtype = HistoryEventSubType.SPEND
+        out_event.notes = f'Migrate {out_event.amount} DAI to USDS'
+        out_event.counterparty = CPT_SKY
+        in_event.event_type = HistoryEventType.MIGRATE
+        in_event.event_subtype = HistoryEventSubType.RECEIVE
+        in_event.notes = f'Receive {in_event.amount} USDS from DAI to USDS migration'
+        in_event.counterparty = CPT_SKY
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -275,6 +324,7 @@ class SkyDecoder(DecoderInterface):
             DAI_TO_USDS_CONTRACT: (self._decode_migrate_dai,),
             SUSDS_CONTRACT: (self._decode_susds_events,),
             MKR_TO_SKY_CONTRACT: (self._decode_migrate_mkr,),
+            USDS_JOIN_ADDRESS: (self._decode_maybe_migrate_dai,),
 
         }
 
