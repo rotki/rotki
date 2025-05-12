@@ -8,13 +8,11 @@ defineOptions({
 
 withDefaults(
   defineProps<{
-    logo?: LogoProps['logo'];
     uniqueKey?: LogoProps['uniqueKey'];
     text?: LogoProps['text'];
     size?: LogoProps['size'];
   }>(),
   {
-    logo: 'app',
     size: undefined,
     text: false,
     uniqueKey: undefined,
@@ -27,8 +25,8 @@ const branch = checkIfDevelopment() ? 'develop' : 'main';
 <template>
   <RuiLogo
     v-bind="$attrs"
+    logo="app"
     :branch="branch"
-    :logo="logo"
     :text="text"
     :size="size"
     :unique-key="uniqueKey"
