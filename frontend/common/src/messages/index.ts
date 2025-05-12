@@ -59,6 +59,7 @@ interface NotificationBase {
   readonly groupCount?: number;
   readonly i18nParam?: I18nParam;
   readonly priority?: Priority;
+  readonly extras?: Record<string, unknown>;
 }
 
 export interface NotificationPayload extends NotificationBase {
@@ -74,7 +75,3 @@ export interface NotificationData extends NotificationBase {
 }
 
 export type Notification = SemiPartial<NotificationPayload, 'title' | 'message'>;
-
-export interface CalendarReminderNotification extends Notification {
-  eventId: number;
-}

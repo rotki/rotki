@@ -71,6 +71,14 @@ export const useNotificationsStore = defineStore('notifications', () => {
     set(messageOverflow, false);
   }
 
+  function removeMatching(predicate: (notification: NotificationData) => boolean): void {
+    const notifications = [...get(data)];
+    const match = notifications.find(predicate);
+    if (match !== undefined) {
+      remove(match.id);
+    }
+  }
+
   function setNotifications(notifications: NotificationData[]): void {
     set(data, take(notifications));
   }
@@ -206,6 +214,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     prioritized,
     queue,
     remove,
+    removeMatching,
   };
 });
 
