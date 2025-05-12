@@ -171,8 +171,6 @@ class DBEvmTx:
     ) -> list[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash for a given chain"""
         chain_id = blockchain.to_chain_id()
-        cursor = self.db.conn.cursor()
-
         address_filter, bindings = '', [parent_tx_hash, chain_id.serialize_for_db()]
         if from_address is not None:
             address_filter += ' AND ITX.from_address=?'
@@ -181,23 +179,24 @@ class DBEvmTx:
             address_filter += ' AND ITX.to_address=?'
             bindings.append(to_address)
 
-        results = cursor.execute(
-            'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value '
-            'FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
-            'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?'
-            f'{address_filter}', bindings,
-        )
-        transactions = []
-        for result in results:
-            tx = EvmInternalTransaction(
-                parent_tx_hash=parent_tx_hash,
-                chain_id=chain_id,
-                trace_id=result[0],
-                from_address=result[1],
-                to_address=result[2],
-                value=int(result[3]),
+        with self.db.conn.read_ctx() as cursor:
+            results = cursor.execute(
+                'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value '
+                'FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
+                'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?'
+                f'{address_filter}', bindings,
             )
-            transactions.append(tx)
+            transactions = []
+            for result in results:
+                tx = EvmInternalTransaction(
+                    parent_tx_hash=parent_tx_hash,
+                    chain_id=chain_id,
+                    trace_id=result[0],
+                    from_address=result[1],
+                    to_address=result[2],
+                    value=int(result[3]),
+                )
+                transactions.append(tx)
 
         return transactions
 
@@ -274,7 +273,6 @@ class DBEvmTx:
             tx_filter_query: EvmTransactionsFilterQuery | None,
             limit: int | None,
     ) -> list[EVMTxHash]:
-        cursor = self.db.conn.cursor()
         querystr = 'SELECT DISTINCT evm_transactions.tx_hash FROM evm_transactions '
         bindings = ()
         if tx_filter_query is not None:
@@ -288,13 +286,13 @@ class DBEvmTx:
             querystr += 'LIMIT ?'
             bindings = (*bindings, limit)  # type: ignore
 
-        cursor_result = cursor.execute(querystr, bindings)
         hashes = []
-        for entry in cursor_result:
-            try:
-                hashes.append(deserialize_evm_tx_hash(entry[0]))
-            except DeserializationError as e:
-                log.debug(f'Got error {e!s} while deserializing tx_hash {entry[0]} from the DB')
+        with self.db.conn.read_ctx() as cursor:
+            for entry in cursor.execute(querystr, bindings):
+                try:
+                    hashes.append(deserialize_evm_tx_hash(entry[0]))
+                except DeserializationError as e:
+                    log.debug(f'Got error {e!s} while deserializing tx_hash {entry[0]} from the DB')  # noqa: E501
 
         return hashes
 
@@ -621,13 +619,13 @@ class DBEvmTx:
     def get_max_genesis_trace_id(self, chain_id: ChainID) -> int:
         """Get the max trace id of genesis internal transactions from the database.
         If no internal transactions were found, returns 0 (zero)."""
-        cursor = self.db.conn.cursor()
-        trace_id, = cursor.execute(
-            'SELECT MAX(trace_id) from evm_internal_transactions AS ITX '
-            'INNER JOIN evm_transactions AS TX ON ITX.parent_tx=TX.identifier '
-            'WHERE TX.tx_hash=? and chain_id=?',
-            (GENESIS_HASH, chain_id.serialize_for_db()),
-        ).fetchone()
+        with self.db.conn.read_ctx() as cursor:
+            trace_id, = cursor.execute(
+                'SELECT MAX(trace_id) from evm_internal_transactions AS ITX '
+                'INNER JOIN evm_transactions AS TX ON ITX.parent_tx=TX.identifier '
+                'WHERE TX.tx_hash=? and chain_id=?',
+                (GENESIS_HASH, chain_id.serialize_for_db()),
+            ).fetchone()
         return trace_id if trace_id is not None else 0
 
     def get_or_create_genesis_transaction(

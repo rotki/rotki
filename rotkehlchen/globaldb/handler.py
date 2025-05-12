@@ -762,17 +762,17 @@ class GlobalDBHandler:
 
         If it exists it returns a list of the identifiers of the assets.
         """
-        cursor = GlobalDBHandler().conn.cursor()
-        query = cursor.execute(
-            'SELECT A.identifier from assets AS A JOIN common_asset_details as C '
-            'ON A.identifier=C.identifier WHERE A.type=? AND A.name=? AND C.symbol=?;',
-            (asset.asset_type.serialize_for_db(), asset.name, asset.symbol),
-        )
-        result = query.fetchall()
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            result = [x[0] for x in cursor.execute(
+                'SELECT A.identifier from assets AS A JOIN common_asset_details as C '
+                'ON A.identifier=C.identifier WHERE A.type=? AND A.name=? AND C.symbol=?;',
+                (asset.asset_type.serialize_for_db(), asset.name, asset.symbol),
+            )]
+
         if len(result) == 0:
             return None
 
-        return [x[0] for x in result]
+        return result
 
     @staticmethod
     def get_evm_token(address: ChecksumEvmAddress, chain_id: ChainID) -> EvmToken | None:
