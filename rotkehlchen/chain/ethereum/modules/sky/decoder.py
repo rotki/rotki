@@ -71,7 +71,7 @@ class SkyDecoder(DecoderInterface):
                 event.counterparty = CPT_SKY
                 event.event_type = HistoryEventType.MIGRATE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {amount} USDS from DAI->USDS migration'
+                event.notes = f'Receive {amount} USDS from DAI to USDS migration'
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -109,7 +109,7 @@ class SkyDecoder(DecoderInterface):
                 event.counterparty = CPT_SKY
                 event.event_type = HistoryEventType.MIGRATE
                 event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {sky_amount} SKY from MKR->SKY migration'
+                event.notes = f'Receive {sky_amount} SKY from MKR to SKY migration'
                 sky_event = event
 
         if None in (mkr_event, sky_event):
@@ -149,7 +149,7 @@ class SkyDecoder(DecoderInterface):
             if is_migration:
                 to_event_type = HistoryEventType.MIGRATE
                 to_event_subtype = HistoryEventSubType.RECEIVE
-                to_notes = f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from sDAI->sUSDS migration'  # noqa: E501
+                to_notes = f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from sDAI to sUSDS migration'  # noqa: E501
                 to_extra_data = {'underlying_amount': str(assets_amount)}
                 to_address = MIGRATION_ACTIONS_CONTRACT
             else:
@@ -201,7 +201,7 @@ class SkyDecoder(DecoderInterface):
                         event.asset == A_DAI and
                         event.location_label == received_address
                 ):  # DAI -> sUSDS
-                    action_items[0].to_notes = f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from DAI->sUSDS migration'  # noqa: E501  # fix the notes of the receival to be DAI
+                    action_items[0].to_notes = f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from DAI to sUSDS migration'  # noqa: E501  # fix the notes of the receival to be DAI
                     event.event_type = HistoryEventType.MIGRATE
                     event.event_subtype = HistoryEventSubType.SPEND
                     event.address = MIGRATION_ACTIONS_CONTRACT
@@ -275,6 +275,7 @@ class SkyDecoder(DecoderInterface):
             DAI_TO_USDS_CONTRACT: (self._decode_migrate_dai,),
             SUSDS_CONTRACT: (self._decode_susds_events,),
             MKR_TO_SKY_CONTRACT: (self._decode_migrate_mkr,),
+
         }
 
     @staticmethod

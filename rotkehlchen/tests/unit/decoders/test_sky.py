@@ -63,7 +63,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         asset=USDS_ASSET,
         amount=FVal(migrated_amount),
         location_label=ethereum_accounts[0],
-        notes=f'Receive {migrated_amount} USDS from DAI->USDS migration',
+        notes=f'Receive {migrated_amount} USDS from DAI to USDS migration',
         counterparty=CPT_SKY,
         address=ZERO_ADDRESS,
     )]
@@ -111,7 +111,7 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),  # sUSDS
         amount=FVal(to_amount := '126610.495160713536806542'),
         location_label=user,
-        notes=f'Receive {to_amount} sUSDS ({(underlying_usds := "133037.184652873382652036")} USDS) from sDAI->sUSDS migration',  # noqa: E501
+        notes=f'Receive {to_amount} sUSDS ({(underlying_usds := "133037.184652873382652036")} USDS) from sDAI to sUSDS migration',  # noqa: E501
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
         extra_data={'underlying_amount': underlying_usds},
@@ -159,7 +159,7 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
         asset=Asset('eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),  # sUSDS
         amount=FVal(to_amount := '5849.104582127060478762'),
         location_label=user,
-        notes=f'Receive {to_amount} sUSDS ({(underlying_usds := "6145.584263394667728636")} USDS) from DAI->sUSDS migration',  # noqa: E501
+        notes=f'Receive {to_amount} sUSDS ({(underlying_usds := "6145.584263394667728636")} USDS) from DAI to sUSDS migration',  # noqa: E501
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
         extra_data={'underlying_amount': underlying_usds},
@@ -307,8 +307,55 @@ def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
         asset=SKY_ASSET,
         amount=FVal(received_amount),
         location_label=ethereum_accounts[0],
-        notes=f'Receive {received_amount} SKY from MKR->SKY migration',
+        notes=f'Receive {received_amount} SKY from MKR to SKY migration',
         counterparty=CPT_SKY,
         address=ZERO_ADDRESS,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x66AE6A0591c6Fb84Fe1fD27F4976dDEC6430d805']])
+def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x2cf64d3e95e39e77dd3e02c458ddb1e22b5aea38f8d93f64cf79174f601ddc20')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1746660575000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00011343597080725'),
+        location_label=(user := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=12,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=USDS_ASSET,
+        amount=FVal(amount := '540310.221137197108444258'),
+        location_label=user,
+        notes=f'Downgrade {amount} USDS to DAI',
+        counterparty=CPT_SKY,
+        address=MIGRATION_ACTIONS_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=17,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DAI,
+        amount=FVal(amount),
+        location_label=user,
+        notes=f'Receive {amount} DAI from USDS to DAI downgrade',
+        counterparty=CPT_SKY,
+        address=MIGRATION_ACTIONS_CONTRACT,
     )]
     assert expected_events == events
