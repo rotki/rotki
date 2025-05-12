@@ -54,7 +54,6 @@ class QueriedAddresses:
             module: ModuleName,
     ) -> tuple[ChecksumAddress, ...] | None:
         """Get a List of addresses to query for module or None if none is set"""
-        cursor = self.db.conn.cursor()
         query = cursor.execute(
             'SELECT value FROM multisettings WHERE name=?;',
             (f'queried_address_{module}',),
