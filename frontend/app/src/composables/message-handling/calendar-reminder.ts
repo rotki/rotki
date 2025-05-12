@@ -4,28 +4,24 @@ import { useCalendarReminderApi } from '@/composables/history/calendar/reminder'
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
-import { type CalendarReminderNotification, NotificationCategory, Severity } from '@rotki/common';
+import { type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import dayjs from 'dayjs';
 
 export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CalendarEventWithReminder> {
   const { getChainName } = useSupportedChains();
   const { addressNameSelector } = useAddressesNamesStore();
-  const router = useRouter();
-  const { prioritized, remove: removeNotification } = useNotificationsStore();
+  const { removeMatching } = useNotificationsStore();
   const { editCalendarReminder } = useCalendarReminderApi();
+  const router = useRouter();
 
-  const handle = (data: CalendarEventWithReminder): CalendarReminderNotification => {
+  const handle = (data: CalendarEventWithReminder): Notification => {
     const { name, timestamp } = data;
     const now = dayjs();
     const eventTime = dayjs(timestamp * 1000);
     const isEventTime = now.isSameOrAfter(eventTime);
 
-    const existingNotification = prioritized.find(item => item.category === NotificationCategory.CALENDAR_REMINDER && 'eventId' in item && item.eventId === data.identifier);
-
-    if (existingNotification) {
-      removeNotification(existingNotification.id);
-    }
+    removeMatching(({ category, extras }) => category === NotificationCategory.CALENDAR_REMINDER && (extras?.eventId === data.identifier));
 
     let title = name;
     if (!isEventTime) {
@@ -68,7 +64,9 @@ export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): 
       },
       category: NotificationCategory.CALENDAR_REMINDER,
       display: true,
-      eventId: data.identifier,
+      extras: {
+        eventId: data.identifier,
+      },
       message,
       severity: Severity.REMINDER,
       title,
