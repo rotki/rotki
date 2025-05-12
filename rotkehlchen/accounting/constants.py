@@ -19,15 +19,16 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.INFORMATIONAL},
         HistoryEventSubType.GOVERNANCE: {DEFAULT: EventCategory.GOVERNANCE},
         HistoryEventSubType.DEPOSIT_ASSET: {DEFAULT: EventCategory.INFORMATIONAL},
-        HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.INFORMATIONAL},
+        HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.WITHDRAW},
         HistoryEventSubType.PLACE_ORDER: {DEFAULT: EventCategory.PLACE_ORDER},
         HistoryEventSubType.CREATE: {DEFAULT: EventCategory.CREATE_PROJECT},
-        HistoryEventSubType.UPDATE: {DEFAULT: EventCategory.UPDATE_PROJECT},
+        HistoryEventSubType.UPDATE: {DEFAULT: EventCategory.UPDATE},
         HistoryEventSubType.APPLY: {DEFAULT: EventCategory.APPLY},
         HistoryEventSubType.APPROVE: {DEFAULT: EventCategory.APPROVAL},
         HistoryEventSubType.ATTEST: {DEFAULT: EventCategory.ATTEST},
         HistoryEventSubType.MEV_REWARD: {DEFAULT: EventCategory.MEV_REWARD},
         HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
+        HistoryEventSubType.CONSOLIDATE: {DEFAULT: EventCategory.COMBINE},
     },
     HistoryEventType.RECEIVE: {
         HistoryEventSubType.REWARD: {DEFAULT: EventCategory.CLAIM_REWARD},
@@ -266,8 +267,8 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.CREATE_PROJECT: {DEFAULT: EventCategoryDetails(
         label='new project',
         icon='lu-file-plus',
-    )}, EventCategory.UPDATE_PROJECT: {DEFAULT: EventCategoryDetails(
-        label='update project',
+    )}, EventCategory.UPDATE: {DEFAULT: EventCategoryDetails(
+        label='update',
         icon='lu-square-pen',
     )}, EventCategory.APPLY: {DEFAULT: EventCategoryDetails(
         label='apply',
@@ -311,6 +312,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.BURN_NFT: {DEFAULT: EventCategoryDetails(
         label='burn nft',
         icon='lu-flame-kindling',
+    )}, EventCategory.COMBINE: {DEFAULT: EventCategoryDetails(
+        label='Combine',
+        icon='lu-combine',
     )},
 }
 

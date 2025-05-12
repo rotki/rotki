@@ -79,16 +79,23 @@ class Eth2Decoder(DecoderInterface):
 
         return [found_indexes.get(key, UNKNOWN_VALIDATOR_INDEX) for key in public_keys]
 
-    def _get_indexes_or_public_keys(self, public_keys: list[Eth2PubKey]) -> list[int | Eth2PubKey]:
-        """Query the validator indexes but fall back to the public key if the index is unknown."""
-        return [
-            validator_index if validator_index != UNKNOWN_VALIDATOR_INDEX else public_key
-            for validator_index, public_key in zip(
-                self._query_validator_indexes(public_keys=public_keys),
-                public_keys,
-                strict=False,  # the list from _query_validator_indexes will be the same length as the original list  # noqa: E501
-            )
-        ]
+    def _get_known_validator_indexes(
+            self,
+            context: DecoderContext,
+            public_keys: list[Eth2PubKey],
+    ) -> list[int] | None:
+        """Get validator indices for the specified public keys.
+        Logs and error and returns None if any indices are unknown.
+        """
+        for idx, validator_index in enumerate(indices := self._query_validator_indexes(public_keys=public_keys)):  # noqa: E501
+            if validator_index == UNKNOWN_VALIDATOR_INDEX:
+                log.error(
+                    f'Failed to find index for validator public key {public_keys[idx]} '
+                    f'in ETH2 request transaction {context.transaction}',
+                )
+                return None
+
+        return indices
 
     def _decode_eth2_deposit_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != DEPOSIT_EVENT:
@@ -193,13 +200,26 @@ class Eth2Decoder(DecoderInterface):
         source_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
         target_public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[68:116]))
         if source_public_key == target_public_key:
-            target = self._get_indexes_or_public_keys(public_keys=[target_public_key])[0]
-            info_event.notes = f'Request to convert validator {target} into an accumulating validator'  # noqa: E501
+            if (indexes := self._get_known_validator_indexes(
+                context=context,
+                public_keys=[target_public_key],
+            )) is None:
+                return DEFAULT_DECODING_OUTPUT
+
+            info_event.extra_data = {'validator_index': (validator_index := indexes[0])}
+            info_event.notes = f'Request to convert validator {validator_index} into an accumulating validator'  # noqa: E501
+            info_event.event_subtype = HistoryEventSubType.UPDATE
         else:
-            source, target = self._get_indexes_or_public_keys(
+            if (indexes := self._get_known_validator_indexes(
+                context=context,
                 public_keys=[source_public_key, target_public_key],
-            )
-            info_event.notes = f'Request to consolidate validator {source} into {target}'
+            )) is None:
+                return DEFAULT_DECODING_OUTPUT
+
+            source_index, target_index = indexes
+            info_event.notes = f'Request to consolidate validator {source_index} into {target_index}'  # noqa: E501
+            info_event.event_subtype = HistoryEventSubType.CONSOLIDATE
+            info_event.extra_data = {'source_validator_index': source_index, 'target_validator_index': target_index}  # noqa: E501
 
         fee_event.notes = f'Spend {fee_event.amount} ETH as validator consolidation fee'
         return DecodingOutput(event=info_event)
@@ -218,12 +238,20 @@ class Eth2Decoder(DecoderInterface):
 
         fee_event, info_event = events
         public_key = Eth2PubKey(bytes_to_hexstr(context.tx_log.data[20:68]))
-        validator = self._get_indexes_or_public_keys(public_keys=[public_key])[0]
+        if (indexes := self._get_known_validator_indexes(
+            context=context,
+            public_keys=[public_key],
+        )) is None:
+            return DEFAULT_DECODING_OUTPUT
+
+        info_event.extra_data = {'validator_index': (validator_index := indexes[0])}
+        info_event.event_subtype = HistoryEventSubType.REMOVE_ASSET
         if (amount := from_gwei(int.from_bytes(context.tx_log.data[68:76]))) == ZERO:
-            info_event.notes = f'Request to exit validator {validator}'
+            info_event.notes = f'Request to exit validator {validator_index}'
             request_description = 'exit'
         else:
-            info_event.notes = f'Request to withdraw {amount} ETH from validator {validator}'
+            info_event.notes = f'Request to withdraw {amount} ETH from validator {validator_index}'
+            info_event.amount = amount
             request_description = 'withdrawal'
 
         fee_event.notes = f'Spend {fee_event.amount} ETH as {request_description} request fee'
