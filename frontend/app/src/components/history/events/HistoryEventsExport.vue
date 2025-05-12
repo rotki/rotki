@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventRequestPayload } from '@/types/history/events';
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useInterop } from '@/composables/electron-interop';
@@ -11,10 +11,11 @@ import { isTaskCancelled } from '@/utils';
 import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 
 const props = defineProps<{
+  matchExactEvents: boolean;
   filters: HistoryEventRequestPayload;
 }>();
 
-const { filters } = toRefs(props);
+const { filters, matchExactEvents } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -27,7 +28,10 @@ const { notify } = useNotificationsStore();
 
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
   try {
-    const { taskId } = await exportHistoryEventsCSV(get(filters), directoryPath);
+    const { taskId } = await exportHistoryEventsCSV({
+      ...get(filters),
+      matchExactEvents: get(matchExactEvents),
+    }, directoryPath);
     const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {
       title: t('actions.history_events_export.title'),
     });

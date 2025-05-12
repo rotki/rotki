@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { ShowEventHistoryForm } from '@/modules/history/management/forms/form-types';
 import type { Collection } from '@/types/collection';
@@ -36,6 +37,7 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 
 const props = defineProps<{
   groups: Collection<HistoryEventRow>;
+  pageParams: HistoryEventRequestPayload | undefined;
   excludeIgnored: boolean;
   groupLoading: boolean;
   identifiers?: string[];
@@ -52,7 +54,7 @@ defineSlots<{
   'query-status': (props: { colspan: number }) => any;
 }>();
 
-const { groupLoading, groups } = toRefs(props);
+const { groupLoading, groups, pageParams } = toRefs(props);
 
 const eventsLoading = ref(false);
 const selected = ref<HistoryEventEntry[]>([]);
@@ -112,6 +114,7 @@ const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
     return [];
 
   const response = await fetchHistoryEvents({
+    ...get(pageParams),
     eventIdentifiers: data.flatMap(item => Array.isArray(item) ? item.map(i => i.eventIdentifier) : item.eventIdentifier),
     excludeIgnoredAssets: props.excludeIgnored,
     groupByEventIds: false,

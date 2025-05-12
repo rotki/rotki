@@ -47,9 +47,19 @@ const combinedAllEvents = computed<HistoryEventRow[]>(() => {
   }
 
   if (isSwapEvent(group)) {
-    return [flatten(all)];
+    const allFlattened = flatten(all);
+    if (allFlattened.length === 1 && Array.isArray(allFlattened[0])) {
+      return [allFlattened[0]];
+    }
+    return allFlattened;
   }
-  return all;
+
+  return all.map((item) => {
+    if (Array.isArray(item) && item.length === 1) {
+      return item[0];
+    }
+    return item;
+  });
 });
 
 const limitedEvents = computed<HistoryEventRow[]>(() => {
