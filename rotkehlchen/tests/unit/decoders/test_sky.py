@@ -65,7 +65,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Receive {migrated_amount} USDS from DAI to USDS migration',
         counterparty=CPT_SKY,
-        address=ZERO_ADDRESS,
+        address=DAI_TO_USDS_CONTRACT,
     )]
     assert expected_events == events
 
@@ -355,6 +355,54 @@ def test_downgrade_usds_dai(ethereum_inquirer, ethereum_accounts):
         amount=FVal(amount),
         location_label=user,
         notes=f'Receive {amount} DAI from USDS to DAI downgrade',
+        counterparty=CPT_SKY,
+        address=MIGRATION_ACTIONS_CONTRACT,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x1170313034adD8c24389550711E86c902cacfB33']])
+def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
+    """Migrate DAI to USDS through the migration actions contract"""
+    tx_hash = deserialize_evm_tx_hash('0xeafdd9789b99498466d9afffdb2087adaaba419b62c0adbcda17ff4c2e239a85')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1747020191000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000237343245854033'),
+        location_label=(user := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=60,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_DAI,
+        amount=FVal(amount := '200'),
+        location_label=user,
+        notes=f'Migrate {amount} DAI to USDS',
+        counterparty=CPT_SKY,
+        address=MIGRATION_ACTIONS_CONTRACT,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=65,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.MIGRATE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=USDS_ASSET,
+        amount=FVal(amount),
+        location_label=user,
+        notes=f'Receive {amount} USDS from DAI to USDS migration',
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
     )]

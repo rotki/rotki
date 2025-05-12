@@ -8,6 +8,8 @@ DAI_TO_USDS_CONTRACT: Final = string_to_evm_address('0x3225737a9Bbb6473CB4a45b72
 MKR_TO_SKY_CONTRACT: Final = string_to_evm_address('0xBDcFCA946b6CDd965f99a839e4435Bcdc1bc470B')
 SUSDS_CONTRACT: Final = string_to_evm_address('0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD')
 MIGRATION_ACTIONS_CONTRACT: Final = string_to_evm_address('0xf86141a5657Cf52AEB3E30eBccA5Ad3a8f714B89')  # noqa: E501
+USDS_JOIN_ADDRESS: Final = string_to_evm_address('0x3C0f895007CA717Aa01c8693e59DF1e8C3777FEB')
+EXIT: Final = b'\xbc*g\xd4"\xc2h\xdao\xe4_>}\x19N\x1d\x98\x90m"\x1f\x1c\xfa\xd6*\\\x80\xf2\xcd \x9fL'  # noqa: E501
 
 SKY_ASSET: Final = Asset('eip155:1/erc20:0x56072C95FAA701256059aa122697B133aDEd9279')
 USDS_ASSET: Final = Asset('eip155:1/erc20:0xdC035D45d973E3EC169d2276DDab16f1e407384F')
