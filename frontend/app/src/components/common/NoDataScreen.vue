@@ -20,7 +20,6 @@ const { isMdAndUp } = useBreakpoint();
         <slot name="logo">
           <RotkiLogo
             :size="isMdAndUp ? 8 : 4"
-            logo="emptyScreen"
             unique-key="3"
           />
         </slot>
