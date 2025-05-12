@@ -3,6 +3,11 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
+from rotkehlchen.chain.ethereum.modules.sky.constants import (
+    CPT_SKY,
+    MIGRATION_ACTIONS_CONTRACT,
+    USDS_ASSET,
+)
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value,
@@ -64,6 +69,8 @@ from .constants import (
     CPT_DSR,
     CPT_MAKERDAO_MIGRATION,
     CPT_VAULT,
+    DAI_JOIN_ADDRESS,
+    GENERIC_EXIT,
     MAKERDAO_ICON,
     MAKERDAO_LABEL,
     MAKERDAO_MIGRATION_ADDRESS,
@@ -77,7 +84,6 @@ if TYPE_CHECKING:
 
 
 GENERIC_JOIN = b';M\xa6\x9f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
-GENERIC_EXIT = b'\xefi;\xed\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 
 POT_JOIN = b'\x04\x98x\xf3\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 POT_EXIT = b'\x7f\x86a\xa1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
@@ -114,7 +120,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         self.sai = A_SAI.resolve_to_evm_token()
         self.sdai = A_SDAI.resolve_to_evm_token()
         self.makerdao_cdp_manager = self.ethereum.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
-        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+        self.makerdao_dai_join = self.ethereum.contracts.contract(DAI_JOIN_ADDRESS)
 
     def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         if self.base.is_tracked(address):
@@ -233,28 +239,68 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             extra_data={'vault_type': vault_type},
         )])
 
+    def _decode_debt_payback(self, context: DecoderContext) -> DecodingOutput:
+        join_user_address = bytes_to_address(context.tx_log.topics[2])
+        raw_amount = int.from_bytes(context.tx_log.topics[3])
+        amount = token_normalized_value(
+            token_amount=raw_amount,
+            token=self.dai,
+        )
+        # The transfer comes right before, but we don't have enough information
+        # yet to make sure that this transfer is indeed a vault payback debt. We
+        # need to get a cdp frob event and compare vault id to address matches
+        action_item = ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.SPEND,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=self.dai,
+            amount=amount,
+            to_event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            to_counterparty=CPT_VAULT,
+            extra_data={'vault_address': join_user_address},
+        )
+        return DecodingOutput(action_items=[action_item])
+
+    def _decode_maybe_downgrade_usds(self, context: DecoderContext) -> DecodingOutput:
+        """There is no useful log event for downgrading usds to dai, but there is a GENERIC_EXIT
+        on dai join which we can use as a hook to check if it is a migration or not"""
+        out_event, in_event, location_label = None, None, None
+        for event in context.decoded_events:
+            if (
+                    event.asset == USDS_ASSET and
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.address == MIGRATION_ACTIONS_CONTRACT
+            ):
+                out_event = event
+                location_label = event.location_label
+            elif (
+                    event.asset == A_DAI and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == location_label
+            ):
+                in_event = event
+                event.address = MIGRATION_ACTIONS_CONTRACT
+
+        if out_event is None or in_event is None:
+            return DEFAULT_DECODING_OUTPUT
+
+        out_event.event_type = HistoryEventType.MIGRATE
+        out_event.event_subtype = HistoryEventSubType.SPEND
+        out_event.notes = f'Downgrade {out_event.amount} USDS to DAI'
+        out_event.counterparty = CPT_SKY
+        in_event.event_type = HistoryEventType.MIGRATE
+        in_event.event_subtype = HistoryEventSubType.RECEIVE
+        in_event.notes = f'Receive {in_event.amount} DAI from USDS to DAI downgrade'
+        in_event.counterparty = CPT_SKY
+        return DEFAULT_DECODING_OUTPUT
+
     def decode_makerdao_debt_payback(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == GENERIC_JOIN:
-            join_user_address = bytes_to_address(context.tx_log.topics[2])
-            raw_amount = int.from_bytes(context.tx_log.topics[3])
-            amount = token_normalized_value(
-                token_amount=raw_amount,
-                token=self.dai,
-            )
-            # The transfer comes right before, but we don't have enough information
-            # yet to make sure that this transfer is indeed a vault payback debt. We
-            # need to get a cdp frob event and compare vault id to address matches
-            action_item = ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.SPEND,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=self.dai,
-                amount=amount,
-                to_event_subtype=HistoryEventSubType.PAYBACK_DEBT,
-                to_counterparty=CPT_VAULT,
-                extra_data={'vault_address': join_user_address},
-            )
-            return DecodingOutput(action_items=[action_item])
+            return self._decode_debt_payback(context)
+        elif context.tx_log.topics[0] == GENERIC_EXIT:
+            return self._decode_maybe_downgrade_usds(context)
 
         return DEFAULT_DECODING_OUTPUT
 
