@@ -305,6 +305,7 @@ defineExpose({
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
+      :location="location"
       :v$="v$"
       :datetime="datetime"
       :hide-price-fields="isInformationalEvent"

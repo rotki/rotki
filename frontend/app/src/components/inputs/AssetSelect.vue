@@ -30,11 +30,13 @@ const props = withDefaults(defineProps<{
   hideDetails?: boolean;
   includeNfts?: boolean;
   asset?: AssetInfoWithId | NftAsset;
+  evmChain?: string;
 }>(), {
   asset: undefined,
   clearable: false,
   disabled: false,
   errorMessages: () => [],
+  evmChain: undefined,
   excludes: () => [],
   hideDetails: false,
   hint: '',
@@ -102,6 +104,7 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
   set(loading, true);
   try {
     const fetchedAssets = await assetSearch({
+      evmChain: props.evmChain,
       limit: 50,
       searchNfts: get(includeNfts),
       signal,
@@ -109,7 +112,8 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
     });
     if (get(modelValue))
       await retainSelectedValueInOptions(fetchedAssets);
-    else set(assets, fetchedAssets);
+    else
+      set(assets, fetchedAssets);
 
     pending = null;
     set(loading, false);
@@ -185,6 +189,13 @@ watch(visibleAssets, () => {
   const identifier = get(modelValue);
   if (identifier && !getVisibleAsset(identifier))
     onUpdateModelValue('');
+});
+
+watch(() => props.evmChain, async () => {
+  if (!get(modelValue)) {
+    return;
+  }
+  await retainSelectedValueInOptions([]);
 });
 
 onMounted(async () => {

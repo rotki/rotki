@@ -194,6 +194,7 @@ defineExpose({
       asset="ETH"
       :v$="v$"
       :datetime="datetime"
+      location="ethereum"
       disable-asset
     />
 

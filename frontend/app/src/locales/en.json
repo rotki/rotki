@@ -4279,6 +4279,11 @@
     "inactive_timeframes": "Inactive Timeframes",
     "visible_timeframes": "Visible Timeframes"
   },
+  "toggle_location_link": {
+    "disabled": "This functionality is available only for evm chains",
+    "limited": "Only assets available in {location} will be displayed.",
+    "unlimited": "All supported assets will be displayed."
+  },
   "trade": {
     "actions": {
       "change_network": "Change Network",
