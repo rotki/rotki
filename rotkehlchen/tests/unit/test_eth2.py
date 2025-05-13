@@ -8,7 +8,13 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    CONSOLIDATION_REQUEST_CONTRACT,
+    CPT_ETH2,
+    MIN_EFFECTIVE_BALANCE,
+    UNKNOWN_VALIDATOR_INDEX,
+    WITHDRAWAL_REQUEST_CONTRACT,
+)
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
@@ -47,10 +53,11 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.history.price import PriceHistorian
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -842,6 +849,161 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
     assert performance['entries_total'] == 2
     assert performance['sums'] == {}
     assert performance['validators'] == {}
+
+
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+def test_eth_accumulating_validators_performance(
+        eth2: 'Eth2',
+        database: 'DBHandler',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that the performance of accumulating validators is handled correctly.
+
+    Validators:
+    1. Accumulating - Target for consolidations.
+    2. Distributing - Consolidated into validator 1
+    3. Accumulating - Consolidated into validator 1 after a 64 ETH deposit
+    4. Accumulating - Exits with pnl with an effective balance > 32
+
+    Events:
+    - initial deposits of 32 ETH to each validator
+    - deposit of 64 ETH to validator 3
+    - deposit of 10 ETH to validator 4
+    - skimming withdrawal of 0.02 ETH from validator 3
+    - partial withdrawal (via EL request) of 4 ETH from validator 3
+    - consolidation of validators 2 and 3 into validator 1
+    - exit of validator 4
+    - block reward of 0.05 ETH for validator 1
+    """
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    validators = [(validator1 := ValidatorDetails(
+        validator_index=1073521,
+        validator_type=ValidatorType.ACCUMULATING,
+        public_key=Eth2PubKey('0xae44b0684220d51d11726e09115b1a9068147755bfa8dcb67fa208f6178a251c2450cc7072d75976ef5c32ab3acd8e68'),
+    )), (validator2 := ValidatorDetails(
+        validator_index=67929,
+        validator_type=ValidatorType.DISTRIBUTING,
+        public_key=Eth2PubKey('0x99e7ae8ad91b8f8fa447554858481980a57da7e93bcf49d92acadcec2e689e98b4e8c25a2f1fbb1ad337c3d4711fd977'),
+    )), (validator3 := ValidatorDetails(
+        validator_index=47086,
+        validator_type=ValidatorType.ACCUMULATING,
+        public_key=Eth2PubKey('0x97662e211e8eb3fa64ffd73ada75cfd6d14078aef7f1138d6430abb38d4d1d1b91191f18470e6e467dd4c125f73a9f48'),
+    )), (validator4 := ValidatorDetails(
+        validator_index=1672457,
+        validator_type=ValidatorType.ACCUMULATING,
+        public_key=Eth2PubKey('0x8ad15ca10be31b7fb7ad6e87f721b7311f535b3e47dc7e6e25d9c6f904a35fc0964b3ab581bb162ac474653236b5f9a6'),
+    ))]
+
+    tx_hash_1, timestamp, user_address, hour_in_ms = make_evm_tx_hash(), TimestampMS(1746119141000), ethereum_accounts[0], ts_sec_to_ms(Timestamp(HOUR_IN_SECONDS))  # noqa: E501
+    events: list[HistoryBaseEntry] = [EthDepositEvent(
+        tx_hash=tx_hash_1,
+        validator_index=validator.validator_index,  # type: ignore[arg-type]  # validator_index has been set
+        sequence_index=idx,
+        timestamp=timestamp,
+        amount=MIN_EFFECTIVE_BALANCE,
+        depositor=user_address,
+    ) for idx, validator in enumerate(validators)]
+    events.extend([EthDepositEvent(
+        tx_hash=make_evm_tx_hash(),
+        validator_index=validator3.validator_index,  # type: ignore[arg-type]
+        sequence_index=1,
+        timestamp=TimestampMS(timestamp + (1 * hour_in_ms)),
+        amount=FVal('64'),
+        depositor=user_address,
+    ), EthDepositEvent(
+        tx_hash=make_evm_tx_hash(),
+        validator_index=validator4.validator_index,  # type: ignore[arg-type]
+        sequence_index=1,
+        timestamp=TimestampMS(timestamp + (1 * hour_in_ms)),
+        amount=(second_deposit := FVal('10')),
+        depositor=user_address,
+    ), EthWithdrawalEvent(
+        validator_index=validator3.validator_index,  # type: ignore[arg-type]
+        timestamp=TimestampMS(timestamp + (2 * hour_in_ms)),
+        amount=(skim_amount := FVal('0.02')),
+        withdrawal_address=user_address,
+        is_exit=False,
+    ), EvmEvent(
+        tx_hash=make_evm_tx_hash(),
+        sequence_index=1,
+        timestamp=TimestampMS(timestamp + (3 * hour_in_ms)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        asset=A_ETH,
+        amount=(withdrawal_amount := FVal('4')),
+        location_label=user_address,
+        notes=f'Request to withdraw {withdrawal_amount} ETH from validator {validator3.validator_index}',  # noqa: E501
+        counterparty=CPT_ETH2,
+        address=WITHDRAWAL_REQUEST_CONTRACT,
+        extra_data={'validator_index': validator3.validator_index},
+    ), EthWithdrawalEvent(
+        validator_index=validator3.validator_index,  # type: ignore[arg-type]
+        timestamp=TimestampMS(timestamp + (36 * hour_in_ms)),
+        amount=withdrawal_amount,
+        withdrawal_address=user_address,
+        is_exit=False,
+    ), EthWithdrawalEvent(
+        validator_index=validator4.validator_index,  # type: ignore[arg-type]
+        timestamp=TimestampMS(timestamp + (72 * hour_in_ms)),
+        amount=MIN_EFFECTIVE_BALANCE + second_deposit + (exit_amount := FVal('0.01')),
+        withdrawal_address=user_address,
+        is_exit=True,
+    ), EthBlockEvent(
+        validator_index=validator1.validator_index,  # type: ignore[arg-type]
+        timestamp=TimestampMS(timestamp + (75 * hour_in_ms)),
+        amount=(block_reward := FVal('0.05')),
+        fee_recipient=user_address,
+        fee_recipient_tracked=True,
+        block_number=33333,
+        is_mev_reward=False,
+    )])
+    events.extend([EvmEvent(
+        tx_hash=make_evm_tx_hash(),
+        sequence_index=1,
+        timestamp=TimestampMS(timestamp + (40 * hour_in_ms)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.CONSOLIDATE,
+        asset=A_ETH,
+        amount=ZERO,
+        location_label=user_address,
+        counterparty=CPT_ETH2,
+        address=CONSOLIDATION_REQUEST_CONTRACT,
+        extra_data={
+            'source_validator_index': validator.validator_index,
+            'target_validator_index': validator1.validator_index,
+        },
+    ) for validator in (validator2, validator3)])
+
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(write_cursor, validators)
+        dbevents.add_history_events(write_cursor, events)
+
+    assert eth2.get_performance(
+        from_ts=ts_ms_to_sec(timestamp),
+        to_ts=ts_ms_to_sec(TimestampMS(timestamp + (100 * hour_in_ms))),
+        limit=10,
+        offset=0,
+        ignore_cache=True,
+    ) == {
+        'validators': {
+            validator3.validator_index: {'withdrawals': skim_amount, 'sum': skim_amount, 'apr': FVal('0.0188793103448275862068965517241379310344827586206896551724137931034482758620690')},  # noqa: E501
+            validator4.validator_index: {'exits': exit_amount, 'sum': exit_amount, 'apr': FVal('0.0290643662906436629064366290643662906436629064366290643662906436629064366290644')},  # noqa: E501
+            validator1.validator_index: {'execution_blocks': block_reward, 'sum': block_reward, 'apr': FVal('0.0411654135338345864661654135338345864661654135338345864661654135338345864661654')},  # noqa: E501
+        },
+        'sums': {
+            'withdrawals': skim_amount,
+            'sum': skim_amount + exit_amount + block_reward,
+            'exits': exit_amount,
+            'execution_blocks': block_reward,
+            'apr': FVal('0.0297030300564352785264995314407796027147703595303844353349566167667297663190996'),  # noqa: E501
+        },
+        'entries_total': 4,
+        'entries_found': 3,
+    }
 
 
 @pytest.mark.vcr

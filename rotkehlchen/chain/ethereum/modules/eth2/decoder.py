@@ -85,7 +85,7 @@ class Eth2Decoder(DecoderInterface):
             public_keys: list[Eth2PubKey],
     ) -> list[int] | None:
         """Get validator indices for the specified public keys.
-        Logs and error and returns None if any indices are unknown.
+        Logs an error and returns None if any indices are unknown.
         """
         for idx, validator_index in enumerate(indices := self._query_validator_indexes(public_keys=public_keys)):  # noqa: E501
             if validator_index == UNKNOWN_VALIDATOR_INDEX:

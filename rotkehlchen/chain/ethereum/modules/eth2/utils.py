@@ -6,12 +6,7 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 )
-from rotkehlchen.db.filtering import (
-    EthStakingEventFilterQuery,
-    EthWithdrawalFilterQuery,
-    HistoryEventFilterQuery,
-    WithdrawalTypesFilter,
-)
+from rotkehlchen.db.filtering import EthStakingEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -22,7 +17,6 @@ from rotkehlchen.utils.misc import get_chunks
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-INITIAL_ETH_DEPOSIT = FVal(32)
 EPOCH_DURATION_SECS = 384
 
 ETH2_GENESIS_TIMESTAMP = 1606824023
@@ -62,26 +56,8 @@ def create_profit_filter_queries(
         to_ts: Timestamp,
         validator_indices: list[int] | None,
         tracked_addresses: Sequence[ChecksumEvmAddress],
-) -> tuple[EthWithdrawalFilterQuery, EthWithdrawalFilterQuery, EthStakingEventFilterQuery, HistoryEventFilterQuery]:  # noqa: E501
-    """Create the Filter queries for withdrawal events and execution layer reward events"""
-    withdrawals_filter_query = EthWithdrawalFilterQuery.make(
-        from_ts=from_ts,
-        to_ts=to_ts,
-        validator_indices=validator_indices,
-        event_types=[HistoryEventType.STAKING],
-        event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-        entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
-        withdrawal_types_filter=WithdrawalTypesFilter.ONLY_PARTIAL,
-    )
-    exits_filter_query = EthWithdrawalFilterQuery.make(
-        from_ts=from_ts,
-        to_ts=to_ts,
-        validator_indices=validator_indices,
-        event_types=[HistoryEventType.STAKING],
-        event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-        entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
-        withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
-    )
+) -> tuple[EthStakingEventFilterQuery, HistoryEventFilterQuery]:
+    """Create the Filter queries for execution layer reward events"""
     blocks_execution_filter_query = EthStakingEventFilterQuery.make(
         from_ts=from_ts,
         to_ts=to_ts,
@@ -100,4 +76,4 @@ def create_profit_filter_queries(
         event_subtypes=[HistoryEventSubType.MEV_REWARD],
         location_labels=tracked_addresses,  # type: ignore  # addresses are strings
     )
-    return withdrawals_filter_query, exits_filter_query, blocks_execution_filter_query, mev_execution_filter_query  # noqa: E501
+    return blocks_execution_filter_query, mev_execution_filter_query
