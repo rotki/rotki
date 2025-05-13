@@ -1,6 +1,7 @@
 from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.fval import FVal
 
 VALIDATOR_STATS_QUERY_BACKOFF_EVERY_N_VALIDATORS: Final = 30
 VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE: Final = 20
@@ -8,6 +9,8 @@ VALIDATOR_STATS_QUERY_BACKOFF_TIME: Final = 8
 
 FREE_VALIDATORS_LIMIT: Final = 4
 UNKNOWN_VALIDATOR_INDEX: Final = -1
+MIN_EFFECTIVE_BALANCE: Final = FVal(32)
+MAX_EFFECTIVE_BALANCE: Final = FVal(2048)
 
 CPT_ETH2: Final = 'eth2'
 

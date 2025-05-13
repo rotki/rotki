@@ -2,7 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.ethereum.modules.eth2.utils import INITIAL_ETH_DEPOSIT
+from rotkehlchen.chain.ethereum.modules.eth2.constants import MIN_EFFECTIVE_BALANCE
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -547,7 +547,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         for (validator_index, pnl_str) in write_cursor:
             pnl = FVal(pnl_str)
             if pnl > ONE:
-                pnl -= INITIAL_ETH_DEPOSIT
+                pnl -= MIN_EFFECTIVE_BALANCE
                 fixed_values.append((str(pnl), validator_index, 1606780800))
 
         if len(fixed_values) != 0:
