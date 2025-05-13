@@ -3,6 +3,7 @@ import type { SwapSubEventModel } from '@/types/history/events';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
+import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
@@ -28,6 +29,8 @@ const amount = ref<string>('');
 const asset = ref<string>('');
 const locationLabel = ref<string>('');
 const userNotes = ref<string>('');
+
+const evmChain = ref<string>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
@@ -170,16 +173,23 @@ watch(userNotes, (userNotes, oldUserNotes) => {
             :error-messages="toMessages(v$.amount)"
             @blur="v$.amount.$touch()"
           />
-          <AssetSelect
-            v-model="asset"
-            outlined
-            clearable
-            :disabled="disabled"
-            :data-cy="`${type}-asset`"
-            :label="assetLabel"
-            :error-messages="toMessages(v$.asset)"
-            @blur="v$.asset.$touch()"
-          />
+          <div class="flex">
+            <AssetSelect
+              v-model="asset"
+              outlined
+              clearable
+              :evm-chain="evmChain"
+              :disabled="disabled"
+              :data-cy="`${type}-asset`"
+              :label="assetLabel"
+              :error-messages="toMessages(v$.asset)"
+              @blur="v$.asset.$touch()"
+            />
+            <ToggleLocationLink
+              v-model="evmChain"
+              :location="location"
+            />
+          </div>
         </div>
 
         <EventLocationLabel

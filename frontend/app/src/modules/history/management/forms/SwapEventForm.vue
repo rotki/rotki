@@ -213,6 +213,7 @@ defineExpose({
     <SwapEventAssetAmount
       v-model:asset="states.spendAsset"
       v-model:amount="states.spendAmount"
+      :location="states.location"
       type="spend"
       :error-messages="{
         asset: toMessages(v$.spendAsset),
@@ -223,6 +224,7 @@ defineExpose({
     <SwapEventAssetAmount
       v-model:asset="states.receiveAsset"
       v-model:amount="states.receiveAmount"
+      :location="states.location"
       type="receive"
       :error-messages="{
         asset: toMessages(v$.receiveAsset),
@@ -247,6 +249,7 @@ defineExpose({
       v-model="hasFee"
       v-model:amount="states.feeAmount"
       v-model:asset="states.feeAsset"
+      :location="states.location"
       :error-messages="{
         fee: toMessages(v$.feeAmount),
         amount: toMessages(v$.feeAsset),
