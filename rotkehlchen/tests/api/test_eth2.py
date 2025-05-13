@@ -1354,3 +1354,29 @@ def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: '
         assert get_balances.call_count == 0
         assert result['per_account'] == {}
         assert result['totals'] == {'assets': {}, 'liabilities': {}}
+
+
+@pytest.mark.vcr(match_on=['beaconchain_matcher'], filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('ethereum_accounts', [['0xa966b01E2136953DF4F4914CfA9D37724E99a187']])
+def test_consolidated_validators_status(rotkehlchen_api_server: 'APIServer') -> None:
+    get_decoded_events_of_transaction(
+        evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x6e1dcb3172dbeea0434c3ebebfe231b4919d6cbe559cbe14a19ad25a21c490d9'),
+    )
+    response = requests.put(  # add a consolidated validator
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': 765882},
+    )
+    assert_proper_sync_response_with_result(response)
+
+    # https://pectrified.com/mainnet/validator/765882
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'eth2validatorsresource'))
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries'][0]['index'] == 765882
+    assert result['entries'][0]['status'] == 'consolidated'
+    assert result['entries'][0]['consolidated_into'] == 765881
+    assert result['entries'][0]['validator_type'] == 'distributing'

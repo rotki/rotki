@@ -191,7 +191,10 @@ class Eth2(EthereumModule):
                 if status == PerformanceStatusFilter.ACTIVE:
                     got_indices = dbeth2.get_active_validator_indices(cursor)
                 else:  # can only be EXITED
-                    got_indices = dbeth2.get_exited_validator_indices(cursor)
+                    got_indices = dbeth2.get_exited_validator_indices(
+                        cursor=cursor,
+                        validator_indices=validator_indices,
+                    )
 
             to_filter_indices = got_indices if to_filter_indices is None else to_filter_indices & got_indices  # noqa: E501
             to_query_indices = got_indices if to_query_indices is None else to_query_indices & got_indices  # noqa: E501
