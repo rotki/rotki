@@ -8259,12 +8259,14 @@ Getting tracked Eth2 validators
    :resjson object entries: The resulting entries list
    :resjson integer index: The index of the validator
    :resjson string public_key: The public key of the validator
-   :resjson string status: The status of the validator. Can be one of ``"pending"``, ``"active"``, ``"exiting"`` and ``"exited"``.
+   :resjson string status: The status of the validator. Can be one of ``"pending"``, ``"active"``, ``"exiting"``, ``"consolidated"`` and ``"exited"``.
    :resjson string[optional] ownership_percentage: The ownership percentage of the validator. If missing assume 100%.
    :resjson string[optional] withdrawal_address: The withdrawal address for the validator if set.
    :resjson integer[optional] activation_timestamp: If existing this is the timestamp the validator will (or has been) activate/d. If not then this is a pending validator not yet fully deposited or not yet processed by the consensus layer.
    :resjson integer[optional] withdrawable_timestamp: If existing this is the timestamp the validator will (or has been) able to be completely withdrawn. In other words from which point on a full exit will happen next time it's skimmed by withdrawals. If this key exists this mean we are dealing with a validator that is exiting or has exited.
    :resjson integer[optional] exited_timestamp: If existing this is the timestamp the validator has exited the beaconchain.
+   :resjson integer[optional] consolidated_into: The validator index in which it was consolidated into. Only present if the validator is ``"consolidated"``
+
 
    :statuscode 200: Eth2 validator defaults successfully returned.
    :statuscode 401: User is not logged in.

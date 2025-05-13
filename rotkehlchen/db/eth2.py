@@ -1,10 +1,12 @@
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Collection
 from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
@@ -23,6 +25,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import ts_ms_to_sec
@@ -163,20 +166,46 @@ class DBEth2:
         )
         return [ValidatorDetails.deserialize_from_db(x) for x in cursor]
 
+    def get_consolidated_validators(self, cursor: 'DBCursor') -> dict[int, int]:
+        """Returns a mapping of source validator index to target validator index
+        for all validators that have been consolidated.
+        """
+        cursor.execute(
+            'SELECT e.extra_data FROM history_events AS e LEFT JOIN evm_events_info ON evm_events_info.identifier=e.identifier '  # noqa: E501
+            'WHERE evm_events_info.counterparty = ? AND e.type = ? AND e.subtype = ? ',
+            (CPT_ETH2, HistoryEventType.INFORMATIONAL.serialize(), HistoryEventSubType.CONSOLIDATE.serialize()),  # noqa: E501
+        )
+        consolidation_indices = {}
+        for raw_extra_data in cursor:
+            try:
+                extra_data = json.loads(raw_extra_data[0])
+                consolidation_indices[extra_data['source_validator_index']] = extra_data['target_validator_index']  # noqa: E501
+            except (KeyError, json.JSONDecodeError) as e:  # should never happen
+                log.error(f'Unable to decode extra data from eth2 consolidation event {raw_extra_data} due to {e}')  # noqa: E501
+
+        return consolidation_indices
+
     def get_validators_with_status(
             self,
             cursor: 'DBCursor',
             validator_indices: set[int] | None,
     ) -> list[ValidatorDetailsWithStatus]:
         result: list[ValidatorDetailsWithStatus] = []
-        exited_indices = self.get_exited_validator_indices(cursor)
+        exited_indices = self.get_exited_validator_indices(
+            cursor=cursor,
+            validator_indices=validator_indices,
+        )
+        consolidated_indices = self.get_consolidated_validators(cursor)
         cursor.execute(
             'SELECT validator_index, public_key, validator_type, ownership_proportion, withdrawal_address, '  # noqa: E501
             'activation_timestamp, withdrawable_timestamp, exited_timestamp FROM eth2_validators;',
         )
         for entry in cursor:
             validator = ValidatorDetailsWithStatus.deserialize_from_db(entry)
-            validator.determine_status(exited_indices)
+            validator.determine_status(
+                exited_indices=exited_indices,
+                consolidated_indices=consolidated_indices,
+            )
             result.append(validator)
 
         if validator_indices is not None:
@@ -191,11 +220,18 @@ class DBEth2:
         )
         return {x[0] for x in cursor}
 
-    def get_exited_validator_indices(self, cursor: 'DBCursor') -> set[int]:
-        """Returns the indices of the tracked validators that we know have exited"""
-        cursor.execute(
-            'SELECT validator_index FROM eth2_validators WHERE exited_timestamp IS NOT NULL',
-        )
+    @staticmethod
+    def get_exited_validator_indices(cursor: 'DBCursor', validator_indices: Collection[int] | None) -> set[int]:  # noqa: E501
+        """Returns the indices of tracked validators that we know have exited.
+        If `validator_indices` is provided, results are filtered to include only those indices.
+        """
+        query = 'SELECT validator_index FROM eth2_validators WHERE exited_timestamp IS NOT NULL'
+        if validator_indices is not None:
+            query = f'{query} AND validator_index IN ({",".join("?" * len(validator_indices))})'
+            cursor.execute(query, tuple(validator_indices))
+        else:
+            cursor.execute(query)
+
         return {x[0] for x in cursor}
 
     def get_associated_with_addresses_validator_indices(

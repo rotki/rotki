@@ -238,19 +238,27 @@ class ValidatorStatus(StrEnum):
     ACTIVE = auto()
     EXITING = auto()
     EXITED = auto()
+    CONSOLIDATED = auto()
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ValidatorDetailsWithStatus(ValidatorDetails):
     status: ValidatorStatus = ValidatorStatus.ACTIVE
+    consolidated_into: int | None = None  # target validator index if consolidated
 
     def serialize(self) -> dict[str, Any]:
         result = super().serialize()
         result['status'] = str(self.status)
+        if self.consolidated_into is not None:
+            result['consolidated_into'] = self.consolidated_into
+
         return result
 
-    def determine_status(self, exited_indices: set[int]) -> None:
-        if self.validator_index in exited_indices:
+    def determine_status(self, exited_indices: set[int], consolidated_indices: dict[int, int]) -> None:  # noqa: E501
+        if self.validator_index in consolidated_indices:
+            self.status = ValidatorStatus.CONSOLIDATED
+            self.consolidated_into = consolidated_indices[self.validator_index]
+        elif self.validator_index in exited_indices:
             self.status = ValidatorStatus.EXITED
         elif self.withdrawable_timestamp is not None:
             self.status = ValidatorStatus.EXITING

@@ -2652,7 +2652,10 @@ class EthStakingCommonFilterSchema(Schema):
                 if status == PerformanceStatusFilter.ACTIVE:
                     status_indices = dbeth2.get_active_validator_indices(cursor)
                 else:  # can only be EXITED
-                    status_indices = dbeth2.get_exited_validator_indices(cursor)
+                    status_indices = dbeth2.get_exited_validator_indices(
+                        cursor=cursor,
+                        validator_indices=validator_indices,
+                    )
 
             no_filter = False
 
