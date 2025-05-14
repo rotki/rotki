@@ -121,8 +121,10 @@ export function useEth2Staking(): UseEthStakingReturn {
 
         const validator = accounts.find(x => x.data.index === index);
         const status = validator?.data?.status;
+        const consolidatedInto = validator?.data?.consolidatedInto;
         const total = validator?.amount;
         return {
+          consolidatedInto,
           index,
           status,
           total,

@@ -19,7 +19,7 @@ export type Matcher = SearchMatcher<EthValidatorAccountFilterKeys, EthValidatorA
 
 export type Filters = MatchedKeywordWithBehaviour<EthValidatorAccountFilterValueKeys>;
 
-const validStatuses = ['exited', 'active', 'all'] as const;
+const validStatuses = ['exited', 'active', 'consolidated', 'all'] as const;
 
 function isValidStatus(status: string): status is (typeof validStatuses)[number] {
   return Array.prototype.includes.call(validStatuses, status);
@@ -53,7 +53,7 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
       keyValue: EthValidatorAccountFilterValueKeys.STATUS,
       multiple: true,
       string: true,
-      suggestions: (): ('exited' | 'active')[] => validStatuses.filter(x => x !== 'all'),
+      suggestions: (): ('exited' | 'active' | 'consolidated')[] => validStatuses.filter(x => x !== 'all'),
       validate: (status: string): boolean => isValidStatus(status),
     },
   ]);
