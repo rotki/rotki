@@ -22,6 +22,8 @@ import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-sta
 import { useNotificationsStore } from '@/store/notifications';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 import {
   type BalanceSnapshotError,
   type DbUploadResult,
@@ -63,6 +65,7 @@ export function useMessageHandling(): UseMessageHandling {
   const { handle: handleCsvImportResult } = useCsvImportResultHandler(t);
   const { handle: handleNewTokenDetectedMessage } = useNewTokenDetectedHandler(t);
   const { handle: handleExchangeUnknownAsset } = useExchangeUnknownAssetHandler(t);
+  const { isTaskRunning } = useTaskStore();
 
   let isRunning = false;
 
@@ -221,7 +224,10 @@ export function useMessageHandling(): UseMessageHandling {
       addNotification(handleNewTokenDetectedMessage(message.data, notifications));
     }
     else if (type === SocketMessageType.REFRESH_BALANCES) {
-      await refreshBalance(message.data.blockchain);
+      const isDecoding = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+      if (!isDecoding) {
+        await refreshBalance(message.data.blockchain);
+      }
     }
     else if (type === SocketMessageType.DB_UPLOAD_RESULT) {
       handleDbUploadResult(message.data);
