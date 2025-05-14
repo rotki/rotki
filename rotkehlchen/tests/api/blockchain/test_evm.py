@@ -10,9 +10,11 @@ import pytest
 import requests
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -27,7 +29,14 @@ from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress, ListOfBlockchainAddresses, SupportedBlockchain
+from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
+    AddressbookType,
+    ChecksumEvmAddress,
+    ListOfBlockchainAddresses,
+    OptionalChainAddress,
+    SupportedBlockchain,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -602,3 +611,59 @@ def test_adding_safe(rotkehlchen_api_server: 'APIServer') -> None:
     assert result == {
         'added': {safe_address: ['arbitrum_one', 'base']},
     }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+    initial_accounts_data, addies_to_start_with = [], [(SupportedBlockchain.ETHEREUM, addy := string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'), (label := 'rotki ens'))]  # noqa: E501
+    blockchain = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    for chain, addy, label in addies_to_start_with:
+        blockchain.modify_blockchain_accounts(
+            blockchain=chain,
+            accounts=[addy],
+            append_or_remove='append',
+        )
+        initial_accounts_data.append(BlockchainAccountData(
+            chain=chain,
+            address=addy,
+            label=label,
+        ))
+
+    with blockchain.database.user_write() as write_cursor:
+        blockchain.database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=initial_accounts_data,
+        )
+
+    with ExitStack() as stack:
+        setup_evm_addresses_activity_mock(
+            stack=stack,
+            chains_aggregator=blockchain,
+            eth_contract_addresses=[],
+            avalanche_addresses=[],
+            ethereum_addresses=[addy],
+            optimism_addresses=[addy],
+            polygon_pos_addresses=[addy],
+            arbitrum_one_addresses=[addy],
+            base_addresses=[addy],
+            gnosis_addresses=[addy],
+            scroll_addresses=[addy],
+            binance_sc_addresses=[addy],
+        )
+
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'evmaccountsresource'),
+            json={'accounts': [{'address': addy}]},
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result == {
+            'added': {addy: ['optimism', 'polygon_pos', 'arbitrum_one', 'base', 'gnosis', 'scroll', 'binance_sc']},  # noqa: E501
+            'existed': {addy: ['eth']},
+        }
+
+    address_book_db = DBAddressbook(blockchain.database)
+    for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+        assert address_book_db.get_addressbook_entry_name(
+            book_type=AddressbookType.PRIVATE,
+            chain_address=OptionalChainAddress(address=addy, blockchain=chain_id.to_blockchain()),
+        ) == 'rotki ens'
