@@ -9,7 +9,7 @@ from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.assets.asset import CryptoAsset, CustomAsset
+from rotkehlchen.assets.asset import CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -48,6 +48,7 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
+    EvmTokenKind,
     Location,
     TimestampMS,
 )
@@ -1206,3 +1207,32 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     )
     assert_proper_response(response)
     assert A_DAI.resolve_to_evm_token().protocol is None
+
+
+def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
+    """Check that evm tokens can be edited with symbol and decimal being None"""
+    token = EvmToken.initialize(
+        address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        name='Custom 2',
+    )
+    GlobalDBHandler.add_asset(token)
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={
+            'asset_type': token.asset_type.serialize(),
+            'identifier': token.identifier,
+            'name': 'A new name',
+            'address': token.evm_address,
+            'token_kind': str(token.token_kind.name),
+            'evm_chain': token.chain_id.to_name(),
+            'symbol': None,
+            'decimals': None,
+        },
+    )
+    assert_proper_response(response)
+    token = EvmToken(token.identifier)
+    assert token.name == 'A new name'
+    assert token.symbol == ''
+    assert token.decimals == 18
