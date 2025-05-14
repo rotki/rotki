@@ -3168,6 +3168,9 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'SELECT topic FROM evmtx_receipt_log_topics WHERE log=113754 ORDER BY topic_index',
         ).fetchall()
         assert not table_exists(cursor, 'evm_transactions_authorizations')
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_receipt_log_topics_topic_id'",  # noqa: E501
+        ).fetchone()[0] == 0
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3251,6 +3254,9 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'WHERE log=113754 ORDER BY topic_index',
         ).fetchall()
         assert table_exists(cursor, 'evm_transactions_authorizations')
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name='idx_receipt_log_topics_topic_id'",  # noqa: E501
+        ).fetchone()[0] == 1
 
     db.logout()
 

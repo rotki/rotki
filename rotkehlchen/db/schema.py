@@ -733,6 +733,9 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 );
 """
 
+DB_CREATE_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_receipt_log_topics_topic_id ON evmtx_receipt_log_topics(topic_id);
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -790,6 +793,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
+{DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

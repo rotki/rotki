@@ -146,6 +146,10 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute(
             'ALTER TABLE evmtx_receipt_log_topics_new RENAME TO evmtx_receipt_log_topics',
         )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_receipt_log_topics_topic_id '
+            'ON evmtx_receipt_log_topics(topic_id);',
+        )
 
     @progress_step(description='Removing action_type table and simplifying ignored_actions')
     def _remove_action_types(write_cursor: 'DBCursor') -> None:

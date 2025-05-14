@@ -558,20 +558,6 @@ class DBEvmTx:
             if genesis_tx_id is not None:
                 tx_ids.append(genesis_tx_id)
 
-        # get the topic_ids linked to the events in the transactions that we are going
-        # to delete so we can delete them if they get orphaned.
-        used_topic_ids = [row[0] for row in write_cursor.execute(
-            f"""
-            SELECT DISTINCT erlt.topic_id
-            FROM evm_transactions AS et
-            JOIN evmtx_receipts AS er ON et.identifier = er.tx_id
-            JOIN evmtx_receipt_logs AS erl ON er.tx_id = erl.tx_id
-            JOIN evmtx_receipt_log_topics AS erlt ON erl.identifier = erlt.log
-            WHERE et.identifier IN ({",".join("?" * len(tx_ids))})
-            """,
-            tx_ids,
-        )]
-
         # Now delete all relevant transactions. By deleting all relevant transactions all tables
         # are cleared thanks to cascading (except for history_events which was cleared above)
         write_cursor.executemany(
@@ -589,22 +575,20 @@ class DBEvmTx:
             [(f'{EXTRAINTERNALTXPREFIX}_{chain_id.value}_%_{tx_hash.hex()}',) for tx_hash in tx_hashes],  # noqa: E501
         )
 
-        try:  # delete orphan topic ids
+        try:  # delete any orphaned topic ids
             write_cursor.execute(
-                f"""
+                """
                 DELETE FROM evmtx_topics_index
-                WHERE topic_id IN ({",".join("?" * len(used_topic_ids))})
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM evmtx_receipt_log_topics
-                    WHERE evmtx_receipt_log_topics.topic_id = evmtx_topics_index.topic_id
+                WHERE topic_id IN (
+                    SELECT ti.topic_id FROM evmtx_topics_index AS ti
+                    LEFT JOIN evmtx_receipt_log_topics AS rlt ON rlt.topic_id = ti.topic_id
+                    WHERE rlt.topic_id IS NULL
                 );
                 """,
-                used_topic_ids,
             )
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             log.error(
-                f'Failed to delete topics {used_topic_ids} when deleting '
+                f'Failed to delete orphaned topics when deleting '
                 f'transactions {tx_hashes} from {chain} due to {e}. Skipping',
             )
 
