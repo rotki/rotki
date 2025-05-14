@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import requests
 
-from rotkehlchen.assets.utils import get_or_create_evm_token, get_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token, get_token
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
@@ -90,6 +90,7 @@ def query_pendle_yield_tokens(evm_inquirer: 'EvmNodeInquirer') -> None:
         log.error(f'Unable to fetch pendle data for {evm_inquirer.chain_name} due to {msg}')
         return
 
+    encounter = TokenEncounterInfo(should_notify=False, description='Querying Pendle yield tokens')
     for token in all_tokens:
         try:
             if (cached_token := get_token(evm_address=token, chain_id=evm_inquirer.chain_id)) is not None:  # noqa: E501
@@ -100,6 +101,7 @@ def query_pendle_yield_tokens(evm_inquirer: 'EvmNodeInquirer') -> None:
                     protocol=CPT_PENDLE,
                     userdb=evm_inquirer.database,
                     evm_address=token,
+                    encounter=encounter,
                     chain_id=evm_inquirer.chain_id,
                 )
             else:
@@ -108,6 +110,7 @@ def query_pendle_yield_tokens(evm_inquirer: 'EvmNodeInquirer') -> None:
                     protocol=CPT_PENDLE,
                     evm_inquirer=evm_inquirer,
                     userdb=evm_inquirer.database,
+                    encounter=encounter,
                     chain_id=evm_inquirer.chain_id,
                 )
         except NotERC20Conformant as e:
