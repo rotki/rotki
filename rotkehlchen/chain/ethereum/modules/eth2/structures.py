@@ -279,3 +279,4 @@ class PerformanceStatusFilter(StrEnum):
     ALL = auto()
     ACTIVE = auto()
     EXITED = auto()
+    CONSOLIDATED = auto()

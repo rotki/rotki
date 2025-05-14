@@ -190,6 +190,8 @@ class Eth2(EthereumModule):
             with self.database.conn.read_ctx() as cursor:
                 if status == PerformanceStatusFilter.ACTIVE:
                     got_indices = dbeth2.get_active_validator_indices(cursor)
+                elif status == PerformanceStatusFilter.CONSOLIDATED:
+                    got_indices = set(dbeth2.get_consolidated_validators(cursor))
                 else:  # can only be EXITED
                     got_indices = dbeth2.get_exited_validator_indices(
                         cursor=cursor,
