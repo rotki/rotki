@@ -3556,6 +3556,10 @@
     "loading": "LOADING",
     "premium_hint": "Get the full experience by upgrading to rotki premium"
   },
+  "page_not_found": {
+    "back": "Back to dashboard",
+    "title": "Oops, the page could not be found."
+  },
   "percentage_display": {
     "symbol": "%"
   },

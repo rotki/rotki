@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 
+import NotFound from '@/pages/404.vue';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { startPromise } from '@shared/utils';
 import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
@@ -7,9 +8,25 @@ import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 
+const errorRoutes = [
+  {
+    component: NotFound,
+    meta: {
+      title: '404 Not Found',
+    },
+    name: 'NotFound',
+    path: '/:pathMatch(.*)*',
+  },
+];
+
+const allRoutes = [
+  ...routes,
+  ...errorRoutes,
+];
+
 export const router = createRouter({
   history: createWebHashHistory(base),
-  routes,
+  routes: allRoutes,
   scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {
       const element = document.getElementById(to.hash.replace(/#/, ''));
