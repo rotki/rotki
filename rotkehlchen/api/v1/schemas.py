@@ -2651,6 +2651,8 @@ class EthStakingCommonFilterSchema(Schema):
             with self.database.conn.read_ctx() as cursor:
                 if status == PerformanceStatusFilter.ACTIVE:
                     status_indices = dbeth2.get_active_validator_indices(cursor)
+                elif status == PerformanceStatusFilter.CONSOLIDATED:
+                    status_indices = set(dbeth2.get_consolidated_validators(cursor))
                 else:  # can only be EXITED
                     status_indices = dbeth2.get_exited_validator_indices(
                         cursor=cursor,
