@@ -77,12 +77,19 @@ export function useScramble(): UseScrambleReturn {
       return timestamp;
 
     const currentTimestamp = Date.now();
-    const diff = (milliseconds ? timestamp : timestamp * 1000) - currentTimestamp;
+    const normalizedTimestamps = (milliseconds ? timestamp : timestamp * 1000);
+    const diff = normalizedTimestamps - currentTimestamp;
     let multiplier = +get(scrambleMultiplier);
     if (multiplier < 1)
       multiplier += 1;
 
-    return Math.round(timestamp + (diff * multiplier * multiplier) / (milliseconds ? 1 : 1000));
+    const maxDiffTimestamps = 50e8; // Approximately 2 months
+    const diffTimestamps = diff * multiplier;
+    const isNegative = diffTimestamps < 0;
+
+    // the diff should not be more than `maxDiffTimestamps`
+    const max = Math.min(Math.abs(diffTimestamps), maxDiffTimestamps);
+    return Math.round(normalizedTimestamps + (max * (isNegative ? -1 : 1)) / (milliseconds ? 1 : 1000));
   };
 
   return {
