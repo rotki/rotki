@@ -19,44 +19,40 @@ export type Matcher = SearchMatcher<EthValidatorAccountFilterKeys, EthValidatorA
 
 export type Filters = MatchedKeywordWithBehaviour<EthValidatorAccountFilterValueKeys>;
 
-const validStatuses = ['exited', 'active', 'consolidated', 'all'] as const;
+export const validStatuses = ['exited', 'active', 'consolidated', 'all'] as const;
 
-function isValidStatus(status: string): status is (typeof validStatuses)[number] {
+export function isValidStatus(status: string): status is (typeof validStatuses)[number] {
   return Array.prototype.includes.call(validStatuses, status);
 }
 
 export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t']): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const matchers = computed<Matcher[]>(() => [
-    {
-      description: t('common.validator_index'),
-      key: EthValidatorAccountFilterKeys.INDEX,
-      keyValue: EthValidatorAccountFilterValueKeys.INDEX,
-      multiple: true,
-      string: true,
-      suggestions: (): string[] => [],
-      validate: (): boolean => true,
-    },
-    {
-      description: t('eth2_input.public_key'),
-      key: EthValidatorAccountFilterKeys.PUBLIC_KEY,
-      keyValue: EthValidatorAccountFilterValueKeys.PUBLIC_KEY,
-      multiple: true,
-      string: true,
-      suggestions: (): string[] => [],
-      validate: (): true => true,
-    },
-    {
-      description: t('eth_validator_combined_filter.status'),
-      key: EthValidatorAccountFilterKeys.STATUS,
-      keyValue: EthValidatorAccountFilterValueKeys.STATUS,
-      multiple: true,
-      string: true,
-      suggestions: (): ('exited' | 'active' | 'consolidated')[] => validStatuses.filter(x => x !== 'all'),
-      validate: (status: string): boolean => isValidStatus(status),
-    },
-  ]);
+  const matchers = computed<Matcher[]>(() => [{
+    description: t('common.validator_index'),
+    key: EthValidatorAccountFilterKeys.INDEX,
+    keyValue: EthValidatorAccountFilterValueKeys.INDEX,
+    multiple: true,
+    string: true,
+    suggestions: (): string[] => [],
+    validate: (): boolean => true,
+  }, {
+    description: t('eth2_input.public_key'),
+    key: EthValidatorAccountFilterKeys.PUBLIC_KEY,
+    keyValue: EthValidatorAccountFilterValueKeys.PUBLIC_KEY,
+    multiple: true,
+    string: true,
+    suggestions: (): string[] => [],
+    validate: (): true => true,
+  }, {
+    description: t('eth_validator_combined_filter.status'),
+    key: EthValidatorAccountFilterKeys.STATUS,
+    keyValue: EthValidatorAccountFilterValueKeys.STATUS,
+    multiple: true,
+    string: true,
+    suggestions: (): ('exited' | 'active' | 'consolidated')[] => validStatuses.filter(x => x !== 'all'),
+    validate: (status: string): boolean => isValidStatus(status),
+  }]);
 
   const OptionalMultipleString = z
     .array(z.string())
