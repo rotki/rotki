@@ -946,6 +946,7 @@ class AllAssetsResource(BaseMethodView):
             disallowed_asset_types=[AssetType.CUSTOM_ASSET],  # custom assets are handled on a separate endpoint  # noqa: E501
             coingecko=self.rest_api.rotkehlchen.coingecko,
             cryptocompare=self.rest_api.rotkehlchen.cryptocompare,
+            is_edit=True,
         )
 
     @resource_parser.use_kwargs(make_post_schema, location='json')

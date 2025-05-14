@@ -199,12 +199,21 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
             self,
             coingecko: Optional['Coingecko'] = None,
             cryptocompare: Optional['Cryptocompare'] = None,
+            is_edit: bool = False,
     ) -> None:
         super().__init__(
             identifier_required=False,  # for evm tokens is always computed from address, token kind and chain  # noqa: E501
             coingecko=coingecko,
             cryptocompare=cryptocompare,
         )
+
+        if is_edit is True:
+            # we allow the symbol and decimals to be None since it is a valid value in the DB
+            # when there are issues querying the token information and those are sent as None
+            # to the frontend. For consistency we allow to have them as None when editing.
+            # TODO: Fix as part of https://github.com/rotki/rotki/issues/9953
+            self.fields['symbol'].allow_none = True
+            self.fields['decimals'].allow_none = True
 
     @validates_schema
     def validate_schema(
@@ -309,6 +318,7 @@ class AssetSchema(Schema):
             disallowed_asset_types: list[AssetType] | None = None,
             coingecko: Optional['Coingecko'] = None,
             cryptocompare: Optional['Cryptocompare'] = None,
+            is_edit: bool = False,
             **kwargs: Any,
     ) -> None:
         """
@@ -324,6 +334,7 @@ class AssetSchema(Schema):
         self.disallowed_asset_types = disallowed_asset_types
         self.coingecko_obj = coingecko
         self.cryptocompare_obj = cryptocompare
+        self.is_edit = is_edit
 
     @post_load
     def transform_data(
@@ -351,6 +362,7 @@ class AssetSchema(Schema):
             asset = EvmTokenSchema(
                 coingecko=self.coingecko_obj,
                 cryptocompare=self.cryptocompare_obj,
+                is_edit=self.is_edit,
             ).load(data)
         else:  # only other case is generic crypto asset
             asset = CryptoAssetSchema(
