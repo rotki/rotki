@@ -144,6 +144,7 @@ function edit(account: EthereumValidator) {
 
 const colorMap: Record<string, ContextColorsType | undefined> = {
   active: 'success',
+  consolidated: 'secondary',
   exited: 'error',
   exiting: 'warning',
   pending: 'info',
@@ -280,8 +281,29 @@ defineExpose({
         <RuiChip
           size="sm"
           :color="getColor(row.status)"
+          class="uppercase [&_span]:text-xs [&_span]:inline-flex [&_span]:gap-1 [&_span]:items-center font-semibold"
         >
           {{ row.status }}
+
+          <template v-if="row.consolidatedInto">
+            <RuiTooltip
+              persist-on-tooltip-hover
+              :open-delay="300"
+            >
+              <template #activator>
+                <RuiIcon
+                  name="lu-merge"
+                  size="16"
+                  class="bg-rui-grey-200 text-rui-grey-800 rounded-full p-0.5 -mr-1.5 cursor-pointer"
+                />
+              </template>
+              <div>{{ t('blockchain_balances.validators.consolidated') }}</div>
+              <HashLink
+                location="eth2"
+                :text="row.consolidatedInto.toString()"
+              />
+            </RuiTooltip>
+          </template>
         </RuiChip>
       </template>
       <template #item.amount="{ row }">

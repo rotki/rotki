@@ -1452,6 +1452,7 @@
     "title": "Blockchain Balances per asset",
     "validator_index_label": "Ethereum validator No. {index}",
     "validators": {
+      "consolidated": "Consolidated into:",
       "selected": "{count} validator(s) selected",
       "title": "Ethereum Validators"
     }

@@ -20,6 +20,7 @@ export interface ValidatorData {
   readonly index: number;
   readonly publicKey: string;
   readonly status: string;
+  readonly consolidatedInto?: number;
   readonly ownershipPercentage?: string;
   readonly withdrawalAddress?: string;
   readonly activationTimestamp?: number;

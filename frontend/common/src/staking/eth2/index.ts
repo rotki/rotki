@@ -57,7 +57,7 @@ export type EthStakingPerformance = Omit<EthStakingPerformanceResponse, 'validat
   validators: EthStakingValidatorPerformance[];
 };
 
-export type EthValidatorStatus = 'all' | 'exited' | 'active';
+export type EthValidatorStatus = 'all' | 'exited' | 'active' | 'consolidated';
 
 export interface EthStakingPayload extends EthStakingPeriod {
   limit: number;
@@ -69,6 +69,7 @@ export interface EthStakingPayload extends EthStakingPeriod {
 
 const Validator = z.object({
   activationTimestamp: z.number().nonnegative().optional(),
+  consolidatedInto: z.number().nonnegative().optional(),
   index: z.number(),
   ownershipPercentage: Percentage.optional(),
   publicKey: z.string(),
