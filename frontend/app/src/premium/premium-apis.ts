@@ -133,7 +133,7 @@ export function userSettings(): UserSettingsApi {
 }
 
 export function balancesApi(): BalancesApi {
-  const { assetPrice, useExchangeRate } = usePriceUtils();
+  const { assetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
   const { balancesByLocation } = useLocationBalancesBreakdown();
   const { balances } = useAggregatedBalances();
   const { createKey, isPending } = useHistoricCachePriceStore();
@@ -141,7 +141,7 @@ export function balancesApi(): BalancesApi {
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
   return {
-    assetPrice: (asset: string) => computed(() => get(assetPrice(asset)) ?? One),
+    assetPrice: (asset: string) => computed(() => get(assetPriceInCurrentCurrency(asset)) ?? One),
     balances: (groupMultiChain = false, exclude = []) => balances(false, groupMultiChain, exclude),
     byLocation: balancesByLocation,
     exchangeRate: (currency: string) => computed(() => get(useExchangeRate(currency)) ?? One),
