@@ -19,6 +19,7 @@ declare module 'vue-router/auto-routes' {
    */
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
+    '/404': RouteRecordInfo<'/404', '/404', Record<never, never>, Record<never, never>>,
     'accounts': RouteRecordInfo<'accounts', '/accounts', Record<never, never>, Record<never, never>>,
     'accounts-bitcoin': RouteRecordInfo<'accounts-bitcoin', '/accounts/bitcoin', Record<never, never>, Record<never, never>>,
     'accounts-evm': RouteRecordInfo<'accounts-evm', '/accounts/evm/:tab?', { tab?: ParamValueZeroOrOne<true> }, { tab?: ParamValueZeroOrOne<false> }>,
