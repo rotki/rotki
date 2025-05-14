@@ -14,6 +14,7 @@ interface UsePriceUtilsReturn {
      * @param {MaybeRef<string>} asset
      */
   assetPrice: (asset: MaybeRef<string>) => ComputedRef<BigNumber | undefined>;
+  assetPriceInCurrentCurrency: (asset: MaybeRef<string>) => ComputedRef<BigNumber>;
   useExchangeRate: <T extends BigNumber | undefined = undefined>(
     currency: MaybeRef<string>,
     defaultValue?: T
@@ -89,6 +90,22 @@ export function usePriceUtils(): UsePriceUtilsReturn {
     return get(assetPricesWithCurrentCurrency)[assetVal]?.value ?? get(prices)[assetVal]?.value;
   });
 
+  /**
+   * @deprecated
+   * TODO: Remove this immediately.
+   * Hacky way to prevent double conversion (try to replicate `match_main_currency` that has been removed)
+   * @param {MaybeRef<string>} asset
+   */
+  const assetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<BigNumber> => computed(() => {
+    const price = get(assetPrice(asset)) || One;
+
+    if (get(isAssetPriceInCurrentCurrency(asset))) {
+      return price;
+    }
+
+    return get(toSelectedCurrency(price));
+  });
+
   const getAssetPriceOracle = (asset: MaybeRef<string>): ComputedRef<string> =>
     computed(() => get(prices)[get(asset)]?.oracle || '');
 
@@ -110,6 +127,7 @@ export function usePriceUtils(): UsePriceUtilsReturn {
 
   return {
     assetPrice,
+    assetPriceInCurrentCurrency,
     getAssetPriceOracle,
     hasCachedPrice,
     isAssetPriceInCurrentCurrency,
