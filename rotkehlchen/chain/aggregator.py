@@ -1563,6 +1563,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         new_tracked_chains, new_failed_chains = self.track_evm_address(account, active_chains)
         failed_to_query_chains += new_failed_chains
+        if len(new_tracked_chains) > 0:
+            DBAddressbook(self.database).maybe_make_entry_name_multichain(address=account)
 
         return (
             [(chain, account) for chain in new_tracked_chains],
@@ -1677,17 +1679,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if progress_handler is not None:
             progress_handler.new_step('Potentially write migrated addresses to the DB')
 
-        account_data, unique_addresses = [], set()
-        for chain, account in added_accounts:
-            account_data.append(BlockchainAccountData(chain=chain, address=account))
-            if account not in unique_addresses:
-                DBAddressbook(self.database).maybe_make_entry_name_multichain(address=account)
-                unique_addresses.add(account)
-
         with self.database.user_write() as write_cursor:
             self.database.add_blockchain_accounts(
                 write_cursor=write_cursor,
-                account_data=account_data,
+                account_data=[BlockchainAccountData(chain=chain, address=address) for chain, address in added_accounts],  # noqa: E501
             )
 
         self.msg_aggregator.add_message(
