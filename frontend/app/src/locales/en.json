@@ -4324,6 +4324,7 @@
     "recipient": {
       "from_private_address_book": "Addresses from private address book",
       "no_addresses_found": "No addresses found",
+      "resolving_ens": "Resolving ENS...",
       "select_recipient_address": "Select recipient address",
       "tracked_addresses": "Tracked Addresses"
     },

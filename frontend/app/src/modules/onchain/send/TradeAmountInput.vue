@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { bigNumberify } from '@rotki/common';
 import { get, set } from '@vueuse/core';
@@ -21,6 +23,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { address, asset, chain } = toRefs(props);
 
+const { currency } = storeToRefs(useGeneralSettingsStore());
+
 const fiatValue = ref<string>('0');
 const fiatValueToBigNumber = bigNumberifyFromRef(fiatValue);
 
@@ -30,6 +34,7 @@ const isAmountSelected = ref<boolean>(true);
 
 const { getAssetDetail } = useTradableAsset(address);
 const assetDetail = getAssetDetail(asset, chain);
+const price = useRefMap(assetDetail, m => m?.price);
 
 function swapInput() {
   set(isAmountSelected, !get(isAmountSelected));
@@ -39,7 +44,12 @@ function setMax() {
   set(model, props.max);
 }
 
-watch([model, () => get(assetDetail)?.price], ([value, price]) => {
+const fiatValuePlaceholder = computed(() => `${get(currency).unicodeSymbol}0`);
+
+watch([model, price], ([value, price]) => {
+  if (!get(isAmountSelected))
+    return;
+
   if (value && price) {
     set(fiatValue, bigNumberify(value).multipliedBy(price).toString());
   }
@@ -48,10 +58,16 @@ watch([model, () => get(assetDetail)?.price], ([value, price]) => {
   }
 });
 
-watch(fiatValue, (value) => {
-  const price = get(assetDetail)?.price;
-  if (price)
-    set(model, bigNumberify(value || '0').dividedBy(price).toString());
+watch([fiatValue, price], ([fiatValue, price]) => {
+  if (get(isAmountSelected))
+    return;
+
+  if (fiatValue && price) {
+    set(model, bigNumberify(fiatValue).dividedBy(price).toString());
+  }
+  else {
+    set(model, '0');
+  }
 });
 
 defineExpose({
@@ -87,8 +103,8 @@ defineExpose({
         :disabled="!address || loading"
         raw-input
         variant="outlined"
-        class="font-bold text-6xl text-center w-full outline-none bg-transparent placeholder:text-rui-grey-400"
-        placeholder="0"
+        class="font-bold text-6xl text-center w-full outline-none bg-transparent placeholder:text-rui-grey-300 dark:placeholder:text-rui-grey-800"
+        :placeholder="fiatValuePlaceholder"
       />
 
       <div class="text-rui-grey-400 flex justify-center gap-1 items-center text-sm font-medium pt-2">
