@@ -3160,13 +3160,6 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'SELECT value FROM settings where name=?',
             ('use_unified_etherscan_api',),
         ).fetchone()[0] == 'True'
-        assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == 22
-        unique_log_topics = cursor.execute(
-            'SELECT COUNT(*)  FROM (SELECT * FROM evmtx_receipt_log_topics GROUP by hex(topic))',
-        ).fetchone()[0]
-        prev_topic_values = cursor.execute(
-            'SELECT topic FROM evmtx_receipt_log_topics WHERE log=113754 ORDER BY topic_index',
-        ).fetchall()
         assert not table_exists(cursor, 'evm_transactions_authorizations')
 
     # Execute upgrade
@@ -3240,16 +3233,6 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             'SELECT value FROM settings where name=?',
             ('use_unified_etherscan_api',),
         ).fetchall() == []
-        # check the migration of log topics
-        assert cursor.execute('SELECT COUNT(*) FROM evmtx_receipt_log_topics').fetchone()[0] == 22
-        assert unique_log_topics == cursor.execute(
-            'SELECT COUNT(*) FROM evmtx_topics_index',
-        ).fetchone()[0]
-        assert prev_topic_values == cursor.execute(
-            'SELECT topic_value FROM evmtx_receipt_log_topics JOIN evmtx_topics_index '
-            'ON evmtx_receipt_log_topics.topic_id = evmtx_topics_index.topic_id '
-            'WHERE log=113754 ORDER BY topic_index',
-        ).fetchall()
         assert table_exists(cursor, 'evm_transactions_authorizations')
 
     db.logout()
@@ -3317,7 +3300,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'evmtx_topics_index', 'evm_transactions_authorizations'}
+    assert new_tables == {'evm_transactions_authorizations'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()

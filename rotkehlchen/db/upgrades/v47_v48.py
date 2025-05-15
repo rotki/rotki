@@ -103,50 +103,6 @@ def upgrade_trade_to_swap_events(
 def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v47 to v48. This was in v1.39 release."""
 
-    @progress_step(description='Migrating transactions data')
-    def _migrate_log_topics(write_cursor: 'DBCursor') -> None:
-        write_cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS evmtx_topics_index (
-                topic_id INTEGER PRIMARY KEY,
-                topic_value BLOB UNIQUE NOT NULL
-            );
-            """,
-        )
-        write_cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS evmtx_receipt_log_topics_new (
-                log INTEGER NOT NULL,
-                topic_id INTEGER NOT NULL,
-                topic_index INTEGER NOT NULL,
-                FOREIGN KEY(log) REFERENCES evmtx_receipt_logs(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
-                FOREIGN KEY(topic_id) REFERENCES evmtx_topics_index(topic_id) ON DELETE RESTRICT ON UPDATE CASCADE, -- Use RESTRICT to prevent deleting a topic that's still used
-                PRIMARY KEY(log, topic_index)
-            );
-            """,  # noqa: E501
-        )
-        write_cursor.execute(
-            'INSERT INTO evmtx_topics_index (topic_value) SELECT DISTINCT topic FROM '
-            'evmtx_receipt_log_topics',
-        )
-        write_cursor.execute(
-            """
-            INSERT INTO evmtx_receipt_log_topics_new (
-                log,
-                topic_id,
-                topic_index
-            ) SELECT
-                log,
-                (SELECT topic_id FROM evmtx_topics_index WHERE topic_value=topic),
-                topic_index
-            FROM evmtx_receipt_log_topics
-            """,
-        )
-        write_cursor.execute('DROP TABLE evmtx_receipt_log_topics')
-        write_cursor.execute(
-            'ALTER TABLE evmtx_receipt_log_topics_new RENAME TO evmtx_receipt_log_topics',
-        )
-
     @progress_step(description='Removing action_type table and simplifying ignored_actions')
     def _remove_action_types(write_cursor: 'DBCursor') -> None:
         """This upgrade drops the action_type table and modifies the ignored_actions table

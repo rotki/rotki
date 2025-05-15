@@ -124,7 +124,6 @@ TABLES_AT_INIT = [
     'optimism_transactions',
     'evm_internal_transactions',
     'evmtx_receipts',
-    'evmtx_topics_index',
     'evmtx_receipt_logs',
     'evmtx_receipt_log_topics',
     'evmtx_address_mappings',
