@@ -46,7 +46,8 @@ MINTED_CRV: Final = b'\x9d"\x8di\xb5\xfd\xb8\xd2s\xa23o\x8f\xb8a-\x03\x961\x02N\
 
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
-CURVE_API_URL = 'https://api.curve.finance/v1/getPools/all/{curve_blockchain_id}'
+CURVE_BASE_API_URL = 'https://api.curve.finance'
+CURVE_API_URL = f'{CURVE_BASE_API_URL}/' + 'v1/getPools/all/{curve_blockchain_id}'
 CURVE_CHAIN_ID = {
     ChainID.ETHEREUM: 'ethereum',
     ChainID.POLYGON_POS: 'polygon',

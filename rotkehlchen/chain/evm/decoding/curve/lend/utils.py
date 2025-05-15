@@ -6,6 +6,7 @@ import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_BASE_API_URL
 from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -40,7 +41,7 @@ def _query_curve_lending_vaults_api() -> list[dict[str, Any]] | None:
     Returns vault list or None if there was an error."""
     try:
         response_data = requests.get(
-            url='https://api.curve.fi/v1/getLendingVaults/all',
+            url=f'{CURVE_BASE_API_URL}/v1/getLendingVaults/all',
             timeout=CachedSettings().get_timeout_tuple(),
         )
         vault_list = response_data.json()['data']['lendingVaultData']
