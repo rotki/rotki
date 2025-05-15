@@ -21,6 +21,6 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly identifiers?: string[];
 }
 
-export interface HistoryEventExportPayload extends HistoryEventRequestPayload {
+export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'groupByEventIds' | 'limit' | 'offset'> {
   readonly matchExactEvents: boolean;
 }
