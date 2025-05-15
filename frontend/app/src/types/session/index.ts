@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 export const PeriodicClientQueryResult = z.object({
   connectedNodes: z.record(z.array(z.string())),
+  failedToConnect: z.record(z.array(z.string())).optional(),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
 });

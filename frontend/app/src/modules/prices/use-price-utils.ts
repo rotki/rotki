@@ -118,8 +118,9 @@ export function usePriceUtils(): UsePriceUtilsReturn {
      * Hacky way to prevent double conversion (try to replicate `match_main_currency` that has been removed)
      * @param {MaybeRef<string>} asset
      */
-  const isAssetPriceInCurrentCurrency = (asset: MaybeRef<string>): ComputedRef<boolean> =>
-    computed(() => (get(isAssetPriceEqualToCurrentCurrency(asset)) || !!get(assetPricesWithCurrentCurrency)[get(asset)]?.value));
+  function isAssetPriceInCurrentCurrency(asset: MaybeRef<string>): ComputedRef<boolean> {
+    return computed(() => (get(isAssetPriceEqualToCurrentCurrency(asset)) || !!get(assetPricesWithCurrentCurrency)[get(asset)]?.value));
+  }
 
   function hasCachedPrice(asset: string): boolean {
     return (get(assetPricesWithCurrentCurrency)[asset]?.value ?? get(prices)[asset]?.value) !== undefined;

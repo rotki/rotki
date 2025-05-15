@@ -6,6 +6,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastBalanceSave = ref(0);
   const lastDataUpload = ref(0);
   const connectedNodes = ref<Record<string, string[]>>({});
+  const failedToConnect = ref<Record<string, string[]>>({});
   const periodicRunning = ref(false);
 
   const { notify } = useNotificationsStore();
@@ -24,7 +25,12 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
         return;
       }
 
-      const { connectedNodes: connected, lastBalanceSave: balance, lastDataUploadTs: upload } = result;
+      const {
+        connectedNodes: connected,
+        failedToConnect: failed,
+        lastBalanceSave: balance,
+        lastDataUploadTs: upload,
+      } = result;
 
       if (get(lastBalanceSave) !== balance)
         set(lastBalanceSave, balance);
@@ -33,6 +39,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
         set(lastDataUpload, upload);
 
       set(connectedNodes, connected);
+      set(failedToConnect, failed);
     }
     catch (error: any) {
       notify({
@@ -51,6 +58,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   return {
     check,
     connectedNodes,
+    failedToConnect,
     lastBalanceSave,
     lastDataUpload,
   };

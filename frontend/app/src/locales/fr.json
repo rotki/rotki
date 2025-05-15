@@ -1801,7 +1801,8 @@
       "title": "Supprimer le nœud RPC {chain}"
     },
     "connected": {
-      "false": "Non connecté",
+      "failure": "Échec",
+      "false": "Prêt",
       "true": "Connecté"
     },
     "delete_error": {
