@@ -16,7 +16,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import (
     ETH_STAKING_EVENT_JOIN,
@@ -399,7 +399,6 @@ class DBEth2:
             filter_query: EthStakingEventFilterQuery,
     ) -> dict[int, FVal]:
         """Execute DB query and extract numerical value per validator after using filter_query
-
         Return a dict of validator index to sum of amounts per validator in the filter
         """
         base_query = f'SELECT validator_index, {amount_querystr} ' + ETH_STAKING_EVENT_JOIN
@@ -450,8 +449,9 @@ class DBEth2:
 
         Returns the `balances_over_time`, `withdrawals_pnl` and `exits_pnl` dicts in a tuple.
         """
+        to_ts_ms = ts_sec_to_ms(to_ts)
         for validator in validator_indices:  # All non-accumulating validators have an effective balance of 32  # noqa: E501
-            balances_over_time[validator][ts_sec_to_ms(to_ts)] = MIN_EFFECTIVE_BALANCE
+            balances_over_time[validator][to_ts_ms] = MIN_EFFECTIVE_BALANCE
 
         with self.db.conn.read_ctx() as cursor:
             withdrawals_pnl.update(self._validator_stats_process_queries(
@@ -500,7 +500,16 @@ class DBEth2:
         events_db = DBHistoryEvents(self.db)
         events: list[HistoryBaseEntry] = []
         with self.db.conn.read_ctx() as cursor:
+            cached_balances_over_time, cached_withdrawals_pnl, cached_exits_pnl, cached_last_stored_ts = self._load_eth2_validator_cache(  # noqa: E501
+                cursor=cursor,
+                from_ts=from_ts,
+                to_ts=to_ts,
+                validator_indices=validator_indices,
+            )
+            from_ts = Timestamp(cached_last_stored_ts + 1) if cached_last_stored_ts > 0 else from_ts  # noqa: E501
+
             for filter_query in (EthStakingEventFilterQuery.make(
+                from_ts=from_ts,
                 to_ts=to_ts,
                 validator_indices=validator_indices,
                 event_types=[HistoryEventType.STAKING],
@@ -513,6 +522,7 @@ class DBEth2:
                     HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT,
                 ]),
             ), EvmEventFilterQuery.make(
+                from_ts=from_ts,
                 to_ts=to_ts,
                 event_types=[HistoryEventType.INFORMATIONAL],
                 event_subtypes=[HistoryEventSubType.CONSOLIDATE],
@@ -529,6 +539,7 @@ class DBEth2:
             for request_event in events_db.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
+                    from_ts=from_ts,
                     to_ts=to_ts,
                     event_types=[HistoryEventType.INFORMATIONAL],
                     event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
@@ -543,8 +554,14 @@ class DBEth2:
                 ):  # only keep related withdrawal requests
                     withdrawal_request_events[v_index].append(request_event)
 
+        balances_over_time.update(cached_balances_over_time)
+        withdrawals_pnl.update(cached_withdrawals_pnl)
+        exits_pnl.update(cached_exits_pnl)
+
         from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
         validator_balances: dict[int, FVal] = defaultdict(lambda: ZERO)
+        # this is to ensure withdrawals are stored correctly in the db cache.
+        withdrawals_pnl_over_time:  dict[int, dict[TimestampMS, FVal]] = defaultdict(lambda: defaultdict(lambda: ZERO))  # noqa: E501
         for event in sorted(events, key=lambda x: x.timestamp):
             if isinstance(event, EthDepositEvent):
                 validator_balances[v_index := event.validator_index] += event.amount
@@ -552,7 +569,7 @@ class DBEth2:
                 v_index = event.validator_index
                 if event.is_exit_or_blocknumber is True:  # Exit withdrawals
                     if from_ts_ms <= event.timestamp <= to_ts_ms:  # only count pnl within the specified range  # noqa: E501
-                        exits_pnl[v_index] += event.amount - validator_balances[v_index]
+                        exits_pnl[v_index] = event.amount - validator_balances[v_index]
                         validator_balances[v_index] = ZERO
                     else:
                         continue
@@ -563,8 +580,7 @@ class DBEth2:
                             withdrawal_request_events[v_index].remove(request_event)  # remove this request event so we don't match it again.  # noqa: E501
                             break
                     else:  # skimming withdrawal - doesn't change the effective balance, but is counted as profit  # noqa: E501
-                        if from_ts_ms <= event.timestamp <= to_ts_ms:  # only count pnl within the specified range  # noqa: E501
-                            withdrawals_pnl[v_index] += event.amount
+                        withdrawals_pnl_over_time[v_index][event.timestamp] += event.amount
                         continue
             elif (
                 event.event_type == HistoryEventType.INFORMATIONAL and
@@ -601,6 +617,21 @@ class DBEth2:
 
             balances_over_time[v_index][event.timestamp] = validator_balances[v_index]
 
+        with self.db.conn.write_ctx() as write_cursor:
+            self._save_eth2_validator_cache(
+                write_cursor=write_cursor,
+                to_ts=to_ts,
+                balances_over_time=balances_over_time,
+                withdrawals_pnl_over_time=withdrawals_pnl_over_time,
+                exits_pnl=exits_pnl,
+            )
+
+        # recreate the withdrawals pnl to only include pnl in that timeframe.
+        for v_index, balances in withdrawals_pnl_over_time.items():
+            for ts, balance in balances.items():
+                if from_ts_ms <= ts <= to_ts_ms:  # only count pnl within the specified range  # noqa: E501
+                    withdrawals_pnl[v_index] += balance
+
         return balances_over_time, withdrawals_pnl, exits_pnl
 
     def process_validators_balances_and_pnl(
@@ -620,7 +651,7 @@ class DBEth2:
             database=self.db,
             validator_indices=validator_indices,
         )
-        balances_over_time: dict[int, dict[TimestampMS, FVal]] = defaultdict(dict)
+        balances_over_time: dict[int, dict[TimestampMS, FVal]] = defaultdict(lambda: defaultdict(lambda: ZERO))  # noqa: E501
         withdrawals_pnl: dict[int, FVal] = defaultdict(lambda: ZERO)
         exits_pnl: dict[int, FVal] = defaultdict(lambda: ZERO)
         for validators, func in (
@@ -638,6 +669,105 @@ class DBEth2:
                 )
 
         return balances_over_time, withdrawals_pnl, exits_pnl
+
+    @staticmethod
+    def _load_eth2_validator_cache(
+            cursor: 'DBCursor',
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            validator_indices: list[int] | None,
+    ) -> tuple[dict[int, dict[TimestampMS, FVal]], dict[int, FVal], dict[int, FVal], Timestamp]:
+        """Load cached validator balance and PnL data from the database into the provided dicts.
+
+        Only includes entries within the given time range and (optionally) the specified validator indices.
+        Returns a tuple containing:
+        - Balances over time for each validator
+        - Withdrawals PnL for each validator
+        - Exits PnL for each validator
+        - The latest timestamp found in the cache or 0 if no data is cached
+
+        This is only used for accumulating validators since it involves a lot of processing.
+        """  # noqa: E501
+        latest_ts: Timestamp = Timestamp(0)
+        balances_over_time: dict[int, dict[TimestampMS, FVal]] = defaultdict(lambda: defaultdict(lambda: ZERO))  # noqa: E501
+        exits_pnl: dict[int, FVal] = defaultdict(lambda: ZERO)
+        withdrawals_pnl: dict[int, FVal] = defaultdict(lambda: ZERO)
+
+        query = """SELECT validator_index, timestamp, balance, withdrawal_pnl, exit_pnl
+        FROM eth2_validator_data_cache
+        WHERE timestamp >= ? AND timestamp <= ?
+        """
+        bindings: list = [ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)]
+        if validator_indices is not None and len(validator_indices) != 0:
+            query += f" AND validator_index IN ({','.join(['?'] * len(validator_indices))})"
+            bindings.extend(validator_indices)
+        cursor.execute(f'{query} ORDER BY timestamp ASC', bindings)
+
+        for v_index, timestamp, balance, withdrawal_pnl, exit_pnl in cursor:
+            balances_over_time[v_index][timestamp] += FVal(balance)
+            withdrawals_pnl[v_index] += FVal(withdrawal_pnl)
+            exits_pnl[v_index] += FVal(exit_pnl)
+            if (ts_in_sec := ts_ms_to_sec(timestamp)) > latest_ts:
+                latest_ts = ts_in_sec
+
+        return balances_over_time, withdrawals_pnl, exits_pnl, latest_ts
+
+    @staticmethod
+    def _save_eth2_validator_cache(
+            write_cursor: 'DBCursor',
+            to_ts: Timestamp,
+            balances_over_time: dict[int, dict[TimestampMS, FVal]],
+            withdrawals_pnl_over_time: dict[int, dict[TimestampMS, FVal]],
+            exits_pnl: dict[int, FVal],
+    ) -> None:
+        """Save validator balance and PnL data to the database, once per week per validator.
+
+        This function caches validator data weekly instead of daily to reduce database size.
+        The cached data is used for faster lookups when needed.
+
+        For each (validator, week), sums all values falling within that week across:
+        - balances_over_time
+        - withdrawals_pnl
+        - exits_pnl
+
+        Stores the weekly totals under the week end timestamp.
+        This is only used for accumulating validators since it involves a lot of processing.
+        """
+        query = """INSERT OR REPLACE INTO eth2_validator_data_cache (
+            validator_index, timestamp, balance, withdrawal_pnl, exit_pnl
+        ) VALUES (?, ?, ?, ?, ?)
+        """
+        week_in_ms = ts_sec_to_ms(Timestamp(WEEK_IN_SECONDS))
+        last_week_ts = ts_sec_to_ms(to_ts) - (ts_sec_to_ms(to_ts) % week_in_ms) + (week_in_ms - 1)  # Calculate the last week's timestamp (aligned to week boundary)  # noqa: E501
+        grouped: dict[tuple[int, int], dict[str, FVal]] = defaultdict(lambda: {  # Aggregates data by (validator_index, week_start_ts) for weekly storage  # noqa: E501
+            'balance': ZERO,
+            'withdrawal_pnl': ZERO,
+            'exit_pnl': ZERO,
+        })
+
+        for balance_key, balances in [
+            ('balance', balances_over_time),
+            ('withdrawal_pnl', withdrawals_pnl_over_time),
+            ('exit_pnl', exits_pnl),
+        ]:
+            if balance_key in ('balance', 'withdrawal_pnl'):
+                for validator_index, ts_map in balances.items():  # type: ignore[attr-defined]  # it is a dict[int, dict[timestamp, fval]]
+                    for ts, val in ts_map.items():
+                        key = (validator_index, ts + (week_in_ms - (ts % week_in_ms)) - 1)
+                        grouped[key][balance_key] += val
+            else:
+                for v_index, pnl_amount in balances.items():  # type: ignore[attr-defined]  # it is a dict[int, fval]
+                    key = (v_index, last_week_ts)
+                    grouped[key][balance_key] += pnl_amount
+
+        for (validator_index, week_ts), values in grouped.items():
+            write_cursor.execute(query, (
+                validator_index,
+                week_ts,
+                str(values['balance']),
+                str(values['withdrawal_pnl']),
+                str(values['exit_pnl']),
+            ))
 
     def get_validators_block_and_mev_rewards(
             self,
