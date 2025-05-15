@@ -15,6 +15,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.misc import InputError, RemoteError
@@ -74,6 +75,9 @@ class AccountingPot(CustomizableDateMixin):
             evm_accounting_aggregators=evm_accounting_aggregators,
             pot=self,
         )
+        # TODO: figure out a better way to resolve the cyclic import
+        # when `DBEth2` is imported in `rotkehlchen/history/events/structures/eth2.py`
+        self.dbeth2 = DBEth2(database)
         self.query_start_ts = self.query_end_ts = Timestamp(0)
         self.report_id: int | None = None
 

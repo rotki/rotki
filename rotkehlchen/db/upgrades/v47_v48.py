@@ -129,6 +129,21 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );
         """)
 
+    @progress_step(description='Adding eth2 validator cache table')
+    def _add_eth2_staking_cache_table(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS eth_validators_data_cache (
+            id INTEGER NOT NULL PRIMARY KEY,
+            validator_index INTEGER NOT NULL,
+            timestamp INTEGER NOT NULL,  -- timestamp is in milliseconds
+            balance TEXT NOT NULL,
+            withdrawals_pnl TEXT NOT NULL,
+            exit_pnl TEXT NOT NULL,
+            UNIQUE(validator_index, timestamp),
+            FOREIGN KEY(validator_index) REFERENCES eth2_validators(validator_index) ON UPDATE CASCADE ON DELETE CASCADE
+        );
+        """)  # noqa: E501
+
     @progress_step(description='Adding validator_type column to eth2 validators table')
     def _add_validator_type_column(write_cursor: 'DBCursor') -> None:
         update_table_schema(

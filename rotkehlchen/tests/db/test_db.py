@@ -139,6 +139,7 @@ TABLES_AT_INIT = [
     'xpub_mappings',
     'eth2_daily_staking_details',
     'eth2_validators',
+    'eth_validators_data_cache',
     'ignored_actions',
     'nfts',
     'history_events',
