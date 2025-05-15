@@ -6628,9 +6628,12 @@ Querying periodic data
           "result": {
               "last_balance_save": 1572345881,
               "connected_nodes": {
-                  "eth": ["nodeX", "nodeY"],
+                  "ethereum": ["nodeX", "nodeY"],
                   "optimism": ["nodeW", "nodeZ"],
                   "polygon_pos": ["nodeA", "nodeB"],
+              },
+              "failed_to_connect": {
+                  "ethereum": ["nodeZ"]
               },
               "last_data_upload_ts": 0
           }
@@ -6640,6 +6643,7 @@ Querying periodic data
    :resjson int last_balance_save: The last time (unix timestamp) at which balances were saved in the database.
    :resjson int last_data_upload_ts: The last time (unix timestamp) at which a new DB was pushed to the remote as backup.
    :resjson object connected_nodes: A dictionary containing the evm chain name and a list of connected nodes.
+   :resjson object failed_to_connect [Optional]: A dictionary containing the evm chain name and the nodes that rotki couldn't connect with. If nothing failed for a chain we don't include it in the mapping.
    :statuscode 200: Data were queried successfully.
    :statuscode 409: No user is currently logged in.
    :statuscode 500: Internal rotki error.
