@@ -1300,10 +1300,16 @@ class Rotkehlchen:
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result[DBCacheStatic.LAST_BALANCE_SAVE.value] = self.data.db.get_last_balance_save_time(cursor)  # noqa: E501
-                connected_nodes = {}
+                connected_nodes, failed_to_connect = {}, {}
                 for evm_manager in self.chains_aggregator.iterate_evm_chain_managers():
                     connected_nodes[evm_manager.node_inquirer.chain_name] = [node.name for node in evm_manager.node_inquirer.get_connected_nodes()]  # noqa: E501
+                    if len(evm_manager.node_inquirer.failed_to_connect_nodes) != 0:
+                        failed_to_connect[evm_manager.node_inquirer.chain_name] = list(evm_manager.node_inquirer.failed_to_connect_nodes)  # noqa: E501
+
                 result['connected_nodes'] = connected_nodes
+                if len(failed_to_connect) != 0:
+                    result['failed_to_connect'] = failed_to_connect
+
                 result[DBCacheStatic.LAST_DATA_UPLOAD_TS.value] = Timestamp(self.premium_sync_manager.last_remote_data_upload_ts)  # noqa: E501
         return result
 
