@@ -1,19 +1,30 @@
+import logging
 from abc import ABC
+from collections import defaultdict
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
-from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    CPT_ETH2,
+    MAX_EFFECTIVE_BALANCE,
+    MIN_EFFECTIVE_BALANCE,
+    UNKNOWN_VALIDATOR_INDEX,
+)
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     FVal,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -55,6 +66,10 @@ EVM_DEPOSIT_EVENT_DB_TUPLE_READ = tuple[
 
 STAKING_DB_INSERT_QUERY_STR = 'eth_staking_events_info(identifier, validator_index, is_exit_or_blocknumber) VALUES (?, ?, ?)'  # noqa: E501
 STAKING_DB_UPDATE_QUERY_STR = 'UPDATE eth_staking_events_info SET validator_index=?, is_exit_or_blocknumber=?'  # noqa: E501
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superclass
@@ -207,25 +222,78 @@ class EthWithdrawalEvent(EthStakingEvent):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        profit_amount = self.amount
-        if self.amount >= 32:
-            profit_amount = self.amount - 32
+        with accounting.database.conn.read_ctx() as cursor:
+            validator_info = accounting.dbeth2.get_validators_with_status(
+                cursor=cursor,
+                validator_indices={self.validator_index},
+            )[0]
 
-        # TODO: This is hacky and does not cover edge case where people mistakenly
-        # double deposited for a validator. We can and should combine deposit and
-        # withdrawal processing by querying deposits for that validator index.
-        # saving pubkey and validator index for deposits.
-        # TODO: rotki/rotki/issues/7508
-        name = 'Exit' if bool(self.is_exit_or_blocknumber) else 'Withdrawal'
-        accounting.add_in_event(
-            event_type=AccountingEventType.HISTORY_EVENT,
-            notes=f'{name} of {self.amount} ETH from validator {self.validator_index}. Only {profit_amount} is profit',  # noqa: E501
-            location=self.location,
-            timestamp=self.get_timestamp_in_sec(),
-            asset=self.asset,
-            amount=profit_amount,
-            taxable=accounting.events_accountant.rules_manager.eth_staking_taxable_after_withdrawal_enabled,
-        )
+        event_ts, is_exit = self.get_timestamp_in_sec(), self.is_exit_or_blocknumber != 0
+        name = 'Exit' if is_exit else 'Withdrawal'
+        if validator_info.validator_type != ValidatorType.ACCUMULATING:
+            profit_or_loss_amount = self.amount  # distributing validators, all of the withdrawal is profit  # noqa: E501
+
+            # Note: This doesn't correctly handle validators with >32 ETH initial deposits, where
+            # the first withdrawal might include both excess principal and possible rewards.
+            #
+            # handles both kinds of exits (profit if > 32 ETH) or (loss if < 32 ETH)
+            if self.amount >= MIN_EFFECTIVE_BALANCE or is_exit:
+                profit_or_loss_amount = self.amount - MIN_EFFECTIVE_BALANCE
+
+        elif is_exit:  # Accumulating validator exit
+            if (profit_or_loss_amount := max(ZERO, self.amount - MAX_EFFECTIVE_BALANCE)) == ZERO:
+                # If no profit detected, then it is a loss and equals total deposited - total withdrawn(just before this event)  # noqa: E501
+                balances, _, _ = accounting.dbeth2.process_accumulating_validators_balances_and_pnl(  # noqa: E501
+                    from_ts=Timestamp(0),
+                    to_ts=Timestamp(event_ts - 1),
+                    validator_indices=[self.validator_index],
+                    balances_over_time=defaultdict(lambda: defaultdict(lambda: ZERO)),
+                    withdrawals_pnl=defaultdict(lambda: ZERO),
+                    exits_pnl=defaultdict(lambda: ZERO),
+                )
+                if len(validator_balances := list(balances[self.validator_index].values())) == 0 or validator_balances[-1] < self.amount:  # noqa: E501
+                    log.error(
+                        f'Validator {self.validator_index} has an unexpected last balance ({validator_balances[-1]}) '  # noqa: E501
+                        f'less than exit amount ({self.amount}) for {self}. Using zero as amount',
+                    )
+                    profit_or_loss_amount = ZERO
+                else:
+                    profit_or_loss_amount = -FVal(validator_balances[-1] - self.amount)
+        else:  # Accumulating validator withdrawal (partial or skimming)
+            _, withdrawal_pnl, _ = accounting.dbeth2.process_accumulating_validators_balances_and_pnl(  # noqa: E501
+                from_ts=event_ts,
+                to_ts=event_ts,
+                validator_indices=[self.validator_index],
+                balances_over_time=defaultdict(lambda: defaultdict(lambda: ZERO)),
+                withdrawals_pnl=defaultdict(lambda: ZERO),
+                exits_pnl=defaultdict(lambda: ZERO),
+            )
+            profit_or_loss_amount = withdrawal_pnl.get(self.validator_index, ZERO)
+
+        if profit_or_loss_amount > ZERO:
+            notes = f'{name} of {self.amount} ETH from validator {self.validator_index}'
+            if self.amount != profit_or_loss_amount:  # this happens with validator exits and accumulating validator withdrawals  # noqa: E501
+                notes += f'. Only {profit_or_loss_amount} is profit'
+
+            accounting.add_in_event(
+                event_type=AccountingEventType.HISTORY_EVENT,
+                notes=notes,
+                location=self.location,
+                timestamp=event_ts,
+                asset=self.asset,
+                amount=profit_or_loss_amount,
+                taxable=accounting.events_accountant.rules_manager.eth_staking_taxable_after_withdrawal_enabled,
+            )
+        else:
+            accounting.add_out_event(
+                event_type=AccountingEventType.HISTORY_EVENT,
+                notes=f'Exit of {self.amount} ETH from validator {self.validator_index}. Loss of {profit_or_loss_amount} incurred',  # noqa: E501
+                location=self.location,
+                timestamp=event_ts,
+                asset=self.asset,
+                amount=abs(profit_or_loss_amount),
+                taxable=accounting.events_accountant.rules_manager.eth_staking_taxable_after_withdrawal_enabled,
+            )
         return 1
 
 

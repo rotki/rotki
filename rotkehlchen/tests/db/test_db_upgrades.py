@@ -3161,6 +3161,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('use_unified_etherscan_api',),
         ).fetchone()[0] == 'True'
         assert not table_exists(cursor, 'evm_transactions_authorizations')
+        assert not table_exists(cursor, 'eth_validators_data_cache')
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3234,6 +3235,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('use_unified_etherscan_api',),
         ).fetchall() == []
         assert table_exists(cursor, 'evm_transactions_authorizations')
+        assert table_exists(cursor, 'eth_validators_data_cache')
 
     db.logout()
 
@@ -3300,7 +3302,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'evm_transactions_authorizations'}
+    assert new_tables == {'evm_transactions_authorizations', 'eth_validators_data_cache'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()

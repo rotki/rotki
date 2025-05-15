@@ -5,11 +5,13 @@ import pytest
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.accounting_rules import DBAccountingRules
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
@@ -29,6 +31,7 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.messages import no_message_errors
 from rotkehlchen.types import (
     AssetAmount,
+    Eth2PubKey,
     Location,
     Timestamp,
     TimestampMS,
@@ -329,10 +332,19 @@ def test_eth_withdrawal_respects_db_settings(
 ) -> None:
     """Test that eth withdrawal events respect the user settings regarding taxation"""
     staking_reward = FVal('0.017197')
+    with accountant.db.conn.write_ctx() as write_cursor:
+        DBEth2(accountant.db).add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[ValidatorDetails(
+                validator_index=(vindex1 := 1),
+                public_key=Eth2PubKey('0xadf4b7a39b4e56a5f5a9e06550a8b9a3251c4a8d8b7c5c9e5d8e9f0a1b2c3d4'),
+                validator_type=ValidatorType.DISTRIBUTING,
+            )],
+        )
     history = [
         EthWithdrawalEvent(
             identifier=3,
-            validator_index=1,
+            validator_index=vindex1,
             timestamp=TimestampMS(1699319051000),
             amount=staking_reward,
             withdrawal_address=make_evm_address(),
