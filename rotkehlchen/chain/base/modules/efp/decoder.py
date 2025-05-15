@@ -52,7 +52,7 @@ class EfpDecoder(EfpCommonDecoder):
 
     def _decode_account_metadata_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events from the EFPAccountMetadata contract, currently only deployed on Base.
-        See https://docs.ethfollow.xyz/design/deployments/
+        See https://docs.ethfollow.xyz/production/deployments
         """
         if context.tx_log.topics[0] != UPDATE_ACCOUNT_METADATA:
             return DEFAULT_DECODING_OUTPUT
@@ -74,7 +74,7 @@ class EfpDecoder(EfpCommonDecoder):
 
     def _decode_list_registry_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events from the EFPListRegistry contract, currently only deployed on Base.
-        See https://docs.ethfollow.xyz/design/deployments/
+        See https://docs.ethfollow.xyz/production/deployments
         """
         if (  # filter to only erc721 transfers
             context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
