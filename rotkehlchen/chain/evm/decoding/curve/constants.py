@@ -36,7 +36,8 @@ EXCHANGE_NG: Final = b'V\xd0f\x1e$\r\xfb\x19\x9e\xf1\x96\xe1noBG9\x906c\x14\xf0"
 
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
-CURVE_API_URL = 'https://api.curve.finance/v1/getPools/all/{curve_blockchain_id}'
+CURVE_BASE_API_URL = 'https://api.curve.finance'
+CURVE_API_URL = f'{CURVE_BASE_API_URL}/' + 'v1/getPools/all/{curve_blockchain_id}'
 CURVE_CHAIN_ID = {
     ChainID.ETHEREUM: 'ethereum',
     ChainID.POLYGON_POS: 'polygon',
