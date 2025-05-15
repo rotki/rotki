@@ -432,6 +432,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         52,  # pol-matic. Have different oracle ids
         155,  # wLUNA and LUNA
         348,  # BNB and WBNB
+        240,  # eure since the new coins use a different coingecko id.
     }
     mismatches = []
     group_id_to_oracle_ids: dict[str, dict[str, str]] = defaultdict(dict)
