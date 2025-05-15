@@ -1637,7 +1637,8 @@
       "title": "删除 {chain} RPC 节点"
     },
     "connected": {
-      "false": "未连接",
+      "failure": "失败",
+      "false": "准备就绪",
       "true": "已连接"
     },
     "delete_error": {

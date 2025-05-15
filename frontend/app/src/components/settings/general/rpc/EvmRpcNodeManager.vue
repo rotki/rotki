@@ -33,11 +33,13 @@ const reconnecting = ref<boolean>(false);
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 
-const { connectedNodes } = storeToRefs(usePeriodicStore());
-const api = useEvmNodesApi(chain);
+const { connectedNodes, failedToConnect } = storeToRefs(usePeriodicStore());
+const { show } = useConfirmStore();
 const { getChainName, getEvmChainName } = useSupportedChains();
+const api = useEvmNodesApi(chain);
 
 const chainName = computed(() => get(getChainName(chain)));
+const anyDisconnected = computed(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
 
 async function loadNodes(): Promise<void> {
   try {
@@ -105,16 +107,28 @@ function isEtherscan(item: EvmRpcNode) {
   return !item.endpoint && item.name.includes('etherscan');
 }
 
-function isNodeConnected(item: EvmRpcNode): boolean {
+function isNodeInDataset(dataset: Record<string, string[]>, item: EvmRpcNode): boolean {
   const blockchain = get(chain);
-  const connected = get(connectedNodes);
   const evmChain = camelCase(getEvmChainName(blockchain) ?? '');
-  const nodes = evmChain && connected[evmChain] ? connected[evmChain] : [];
-
-  return nodes.includes(item.name) || isEtherscan(item);
+  const nodes = evmChain && dataset?.[evmChain] ? dataset[evmChain] : [];
+  return nodes.includes(item.name);
 }
 
-const { show } = useConfirmStore();
+function isNodeConnected(item: EvmRpcNode): boolean {
+  return isNodeInDataset(get(connectedNodes), item) || isEtherscan(item);
+}
+
+function getNodeStatus(item: EvmRpcNode): 'connected' | 'ready' | 'failed' {
+  if (isNodeConnected(item)) {
+    return 'connected';
+  }
+  else if (isNodeInDataset(get(failedToConnect), item)) {
+    return 'failed';
+  }
+  else {
+    return 'ready';
+  }
+}
 
 function showDeleteConfirmation(item: EvmRpcNode) {
   const chainProp = get(chainName);
@@ -130,8 +144,6 @@ function showDeleteConfirmation(item: EvmRpcNode) {
     () => deleteNode(item),
   );
 }
-
-const anyDisconnected = computed(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
 
 async function reConnect(identifier?: number) {
   set(reconnecting, true);
@@ -247,7 +259,7 @@ defineExpose({
           <div class="flex items-center gap-2">
             <div class="w-6">
               <RuiTooltip
-                v-if="!isNodeConnected(item) && item.active"
+                v-if="getNodeStatus(item) === 'failed' && item.active"
                 :open-delay="400"
               >
                 <template #activator>
@@ -269,7 +281,7 @@ defineExpose({
               </RuiTooltip>
             </div>
             <BadgeDisplay
-              v-if="isNodeConnected(item)"
+              v-if="getNodeStatus(item) === 'connected'"
               color="green"
               class="items-center gap-2 !leading-6"
             >
@@ -283,7 +295,7 @@ defineExpose({
               </span>
             </BadgeDisplay>
             <BadgeDisplay
-              v-else
+              v-else-if="getNodeStatus(item) === 'failed'"
               color="red"
               class="items-center gap-2 !leading-6"
             >
@@ -291,6 +303,20 @@ defineExpose({
                 color="error"
                 size="16"
                 name="lu-wifi-off"
+              />
+              <span>
+                {{ t('evm_rpc_node_manager.connected.failure') }}
+              </span>
+            </BadgeDisplay>
+            <BadgeDisplay
+              v-else
+              color="grey"
+              class="items-center gap-2 !leading-6"
+            >
+              <RuiIcon
+                color="info"
+                size="16"
+                name="lu-wifi"
               />
               <span>
                 {{ t('evm_rpc_node_manager.connected.false') }}

@@ -80,6 +80,12 @@
     "never": "Niemals",
     "refresh": "Αktualisieren"
   },
+  "evm_rpc_node_manager": {
+    "connected": {
+      "failure": "Fehlgeschlagen",
+      "false": "Bereit"
+    }
+  },
   "managed_asset_content": {
     "add_asset": "Vermögenswert hinzufügen"
   },

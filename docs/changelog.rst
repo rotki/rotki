@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Users will now see the correct latest price on the asset chart when the currently selected currency is not USD.
+* :feature:`9937` Users will now only see a failed/disconnected state when an RPC node fails to connect, the default non-connected state has been changed to Ready to avoid confusion.
 * :feature:`-` Account labels will now be applied to all chains for which activity is auto-detected unless the existing labels differ between chains.
 * :feature:`-` rotki will now use the Etherscan V2 api. Users won't need to create a different api key for each chain since the one from https://etherscan.io will be used for all the supported chains. Finally all non mainnet etherscan api keys are removed from the app. More information available at https://docs.etherscan.io/etherscan-v2
 * :bug:`-` Newer interactions with MakerDAO (now Sky) vaults will now be properly decoded.

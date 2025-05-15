@@ -1593,7 +1593,8 @@
       "title": "Delete {chain} RPC Node"
     },
     "connected": {
-      "false": "Not connected",
+      "failure": "Απέτυχε",
+      "false": "Έτοιμο",
       "true": "Connected"
     },
     "delete_error": {
@@ -2534,7 +2535,7 @@
       },
       "overview": "Overview",
       "ranges": {
-        "one_day": "1D",
+        "one_day": 1.0,
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"

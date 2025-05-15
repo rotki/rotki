@@ -1577,7 +1577,8 @@
       "title": "Delete {chain} RPC Node"
     },
     "connected": {
-      "false": "Not connected",
+      "failure": "Fallido",
+      "false": "Listo",
       "true": "Connected"
     },
     "delete_error": {
