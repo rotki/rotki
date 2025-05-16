@@ -1,7 +1,6 @@
-import { camelCase } from 'es-toolkit';
-import { etherscanLinks, externalLinks } from '@shared/external-links';
+import { etherscanLink, externalLinks } from '@shared/external-links';
 import { pslSuffixes } from '@/data/psl';
-import { isEtherscanKey } from '@/types/external';
+import { Routes } from '@/router/routes';
 import { logger } from '@/utils/logging';
 import type { RouteLocationRaw } from 'vue-router';
 
@@ -36,42 +35,38 @@ export function getDomain(str: string): string {
 interface ExternalUrl { external: string; route: RouteLocationRaw }
 
 /**
- * Returns the registration url of a specified Etherscan location and a path to the local page
- * @param {string} location
+ * Returns the registration url of a specified Etherscan registration link, and the page to fill it
  * @returns {{external: string, route: RouteLocationRaw} | undefined}
  */
-export function getEtherScanRegisterUrl(location: string): ExternalUrl | undefined {
-  const camelCaseLocation = camelCase(location);
-
-  if (isEtherscanKey(camelCaseLocation)) {
-    const data = etherscanLinks[camelCaseLocation];
-    return {
-      external: data,
-      route: { hash: `#${location}`, path: '/api-keys/external' },
-    };
-  }
-
-  logger.warn(`Unsupported etherscan location: '${location}'`);
-  return undefined;
+export function getEtherScanRegisterUrl(): ExternalUrl | undefined {
+  return {
+    external: etherscanLink,
+    route: {
+      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      query: { service: 'etherscan' },
+    },
+  };
 }
 
 export function getTheGraphRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.applyTheGraphApiKey,
-    route: { hash: `#thegraph`, path: '/api-keys/external' },
+    route: {
+      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      query: { service: 'thegraph' },
+    },
   };
 }
 
 /**
- * Returns the registration url of a specified service location and a path to the local page
+ * Returns the registration url of a specified service and a path to the local page
  * @param {string} service
- * @param {string} location
  * @returns {undefined | {external: string, route: RouteLocationRaw}}
  */
-export function getServiceRegisterUrl(service: string, location: string): ExternalUrl | undefined {
+export function getServiceRegisterUrl(service: string): ExternalUrl | undefined {
   switch (service) {
     case 'etherscan':
-      return getEtherScanRegisterUrl(location);
+      return getEtherScanRegisterUrl();
     case 'thegraph':
       return getTheGraphRegisterUrl();
     default:

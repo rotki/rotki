@@ -59,9 +59,7 @@ describe('/settings/api-keys/external-services', () => {
 
   const mockResponse: ExternalServiceKeys = {
     etherscan: {
-      ethereum: {
-        apiKey: '123',
-      },
+      apiKey: '123',
     },
     cryptocompare: {
       apiKey: '123',
@@ -107,9 +105,7 @@ describe('/settings/api-keys/external-services', () => {
     beforeEach(async () => {
       const query = api.queryExternalServices as any;
       query.mockResolvedValueOnce({
-        etherscan: {
-          ethereum: null,
-        },
+        etherscan: undefined,
       });
       wrapper = createWrapper();
       await vi.dynamicImportSettled();
@@ -128,8 +124,12 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper.find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__save]').trigger('click');
+      await wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').trigger('click');
       await flushPromises();
+      const message = wrapper
+        .find('[data-cy="bottom-dialog"] [data-cy=etherscan] [data-cy=service-key__content] .details')
+        .text();
+      expect(message).toMatch('Etherscan');
       await vi.advanceTimersToNextTimerAsync();
       expect(mock).toHaveBeenCalledWith([{ name: 'etherscan', apiKey: '123' }]);
     });
@@ -166,7 +166,7 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__api-key] input')
         .setValue('123');
       await nextTick();
-      await wrapper.find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__save]').trigger('click');
+      await wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').trigger('click');
       await flushPromises();
       const message = wrapper
         .find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__content] .details')
@@ -180,8 +180,9 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
+
       expect(
-        wrapper.find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__delete]').attributes(),
+        wrapper.find('[data-cy=bottom-dialog] [data-cy=delete-button]').attributes(),
       ).toHaveProperty('disabled');
 
       // Close the dialog
@@ -205,8 +206,9 @@ describe('/settings/api-keys/external-services', () => {
         .find('[data-cy=external-keys] [data-cy=etherscan-api-keys] button')
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
+
       expect(
-        wrapper.find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__save]').attributes(),
+        wrapper.find('[data-cy="bottom-dialog"] [data-cy="confirm"]').attributes(),
       ).toHaveProperty('disabled');
     });
   });
@@ -255,7 +257,9 @@ describe('/settings/api-keys/external-services', () => {
         .trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      await wrapper.find('[data-cy=bottom-dialog] [data-cy=etherscan] [data-cy=service-key__delete]').trigger('click');
+      await wrapper
+        .find('[data-cy=bottom-dialog] [data-cy=delete-button]')
+        .trigger('click');
       await nextTick();
 
       const confirmStore = useConfirmStore();

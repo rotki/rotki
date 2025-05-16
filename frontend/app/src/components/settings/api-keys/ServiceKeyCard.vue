@@ -4,8 +4,9 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import AppImage from '@/components/common/AppImage.vue';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
+    name?: string;
     title: string;
     subtitle?: string;
     imageSrc: string;
@@ -41,9 +42,21 @@ function setOpen(value: boolean) {
   set(openDialog, value);
 }
 
-defineExpose({
-  setOpen,
-});
+const route = useRoute();
+const router = useRouter();
+
+watch(route, async (route) => {
+  if (!props.name)
+    return;
+
+  const { query } = route;
+  if (query?.service === props.name) {
+    nextTick(() => {
+      setOpen(true);
+    });
+    await router.replace({ query: {} });
+  }
+}, { immediate: true });
 </script>
 
 <template>

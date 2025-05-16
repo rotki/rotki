@@ -18,6 +18,7 @@ const status = actionStatus(name);
 
 <template>
   <ServiceKeyCard
+    :name="name"
     :key-set="!!key"
     :title="t('external_services.opensea.title')"
     :subtitle="t('external_services.opensea.description')"

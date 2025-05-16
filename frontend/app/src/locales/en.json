@@ -2327,12 +2327,10 @@
     "delete_key": "Delete key",
     "enter_api_key": "Enter API key",
     "etherscan": {
-      "api_key_message": "Please add an {chain} Etherscan API key to be able to query historical EVM transactions.",
-      "delete_tooltip": "Deletes the {chain} Etherscan API key",
+      "api_key_message": "Please add an Etherscan API key to be able to query historical EVM transactions.",
       "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
-      "hint": "Enter your {chain} Etherscan API key",
-      "title": "Etherscan",
-      "unified": "Use unified Etherscan key"
+      "hint": "Enter your Etherscan API key",
+      "title": "Etherscan"
     },
     "get_api_key": "You can apply for an API key {link}",
     "gnosispay": {

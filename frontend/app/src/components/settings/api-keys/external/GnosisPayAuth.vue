@@ -28,6 +28,7 @@ watchImmediate(key, (value) => {
   <ServiceKeyCard
     need-premium
     rounded-icon
+    :name="name"
     :key-set="!!key"
     :title="t('external_services.gnosispay.title')"
     :subtitle="t('external_services.gnosispay.description')"
