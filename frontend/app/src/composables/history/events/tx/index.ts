@@ -138,7 +138,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     });
   };
 
-  const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
+  const getEvmAccounts = (chains: string[] = []): EvmChainAddress[] =>
     Object.entries(get(addresses))
       .filter(([chain]) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
       .flatMap(([chain, addresses]) => {
@@ -278,18 +278,21 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const refreshTransactions = async (
-    chains: Blockchain[] = [],
-    disableEvmEvents = false,
-    userInitiated = false,
+    { accounts, chains = [], disableEvmEvents = false, userInitiated = false }: {
+      chains?: Blockchain[];
+      disableEvmEvents?: boolean;
+      userInitiated?: boolean;
+      accounts?: EvmChainAddress[];
+    } = {},
   ): Promise<void> => {
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping transaction refresh');
       return;
     }
 
-    const evmAccounts: EvmChainAddress[] = disableEvmEvents ? [] : getEvmAccounts(chains);
+    const evmAccounts: EvmChainAddress[] = disableEvmEvents ? [] : (accounts ?? getEvmAccounts(chains));
 
-    const evmLikeAccounts: EvmChainAddress[] = disableEvmEvents ? [] : getEvmLikeAccounts(chains);
+    const evmLikeAccounts: EvmChainAddress[] = (disableEvmEvents || accounts) ? [] : getEvmLikeAccounts(chains);
 
     if (evmAccounts.length + evmLikeAccounts.length > 0) {
       setStatus(Status.REFRESHING);
