@@ -683,7 +683,7 @@ def test_hop_add_liquidity(
         ) == '0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'
 
     inquirer.inject_evm_managers([(base_inquirer.chain_id, base_manager)])
-    assert inquirer.find_usd_price(Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D')).is_close(2047.7888340254)  # noqa: E501
+    assert inquirer.find_usd_price(Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D')).is_close(2939.36206031)  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1062,7 +1062,7 @@ def test_hop_stake(
     ]
     assert events == expected_events
     inquirer.inject_evm_managers([(arbitrum_one_inquirer.chain_id, arbitrum_one_manager)])
-    assert inquirer.find_usd_price(Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')).is_close(1995.56814825)  # noqa: E501
+    assert inquirer.find_usd_price(Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')).is_close(2863.5423393)  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

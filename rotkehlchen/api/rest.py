@@ -222,7 +222,6 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
-    ETHERSCAN_TO_CHAINID,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_EVMLIKE_LOCATIONS,
@@ -616,14 +615,10 @@ class RestAPI:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
         response_dict: dict[str, Any] = {}
         response_dict['blockscout'] = {chain_id.to_name(): None for _, chain_id in BLOCKSCOUT_TO_CHAINID.items()}  # noqa: E501
-        response_dict['etherscan'] = {chain_id.to_name(): None for _, chain_id in ETHERSCAN_TO_CHAINID.items()}  # noqa: E501
         for credential in credentials_list:
             name, key_info = credential.serialize_for_api()
-            if (chain := credential.service.get_chain_for_etherscan()) is not None:
-                response_dict['etherscan'][chain.to_name()] = key_info
-            elif (chain := credential.service.get_chain_for_blockscout()) is not None:
+            if (chain := credential.service.get_chain_for_blockscout()) is not None:
                 response_dict['blockscout'][chain.to_name()] = key_info
-
             else:
                 response_dict[name] = key_info
 

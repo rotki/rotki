@@ -383,6 +383,7 @@ class EvmTransactions(ABC):  # noqa: B024
             log.debug(f'Querying {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
                 for erc20_tx_hashes in self.evm_inquirer.etherscan.get_token_transaction_hashes(
+                    chain_id=self.evm_inquirer.chain_id,
                     account=address,
                     from_ts=query_start_ts,
                     to_ts=query_end_ts,

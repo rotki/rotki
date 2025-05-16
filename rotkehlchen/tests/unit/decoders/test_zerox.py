@@ -1236,6 +1236,7 @@ def test_swap_anon_event(ethereum_inquirer: 'EthereumInquirer', ethereum_account
         sequence_index=2,
         timestamp=timestamp,
         location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:1/erc20:0x58D97B57BB95320F9a05dC918Aef65434969c2B2'),
         amount=FVal(fee_amount := '14.050054845407416491'),
