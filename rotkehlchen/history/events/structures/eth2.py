@@ -1,11 +1,19 @@
 from abc import ABC
+from collections import defaultdict
 from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.chain.ethereum.constants import ETH2_DEPOSIT_ADDRESS
-from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, UNKNOWN_VALIDATOR_INDEX
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    CPT_ETH2,
+    MAX_EFFECTIVE_BALANCE,
+    MIN_EFFECTIVE_BALANCE,
+    UNKNOWN_VALIDATOR_INDEX,
+)
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorType
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
@@ -14,6 +22,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     FVal,
     Location,
+    Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
@@ -207,16 +216,32 @@ class EthWithdrawalEvent(EthStakingEvent):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        profit_amount = self.amount
-        if self.amount >= 32:
-            profit_amount = self.amount - 32
+        with accounting.database.conn.read_ctx() as cursor:
+            validator_info = accounting.dbeth2.get_validators_with_status(
+                cursor=cursor,
+                validator_indices={self.validator_index},
+            )[0]
 
-        # TODO: This is hacky and does not cover edge case where people mistakenly
-        # double deposited for a validator. We can and should combine deposit and
-        # withdrawal processing by querying deposits for that validator index.
-        # saving pubkey and validator index for deposits.
-        # TODO: rotki/rotki/issues/7508
-        name = 'Exit' if bool(self.is_exit_or_blocknumber) else 'Withdrawal'
+        is_exit = bool(self.is_exit_or_blocknumber)
+        name = 'Exit' if is_exit else 'Withdrawal'
+        if validator_info.validator_type != ValidatorType.ACCUMULATING:
+            # Non-accumulating validator: profit = amount, unless it's an exit above MIN_EFFECTIVE_BALANCE  # noqa: E501
+            profit_amount = self.amount
+            if self.amount >= MIN_EFFECTIVE_BALANCE:
+                profit_amount = self.amount - MIN_EFFECTIVE_BALANCE
+        elif is_exit:  # Accumulating validator exit: profit = amount - MAX_EFFECTIVE_BALANCE
+            profit_amount = max(ZERO, self.amount - MAX_EFFECTIVE_BALANCE)
+        else:  # Accumulating validator withdrawal (partial or skimming)
+            _, withdrawal_pnl, _ = accounting.dbeth2.process_accumulating_validators_balances_and_pnl(  # noqa: E501
+                from_ts=self.get_timestamp_in_sec(),
+                to_ts=Timestamp(self.get_timestamp_in_sec() + 1),
+                validator_indices={self.validator_index},
+                balances_over_time=defaultdict(lambda: defaultdict(lambda: ZERO)),
+                withdrawals_pnl=defaultdict(lambda: ZERO),
+                exits_pnl=defaultdict(lambda: ZERO),
+            )
+            profit_amount = withdrawal_pnl.get(self.validator_index, ZERO)
+
         accounting.add_in_event(
             event_type=AccountingEventType.HISTORY_EVENT,
             notes=f'{name} of {self.amount} ETH from validator {self.validator_index}. Only {profit_amount} is profit',  # noqa: E501
