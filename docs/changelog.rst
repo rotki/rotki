@@ -39,6 +39,9 @@ Changelog
 * :bug:`-` rotki will now correctly decode mints of CRV from various gauges.
 * :bug:`-` rotki will now correctly decode crvUSD claims from the Curve fees distributor.
 * :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
+
+* :release:`1.38.3 <2025-05-16>`
+* :bug:`-` Fix slow history querying due to the curve DNS domain hijacking which caused us to switch to onchain queries for thousands of pools.
 * :bug:`-` Users will now be able to use the filter properly after deleting the selected filter that is being edited.
 * :bug:`9793` Users will now be able to add a missing accounting rule by clicking the menu on the history events page.
 * :bug:`9777` Bitstamp asset movements with a fee will now load correctly.

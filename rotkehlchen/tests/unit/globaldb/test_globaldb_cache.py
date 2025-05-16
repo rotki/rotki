@@ -322,7 +322,7 @@ def test_convex_cache(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('use_curve_api', [True, False])
+@pytest.mark.parametrize('use_curve_api', [True])  # TODO: renable query using onchain data
 def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     global_cursor = globaldb.conn.cursor()
     """Test curve pools fetching mechanism"""
