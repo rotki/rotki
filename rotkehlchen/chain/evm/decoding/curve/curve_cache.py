@@ -477,13 +477,10 @@ def query_curve_data(
         msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges and save them in the database.
-    First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
+    First tries to find data via curve api.
 
-    Returns list of pools if either api or chain query was successful, otherwise None.
-
-    There is a known issue that curve api and metaregistry return different pool names. For example
-    curve api returns "Curve.fi DAI/USDC/USDT" while metaregistry returns "3pool".
-    TODO: think of how to make pool names uniform."""
+    Returns list of pools if api query was successful, otherwise None.
+    """
     with GlobalDBHandler().conn.read_ctx() as cursor:
         existing_pools = {  # query the pools that we already have in the db
             string_to_evm_address(address[0])
@@ -499,16 +496,8 @@ def query_curve_data(
             existing_pools=existing_pools,
         )
     except (RemoteError, UnableToDecryptRemoteData) as e:
-        log.error(f'Could not query curve api due to: {e}. Will query metaregistry on chain')
-        try:
-            pools_data = _query_curve_data_from_chain(
-                evm_inquirer=inquirer,
-                existing_pools=existing_pools,
-                msg_aggregator=msg_aggregator,
-            )
-        except RemoteError as err:
-            log.error(f'Could not query chain for curve pools due to: {err}')
-            return None
+        log.error(f'Could not query curve api due to: {e}.')
+        return None
 
     if len(pools_data) == 0:
         # if no new pools, update the last_queried_ts of db entries
