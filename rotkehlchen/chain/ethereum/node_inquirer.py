@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Sequence
-from contextlib import suppress
 from typing import TYPE_CHECKING, Literal, overload
 
 from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
@@ -26,7 +25,7 @@ from rotkehlchen.chain.evm.node_inquirer import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
@@ -38,7 +37,6 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     SupportedBlockchain,
-    Timestamp,
 )
 from rotkehlchen.utils.misc import get_chunks
 
@@ -257,25 +255,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             ARCHIVE_NODE_CHECK_BLOCK,
             ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
         )
-
-    def get_blocknumber_by_time(
-            self,
-            ts: Timestamp,
-            closest: Literal['before', 'after'] = 'before',
-    ) -> int:
-        """Searches for the blocknumber of a specific timestamp
-        - Performs the etherscan api call by default first
-        - If RemoteError raised or etherscan flag set to false
-            -> queries blocks subgraph
-        """
-        with suppress(RemoteError):
-            return self.etherscan.get_blocknumber_by_time(
-                chain_id=ChainID.ETHEREUM,
-                ts=ts,
-                closest=closest,
-            )
-
-        return self.blockscout.get_blocknumber_by_time(ts, closest)
 
     # -- Implementation of EvmNodeInquirer optional methods --
 

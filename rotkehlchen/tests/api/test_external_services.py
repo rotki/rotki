@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 EMPTY_RESULT = {
-    'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None},  # noqa: E501
+    'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None, 'scroll': None},  # noqa: E501
 }
 
 
@@ -34,7 +34,7 @@ def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     # Now add some data and see that the response shows they are added
     expected_result: dict[str, Any] = {
         'etherscan': {'api_key': 'key1'},
-        'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None},  # noqa: E501
+        **EMPTY_RESULT,
         'cryptocompare': {'api_key': 'key2'},
         'monerium': {'username': 'Ben', 'password': 'supersafepassword'},
     }
@@ -81,8 +81,8 @@ def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
     expected_result: dict[str, Any] = {
-        'etherscan': {'api_key': 'key1'},
-        'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None},  # noqa: E501
+        'etherscan':  {'api_key': 'key1'},
+        **EMPTY_RESULT,
         'cryptocompare': {'api_key': 'key2'},
     }
     response = requests.put(

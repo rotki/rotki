@@ -66,6 +66,8 @@ class Blockscout(ExternalServiceWithApiKey):
                 self.url = 'https://gnosis.blockscout.com/api'
             case SupportedBlockchain.POLYGON_POS:
                 self.url = 'https://polygon.blockscout.com/api'
+            case SupportedBlockchain.SCROLL:
+                self.url = 'https://scroll.blockscout.com/api'
             case _:
                 raise NotImplementedError(f'Blockscout not implement for {blockchain}')
 
