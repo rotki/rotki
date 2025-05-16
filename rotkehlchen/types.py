@@ -151,6 +151,7 @@ class ExternalService(SerializableEnumNameMixin):
     DEFILLAMA = auto()
     COINGECKO = auto()
     ALCHEMY = auto()
+    SCROLL_BLOCKSCOUT = auto()
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
@@ -354,6 +355,7 @@ BLOCKSCOUT_TO_CHAINID = {
     ExternalService.ARBITRUM_ONE_BLOCKSCOUT: ChainID.ARBITRUM_ONE,
     ExternalService.BASE_BLOCKSCOUT: ChainID.BASE,
     ExternalService.GNOSIS_BLOCKSCOUT: ChainID.GNOSIS,
+    ExternalService.SCROLL_BLOCKSCOUT: ChainID.SCROLL,
 }
 
 ETHERSCAN_TO_CHAINID = {
