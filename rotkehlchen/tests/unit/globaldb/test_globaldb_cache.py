@@ -322,7 +322,7 @@ def test_convex_cache(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('use_curve_api', [True])  # TODO: renable query using onchain data
+@pytest.mark.parametrize('use_curve_api', [True])  # TODO: re-enable query using onchain data. Part of https://github.com/orgs/rotki/projects/11?pane=issue&itemId=111026071  Essentially add a False here again by undoing what happened in https://github.com/rotki/rotki/pull/9963/files#diff-098f0ac6382a14207e3774683524c1ecdf2e15742e39d0925b64ca8fe2520348 # noqa: E501
 def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     global_cursor = globaldb.conn.cursor()
     """Test curve pools fetching mechanism"""
