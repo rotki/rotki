@@ -10,6 +10,7 @@ import type {
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
+  EvmChainAddress,
   HistoryEventRow,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
@@ -321,7 +322,7 @@ function editMissingRulesEntry(data: ShowFormData): void {
   }));
 }
 
-async function refresh(userInitiated = false): Promise<void> {
+async function refresh(userInitiated = false, accounts?: EvmChainAddress[]): Promise<void> {
   if (userInitiated)
     startPromise(historyEventMappings.refresh());
   else
@@ -330,7 +331,12 @@ async function refresh(userInitiated = false): Promise<void> {
   set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
   const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
-  await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
+  await refreshTransactions({
+    accounts,
+    chains: get(onlyChains),
+    disableEvmEvents,
+    userInitiated,
+  });
   startPromise(fetchDataAndLocations());
 }
 
@@ -433,7 +439,7 @@ onMounted(async () => {
         :processing="processing"
         :loading="eventTaskLoading"
         :include-evm-events="includes.evmEvents"
-        @refresh="refresh(true)"
+        @refresh="refresh(true, $event)"
         @show:form="showForm($event)"
         @show:add-transaction-form="addTxHash()"
         @show:repulling-transactions-form="repullingTransactions()"

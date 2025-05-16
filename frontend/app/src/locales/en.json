@@ -1590,6 +1590,7 @@
       "push": "Push",
       "save": "Save",
       "search": "Search",
+      "select_all": "Select All",
       "skip": "Skip",
       "terminate": "Terminate",
       "update": "Update",
@@ -2806,6 +2807,13 @@
   "history_events_list_swap": {
     "fee_description": "{notes} with fee: {feeText}",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}"
+  },
+  "history_refresh_chain_selection": {
+    "back_to_chain": "Back to chain selection",
+    "refresh": "Refresh {accounts} accounts",
+    "search_address": "Search by address",
+    "search_chain": "Search by chain",
+    "selection": "Select one or more chains to refresh their transactions"
   },
   "ignore": {
     "confirm": {
