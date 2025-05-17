@@ -1,8 +1,8 @@
 mypy==1.15.0
 mypy-extensions==1.1.0
-pylint==3.3.6
-astroid==3.3.9  # engine of pylint, upgrade them together
-ruff==0.11.8
+pylint==3.3.7
+astroid==3.3.10  # engine of pylint, upgrade them together
+ruff==0.11.10
 double-indent-rotki==0.1.7  # our fork of double indent
 pyright==1.1.400
 
