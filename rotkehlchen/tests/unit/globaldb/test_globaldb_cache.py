@@ -4,6 +4,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, _Call, call, patch
 
+import gevent
 import pytest
 import requests
 from freezegun import freeze_time
@@ -322,17 +323,22 @@ def test_convex_cache(ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
-@pytest.mark.parametrize('use_curve_api', [True])  # TODO: re-enable query using onchain data. Part of https://github.com/orgs/rotki/projects/11?pane=issue&itemId=111026071  Essentially add a False here again by undoing what happened in https://github.com/rotki/rotki/pull/9963/files#diff-098f0ac6382a14207e3774683524c1ecdf2e15742e39d0925b64ca8fe2520348 # noqa: E501
+@pytest.mark.parametrize('use_curve_api', [True, False])
 def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     global_cursor = globaldb.conn.cursor()
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        # make sure that curve cache is clear of expected pools and addressbook entries
-        for lp_token in CURVE_EXPECTED_LP_TOKENS_TO_POOLS:
-            write_cursor.execute(f"DELETE FROM unique_cache WHERE key LIKE '%{lp_token}%'")
+        # Make sure that curve cache is clear of ethereum pools and expected addressbook entries
+        write_cursor.execute("DELETE FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS10x%'")
         for entry in CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN:
             write_cursor.execute('DELETE FROM address_book WHERE address=?', (entry.address,))
+
+        # Ensure addresses for optimism (chain id 10 + 0x of address) are present. Regression test
+        # for a problem where the 0x wasn't included and chain id 1 would also match chain id 10.
+        assert write_cursor.execute(
+            "SELECT COUNT(*) FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS100x%'",
+        ).fetchone()[0] > 0
 
     # delete one of the tokens to check that it is created during the update
     token_id = evm_address_to_identifier(
@@ -407,6 +413,8 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
             node_inquirer=ethereum_inquirer,
             transactions_decoder=rotkehlchen_instance.chains_aggregator.ethereum.transactions_decoder,
         )
+        # the onchain pool queries run in a separate greenlet
+        gevent.joinall(rotkehlchen_instance.greenlet_manager.greenlets)
 
     pools, gauges = read_curve_pools_and_gauges(chain_id=ChainID.ETHEREUM)
     for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
