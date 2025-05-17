@@ -79,3 +79,5 @@ CURVE_ADDRESS_PROVIDER: Final = string_to_evm_address('0x5ffe7FB82894076ECB99A30
 CURVE_SWAP_ROUTER_NG: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')
 DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD')
 CHILD_LIQUIDITY_GAUGE_FACTORY: Final = string_to_evm_address('0xabC000d88f23Bb45525E447528DBF656A9D55bf5')  # noqa: E501
+# Maximum number of pools to query from the onchain metaregistry. Querying too many pools onchain takes a very long time.  # noqa: E501
+MAX_ONCHAIN_POOLS_QUERY: Final = 500
