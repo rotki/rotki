@@ -18,7 +18,7 @@ py-sr25519-bindings==0.2.2
 py-ed25519-zebra-bindings==1.2.0
 py-bip39-bindings==0.2.0
 substrate-interface==1.7.11
-beautifulsoup4==4.13.3
+beautifulsoup4==4.13.4
 maxminddb==2.6.3
 pywin32==306; sys_platform == 'win32'
 miniupnpc==2.3.2
