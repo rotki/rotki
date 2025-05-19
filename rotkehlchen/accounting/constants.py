@@ -68,6 +68,8 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     HistoryEventType.LOSS: {
         HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
         HistoryEventSubType.HACK: {DEFAULT: EventCategory.HACK_LOSS},
+        HistoryEventSubType.LIQUIDITY_PROVISION_LOSS: {DEFAULT: EventCategory.LIQUIDITY_PROVISION_LOSS},  # noqa: E501
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.LOSS},
     },
     HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.REMOVE_ASSET: {
@@ -319,6 +321,12 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.DELEGATE: {DEFAULT: EventCategoryDetails(
         label='delegate',
         icon='lu-handshake',
+    )}, EventCategory.LOSS: {DEFAULT: EventCategoryDetails(
+        label='loss',
+        icon='lu-trending-down',
+    )}, EventCategory.LIQUIDITY_PROVISION_LOSS: {DEFAULT: EventCategoryDetails(
+        label='liquidity provision loss',
+        icon='lu-droplet-trending-down',
     )},
 }
 
