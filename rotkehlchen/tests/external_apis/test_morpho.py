@@ -101,16 +101,31 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
 def test_morpho_rewards_api() -> None:
     """Test that reward distributor addresses are queried correctly."""
     original_request = requests.get
+    good_response = '{"data":[{"id":"0x2923a47dfacb9296e95586241349f77cbd7b48b992597011901080320cfe5957","market_id":"0x423cb007534ac88febb8ce39f544ab303e8b757f8415ed891fc76550f8f4c965","chain_id":1,"total_rewards":"2999999999999999999","total_rewards_distributed":"2999999999999999999","supply_rate_per_year":"37758620689655172413","borrow_rate_per_year":"0","collateral_rate_per_year":"0","asset":{"id":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0-1","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","chain_id":1},"distributor":{"id":"0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb-1","address":"0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb","chain_id":1},"start":"1714525200","end":"1717030800","created_at":"1713968975","creator":"0x0C2553e4B9dFA9f83b1A6D3EAB96c4bAaB42d430","type":"market-reward"},{"id":"0xd12a33f87f11fcc3f10b0f29b4a50999c8f7368649fdbd3f82ef1863f5aee096","vault":"0xa0E430870c4604CcfC7B38Ca7845B1FF653D0ff1","chain_id":8453,"total_rewards":"4164999999999999999999998","total_rewards_distributed":"4164999999999999999999998","rate_per_year":"25337083333333333333333327","amount":"4164999999999999999999998","asset":{"id":"0xA88594D404727625A9437C3f886C7643872296AE-8453","address":"0xA88594D404727625A9437C3f886C7643872296AE","chain_id":8453},"distributor":{"id":"0x9e3380f8B29E8f85cA19EFFA80Fb41149417D943-8453","address":"0x9e3380f8B29E8f85cA19EFFA80Fb41149417D943","chain_id":8453},"start":"1718719200","end":"1723903200","created_at":"1718719200","creator":"0x74Cbb1E8B68dDD13B28684ECA202a351afD45EAa","type":"vault-reward"},{"id":"0x580cba08689cabd9a0decc50ed9ea3c1dc56e85287d9eeea8e04517be7caea30","market_id":"0xdba352d93a64b17c71104cbddc6aef85cd432322a1446b5b65163cbbc615cd0c","chain_id":8453,"total_rewards":"14279999999","total_rewards_distributed":"14279999999","supply_rate_per_year":"208141098169","borrow_rate_per_year":"0","collateral_rate_per_year":"0","asset":{"id":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913-8453","address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","chain_id":8453},"distributor":{"id":"0x5400dBb270c956E8985184335A1C62AcA6Ce1333-8453","address":"0x5400dBb270c956E8985184335A1C62AcA6Ce1333","chain_id":8453},"start":"1718978400","end":"1721142000","created_at":"1718978400","creator":"0x874A0A0fc772a32b40e3749ACc3B72f3b0c9b82a","type":"market-reward"}]}'  # noqa: E501
 
     def mock_morpho_rewards_api(url, timeout):
         """Return three different distributors in the API response"""
         if url == MORPHO_REWARDS_API:
-            return MockResponse(HTTPStatus.OK, '{"data":[{"id":"0x2923a47dfacb9296e95586241349f77cbd7b48b992597011901080320cfe5957","market_id":"0x423cb007534ac88febb8ce39f544ab303e8b757f8415ed891fc76550f8f4c965","chain_id":1,"total_rewards":"2999999999999999999","total_rewards_distributed":"2999999999999999999","supply_rate_per_year":"37758620689655172413","borrow_rate_per_year":"0","collateral_rate_per_year":"0","asset":{"id":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0-1","address":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0","chain_id":1},"distributor":{"id":"0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb-1","address":"0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb","chain_id":1},"start":"1714525200","end":"1717030800","created_at":"1713968975","creator":"0x0C2553e4B9dFA9f83b1A6D3EAB96c4bAaB42d430","type":"market-reward"},{"id":"0xd12a33f87f11fcc3f10b0f29b4a50999c8f7368649fdbd3f82ef1863f5aee096","vault":"0xa0E430870c4604CcfC7B38Ca7845B1FF653D0ff1","chain_id":8453,"total_rewards":"4164999999999999999999998","total_rewards_distributed":"4164999999999999999999998","rate_per_year":"25337083333333333333333327","amount":"4164999999999999999999998","asset":{"id":"0xA88594D404727625A9437C3f886C7643872296AE-8453","address":"0xA88594D404727625A9437C3f886C7643872296AE","chain_id":8453},"distributor":{"id":"0x9e3380f8B29E8f85cA19EFFA80Fb41149417D943-8453","address":"0x9e3380f8B29E8f85cA19EFFA80Fb41149417D943","chain_id":8453},"start":"1718719200","end":"1723903200","created_at":"1718719200","creator":"0x74Cbb1E8B68dDD13B28684ECA202a351afD45EAa","type":"vault-reward"},{"id":"0x580cba08689cabd9a0decc50ed9ea3c1dc56e85287d9eeea8e04517be7caea30","market_id":"0xdba352d93a64b17c71104cbddc6aef85cd432322a1446b5b65163cbbc615cd0c","chain_id":8453,"total_rewards":"14279999999","total_rewards_distributed":"14279999999","supply_rate_per_year":"208141098169","borrow_rate_per_year":"0","collateral_rate_per_year":"0","asset":{"id":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913-8453","address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","chain_id":8453},"distributor":{"id":"0x5400dBb270c956E8985184335A1C62AcA6Ce1333-8453","address":"0x5400dBb270c956E8985184335A1C62AcA6Ce1333","chain_id":8453},"start":"1718978400","end":"1721142000","created_at":"1718978400","creator":"0x874A0A0fc772a32b40e3749ACc3B72f3b0c9b82a","type":"market-reward"}]}')  # noqa: E501
+            return MockResponse(HTTPStatus.OK, mock_response)
 
         nonlocal original_request
         return original_request(url=url, timeout=timeout)
 
+    # First check that deserialization errors are handled gracefully.
     with patch.object(requests, 'get', wraps=mock_morpho_rewards_api):
+        mock_response = good_response.replace('"chain_id":', '"chain_id":1234567890')
+        query_morpho_reward_distributors()
+
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        for chain_id in (ChainID.BASE, ChainID.ETHEREUM):
+            assert globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
+            ) == []
+
+    # Check that distributors are correctly added using the good response.
+    with patch.object(requests, 'get', wraps=mock_morpho_rewards_api):
+        mock_response = good_response
         query_morpho_reward_distributors()
 
     with GlobalDBHandler().conn.read_ctx() as cursor:

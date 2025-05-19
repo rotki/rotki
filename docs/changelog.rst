@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Ethereum and Base transaction decoding should now work fine again after the Morpho API deserialization problems.
+
 * :release:`1.38.3 <2025-05-16>`
 * :bug:`-` Fix slow history querying due to the curve DNS domain hijacking which caused us to switch to onchain queries for thousands of pools.
 * :bug:`-` Users will now be able to use the filter properly after deleting the selected filter that is being edited.
