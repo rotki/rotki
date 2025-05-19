@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final
 
@@ -11,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.morpho.constants import MORPHO_VAULT_ABI
 from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
 from rotkehlchen.constants import EXP18_INT, ONE
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -114,17 +116,20 @@ def query_morpho_reward_distributors() -> None:
         response_data = requests.get(
             url=MORPHO_REWARDS_API,
             timeout=CachedSettings().get_timeout_tuple(),
-        )
-        distributors: dict[ChainID, set] = {}
-        for item in response_data.json()['data']:
-            if (chain_id := ChainID.deserialize(item['chain_id'])) not in distributors:
-                distributors[chain_id] = set()
-
-            distributors[chain_id].add(deserialize_evm_address(item['distributor']['address']))
-    except (requests.RequestException, TypeError, KeyError) as e:
-        error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
-        log.error(f'Failed to retrieve morpho reward distributors from api due to {error}')
+        ).json().get('data', [])
+    except (requests.RequestException, AttributeError) as e:  # AttributeError to handle if the json is not a dict  # noqa: E501
+        log.error(f'Failed to retrieve morpho reward distributors from api due to {e!s}')
         return
+
+    distributors: dict[ChainID, set] = defaultdict(set)
+    for item in response_data:
+        try:
+            distributors[ChainID.deserialize(item['chain_id'])].add(
+                deserialize_evm_address(item['distributor']['address']),
+            )
+        except (DeserializationError, TypeError, KeyError) as e:
+            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+            log.error(f'Failed to deserialize morpho reward distributor entry from api due to {error}')  # noqa: E501
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         for chain_id, addresses in distributors.items():
