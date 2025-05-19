@@ -27,7 +27,7 @@ py-machineid==0.7.0
 more-itertools==10.6.0  # for peekable iterators
 regex==2024.11.6  # used for unicode information in detection of spam tokens
 eth-abi==5.2.0
-polars-lts-cpu==1.27.1
+polars-lts-cpu==1.29.0
 eth-utils==5.3.0
 
 # For the rest api
