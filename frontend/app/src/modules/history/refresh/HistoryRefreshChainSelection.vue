@@ -114,6 +114,10 @@ function refresh() {
   set(open, false);
 }
 
+watch(selectedChain, () => {
+  set(search, '');
+});
+
 onMounted(() => {
   reset();
 });
@@ -122,18 +126,19 @@ onMounted(() => {
 <template>
   <RuiMenu
     v-model="open"
+    class="!border-0"
     :popper="{ placement: 'bottom', offsetSkid: 35 }"
   >
     <template #activator="{ attrs }">
       <RuiButton
         variant="outlined"
-        class="px-3 py-3 !outline-none rounded-none"
+        color="primary"
+        class="px-3 py-3 rounded-l-none -ml-[1px]"
         :disabled="disabled"
         v-bind="attrs"
       >
         <RuiIcon
           name="lu-chevrons-up-down"
-          color="primary"
           class="size-4"
         />
       </RuiButton>
@@ -158,8 +163,7 @@ onMounted(() => {
       <div v-if="selectedChain">
         <RuiButton
           size="sm"
-          variant="text"
-          class="mx-2"
+          variant="list"
           @click.prevent="selectedChain = undefined"
         >
           <template #prepend>
