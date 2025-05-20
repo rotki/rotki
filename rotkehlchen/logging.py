@@ -3,7 +3,7 @@ import logging.config
 import re
 from collections.abc import Callable, MutableMapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 import gevent
 
@@ -13,6 +13,8 @@ from rotkehlchen.utils.misc import is_production, timestamp_to_date, ts_now
 PYWSGI_RE = re.compile(r'\[(.*)\] ')
 
 TRACE = logging.DEBUG - 5
+
+SENSITIVE_KEYS: Final = frozenset(('password', 'new_password', 'old_password'))
 
 
 def add_logging_level(
@@ -90,13 +92,23 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         This is the main post-processing function for rotki logs
 
         This function:
-        - appends all kwargs to the final message
+        - appends all kwargs to the final message, redacting any sensitive information
         - appends the greenlet id in the log message
         """
-        msg = str(given_msg)
-        greenlet = gevent.getcurrent()
+        msg, greenlet = str(given_msg), gevent.getcurrent()
         greenlet_name = get_greenlet_name(greenlet)
-        msg = greenlet_name + ': ' + msg + ','.join(f' {a[0]}={a[1]}' for a in kwargs.items())
+        if (
+                'json_data' in kwargs and
+                isinstance((data := kwargs['json_data']), dict) and
+                len(sensitive_found := SENSITIVE_KEYS & data.keys()) > 0
+        ):
+            sanitized_data = kwargs['json_data'].copy()
+            for key in sensitive_found:
+                sanitized_data[key] = '[REDACTED]'
+
+            kwargs['json_data'] = sanitized_data
+
+        msg = greenlet_name + ': ' + msg + ','.join(f' {k}={v}' for k, v in kwargs.items())
         return msg, {}
 
     def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:
