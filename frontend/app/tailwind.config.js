@@ -127,6 +127,7 @@ export default {
     'lg:col-span-2',
     'min-h-[560px]',
     '!pt-0',
+    'h-[30rem]',
   ],
   plugins: [generated, containerQueryPlugin],
 };

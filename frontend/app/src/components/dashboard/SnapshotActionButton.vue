@@ -33,7 +33,6 @@ const { fetchNetValue } = useStatisticsStore();
 const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
 const { ignoreSnapshotError } = storeToRefs(useFrontendSettingsStore());
-const { isDark } = useRotkiTheme();
 
 async function refreshAllAndSave() {
   set(visible, false);
@@ -115,12 +114,13 @@ watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
     <template #activator="{ attrs }">
       <MenuTooltipButton
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
-        :variant="!isDark ? 'default' : 'text'"
+        variant="default"
         size="sm"
         custom-color
         v-bind="attrs"
+        class="!p-2"
       >
-        <RuiIcon name="lu-chevron-down" />
+        <RuiIcon name="lu-git-commit-vertical" />
       </MenuTooltipButton>
     </template>
     <div class="p-4 md:w-[16rem] w-full">
