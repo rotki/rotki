@@ -111,17 +111,27 @@ export interface SettingsApi {
   };
 }
 
-export interface GraphApi {
-  getCanvasCtx: () => CanvasRenderingContext2D;
-  baseColor: ComputedRef<string>;
-  gradient: ComputedRef<CanvasGradient>;
-  secondaryColor: ComputedRef<string>;
-  backgroundColor: ComputedRef<string>;
-  fontColor: ComputedRef<string>;
-  gridColor: ComputedRef<string>;
+interface GradientArea {
+  color: {
+    colorStops: {
+      color: string;
+      offset: number;
+    }[];
+    type: string;
+    x: number;
+    x2: number;
+    y: number;
+    y2: number;
+  };
 }
 
-type GetGraphApi = (canvasId: string) => GraphApi;
+export interface GraphApi {
+  baseColor: ComputedRef<string>;
+  gradient: ComputedRef<GradientArea>;
+  secondaryColor: ComputedRef<string>;
+}
+
+type GetGraphApi = () => GraphApi;
 
 export interface PremiumApi {
   readonly date: DateUtilities;

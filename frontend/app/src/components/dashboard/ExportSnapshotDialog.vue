@@ -9,7 +9,6 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { downloadFileByBlobResponse } from '@/utils/download';
 import dayjs from 'dayjs';
 
@@ -17,11 +16,10 @@ const display = defineModel<boolean>({ default: false, required: true });
 
 const props = withDefaults(
   defineProps<{
+    balance: BigNumber;
     timestamp?: number;
-    balance?: number;
   }>(),
   {
-    balance: 0,
     timestamp: 0,
   },
 );
@@ -35,13 +33,6 @@ const editMode = ref<boolean>(false);
 const { setMessage } = useMessageStore();
 const snapshotApi = useSnapshotApi();
 const { appSession, openDirectory } = useInterop();
-
-const formattedSelectedBalance = computed<BigNumber | null>(() => {
-  if (get(balance))
-    return get(bigNumberifyFromRef(balance));
-
-  return null;
-});
 
 async function downloadSnapshot() {
   const response = await snapshotApi.downloadSnapshot(get(timestamp));
@@ -177,8 +168,8 @@ function showDeleteConfirmation() {
           {{ t('common.balance') }}:
         </div>
         <AmountDisplay
-          v-if="formattedSelectedBalance"
-          :value="formattedSelectedBalance"
+          v-if="balance"
+          :value="balance"
           :fiat-currency="currencySymbol"
           class="font-bold"
         />

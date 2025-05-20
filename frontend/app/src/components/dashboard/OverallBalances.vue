@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
+import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
@@ -15,7 +16,7 @@ import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSe
 import dayjs from 'dayjs';
 
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const sessionStore = useSessionSettingsStore();
 const { update } = sessionStore;
 const { timeframe } = storeToRefs(sessionStore);
@@ -32,14 +33,6 @@ const isLoading = logicOr(
   shouldShowLoadingScreen(Section.BLOCKCHAIN),
   isSectionLoading(Section.BLOCKCHAIN),
 );
-
-const adjustedTotalNetWorthFontSize = computed(() => {
-  const digits = get(totalNetWorth).toFormat(get(floatingPrecision)).replace(/\./g, '').replace(/,/g, '').length;
-
-  // this number adjusted visually
-  // when we use max floating precision (8), it won't overlap
-  return Math.min(1, 12 / digits);
-});
 
 const allTimeframes = computed(() =>
   timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()),
@@ -87,12 +80,12 @@ const indicator = computed(() => {
 const balanceClass = computed(() => {
   const delta = get(balanceDelta);
   if (delta.isNegative())
-    return 'bg-rui-error-lighter';
+    return '!text-rui-error-lighter';
 
   if (delta.isZero())
-    return 'bg-rui-grey-500';
+    return '!text-rui-grey-500';
 
-  return 'bg-rui-success';
+  return '!text-rui-success';
 });
 
 async function setTimeframe(value: TimeFrameSetting) {
@@ -107,98 +100,86 @@ onMounted(() => {
   if (!isPremium && !isPeriodAllowed(selectedTimeframe))
     update({ timeframe: TimeFramePeriod.TWO_WEEKS });
 });
-
-const { showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
-const chartSectionHeight = computed<string>(() => {
-  const height = 208 + (get(showGraphRangeSelector) ? 60 : 0);
-  return `${height}px`;
-});
 </script>
 
 <template>
   <RuiCard
     class="overall-balances"
-    content-class="grid md:grid-cols-2 lg:grid-cols-12 p-2 gap-4 overflow-hidden"
+    content-class="grid grid-cols-1 lg:grid-cols-12 p-2 gap-4 overflow-hidden"
   >
-    <div class="lg:col-span-5 flex flex-col items-center justify-center">
+    <div
+      class="lg:col-span-4 flex flex-col justify-start lg:p-4"
+    >
+      <div class="text-rui-text-secondary">
+        {{ t('overall_balances.total_balance') }}
+      </div>
       <div
-        class="text-center font-medium mb-2 flex"
+        class="font-medium"
         data-cy="overall-balances__net-worth"
-        :style="`font-size: ${adjustedTotalNetWorthFontSize}em`"
       >
         <AmountDisplay
-          class="ps-4"
           xl
           show-currency="symbol"
           :fiat-currency="currencySymbol"
           :value="totalNetWorth"
         />
       </div>
-      <div class="flex justify-center items-center">
-        <RuiSkeletonLoader
-          v-if="isLoading"
-          class="w-[10.625rem] h-8"
-          rounded="full"
+
+      <RuiSkeletonLoader
+        v-if="isLoading"
+        class="w-48 h-8"
+      />
+      <div
+        v-else
+        :class="balanceClass"
+        class="flex flex-row items-center gap-2 rounded-full font-medium"
+      >
+        <RuiIcon
+          :name="indicator"
+          size="16"
         />
-        <span
-          v-else
-          :class="balanceClass"
-          class="py-1 px-3 flex flex-row rounded-full min-h-[2rem] min-w-[170px] text-white dark:text-rui-light-text"
-        >
-          <span>
-            <RuiIcon :name="indicator" />
-          </span>
+        <PercentageDisplay
+          v-if="!isLoading"
+          class="pr-4"
+          :value="percentage"
+        />
+        <span>
+          (
           <AmountDisplay
             v-if="!isLoading"
-            class="px-3"
             show-currency="symbol"
             :fiat-currency="currencySymbol"
             :value="balanceDelta"
           />
-          <PercentageDisplay
-            v-if="!isLoading"
-            class="pr-2 opacity-80"
-            :value="percentage"
-          />
+          )
         </span>
       </div>
-      <TimeframeSelector
-        class="pt-6"
-        :model-value="timeframe"
-        :visible-timeframes="visibleTimeframes"
-        @update:model-value="setTimeframe($event)"
-      />
     </div>
-    <div class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart relative">
-      <NetWorthChart
-        :chart-data="timeframeData"
-        :timeframe="timeframe"
-        :timeframes="allTimeframes"
-        :loading="isLoading"
-      />
-      <div
-        v-if="isLoading"
-        class="absolute top-0 -left-5 overall-balances__net-worth-chart__loader h-full w-[calc(100%+20px)] flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-[#1e1e1e]/[0.9] z-[6]"
-      >
-        <RuiProgress
-          circular
-          variant="indeterminate"
-          color="primary"
-          size="24"
-          thickness="2"
+    <div class="lg:col-span-8 flex flex-col">
+      <div class="flex justify-start lg:justify-end items-center md:pt-4 gap-4">
+        <TimeframeSelector
+          :model-value="timeframe"
+          :visible-timeframes="visibleTimeframes"
+          @update:model-value="setTimeframe($event)"
         />
-        {{ t('overall_balances.loading') }}
+        <SnapshotActionButton />
+      </div>
+      <div class="relative">
+        <NetWorthChart :chart-data="timeframeData" />
+        <div
+          v-if="isLoading"
+          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-[#1e1e1e]/[0.9] z-[6]"
+        >
+          <RuiProgress
+            circular
+            variant="indeterminate"
+            color="primary"
+            size="24"
+            thickness="2"
+          />
+          {{ t('overall_balances.loading') }}
+        </div>
       </div>
     </div>
   </RuiCard>
 </template>
-
-<style scoped lang="scss">
-.overall-balances {
-  &__net-worth-chart {
-    &__loader {
-      min-height: v-bind(chartSectionHeight);
-    }
-  }
-}
-</style>
