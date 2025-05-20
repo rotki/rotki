@@ -281,7 +281,8 @@ defineExpose({
         <RuiChip
           size="sm"
           :color="getColor(row.status)"
-          class="uppercase [&_span]:text-xs [&_span]:inline-flex [&_span]:gap-1 [&_span]:items-center font-semibold"
+          content-class="text-xs inline-flex gap-1 items-center"
+          class="uppercase font-semibold"
         >
           {{ row.status }}
 

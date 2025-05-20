@@ -152,7 +152,7 @@ export class AssetsManagerPage {
     cy.get('@submitButton').should('be.enabled');
   }
 
-  addAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
+  addAnEvmAsset(address = '0x12bb890508c125661e03b09ec06e404bc9289040'): void {
     // get the fields
     cy.get('[data-cy=chain-select]').as('chainInput');
 

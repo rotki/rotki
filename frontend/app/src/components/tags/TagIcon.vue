@@ -21,8 +21,9 @@ withDefaults(
 <template>
   <div class="flex items-center">
     <RuiChip
-      class="tag font-medium [&>span]:flex !rounded-md [&>span]:font-mono shrink-0"
+      class="tag font-medium !rounded-md shrink-0"
       tile
+      content-class="flex font-mono"
       :size="small ? 'sm' : 'md'"
       :bg-color="`#${tag.backgroundColor}`"
       :text-color="`#${tag.foregroundColor}`"
