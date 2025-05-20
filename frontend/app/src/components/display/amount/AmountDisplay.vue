@@ -486,7 +486,8 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
             <RuiChip
               v-if="assetOracle"
               color="warning"
-              class="[&_span]:!text-[10px] font-bold leading-3 uppercase !p-0.5 mb-0.5 mt-0.5"
+              content-class="!text-[10px]"
+              class="font-bold leading-3 uppercase !p-0.5 mb-0.5 mt-0.5"
               size="sm"
             >
               <div class="flex gap-1">
