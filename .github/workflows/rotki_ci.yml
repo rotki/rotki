@@ -229,10 +229,13 @@ jobs:
           persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@clippy
+        with:
+          toolchain: 1.86.0
 
       - uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+          workspaces: colibri
 
       - run: cargo check --workspace && cargo clippy --workspace
         working-directory: ./colibri
