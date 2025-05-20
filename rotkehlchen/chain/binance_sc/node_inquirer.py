@@ -8,7 +8,13 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BSC_BNB
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EVMTxHash,
+    SupportedBlockchain,
+    Timestamp,
+)
 
 from .constants import (
     ARCHIVE_NODE_CHECK_ADDRESS,
@@ -53,4 +59,20 @@ class BinanceSCInquirer(EvmNodeInquirer):
             ARCHIVE_NODE_CHECK_ADDRESS,
             ARCHIVE_NODE_CHECK_BLOCK,
             ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
+        )
+
+    def get_blocknumber_by_time(
+            self,
+            ts: 'Timestamp',
+            closest: Literal['before', 'after'] = 'before',
+    ) -> int:
+        """Searches for the blocknumber of a specific timestamp.
+        Reimplemented because bsc doesn't have a blockscout api.
+
+        May raise RemoteError
+        """
+        return self.etherscan.get_blocknumber_by_time(
+            chain_id=self.chain_id,
+            ts=ts,
+            closest=closest,
         )

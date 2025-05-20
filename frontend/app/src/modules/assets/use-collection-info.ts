@@ -55,6 +55,16 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
       for (const collection in assetCollections) {
         collectionMainAsset[collection] = assetCollections[collection].mainAsset ?? null;
       }
+
+      const foundIdentifiers = Object.keys(assets);
+      const identifiers = [...chunk];
+      const missingIdentifiers = identifiers.filter(id => !foundIdentifiers.includes(id));
+
+      for (const identifier of missingIdentifiers) {
+        if (assetToCollection[identifier] === undefined) {
+          assetToCollection[identifier] = null;
+        }
+      }
     }
     return { assetToCollection, collectionMainAsset };
   }

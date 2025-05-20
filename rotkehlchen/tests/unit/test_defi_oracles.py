@@ -80,7 +80,7 @@ def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylin
         from_asset=A_1INCH,
         to_asset=A_LINK,
         timestamp=1653454800,
-    ) == Price(FVal('0.139152791117568194371010708385710558327124437415165328415539849552333178019986'))  # noqa: E501
+    ) == Price(FVal('0.138028273714701208394300881476926660441297470010798769978393676678931896933043'))  # noqa: E501
 
     with pytest.raises(NoPriceForGivenTimestamp):
         inquirer_defi._uniswapv3.query_historical_price(

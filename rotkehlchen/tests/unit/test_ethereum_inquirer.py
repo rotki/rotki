@@ -324,17 +324,18 @@ def _test_get_blocknumber_by_time(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_blocknumber_by_time_blockscout(ethereum_inquirer):
     """Queries blockscout api for known block times"""
-    with patch(
-        'rotkehlchen.externalapis.etherscan.Etherscan.get_blocknumber_by_time',
-        side_effect=RemoteError('Mocked failed etherscan api query'),
-    ):
-        _test_get_blocknumber_by_time(ethereum_inquirer)
+    _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
-    _test_get_blocknumber_by_time(ethereum_inquirer)
+    with patch.object(
+        ethereum_inquirer.blockscout,
+        'get_blocknumber_by_time',
+        side_effect=RemoteError('Intentional blockscout remote error to test etherscan'),
+    ):
+        _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

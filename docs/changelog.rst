@@ -41,6 +41,12 @@ Changelog
 * :bug:`-` rotki will now correctly decode crvUSD claims from the Curve fees distributor.
 * :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
 
+* :release:`1.38.4 <2025-05-20>`
+* :feature:`-` Blockscout will now be prioritized when querying block number.
+* :bug:`-` Users should no longer experience a loading loop for asset information (name, symbol) on different areas of the application.
+* :bug:`-` rotki password will no longer appear in the debug logs.
+* :bug:`-` Ethereum and Base transaction decoding should now work fine again after the Morpho API deserialization problems.
+
 * :release:`1.38.3 <2025-05-16>`
 * :bug:`-` Fix slow history querying due to the curve DNS domain hijacking which caused us to switch to onchain queries for thousands of pools.
 * :bug:`-` Users will now be able to use the filter properly after deleting the selected filter that is being edited.

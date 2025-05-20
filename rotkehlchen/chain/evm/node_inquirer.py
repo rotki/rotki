@@ -1379,9 +1379,14 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             closest: Literal['before', 'after'] = 'before',
     ) -> int:
         """Searches for the blocknumber of a specific timestamp
-
+        - Performs the blockscout api call by default first
+        - If RemoteError gets raised it queries etherscan
         May raise RemoteError
         """
+        assert self.blockscout is not None, 'Blockscout should be set'
+        with suppress(RemoteError):
+            return self.blockscout.get_blocknumber_by_time(ts, closest)
+
         return self.etherscan.get_blocknumber_by_time(
             chain_id=self.chain_id,
             ts=ts,
