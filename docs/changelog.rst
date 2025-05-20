@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9965` Users will now be able to chose which chains and addresses they can refresh history events for.
 * :bug:`-` Users will now see the correct latest price on the asset chart when the currently selected currency is not USD.
 * :feature:`9937` Users will now only see a failed/disconnected state when an RPC node fails to connect, the default non-connected state has been changed to Ready to avoid confusion.
 * :feature:`-` Account labels will now be applied to all chains for which activity is auto-detected unless the existing labels differ between chains.
