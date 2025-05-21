@@ -56,6 +56,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     EVM_EVMLIKE_LOCATIONS_TYPE,
+    EVM_LOCATIONS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -228,6 +229,37 @@ class DBHistoryEvents:
                 )
 
         return None
+
+    @staticmethod
+    def reset_evm_events_for_redecode(
+            write_cursor: 'DBCursor',
+            location: EVM_LOCATIONS_TYPE,
+    ) -> None:
+        """Reset EVM events and transaction decode status for the given location.
+
+        Deletes all non-customized EVM events and marks their transactions
+        as not decoded to enable re-processing.
+        """
+        customized_events_num = write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        ).fetchone()[0]
+        querystr = (
+            'DELETE FROM history_events WHERE identifier IN ('
+            'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+            'ON H.identifier=E.identifier AND E.tx_hash IN '
+            '(SELECT tx_hash FROM evm_transactions) AND H.location = ?)'
+        )
+        bindings: tuple = (location.serialize_for_db(),)
+        if customized_events_num != 0:
+            querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+            bindings += (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+        write_cursor.execute(querystr, bindings)
+        write_cursor.execute(
+            'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+            (EVMTX_DECODED,),
+        )
 
     def delete_events_by_location(
             self,

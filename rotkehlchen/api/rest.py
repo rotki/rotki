@@ -2881,8 +2881,8 @@ class RestAPI:
         This logic is executed by the frontend in pages where the set of transactions needs to be
         up to date, for example, the liquity module.
 
-        If force redecode is True then all related events, except the
-        customized ones are deleted and rececoded.
+        If force redecode is True then all related evm events, except the
+        customized ones are deleted and re-decoded.
 
         Returns the number of decoded transactions (not events in transactions)
         """
@@ -2893,7 +2893,7 @@ class RestAPI:
         for evm_chain in evm_chains:
             if force_redecode:
                 with self.rotkehlchen.data.db.user_write() as write_cursor:
-                    dbevents.delete_events_by_location(
+                    dbevents.reset_evm_events_for_redecode(
                         write_cursor=write_cursor,
                         location=Location.from_chain_id(evm_chain),
                     )

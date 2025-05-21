@@ -21,11 +21,16 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_W
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import (
+    EvmEventFilterQuery,
+    EvmTransactionsFilterQuery,
+    HistoryEventFilterQuery,
+)
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
@@ -1572,3 +1577,65 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
             has_premium=True,
         )
     assert events_before_redecoding == events_after_redecoding
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
+def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that forcefully redecoding transactions does not remove EthWithdrawalEvent or EthBlockEvent instances.
+    Regression test for https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=111708772"
+    """  # noqa: E501
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    eth_transactions, _ = setup_ethereum_transactions_test(
+        database=rotki.data.db,
+        transaction_already_queried=True,
+        one_receipt_in_db=True,
+        second_receipt_in_db=True,
+    )
+
+    for tx in eth_transactions:
+        get_decoded_events_of_transaction(
+            evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+            tx_hash=tx.tx_hash,
+        )
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[EthWithdrawalEvent(
+                validator_index=123456,
+                timestamp=TimestampMS(1620000200000),
+                amount=FVal('0.1'),
+                withdrawal_address=string_to_evm_address('0x1234567890123456789012345678901234567890'),
+                is_exit=False,
+                event_identifier='eth_withdrawal_1',
+            ), EthBlockEvent(
+                validator_index=123456,
+                timestamp=TimestampMS(1620000300000),
+                amount=FVal('0.01'),
+                fee_recipient=string_to_evm_address('0x0987654321098765432109876543210987654321'),
+                fee_recipient_tracked=True,
+                block_number=15000000,
+                is_mev_reward=False,
+                event_identifier='eth_block_1',
+            )],
+        )
+        assert dbevents.get_history_events_count(
+            cursor=write_cursor,
+            query_filter=HistoryEventFilterQuery.make(),
+        )[0] == 5
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmpendingtransactionsdecodingresource',
+        ), json={'async_query': False, 'ignore_cache': True},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result == {'decoded_tx_number': {'ethereum': 2}}
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert dbevents.get_history_events_count(
+            cursor=cursor,
+            query_filter=HistoryEventFilterQuery.make(),
+        )[0] == 5
