@@ -45,5 +45,9 @@ function toggleSelect(): void {
       horizontal
     />
     <div class="grow" />
+    <RuiIcon
+      name="lu-chevron-right"
+      class="mx-2 text-rui-text-secondary"
+    />
   </div>
 </template>

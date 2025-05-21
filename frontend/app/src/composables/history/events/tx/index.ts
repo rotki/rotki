@@ -171,9 +171,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
       return;
     logger.debug(`querying for ${queryType} events`);
-
     const taskType = TaskType.QUERY_ONLINE_EVENTS;
-
     const { taskId } = await queryOnlineHistoryEvents({
       asyncQuery: true,
       queryType,
@@ -291,7 +289,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
 
     const evmAccounts: EvmChainAddress[] = disableEvmEvents ? [] : (accounts ?? getEvmAccounts(chains));
-
     const evmLikeAccounts: EvmChainAddress[] = (disableEvmEvents || accounts) ? [] : getEvmLikeAccounts(chains);
 
     if (evmAccounts.length + evmLikeAccounts.length > 0) {
@@ -304,14 +301,18 @@ export const useHistoryTransactions = createSharedComposable(() => {
       if (!disableEvmEvents)
         await fetchUndecodedTransactionsStatus();
 
-      await Promise.allSettled([
+      const asyncOperations: Promise<void>[] = [
         refreshTransactionsHandler(evmAccounts, TransactionChainType.EVM),
-        refreshTransactionsHandler(evmLikeAccounts, TransactionChainType.EVMLIKE),
-        queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
-        queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
-        queryAllExchangeEvents(),
-      ]);
-
+      ];
+      if (!accounts) {
+        asyncOperations.push(
+          refreshTransactionsHandler(evmLikeAccounts, TransactionChainType.EVMLIKE),
+          queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
+          queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
+          queryAllExchangeEvents(),
+        );
+      }
+      await Promise.allSettled(asyncOperations);
       if (!disableEvmEvents)
         queue.queue('undecoded-transactions-status-final', async () => fetchUndecodedTransactionsStatus());
     }
@@ -341,7 +342,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
   const repullingTransactions = async (payload: RepullingTransactionPayload, refresh: () => void): Promise<void> => {
     const taskType = TaskType.REPULLING_TXS;
-
     const { taskId } = await repullingTransactionsCaller(payload);
 
     const messagePayload = {
