@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError, UnableToDecryptRemoteData
@@ -69,7 +69,7 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
     except (RemoteError, UnableToDecryptRemoteData) as e:
         log.error(f'Failed to retrieve StakeDAO gauges for {chain_id} lockers and strategies from API due to {e!s}')  # noqa: E501
 
-    only_gauges = set()
+    only_gauges, encounter = set(), TokenEncounterInfo(description=f'Querying stakedao gauges for {evm_inquirer.chain_name}', should_notify=False)  # noqa: E501
     for gauge_token_addr, underlying_addr in all_gauges:
         try:
             get_or_create_evm_token(
@@ -77,12 +77,15 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
                 protocol=CPT_STAKEDAO,
                 userdb=evm_inquirer.database,
                 evm_address=gauge_token_addr,
+                evm_inquirer=evm_inquirer,
+                encounter=encounter,
                 underlying_tokens=[UnderlyingToken(
                     address=get_or_create_evm_token(
                         chain_id=evm_inquirer.chain_id,
                         evm_inquirer=evm_inquirer,
                         userdb=evm_inquirer.database,
                         evm_address=underlying_addr,
+                        encounter=encounter,
                     ).evm_address,
                     weight=ONE,
                     token_kind=EvmTokenKind.ERC20,

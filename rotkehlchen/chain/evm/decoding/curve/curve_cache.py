@@ -112,7 +112,7 @@ def _ensure_single_pool_curve_tokens_existence(
         pool: CurvePoolData,
 ) -> CurvePoolData | None:
     encounter = TokenEncounterInfo(
-        description=f'Querying curve pools for {evm_inquirer.chain_id.to_name()}',
+        description=f'Querying curve pools for {evm_inquirer.chain_name}',
         should_notify=False,
     )
     # Ensure pool coins exist in the globaldb.

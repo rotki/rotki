@@ -70,7 +70,7 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         chain_id=vault_chain_id,
         decimals=deserialize_int(vault['assets']['borrowed']['decimals']),
         symbol=vault['assets']['borrowed']['symbol'],
-        encounter=TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False),  # noqa: E501
+        encounter=(encounter := TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False)),  # noqa: E501
     )
     vault_token = get_or_create_evm_token(
         userdb=database,
@@ -84,7 +84,7 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
             token_kind=EvmTokenKind.ERC20,
             weight=ONE,
         )],
-        encounter=TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False),  # noqa: E501
+        encounter=encounter,
     )
     gauge_address = None
     if (raw_gauge_address := vault.get('gaugeAddress')) is not None:
@@ -94,7 +94,7 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
             name=f'Curve.fi {vault_token.name} Gauge Deposit',
             symbol=f'{vault_token.symbol}-gauge',
             evm_address=(gauge_address := deserialize_evm_address(raw_gauge_address)),
-            encounter=TokenEncounterInfo(description='Querying Curve lending vaults', should_notify=False),  # noqa: E501
+            encounter=encounter,
         )
 
     # Cache the controller and AMM addresses to avoid having to make a call
