@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { EvmChainInfo } from '@/types/api/chains';
+import type { ChainData } from '@/modules/history/refresh/types';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 
 const modelValue = defineModel<string[]>({ required: true });
 
 const props = defineProps<{
-  item: EvmChainInfo;
+  item: ChainData;
   addresses: string[];
   processing: boolean;
 }>();
@@ -27,7 +27,7 @@ function toggleSelect(): void {
 <template>
   <div
     class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
-    @click.prevent="emit('pick-addresses', item.evmChainName)"
+    @click.prevent="emit('pick-addresses', item.evmChain)"
   >
     <RuiCheckbox
       :model-value="modelValue.length === addresses.length"
@@ -41,7 +41,7 @@ function toggleSelect(): void {
     <LocationIcon
       size="1.25"
       class="text-sm"
-      :item="item.evmChainName"
+      :item="item.evmChain"
       horizontal
     />
     <div class="grow" />

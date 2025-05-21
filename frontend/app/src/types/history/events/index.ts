@@ -351,10 +351,12 @@ export type HistoryEventEntry = HistoryEvent & HistoryEventMeta;
 
 export type HistoryEventRow = HistoryEventEntry | HistoryEventEntry[];
 
-export enum OnlineHistoryEventsQueryType {
-  ETH_WITHDRAWALS = 'eth_withdrawals',
-  BLOCK_PRODUCTIONS = 'block_productions',
-}
+export const OnlineHistoryEventsQueryType = {
+  BLOCK_PRODUCTIONS: 'block_productions',
+  ETH_WITHDRAWALS: 'eth_withdrawals',
+} as const;
+
+export type OnlineHistoryEventsQueryType = typeof OnlineHistoryEventsQueryType[keyof typeof OnlineHistoryEventsQueryType];
 
 export interface OnlineHistoryEventsRequestPayload {
   readonly asyncQuery: boolean;

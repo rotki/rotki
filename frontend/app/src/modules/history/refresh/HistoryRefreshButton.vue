@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { EvmChainAddress } from '@/types/history/events';
-import HistoryRefreshChainSelection from '@/modules/history/refresh/HistoryRefreshChainSelection.vue';
+import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import HistoryRefreshSelection from '@/modules/history/refresh/HistoryRefreshSelection.vue';
 import { useConfirmStore } from '@/store/confirm';
 
 defineProps<{
   processing: boolean;
 }>();
 
-const emit = defineEmits<{ refresh: [accounts?: EvmChainAddress[]] }>();
+const emit = defineEmits<{ refresh: [payload?: HistoryRefreshEventData] }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -47,7 +47,7 @@ function confirmRefresh() {
       {{ t('transactions.refresh_tooltip') }}
     </RuiTooltip>
 
-    <HistoryRefreshChainSelection
+    <HistoryRefreshSelection
       :processing="processing"
       :disabled="processing"
       @refresh="emit('refresh', $event)"
