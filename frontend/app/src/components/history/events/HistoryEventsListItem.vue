@@ -51,6 +51,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     validatorIndex?: number;
     blockNumber?: number;
     counterparty?: string;
+    extraData?: Record<string, any>;
   } = {};
 
   if ('validatorIndex' in event)
@@ -63,6 +64,9 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 
   if ('counterparty' in event && event.counterparty)
     data.counterparty = event.counterparty;
+
+  if ('extraData' in event && event.extraData)
+    data.extraData = event.extraData;
 
   const { asset, autoNotes, userNotes } = pick(event, ['userNotes', 'autoNotes', 'asset']);
 
