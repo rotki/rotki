@@ -28,7 +28,7 @@ const { getAddresses } = useAccountAddresses();
 const { t } = useI18n({ useScope: 'global' });
 
 const filtered = computed<EvmChainInfo[]>(() => {
-  const chains = [...get(txEvmChains)];
+  const chains = [...get(txEvmChains)].filter(item => getAddresses(item.id)?.length > 0);
   const query = getTextToken(get(search));
   if (!query)
     return chains;
@@ -106,6 +106,8 @@ function toggleAllChains() {
 
 function reset() {
   set(selection, emptySelection());
+  set(selectedChain, undefined);
+  set(search, '');
 }
 
 function refresh() {

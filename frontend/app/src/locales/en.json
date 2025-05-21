@@ -2808,6 +2808,12 @@
     "fee_description": "{notes} with fee: {feeText}",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}"
   },
+  "history_refresh_button": {
+    "confirm_refresh": {
+      "message": "Are you sure you want to proceed with refreshing all your account transactions and exchange events? This action can take a significant amount of time.",
+      "title": "Confirm history refresh"
+    }
+  },
   "history_refresh_chain_selection": {
     "back_to_chain": "Back to chain selection",
     "refresh": "Refresh {accounts} accounts",
