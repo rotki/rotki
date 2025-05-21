@@ -14,7 +14,7 @@ import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, pol
 import { type AppKit, createAppKit, useAppKitProvider } from '@reown/appkit/vue';
 import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
+import { BrowserProvider, formatUnits, getAddress, type TransactionResponse } from 'ethers';
 import { useTradeApi } from './send/use-trade-api';
 
 export const ROTKI_DAPP_METADATA = {
@@ -115,7 +115,7 @@ export const useWalletStore = defineStore('wallet', () => {
       assert(appKit);
 
       set(connected, account.isConnected);
-      set(connectedAddress, account.isConnected ? account.address : undefined);
+      set(connectedAddress, account.isConnected && account.address ? getAddress(account.address) : undefined);
 
       if (account.isConnected) {
         const provider: any = appKit.getProvider(EIP155);
