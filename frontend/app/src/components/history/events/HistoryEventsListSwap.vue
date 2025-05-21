@@ -118,18 +118,33 @@ watch(expanded, () => {
   <TransitionGroup
     tag="div"
     name="list"
-    class="relative"
+    class="relative group"
     :class="{
-      'grid grid-cols-10 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start gap-3 gap-y-1 @5xl:min-h-[92px]': !expanded,
+      'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !expanded,
       'flex flex-col': expanded,
       'transition-wrapper': !isInitialRender,
+      'md:pl-3': !expanded,
     }"
   >
     <LazyLoader
       v-if="!expanded"
       key="history-event-type"
-      class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 md:pl-3"
+      class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative"
     >
+      <RuiButton
+        size="sm"
+        icon
+        color="primary"
+        class="absolute top-2 -left-1 size-5"
+        @click="expanded = !expanded"
+      >
+        <RuiIcon
+          class="hidden group-hover:block"
+          name="lu-unfold-vertical"
+          size="14"
+        />
+        <span class="group-hover:hidden">{{ events.length }}</span>
+      </RuiButton>
       <HistoryEventType
         icon="lu-arrow-right-left"
         :event="events[0]"
@@ -140,19 +155,34 @@ watch(expanded, () => {
 
     <div
       key="history-event-assets"
-      class="flex flex-col col-span-10 md:col-span-6 @5xl:!col-span-8"
+      class="flex flex-col col-span-10 md:col-span-6 @5xl:!col-span-8 relative"
       :class="{
-        'md:py-2 grid grid-cols-[1fr_2.5rem_1fr]': !expanded,
+        'md:py-2 grid grid-cols-10': !expanded,
       }"
     >
+      <RuiButton
+        v-if="expanded"
+        size="sm"
+        icon
+        color="primary"
+        class="absolute top-2.5 -left-2 md:left-1.5 size-5"
+        @click="expanded = !expanded"
+      >
+        <RuiIcon
+          class="hidden group-hover:block"
+          name="lu-fold-vertical"
+          size="14"
+        />
+        <span class="group-hover:hidden">{{ events.length }}</span>
+      </RuiButton>
       <template
         v-for="(event, eventIndex) in usedEvents"
         :key="event.identifier"
       >
         <HistoryEventsListItem
           :class="{
-            'col-start-1': !expanded && event.eventSubtype === 'spend',
-            'col-start-3': !expanded && event.eventSubtype === 'receive',
+            'col-start-1 col-span-4': !expanded && event.eventSubtype === 'spend',
+            'col-start-6 col-span-5': !expanded && event.eventSubtype === 'receive',
           }"
           :item="event"
           :index="eventIndex"
@@ -170,7 +200,7 @@ watch(expanded, () => {
         <LazyLoader
           v-if="!expanded && eventIndex === 0 && usedEvents.length > 0"
           key="swap-arrow"
-          class="flex items-center px-2 @md:pl-0 h-14 col-start-2"
+          class="flex items-center px-2 @md:pl-0 h-14 col-start-5"
         >
           <RuiIcon
             class="text-rui-grey-400 dark:text-rui-grey-600"
@@ -184,7 +214,7 @@ watch(expanded, () => {
     <LazyLoader
       v-if="!expanded && getCompactNotes(events)"
       key="history-event-notes"
-      class="py-2 pt-4 md:pl-3 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
+      class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
       min-height="80"
     >
       <HistoryEventNote
@@ -209,26 +239,6 @@ watch(expanded, () => {
       />
     </LazyLoader>
   </TransitionGroup>
-  <LazyLoader
-    class="pb-2"
-    min-height="36"
-  >
-    <RuiButton
-      variant="text"
-      color="primary"
-      @click="expanded = !expanded"
-    >
-      <template #prepend>
-        <RuiIcon
-          name="lu-chevron-down"
-          size="16"
-          class="transition-all"
-          :class="{ 'rotate-180': expanded }"
-        />
-      </template>
-      {{ !expanded ? t('transactions.events.view.view_detail') : t('transactions.events.view.compact_view') }}
-    </RuiButton>
-  </LazyLoader>
 </template>
 
 <style lang="scss" scoped>

@@ -81,28 +81,27 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
     :class="{
       'bg-rui-error/[0.05]': isHighlighted,
       'border-b': !isLast && !compact,
-      'md:pl-2': compact,
     }"
   >
     <div
       class="transition-all duration-300 ease-in-out"
       :class="{
-        'grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:pl-3': !compact,
-        'py-2 md:p-2': compact,
+        'grid md:grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:pl-3': !compact,
+        'py-2 md:py-2': compact,
       }"
     >
       <HistoryEventType
         v-if="!compact"
         :event="item"
         :chain="getChain(item.location)"
-        class="md:col-span-2 lg:col-span-6"
+        class="col-span-10 md:col-span-4 @5xl:!col-span-5 pt-1.5 pb-4 @5xl:py-0"
       />
 
       <HistoryEventAsset
         :event="item"
         class="transition-all duration-300"
         :class="{
-          'md:col-span-2 lg:col-span-4': !compact,
+          'col-span-10 md:col-span-6 @5xl:!col-span-4': !compact,
           'w-full !py-0': compact,
         }"
       />
@@ -113,12 +112,12 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
         :amount="item.amount"
         :chain="getChain(item.location)"
         :no-tx-hash="isNoTxHash(item)"
-        class="break-words leading-6 md:col-span-3 lg:col-span-7"
+        class="break-words leading-6 col-span-10 @md:col-span-7 @5xl:!col-span-8"
       />
 
       <HistoryEventsListItemAction
         v-if="!compact"
-        class="lg:col-span-3"
+        class="col-span-10 @md:col-span-3"
         :item="item"
         :index="index"
         :events="events"
