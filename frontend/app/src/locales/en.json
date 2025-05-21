@@ -1203,7 +1203,6 @@
       "mark_as_spam": "Mark as spam"
     },
     "amount": "Total Owned",
-    "asset_identifier": "Asset Identifier",
     "asset_symbol": "[{symbol}]",
     "backup": {
       "missing_directory": "Please select a directory"
@@ -1234,7 +1233,7 @@
       "type": "Filter by the type of the custom asset",
       "type_hint": "Search using the asset type"
     },
-    "go_to_asset_detail": "Go to asset details",
+    "go_to_asset_detail": "Asset details",
     "multi_chain_assets": "Multi Chain Assets",
     "refresh_price": "Refresh price",
     "value": "Value"

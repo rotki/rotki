@@ -79,9 +79,9 @@ function updateMenuVisibility(value: boolean) {
   <RuiMenu
     class="flex"
     :disabled="hideMenu"
-    menu-class="w-[26rem] max-w-[90%]"
+    menu-class="w-[16rem] max-w-[90%]"
     :open-on-hover="iconOnly"
-    :open-delay="300"
+    :open-delay="400"
     :close-delay="iconOnly ? 200 : 0"
     :popper="{ placement: 'bottom-start' }"
     @update:model-value="updateMenuVisibility($event)"
