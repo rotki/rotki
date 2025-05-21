@@ -2813,12 +2813,24 @@
       "title": "Confirm history refresh"
     }
   },
-  "history_refresh_chain_selection": {
+  "history_refresh_selection": {
     "back_to_chain": "Back to chain selection",
-    "refresh": "Refresh {accounts} accounts",
+    "refresh": "Refresh {total} {type}",
     "search_address": "Search by address",
     "search_chain": "Search by chain",
-    "selection": "Select one or more chains to refresh their transactions"
+    "search_events": "Search by type",
+    "search_exchanges": "Search by exchange",
+    "selection": "Select one or more to refresh their events",
+    "tabs": {
+      "chains": "Chains",
+      "exchanges": "Exchanges"
+    },
+    "type": {
+      "accounts": "Accounts | Account | Accounts",
+      "events": "Events | Event | Events",
+      "exchanges": "Exchanges | Exchange | Exchanges"
+    },
+    "validator_events": "Validator Events"
   },
   "ignore": {
     "confirm": {
@@ -3638,7 +3650,7 @@
       "ranges": {
         "all": "All Time",
         "custom": "Custom",
-        "one_day": "1D",
+        "one_day": 1.0,
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"

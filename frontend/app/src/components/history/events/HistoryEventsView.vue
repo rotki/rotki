@@ -7,10 +7,10 @@ import type {
   ShowFormData,
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
+import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
-  EvmChainAddress,
   HistoryEventRow,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
@@ -322,7 +322,7 @@ function editMissingRulesEntry(data: ShowFormData): void {
   }));
 }
 
-async function refresh(userInitiated = false, accounts?: EvmChainAddress[]): Promise<void> {
+async function refresh(userInitiated = false, payload?: HistoryRefreshEventData): Promise<void> {
   if (userInitiated)
     startPromise(historyEventMappings.refresh());
   else
@@ -332,9 +332,9 @@ async function refresh(userInitiated = false, accounts?: EvmChainAddress[]): Pro
   const entryTypesVal = get(entryTypes) || [];
   const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
   await refreshTransactions({
-    accounts,
     chains: get(onlyChains),
     disableEvmEvents,
+    payload,
     userInitiated,
   });
   startPromise(fetchDataAndLocations());

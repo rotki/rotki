@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ShowEventForm } from '@/modules/history/management/forms/form-types';
-import type { EvmChainAddress } from '@/types/history/events';
+import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
 
 const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
@@ -12,7 +12,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  'refresh': [accounts?: EvmChainAddress[]];
+  'refresh': [payload?: HistoryRefreshEventData];
   'show:form': [payload: ShowEventForm];
   'show:add-transaction-form': [];
   'show:repulling-transactions-form': [];
