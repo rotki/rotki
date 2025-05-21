@@ -560,6 +560,14 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     f'Failed to query {node_info.name} for {method!s}: '
                     f'non-checksum address {e.args[1]}',
                 ) from e
+            except requests.Timeout as e:  # Add node to failed_to_connect_nodes to prevent repeatedly timing out on the same node.  # noqa: E501
+                log.warning(
+                    f'Timed out while querying {node_info.name} for '
+                    f'{method.__name__}: {e!s}. Skipping this node in future queries.',
+                )
+                self.failed_to_connect_nodes.add(node_info.name)
+                self.web3_mapping.pop(node_info, None)
+                continue
             except (
                     RemoteError,
                     requests.exceptions.RequestException,

@@ -1,7 +1,10 @@
+import json
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
@@ -204,6 +207,44 @@ def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
         arguments=['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'],
     )
     assert result >= 0
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE, ETHEREUM_ETHERSCAN_NODE)])  # noqa: E501
+def test_rpc_request_timeout(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_manager_connect_at_start: list[WeightedNode],
+) -> None:
+    """Test that rpc timeout errors result in the node being marked as `failed to connect`.
+    Regression test for https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=111711513
+    """
+    wait_until_all_nodes_connected(
+        connect_at_start=ethereum_manager_connect_at_start,
+        evm_inquirer=ethereum_inquirer,
+    )
+    yearn_ycrv_vault = ethereum_inquirer.contracts.contract(string_to_evm_address('0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'))  # noqa: E501
+
+    def make_mock_post(
+            timeout_exception: type[requests.ReadTimeout | requests.ConnectTimeout],
+    ) -> Callable:
+        def mock_post(url, data, **kwargs):
+            data_j = json.loads(data)
+            if data_j.get('method') == 'eth_call':
+                raise timeout_exception
+
+            return requests.post(url, data, **kwargs)
+        return mock_post
+
+    for exception in (requests.ReadTimeout, requests.ConnectTimeout):  # test both read and connect timeouts  # noqa: E501
+        ethereum_inquirer.failed_to_connect_nodes = set()  # reset failed nodes
+        with patch('requests.sessions.Session.post', side_effect=make_mock_post(exception)):
+            ethereum_inquirer.call_contract(
+                contract_address=yearn_ycrv_vault.address,
+                abi=yearn_ycrv_vault.abi,
+                method_name='symbol',
+            )
+
+        assert ethereum_inquirer.failed_to_connect_nodes == {INFURA_ETH_NODE.node_info.name}
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
