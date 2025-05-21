@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
-from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, CPT_POLONIEX, CPT_UPHOLD
 from rotkehlchen.chain.ethereum.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
@@ -21,7 +21,13 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
-from .constants import ETHADDRESS_TO_KNOWN_NAME, GNOSIS_CPT_DETAILS, GTC_CLAIM
+from .constants import (
+    GNOSIS_CPT_DETAILS,
+    GTC_CLAIM,
+    KRAKEN_ADDRESSES,
+    POLONIEX_ADDRESS,
+    UPHOLD_ADDRESS,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -57,6 +63,14 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     identifier=CPT_KRAKEN,
                     label='Kraken',
                     image='kraken.svg',
+                ), CounterpartyDetails(
+                    identifier=CPT_POLONIEX,
+                    label='Poloniex',
+                    image='poloniex.svg',
+                ), CounterpartyDetails(
+                    identifier=CPT_UPHOLD,
+                    label='Uphold.com',
+                    image='uphold.svg',
                 ),
             ],
             base_tools=BaseDecoderToolsWithDSProxy(
@@ -104,7 +118,11 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
     @staticmethod
     def _address_is_exchange(address: ChecksumEvmAddress) -> str | None:
-        name = ETHADDRESS_TO_KNOWN_NAME.get(address)
-        if name and 'Kraken' in name:
+        if address in KRAKEN_ADDRESSES:
             return CPT_KRAKEN
+        elif address == UPHOLD_ADDRESS:
+            return CPT_UPHOLD
+        elif address == POLONIEX_ADDRESS:
+            return CPT_POLONIEX
+
         return None

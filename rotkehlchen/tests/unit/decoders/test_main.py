@@ -229,6 +229,8 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'puffer',
         'openocean',
         'rainbow_swaps',
+        'poloniex',
+        'uphold',
     }
 
 

@@ -2,7 +2,11 @@ import logging
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, cast
 
-from rotkehlchen.chain.ethereum.decoding.constants import ETHADDRESS_TO_KNOWN_NAME
+from rotkehlchen.chain.ethereum.decoding.constants import (
+    KRAKEN_ADDRESSES,
+    POLONIEX_ADDRESS,
+    UPHOLD_ADDRESS,
+)
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.dbhandler import DBHandler
@@ -227,7 +231,15 @@ def _hardcoded_address_to_name(
     """Returns the name of a known address or None if there is no such address"""
     if chain_address.blockchain != SupportedBlockchain.ETHEREUM:
         return None
-    return ETHADDRESS_TO_KNOWN_NAME.get(chain_address.address, None)
+
+    if chain_address.address in KRAKEN_ADDRESSES:
+        return 'Kraken'
+    elif chain_address.address == POLONIEX_ADDRESS:
+        return 'Poloniex'
+    elif chain_address.address == UPHOLD_ADDRESS:
+        return 'Uphold.com'
+
+    return None
 
 
 def _token_mappings_address_to_name(

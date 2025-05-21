@@ -664,7 +664,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     address_tylor = string_to_evm_address('0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D')
     address_nonlabel = ADDRESS_ETH
     address_firstblood = string_to_evm_address('0xAf30D2a7E90d7DC361c8C4585e9BB7D2F6f15bc7')
-    address_kraken10 = string_to_evm_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F')
+    address_kraken = string_to_evm_address('0xAe2D4617c862309A3d75A0fFB358c7a5009c673F')
     address_titan = string_to_evm_address('0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97')
     db_handler = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     db_ens = DBEns(db_handler=db_handler)
@@ -684,7 +684,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     publicly_known_addresses = [
         OptionalChainAddress(address_rotki, None),
         OptionalChainAddress(address_titan, None),
-        OptionalChainAddress(address_kraken10, SupportedBlockchain.ETHEREUM),
+        OptionalChainAddress(address_kraken, SupportedBlockchain.ETHEREUM),
         OptionalChainAddress(address_firstblood, SupportedBlockchain.ETHEREUM),
         # Below is an address that we don't know anything about
         OptionalChainAddress(to_checksum_address('0x42F47A289B1E17BCbbBc1630f112c036ed901f5d'), SupportedBlockchain.ETHEREUM),  # noqa: E501
@@ -692,7 +692,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     publicly_known_expected = [
         AddressbookEntry(address=address_rotki, blockchain=None, name='rotki.eth'),
         AddressbookEntry(address=address_titan, blockchain=None, name='Titan Builder'),
-        AddressbookEntry(address=address_kraken10, blockchain=SupportedBlockchain.ETHEREUM, name='Kraken 10'),  # noqa: E501
+        AddressbookEntry(address=address_kraken, blockchain=SupportedBlockchain.ETHEREUM, name='Kraken'),  # noqa: E501
         AddressbookEntry(address=address_firstblood, blockchain=SupportedBlockchain.ETHEREUM, name='FirstBlood'),  # noqa: E501
     ]
 

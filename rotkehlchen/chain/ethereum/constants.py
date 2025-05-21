@@ -11,6 +11,8 @@ ETH2_DEPOSIT_ADDRESS: Final = string_to_evm_address('0x00000000219ab540356cBB839
 ETHEREUM_GENESIS: Final = Timestamp(1438269973)
 
 CPT_KRAKEN: Final = 'kraken'
+CPT_POLONIEX: Final = 'poloniex'
+CPT_UPHOLD: Final = 'uphold'
 
 ETHEREUM_ETHERSCAN_NODE: Final = WeightedNode(
     node_info=NodeName(
