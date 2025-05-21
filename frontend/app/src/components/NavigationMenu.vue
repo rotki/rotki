@@ -95,7 +95,12 @@ const navItems: MenuItem[] = [
     ],
   },
   {
-    class: 'trade',
+    class: 'history',
+    type: 'item',
+    ...Routes.HISTORY,
+  },
+  {
+    class: 'onchain',
     type: 'group',
     ...Routes.ONCHAIN,
     items: [
@@ -107,19 +112,10 @@ const navItems: MenuItem[] = [
     ],
   },
   {
-    class: 'nfts',
+    class: 'staking',
     type: 'item',
-    ...Routes.NFTS,
-  },
-  {
-    class: 'history',
-    type: 'item',
-    ...Routes.HISTORY,
-  },
-  {
-    class: 'airdrops',
-    type: 'item',
-    ...Routes.AIRDROPS,
+    ...Routes.STAKING,
+    route: '/staking',
   },
   {
     class: 'statistics',
@@ -139,15 +135,19 @@ const navItems: MenuItem[] = [
     ],
   },
   {
-    class: 'staking',
-    type: 'item',
-    ...Routes.STAKING,
-    route: '/staking',
-  },
-  {
     class: 'profit-loss-report',
     type: 'item',
     ...Routes.PROFIT_LOSS_REPORTS,
+  },
+  {
+    class: 'airdrops',
+    type: 'item',
+    ...Routes.AIRDROPS,
+  },
+  {
+    class: 'nfts',
+    type: 'item',
+    ...Routes.NFTS,
   },
   {
     type: 'divider',
