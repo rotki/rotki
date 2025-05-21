@@ -38,6 +38,7 @@ interface FormatNoteParams {
   validatorIndex?: MaybeRef<number | undefined>;
   blockNumber?: MaybeRef<number | undefined>;
   counterparty?: MaybeRef<string | undefined>;
+  extraData?: MaybeRef<Record<string, any> | undefined>;
 }
 
 interface UseHistoryEventsNoteReturn {
@@ -133,6 +134,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     assetId,
     blockNumber,
     counterparty,
+    extraData,
     notes,
     noTxHash,
     validatorIndex,
@@ -140,6 +142,8 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     const asset = get(assetSymbol(assetId, {
       collectionParent: false,
     }));
+
+    const extraDataVal = get(extraData);
 
     let notesVal = get(notes);
     if (!notesVal)
@@ -216,8 +220,23 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         return putBackPunctuation();
       }
 
+      const validatorIndices = [];
+      const validatorIndexVal = get(validatorIndex);
+
+      if (validatorIndexVal) {
+        validatorIndices.push(validatorIndexVal.toString());
+      }
+
+      if (extraDataVal && 'sourceValidatorIndex' in extraDataVal) {
+        validatorIndices.push(extraDataVal.sourceValidatorIndex.toString());
+      }
+
+      if (extraDataVal && 'targetValidatorIndex' in extraDataVal) {
+        validatorIndices.push(extraDataVal.targetValidatorIndex.toString());
+      }
+
       // Check if the word is ETH2 Validator Index
-      if (get(validatorIndex)?.toString() === word) {
+      if (validatorIndices.includes(word)) {
         formats.push({
           address: word,
           chain: Blockchain.ETH2,

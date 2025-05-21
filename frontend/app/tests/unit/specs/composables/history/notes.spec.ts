@@ -280,6 +280,39 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  it('with Extra Data `sourceValidatorIndex` and `targetValidatorIndex`', () => {
+    const sourceValidatorIndex = 812312;
+    const targetValidatorIndex = 812311;
+    const notes = `Consolidate ${sourceValidatorIndex} to ${targetValidatorIndex}`;
+
+    const formatted = get(formatNotes({ notes, extraData: { sourceValidatorIndex, targetValidatorIndex } }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Consolidate',
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: `${sourceValidatorIndex}`,
+        chain: Blockchain.ETH2,
+        showHashLink: true,
+      },
+      {
+        type: NoteType.WORD,
+        word: 'to',
+      },
+      {
+        type: NoteType.ADDRESS,
+        address: `${targetValidatorIndex}`,
+        chain: Blockchain.ETH2,
+        showHashLink: true,
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
   it('with Block Number', () => {
     const blockNumber = 17173975;
     const notes = `BlockNo ${blockNumber}`;

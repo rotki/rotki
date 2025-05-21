@@ -21,6 +21,7 @@ const props = withDefaults(
     validatorIndex?: number;
     blockNumber?: number;
     counterparty?: string;
+    extraData?: Record<string, any>;
   }>(),
   {
     amount: undefined,
@@ -33,7 +34,7 @@ const props = withDefaults(
   },
 );
 
-const { amount, asset, blockNumber, counterparty, notes, noTxHash, validatorIndex } = toRefs(props);
+const { amount, asset, blockNumber, counterparty, extraData, notes, noTxHash, validatorIndex } = toRefs(props);
 
 const { formatNotes } = useHistoryEventNote();
 
@@ -42,6 +43,7 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   assetId: asset,
   blockNumber,
   counterparty,
+  extraData,
   notes,
   noTxHash,
   validatorIndex,
