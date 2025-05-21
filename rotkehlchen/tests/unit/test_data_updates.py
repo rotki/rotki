@@ -1,10 +1,12 @@
 import json
+import os
 from collections.abc import Callable
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
+from packaging.version import Version
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -27,9 +29,12 @@ from rotkehlchen.types import (
     Location,
     SupportedBlockchain,
 )
+from rotkehlchen.utils.version_check import VersionCheckResult
 
 if TYPE_CHECKING:
     from gevent import DBCursor
+
+    from rotkehlchen.db.dbhandler import DBHandler
 
 ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()
@@ -773,3 +778,19 @@ def test_location_unsupported_assets_updates(
 
     with globaldb.conn.read_ctx() as cursor:
         _check_location_unsupported_assets(cursor, after_upgrade=True)
+
+
+def test_version_used_in_updates(database: 'DBHandler') -> None:
+    """Test that the next higher bugfixes or develop version is used depending on the branch.
+    Allows updates intended for the next release to be applied during release testing.
+    """
+    with patch(
+            'rotkehlchen.db.updates.get_current_version',
+            return_value=VersionCheckResult(our_version=Version('1.38.4.dev204+gcd9b2b93f')),
+    ):
+        os.environ['GITHUB_BASE_REF'] = 'develop'
+        data_updater = RotkiDataUpdater(msg_aggregator=database.msg_aggregator, user_db=database)
+        assert data_updater.version == Version('1.39.0')
+        os.environ['GITHUB_BASE_REF'] = 'bugfixes'
+        data_updater = RotkiDataUpdater(msg_aggregator=database.msg_aggregator, user_db=database)
+        assert data_updater.version == Version('1.38.5')
