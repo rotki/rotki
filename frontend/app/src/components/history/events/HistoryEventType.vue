@@ -9,8 +9,6 @@ import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEvent,
-  isEthDepositEventRef,
-  isEvmEventRef,
   isOnlineHistoryEvent,
 } from '@/utils/history/events';
 
@@ -36,15 +34,13 @@ const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefin
 
   return undefined;
 });
-
-const evmOrEthDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)));
 </script>
 
 <template>
   <div class="flex items-center text-left">
     <HistoryEventTypeCounterparty
-      v-if="evmOrEthDepositEvent"
-      :event="evmOrEthDepositEvent"
+      v-if="('counterparty' in event && event.counterparty) || 'address' in event"
+      :event="event"
     >
       <HistoryEventTypeCombination
         :highlight="highlight"
