@@ -346,6 +346,9 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
 
         If the combination of type/subtype is invalid return `None`.
         """
+        if self.event_type == HistoryEventType.INFORMATIONAL:
+            return EventDirection.NEUTRAL
+
         try:
             category_mapping = EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype]
             if EXCHANGE in category_mapping and self.location in ALL_SUPPORTED_EXCHANGES:
