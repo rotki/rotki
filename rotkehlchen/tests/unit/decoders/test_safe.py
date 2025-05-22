@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import (
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -607,6 +607,46 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             amount=ZERO,
             location_label=user_address,
             notes=f'Successfully executed safe transaction 0x8e01ca76365b063a7628f0072527f51579660103276990ab4f2b97e2de26e04b for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[
+    '0x97c599819C95Aaf1BBC9063f4c743cCfCE7bc591',
+    '0xEbfbf7A3006104fB1D3b68529A7B1b584acf4203',
+]])
+def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x42536687dbc0c93d6b18c451c458def1e9d78476f610c8909be31bf2ffd56a69')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    user_address, multisig_address, timestamp, gas = gnosis_accounts[0], gnosis_accounts[1], TimestampMS(1747908200000), '0.000097393118048512'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas),
+            location_label=user_address,
+            notes=f'Burn {gas} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=60,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Add owner 0xfD90FAd33ee8b58f32c00aceEad1358e4AFC23f9 to multisig {multisig_address}',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address=multisig_address,
         ),

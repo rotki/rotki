@@ -12,6 +12,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_SAFE_MULTISIG
@@ -20,9 +21,28 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _get_maybe_indexed_address(context: DecoderContext, details: str) -> ChecksumEvmAddress | None:
+    """Get argument either from topics[1] if indexed or data if not.
+
+    This is needed since some implementation of SAFE have args indexed and
+    some not. And that does not affect the signature so they match.
+    """
+    if len(context.tx_log.data) >= 32:  # argument can be non-indexed
+        address = bytes_to_address(context.tx_log.data[:32])
+    elif len(context.tx_log.topics) >= 1:
+        address = bytes_to_address(context.tx_log.topics[1])  # or indexed
+    else:
+        log.error(f'Failed to find address for {details} in {context.transaction}')
+        return None
+
+    return address
+
+
 class SafemultisigDecoder(DecoderInterface):
     def _decode_added_owner(self, context: DecoderContext) -> DecodingOutput:
-        address = bytes_to_address(context.tx_log.data[:32])
+        if (address := _get_maybe_indexed_address(context, details='safe owner addition')) is None:
+            return DEFAULT_DECODING_OUTPUT
+
         if not self.base.any_tracked([address, context.transaction.from_address, context.tx_log.address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -41,7 +61,9 @@ class SafemultisigDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def _decode_removed_owner(self, context: DecoderContext) -> DecodingOutput:
-        address = bytes_to_address(context.tx_log.data[:32])
+        if (address := _get_maybe_indexed_address(context, details='safe owner addition')) is None:
+            return DEFAULT_DECODING_OUTPUT
+
         if not self.base.any_tracked([address, context.transaction.from_address, context.tx_log.address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
