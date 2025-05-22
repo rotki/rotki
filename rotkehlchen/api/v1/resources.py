@@ -78,6 +78,7 @@ from rotkehlchen.api.v1.schemas import (
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
     Eth2StakePerformanceSchema,
+    Eth2StakingEventsResetSchema,
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
     Eth2ValidatorPutSchema,
@@ -226,6 +227,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.serialization.schemas import (
@@ -3394,3 +3396,12 @@ class RefetchEvmTransactionsResource(BaseMethodView):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
+
+
+class Eth2StakingEventsResetResource(BaseMethodView):
+    delete_schema = Eth2StakingEventsResetSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]) -> Response:  # noqa: E501
+        return self.rest_api.reset_eth_staking_data(entry_type=entry_type)

@@ -4098,3 +4098,11 @@ class NativeAssetTransfer(AssetTransferSchema):
 
 class AccountTokenBalanceSchema(ERC20InfoSchema):
     asset = AssetField(required=True, expected_type=CryptoAsset, form_with_incomplete_data=True)
+
+
+class Eth2StakingEventsResetSchema(Schema):
+    entry_type = SerializableEnumField(
+        enum_class=HistoryBaseEntryType,
+        allow_only=(HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT),  # noqa: E501
+        required=True,
+    )

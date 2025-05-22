@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import (
     ETH_STAKING_EVENT_FIELDS,
     ETH_STAKING_FIELD_LENGTH,
@@ -56,7 +57,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     EVM_EVMLIKE_LOCATIONS_TYPE,
-    EVM_LOCATIONS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -230,10 +230,30 @@ class DBHistoryEvents:
 
         return None
 
+    def reset_eth_staking_data(
+            self,
+            entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
+    ) -> None:
+        """Reset Ethereum staking events and related cache data.
+        Removes all stored events of the specified type and clears associated
+        cache entries to enable fresh data retrieval.
+        """
+        with self.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute('DELETE FROM history_events WHERE entry_type=?', (entry_type.serialize_for_db(),))  # noqa: E501
+            if entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
+                key_parts = [DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]]
+            else:
+                key_parts = [
+                    DBCacheDynamic.WITHDRAWALS_TS.value[0].split('_')[0],
+                    DBCacheDynamic.WITHDRAWALS_IDX.value[0].split('_')[0],
+                ]
+
+            self.db.delete_dynamic_caches(write_cursor=write_cursor, key_parts=key_parts)
+
     @staticmethod
     def reset_evm_events_for_redecode(
             write_cursor: 'DBCursor',
-            location: EVM_LOCATIONS_TYPE,
+            location: EVM_EVMLIKE_LOCATIONS_TYPE,
     ) -> None:
         """Reset EVM events and transaction decode status for the given location.
 
@@ -256,35 +276,10 @@ class DBHistoryEvents:
             bindings += (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
 
         write_cursor.execute(querystr, bindings)
-        write_cursor.execute(
-            'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
-            (EVMTX_DECODED,),
-        )
-
-    def delete_events_by_location(
-            self,
-            write_cursor: 'DBCursor',
-            location: EVM_EVMLIKE_LOCATIONS_TYPE,
-    ) -> None:
-        """Delete all relevant non-customized events for a given location
-
-        Also set evm_tx_mapping as non decoded so they can be redecoded later
-        """
-        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
-        whereclause = 'WHERE location=?'
-        if (length := len(customized_event_ids)) != 0:
-            whereclause += f' AND history_events.identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings = [location.serialize_for_db(), *customized_event_ids]
-        else:
-            bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
-
-        transaction_hashes = write_cursor.execute(f'SELECT evm_events_info.tx_hash FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier {whereclause}', bindings).fetchall()  # noqa: E501
-        write_cursor.execute(f'DELETE FROM history_events {whereclause}', bindings)
-
-        if location != Location.ZKSYNC_LITE and len(transaction_hashes) != 0:
-            write_cursor.executemany(
-                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) AND value=?',  # noqa: E501
-                [(x[0], location.to_chain_id(), EVMTX_DECODED) for x in transaction_hashes],
+        if location != Location.ZKSYNC_LITE:  # the decode status is stored in zksynclite_transactions.is_decoded  # noqa: E501
+            write_cursor.execute(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+                (EVMTX_DECODED,),
             )
 
     def delete_events_by_tx_hash(

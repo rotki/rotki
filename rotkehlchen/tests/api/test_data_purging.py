@@ -12,16 +12,26 @@ from rotkehlchen.chain.zksync_lite.structures import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for, assert_simple_ok_response
+from rotkehlchen.tests.utils.api import (
+    api_url_for,
+    assert_proper_sync_response_with_result,
+    assert_simple_ok_response,
+)
 from rotkehlchen.tests.utils.exchanges import (
     check_saved_events_for_exchange,
     mock_exchange_data_in_db,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_eth_withdrawal_and_block_events,
+    make_evm_address,
+    make_evm_tx_hash,
+    make_random_timestamp,
+)
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -81,7 +91,7 @@ def test_purge_single_exchange_data(
 def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addr1 = make_evm_address()
-    db = DBEvmTx(rotki.data.db)
+    db, dbevents = DBEvmTx(rotki.data.db), DBHistoryEvents(rotki.data.db)
     with rotki.data.db.user_write() as write_cursor:
         rotki.data.db.add_blockchain_accounts(
             write_cursor=write_cursor,
@@ -91,6 +101,10 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
                 BlockchainAccountData(chain=SupportedBlockchain.GNOSIS, address=addr1),
                 BlockchainAccountData(chain=SupportedBlockchain.ZKSYNC_LITE, address=addr1),
             ],
+        )
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=make_eth_withdrawal_and_block_events(),
         )
         for chain_id in (ChainID.ETHEREUM, ChainID.OPTIMISM, ChainID.GNOSIS):
             for i in range(3 if chain_id == ChainID.ETHEREUM else 2):
@@ -128,6 +142,10 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         assert len(result) == 4
         result = db.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert len(result) == 0
+        assert dbevents.get_history_events_count(
+            cursor=cursor,
+            query_filter=HistoryEventFilterQuery.make(),
+        )[0] == 2  # the eth withdrawal & block events are not deleted
 
     def _add_zksynclitetxs(write_cursor: 'DBCursor') -> None:
         for i in range(2):
@@ -261,3 +279,53 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
     )
     assert_simple_ok_response(response)
     check_data(name=None, before=False)
+
+
+def test_purge_eth2_staking_events_and_cache(rotkehlchen_api_server: 'APIServer') -> None:
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    events_db = DBHistoryEvents(db)
+    with db.conn.write_ctx() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=make_eth_withdrawal_and_block_events(),
+        )
+        for i in range(10):
+            db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.WITHDRAWALS_IDX,
+                value=i,
+                address=(addy := make_evm_address()),
+            )
+            db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.WITHDRAWALS_TS,
+                value=make_random_timestamp(),
+                address=addy,
+            )
+            db.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                value=make_random_timestamp(),
+                index=i,
+            )
+
+    for entry_type, cache_keys, expected_event_count in (
+            ('eth withdrawal event', ['ethwithdrawalsts%', 'ethwithdrawalsidx%'], 1),
+            ('eth block event', ['last_produced_blocks_query_ts%'], 0),
+    ):
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2stakingeventsresetresource',
+            ), json={'entry_type': entry_type},
+        )
+        assert_proper_sync_response_with_result(response)
+        with db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                f'SELECT COUNT(*) FROM key_value_cache WHERE {" OR ".join(["name LIKE ?"] * len(cache_keys))}',  # noqa: E501
+                cache_keys,
+            ).fetchone()[0] == 0
+            assert events_db.get_history_events_count(
+                cursor=cursor,
+                query_filter=HistoryEventFilterQuery.make(),
+            )[0] == expected_event_count

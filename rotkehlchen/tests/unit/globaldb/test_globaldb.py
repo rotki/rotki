@@ -612,9 +612,9 @@ def test_global_db_restore(globaldb, database):
     status, _ = GlobalDBHandler().hard_reset_assets_list(database)
     assert status is False
     with database.user_write() as write_cursor:
-        DBHistoryEvents(database).delete_events_by_location(  # Now do it without the event
-            write_cursor=write_cursor,
-            location=Location.BLOCKFI,
+        write_cursor.execute(
+            'DELETE FROM history_events WHERE location=?',
+            (Location.BLOCKFI.serialize_for_db(),),
         )
     status, msg = GlobalDBHandler().hard_reset_assets_list(database, True)
     assert status, msg
