@@ -3650,7 +3650,7 @@
       "ranges": {
         "all": "All Time",
         "custom": "Custom",
-        "one_day": 1.0,
+        "one_day": "1D",
         "one_month": "1M",
         "one_week": "1W",
         "one_year": "1Y"
