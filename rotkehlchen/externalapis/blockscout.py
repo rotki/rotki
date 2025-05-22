@@ -13,9 +13,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import HasChainActivity
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_int
 from rotkehlchen.types import (
     BLOCKSCOUT_TO_CHAINID,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -318,6 +319,9 @@ class Blockscout(ExternalServiceWithApiKey):
         - RemoteError: If it fails to call the remote server or response doesn't have the correct
         format
         """
+        if ts < get_earliest_ts(self.chain_id):
+            return 0  # behave like etherscan for timestamps close to the genesis
+
         response = self._query_v1(
             module='block',
             action='getblocknobytime',
@@ -328,7 +332,7 @@ class Blockscout(ExternalServiceWithApiKey):
                 f'Invalid block number response from blockscout for {ts}: {response}',
             )
         try:
-            return deserialize_timestamp(blocknumber)
+            return deserialize_int(blocknumber)
         except DeserializationError as e:
             raise RemoteError(
                 f'Failed to deserialize timestamp from blockscout response {response}',

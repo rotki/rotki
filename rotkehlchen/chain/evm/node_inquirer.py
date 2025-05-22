@@ -2,6 +2,7 @@ import json
 import logging
 import random
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import zip_longest
@@ -41,6 +42,7 @@ from rotkehlchen.chain.evm.constants import (
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import NodeName, RemoteDataQueryStatus, Web3Node, WeightedNode
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
@@ -231,6 +233,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
         self.contract_multicall = contract_multicall
         self.blockscout = blockscout
+        # keep a cache per chain id of timestamp to block to avoid querying multiple times
+        # the same information. Remove from here with
+        # https://github.com/rotki/rotki/issues/9998
+        self.timestamp_to_block_cache: dict[ChainID, LRUCacheWithRemove[Timestamp, int]] = defaultdict(lambda: LRUCacheWithRemove(maxsize=32))  # noqa: E501
 
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
@@ -1379,6 +1385,19 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         transaction, _ = self.get_transaction_by_hash(deployed_hash)
         return transaction.block_number
 
+    def maybe_timestamp_to_block_range(
+            self,
+            period: TimestampOrBlockRange,
+    ) -> TimestampOrBlockRange:
+        if period.range_type == 'timestamps':
+            return TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=self.get_blocknumber_by_time(ts=Timestamp(period.from_value)),
+                to_value=self.get_blocknumber_by_time(ts=Timestamp(period.to_value)),
+            )
+
+        return period  # no op for block ranges
+
     # -- methods to be implemented by child classes --
 
     def get_blocknumber_by_time(
@@ -1391,15 +1410,23 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         - If RemoteError gets raised it queries etherscan
         May raise RemoteError
         """
+        # check if value exists in the cache
+        if (block_number := self.timestamp_to_block_cache[self.chain_id].get(ts)) is not None:
+            return block_number
+
         assert self.blockscout is not None, 'Blockscout should be set'
         with suppress(RemoteError):
-            return self.blockscout.get_blocknumber_by_time(ts, closest)
+            block_number = self.blockscout.get_blocknumber_by_time(ts, closest)
+            self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
+            return block_number
 
-        return self.etherscan.get_blocknumber_by_time(
+        block_number = self.etherscan.get_blocknumber_by_time(
             chain_id=self.chain_id,
             ts=ts,
             closest=closest,
         )
+        self.timestamp_to_block_cache[self.chain_id].add(key=ts, value=block_number)
+        return block_number
 
     # -- methods to be optionally implemented by child classes --
 

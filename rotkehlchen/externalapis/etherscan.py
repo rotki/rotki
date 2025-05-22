@@ -2,7 +2,6 @@ import json
 import logging
 import operator
 from abc import ABC
-from collections import defaultdict
 from collections.abc import Iterator
 from enum import Enum, auto
 from http import HTTPStatus
@@ -14,13 +13,11 @@ import requests
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAINIDS_WITH_L1_FEES,
     L2WithL1FeesTransaction,
 )
-from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import EVMTX_DECODED
@@ -30,6 +27,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -51,7 +49,6 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import from_gwei, hexstr_to_int, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -103,8 +100,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         self.session = create_session()
         self.warning_given = False
         set_user_agent(self.session)
-        self.timestamp_to_block_cache: dict[ChainID, LRUCacheWithRemove[Timestamp, int]] = defaultdict(lambda: LRUCacheWithRemove(maxsize=32))  # noqa: E501
-
         self.api_url = 'https://api.etherscan.io/v2/api'
 
     @overload
@@ -511,23 +506,13 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             account: ChecksumEvmAddress,
-            from_ts: Timestamp | None = None,
-            to_ts: Timestamp | None = None,
+            from_block: int | None = None,
+            to_block: int | None = None,
     ) -> Iterator[list[EVMTxHash]]:
         options = {'address': str(account), 'sort': 'asc'}
-        if from_ts is not None:
-            from_block = self.get_blocknumber_by_time(
-                chain_id=chain_id,
-                ts=from_ts,
-                closest='before',
-            )
+        if from_block is not None:
             options['startBlock'] = str(from_block)
-        if to_ts is not None:
-            to_block = self.get_blocknumber_by_time(
-                chain_id=chain_id,
-                ts=to_ts,
-                closest='before',
-            )
+        if to_block is not None:
             options['endBlock'] = str(to_block)
 
         hashes: set[tuple[EVMTxHash, Timestamp]] = set()
@@ -545,7 +530,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 except DeserializationError as e:
                     log.error(
                         f"Failed to read transaction timestamp {entry['hash']} from {chain_id} "
-                        f'etherscan for {account} in the range {from_ts} to {to_ts}. {e!s}',
+                        f'etherscan for {account} in the range {from_block} to {to_block}. {e!s}',
                     )
                     continue
 
@@ -558,7 +543,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 except DeserializationError as e:
                     log.error(
                         f"Failed to read transaction hash {entry['hash']} from {chain_id} "
-                        f'etherscan for {account} in the range {from_ts} to {to_ts}. {e!s}',
+                        f'etherscan for {account} in the range {from_block} to {to_block}. {e!s}',
                     )
                     continue
 
@@ -751,30 +736,8 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         an unexpected response is returned
         """
         # set per-chain earliest timestamps that can be turned to blocks. Never returns block 0
-        match chain_id:
-            case ChainID.ETHEREUM:
-                earliest_ts = 1438269989
-            case ChainID.OPTIMISM:
-                earliest_ts = 1636665399
-            case ChainID.ARBITRUM_ONE:
-                earliest_ts = 1622243344
-            case ChainID.BASE:
-                earliest_ts = 1686789347
-            case ChainID.GNOSIS:
-                earliest_ts = 1539024185
-            case ChainID.SCROLL:
-                earliest_ts = SCROLL_GENESIS
-            case ChainID.BINANCE_SC:
-                earliest_ts = BINANCE_SC_GENESIS
-            case ChainID.POLYGON_POS:
-                earliest_ts = 1590856200
-
-        if ts < earliest_ts:
+        if ts < get_earliest_ts(chain_id):
             return 0  # etherscan does not handle timestamps close to genesis well
-
-        # check if value exists in the cache
-        if (block_number := self.timestamp_to_block_cache[chain_id].get(ts)) is not None:
-            return block_number
 
         options = {'timestamp': ts, 'closest': closest}
         result = self._query(
@@ -791,7 +754,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 f'getblocknobytime result {result}',
             ) from e
 
-        self.timestamp_to_block_cache[chain_id].add(key=ts, value=number)
         return number
 
     def get_contract_creation_hash(
