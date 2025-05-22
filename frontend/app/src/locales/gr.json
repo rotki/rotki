@@ -2534,12 +2534,6 @@
         "validator": "Validator"
       },
       "overview": "Overview",
-      "ranges": {
-        "one_day": 1.0,
-        "one_month": "1M",
-        "one_week": "1W",
-        "one_year": "1Y"
-      },
       "staking_per_beacon_chain": "Staking per Validator",
       "staking_per_eth1_address": "Staking per ETH1 address",
       "total_based_on_eth_daily_prices": "The total is based on the daily prices of ETH",
