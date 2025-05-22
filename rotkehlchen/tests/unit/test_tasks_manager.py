@@ -635,7 +635,7 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
             ),
         ):
             task_manager.schedule()
-            gevent.sleep(0)
+            gevent.joinall(task_manager.greenlet_manager.greenlets)
             assert get_withdrawals_mock.call_count == expected_call_count
             assert queried_addresses == expected_addresses
 

@@ -479,9 +479,10 @@ class Eth2(EthereumModule):
         log.debug(f'Querying {address} ETH withdrawals from {from_ts} to {to_ts}')
 
         try:
+            period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
             untracked_validator_indices = self.ethereum.etherscan.get_withdrawals(
                 address=address,
-                period=TimestampOrBlockRange('timestamps', from_ts, to_ts),
+                period=period,
             )
         except (DeserializationError, RemoteError) as e:
             log.error(f'Failed to query ethereum withdrawals for {address} through etherscan due to {e}. Will try blockscout.')  # noqa: E501
