@@ -106,6 +106,22 @@ const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
   return get(aggregatedBalances).find(data => data.asset === get(identifier))?.breakdown || [];
 });
 
+const collectionAssetWithPrice = computed<string | undefined>(() => {
+  const collectionBalanceVal = get(collectionBalance);
+
+  const id = get(identifier);
+
+  if (collectionBalanceVal.length === 0) {
+    return id;
+  }
+
+  if (collectionBalanceVal.some(item => item.asset === id)) {
+    return id;
+  }
+
+  return collectionBalanceVal[0].asset;
+});
+
 const isSpam = computed(() => get(asset)?.isSpam || false);
 
 function goToEdit() {
@@ -280,6 +296,7 @@ async function toggleWhitelistAsset() {
     <AssetAmountAndValueOverTime
       v-if="premium"
       :asset="identifier"
+      :price-asset="collectionAssetWithPrice"
       :collection-id="collectionId"
     />
 
