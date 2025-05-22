@@ -1230,6 +1230,10 @@ class ProtocolsWithCache(SerializableEnumNameMixin):
     CONVEX = auto()
     GEARBOX = auto()
     SPARK = auto()
+    # TODO: ETH_WITHDRAWALS and ETH_BLOCKS should be removed
+    #  once https://github.com/rotki/rotki/issues/9302 is implemented
+    ETH_WITHDRAWALS = auto()
+    ETH_BLOCKS = auto()
 
 
 UniqueCacheType = Literal[

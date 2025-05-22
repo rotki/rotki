@@ -127,6 +127,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -2671,6 +2672,13 @@ class RestAPI:
 
         return {'result': True, 'message': message, 'status_code': status_code}
 
+    def reset_eth_staking_data(
+            self,
+            entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
+    ) -> Response:
+        DBHistoryEvents(self.rotkehlchen.data.db).reset_eth_staking_data(entry_type=entry_type)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
     def delete_blockchain_transaction_data(
             self,
             chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
@@ -2705,7 +2713,7 @@ class RestAPI:
             else:
                 chain_locations = [Location.from_chain(chain)] if chain else EVM_EVMLIKE_LOCATIONS
                 for chain_location in chain_locations:
-                    dbevents.delete_events_by_location(
+                    dbevents.reset_evm_events_for_redecode(
                         write_cursor=write_cursor,
                         location=chain_location,
                     )
@@ -4602,6 +4610,22 @@ class RestAPI:
                     return wrap_in_fail_result(
                         message=f'Failed to refresh {cache_protocol.name.lower()} cache due to: {e!s}',  # noqa: E501
                         status_code=HTTPStatus.CONFLICT,
+                    )
+            case ProtocolsWithCache.ETH_WITHDRAWALS:
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    self.rotkehlchen.data.db.delete_dynamic_caches(
+                        write_cursor=write_cursor,
+                        key_parts=[
+                            DBCacheDynamic.WITHDRAWALS_TS.value[0].split('_')[0],
+                            DBCacheDynamic.WITHDRAWALS_IDX.value[0].split('_')[0],
+                        ],
+                    )
+
+            case ProtocolsWithCache.ETH_BLOCKS:
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    self.rotkehlchen.data.db.delete_dynamic_caches(
+                        write_cursor=write_cursor,
+                        key_parts=[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]],
                     )
 
         failed_to_update = []

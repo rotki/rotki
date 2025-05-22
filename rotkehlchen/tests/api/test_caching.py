@@ -126,7 +126,7 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
     ))
     result = assert_proper_sync_response_with_result(response)
     assert {
-        'curve', 'velodrome', 'convex', 'aerodrome', 'gearbox', 'yearn', 'maker',
+        'curve', 'velodrome', 'convex', 'aerodrome', 'gearbox', 'yearn', 'maker', 'eth withdrawals', 'eth blocks',  # noqa: E501
     }.issubset(set(result))
 
     with ExitStack() as stack:
@@ -166,6 +166,11 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             'rotkehlchen.api.rest.update_spark_underlying_assets',
             new=MagicMock(),
         ))
+        patched_eth_withdrawals_cache = stack.enter_context(patch.object(
+            rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+            'delete_dynamic_caches',
+            new=MagicMock(),
+        ))
 
         for protocol, patched_obj, expected_calls in (
             (ProtocolsWithCache.CURVE, patched_curve_query, 6),
@@ -177,6 +182,8 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             (ProtocolsWithCache.MAKER, patched_ilk_registry, 1),
             (ProtocolsWithCache.AAVE, patched_aave_v3_assets, 1),
             (ProtocolsWithCache.SPARK, patched_spark_assets, 1),
+            (ProtocolsWithCache.ETH_WITHDRAWALS, patched_eth_withdrawals_cache, 1),
+            (ProtocolsWithCache.ETH_BLOCKS, patched_eth_withdrawals_cache, 2),  # same method is called as above  # noqa: E501
         ):
             response = requests.post(api_url_for(
                 rotkehlchen_api_server,

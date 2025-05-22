@@ -14091,3 +14091,42 @@ Active management
     :statuscode 400: Malformed request.
     :statuscode 409: Error querying the RPC or mismatch between asset and chain provided.
     :statuscode 500: Internal Rotki error.
+
+
+Reset Ethereum staking events
+==============================
+
+.. http:delete:: /api/(version)/blockchains/eth2/stake/events/reset
+
+   Doing a DELETE on this endpoint will reset Ethereum staking events data by removing all stored events of the specified type and clearing associated cache entries to enable fresh data retrieval.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+       DELETE /api/(version)/blockchains/eth2/stake/events/reset HTTP/1.1
+       Host: localhost:5042
+       Content-Type: application/json;charset=UTF-8
+
+       {"entry_type": "eth_withdrawal_event"}
+
+   :reqjson string entry_type: The type of staking events to reset. Must be either ``eth_block_event`` or ``eth_withdrawal_event``.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+       HTTP/1.1 200 OK
+       Content-Type: application/json
+
+       {
+         "result": true,
+         "message": ""
+       }
+
+   :resjson boolean result: Returns ``true`` when the reset operation completes successfully.
+
+   :statuscode 200: Reset operation completed successfully.
+   :statuscode 400: Failed to validate the data or invalid entry type provided.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.

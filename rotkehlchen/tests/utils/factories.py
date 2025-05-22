@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import (
@@ -239,6 +240,26 @@ def make_random_user_notes(num_notes: int) -> list[dict[str, Any]]:
         'location': 'manual balances',
         'is_pinned': random.choice([True, False]),
     } for note_number in range(num_notes)]
+
+
+def make_eth_withdrawal_and_block_events() -> list[EthWithdrawalEvent | EthBlockEvent]:
+    return [EthWithdrawalEvent(
+        validator_index=123456,
+        timestamp=TimestampMS(1620000200000),
+        amount=FVal('0.1'),
+        withdrawal_address=string_to_evm_address('0x1234567890123456789012345678901234567890'),
+        is_exit=False,
+        event_identifier='eth_withdrawal_1',
+    ), EthBlockEvent(
+        validator_index=123456,
+        timestamp=TimestampMS(1620000300000),
+        amount=FVal('0.01'),
+        fee_recipient=string_to_evm_address('0x0987654321098765432109876543210987654321'),
+        fee_recipient_tracked=True,
+        block_number=15000000,
+        is_mev_reward=False,
+        event_identifier='eth_block_1',
+    )]
 
 
 UNIT_BTC_ADDRESS1 = BTCAddress('1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2')

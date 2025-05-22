@@ -789,6 +789,18 @@ class DBHandler:
             'DELETE FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
         ).fetchone()
 
+    @staticmethod
+    def delete_dynamic_caches(
+            write_cursor: 'DBCursor',
+            key_parts: Sequence[str],
+    ) -> None:
+        """Delete cache entries whose names start with any of the given `key_parts`"""
+        placeholders = ' OR '.join(['name LIKE ?'] * len(key_parts))
+        write_cursor.execute(
+            f'DELETE FROM key_value_cache WHERE {placeholders}',
+            [f'{key_part}%' for key_part in key_parts],
+        )
+
     @overload
     def set_dynamic_cache(
             self,
