@@ -3247,9 +3247,6 @@
   "update_indicator": {
     "version": "An Updated Version ({appVersion}) of rotki is available"
   },
-  "update_notifier": {
-    "update_available": "An updated version of the frontend is available."
-  },
   "update_popup": {
     "download_failed": {
       "message": "An error occurred while downloading the application update. For more information check the application log file (rotki_electron.log)."

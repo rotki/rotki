@@ -3373,9 +3373,6 @@
   "update_indicator": {
     "version": "rotki 的更新版本 ({appVersion}) 可用"
   },
-  "update_notifier": {
-    "update_available": "前端的更新版本可用。"
-  },
   "update_popup": {
     "download_failed": {
       "message": "下载应用程序更新时出错。有关更多信息，请查看应用程序日志文件 (rotki_electron.log)。"

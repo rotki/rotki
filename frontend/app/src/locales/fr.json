@@ -3774,9 +3774,6 @@
   "update_indicator": {
     "version": "Une version mise à jour ({appVersion}) de rotki est disponible"
   },
-  "update_notifier": {
-    "update_available": "Une version mise à jour de l'interface utilisateur frontale est disponible."
-  },
   "update_popup": {
     "download_failed": {
       "message": "Une erreur s'est produite lors du téléchargement de la mise à jour de l'application. Pour plus d'informations, consultez le fichier journal de l'application (rotki_electron.log)."
