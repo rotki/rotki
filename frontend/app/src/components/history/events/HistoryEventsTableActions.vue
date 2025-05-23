@@ -7,9 +7,9 @@ import HistoryEventsExport from '@/components/history/events/HistoryEventsExport
 import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
 import { useRefPropVModel } from '@/utils/model';
-import { checkIfDevelopment } from '@shared/utils';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 
@@ -32,8 +32,7 @@ withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  'redecode': [];
-  'redecode-page': [];
+  redecode: [payload: 'all' | 'page' | string[]];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -44,13 +43,6 @@ const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
 const { txChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
-
-const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
-const isDevelopment = checkIfDevelopment();
-
-function redecodePageTransactions(): void {
-  emit('redecode-page');
-}
 </script>
 
 <template>
@@ -91,28 +83,10 @@ function redecodePageTransactions(): void {
       />
     </template>
 
-    <RuiButtonGroup
-      color="primary"
-      :disabled="processing"
-      :class="{
-        '!divide-rui-grey-200 dark:!divide-rui-grey-800': processing,
-      }"
-    >
-      <RuiButton
-        class="!py-2"
-        @click="emit('redecode')"
-      >
-        {{ t('transactions.events_decoding.redecode_all') }}
-      </RuiButton>
-
-      <RuiButton
-        v-if="isDevelopment && !isDemoMode"
-        class="!py-2"
-        @click="redecodePageTransactions()"
-      >
-        {{ t('transactions.actions.redecode_page') }}
-      </RuiButton>
-    </RuiButtonGroup>
+    <HistoryRedecodeButton
+      :processing="processing"
+      @redecode="emit('redecode', $event)"
+    />
 
     <HistoryEventsExport
       :match-exact-events="toggles.matchExactEvents"
