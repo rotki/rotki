@@ -7,13 +7,11 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import gevent
 from gevent.lock import Semaphore
-from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS, YEAR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
@@ -24,7 +22,6 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
-from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check
@@ -33,7 +30,6 @@ from rotkehlchen.types import (
     Eth2PubKey,
     Timestamp,
     TimestampMS,
-    deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
@@ -649,69 +645,7 @@ class Eth2(EthereumModule):
     def combine_block_with_tx_events(self) -> None:
         """Get all mev reward block production events and combine them with the
         transaction events if they can be found"""
-        with self.database.conn.read_ctx() as cursor:
-            cursor.execute(
-                """SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, (
-                    SELECT A_S.validator_index FROM history_events A_H
-                    LEFT JOIN eth_staking_events_info A_S ON A_H.identifier=A_S.identifier
-                    WHERE A_H.subtype=? AND A_S.is_exit_or_blocknumber=B_T.block_number
-                    AND A_H.location_label=B_H.location_label
-                ) as validator_index
-                FROM evm_transactions B_T LEFT JOIN evm_events_info B_E ON B_T.tx_hash=B_E.tx_hash
-                LEFT JOIN history_events B_H ON B_E.identifier=B_H.identifier
-                WHERE B_H.asset=? AND B_H.type=? AND B_H.subtype=? AND B_T.block_number=(
-                    SELECT A_S.is_exit_or_blocknumber FROM history_events A_H
-                    LEFT JOIN eth_staking_events_info A_S ON A_H.identifier=A_S.identifier
-                    WHERE A_H.subtype=? AND A_S.is_exit_or_blocknumber=B_T.block_number
-                    AND A_H.location_label=B_H.location_label
-                )""",
-                (
-                    HistoryEventSubType.MEV_REWARD.serialize(),
-                    A_ETH.identifier,
-                    HistoryEventType.RECEIVE.serialize(),
-                    HistoryEventSubType.NONE.serialize(),
-                    HistoryEventSubType.MEV_REWARD.serialize(),
-                ),
-            )
-            changes = []
-            for entry in cursor:
-                event_identifier = EthBlockEvent.form_event_identifier(entry[1])
-                tx_hash = deserialize_evm_tx_hash(entry[3])
-                changes.append((
-                    event_identifier,
-                    event_identifier,
-                    f'{entry[2]} as mev reward for block {entry[1]} in {tx_hash.hex()}',  # pylint: disable=no-member
-                    HistoryEventType.STAKING.serialize(),
-                    HistoryEventSubType.MEV_REWARD.serialize(),
-                    json.dumps({'validator_index': entry[4]}),  # extra data
-                    entry[0],  # identifier
-                    tx_hash,
-                ))
-
-        with self.database.user_write() as write_cursor:
-            for changes_entry in changes:
-                result = write_cursor.execute(
-                    'SELECT COUNT(*) FROM history_events HE LEFT JOIN evm_events_info EE ON '
-                    'HE.identifier = EE.identifier WHERE HE.event_identifier=? AND EE.tx_hash=?',
-                    (changes_entry[0], changes_entry[7]),
-                ).fetchone()[0]
-                if result == 1:  # Has already been moved.
-                    log.debug(f'Did not move history event with {changes_entry} in combine_block_with_tx_events since event with same tx_hash already combined in the block')  # noqa: E501
-                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
-                    continue
-
-                try:
-                    write_cursor.execute(
-                        'UPDATE history_events '
-                        'SET event_identifier=?, sequence_index=('
-                        'SELECT MAX(sequence_index) FROM history_events E2 WHERE E2.event_identifier=?)+1, '  # noqa: E501
-                        'notes=?, type=?, subtype=?, extra_data=? WHERE identifier=?',
-                        changes_entry[:-1],
-                    )
-                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                    log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
-                    # already exists. Probably right after resetting events? Delete old one
-                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
+        DBEth2(self.database).combine_block_with_tx_events()
 
     def detect_exited_validators(self) -> None:
         """This function will detect any validators that have exited from the ones that

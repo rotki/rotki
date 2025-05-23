@@ -316,7 +316,7 @@ def test_purge_eth2_staking_events_and_cache(rotkehlchen_api_server: 'APIServer'
         response = requests.delete(
             api_url_for(
                 rotkehlchen_api_server,
-                'eth2stakingeventsresetresource',
+                'eth2stakingeventsresource',
             ), json={'entry_type': entry_type},
         )
         assert_proper_sync_response_with_result(response)

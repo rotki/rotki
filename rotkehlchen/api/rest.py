@@ -137,6 +137,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     AccountingRulesFilterQuery,
@@ -2359,6 +2360,14 @@ class RestAPI:
         return api_response(result, status_code=status_code)
 
     @async_api_call()
+    def redecode_eth2_block_events(
+            self,
+            block_numbers: list[int] | None,
+    ) -> Response:
+        DBEth2(self.rotkehlchen.data.db).redecode_block_production_events(block_numbers)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    @async_api_call()
     def get_airdrops(self) -> dict[str, Any]:
         try:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
@@ -2905,6 +2914,9 @@ class RestAPI:
                         write_cursor=write_cursor,
                         location=Location.from_chain_id(evm_chain),
                     )
+
+                if evm_chain == ChainID.ETHEREUM:
+                    DBEth2(self.rotkehlchen.data.db).redecode_block_production_events()
 
             chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
             # make sure that all the receipts are already queried

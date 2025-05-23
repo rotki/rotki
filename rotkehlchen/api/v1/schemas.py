@@ -3000,6 +3000,34 @@ class Eth2DailyStatsSchema(
         }
 
 
+class Eth2StakingEventsDecodingSchema(AsyncQueryArgumentSchema):
+
+    def __init__(self, database: 'DBHandler') -> None:
+        super().__init__()
+        self.database = database
+
+    block_numbers = fields.List(
+        fields.Integer(),
+        validate=validate.Length(min=1),
+        load_default=None,
+    )
+
+    @validates_schema
+    def validate_schema(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        """Ensure the specified block numbers exist."""
+        if len(block_numbers := data.get('block_numbers', [])) > 0:
+            with self.database.conn.read_ctx() as cursor:
+                if (block_count := len(block_numbers)) != cursor.execute(
+                    'SELECT COUNT(DISTINCT is_exit_or_blocknumber) FROM eth_staking_events_info '
+                    f"WHERE is_exit_or_blocknumber IN ({','.join(['?'] * block_count)});",
+                    block_numbers,
+                ).fetchone()[0]:
+                    raise ValidationError(
+                        message='Some of the specified block numbers do not exist in the db',
+                        field_name='block_numbers',
+                    )
+
+
 class StatisticsNetValueSchema(Schema):
     include_nfts = fields.Boolean(load_default=True)
 

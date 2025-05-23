@@ -78,6 +78,7 @@ from rotkehlchen.api.v1.schemas import (
     ERC20InfoSchema,
     Eth2DailyStatsSchema,
     Eth2StakePerformanceSchema,
+    Eth2StakingEventsDecodingSchema,
     Eth2StakingEventsResetSchema,
     Eth2ValidatorDeleteSchema,
     Eth2ValidatorPatchSchema,
@@ -2014,6 +2015,28 @@ class Eth2StakePerformanceResource(BaseMethodView):
         )
 
 
+class Eth2StakingEventsResource(BaseMethodView):
+    delete_schema = Eth2StakingEventsResetSchema()
+
+    def make_put_schema(self) -> Eth2StakingEventsDecodingSchema:
+        return Eth2StakingEventsDecodingSchema(
+            database=self.rest_api.rotkehlchen.data.db,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]) -> Response:  # noqa: E501
+        return self.rest_api.reset_eth_staking_data(entry_type=entry_type)
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_put_schema, location='json')
+    def put(self, async_query: bool, block_numbers: list[int] | None) -> Response:
+        return self.rest_api.redecode_eth2_block_events(
+            async_query=async_query,
+            block_numbers=block_numbers,
+        )
+
+
 class NamedEthereumModuleDataResource(BaseMethodView):
     delete_schema = NamedEthereumModuleDataSchema()
 
@@ -3396,12 +3419,3 @@ class RefetchEvmTransactionsResource(BaseMethodView):
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
         )
-
-
-class Eth2StakingEventsResetResource(BaseMethodView):
-    delete_schema = Eth2StakingEventsResetSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(self, entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]) -> Response:  # noqa: E501
-        return self.rest_api.reset_eth_staking_data(entry_type=entry_type)

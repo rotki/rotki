@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
 from rotkehlchen.constants import ONE, WEEK_IN_MILLISECONDS, ZERO
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import (
     DAY_IN_SECONDS,
     HOUR_IN_SECONDS,
@@ -33,10 +34,21 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
-from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
+from rotkehlchen.history.events.structures.eth2 import (
+    EthBlockEvent,
+    EthDepositEvent,
+    EthWithdrawalEvent,
+)
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    Eth2PubKey,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -812,3 +824,112 @@ class DBEth2:
             mev_rewards_amounts[validator_index] += FVal(amount_str)
 
         return blocks_rewards_amounts, mev_rewards_amounts
+
+    def redecode_block_production_events(self, block_numbers: list[int] | None = None) -> None:
+        """Reprocess eth block production events from the db.
+        - Resets event type depending on whether the fee recipient address is tracked.
+        - Combine mev reward events with evm tx events
+        Optionally limit to only events for the specified block numbers.
+        """
+        with self.db.conn.write_ctx() as write_cursor:
+            tracked_addresses = self.db.get_single_blockchain_addresses(
+                cursor=write_cursor,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            )
+            for event_type, operation in (
+                (HistoryEventType.STAKING, 'IN'),
+                (HistoryEventType.INFORMATIONAL, 'NOT IN'),
+            ):
+                query = (
+                    'UPDATE history_events SET type=? WHERE entry_type=? AND subtype=? '
+                    f"AND location_label {operation} ({','.join('?' * len(tracked_addresses))})"
+                )
+                bindings = [
+                    event_type.serialize(),
+                    HistoryBaseEntryType.ETH_BLOCK_EVENT.value,
+                    HistoryEventSubType.BLOCK_PRODUCTION.serialize(),
+                    *tracked_addresses,
+                ]
+                if block_numbers is not None and len(block_numbers) > 0:
+                    query += (
+                        ' AND identifier IN (SELECT identifier FROM eth_staking_events_info '
+                        f"WHERE is_exit_or_blocknumber IN ({','.join('?' * len(block_numbers))}))"
+                    )
+                    bindings += block_numbers
+
+                write_cursor.execute(query, bindings)
+
+        self.combine_block_with_tx_events(block_numbers=block_numbers)
+
+    def combine_block_with_tx_events(self, block_numbers: list[int] | None = None) -> None:
+        """Get mev reward block production events and combine them with the transaction events
+        if they can be found. Optionally limit to only events for the specified block numbers.
+        """
+        with self.db.conn.read_ctx() as cursor:
+            query = (
+                """SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, (
+                    SELECT A_S.validator_index FROM history_events A_H
+                    LEFT JOIN eth_staking_events_info A_S ON A_H.identifier=A_S.identifier
+                    WHERE A_H.subtype=? AND A_S.is_exit_or_blocknumber=B_T.block_number
+                    AND A_H.location_label=B_H.location_label
+                ) as validator_index
+                FROM evm_transactions B_T LEFT JOIN evm_events_info B_E ON B_T.tx_hash=B_E.tx_hash
+                LEFT JOIN history_events B_H ON B_E.identifier=B_H.identifier
+                WHERE B_H.asset=? AND B_H.type=? AND B_H.subtype=? AND B_T.block_number=(
+                    SELECT A_S.is_exit_or_blocknumber FROM history_events A_H
+                    LEFT JOIN eth_staking_events_info A_S ON A_H.identifier=A_S.identifier
+                    WHERE A_H.subtype=? AND A_S.is_exit_or_blocknumber=B_T.block_number
+                    AND A_H.location_label=B_H.location_label
+                )"""
+            )
+            bindings: list[int | str] = [
+                HistoryEventSubType.MEV_REWARD.serialize(),
+                A_ETH.identifier,
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+                HistoryEventSubType.MEV_REWARD.serialize(),
+            ]
+            if block_numbers is not None and len(block_numbers) > 0:
+                placeholders = ','.join('?' * len(block_numbers))
+                query += f' AND B_T.block_number IN ({placeholders})'
+                bindings += block_numbers
+
+            changes = []
+            for entry in cursor.execute(query, bindings):
+                event_identifier = EthBlockEvent.form_event_identifier(entry[1])
+                tx_hash = deserialize_evm_tx_hash(entry[3])
+                changes.append((
+                    event_identifier,
+                    event_identifier,
+                    f'{entry[2]} as mev reward for block {entry[1]} in {tx_hash.hex()}',  # pylint: disable=no-member
+                    HistoryEventType.STAKING.serialize(),
+                    HistoryEventSubType.MEV_REWARD.serialize(),
+                    json.dumps({'validator_index': entry[4]}),  # extra data
+                    entry[0],  # identifier
+                    tx_hash,
+                ))
+
+        with self.db.user_write() as write_cursor:
+            for changes_entry in changes:
+                result = write_cursor.execute(
+                    'SELECT COUNT(*) FROM history_events HE LEFT JOIN evm_events_info EE ON '
+                    'HE.identifier = EE.identifier WHERE HE.event_identifier=? AND EE.tx_hash=?',
+                    (changes_entry[0], changes_entry[7]),
+                ).fetchone()[0]
+                if result == 1:  # Has already been moved.
+                    log.debug(f'Did not move history event with {changes_entry} in combine_block_with_tx_events since event with same tx_hash already combined in the block')  # noqa: E501
+                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
+                    continue
+
+                try:
+                    write_cursor.execute(
+                        'UPDATE history_events '
+                        'SET event_identifier=?, sequence_index=('
+                        'SELECT MAX(sequence_index) FROM history_events E2 WHERE E2.event_identifier=?)+1, '  # noqa: E501
+                        'notes=?, type=?, subtype=?, extra_data=? WHERE identifier=?',
+                        changes_entry[:-1],
+                    )
+                except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                    log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
+                    # already exists. Probably right after resetting events? Delete old one
+                    write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
