@@ -294,6 +294,22 @@ async function redecodeAllEventsHandler(): Promise<void> {
   await fetchData();
 }
 
+async function redecode(payload: 'all' | 'page' | string[]) {
+  if (Array.isArray(payload)) {
+    set(decodingStatusDialogPersistent, false);
+    set(currentAction, 'decode');
+    resetUndecodedTransactionsStatus();
+    await redecodeTransactions(payload);
+    await fetchData();
+  }
+  else if (payload === 'all') {
+    redecodeAllEvents();
+  }
+  else if (payload === 'page') {
+    await redecodePageTransactions();
+  }
+}
+
 async function forceRedecodeEvmEvents(data: PullEvmTransactionPayload): Promise<void> {
   set(currentAction, 'decode');
   await pullAndRedecodeTransactions(data);
@@ -471,8 +487,7 @@ onMounted(async () => {
           :export-params="pageParams"
           :hide-account-selector="useExternalAccountFilter"
           @update:accounts="onFilterAccountsChanged($event)"
-          @redecode="redecodeAllEvents()"
-          @redecode-page="redecodePageTransactions()"
+          @redecode="redecode($event)"
         />
 
         <div
