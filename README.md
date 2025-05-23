@@ -16,7 +16,7 @@
 [![Docker Image Version](https://img.shields.io/docker/v/rotki/rotki/latest?label=Docker)](https://hub.docker.com/r/rotki/rotki)
 [![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg)](https://GitHub.com/rotki/rotki/commit/)
 [![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat)](https://github.com/rotki/rotki/graphs/contributors)
-![Visitors](https://api.visitorbadge.io/api/visitors?path=rotki%2Frotki%20&countColor=%23263759&style=flat)
+[![Visitors](https://api.visitorbadge.io/api/visitors?path=rotki%2Frotki%20&countColor=%23263759&style=flat)](https://rotki.com/)
 [![GitHub forks](https://img.shields.io/github/forks/rotki/rotki)](https://github.com/rotki/rotki/forks)
 [![GitHub stars](https://img.shields.io/github/stars/rotki/rotki)](https://github.com/rotki/rotki/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki)](https://github.com/rotki/rotki/commits/master)
