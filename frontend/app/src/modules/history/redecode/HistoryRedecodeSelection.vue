@@ -79,7 +79,7 @@ function redecode() {
     <template #activator="{ attrs }">
       <RuiButton
         color="primary"
-        class="px-3 py-3 rounded-l-none -ml-[1px]"
+        class="px-3 py-3 rounded-l-none -ml-[1px] border-l border-rui-primary-darker disabled:border-rui-grey-200 disabled:dark:border-rui-grey-800"
         :class="{
           'rounded-r-none': isDevelopment && !isDemoMode,
         }"
