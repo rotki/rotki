@@ -8,12 +8,13 @@ interface ApiSorting {
   ascending: boolean[];
 }
 
-function getSorting<T extends NonNullable<unknown>>(
+export function getSorting<T extends NonNullable<unknown>>(
   sorting: { column?: string; direction?: 'asc' | 'desc' },
+  defaults?: { column?: string; direction?: 'asc' | 'desc' },
 ): SingleColumnSorting<T> {
   const {
-    column = 'timestamp',
-    direction = 'desc',
+    column = defaults?.column || 'timestamp',
+    direction = defaults?.direction || 'desc',
   } = sorting;
   return {
     column: column as TableRowKey<T>,
@@ -35,7 +36,7 @@ export function parseQueryHistory<T extends NonNullable<unknown>>(query: Locatio
     return getSorting({
       column: sort?.[0],
       direction: order?.[0],
-    });
+    }, defaults);
   }
   else {
     const length = sort?.length || order?.length || 0;

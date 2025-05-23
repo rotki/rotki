@@ -8,7 +8,14 @@ import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
-import { applyPaginationDefaults, applySortingDefaults, getApiSortingParams, parseQueryHistory, parseQueryPagination } from '@/composables/use-pagination-filter/utils';
+import {
+  applyPaginationDefaults,
+  applySortingDefaults,
+  getApiSortingParams,
+  getSorting,
+  parseQueryHistory,
+  parseQueryPagination,
+} from '@/composables/use-pagination-filter/utils';
 import { useNotificationsStore } from '@/store/notifications';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
 import { defaultCollectionState } from '@/utils/collection';
@@ -113,8 +120,17 @@ export function usePaginationFilters<
       return get(internalSorting) as DataTableSortData<TItem>;
     },
     set(sort) {
+      const defaults = defaultSorting();
       set(userAction, true);
-      set(internalSorting, sort);
+      let newSort = sort;
+      if (newSort && defaults && !Array.isArray(newSort) && !Array.isArray(defaults)) {
+        newSort = getSorting({
+          column: newSort.column,
+          direction: newSort.direction,
+        }, defaults);
+      }
+
+      set(internalSorting, newSort);
     },
   });
 
