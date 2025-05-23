@@ -4077,6 +4077,8 @@
       "label": "DeFi module to clear"
     },
     "defi_modules": "DeFi Modules",
+    "eth_block": "ETH Block Events",
+    "eth_withdrawals": "ETH Withdrawal Events",
     "label": "Select a data source",
     "tooltip": "Purge data",
     "transactions": "Transactions"

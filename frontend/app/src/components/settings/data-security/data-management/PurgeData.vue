@@ -22,7 +22,7 @@ const { txChains } = useSupportedChains();
 
 const { purgeCache } = useSessionPurge();
 const { deleteModuleData } = useBlockchainBalancesApi();
-const { deleteTransactions } = useHistoryEventsApi();
+const { deleteStakeEvents, deleteTransactions } = useHistoryEventsApi();
 const { deleteExchangeData } = useExchangeApi();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -55,6 +55,14 @@ const purgeable = [
     text: t('purge_selector.transactions'),
     value: chainToClear,
   },
+  {
+    id: Purgeable.ETH_WITHDRAWAL_EVENT,
+    text: t('purge_selector.eth_withdrawals'),
+  },
+  {
+    id: Purgeable.ETH_BLOCK_EVENT,
+    text: t('purge_selector.eth_block'),
+  },
 ];
 
 async function purgeSource(source: Purgeable) {
@@ -74,6 +82,9 @@ async function purgeSource(source: Purgeable) {
       await deleteModuleData(value as Module);
     else
       await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
+  }
+  else if ([Purgeable.ETH_WITHDRAWAL_EVENT, Purgeable.ETH_BLOCK_EVENT].includes(source)) {
+    await deleteStakeEvents(source);
   }
 
   // Purgeable only modules don't have some cache that needs reset.
