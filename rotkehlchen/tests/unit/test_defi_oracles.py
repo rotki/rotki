@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.oracles.constants import (
     A_ARBITRUM_USDC,
     A_BASE_USDC,
     A_BSC_USDT,
+    A_OPTIMISM_USDC,
     A_OPTIMISM_USDT,
     A_POLYGON_USDC,
 )
@@ -21,6 +22,7 @@ from rotkehlchen.constants.assets import (
     A_DOGE,
     A_ETH,
     A_LINK,
+    A_OPTIMISM_ETH,
     A_POLYGON_POS_MATIC,
     A_USDC,
     A_WETH,
@@ -152,6 +154,24 @@ def test_uniswap_oracles_evm(inquirer_defi: 'Inquirer') -> None:
         from_asset=A_BSC_USDT,
         to_asset=A_BSC_BNB,
     ) == Price(FVal('0.0015756749034228114'))
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_uniswap_oracles_routing_assets(
+        inquirer_defi: 'Inquirer',
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Test that the Uniswap oracle correctly handles a missing routing asset."""
+    assert inquirer_defi._uniswapv3 is not None
+    globaldb.delete_asset_by_identifier(A_OPTIMISM_USDC.identifier)
+    assert inquirer_defi._uniswapv3.query_current_price(
+        from_asset=A_OPTIMISM_ETH,
+        to_asset=A_OPTIMISM_USDT,
+    ) != ZERO_PRICE
+    assert globaldb.get_evm_token(
+        address=string_to_evm_address(A_OPTIMISM_USDC.identifier.split(':')[-1]),
+        chain_id=ChainID.OPTIMISM,
+    ) == A_OPTIMISM_USDC
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -464,8 +464,8 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             defillama=self.defillama,
             alchemy=self.alchemy,
-            uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
-            uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
+            uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle(database=self.data.db)),
+            uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle(database=self.data.db)),
         )
         price_historian.set_oracles_order(settings.historical_price_oracles)
 

@@ -45,13 +45,13 @@ def fixture_defillama():
 
 
 @pytest.fixture(name='uniswapv2_inquirer')
-def fixture_uniswapv2():
-    return UniswapV2Oracle()
+def fixture_uniswapv2(database: 'DBHandler'):
+    return UniswapV2Oracle(database=database)
 
 
 @pytest.fixture(name='uniswapv3_inquirer')
-def fixture_uniswapv3():
-    return UniswapV3Oracle()
+def fixture_uniswapv3(database: 'DBHandler'):
+    return UniswapV3Oracle(database=database)
 
 
 @pytest.fixture(name='historical_price_oracles_order')
