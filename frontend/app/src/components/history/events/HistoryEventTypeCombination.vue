@@ -8,8 +8,10 @@ const props = withDefaults(
     showLabel?: boolean;
     icon?: RuiIcons;
     highlight?: boolean;
+    showInfo?: boolean;
   }>(),
   {
+    showInfo: false,
     showLabel: false,
   },
 );
@@ -33,7 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <div class="flex items-center gap-3">
     <div
-      class="shrink-0 bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full"
+      class="shrink-0 bg-rui-grey-200 dark:bg-rui-grey-900 text-rui-grey-600 dark:text-rui-grey-400 size-10 flex items-center justify-center rounded-full relative"
       :class="{
         '!bg-rui-primary-lighter/[0.7] dark:!bg-rui-primary-lighter !text-rui-primary': highlight,
       }"
@@ -42,6 +44,12 @@ const { t } = useI18n({ useScope: 'global' });
         size="20"
         :name="icon || type.icon"
         :color="type.color"
+      />
+      <RuiIcon
+        v-if="showInfo"
+        name="lu-info"
+        size="14"
+        class="absolute bottom-0 right-0 opacity-40"
       />
     </div>
     <div

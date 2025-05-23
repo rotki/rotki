@@ -34,6 +34,8 @@ const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefin
 
   return undefined;
 });
+
+const isInformational = computed(() => get(event).eventType === 'informational');
 </script>
 
 <template>
@@ -46,6 +48,7 @@ const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefin
         :highlight="highlight"
         :icon="icon"
         :type="attrs"
+        :show-info="isInformational"
       />
     </HistoryEventTypeCounterparty>
     <HistoryEventTypeCombination
@@ -53,6 +56,7 @@ const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | undefin
       :highlight="highlight"
       :icon="icon"
       :type="attrs"
+      :show-info="isInformational"
     />
 
     <div class="ml-4">
