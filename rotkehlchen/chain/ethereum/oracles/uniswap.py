@@ -9,9 +9,11 @@ from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -38,6 +40,7 @@ from .constants import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 logger = logging.getLogger(__name__)
@@ -61,17 +64,31 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
-    def __init__(self, version: int) -> None:
+    def __init__(self, database: 'DBHandler', version: int) -> None:
         CacheableMixIn.__init__(self)
         HistoricalPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
-        self.routing_assets = {
-            chain_id: [asset.resolve_to_evm_token() for asset in assets]
-            for chain_id, assets in UNISWAP_ROUTING_ASSETS.items()
-        }
+        self.database = database
+        self.routing_assets: dict[ChainID, list[EvmToken]] = {}
         self.uniswap_factories = {
             chain_id: Inquirer().get_evm_manager(chain_id).node_inquirer.contracts.contract(UNISWAP_FACTORY_ADDRESSES[version][chain_id])  # noqa: E501
             for chain_id in UNISWAP_SUPPORTED_CHAINS
         }
+
+    def resolve_routing_assets(self) -> None:
+        """Resolve the uniswap routing assets to evm tokens.
+        Attempt to create the token if it is missing.
+        """
+        for chain_id, assets in UNISWAP_ROUTING_ASSETS.items():
+            self.routing_assets[chain_id] = []
+            for asset in assets:
+                try:
+                    self.routing_assets[chain_id].append(asset.resolve_to_evm_token())
+                except UnknownAsset:
+                    self.routing_assets[chain_id].append(get_or_create_evm_token(
+                        userdb=self.database,
+                        evm_address=string_to_evm_address(asset.identifier.split(':')[-1]),
+                        chain_id=chain_id,
+                    ))
 
     def resolve_assets(
             self,
@@ -164,6 +181,9 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
         Calculate the path needed to go from from_asset to to_asset and return a
         list of the pools needed to jump through to do that.
         """
+        if len(self.routing_assets) == 0:
+            self.resolve_routing_assets()
+
         routing_assets = self.routing_assets[from_asset.chain_id]
         output: list[str] = []
         # If any of the assets is in the glue assets let's see if we find any path
@@ -404,8 +424,8 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
 
 class UniswapV3Oracle(UniswapOracle):
 
-    def __init__(self) -> None:
-        super().__init__(version=3)
+    def __init__(self, database: 'DBHandler') -> None:
+        super().__init__(database=database, version=3)
         self.uniswap_v3_pool_abi = Inquirer().get_evm_manager(ChainID.ETHEREUM).node_inquirer.contracts.abi('UNISWAP_V3_POOL')  # noqa: E501
 
     @cache_response_timewise()
@@ -513,8 +533,8 @@ class UniswapV3Oracle(UniswapOracle):
 
 class UniswapV2Oracle(UniswapOracle):
 
-    def __init__(self) -> None:
-        super().__init__(version=2)
+    def __init__(self, database: 'DBHandler') -> None:
+        super().__init__(database=database, version=2)
         self.uniswap_v2_lp_abi = Inquirer().get_evm_manager(ChainID.ETHEREUM).node_inquirer.contracts.abi('UNISWAP_V2_LP')  # noqa: E501
 
     @cache_response_timewise()
