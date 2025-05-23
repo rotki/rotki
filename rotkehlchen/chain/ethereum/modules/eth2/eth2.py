@@ -344,7 +344,10 @@ class Eth2(EthereumModule):
                 from_ts_ms=ts_sec_to_ms(profit_from_ts),
                 to_ts_ms=ts_sec_to_ms(profit_to_ts),
             )
-            data['apr'] = ((YEAR_IN_SECONDS * validator_sum) / (profit_to_ts - profit_from_ts)) / time_weighted_avg  # noqa: E501
+            data['apr'] = (
+                ((YEAR_IN_SECONDS * validator_sum) / (profit_to_ts - profit_from_ts)) / time_weighted_avg  # noqa: E501
+                if time_weighted_avg != ZERO else ZERO
+            )
             sum_apr += data['apr']
 
         if count_apr != ZERO:
