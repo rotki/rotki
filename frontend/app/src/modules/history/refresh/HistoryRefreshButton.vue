@@ -27,6 +27,7 @@ function confirmRefresh() {
   <RuiButtonGroup
     variant="outlined"
     color="primary"
+    class="h-9"
   >
     <RuiTooltip :open-delay="400">
       <template #activator>
