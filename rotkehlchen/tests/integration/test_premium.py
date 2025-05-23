@@ -69,7 +69,7 @@ def test_upload_data_to_server(
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
-    def mock_succesfull_upload_data_to_server(
+    def mock_successful_upload_data_to_server(
             url,  # pylint: disable=unused-argument
             data,
             files,
@@ -90,7 +90,7 @@ def test_upload_data_to_server(
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
-        side_effect=mock_succesfull_upload_data_to_server,
+        side_effect=mock_successful_upload_data_to_server,
     )
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
