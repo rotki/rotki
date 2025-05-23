@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
@@ -16,9 +17,11 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.eth2 import DBEth2
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -27,6 +30,8 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthDepositEvent,
     EthWithdrawalEvent,
 )
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -38,7 +43,17 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Eth2PubKey, Timestamp, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    Eth2PubKey,
+    EvmTransaction,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -1380,3 +1395,119 @@ def test_consolidated_validators_status(rotkehlchen_api_server: 'APIServer') -> 
     assert result['entries'][0]['status'] == 'consolidated'
     assert result['entries'][0]['consolidated_into'] == 765881
     assert result['entries'][0]['validator_type'] == 'distributing'
+
+
+def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test redecoding of block production events.
+    Events:
+    - Three events to test combining block events with tx events.
+        1. block event with an address that will not be tracked - Event type will not get updated.
+        2. mev reward event - Should remain unmodified.
+        3. evm event - Should be updated by combine_block_with_tx_events.
+    - Two block events with an address that will get tracked:
+        1. event_identifier will be passed when redecoding - Event type will be updated to staking.
+        2. event_identifier will not be passed - Event type will remain informational.
+
+    `fee_recipient_tracked` is initially set to False on all events.
+    """
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    dbevents, dbevmtx = DBHistoryEvents(db), DBEvmTx(db)
+    with db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(write_cursor, [
+            EthBlockEvent(
+                validator_index=(v_index := 12345),
+                timestamp=(timestamp := TimestampMS(1737836284)),
+                amount=FVal(reward1 := '0.126419309459217215'),
+                fee_recipient=(mev_builder_address := make_evm_address()),
+                fee_recipient_tracked=False,
+                block_number=(block_number := 1234567),
+                is_mev_reward=False,
+            ), EthBlockEvent(
+                validator_index=v_index,
+                timestamp=timestamp,
+                amount=FVal(reward2 := '0.126458404824519798'),
+                fee_recipient=(fee_recipient_address := make_evm_address()),
+                fee_recipient_tracked=False,
+                block_number=block_number,
+                is_mev_reward=True,
+            ), EvmEvent(
+                tx_hash=(tx_hash := deserialize_evm_tx_hash(tx_hash_str := '0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')),  # noqa: E501
+                sequence_index=0,
+                timestamp=timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal(reward2),
+                location_label=fee_recipient_address,
+                notes=f'Received {reward2} ETH from {mev_builder_address}',
+            ), EthBlockEvent(
+                validator_index=v_index,
+                timestamp=TimestampMS(timestamp + 1),
+                amount=FVal(reward3 := '0.2'),
+                fee_recipient=fee_recipient_address,
+                fee_recipient_tracked=False,
+                block_number=block_number + 1,
+                is_mev_reward=False,
+            ), EthBlockEvent(
+                validator_index=v_index,
+                timestamp=TimestampMS(timestamp + 2),
+                amount=FVal(reward4 := '0.3'),
+                fee_recipient=fee_recipient_address,
+                fee_recipient_tracked=False,
+                block_number=block_number + 2,
+                is_mev_reward=False,
+            ),
+        ])
+        dbevmtx.add_evm_transactions(  # transaction is needed for combine_block_with_tx_events
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=ts_ms_to_sec(timestamp),
+                block_number=block_number,
+                from_address=mev_builder_address,
+                to_address=fee_recipient_address,
+                value=126458404824519798,
+                gas=27500,
+                gas_price=9213569214,
+                gas_used=0,  # irrelevant
+                input_data=b'',  # irrelevant
+                nonce=16239,
+            )],
+            relevant_address=fee_recipient_address,
+        )
+        db.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ETHEREUM,
+                address=fee_recipient_address,
+            )],
+        )
+
+    assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'eth2stakingeventsresource'),
+        json={'block_numbers': [block_number, block_number + 1], 'async_query': False},
+    ))
+
+    with db.conn.read_ctx() as cursor:
+        # Check raw data from the db since deserializing EthBlockEvents performs the same check
+        # for if the address is tracked that we are trying to test here.
+        assert cursor.execute('SELECT * FROM history_events').fetchall() == [
+            (1, 4, f'BP1_{block_number}', 0, timestamp, 'f', mev_builder_address, 'ETH', reward1, f'Validator {v_index} produced block {block_number} with {reward1} ETH going to {mev_builder_address} as the block reward', 'informational', 'block production', None),  # noqa: E501
+            (2, 4, f'BP1_{block_number}', 1, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Validator {v_index} produced block {block_number}. Relayer reported {reward2} ETH as the MEV reward going to {fee_recipient_address}', 'informational', 'mev reward', None),  # noqa: E501
+            (3, 2, f'BP1_{block_number}', 2, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Received {reward2} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash_str}', 'staking', 'mev reward', f'{{"validator_index": {v_index}}}'),  # noqa: E501
+            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'f', fee_recipient_address, 'ETH', reward3, f'Validator {v_index} produced block {block_number + 1} with {reward3} ETH going to {fee_recipient_address} as the block reward', 'staking', 'block production', None),  # noqa: E501
+            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, f'Validator {v_index} produced block {block_number + 2} with {reward4} ETH going to {fee_recipient_address} as the block reward', 'informational', 'block production', None),  # noqa: E501
+        ]
+        # Confirm combine_block_with_tx_events marked the EthBlockEvent as hidden
+        assert dbevents.get_hidden_event_ids(cursor) == [2]
+
+    assert_error_response(  # Check validation with non-existent block number.
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'eth2stakingeventsresource'),
+            json={'block_numbers': [block_number + 5], 'async_query': False},
+        ),
+        contained_in_msg='Some of the specified block numbers do not exist in the db',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

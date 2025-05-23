@@ -14093,10 +14093,10 @@ Active management
     :statuscode 500: Internal Rotki error.
 
 
-Reset Ethereum staking events
+Ethereum staking events
 ==============================
 
-.. http:delete:: /api/(version)/blockchains/eth2/stake/events/reset
+.. http:delete:: /api/(version)/blockchains/eth2/stake/events
 
    Doing a DELETE on this endpoint will reset Ethereum staking events data by removing all stored events of the specified type and clearing associated cache entries to enable fresh data retrieval.
 
@@ -14104,7 +14104,7 @@ Reset Ethereum staking events
 
    .. http:example:: curl wget httpie python-requests
 
-       DELETE /api/(version)/blockchains/eth2/stake/events/reset HTTP/1.1
+       DELETE /api/(version)/blockchains/eth2/stake/events HTTP/1.1
        Host: localhost:5042
        Content-Type: application/json;charset=UTF-8
 
@@ -14127,6 +14127,44 @@ Reset Ethereum staking events
    :resjson boolean result: Returns ``true`` when the reset operation completes successfully.
 
    :statuscode 200: Reset operation completed successfully.
+   :statuscode 400: Failed to validate the data or invalid entry type provided.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 500: Internal rotki error.
+
+.. http:put:: /api/(version)/blockchains/eth2/stake/events
+
+   Doing a PUT on this endpoint will reprocess the Ethereum block production events in the db, updating the event type depending on whether the fee receiver address is tracked, and combining block events with evm tx events.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+       PUT /api/(version)/blockchains/eth2/stake/events HTTP/1.1
+       Host: localhost:5042
+       Content-Type: application/json;charset=UTF-8
+
+       {
+            "block_numbers": [10001, 10002],
+            "async_query": false
+       }
+
+   :reqjson list(integer)[optional] block_numbers: List of block numbers for which to redecode events. Redecodes all events when omitted.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+       HTTP/1.1 200 OK
+       Content-Type: application/json
+
+       {
+         "result": true,
+         "message": ""
+       }
+
+   :resjson boolean result: Returns ``true`` when the redecode operation completes successfully.
+
+   :statuscode 200: Redecode operation completed successfully.
    :statuscode 400: Failed to validate the data or invalid entry type provided.
    :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
