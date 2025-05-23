@@ -54,6 +54,7 @@ interface UseHistoryEventsApiReturn {
   queryExchangeEvents: (payload: QueryExchangePayload) => Promise<PendingTask>;
   exportHistoryEventsCSV: (filters: HistoryEventExportPayload, directoryPath?: string) => Promise<PendingTask>;
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
+  deleteStakeEvents: (entryType: string) => Promise<boolean>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -302,11 +303,21 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     }
   };
 
+  const deleteStakeEvents = async (entryType: string): Promise<boolean> => {
+    const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/eth2/stake/events/reset', {
+      data: snakeCaseTransformer({ entryType }),
+      validateStatus: validStatus,
+    });
+
+    return handleResponse(response);
+  };
+
   return {
     addHistoryEvent,
     addTransactionHash,
     decodeTransactions,
     deleteHistoryEvent,
+    deleteStakeEvents,
     deleteTransactions,
     downloadHistoryEventsCSV,
     editHistoryEvent,
