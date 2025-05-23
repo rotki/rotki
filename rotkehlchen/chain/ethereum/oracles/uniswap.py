@@ -9,16 +9,18 @@ from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -64,14 +66,32 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
     def __init__(self, version: int) -> None:
         CacheableMixIn.__init__(self)
         HistoricalPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
-        self.routing_assets = {
-            chain_id: [asset.resolve_to_evm_token() for asset in assets]
-            for chain_id, assets in UNISWAP_ROUTING_ASSETS.items()
-        }
+        self.routing_assets: dict[ChainID, list[EvmToken]] = {}
         self.uniswap_factories = {
             chain_id: Inquirer().get_evm_manager(chain_id).node_inquirer.contracts.contract(UNISWAP_FACTORY_ADDRESSES[version][chain_id])  # noqa: E501
             for chain_id in UNISWAP_SUPPORTED_CHAINS
         }
+
+    def resolve_routing_assets(self) -> None:
+        """Resolve the uniswap routing assets to evm tokens.
+        Attempt to create the token if it is missing.
+        """
+        for chain_id, assets in UNISWAP_ROUTING_ASSETS.items():
+            self.routing_assets[chain_id] = []
+            for asset in assets:
+                try:
+                    self.routing_assets[chain_id].append(asset.resolve_to_evm_token())
+                except UnknownAsset:
+                    try:
+                        self.routing_assets[chain_id].append(get_or_create_evm_token(
+                            userdb=(node_inquirer := Inquirer().get_evm_manager(chain_id).node_inquirer).database,  # noqa: E501
+                            evm_address=string_to_evm_address(asset.identifier.split(':')[-1]),
+                            chain_id=chain_id,
+                            evm_inquirer=node_inquirer,
+                        ))
+                    except (NotERC20Conformant, NotERC721Conformant) as e:
+                        log.error(f'Failed to create missing Uniswap routing asset {asset} due to {e!s}')  # noqa: E501
+                        continue
 
     def resolve_assets(
             self,
@@ -164,6 +184,9 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
         Calculate the path needed to go from from_asset to to_asset and return a
         list of the pools needed to jump through to do that.
         """
+        if len(self.routing_assets) == 0:
+            self.resolve_routing_assets()  # May include external remote calls to add any missing assets  # noqa: E501
+
         routing_assets = self.routing_assets[from_asset.chain_id]
         output: list[str] = []
         # If any of the assets is in the glue assets let's see if we find any path
