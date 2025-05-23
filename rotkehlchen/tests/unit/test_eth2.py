@@ -18,6 +18,8 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
+    ValidatorDetailsWithStatus,
+    ValidatorStatus,
     ValidatorType,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -1375,3 +1377,50 @@ def test_clean_cache_on_account_removal(
             name=DBCacheDynamic.WITHDRAWALS_TS,
             address=ethereum_accounts[0],
         ) is None
+
+
+def test_staking_performance_division_by_zero_protection(eth2) -> None:
+    """Test that division by zero is prevented when time_weighted_avg is zero in APR calculation"""
+    dbevents, dbeth2 = DBHistoryEvents(eth2.database), DBEth2(eth2.database)
+    with eth2.database.conn.write_ctx() as write_cursor:
+        dbeth2.add_or_update_validators(
+            write_cursor=write_cursor,
+            validators=[(validator := ValidatorDetailsWithStatus(
+                activation_timestamp=Timestamp(1606824023),
+                validator_index=(v_index := 999999),
+                public_key=Eth2PubKey('0xb912072ccf65435991175736cd73bcb4b2852a993f7d00c4bf3abab5fcfacbd72b37114320a60d9894eaced1ddee1cae'),
+                withdrawal_address=make_evm_address(),
+                status=ValidatorStatus.ACTIVE,
+                validator_type=ValidatorType.DISTRIBUTING,
+            ))],
+        )
+
+    with eth2.database.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[EthWithdrawalEvent(
+                identifier=1,
+                validator_index=v_index,
+                timestamp=TimestampMS(1631379127000),
+                amount=ONE,
+                withdrawal_address=make_evm_address(),
+                is_exit=False,
+            )],
+        )
+
+    with (
+        patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_validator_data', return_value=[validator]),  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.modules.eth2.eth2.Eth2._time_weighted_average', return_value=ZERO),  # noqa: E501
+    ):
+        result = eth2.get_performance(
+            from_ts=Timestamp(1631378127),
+            to_ts=Timestamp(1631379927),
+            limit=100,
+            offset=0,
+            validator_indices=[v_index],
+            ignore_cache=True,
+        )
+        validator_apr = result['validators'][v_index]
+        assert FVal(validator_apr['sum']) == ONE
+        assert FVal(validator_apr['withdrawals']) == ONE
+        assert FVal(validator_apr['apr']) == ZERO

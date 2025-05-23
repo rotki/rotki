@@ -15,11 +15,10 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorType,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ONE, WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.constants.timing import (
     DAY_IN_SECONDS,
     HOUR_IN_SECONDS,
-    WEEK_IN_MILLISECONDS,
 )
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import (
@@ -704,8 +703,11 @@ class DBEth2:
             bindings.extend(validator_indices)
         cursor.execute(f'{query} ORDER BY timestamp ASC', bindings)
 
-        for v_index, timestamp, balance, withdrawal_pnl, exit_pnl in cursor:
-            balances_over_time[v_index][timestamp] += FVal(balance)
+        for v_index, timestamp, str_balance, withdrawal_pnl, exit_pnl in cursor:
+            if (balance := FVal(str_balance)) > ZERO:  # store balance data only if balance > 0
+                balances_over_time[v_index][timestamp] = FVal(balance)
+
+            # accumulate PnL data
             withdrawals_pnl[v_index] += FVal(withdrawal_pnl)
             exits_pnl[v_index] += FVal(exit_pnl)
             if (ts_in_sec := ts_ms_to_sec(timestamp)) > latest_ts:
