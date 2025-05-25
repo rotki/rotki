@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_ARB,
     A_ETH,
+    A_OP,
     A_USDC,
     A_WETH_ARB,
     A_WETH_BASE,
@@ -40,6 +41,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.inquirer import Inquirer
 
@@ -1202,6 +1204,49 @@ def test_hop_claim_rewards_2(
             tx_hash=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xCA16fAf47686aCFEbD6CFC74419fcC9Cbf833067']])
+def test_hop_claim_merkle_rewards(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x7f8114d30702cd540154b01a666ef6a7cf4dab8c4d657efa9e0503413243d2f3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, reward_amount = TimestampMS(1747908883000), '0.000000228471368276', '0.18'
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas),
+            location_label=optimism_accounts[0],
+            notes=f'Burn {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=15,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_OP,
+            amount=FVal(reward_amount),
+            location_label=optimism_accounts[0],
+            notes=f'Claim {reward_amount} OP from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x45269F59aA76bB491D0Fc4c26F468D8E1EE26b73'),
         ),
     ]
     assert events == expected_events

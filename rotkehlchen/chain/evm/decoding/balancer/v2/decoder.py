@@ -217,7 +217,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
 
         asset = context.event.asset.resolve_to_evm_token()
         if (
-            isinstance(context.action_items[-1].asset, EvmToken) is False and
+            context.action_items[-1].asset and isinstance(context.action_items[-1].asset, EvmToken) is False and  # noqa: E501
             not ((
                 context.action_items[-1].asset.evm_address != context.tx_log.address and  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statement in the or this check won't be evaluated if the asset isn't a token
                 context.action_items[-1].amount != context.event.amount
