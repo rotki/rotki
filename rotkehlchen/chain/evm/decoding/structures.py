@@ -19,7 +19,7 @@ class ActionItem:
     action: Literal['transform', 'skip', 'skip & keep']
     from_event_type: 'HistoryEventType'
     from_event_subtype: 'HistoryEventSubType'
-    asset: 'Asset'
+    asset: Optional['Asset'] = None
     amount: Optional['FVal'] = None
     location_label: str | None = None
     address: ChecksumEvmAddress | None = None

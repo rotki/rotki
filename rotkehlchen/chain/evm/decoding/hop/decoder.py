@@ -38,6 +38,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     ADD_LIQUIDITY,
+    CLAIMED,
     REMOVE_LIQUIDITY,
     REMOVE_LIQUIDITY_ONE,
     REWARDS_PAID,
@@ -325,7 +326,7 @@ class HopCommonDecoder(DecoderInterface):
     def _decode_token_swap(self, context: DecoderContext) -> DecodingOutput:
         """Decodes a TokenSwap event to set the proper bridged amount"""
         for item in context.action_items:
-            if item.to_event_subtype == HistoryEventSubType.BRIDGE:
+            if item.asset and item.to_event_subtype == HistoryEventSubType.BRIDGE:
                 tokens_bought = int.from_bytes(context.tx_log.data[32:64])
                 asset = item.asset.resolve_to_evm_token()
                 amount = token_normalized_value(tokens_bought, asset)
@@ -522,6 +523,9 @@ class HopCommonDecoder(DecoderInterface):
                 preposition='from',
             )
 
+        if context.tx_log.topics[0] == CLAIMED:
+            return self._decode_merkle_claim(context=context)
+
         if context.tx_log.topics[0] == WITHDRAWN:
             return self._decode_common_staking(
                 context=context,
@@ -532,6 +536,24 @@ class HopCommonDecoder(DecoderInterface):
             )
 
         return DEFAULT_DECODING_OUTPUT
+
+    def _decode_merkle_claim(self, context: DecoderContext) -> DecodingOutput:
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        action_item = ActionItem(
+            action='transform',
+            amount=amount,
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            to_event_type=HistoryEventType.STAKING,
+            to_event_subtype=HistoryEventSubType.REWARD,
+            to_notes='Claim {amount} {symbol} from Hop',
+            to_counterparty=CPT_HOP,
+            to_address=context.tx_log.address,
+        )
+        return DecodingOutput(action_items=[action_item])
 
     def _decode_common_staking(
             self,

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Hop staking merkle rewards for optimism should be properly decoded.
 * :feature:`-` More Stakedao bribes should be properly decoded
 * :feature:`-` User will now be able to redecode events for only selected chains if they need.
 * :bug:`-` rotki should decode newer safe multisig owner addition/removal transactions properly now.

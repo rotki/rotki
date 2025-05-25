@@ -1316,7 +1316,7 @@ class EVMTransactionDecoder(ABC):
 
         for idx, action_item in enumerate(action_items):
             if (
-                    action_item.asset == found_token and
+                    (action_item.asset is None or action_item.asset == found_token) and
                     action_item.from_event_type == transfer.event_type and
                     action_item.from_event_subtype == transfer.event_subtype and
                     (

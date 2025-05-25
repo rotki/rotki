@@ -58,4 +58,5 @@ REWARD_CONTRACTS: Final = {
     string_to_evm_address('0x2935008eE9943f859C4fbb863c5402fFC06f462E'),  # HOP (sUSD)
     string_to_evm_address('0x25FB92E505F752F730cAD0Bd4fa17ecE4A384266'),  # OP (sUSD)
     string_to_evm_address('0x266e2dc3C4c59E42AA07afeE5B09E964cFFe6778'),  # RPL (rETH)
+    string_to_evm_address('0x45269F59aA76bB491D0Fc4c26F468D8E1EE26b73'),  # Merkle reewards (OP)
 }
