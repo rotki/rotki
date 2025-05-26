@@ -1503,7 +1503,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         if cache_key_parts is None:
             cache_key_parts = []
         if (
-            should_update_protocol_cache(cache_type, cache_key_parts) is False and
+            should_update_protocol_cache(self.database, cache_type, cache_key_parts) is False and
             force_refresh is False
         ):
             log.debug(f'Not refreshing cache {cache_type}. Queried recently')

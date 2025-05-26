@@ -81,8 +81,9 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         Returns a fresh addresses to decoders mapping.
         """
         if should_update_protocol_cache(
-            cache_key=CacheType.STAKEDAO_GAUGES,
-            args=(str(self.evm_inquirer.chain_id.serialize()),),
+                userdb=self.base.database,
+                cache_key=CacheType.STAKEDAO_GAUGES,
+                args=(str(self.evm_inquirer.chain_id.serialize()),),
         ) is True:
             query_stakedao_gauges(self.evm_inquirer)
 

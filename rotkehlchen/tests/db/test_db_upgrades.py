@@ -2187,8 +2187,11 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         value TEXT
     )""") is True
         cache_values = cursor.execute('SELECT name, value FROM key_value_cache').fetchall()
-        assert len(cache_values) == len(should_move_settings) + len(should_move_used_query_ranges)
+        assert len(cache_values) == len(should_move_settings) + len(should_move_used_query_ranges) + 1  # 1 is for the last_db_upgrade_ts  # noqa: E501
         for name, value in cache_values:
+            if name == 'last_db_upgrade':
+                continue  # this unrelated
+
             assert name not in should_not_move_settings
             assert name not in should_not_move_used_query_ranges
             if name in should_move_settings:

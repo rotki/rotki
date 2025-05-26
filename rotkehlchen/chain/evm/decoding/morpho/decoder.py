@@ -68,12 +68,13 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         Returns a fresh addresses to decoders mapping.
         """
         updated = False
-        if should_update_protocol_cache(CacheType.MORPHO_VAULTS) is True:
+        if should_update_protocol_cache(self.base.database, CacheType.MORPHO_VAULTS) is True:
             query_morpho_vaults(database=self.evm_inquirer.database)
             updated = True
         if should_update_protocol_cache(
-            cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
-            args=(str(self.evm_inquirer.chain_id),),
+                userdb=self.base.database,
+                cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
+                args=(str(self.evm_inquirer.chain_id),),
         ) is True:
             query_morpho_reward_distributors()
             updated = True

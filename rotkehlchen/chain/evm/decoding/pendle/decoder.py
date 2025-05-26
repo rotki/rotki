@@ -500,9 +500,11 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         if should_update_protocol_cache(
-            cache_key=CacheType.PENDLE_POOLS,
-            args=(str(self.evm_inquirer.chain_id.serialize()),),
+                userdb=self.base.database,
+                cache_key=CacheType.PENDLE_POOLS,
+                args=(str(self.evm_inquirer.chain_id.serialize()),),
         ) or should_update_protocol_cache(
+            userdb=self.base.database,
             cache_key=CacheType.PENDLE_SY_TOKENS,
             args=(str(self.evm_inquirer.chain_id.serialize()),),
         ):

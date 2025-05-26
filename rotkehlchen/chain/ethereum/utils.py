@@ -14,7 +14,8 @@ from web3 import Web3
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_XDAI
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
-from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH
+from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH, HOUR_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -31,6 +32,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.opensea import Opensea
 
 
@@ -132,12 +134,21 @@ def generate_address_via_create2(
     return to_checksum_address(contract_address)
 
 
-def should_update_protocol_cache(cache_key: CacheType, args: Sequence[str] | None = None) -> bool:
+def should_update_protocol_cache(
+        userdb: 'DBHandler',
+        cache_key: CacheType,
+        args: Sequence[str] | None = None,
+) -> bool:
     """
     Checks if the last time the cache_key was queried is far enough to trigger
     the process of querying it again.
     """
     args = args if args is not None else []
+    now = ts_now()
+    with userdb.conn.read_ctx() as cursor:
+        if (last_upgrade_ts := userdb.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DB_UPGRADE)) is not None and (now - last_upgrade_ts) < HOUR_IN_SECONDS * 3:  # noqa: E501
+            return False  # if we had recent DB upgrade don't refresh
+
     with GlobalDBHandler().conn.read_ctx() as cursor:
         if cache_key in UNIQUE_CACHE_KEYS:
             last_update_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
@@ -149,7 +160,7 @@ def should_update_protocol_cache(cache_key: CacheType, args: Sequence[str] | Non
                 cursor=cursor,
                 key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here
             )
-    return ts_now() - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
+    return now - last_update_ts >= ETH_PROTOCOLS_CACHE_REFRESH
 
 
 def _get_response_image(response: requests.adapters.Response) -> bytes:

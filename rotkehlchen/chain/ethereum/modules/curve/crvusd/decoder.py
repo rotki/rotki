@@ -59,7 +59,10 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
         Returns a fresh addresses to decoders mapping."""
-        if should_update_protocol_cache(CacheType.CURVE_CRVUSD_CONTROLLERS) is True:
+        if should_update_protocol_cache(
+                userdb=self.base.database,
+                cache_key=CacheType.CURVE_CRVUSD_CONTROLLERS,
+        ) is True:
             query_crvusd_controllers(evm_inquirer=self.evm_inquirer)
         elif len(self.controllers) != 0:
             return None  # we didn't update the globaldb cache, and we have the data already
