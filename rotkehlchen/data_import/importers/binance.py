@@ -209,6 +209,31 @@ class BinanceTradeEntry(BinanceMultipleEntry):
         Change is amount, Coin is asset
         If amount is negative then this asset is sold, otherwise it's bought
         """
+        # First, aggregate all amounts by operation and coin
+        # for Transaction Buy/Spend/Fee operations
+        aggregated_data, other_data = {}, []
+        for row in data:
+            operation = row['Operation']
+            coin = row['Coin']
+            change = row['Change']
+
+            # Check if this is a Transaction Buy/Spend/Fee operation that should be aggregated
+            if operation in {'Transaction Buy', 'Transaction Spend', 'Transaction Fee'}:
+                key = (operation, coin)
+                if key not in aggregated_data:
+                    aggregated_data[key] = {
+                        'Operation': operation,
+                        'Coin': coin,
+                        'Change': ZERO,
+                        INDEX: row[INDEX],  # Keep the first row's index
+                    }
+                aggregated_data[key]['Change'] += change
+            else:
+                other_data.append(row)
+
+        # Combine aggregated data with other data
+        data = list(aggregated_data.values()) + other_data
+
         # Because we can get mixed data (e.g. multiple Buys or Sells on a single timestamp) we need
         # to group it somehow. We are doing it by grouping the highest bought with the highest
         # sold value. We query usd equivalent for each amount because different Sells / Buys
