@@ -656,7 +656,7 @@ class TaskManager:
             if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
                 return None
 
-        if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
+        if should_update_protocol_cache(self.database, CacheType.YEARN_VAULTS) is True:
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update yearn vaults',
@@ -678,7 +678,7 @@ class TaskManager:
                 return None
 
         greenlets = []
-        if should_update_protocol_cache(CacheType.MORPHO_VAULTS) is True:
+        if should_update_protocol_cache(self.database, CacheType.MORPHO_VAULTS) is True:
             greenlets.append(self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update Morpho vaults',
@@ -689,6 +689,7 @@ class TaskManager:
 
         if any(
             should_update_protocol_cache(
+                userdb=self.database,
                 cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
                 args=(str(chain_id),),
             )
@@ -724,7 +725,7 @@ class TaskManager:
                 evm_inquirer=self.chains_aggregator.get_evm_manager(chain).node_inquirer,  # type: ignore[arg-type]  # chain is supported
             )
             for chain in PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM | {ChainID.ETHEREUM}
-            if should_update_protocol_cache(CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
+            if should_update_protocol_cache(self.database, CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
         ]
 
     def _maybe_update_aura_pools(self) -> Optional[list[gevent.Greenlet]]:
@@ -748,7 +749,7 @@ class TaskManager:
                 evm_inquirer=self.chains_aggregator.get_evm_manager(chain).node_inquirer,  # type: ignore[arg-type]  # chain id is valid
             )
             for chain in CHAIN_ID_TO_BOOSTER_ADDRESSES
-            if should_update_protocol_cache(CacheType.AURA_POOLS, (str(chain.value),)) is True
+            if should_update_protocol_cache(self.database, CacheType.AURA_POOLS, (str(chain.value),)) is True  # noqa: E501
         ]
 
     def _maybe_check_data_updates(self) -> Optional[list[gevent.Greenlet]]:
@@ -788,7 +789,7 @@ class TaskManager:
             if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
                 return None
 
-        if should_update_protocol_cache(CacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:
+        if should_update_protocol_cache(self.database, CacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:  # noqa: E501
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name='Update ilk cache',

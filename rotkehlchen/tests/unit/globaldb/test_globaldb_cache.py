@@ -493,6 +493,7 @@ def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
         datetime.datetime(year=2024, month=9, day=25, hour=15, minute=30, tzinfo=datetime.UTC),
     )
     assert should_update_protocol_cache(
+        userdb=blockchain.database,
         cache_key=CacheType.CURVE_LP_TOKENS,
         args=(str(ChainID.ETHEREUM.serialize_for_db()),),
     ) is True
@@ -511,6 +512,7 @@ def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
         datetime.datetime(year=2024, month=9, day=26, hour=15, minute=30, tzinfo=datetime.UTC),
     )
     assert should_update_protocol_cache(
+        userdb=blockchain.database,
         cache_key=CacheType.CURVE_LP_TOKENS,
         args=(str(ChainID.ETHEREUM.serialize_for_db()),),
     ) is False

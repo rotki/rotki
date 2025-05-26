@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrades.v26_v27 import upgrade_v26_to_v27
 from rotkehlchen.db.upgrades.v27_v28 import upgrade_v27_to_v28
@@ -250,6 +251,8 @@ class DBUpgradeManager:
             raise DBUpgradeError(error_message) from e
 
         # Upgrade success all is good - Note: We keep the backups even for success
-        with self.db.user_write() as cursor:
-            cursor.execute('DELETE FROM settings WHERE name=?', ('ongoing_upgrade_from_version',))
-            self.db.set_setting(write_cursor=cursor, name='version', value=to_version)
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute('DELETE FROM settings WHERE name=?', ('ongoing_upgrade_from_version',))  # noqa: E501
+            self.db.set_setting(write_cursor=write_cursor, name='version', value=to_version)
+            if to_version >= 41:
+                self.db.set_static_cache(write_cursor=write_cursor, name=DBCacheStatic.LAST_DB_UPGRADE, value=ts_now())  # noqa: E501

@@ -1050,6 +1050,7 @@ def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
             key_parts=(CacheType.EXTRAFI_NEXT_RESERVE_ID, chain),
         )
         assert should_update_protocol_cache(
+            userdb=optimism_inquirer.database,
             cache_key=CacheType.EXTRAFI_NEXT_RESERVE_ID,
             args=(chain,),
         ) is False

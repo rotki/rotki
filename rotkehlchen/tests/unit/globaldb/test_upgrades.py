@@ -624,7 +624,7 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [7])
 @pytest.mark.parametrize('reload_user_assets', [False])
-def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
+def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator, database):
     """Test the global DB upgrade from v7 to v8"""
     # Check the state before upgrading
     with globaldb.conn.read_ctx() as cursor:
@@ -674,7 +674,7 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
 
         # before update, the cache is not eligible to refresh, because last_queried_ts is ts_now()
         cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
-        assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False
+        assert should_update_protocol_cache(database, CacheType.CURVE_LP_TOKENS) is False
 
     assert unique_entries['Wormhole Token', 'W'] == 263
     assert unique_entries['TokenFi', 'TOKEN'] == 264
@@ -764,7 +764,7 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute("SELECT COUNT(*) FROM general_cache WHERE key LIKE 'CURVE_POOL_UNDERLYING_TOKENS%'").fetchone()[0] == 0  # noqa: E501
 
         # ensure that now curve cache should be eligible to update
-        assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS, '1') is True
+        assert should_update_protocol_cache(database, CacheType.CURVE_LP_TOKENS, '1') is True
 
     with (
         pytest.raises(IntegrityError),

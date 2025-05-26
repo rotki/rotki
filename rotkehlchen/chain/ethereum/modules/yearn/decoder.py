@@ -99,7 +99,7 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
         """Check that cache is up to date and refresh cache from db
         Returns a fresh addresses to decoders mapping.
         """
-        if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
+        if should_update_protocol_cache(self.base.database, CacheType.YEARN_VAULTS) is True:
             query_yearn_vaults(
                 db=self.evm_inquirer.database,
                 ethereum_inquirer=cast('EthereumInquirer', self.evm_inquirer),
