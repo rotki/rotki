@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Binance CSV import now correctly handles complex trade entries that span multiple rows.
+* :bug:`-` Balancer pool token price errors are now properly handled instead of breaking portfolio snapshots.
 * :feature:`-` Users will now be able to redecode the ETH block events.
 * :feature:`-` Users will now be able to fetch/refresh the name, symbol and decimals for an evm token from chain data.
 * :feature:`-` Hop staking merkle rewards for optimism should be properly decoded.
