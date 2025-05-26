@@ -16,7 +16,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
-from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     CurvePoolData,
@@ -983,7 +983,7 @@ def test_find_morpho_vault_price(database: 'DBHandler', inquirer_defi: 'Inquirer
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
     """Test that we get the correct price for Balancer pool tokens."""
-    pufeth_wseth_token = get_or_create_evm_token(
+    pufeth_wseth_token = get_or_create_evm_token(  # v2 pool
         userdb=database,
         evm_address=string_to_evm_address('0x63E0d47A6964aD1565345Da9bfA66659F4983F02'),
         chain_id=ChainID.ETHEREUM,
@@ -1002,8 +1002,52 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
             weight=FVal('0.5'),
         )],
     )
+    prf_usdc_token = get_or_create_evm_token(  # v1 pool without liquidity
+        userdb=database,
+        evm_address=string_to_evm_address('0x19AD01cDc68d831F8E97A2CF9f552D16315eF175'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='50PRF-50USDC',
+        name='Balancer CoW AMM 50 PRF 50 USDC',
+        decimals=18,
+        protocol=CPT_BALANCER_V1,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x1310952Bc5594852459Ee45bfD0df70b34Ac5509'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=FVal('0.5'),
+        ), UnderlyingToken(
+            address=string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=FVal('0.5'),
+        )],
+    )
+    ring_wsteth_token = get_or_create_evm_token(  # v1 pool with liquidity
+        userdb=database,
+        evm_address=string_to_evm_address('0xAeF24dd15Ad265319A5F0Bfa53bF3CD328375B7B'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='BCoW-50RING-50wstETH',
+        name='Balancer CoW AMM 50 RING 50 wstETH',
+        decimals=18,
+        protocol=CPT_BALANCER_V1,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x9e523234D36973f9e38642886197D023C88e307e'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=FVal('0.5'),
+        ), UnderlyingToken(
+            address=string_to_evm_address('0x5979D7b546E38E414F7E9822514be443A4800529'),
+            token_kind=EvmTokenKind.ERC20,
+            weight=FVal('0.5'),
+        )],
+    )
     price = inquirer_defi.find_usd_price(asset=pufeth_wseth_token)
-    assert price.is_close(FVal('3400.8425'), max_diff='1e-5')
+    assert price.is_close(FVal('2619.2784'), max_diff='1e-4')
+
+    price = inquirer_defi.find_usd_price(asset=ring_wsteth_token)
+    assert price.is_close(FVal('5.1319'), max_diff='1e-4')
+
+    price = inquirer_defi.find_usd_price(asset=prf_usdc_token)
+    assert price == ZERO_PRICE  # This CoW AMM pool has zero liquidity and supply, so ZERO_PRICE is correct  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
