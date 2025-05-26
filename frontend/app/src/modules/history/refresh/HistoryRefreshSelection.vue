@@ -5,7 +5,7 @@ import type { EvmChainAddress, OnlineHistoryEventsQueryType } from '@/types/hist
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';
-import HistoryRefreshValidatorEvents from '@/modules/history/refresh/HistoryRefreshValidatorEvents.vue';
+import HistoryRefreshStakingEvents from '@/modules/history/refresh/HistoryRefreshStakingEvents.vue';
 
 withDefaults(defineProps<{
   processing: boolean;
@@ -34,7 +34,7 @@ const allQueriesSelected = ref<boolean>(false);
 
 const chains = useTemplateRef<ComponentExposed<typeof HistoryRefreshChains>>('chains');
 const exchanges = useTemplateRef<ComponentExposed<typeof HistoryRefreshExchanges>>('exchanges');
-const validatorEvents = useTemplateRef<ComponentExposed<typeof HistoryRefreshValidatorEvents>>('validatorEvents');
+const validatorEvents = useTemplateRef<ComponentExposed<typeof HistoryRefreshStakingEvents>>('validatorEvents');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -201,7 +201,7 @@ onMounted(() => {
           {{ t('history_refresh_selection.tabs.exchanges') }}
         </RuiTab>
         <RuiTab value="events">
-          {{ t('history_refresh_selection.validator_events') }}
+          {{ t('history_refresh_selection.tabs.events') }}
         </RuiTab>
       </RuiTabs>
 
@@ -230,7 +230,7 @@ onMounted(() => {
           />
         </RuiTabItem>
         <RuiTabItem value="events">
-          <HistoryRefreshValidatorEvents
+          <HistoryRefreshStakingEvents
             ref="validatorEvents"
             v-model="selectedQueries"
             v-model:search="search"

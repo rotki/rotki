@@ -2828,14 +2828,14 @@
     "selection": "Select one or more to refresh their events",
     "tabs": {
       "chains": "Chains",
+      "events": "ETH Staking Events",
       "exchanges": "Exchanges"
     },
     "type": {
       "accounts": "Accounts | Account | Accounts",
       "events": "Events | Event | Events",
       "exchanges": "Exchanges | Exchange | Exchanges"
-    },
-    "validator_events": "Validator Events"
+    }
   },
   "ignore": {
     "confirm": {
