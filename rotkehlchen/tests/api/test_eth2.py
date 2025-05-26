@@ -1485,10 +1485,14 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
             )],
         )
 
-    assert_proper_sync_response_with_result(requests.put(
-        api_url_for(rotkehlchen_api_server, 'eth2stakingeventsresource'),
-        json={'block_numbers': [block_number, block_number + 1], 'async_query': False},
-    ))
+    assert_proper_response_with_result(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'eth2stakingeventsresource'),
+            json={'block_numbers': [block_number, block_number + 1], 'async_query': True},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=True,
+    )
 
     with db.conn.read_ctx() as cursor:
         # Check raw data from the db since deserializing EthBlockEvents performs the same check
