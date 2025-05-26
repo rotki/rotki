@@ -74,10 +74,12 @@ defineExpose({
       :identifier="exchange.location"
       icon
       :open-details="false"
-      size="26px"
+      size="20px"
     />
 
-    {{ exchange.name }}
+    <span class="ml-2 text-rui-text-secondary text-sm capitalize">
+      {{ exchange.name }}
+    </span>
 
     <div class="grow" />
   </div>

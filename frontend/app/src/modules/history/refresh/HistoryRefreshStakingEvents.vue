@@ -63,7 +63,9 @@ defineExpose({
       @click.prevent.stop="toggleSelect(query)"
     />
 
-    {{ toHumanReadable(query) }}
+    <span class="capitalize text-sm text-rui-text-secondary">
+      {{ toHumanReadable(query) }}
+    </span>
 
     <div class="grow" />
   </div>
