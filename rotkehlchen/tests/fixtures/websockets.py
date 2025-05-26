@@ -38,7 +38,7 @@ class WebsocketReader:
     def wait_until_messages_num(self, num: int, timeout: int) -> None:
         try:
             with gevent.Timeout(timeout):
-                while self.messages_num() != num:
+                while self.messages_num() < num:
                     gevent.sleep(0.2)
         except gevent.Timeout as e:
             msg = f'Websocket reader did not contain {num} messages within {timeout} seconds. Only found {self.messages_num()}'  # noqa: E501
