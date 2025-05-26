@@ -21,7 +21,7 @@ import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, t
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { omit } from 'es-toolkit';
+import { omit, pick } from 'es-toolkit';
 
 const modelValue = defineModel<SupportedAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -174,24 +174,32 @@ function saveIcon(identifier: string) {
 }
 
 async function fetchTokenData(address: string, evmChain: string): Promise<void> {
-  if (isValidEvmChain(evmChain)) {
+  if (!isValidEvmChain(evmChain)) {
     return;
   }
   set(fetching, true);
 
+  const tokenInfo = pick(get(modelValue), ['decimals', 'name', 'symbol']);
   const tokenDetails = await fetchTokenDetails({ address, evmChain });
 
-  if (tokenDetails.decimals)
-    set(decimals, tokenDetails.decimals);
+  const updateTokenInfo = {
+    decimals: tokenDetails.decimals ? tokenDetails.decimals : tokenInfo.decimals,
+    name: tokenDetails.name ? tokenDetails.name : tokenInfo.name,
+    symbol: tokenDetails.symbol ? tokenDetails.symbol : tokenInfo.symbol,
+  };
 
-  if (tokenDetails.name)
-    set(name, tokenDetails.name);
-
-  if (tokenDetails.symbol)
-    set(symbol, tokenDetails.symbol);
+  set(modelValue, { ...get(modelValue), ...updateTokenInfo });
 
   set(fetching, false);
   clearFieldErrors(['decimals', 'name', 'symbol']);
+}
+
+async function refreshTokenData() {
+  if (!isDefined(evmChain)) {
+    return;
+  }
+
+  await fetchTokenData(get(address), get(evmChain));
 }
 
 function isValidEvmChain(evmChain: string) {
@@ -328,7 +336,21 @@ defineExpose({
             :disabled="loading || fetching || editMode"
             @keydown.space.
             @blur="v$.address.$touch()"
-          />
+          >
+            <template
+              v-if="isEvmToken && editMode"
+              #append
+            >
+              <RuiButton
+                variant="text"
+                icon
+                :disabled="loading || fetching"
+                @click="refreshTokenData()"
+              >
+                <RuiIcon name="lu-refresh-cw" />
+              </RuiButton>
+            </template>
+          </RuiTextField>
         </div>
       </template>
 
