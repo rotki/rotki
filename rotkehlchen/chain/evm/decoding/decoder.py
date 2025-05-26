@@ -134,6 +134,7 @@ def decode_safely(
         ValueError,
         ConversionError,
         Web3Exception,
+        NotERC20Conformant,
     ) as e:
         log.error(traceback.format_exc())
         error_prefix = f'Decoding of transaction {tx_hash.hex()} in {chain_id.to_name()}'
