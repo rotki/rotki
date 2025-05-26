@@ -486,3 +486,41 @@ def test_claim_rewards(arbitrum_one_inquirer, arbitrum_one_accounts):
         counterparty=CPT_STAKEDAO,
         address=string_to_evm_address('0x533C72541B918280E3492e4106e7262b8b5B1811'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xb6aE392c3D209BEE9dEd8A2a434A47c05F651092']])
+def test_claim_bribe_with_protocolfee(ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xd76c858d4e9a11d6b2cb70ca752c898728e79f40705c93d7e31b814f8f20a497')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    user_address, gas_amount, claim_amount, timestamp, period = ethereum_accounts[0], '0.002079703956975652', '0.703793566500610594', TimestampMS(1679130407000), 1678924800  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        address=None,
+    ), EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=221,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96'),  # GNO
+        amount=FVal(claim_amount),
+        location_label=user_address,
+        notes=f'Claim {claim_amount} GNO from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+        counterparty=CPT_STAKEDAO,
+        address=string_to_evm_address('0x7D0F747eb583D43D41897994c983F13eF7459e1f'),
+        product=EvmProduct.BRIBE,
+    )]
+    assert events == expected_events
