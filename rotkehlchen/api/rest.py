@@ -2363,9 +2363,9 @@ class RestAPI:
     def redecode_eth2_block_events(
             self,
             block_numbers: list[int] | None,
-    ) -> Response:
+    ) -> dict[str, Any]:
         DBEth2(self.rotkehlchen.data.db).redecode_block_production_events(block_numbers)
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return OK_RESULT
 
     @async_api_call()
     def get_airdrops(self) -> dict[str, Any]:
