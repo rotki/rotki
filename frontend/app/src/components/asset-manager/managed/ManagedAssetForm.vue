@@ -21,27 +21,25 @@ import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, t
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { omit } from 'es-toolkit';
+import { omit, pick } from 'es-toolkit';
 
 const modelValue = defineModel<SupportedAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(
-  defineProps<{
-    editMode?: boolean;
-    loading?: boolean;
-  }>(),
-  {
-    editMode: false,
-    loading: false,
-  },
-);
-
-const { t } = useI18n({ useScope: 'global' });
-const { fetchTokenDetails } = useAssetInfoRetrieval();
+const props = withDefaults(defineProps<{
+  editMode?: boolean;
+  loading?: boolean;
+}>(), {
+  editMode: false,
+  loading: false,
+});
 
 const types = ref<SelectOptions>([{ key: EVM_TOKEN, label: toSentenceCase(EVM_TOKEN) }]);
+const fetching = ref<boolean>(false);
+const dontAutoFetch = ref<boolean>(false);
+const underlyingTokens = ref<UnderlyingToken[]>([]);
+const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
 
 const identifier = useRefPropVModel(modelValue, 'identifier');
 const address = refOptional(useRefPropVModel(modelValue, 'address'), '');
@@ -57,14 +55,6 @@ const protocol = refOptional(useRefPropVModel(modelValue, 'protocol'), '');
 const swappedFor = refOptional(useRefPropVModel(modelValue, 'swappedFor'), '');
 const forked = refOptional(useRefPropVModel(modelValue, 'forked'), '');
 const started = useRefPropVModel(modelValue, 'started');
-
-function parseDecimals(value?: string): number | null {
-  if (!value)
-    return null;
-
-  const parsedValue = Number.parseInt(value);
-  return Number.isNaN(parsedValue) ? null : parsedValue;
-}
 
 const startedModel = computed({
   get: () => {
@@ -85,21 +75,13 @@ const decimalsModel = computed({
   },
 });
 
-const fetching = ref<boolean>(false);
-const dontAutoFetch = ref<boolean>(false);
-
-const underlyingTokens = ref<UnderlyingToken[]>([]);
-
-const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
-
-const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
-
-const { allEvmChains } = useSupportedChains();
-
 const { setMessage } = useMessageStore();
-
+const { t } = useI18n({ useScope: 'global' });
+const { allEvmChains, txEvmChains } = useSupportedChains();
+const { fetchTokenDetails } = useAssetInfoRetrieval();
 const { addAsset, editAsset, getAssetTypes } = useAssetManagementApi();
 
+const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 const externalServerValidation = () => true;
 
 const states = {
@@ -118,33 +100,37 @@ const states = {
   tokenKind,
 };
 
-const v$ = useVuelidate(
-  {
-    address: {
-      required: requiredIf(isEvmToken),
-      validated: helpers.withMessage(
-        t('asset_form.validation.valid_address'),
-        (v: string) => !get(isEvmToken) || isValidEthAddress(v),
-      ),
-    },
-    assetType: { required },
-    coingecko: { externalServerValidation },
-    cryptocompare: { externalServerValidation },
-    decimals: { externalServerValidation },
-    evmChain: { externalServerValidation },
-    forked: { externalServerValidation },
-    name: { externalServerValidation },
-    protocol: { externalServerValidation },
-    started: { externalServerValidation },
-    swappedFor: { externalServerValidation },
-    symbol: { externalServerValidation },
-    tokenKind: { externalServerValidation },
+const v$ = useVuelidate({
+  address: {
+    required: requiredIf(isEvmToken),
+    validated: helpers.withMessage(
+      t('asset_form.validation.valid_address'),
+      (v: string) => !get(isEvmToken) || isValidEthAddress(v),
+    ),
   },
-  states,
-  { $autoDirty: true, $externalResults: errors },
-);
+  assetType: { required },
+  coingecko: { externalServerValidation },
+  cryptocompare: { externalServerValidation },
+  decimals: { externalServerValidation },
+  evmChain: { externalServerValidation },
+  forked: { externalServerValidation },
+  name: { externalServerValidation },
+  protocol: { externalServerValidation },
+  started: { externalServerValidation },
+  swappedFor: { externalServerValidation },
+  symbol: { externalServerValidation },
+  tokenKind: { externalServerValidation },
+}, states, { $autoDirty: true, $externalResults: errors });
 
 useFormStateWatcher(states, stateUpdated);
+
+function parseDecimals(value?: string): number | null {
+  if (!value)
+    return null;
+
+  const parsedValue = Number.parseInt(value);
+  return Number.isNaN(parsedValue) ? null : parsedValue;
+}
 
 function clearFieldError(field: keyof SupportedAsset) {
   set(errors, omit(get(errors), [field]));
@@ -153,64 +139,6 @@ function clearFieldError(field: keyof SupportedAsset) {
 function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
   fields.forEach(clearFieldError);
 }
-
-const { txEvmChains } = useSupportedChains();
-
-watch([address, evmChain], async ([address, evmChain]) => {
-  if (!evmChain)
-    return;
-
-  if (get(dontAutoFetch) || !isValidEthAddress(address)) {
-    set(dontAutoFetch, false);
-    return;
-  }
-
-  if (get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain)) {
-    set(fetching, true);
-
-    const { decimals: newDecimals, name: newName, symbol: newSymbol } = await fetchTokenDetails({ address, evmChain });
-
-    if (newDecimals)
-      set(decimals, newDecimals);
-
-    if (newName)
-      set(name, newName);
-
-    if (newSymbol)
-      set(symbol, newSymbol);
-
-    set(fetching, false);
-    clearFieldErrors(['decimals', 'name', 'symbol']);
-  }
-});
-
-watch(assetType, () => {
-  // clearing errors because the errors are unique based on the asset type
-  set(errors, {});
-});
-
-onBeforeMount(async () => {
-  try {
-    const queriedTypes = await getAssetTypes();
-    set(
-      types,
-      queriedTypes
-        .filter(item => item !== CUSTOM_ASSET)
-        .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
-    );
-  }
-  catch (error: any) {
-    setMessage({
-      description: t('asset_form.types.error', {
-        message: error.message,
-      }),
-    });
-  }
-});
-
-onMounted(() => {
-  set(dontAutoFetch, props.editMode);
-});
 
 async function saveAsset() {
   let newIdentifier: string;
@@ -245,6 +173,56 @@ function saveIcon(identifier: string) {
   get(assetIconFormRef)?.saveIcon(identifier);
 }
 
+async function fetchTokenData(address: string, evmChain: string): Promise<void> {
+  if (!isValidEvmChain(evmChain)) {
+    return;
+  }
+  set(fetching, true);
+
+  const tokenInfo = pick(get(modelValue), ['decimals', 'name', 'symbol']);
+  const tokenDetails = await fetchTokenDetails({ address, evmChain });
+
+  const updateTokenInfo = {
+    decimals: tokenDetails.decimals ? tokenDetails.decimals : tokenInfo.decimals,
+    name: tokenDetails.name ? tokenDetails.name : tokenInfo.name,
+    symbol: tokenDetails.symbol ? tokenDetails.symbol : tokenInfo.symbol,
+  };
+
+  set(modelValue, { ...get(modelValue), ...updateTokenInfo });
+
+  set(fetching, false);
+  clearFieldErrors(['decimals', 'name', 'symbol']);
+}
+
+async function refreshTokenData() {
+  if (!isDefined(evmChain)) {
+    return;
+  }
+
+  await fetchTokenData(get(address), get(evmChain));
+}
+
+function isValidEvmChain(evmChain: string) {
+  return get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain);
+}
+
+watch([address, evmChain], async ([address, evmChain]) => {
+  if (!evmChain)
+    return;
+
+  if (get(dontAutoFetch) || !isValidEthAddress(address)) {
+    set(dontAutoFetch, false);
+    return;
+  }
+
+  await fetchTokenData(address, evmChain);
+});
+
+watch(assetType, () => {
+  // clearing errors because the errors are unique based on the asset type
+  set(errors, {});
+});
+
 watchImmediate(modelValue, (asset) => {
   if (asset.underlyingTokens && asset.underlyingTokens.length > 0) {
     set(underlyingTokens, asset.underlyingTokens);
@@ -252,6 +230,29 @@ watchImmediate(modelValue, (asset) => {
   else {
     set(underlyingTokens, []);
   }
+});
+
+onBeforeMount(async () => {
+  try {
+    const queriedTypes = await getAssetTypes();
+    set(
+      types,
+      queriedTypes
+        .filter(item => item !== CUSTOM_ASSET)
+        .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
+    );
+  }
+  catch (error: any) {
+    setMessage({
+      description: t('asset_form.types.error', {
+        message: error.message,
+      }),
+    });
+  }
+});
+
+onMounted(() => {
+  set(dontAutoFetch, props.editMode);
 });
 
 defineExpose({
@@ -335,7 +336,21 @@ defineExpose({
             :disabled="loading || fetching || editMode"
             @keydown.space.
             @blur="v$.address.$touch()"
-          />
+          >
+            <template
+              v-if="isEvmToken && editMode"
+              #append
+            >
+              <RuiButton
+                variant="text"
+                icon
+                :disabled="loading || fetching"
+                @click="refreshTokenData()"
+              >
+                <RuiIcon name="lu-refresh-cw" />
+              </RuiButton>
+            </template>
+          </RuiTextField>
         </div>
       </template>
 

@@ -2,9 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to fetch/refresh the name, symbol and decimals for an evm token from chain data.
 * :feature:`-` Hop staking merkle rewards for optimism should be properly decoded.
 * :feature:`-` More Stakedao bribes should be properly decoded
-* :feature:`-` User will now be able to redecode events for only selected chains if they need.
+* :feature:`-` Users will now be able to redecode events for only selected chains if they need.
 * :bug:`-` rotki should decode newer safe multisig owner addition/removal transactions properly now.
 * :feature:`9965` Users will now be able to chose which chains and addresses they can refresh history events for.
 * :bug:`-` Users will now see the correct latest price on the asset chart when the currently selected currency is not USD.
