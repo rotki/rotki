@@ -9,6 +9,7 @@ import { useTaskStore } from '@/store/tasks';
 import {
   type ChainAndTxHash,
   type EvmChainAndTxHash,
+  type PullEthBlockEventPayload,
   type PullEvmTransactionPayload,
   type PullTransactionPayload,
   TransactionChainType,
@@ -25,8 +26,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
 
-  const { decodeTransactions, getUndecodedTransactionsBreakdown, pullAndRecodeTransactionRequest }
-    = useHistoryEventsApi();
+  const {
+    decodeTransactions,
+    getUndecodedTransactionsBreakdown,
+    pullAndRecodeEthBlockEventRequest,
+    pullAndRecodeTransactionRequest,
+  } = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const {
@@ -291,11 +296,53 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
+  const pullAndRecodeEthBlockEvents = async (payload: PullEthBlockEventPayload): Promise<void> => {
+    try {
+      const taskType = TaskType.ETH_BLOCK_EVENTS_DECODING;
+      const { taskId } = await pullAndRecodeEthBlockEventRequest(payload);
+
+      let taskMeta = {
+        description: t('actions.eth_block_events_redecoding.task.single_description', {
+          number: payload.blockNumbers.length,
+        }),
+        title: t('actions.eth_block_events_redecoding.task.title'),
+      };
+
+      if (payload.blockNumbers.length === 1) {
+        const data = payload.blockNumbers[0];
+        taskMeta = {
+          description: t('actions.eth_block_events_redecoding.task.description', {
+            block: data,
+          }),
+          title: t('actions.eth_block_events_redecoding.task.title'),
+        };
+      }
+
+      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+
+      if (result)
+        clearDependedSection();
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
+        notify({
+          display: true,
+          message: t('actions.eth_block_events_redecoding.error.description', {
+            error,
+          }),
+          title: t('actions.eth_block_events_redecoding.error.title'),
+        });
+      }
+    }
+  };
+
   return {
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
+    pullAndRecodeEthBlockEvents,
     pullAndRedecodeTransactions,
     redecodeTransactions,
   };

@@ -23,7 +23,9 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
 
   const sectionLoading = isSectionLoading(Section.HISTORY);
-  const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+  const transactionsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+  const ethBlockEventsDecoding = useIsTaskRunning(TaskType.ETH_BLOCK_EVENTS_DECODING);
+  const eventTaskLoading = logicOr(transactionsDecoding, ethBlockEventsDecoding);
   const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
   const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
   const isTransactionsLoading = useIsTaskRunning(TaskType.TX);

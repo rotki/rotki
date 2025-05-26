@@ -521,6 +521,17 @@
         "title": "Editing ETH staking validator"
       }
     },
+    "eth_block_events_redecoding": {
+      "error": {
+        "description": "Failed to decode ETH block events: {error}",
+        "title": "Decoding ETH block events"
+      },
+      "task": {
+        "description": "Decoding ETH block events for block: {block}",
+        "single_description": "Decoding ETH block events for {number} blocks",
+        "title": "Decoding ETH block events"
+      }
+    },
     "eth2_staking_stats": {
       "error": {
         "message": "Query failed with the following error: {message}",

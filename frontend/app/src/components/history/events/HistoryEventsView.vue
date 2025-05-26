@@ -12,6 +12,7 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type {
   AddTransactionHashPayload,
   HistoryEventRow,
+  PullEthBlockEventPayload,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
 } from '@/types/history/events';
@@ -125,7 +126,12 @@ const { decodingStatus } = storeToRefs(useHistoryStore());
 const { getAccountByAddress } = useBlockchainAccountsStore();
 const { fetchHistoryEvents } = useHistoryEvents();
 const { refreshTransactions } = useHistoryTransactions();
-const { fetchUndecodedTransactionsStatus, pullAndRedecodeTransactions, redecodeTransactions } = useHistoryTransactionDecoding();
+const {
+  fetchUndecodedTransactionsStatus,
+  pullAndRecodeEthBlockEvents,
+  pullAndRedecodeTransactions,
+  redecodeTransactions,
+} = useHistoryTransactionDecoding();
 const { eventTaskLoading, processing, refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
 const historyEventMappings = useHistoryEventMappings();
 useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
@@ -362,6 +368,12 @@ async function fetchAndRedecodeEvents(data?: PullEvmTransactionPayload): Promise
     await forceRedecodeEvmEvents(data);
 }
 
+async function redecodeBlockEvents(data: PullEthBlockEventPayload): Promise<void> {
+  set(currentAction, 'decode');
+  await pullAndRecodeEthBlockEvents(data);
+  await fetchData();
+}
+
 function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
   if (type === 'decode')
     set(decodingStatusDialogOpen, true);
@@ -530,6 +542,7 @@ onMounted(async () => {
           :highlighted-identifiers="highlightedIdentifiers"
           @show:form="showForm($event)"
           @refresh="fetchAndRedecodeEvents($event)"
+          @refresh:block-event="redecodeBlockEvents($event)"
           @set-page="setPage($event)"
         >
           <template #query-status="{ colspan }">
