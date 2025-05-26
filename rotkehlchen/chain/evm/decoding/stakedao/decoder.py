@@ -67,10 +67,12 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             claim_bribe_addresses: set['ChecksumEvmAddress'] | None = None,
+            claim_bribe_protocolfee_addresses: set['ChecksumEvmAddress'] | None = None,
             claim_bounty_addresses: set['ChecksumEvmAddress'] | None = None,
     ):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.claim_bribe_addresses = claim_bribe_addresses
+        self.claim_bribe_protocolfee_addresses = claim_bribe_protocolfee_addresses
         self.claim_bounty_addresses = claim_bounty_addresses
         self.gauges: set[ChecksumEvmAddress] = set()
 
@@ -156,6 +158,16 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
         reward_token_address = bytes_to_address(context.tx_log.topics[2])
         amount = int.from_bytes(context.tx_log.data[0:32])
         period = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
+        return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
+
+    def _decode_claim_bribe_protocolfee(self, context: DecoderContext) -> DecodingOutput:
+        """Very similar to _decode_claim_with_bribe but has topics[0] of CLAIMED_WITH_BOUNTY but different handling needed due to having a protocol fee which is not paid from the user directly so no need to decode"""  # noqa: E501
+        if context.tx_log.topics[0] != CLAIMED_WITH_BOUNTY:
+            return DEFAULT_DECODING_OUTPUT
+
+        reward_token_address = bytes_to_address(context.tx_log.topics[2])
+        amount = int.from_bytes(context.tx_log.data[0:32])
+        period = Timestamp(int.from_bytes(context.tx_log.data[64:96]))
         return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
@@ -305,6 +317,9 @@ class StakedaoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         if self.claim_bribe_addresses is not None:
             decoders.update(dict.fromkeys(self.claim_bribe_addresses, (self._decode_claim_with_bribe, )))  # noqa: E501
+
+        if self.claim_bribe_protocolfee_addresses is not None:
+            decoders.update(dict.fromkeys(self.claim_bribe_protocolfee_addresses, (self._decode_claim_bribe_protocolfee, )))  # noqa: E501
 
         return decoders
 

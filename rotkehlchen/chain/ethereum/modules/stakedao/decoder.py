@@ -27,10 +27,10 @@ class StakedaoDecoder(StakedaoCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             claim_bribe_addresses={STAKEDAO_CLAIMER_OLD},
+            claim_bribe_protocolfee_addresses={string_to_evm_address('0x7D0F747eb583D43D41897994c983F13eF7459e1f')},
             claim_bounty_addresses={
                 STAKEDAO_CLAIMER1,
                 STAKEDAO_CLAIMER2,
-                string_to_evm_address('0x7D0F747eb583D43D41897994c983F13eF7459e1f'),
                 string_to_evm_address('0x00000004E4FB0C3017b543EF66cC8A89F5dE74Ff'),
                 string_to_evm_address('0x0000000446b28e4c90DbF08Ead10F3904EB27606'),
                 string_to_evm_address('0x000000060e56DEfD94110C1a9497579AD7F5b254'),
