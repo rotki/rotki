@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, _Call, call, patch
@@ -42,12 +43,14 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     read_velodrome_pools_and_gauges_from_cache,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.modules.velodrome.constants import A_VELO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -61,6 +64,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 CURVE_EXPECTED_LP_TOKENS_TO_POOLS = {
     # first 2 are registry pools
@@ -144,9 +150,9 @@ VELODROME_SOME_EXPECTED_GAUGES = {
 }
 
 VELODROME_SOME_EXPECTED_ASSETS = [
-    'eip155:10/erc20:0x8134A2fDC127549480865fB8E5A9E8A8a95a54c5',
-    'eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1',
-    'eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
+    'eip155:10/erc20:0x7A7f1187c4710010DB17d0a9ad3fcE85e6ecD90a',  # RED/VELO pool token
+    'eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607',  # USDC
+    A_VELO.identifier,
 ]
 
 GEARBOX_SOME_EXPECTED_POOLS = {
@@ -229,7 +235,7 @@ def test_velodrome_cache(optimism_inquirer):
             write_cursor.execute('DELETE FROM address_book WHERE address=?', (pool,))
 
         for asset in VELODROME_SOME_EXPECTED_ASSETS:
-            write_cursor.execute(f"DELETE FROM assets WHERE identifier LIKE '%{asset}%'")
+            write_cursor.execute('DELETE FROM assets WHERE identifier=?', (asset,))
 
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert not pools & VELODROME_SOME_EXPECTED_POOLS
@@ -237,8 +243,27 @@ def test_velodrome_cache(optimism_inquirer):
     addressbook_entries, asset_identifiers = get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer)  # noqa: E501
     assert not any(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert not any((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)  # noqa: E501
+    call_count = 0
+
+    def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
+        """Limit pool query to only the first five pools"""
+        nonlocal call_count
+        if method_name == 'all':
+            if call_count > 0:
+                return []  # only do a single chunk
+
+            kwargs['arguments'] = [5, 0]  # Only query the first 5 pools
+            call_count += 1
+
+        return node_inquirer.call_contract(
+            contract_address=contract.address,
+            abi=contract.abi,
+            method_name=method_name,
+            **kwargs,
+        )
 
     with (
+        patch(target='rotkehlchen.chain.evm.contracts.EvmContract.call', new=mock_call_contract),
         patch.object(optimism_inquirer.database.msg_aggregator, 'add_message'),
         patch('rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache', return_value=True),  # noqa: E501
     ):
@@ -246,6 +271,7 @@ def test_velodrome_cache(optimism_inquirer):
             cache_type=CacheType.VELODROME_POOL_ADDRESS,
             query_method=query_velodrome_like_data,
         )  # populates cache, addressbook and assets tables
+
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert pools >= VELODROME_SOME_EXPECTED_POOLS
     assert gauges >= VELODROME_SOME_EXPECTED_GAUGES
@@ -258,7 +284,7 @@ class MockEvmContract:
     """A mock contract class that returns a desired result for a `call` function.
     Used for `test_velodrome_cache_with_no_symbol`."""
     def call(self, **kwargs):
-        if kwargs['arguments'][1] == 0:
+        if kwargs['method_name'] == 'all':
             return [{
                 0: '0x3241738149B24C9164dA14Fa2040159FFC6Dd237',
                 1: '',
