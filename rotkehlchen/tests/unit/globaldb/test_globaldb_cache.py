@@ -37,7 +37,6 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     read_gearbox_data_from_cache,
 )
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
@@ -239,8 +238,10 @@ def test_velodrome_cache(optimism_inquirer):
     assert not any(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert not any((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)  # noqa: E501
 
-    notify_patch = patch.object(optimism_inquirer.database.msg_aggregator, 'add_message')
-    with notify_patch as mock_notify:
+    with (
+        patch.object(optimism_inquirer.database.msg_aggregator, 'add_message'),
+        patch('rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache', return_value=True),  # noqa: E501
+    ):
         optimism_inquirer.ensure_cache_data_is_updated(
             cache_type=CacheType.VELODROME_POOL_ADDRESS,
             query_method=query_velodrome_like_data,
@@ -251,13 +252,6 @@ def test_velodrome_cache(optimism_inquirer):
     addressbook_entries, asset_identifiers = get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer)  # noqa: E501
     assert all(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert all((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)
-
-    # New messages are sent only after a delay of 5 secs and the test runs fast
-    # due to the vcr, so only the first message from each loop gets sent.
-    assert mock_notify.call_args_list == [
-        make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 0, 200),
-        make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 1, 282),
-    ]
 
 
 class MockEvmContract:

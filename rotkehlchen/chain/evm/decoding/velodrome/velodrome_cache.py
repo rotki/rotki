@@ -197,7 +197,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
 
     pool_data: list[dict] = []
     pool_data_chunk: list[dict] = []
-    offset, limit, last_notified_ts = 0, 200, Timestamp(0)
+    offset, limit, last_notified_ts = 0, 100, Timestamp(0)
     while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == 0):
         try:
             pool_data_chunk = data_contract.call(
@@ -207,7 +207,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             )
         except RemoteError as e:
             log.warning(f'Failed to query velodrome pool data chunk due to {e!s}.')
-            # If the total count of existing pools is a multiple of 200 it will try to query
+            # If the total count of existing pools is a multiple of 100 it will try to query
             # a chunk for which there is no data, which results in a remote error here.
             # So break the loop since this indicates we have gotten all pools.
             break
