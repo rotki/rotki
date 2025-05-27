@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to redecode the ETH block events.
 * :feature:`-` Users will now be able to fetch/refresh the name, symbol and decimals for an evm token from chain data.
 * :feature:`-` Hop staking merkle rewards for optimism should be properly decoded.
 * :feature:`-` More Stakedao bribes should be properly decoded

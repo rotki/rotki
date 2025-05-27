@@ -7,6 +7,8 @@ import type {
   EvmChainAndTxHash,
   HistoryEventEntry,
   HistoryEventRow,
+  PullEthBlockEventPayload,
+  PullEventPayload,
   PullEvmTransactionPayload,
   StandaloneEditableEvents,
 } from '@/types/history/events';
@@ -29,6 +31,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { isTaskCancelled } from '@/utils';
+import { HistoryEventEntryType } from '@rotki/common';
 import { flatten } from 'es-toolkit';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
@@ -48,6 +51,7 @@ const emit = defineEmits<{
   'show:form': [payload: ShowEventHistoryForm];
   'set-page': [page: number];
   'refresh': [payload?: PullEvmTransactionPayload];
+  'refresh:block-event': [payload: PullEthBlockEventPayload];
 }>();
 
 defineSlots<{
@@ -237,14 +241,19 @@ function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
 
 const showRedecodeConfirmation = ref<boolean>(false);
 const deleteCustom = ref<boolean>(false);
-const redecodePayload = ref<EvmChainAndTxHash>();
+const redecodePayload = ref<PullEventPayload>();
 
-function redecode(payload: EvmChainAndTxHash, eventIdentifier: string): void {
+function redecode(payload: PullEventPayload, eventIdentifier: string): void {
+  if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
+    emit('refresh:block-event', { blockNumbers: payload.data });
+    return;
+  }
+
   const childEvents = flatten(get(eventsGroupedByEventIdentifier)[eventIdentifier] || []);
   const isAnyCustom = childEvents.some(item => item.customized);
 
   if (!isAnyCustom) {
-    emit('refresh', { transactions: [payload] });
+    emit('refresh', { transactions: [payload.data] });
   }
   else {
     set(redecodePayload, payload);
@@ -253,13 +262,20 @@ function redecode(payload: EvmChainAndTxHash, eventIdentifier: string): void {
   }
 }
 
-function forceRedecode(): void {
+function confirmRedecode(): void {
   const payload = get(redecodePayload);
   if (payload) {
-    emit('refresh', {
-      deleteCustom: get(deleteCustom),
-      transactions: [payload],
-    });
+    if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
+      emit('refresh:block-event', {
+        blockNumbers: payload.data,
+      });
+    }
+    else {
+      emit('refresh', {
+        deleteCustom: get(deleteCustom),
+        transactions: [payload.data],
+      });
+    }
   }
   set(showRedecodeConfirmation, false);
   set(deleteCustom, false);
@@ -422,7 +438,7 @@ function addMissingRule($event: any, row: HistoryEventEntry): void {
         <div class="grow" />
         <RuiButton
           color="primary"
-          @click="forceRedecode()"
+          @click="confirmRedecode()"
         >
           {{ t('common.actions.proceed') }}
         </RuiButton>

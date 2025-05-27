@@ -22,6 +22,18 @@ export interface PullEvmTransactionPayload {
   readonly deleteCustom?: boolean;
 }
 
+export interface PullEthBlockEventPayload {
+  readonly blockNumbers: number[];
+}
+
+export type PullEventPayload = {
+  type: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
+  data: number [];
+} | {
+  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT;
+  data: EvmChainAndTxHash;
+};
+
 export interface PullEvmLikeTransactionPayload {
   readonly transactions: ChainAndTxHash[];
   readonly deleteCustom?: boolean;

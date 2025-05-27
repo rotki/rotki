@@ -21,6 +21,7 @@ import {
   HistoryEventsCollectionResponse,
   type ModifyHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
+  type PullEthBlockEventPayload,
   type PullTransactionPayload,
   type RepullingTransactionPayload,
   TransactionChainType,
@@ -55,6 +56,7 @@ interface UseHistoryEventsApiReturn {
   exportHistoryEventsCSV: (filters: HistoryEventExportPayload, directoryPath?: string) => Promise<PendingTask>;
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
+  pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -304,10 +306,24 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   };
 
   const deleteStakeEvents = async (entryType: string): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/eth2/stake/events/reset', {
+    const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/eth2/stake/events', {
       data: snakeCaseTransformer({ entryType }),
       validateStatus: validStatus,
     });
+
+    return handleResponse(response);
+  };
+
+  const pullAndRecodeEthBlockEventRequest = async (
+    payload: PullEthBlockEventPayload,
+  ): Promise<PendingTask> => {
+    const response = await api.instance.put<ActionResult<PendingTask>>(
+      '/blockchains/eth2/stake/events',
+      snakeCaseTransformer({
+        asyncQuery: true,
+        ...payload,
+      }),
+    );
 
     return handleResponse(response);
   };
@@ -329,6 +345,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     getHistoryEventProductsData,
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
+    pullAndRecodeEthBlockEventRequest,
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,

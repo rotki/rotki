@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import type {
+  EthBlockEvent,
   EvmChainAndTxHash,
+  EvmHistoryEvent,
+  EvmSwapEvent,
   HistoryEvent,
   HistoryEventEntry,
+  PullEventPayload,
   StandaloneEditableEvents,
 } from '@/types/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEvmEvent } from '@/utils/history/events';
+import { isEthBlockEvent, isEthBlockEventRef, isEvmEvent } from '@/utils/history/events';
 
 interface EventInfo { txHash: string; location: string }
 
@@ -22,25 +25,27 @@ const props = defineProps<{
 const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
-  'redecode': [data: EvmChainAndTxHash];
+  'redecode': [event: PullEventPayload];
   'delete-tx': [data: EvmChainAndTxHash];
 }>();
 
-const { useIsTaskRunning } = useTaskStore();
-const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const {
+  ethBlockEventsDecoding,
+  evmEventsDecoding,
+} = useHistoryEventsStatus();
 
 const { event } = toRefs(props);
 
-const evmEvent = computed<EventInfo | undefined>(() => {
+const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
   const currentEvent = get(event);
   if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
-    return {
-      location: currentEvent.location,
-      txHash: currentEvent.txHash,
-    };
+    return currentEvent;
   }
   return undefined;
 });
+
+const blockEvent = isEthBlockEventRef(event);
+
 const { getChain } = useSupportedChains();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -52,7 +57,21 @@ function addEvent(event: HistoryEvent) {
   emit('add-event', event);
 }
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
-const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
+
+function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent) {
+  if (isEthBlockEvent(event)) {
+    emit('redecode', {
+      data: [event.blockNumber],
+      type: event.entryType,
+    });
+  }
+  else {
+    emit('redecode', {
+      data: toEvmChainAndTxHash({ location: event.location, txHash: event.txHash }),
+      type: event.entryType,
+    });
+  }
+}
 
 function deleteTxAndEvents({ location, txHash }: EventInfo) {
   return emit('delete-tx', { evmChain: getChain(location), txHash });
@@ -104,11 +123,23 @@ function hideAddAction(item: HistoryEvent): boolean {
           </template>
           {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
         </RuiButton>
-        <template v-if="evmEvent">
+        <template v-if="blockEvent">
           <RuiButton
             variant="list"
-            :disabled="loading || eventTaskLoading"
-            @click="redecode(toEvmChainAndTxHash(evmEvent))"
+            :disabled="loading || ethBlockEventsDecoding"
+            @click="redecode(blockEvent)"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-rotate-ccw" />
+            </template>
+            {{ t('transactions.actions.redecode_events') }}
+          </RuiButton>
+        </template>
+        <template v-else-if="evmEvent">
+          <RuiButton
+            variant="list"
+            :disabled="loading || evmEventsDecoding"
+            @click="redecode(evmEvent)"
           >
             <template #prepend>
               <RuiIcon name="lu-rotate-ccw" />
