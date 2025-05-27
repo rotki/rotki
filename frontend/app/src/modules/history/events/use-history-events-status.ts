@@ -8,7 +8,9 @@ import { TaskType } from '@/types/task-type';
 import { not } from '@vueuse/math';
 
 interface UseHistoryEventStatusReturn {
-  eventTaskLoading: ComputedRef<boolean>;
+  ethBlockEventsDecoding: ComputedRef<boolean>;
+  anyEventsDecoding: ComputedRef<boolean>;
+  evmEventsDecoding: ComputedRef<boolean>;
   processing: ComputedRef<boolean>;
   refreshing: ComputedRef<boolean>;
   sectionLoading: ComputedRef<boolean>;
@@ -23,20 +25,22 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
   const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
 
   const sectionLoading = isSectionLoading(Section.HISTORY);
-  const transactionsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+  const evmEventsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
   const ethBlockEventsDecoding = useIsTaskRunning(TaskType.ETH_BLOCK_EVENTS_DECODING);
-  const eventTaskLoading = logicOr(transactionsDecoding, ethBlockEventsDecoding);
+  const anyEventsDecoding = logicOr(evmEventsDecoding, ethBlockEventsDecoding);
   const protocolCacheUpdatesLoading = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
   const onlineHistoryEventsLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
   const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
 
-  const refreshing = logicOr(sectionLoading, eventTaskLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
+  const refreshing = logicOr(sectionLoading, anyEventsDecoding, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
   const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
   const shouldFetchEventsRegularly = logicOr(querying, refreshing);
   const processing = logicOr(isTransactionsLoading, querying, refreshing);
 
   return {
-    eventTaskLoading,
+    anyEventsDecoding,
+    ethBlockEventsDecoding,
+    evmEventsDecoding,
     processing,
     refreshing,
     sectionLoading,

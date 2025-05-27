@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type {
+  EthBlockEvent,
   EvmChainAndTxHash,
   EvmHistoryEvent,
   EvmSwapEvent,
@@ -9,11 +10,10 @@ import type {
   StandaloneEditableEvents,
 } from '@/types/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEthBlockEventRef, isEvmEvent } from '@/utils/history/events';
+import { isEthBlockEvent, isEthBlockEventRef, isEvmEvent } from '@/utils/history/events';
 
 interface EventInfo { txHash: string; location: string }
 
@@ -29,8 +29,10 @@ const emit = defineEmits<{
   'delete-tx': [data: EvmChainAndTxHash];
 }>();
 
-const { useIsTaskRunning } = useTaskStore();
-const eventTaskLoading = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const {
+  ethBlockEventsDecoding,
+  evmEventsDecoding,
+} = useHistoryEventsStatus();
 
 const { event } = toRefs(props);
 
@@ -42,7 +44,7 @@ const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
   return undefined;
 });
 
-const blockEvent = computed(() => get(isEthBlockEventRef(event)));
+const blockEvent = isEthBlockEventRef(event);
 
 const { getChain } = useSupportedChains();
 
@@ -56,8 +58,19 @@ function addEvent(event: HistoryEvent) {
 }
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 
-function redecode(event: PullEventPayload) {
-  return emit('redecode', event);
+function redecode(event: EthBlockEvent | EvmHistoryEvent | EvmSwapEvent) {
+  if (isEthBlockEvent(event)) {
+    emit('redecode', {
+      data: [event.blockNumber],
+      type: event.entryType,
+    });
+  }
+  else {
+    emit('redecode', {
+      data: toEvmChainAndTxHash({ location: event.location, txHash: event.txHash }),
+      type: event.entryType,
+    });
+  }
 }
 
 function deleteTxAndEvents({ location, txHash }: EventInfo) {
@@ -113,8 +126,8 @@ function hideAddAction(item: HistoryEvent): boolean {
         <template v-if="blockEvent">
           <RuiButton
             variant="list"
-            :disabled="loading || eventTaskLoading"
-            @click="redecode({ type: blockEvent.entryType, data: [blockEvent.blockNumber] })"
+            :disabled="loading || ethBlockEventsDecoding"
+            @click="redecode(blockEvent)"
           >
             <template #prepend>
               <RuiIcon name="lu-rotate-ccw" />
@@ -125,8 +138,8 @@ function hideAddAction(item: HistoryEvent): boolean {
         <template v-else-if="evmEvent">
           <RuiButton
             variant="list"
-            :disabled="loading || eventTaskLoading"
-            @click="redecode({ type: evmEvent.entryType, data: toEvmChainAndTxHash({ location: evmEvent.location, txHash: evmEvent.txHash }) })"
+            :disabled="loading || evmEventsDecoding"
+            @click="redecode(evmEvent)"
           >
             <template #prepend>
               <RuiIcon name="lu-rotate-ccw" />

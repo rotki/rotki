@@ -11,6 +11,7 @@ import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryS
 import HistoryQueryStatusDialog from '@/components/history/events/HistoryQueryStatusDialog.vue';
 import { useEventsQueryStatus } from '@/composables/history/events/query-status/events-query-status';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -22,7 +23,6 @@ const props = withDefaults(defineProps<{
   loading: boolean;
   onlyChains?: Blockchain[];
   locations?: string[];
-  decoding: boolean;
 }>(), {
   locations: () => [],
   onlyChains: () => [],
@@ -32,9 +32,14 @@ const emit = defineEmits<{
   'show:dialog': [type: 'decode' | 'protocol-refresh'];
 }>();
 
-const { decoding, loading, locations, onlyChains } = toRefs(props);
+const { loading, locations, onlyChains } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
+
+const {
+  anyEventsDecoding,
+  ethBlockEventsDecoding,
+} = useHistoryEventsStatus();
 
 const { resetUndecodedTransactionsStatus } = useHistoryStore();
 const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useHistoryStore());
@@ -59,7 +64,7 @@ const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERA
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
 
-const show = computed(() => get(loading) || get(decoding) || get(receivingProtocolCacheStatus) || get(items).length > 0);
+const show = computed(() => get(loading) || get(anyEventsDecoding) || get(receivingProtocolCacheStatus) || get(items).length > 0);
 const showDebounced = refDebounced(show, 400);
 const usedShow = logicOr(show, showDebounced);
 
@@ -89,7 +94,7 @@ function resetQueryStatus() {
   <HistoryQueryStatusBar
     v-if="usedShow"
     :colspan="colspan"
-    :finished="isQuery ? !loading : !receivingProtocolCacheStatus && !decoding"
+    :finished="isQuery ? !loading : !receivingProtocolCacheStatus && !anyEventsDecoding"
     @reset="resetQueryStatus()"
   >
     <template #current>
@@ -98,9 +103,14 @@ function resetQueryStatus() {
         v-else-if="isQuery"
         :finished="!loading"
       />
+      <HistoryQueryStatusCurrent v-else-if="ethBlockEventsDecoding">
+        <template #running>
+          {{ t('transactions.events_decoding.decoding.eth_block_events') }}
+        </template>
+      </HistoryQueryStatusCurrent>
       <EventsDecodingStatusCurrent
         v-else
-        :finished="!decoding"
+        :finished="!anyEventsDecoding"
       />
     </template>
 

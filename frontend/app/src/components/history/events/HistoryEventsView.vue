@@ -132,7 +132,13 @@ const {
   pullAndRedecodeTransactions,
   redecodeTransactions,
 } = useHistoryTransactionDecoding();
-const { eventTaskLoading, processing, refreshing, sectionLoading, shouldFetchEventsRegularly } = useHistoryEventsStatus();
+const {
+  anyEventsDecoding,
+  processing,
+  refreshing,
+  sectionLoading,
+  shouldFetchEventsRegularly,
+} = useHistoryEventsStatus();
 const historyEventMappings = useHistoryEventMappings();
 useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
 
@@ -427,7 +433,7 @@ watchImmediate(route, async (route) => {
   }
 });
 
-watch(eventTaskLoading, async (isLoading, wasLoading) => {
+watch(anyEventsDecoding, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await fetchDataAndLocations();
 });
@@ -465,7 +471,7 @@ onMounted(async () => {
       <HistoryEventsViewButtons
         v-model:open-decoding-dialog="decodingStatusDialogOpen"
         :processing="processing"
-        :loading="eventTaskLoading"
+        :loading="anyEventsDecoding"
         :include-evm-events="includes.evmEvents"
         @refresh="refresh(true, $event)"
         @show:form="showForm($event)"
@@ -551,7 +557,6 @@ onMounted(async () => {
               :only-chains="onlyChains"
               :locations="locations"
               :decoding-status="decodingStatus"
-              :decoding="eventTaskLoading"
               :colspan="colspan"
               :loading="processing"
               @show:dialog="onShowDialog($event)"

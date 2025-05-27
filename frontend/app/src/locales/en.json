@@ -4660,8 +4660,9 @@
       },
       "decoding": {
         "all": "Redecoding EVM transactions",
-        "all_done": "Done redecoding EVM transactions",
+        "all_done": "Redecoding finished",
         "done": "Decoded {count} transaction | Decoded {count} transactions",
+        "eth_block_events": "Redecoding ETH block events",
         "pending": "{count} Undecoded transaction | {count} Undecoded transactions",
         "processing": "Decoding {count} transaction | Decoding {count} of {total} transactions"
       },
