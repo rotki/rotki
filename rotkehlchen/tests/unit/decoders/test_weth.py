@@ -507,8 +507,7 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=evmhash,
     )
-    timestamp = TimestampMS(1712328694000)
-    amount, gas_fees = '0.007767825959188763', '0.000001382891214'
+    user, amount, gas_fees, timestamp = arbitrum_one_accounts[0], '0.007767825959188763', '0.000001382891214', TimestampMS(1712328694000)  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -519,7 +518,7 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal(gas_fees),
-            location_label=arbitrum_one_accounts[0],
+            location_label=user,
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
@@ -531,7 +530,7 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
             amount=FVal(amount),
-            location_label=arbitrum_one_accounts[0],
+            location_label=user,
             notes=f'Wrap {amount} ETH in WETH',
             counterparty=CPT_WETH,
             address=WETH_ARB_ADDRESS,
@@ -544,7 +543,7 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_WETH_ARB,
             amount=FVal(amount),
-            location_label='0x0000000000000000000000000000000000000000',
+            location_label=user,
             notes=f'Receive {amount} WETH',
             counterparty=CPT_WETH,
             address=WETH_ARB_ADDRESS,
