@@ -312,7 +312,7 @@ class DBEth2:
         self.add_or_update_validators(
             write_cursor=write_cursor,
             validators=validators,
-            updatable_attributes=('validator_index', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp'),  # noqa: E501
+            updatable_attributes=('validator_index', 'validator_type', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp'),  # noqa: E501
         )
 
     def add_or_update_validators(
@@ -338,6 +338,9 @@ class DBEth2:
                 db_validator = ValidatorDetails.deserialize_from_db(result)
                 for attr in updatable_attributes:
                     if getattr(db_validator, attr) != (new_value := getattr(validator, attr)):
+                        if attr == 'validator_type':
+                            new_value = new_value.serialize_for_db()
+
                         write_cursor.execute(
                             f'UPDATE eth2_validators SET {attr}=? WHERE public_key=?',
                             (new_value, validator.public_key),
