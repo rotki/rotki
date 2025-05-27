@@ -60,7 +60,6 @@ class WethDecoderBase(DecoderInterface, ABC):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
-        depositor = bytes_to_address(context.tx_log.topics[1])
         deposited_amount_raw = int.from_bytes(context.tx_log.data[:32])
         deposited_amount = asset_normalized_value(
             amount=deposited_amount_raw,
@@ -91,7 +90,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=self.wrapped_token,
             amount=deposited_amount,
-            location_label=depositor,
+            location_label=out_event.location_label,
             counterparty=self.counterparty,
             notes=f'Receive {deposited_amount} {self.wrapped_token.symbol}',
             address=context.transaction.to_address,
