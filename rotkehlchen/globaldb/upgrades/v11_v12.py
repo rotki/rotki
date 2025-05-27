@@ -1,7 +1,9 @@
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.types import CacheType
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -14,10 +16,8 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
     """This globalDB upgrade does the following:
     - Add new table for counterparty mappings
 
-    - Clears Velodrome/Aerodrome pool and gauge cache entries to ensure a full refresh.
-    Previously, fee and bribe addresses were not stored, so this forces an update
-    to include them where available.
-
+    - Updates Velo(aero)drome pool and gauge caches by copying fresh data from packaged database.
+    This includes missing fee and bribe addresses without forcing users to wait for requerying.
     - Reset Curve Lending vaults cache to force a repull.
 
     - Remove several Curve Lending caches which have been replaced with caches using the
@@ -39,14 +39,34 @@ def migrate_to_v12(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
 
     @progress_step('Reset caches')
     def _reset_caches(write_cursor: 'DBCursor') -> None:
+        packaged_db_path = Path(__file__).resolve().parent.parent.parent / 'data' / 'global.db'
         write_cursor.execute(
             'DELETE FROM general_cache WHERE key IN (?, ?, ?, ?)',
-            (
+            (bindings := [
                 CacheType.VELODROME_POOL_ADDRESS.serialize(),
                 CacheType.VELODROME_GAUGE_ADDRESS.serialize(),
                 CacheType.AERODROME_POOL_ADDRESS.serialize(),
                 CacheType.AERODROME_GAUGE_ADDRESS.serialize(),
-            ),
+            ]),
+        )
+        write_cursor.execute(f"ATTACH DATABASE '{packaged_db_path}' AS packaged_db;")
+        bindings.extend([
+            CacheType.AERODROME_GAUGE_FEE_ADDRESS.serialize(),
+            CacheType.AERODROME_GAUGE_BRIBE_ADDRESS.serialize(),
+            CacheType.VELODROME_GAUGE_FEE_ADDRESS.serialize(),
+            CacheType.VELODROME_GAUGE_BRIBE_ADDRESS.serialize(),
+        ])
+        write_cursor.execute("""
+        INSERT INTO general_cache (key, value, last_queried_ts)
+        SELECT key, value, last_queried_ts
+        FROM packaged_db.general_cache
+        WHERE key IN (?, ?, ?, ?, ?, ?, ?, ?);
+        """, bindings)
+        write_cursor.execute('COMMIT;')
+        write_cursor.execute('DETACH DATABASE packaged_db;')
+        write_cursor.execute(
+            'UPDATE general_cache SET last_queried_ts = ? WHERE key IN (?, ?, ?, ?, ?, ?, ?, ?);',
+            (ts_now(), *bindings),
         )
 
         write_cursor.execute(

@@ -981,6 +981,15 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
             ),
         ).fetchone()[0] == 1914
         assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?)',
+            (
+                CacheType.VELODROME_GAUGE_FEE_ADDRESS.serialize(),
+                CacheType.VELODROME_GAUGE_BRIBE_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_BRIBE_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_FEE_ADDRESS.serialize(),
+            ),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
             'SELECT value, last_queried_ts FROM unique_cache WHERE key = ?',
             (CacheType.CURVE_LENDING_VAULTS.serialize(),),
         ).fetchone() == ('10000', 1741813725)
@@ -1025,7 +1034,16 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
                 CacheType.AERODROME_POOL_ADDRESS.serialize(),
                 CacheType.AERODROME_GAUGE_ADDRESS.serialize(),
             ),
-        ).fetchone()[0] == 0
+        ).fetchone()[0] == 4420
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?)',
+            (
+                CacheType.VELODROME_GAUGE_FEE_ADDRESS.serialize(),
+                CacheType.VELODROME_GAUGE_BRIBE_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_BRIBE_ADDRESS.serialize(),
+                CacheType.AERODROME_GAUGE_FEE_ADDRESS.serialize(),
+            ),
+        ).fetchone()[0] == 1194
         assert cursor.execute(
             'SELECT value, last_queried_ts FROM unique_cache WHERE key = ?',
             (CacheType.CURVE_LENDING_VAULTS.serialize(),),
