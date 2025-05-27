@@ -1424,3 +1424,34 @@ def test_staking_performance_division_by_zero_protection(eth2) -> None:
         assert FVal(validator_apr['sum']) == ONE
         assert FVal(validator_apr['withdrawals']) == ONE
         assert FVal(validator_apr['apr']) == ZERO
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_accounts', [['0xa966b01E2136953DF4F4914CfA9D37724E99a187']])
+def test_validator_details_update(
+        eth2: 'Eth2',
+        database: 'DBHandler',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+):
+    """Test that validator details are properly updated."""
+    dbeth2 = DBEth2(database)
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=(v_index := 765881),
+            validator_type=ValidatorType.DISTRIBUTING,  # Will be updated to accumulating
+            public_key=(pub_key := Eth2PubKey('0x8f4bbc39e8319c17050fd94bb609bc21b5f45d2208de5ecf73fc5f38cccfdd434aefb13ed77dea5c1745fa76b627a8af')),  # noqa: E501
+        )])
+
+    assert eth2.get_validators(
+        ignore_cache=True,
+        addresses=[withdrawal_address := ethereum_accounts[0]],
+        validator_indices={v_index},
+    ) == [ValidatorDetailsWithStatus(
+        validator_index=v_index,
+        validator_type=ValidatorType.ACCUMULATING,
+        public_key=pub_key,
+        withdrawal_address=withdrawal_address,
+        activation_timestamp=Timestamp(1690165463),
+        status=ValidatorStatus.ACTIVE,
+    )]
