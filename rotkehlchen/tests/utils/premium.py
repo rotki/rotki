@@ -1,4 +1,5 @@
 import os
+import tempfile
 from http import HTTPStatus
 from typing import Literal
 from unittest.mock import patch
@@ -155,7 +156,9 @@ def setup_starting_environment(
         our_last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
         assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
 
     if same_hash_with_remote:
         remote_hash = our_hash

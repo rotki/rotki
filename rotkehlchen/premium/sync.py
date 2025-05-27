@@ -1,5 +1,6 @@
 import logging
 import shutil
+import tempfile
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
@@ -205,8 +206,11 @@ class PremiumSyncManager(LockableQueryMixIn):
             self.last_upload_attempt_ts = ts_now()
             return False, message
 
-        greenlet = gevent.get_hub().threadpool.spawn(self.data.compress_and_encrypt_db)
-        data, our_hash = greenlet.get()
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+            tempdbpath = self.data.db.export_unencrypted(tempdbfile)
+            greenlet = gevent.get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)  # noqa: E501
+            data, our_hash = greenlet.get()
+
         log.debug(
             'CAN_PUSH',
             ours=our_hash,
