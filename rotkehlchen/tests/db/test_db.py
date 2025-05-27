@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import tempfile
 import time
 from contextlib import suppress
 from copy import deepcopy
@@ -314,7 +315,9 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
     with data.db.user_write() as cursor:
         data.db.add_manually_tracked_balances(cursor, [starting_balance])
 
-    encoded_data, _ = data.compress_and_encrypt_db()
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = data.db.export_unencrypted(tempdbfile)
+        encoded_data, _ = data.compress_and_encrypt_db(tempdbpath)
     # The server would return them decoded
     data.decompress_and_decrypt_db(encoded_data)
     with data.db.user_write() as cursor:

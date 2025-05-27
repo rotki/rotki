@@ -1,4 +1,5 @@
 import json
+import tempfile
 from base64 import b64decode
 from http import HTTPStatus
 from pathlib import Path
@@ -18,6 +19,7 @@ from rotkehlchen.errors.api import (
 )
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import (
     VALID_PREMIUM_KEY,
@@ -27,6 +29,7 @@ from rotkehlchen.tests.utils.premium import (
     get_different_hash,
     setup_starting_environment,
 )
+from rotkehlchen.types import ChainID
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -66,7 +69,9 @@ def test_upload_data_to_server(
     with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
 
     def mock_successful_upload_data_to_server(
@@ -152,7 +157,9 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(write_cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = our_hash
 
     patched_post = patch.object(
@@ -189,7 +196,10 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
         assert last_ts is None
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
 
     patched_post = patch.object(
@@ -494,6 +504,7 @@ def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials,
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [10])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     """Test that if the server has bigger DB size and context switch happens it
     all works out. Essentially a test for https://github.com/rotki/rotki/issues/5038
@@ -504,6 +515,10 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     The solution was to add a lock in the entire maybe_upload_data_to_server.
 
     We emulate bigger size by just lowering sql_vm_instructions_cb to force a context switch
+
+    Also this test checks for the deadlock (database locked message in the test) caused by doing DB
+    operations in a different threadpool greenlet. The fix was to move only the compressing and
+    encrypting into that thread greenlet but not the DB reading.
     """
     with rotkehlchen_instance.data.db.user_write() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
@@ -512,8 +527,10 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         assert last_ts is None
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
-    remote_hash = get_different_hash(our_hash)
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
+        remote_hash = get_different_hash(our_hash)
 
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
@@ -528,11 +545,35 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         metadata_data_size=9999999999,
         saved_data='foo',
     )
+    chain_manager = rotkehlchen_instance.chains_aggregator.get_evm_manager(ChainID.ETHEREUM)
 
-    with patched_get, patched_post as post_mock:
-        a = gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server)
-        b = gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server)
-        greenlets = [a, b]
+    def mock_stuff(chain_id, limit):
+        """Just mock get_transaction_hashes_not_decoded which is called during
+        get_and_decode_undecoded_transactions() to add some DB work and some sleeping.
+        This triggers the threadpool deadlock problem in 50% of the test runs"""
+        with chain_manager.node_inquirer.database.conn.read_ctx() as cursor:
+            for _ in range(3):
+                cursor.execute('SELECT * FROM settings').fetchall()
+
+        gevent.sleep(.5)
+        return []
+
+    patched_get_hashes_not_decoded = patch.object(
+        chain_manager.transactions_decoder.dbevmtx,
+        'get_transaction_hashes_not_decoded',
+        wraps=mock_stuff,
+    )  # Mix in calls to decoding and calls to maybe_upload to emulate the deadlock of different threadpool greenlet that's mentioned in the docstring  # noqa: E501
+    with patched_get_hashes_not_decoded, patch_decoder_reload_data(), patched_get, patched_post as post_mock:  # noqa: E501
+        greenlets = [
+            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+        ]
         gevent.joinall(greenlets)
         for g in greenlets:
             assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
@@ -576,7 +617,9 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
 
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
 
     patched_post = patch.object(
@@ -618,7 +661,9 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
         return MockResponse(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big')
 
     assert rotkehlchen_instance.premium is not None
-    _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
+        tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
+        _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,

@@ -542,7 +542,7 @@ class DBHandler:
             conn.close()
             setattr(self, conn_attribute, None)
 
-    def export_unencrypted(self, temppath: Path) -> None:
+    def export_unencrypted(self, tempdbfile: 'tempfile._TemporaryFileWrapper[bytes]') -> Path:
         """Export the unencrypted DB to the temppath as plaintext DB
 
         The critical section is absolutely needed as a context switch
@@ -551,15 +551,20 @@ class DBHandler:
         to DB plaintext already in use
         2. Having a DB transaction open between the attach and detach and not
         closed when we detach which will result in DB plaintext locked.
+
+        Returns the Path of the new temp DB file
         """
+        tempdbpath = Path(tempdbfile.name)
+        tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
         with self.conn.critical_section():
             # flush the wal file to have up to date information when exporting data
             self.conn.execute('PRAGMA wal_checkpoint;')
             self.conn.executescript(
-                f"ATTACH DATABASE '{temppath}' AS plaintext KEY '';"
+                f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
                 "SELECT sqlcipher_export('plaintext');"
                 "DETACH DATABASE plaintext;",
             )
+        return tempdbpath
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
         """Imports an unencrypted DB from raw data

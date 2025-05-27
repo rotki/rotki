@@ -2,7 +2,6 @@ import base64
 import hashlib
 import logging
 import shutil
-import tempfile
 import zlib
 from collections.abc import Sequence
 from pathlib import Path
@@ -185,27 +184,22 @@ class DataHandler:
 
         return users
 
-    def compress_and_encrypt_db(self) -> tuple[bytes, str]:
+    def compress_and_encrypt_db(self, tempdbpath: Path) -> tuple[bytes, str]:
         """Decrypt the DB, dump in temporary plaintextdb, compress it,
         and then re-encrypt it
 
         Returns a b64 encoded binary blob"""
         compressor = zlib.compressobj(level=9)
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
-            tempdbpath = Path(tempdbfile.name)
-            log.info(f'Compress and encrypt DB at temporary path: {tempdbpath}')
-            tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
-            self.db.export_unencrypted(tempdbpath)
-            source_data = bytearray()
-            compressed_data = bytearray()
-            with open(tempdbpath, 'rb') as src_f:
+        source_data = bytearray()
+        compressed_data = bytearray()
+        with open(tempdbpath, 'rb') as src_f:
+            block = src_f.read(BUFFERSIZE)
+            while block:
+                source_data += block
+                compressed_data += compressor.compress(block)
                 block = src_f.read(BUFFERSIZE)
-                while block:
-                    source_data += block
-                    compressed_data += compressor.compress(block)
-                    block = src_f.read(BUFFERSIZE)
 
-                compressed_data += compressor.flush()
+            compressed_data += compressor.flush()
 
         original_data_hash = base64.b64encode(
             hashlib.sha256(source_data).digest(),
