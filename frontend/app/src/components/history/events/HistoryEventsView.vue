@@ -40,6 +40,7 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
 import { RouterAccountsSchema } from '@/types/route';
@@ -388,12 +389,24 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
 }
 
 async function redecodePageTransactions(): Promise<void> {
-  const evmEvents = flatten(get(groups).data).filter(isEvmEvent);
-  const transactions = evmEvents.map(item => toEvmChainAndTxHash(item));
+  const events = flatten(get(groups).data);
+  const evmEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event));
+  const ethBlockEvents = events.filter(item => 'blockNumber' in item);
 
-  await pullAndRedecodeTransactions({ transactions });
-  await fetchUndecodedTransactionsStatus();
-  await fetchData();
+  if (evmEvents.length > 0 || ethBlockEvents.length > 0) {
+    if (evmEvents.length > 0) {
+      const redecodePayload = evmEvents.map(item => toEvmChainAndTxHash(item));
+      await pullAndRedecodeTransactions({ transactions: redecodePayload });
+      await fetchUndecodedTransactionsStatus();
+    }
+
+    if (ethBlockEvents.length > 0) {
+      const redecodePayload = ethBlockEvents.map(item => item.blockNumber);
+      await redecodeBlockEvents({ blockNumbers: redecodePayload });
+    }
+
+    await fetchData();
+  }
 }
 
 function removeIdentifierParam() {

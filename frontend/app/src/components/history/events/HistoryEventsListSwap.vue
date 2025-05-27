@@ -135,7 +135,7 @@ watch(expanded, () => {
         size="sm"
         icon
         color="primary"
-        class="absolute top-2 -left-1 size-5 z-[6]"
+        class="absolute top-2.5 -left-1 size-5 z-[6]"
         @click="expanded = !expanded"
       >
         <RuiIcon
@@ -165,7 +165,7 @@ watch(expanded, () => {
         size="sm"
         icon
         color="primary"
-        class="absolute top-2.5 -left-2 md:left-1.5 size-5 z-[6]"
+        class="absolute top-3 -left-2 md:left-1.5 size-5 z-[6]"
         @click="expanded = !expanded"
       >
         <RuiIcon
