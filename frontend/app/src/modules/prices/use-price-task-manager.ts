@@ -65,7 +65,10 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
 
     try {
       setStatus(Status.LOADING);
-      await Promise.all(chunkArray<string>([...payload.selectedAssets], 100).map(fetch));
+      const priceBatches = chunkArray<string>([...payload.selectedAssets], 100);
+      for (const batch of priceBatches) {
+        await fetch(batch);
+      }
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
