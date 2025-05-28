@@ -2003,6 +2003,8 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
         from_address=string_to_evm_address('0x72Ee0f9AB3678148CC0700243CB38577Bd290869'),
         to_address=ADDY_10,
         value=30000004449579884,
+        gas=0,
+        gas_used=0,
     )
     receipt = EvmTxReceipt(
         tx_hash=evmhash,

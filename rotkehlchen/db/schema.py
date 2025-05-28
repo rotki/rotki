@@ -340,6 +340,11 @@ CREATE TABLE IF NOT EXISTS evm_transactions_authorizations (
 # from/to address/value is also in the primary key of the internal transactions since
 # trace_id, which is returned by etherscan does not guarantee uniqueness. Example:
 # https://api.etherscan.io/api?module=account&action=txlistinternal&sort=asc&startBlock=16779092&endBlock=16779092
+# Same for gas/gas_used. An example would be https://etherscan.io/tx/0x72f5e619a8f521d874652ec5c09ea22e329ed3a990012e1fe6548d5a07e1959c
+# where each consolidation internal transaction of 1 wei is the same and can only differentiate
+# from gas/gasused combination
+# NB: If you change the internal transactions schema then make sure to change the indexes
+# at DBHandler.write_tuples are correct
 DB_CREATE_EVM_INTERNAL_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     parent_tx INTEGER NOT NULL,
@@ -347,8 +352,10 @@ CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     from_address TEXT NOT NULL,
     to_address TEXT,
     value TEXT NOT NULL,
+    gas TEXT NOT NULL,
+    gas_used TEXT NOT NULL,
     FOREIGN KEY(parent_tx) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
-    PRIMARY KEY(parent_tx, trace_id, from_address, to_address, value)
+    PRIMARY KEY(parent_tx, trace_id, from_address, to_address, value, gas, gas_used)
 );
 """  # noqa: E501
 

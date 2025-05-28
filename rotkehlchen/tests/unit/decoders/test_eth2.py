@@ -264,6 +264,63 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x338aD53f251a7a9A1E4644f91802EDBD0683175d',
+    '0x3fd8462E467708e5d1Dd4aD6BEcf4058d4ccBD8d',
+]])
+def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
+    """Test that a multisig withdrawal address asking to consolidate multiple works fine"""
+    tx_hash = deserialize_evm_tx_hash('0xbded678de7cb58d7f0e4e8d1f0f5adeb1dd5097601a8ab5790558f8228a04c58')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    gas_amount, multisig_address, fee_amount = FVal('0.00051391919229775'), ethereum_accounts[1], FVal('0.000000000000000001')  # noqa: E501
+    assert events[0] == EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1748043071000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=gas_amount,
+        location_label=ethereum_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    )
+    event_pairs = [(events[1:][i], events[1:][i + 1]) for i in range(0, len(events[1:]), 2)]
+    for idx, ((upgrade_event, fee_event), validator_index) in enumerate(zip(event_pairs, [1405739, 1405731, 1405735, 1405733, 1405736], strict=False)):  # noqa: E501
+        idx *= 2  # noqa: PLW2901
+        assert upgrade_event == EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=6 + idx,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=multisig_address,
+            notes=f'Request to convert validator {validator_index} into an accumulating validator',
+            counterparty=CPT_ETH2,
+            address=CONSOLIDATION_REQUEST_CONTRACT,
+            extra_data={'validator_index': validator_index},
+        )
+        assert fee_event == EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=6 + idx + 1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=fee_amount,
+            location_label=multisig_address,
+            notes=f'Spend {fee_amount} ETH as validator consolidation fee',
+            counterparty=CPT_ETH2,
+            address=CONSOLIDATION_REQUEST_CONTRACT,
+        )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x86863bC22648d8c2fb02e3fcA314B8ee9ca0A4e0']])
 def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5f038d3775fc27e16d8d5770aa1ba6f962e67ff8db0a194551566418542d60dc')  # noqa: E501

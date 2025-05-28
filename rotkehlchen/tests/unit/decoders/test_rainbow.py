@@ -364,6 +364,8 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
                         from_address=ZERO_ADDRESS,
                         to_address=ZERO_ADDRESS,
                         value=10000,
+                        gas=0,
+                        gas_used=0,
                     )],
                     relevant_address=binance_sc_accounts[0],
                 )

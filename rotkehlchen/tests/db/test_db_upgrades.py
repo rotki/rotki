@@ -3165,6 +3165,9 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         ).fetchone()[0] == 'True'
         assert not table_exists(cursor, 'evm_transactions_authorizations')
         assert not table_exists(cursor, 'eth_validators_data_cache')
+        assert cursor.execute('SELECT * from evm_internal_transactions').fetchall() == [
+            (579, 42, '0x9eE457023bB3De16D51A003a247BaEaD7fce313D', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '15'),  # noqa: E501
+        ]
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3239,6 +3242,9 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         ).fetchall() == []
         assert table_exists(cursor, 'evm_transactions_authorizations')
         assert table_exists(cursor, 'eth_validators_data_cache')
+        assert cursor.execute('SELECT * from evm_internal_transactions').fetchall() == [
+            (579, 42, '0x9eE457023bB3De16D51A003a247BaEaD7fce313D', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '15', '0', '0'),  # noqa: E501
+        ]
 
     db.logout()
 
