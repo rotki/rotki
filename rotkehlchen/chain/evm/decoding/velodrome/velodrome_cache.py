@@ -172,6 +172,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         inquirer: 'OptimismInquirer | BaseInquirer',
         existing_pools: list[ChecksumEvmAddress],
         msg_aggregator: 'MessagesAggregator',
+        reload_all: bool,
 ) -> list[VelodromePoolData]:
     """
     Queries velodrome data from chain from the Velodrome Finance LP Sugar v2 contract.
@@ -199,9 +200,10 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
 
     pool_data: list[dict] = []
     pool_data_chunk: list[dict] = []
-    offset, limit, last_notified_ts = (initial_offset := len(existing_pools)), POOL_DATA_CHUNK_SIZE, Timestamp(0)  # noqa: E501
+    offset = initial_offset = 0 if reload_all else len(existing_pools)
+    limit, last_notified_ts = POOL_DATA_CHUNK_SIZE, Timestamp(0)
     while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == initial_offset):  # noqa: E501
-        if len(pool_data) >= POOL_DATA_MAX_QUERY:
+        if len(pool_data) >= POOL_DATA_MAX_QUERY and reload_all is False:
             log.info(
                 f'Reached max number of new {counterparty} pools to query at once. '
                 f'Only querying {len(pool_data)} pools.',
@@ -335,6 +337,7 @@ def query_velodrome_like_data(
         inquirer: 'OptimismInquirer | BaseInquirer',
         cache_type: Literal[CacheType.VELODROME_POOL_ADDRESS, CacheType.AERODROME_POOL_ADDRESS],
         msg_aggregator: 'MessagesAggregator',
+        reload_all: bool,
 ) -> list[VelodromePoolData] | None:
     """Queries velodrome pools and tokens."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -355,4 +358,5 @@ def query_velodrome_like_data(
         inquirer=inquirer,
         existing_pools=existing_pools,
         msg_aggregator=msg_aggregator,
+        reload_all=reload_all,
     )) > 0 else None

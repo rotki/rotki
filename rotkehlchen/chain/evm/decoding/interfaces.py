@@ -48,6 +48,7 @@ CACHE_QUERY_METHOD_TYPE = (
             'OptimismInquirer | BaseInquirer',
             Literal[CacheType.VELODROME_POOL_ADDRESS, CacheType.AERODROME_POOL_ADDRESS],
             'MessagesAggregator',
+            bool,
         ],
         list['VelodromePoolData'] | None] |
     Callable[
@@ -55,22 +56,23 @@ CACHE_QUERY_METHOD_TYPE = (
             'EvmNodeInquirer',
             Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
             'MessagesAggregator',
+            bool,
         ],
         tuple[set['ChecksumEvmAddress'], set['ChecksumEvmAddress']] | None] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS], 'MessagesAggregator'],
+        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS], 'MessagesAggregator', bool],
         list | None,
     ] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.EXTRAFI_NEXT_RESERVE_ID], 'MessagesAggregator'],
+        ['EthereumInquirer', Literal[CacheType.EXTRAFI_NEXT_RESERVE_ID], 'MessagesAggregator', bool],  # noqa: E501
         list | None,
     ] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS], 'MessagesAggregator'],
+        ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS], 'MessagesAggregator', bool],
         dict | None,
     ] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.GEARBOX_POOL_ADDRESS], 'MessagesAggregator'],
+        ['EthereumInquirer', Literal[CacheType.GEARBOX_POOL_ADDRESS], 'MessagesAggregator', bool],
         list | None,
     ]
 )

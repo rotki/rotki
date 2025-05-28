@@ -412,8 +412,11 @@ def _query_curve_data_from_chain(
         evm_inquirer: 'EvmNodeInquirer',
         existing_pools: set[ChecksumEvmAddress],
         msg_aggregator: 'MessagesAggregator',
+        reload_all: bool,
 ) -> list[CurvePoolData]:
-    """Query all curve information(lp tokens, pools, gauges, pool coins) from metaregistry."""
+    """Query all curve information(lp tokens, pools, gauges, pool coins) from the metaregistry.
+    `reload_all` controls whether to refresh all pools or only query new pools.
+    """
     address_provider = evm_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
     try:
         metaregistry_address = deserialize_evm_address(address_provider.call(
@@ -444,24 +447,26 @@ def _query_curve_data_from_chain(
 
     if (existing_pool_count := len(existing_pools)) == pool_count:
         return []
-    if (new_pool_count := pool_count - existing_pool_count) > MAX_ONCHAIN_POOLS_QUERY:
+    if reload_all:
+        pools_to_query_count = pool_count
+    elif (pools_to_query_count := pool_count - existing_pool_count) > MAX_ONCHAIN_POOLS_QUERY:
         pool_count = existing_pool_count + MAX_ONCHAIN_POOLS_QUERY
-        new_pool_count = MAX_ONCHAIN_POOLS_QUERY
+        pools_to_query_count = MAX_ONCHAIN_POOLS_QUERY
         log.info(
-            f'Tried to query {new_pool_count} {evm_inquirer.chain_name} Curve pools. '
-            f'Too many pools to query onchain. Only querying {new_pool_count}.',
+            f'Tried to query {pools_to_query_count} {evm_inquirer.chain_name} Curve pools. '
+            f'Too many pools to query onchain. Only querying {pools_to_query_count}.',
         )
 
     new_pools, last_notified_ts = [], Timestamp(0)
     pools_to_skip = IGNORED_CURVE_POOLS | existing_pools
-    for pool_index in range((start_idx := pool_count - new_pool_count), pool_count):
+    for pool_index in range((start_idx := pool_count - pools_to_query_count), pool_count):
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=msg_aggregator,
             last_notified_ts=last_notified_ts,
             protocol=CPT_CURVE,
             chain=evm_inquirer.chain_id,
             processed=(processed := pool_index - start_idx),
-            total=new_pool_count,
+            total=pools_to_query_count,
         )
 
         try:
@@ -473,7 +478,7 @@ def _query_curve_data_from_chain(
                 continue
 
             log.debug(
-                f'Processing Curve pool {processed}/{new_pool_count} {pool_address} '
+                f'Processing Curve pool {processed}/{pools_to_query_count} {pool_address} '
                 f'on {evm_inquirer.chain_name}.',
             )
             raw_pool_properties = evm_inquirer.multicall_2(
@@ -547,6 +552,7 @@ def query_curve_data(
         inquirer: 'EvmNodeInquirer',
         cache_type: Literal[CacheType.CURVE_LP_TOKENS],
         msg_aggregator: 'MessagesAggregator',
+        reload_all: bool,
 ) -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges and save them in the database.
     First tries to find data via curve api.
@@ -577,6 +583,7 @@ def query_curve_data(
             evm_inquirer=inquirer,
             existing_pools=existing_pools,
             msg_aggregator=msg_aggregator,
+            reload_all=reload_all,
         )
 
     if len(pools_data) == 0:  # if no new pools, update the last_queried_ts of db entries

@@ -1040,6 +1040,7 @@ def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
         inquirer=optimism_inquirer,
         cache_type=CacheType.EXTRAFI_NEXT_RESERVE_ID,
         msg_aggregator=optimism_inquirer.database.msg_aggregator,
+        reload_all=False,
     )
     chain = str(optimism_inquirer.chain_id.serialize_for_db())
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -1060,6 +1061,7 @@ def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
         inquirer=optimism_inquirer,
         cache_type=CacheType.EXTRAFI_NEXT_RESERVE_ID,
         msg_aggregator=optimism_inquirer.database.msg_aggregator,
+        reload_all=False,
     )
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_last_queried_ts_by_key(

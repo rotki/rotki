@@ -108,6 +108,7 @@ def query_convex_data(
         inquirer: 'EthereumInquirer',
         cache_type: Literal[CacheType.CONVEX_POOL_ADDRESS],
         msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument  # argument is unused to keep the interface consistent with the other functions because they all are called similarly in ensure_cache_data_is_updated and refresh_general_cache
+        reload_all: bool,  # pylint: disable=unused-argument
 ) -> dict[ChecksumEvmAddress, str] | None:
     """
     Queries chain for all convex rewards pools and returns a list of the mappings not cached
