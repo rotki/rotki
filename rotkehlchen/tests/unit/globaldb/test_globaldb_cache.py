@@ -5,7 +5,6 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, _Call, call, patch
 
-import gevent
 import pytest
 import requests
 from freezegun import freeze_time
@@ -433,8 +432,6 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
             node_inquirer=ethereum_inquirer,
             transactions_decoder=rotkehlchen_instance.chains_aggregator.ethereum.transactions_decoder,
         )
-        # the onchain pool queries run in a separate greenlet
-        gevent.joinall(rotkehlchen_instance.greenlet_manager.greenlets)
 
     pools, gauges = read_curve_pools_and_gauges(chain_id=ChainID.ETHEREUM)
     for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
