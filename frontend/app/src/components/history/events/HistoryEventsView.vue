@@ -40,12 +40,18 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
 import { RouterAccountsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
+import {
+  isEthBlockEvent,
+  isEvmEvent,
+  isEvmEventType,
+  isOnlineHistoryEventType,
+} from '@/utils/history/events';
 import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { flatten, isEqual } from 'es-toolkit';
@@ -388,12 +394,24 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
 }
 
 async function redecodePageTransactions(): Promise<void> {
-  const evmEvents = flatten(get(groups).data).filter(isEvmEvent);
-  const transactions = evmEvents.map(item => toEvmChainAndTxHash(item));
+  const events = flatten(get(groups).data);
+  const evmEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event));
+  const ethBlockEvents = events.filter(isEthBlockEvent);
 
-  await pullAndRedecodeTransactions({ transactions });
-  await fetchUndecodedTransactionsStatus();
-  await fetchData();
+  if (evmEvents.length > 0 || ethBlockEvents.length > 0) {
+    if (evmEvents.length > 0) {
+      const redecodePayload = evmEvents.map(item => toEvmChainAndTxHash(item));
+      await pullAndRedecodeTransactions({ transactions: redecodePayload });
+      await fetchUndecodedTransactionsStatus();
+    }
+
+    if (ethBlockEvents.length > 0) {
+      const redecodePayload = ethBlockEvents.map(item => item.blockNumber);
+      await redecodeBlockEvents({ blockNumbers: redecodePayload });
+    }
+
+    await fetchData();
+  }
 }
 
 function removeIdentifierParam() {

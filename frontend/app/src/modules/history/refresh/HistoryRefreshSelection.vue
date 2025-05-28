@@ -169,7 +169,7 @@ onMounted(() => {
       <RuiButton
         variant="outlined"
         color="primary"
-        class="px-3 py-3 rounded-l-none -ml-[1px] h-9"
+        class="px-3 py-3 rounded-l-none h-9 !outline-none"
         :disabled="disabled"
         v-bind="attrs"
       >
