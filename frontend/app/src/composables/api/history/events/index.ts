@@ -240,6 +240,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       '/history/events',
       snakeCaseTransformer(payload),
       {
+        timeout: 90_000,
         validateStatus: validStatus,
       },
     );

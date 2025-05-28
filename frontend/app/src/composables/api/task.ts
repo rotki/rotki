@@ -26,8 +26,9 @@ export function useTaskApi(): UseTaskApiReturn {
   const queryTaskResult = async <T>(
     id: number,
     transformer?: AxiosResponseTransformer[],
-  ): Promise<ActionResult<T>> => withRetry(async () => {
+  ): Promise<ActionResult<T>> => {
     const config: Partial<AxiosRequestConfig> = {
+      timeout: 90_000,
       validateStatus: validTaskStatus,
     };
 
@@ -62,7 +63,7 @@ export function useTaskApi(): UseTaskApiReturn {
     }
 
     throw new Error('No result');
-  });
+  };
 
   const cancelAsyncTask = async (id: number): Promise<boolean> => {
     const config: Partial<AxiosRequestConfig> = {

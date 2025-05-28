@@ -1,6 +1,7 @@
 import type { CommonMessageHandler, ExchangeUnknownAssetData } from '@/types/websocket-messages';
 import { useMissingMappingsDB } from '@/modules/asset-manager/missing-mappings/use-missing-mappings-db';
 import { Routes } from '@/router/routes';
+import { logger } from '@/utils/logging';
 import { type Notification, NotificationGroup, Severity } from '@rotki/common';
 import { pick } from 'es-toolkit';
 
@@ -11,7 +12,13 @@ export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t'
   const handle = async (data: ExchangeUnknownAssetData): Promise<Notification> => {
     const mapping = pick(data, ['identifier', 'location', 'name', 'details']);
 
-    await put(mapping);
+    try {
+      await put(mapping);
+    }
+    catch (error: any) {
+      logger.error(error);
+    }
+
     const groupCount = await count();
 
     return {
