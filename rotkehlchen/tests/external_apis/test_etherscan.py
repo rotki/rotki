@@ -225,6 +225,8 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             from_address=ZERO_ADDRESS,
             to_address='0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A',
             value=327600000000000000000,
+            gas=0,
+            gas_used=0,
         ),
     ]
 

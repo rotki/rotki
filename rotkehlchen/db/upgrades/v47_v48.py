@@ -337,4 +337,33 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         )
 
+    @progress_step(description='Upgrade internal transactions table')
+    def _ugrade_internal_transactions(write_cursor: 'DBCursor') -> None:
+        """Update the internal transactions table
+
+        Again we need to add more info in the internal transactions data due to examples like this:
+        https://etherscan.io/tx/0xbded678de7cb58d7f0e4e8d1f0f5adeb1dd5097601a8ab5790558f8228a04c58#internal
+
+        To differentiate between same from/to/value internals we just add gas and gas used there.
+        This "should" reduce the chance of missing something to almost zero. There is no other data
+        available for differentiation.
+        """
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='evm_internal_transactions',
+            schema="""
+            parent_tx INTEGER NOT NULL,
+            trace_id INTEGER NOT NULL,
+            from_address TEXT NOT NULL,
+            to_address TEXT,
+            value TEXT NOT NULL,
+            gas TEXT NOT NULL,
+            gas_used TEXT NOT NULL,
+            FOREIGN KEY(parent_tx) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+            PRIMARY KEY(parent_tx, trace_id, from_address, to_address, value, gas, gas_used)
+            """,  # noqa: E501
+            insert_columns="parent_tx, trace_id, from_address, to_address, value, '0', '0'",
+            insert_order='(parent_tx, trace_id, from_address, to_address, value, gas, gas_used)',
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

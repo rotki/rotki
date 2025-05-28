@@ -139,7 +139,7 @@ class Eth2Decoder(DecoderInterface):
             self,
             context: DecoderContext,
             expected_data_length: Literal[76, 116],
-    ) -> tuple[EvmEvent, EvmEvent] | None:
+    ) -> tuple[EvmEvent | None, EvmEvent] | None:
         """Decode a consolidation/withdrawal request with its fee.
         Returns the fee event and info event in a tuple or None on error.
         Note: The caller must further populate both events with data specific to the request type.
@@ -151,6 +151,7 @@ class Eth2Decoder(DecoderInterface):
             )
             return None
 
+        fee_event = None
         for event in context.decoded_events:
             if (
                 event.address == context.tx_log.address and
@@ -164,7 +165,6 @@ class Eth2Decoder(DecoderInterface):
                 break
         else:
             log.error(f'Failed to find fee event in ETH2 request transaction {context.transaction}')  # noqa: E501
-            return None
 
         info_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -177,10 +177,11 @@ class Eth2Decoder(DecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_ETH2,
         )
-        maybe_reshuffle_events(
-            ordered_events=[info_event, fee_event],
-            events_list=context.decoded_events + [info_event],
-        )
+        if fee_event:
+            maybe_reshuffle_events(
+                ordered_events=[info_event, fee_event],
+                events_list=context.decoded_events + [info_event],
+            )
         return fee_event, info_event
 
     def _decode_eth2_consolidation_request(self, context: DecoderContext) -> DecodingOutput:
@@ -221,7 +222,8 @@ class Eth2Decoder(DecoderInterface):
             info_event.event_subtype = HistoryEventSubType.CONSOLIDATE
             info_event.extra_data = {'source_validator_index': source_index, 'target_validator_index': target_index}  # noqa: E501
 
-        fee_event.notes = f'Spend {fee_event.amount} ETH as validator consolidation fee'
+        if fee_event:
+            fee_event.notes = f'Spend {fee_event.amount} ETH as validator consolidation fee'
         return DecodingOutput(event=info_event)
 
     def _decode_eth2_withdrawal_request(self, context: DecoderContext) -> DecodingOutput:
@@ -254,7 +256,8 @@ class Eth2Decoder(DecoderInterface):
             info_event.amount = amount
             request_description = 'withdrawal'
 
-        fee_event.notes = f'Spend {fee_event.amount} ETH as {request_description} request fee'
+        if fee_event:
+            fee_event.notes = f'Spend {fee_event.amount} ETH as {request_description} request fee'
         return DecodingOutput(event=info_event)
 
     # -- DecoderInterface methods

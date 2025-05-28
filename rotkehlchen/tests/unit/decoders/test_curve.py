@@ -561,6 +561,8 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
         from_address=string_to_evm_address('0xDC24316b9AE028F1497c275EB9192a3Ea0f67022'),
         to_address=string_to_evm_address('0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC'),
         value=FVal('1.02930131799766041') * EXP18,
+        gas=0,
+        gas_used=0,
     )
     dbevmtx = DBEvmTx(database)
     with database.user_write() as cursor:

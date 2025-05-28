@@ -227,6 +227,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         from_address=ETH_ADDRESS3,
         to_address=address_4,
         value=0,
+        gas=0,
+        gas_used=0,
     )
     internal_tx2 = EvmInternalTransaction(
         parent_tx_hash=tx_hashes[4],
@@ -235,6 +237,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         from_address=make_evm_address(),
         to_address=make_evm_address(),
         value=0,
+        gas=0,
+        gas_used=0,
     )
     internal_tx3 = EvmInternalTransaction(
         parent_tx_hash=tx_hashes[3],
@@ -243,6 +247,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         from_address=ETH_ADDRESS1,
         to_address=ETH_ADDRESS3,
         value=10,
+        gas=0,
+        gas_used=0,
     )
     internal_tx4 = EvmInternalTransaction(
         parent_tx_hash=tx_hashes[3],
@@ -251,6 +257,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         from_address=ETH_ADDRESS1,
         to_address=ETH_ADDRESS3,
         value=0,
+        gas=0,
+        gas_used=0,
     )
 
     dbevmtx = DBEvmTx(data.db)
@@ -274,6 +282,8 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
             ),
             has_premium=True,
         )
+        # NB: If this test fails check dbhandler.write_tuples for internal transactions and
+        # make sure indices at the query adding the relevant address are correct
         assert {x.tx_hash for x in result} == {tx_hashes[0], tx_hashes[2], tx_hashes[3]}
 
         # Now try transaction query by relevant addresses and see we get more due to the

@@ -557,6 +557,8 @@ def deserialize_evm_transaction(
                 from_address=from_address,
                 to_address=to_address,
                 value=value,
+                gas=int(data.get('gas', '0')),
+                gas_used=int(data.get('gasUsed', '0')),
             ), None
 
         # else normal transaction

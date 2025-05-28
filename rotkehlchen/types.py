@@ -421,12 +421,16 @@ class EvmInternalTransaction(NamedTuple):
     from_address: ChecksumEvmAddress
     to_address: ChecksumEvmAddress | None
     value: int
+    gas: int
+    gas_used: int
 
     def serialize(self) -> dict[str, Any]:
         result = self._asdict()  # pylint: disable=no-member
         result['tx_hash'] = result['tx_hash'].hex()
         result['chain_id'] = result['chain_id'].serialize()
         result['value'] = str(result['value'])
+        result['gas'] = str(result['gas'])
+        result['gas_used'] = str(result['gas_used'])
         return result
 
     def __hash__(self) -> int:

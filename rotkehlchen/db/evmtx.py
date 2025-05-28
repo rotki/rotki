@@ -140,6 +140,8 @@ class DBEvmTx:
             tx.from_address,
             tx.to_address,
             str(tx.value),
+            str(tx.gas),
+            str(tx.gas_used),
             tx.parent_tx_hash,
             tx.chain_id.serialize_for_db(),
         ) for tx in transactions]
@@ -149,7 +151,10 @@ class DBEvmTx:
               trace_id,
               from_address,
               to_address,
-              value) SELECT evm_transactions.identifier, ?, ?, ?, ? FROM evm_transactions
+              value,
+              gas,
+              gas_used
+        ) SELECT evm_transactions.identifier, ?, ?, ?, ?, ?, ? FROM evm_transactions
             WHERE tx_hash=? AND chain_id=?
         """
         self.db.write_tuples(
@@ -179,8 +184,8 @@ class DBEvmTx:
 
         with self.db.conn.read_ctx() as cursor:
             results = cursor.execute(
-                'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value '
-                'FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
+                'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value, ITX.gas, '
+                'ITX.gas_used FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
                 'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?'
                 f'{address_filter}', bindings,
             )
@@ -193,6 +198,8 @@ class DBEvmTx:
                     from_address=result[1],
                     to_address=result[2],
                     value=int(result[3]),
+                    gas=int(result[4]),
+                    gas_used=int(result[5]),
                 )
                 transactions.append(tx)
 
@@ -653,9 +660,9 @@ class DBEvmTx:
         """Constructs SQL query and bindings for EVM transactions with authorization data"""
         base_select = (
             'SELECT evm_transactions.tx_hash, evm_transactions.chain_id, '
-            'timestamp, block_number, from_address, to_address, value, gas, '
-            'gas_price, gas_used, input_data, evm_transactions.nonce, identifier, '
-            'auth.nonce AS auth_nonce, auth.delegated_address'
+            'timestamp, block_number, from_address, to_address, value, evm_transactions.gas, '
+            'gas_price, evm_transactions.gas_used, input_data, evm_transactions.nonce, '
+            'identifier, auth.nonce AS auth_nonce, auth.delegated_address'
         )
         join_clause = 'LEFT JOIN evm_transactions_authorizations AS auth ON evm_transactions.identifier = auth.tx_id'  # noqa: E501
         if has_premium:
