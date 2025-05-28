@@ -343,7 +343,7 @@ def _save_curve_data_to_cache(
 
 
 def _query_curve_data_from_api(
-        chain_id: ChainID,
+        evm_inquirer: 'EvmNodeInquirer',
         existing_pools: set[ChecksumEvmAddress],
 ) -> list[CurvePoolData]:
     """
@@ -352,7 +352,7 @@ def _query_curve_data_from_api(
     May raise:
     - RemoteError if failed to query curve api
     """
-    all_api_pools, api_url = [], CURVE_API_URL.format(curve_blockchain_id=CURVE_CHAIN_ID[chain_id])
+    all_api_pools, api_url = [], CURVE_API_URL.format(curve_blockchain_id=CURVE_CHAIN_ID[evm_inquirer.chain_id])  # noqa: E501
     log.debug(f'Querying curve api {api_url}')
     response_json = request_get_dict(api_url)
     if response_json['success'] is False:
@@ -397,6 +397,14 @@ def _query_curve_data_from_api(
                 f'{api_pool_data["address"]} information from curve api: {e}',
             )
 
+    if len(processed_new_pools) > 0:
+        verified_pools = _ensure_curve_tokens_existence(
+            evm_inquirer=evm_inquirer,
+            all_pools=processed_new_pools,
+            msg_aggregator=evm_inquirer.database.msg_aggregator,
+        )
+        _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=verified_pools)
+
     return processed_new_pools
 
 
@@ -404,13 +412,8 @@ def _query_curve_data_from_chain(
         evm_inquirer: 'EvmNodeInquirer',
         existing_pools: set[ChecksumEvmAddress],
         msg_aggregator: 'MessagesAggregator',
-) -> None:
-    """
-    Query all curve information(lp tokens, pools, gagues, pool coins) from metaregistry.
-
-    May raise:
-    - RemoteError if failed to query chain
-    """
+) -> list[CurvePoolData]:
+    """Query all curve information(lp tokens, pools, gauges, pool coins) from metaregistry."""
     address_provider = evm_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
     try:
         metaregistry_address = deserialize_evm_address(address_provider.call(
@@ -423,7 +426,7 @@ def _query_curve_data_from_chain(
             f'Failed to retrieve metaregistry address from the Curve '
             f'address provider on {evm_inquirer.chain_name} due to {e!s}',
         )
-        return
+        return []
 
     metaregistry = EvmContract(
         address=metaregistry_address,
@@ -437,10 +440,10 @@ def _query_curve_data_from_chain(
             'Failed to retrieve Curve pool count from the metaregistry '
             f'on {evm_inquirer.chain_name} due to {e!s}',
         )
-        return
+        return []
 
     if (existing_pool_count := len(existing_pools)) == pool_count:
-        return
+        return []
     if (new_pool_count := pool_count - existing_pool_count) > MAX_ONCHAIN_POOLS_QUERY:
         pool_count = existing_pool_count + MAX_ONCHAIN_POOLS_QUERY
         new_pool_count = MAX_ONCHAIN_POOLS_QUERY
@@ -449,7 +452,7 @@ def _query_curve_data_from_chain(
             f'Too many pools to query onchain. Only querying {new_pool_count}.',
         )
 
-    last_notified_ts = Timestamp(0)
+    new_pools, last_notified_ts = [], Timestamp(0)
     pools_to_skip = IGNORED_CURVE_POOLS | existing_pools
     for pool_index in range((start_idx := pool_count - new_pool_count), pool_count):
         last_notified_ts = maybe_notify_cache_query_status(
@@ -535,6 +538,9 @@ def _query_curve_data_from_chain(
             ),
         )) is not None:
             _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=[pool])
+            new_pools.append(pool)
+
+    return new_pools
 
 
 def query_curve_data(
@@ -560,26 +566,20 @@ def query_curve_data(
             )
         }
 
-    pools_data: list[CurvePoolData] = []
     try:
         pools_data = _query_curve_data_from_api(
-            chain_id=inquirer.chain_id,
+            evm_inquirer=inquirer,
             existing_pools=existing_pools,
         )
     except (RemoteError, UnableToDecryptRemoteData) as e:
         log.error(f'Could not query curve api due to: {e}. Will query the metaregistry on chain')
-        inquirer.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Query Curve pools from the onchain metaregistry',
-            exception_is_error=False,
-            method=_query_curve_data_from_chain,
+        pools_data = _query_curve_data_from_chain(
             evm_inquirer=inquirer,
             existing_pools=existing_pools,
             msg_aggregator=msg_aggregator,
         )
 
-    if len(pools_data) == 0:
-        # if no new pools, update the last_queried_ts of db entries
+    if len(pools_data) == 0:  # if no new pools, update the last_queried_ts of db entries
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             globaldb_update_cache_last_ts(
                 write_cursor=write_cursor,
@@ -588,13 +588,7 @@ def query_curve_data(
             )
         return None
 
-    verified_pools = _ensure_curve_tokens_existence(
-        evm_inquirer=inquirer,
-        all_pools=pools_data,
-        msg_aggregator=msg_aggregator,
-    )
-    _save_curve_data_to_cache(evm_inquirer=inquirer, new_data=verified_pools)
-    return verified_pools
+    return pools_data
 
 
 def get_lp_and_gauge_token_addresses(
