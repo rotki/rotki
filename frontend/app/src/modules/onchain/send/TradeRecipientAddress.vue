@@ -6,6 +6,7 @@ import TradeAddressDisplay from '@/modules/onchain/send/TradeAddressDisplay.vue'
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { isValidEthAddress } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
 
 const model = defineModel<string>({ required: true });
@@ -37,7 +38,7 @@ const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
 const { connected, connectedAddress } = storeToRefs(useWalletStore());
 const { addresses } = useAccountAddresses();
 const { fetchAddressBook, resolveEnsNames } = useAddressesNamesApi();
-const { updateEnsNamesState } = useAddressesNamesStore();
+const { fetchEnsNames, updateEnsNamesState } = useAddressesNamesStore();
 
 function isNotConnectedAddress(address: string) {
   const connected = get(connectedAddress);
@@ -114,9 +115,10 @@ watch(usedAnyFocused, (focus) => {
 watch(debouncedSearchValue, async (value) => {
   const values = [];
   const privateBooks = await getAddressBookData(value);
-  values.push(...privateBooks);
-
-  if (value.endsWith('.eth')) {
+  if (privateBooks.length > 0) {
+    values.push(...privateBooks);
+  }
+  else if (value.endsWith('.eth')) {
     set(resolvingEns, true);
     const address = await resolveEnsNames(value);
     set(resolvingEns, false);
@@ -130,6 +132,12 @@ watch(debouncedSearchValue, async (value) => {
         [address]: value,
       });
     }
+  }
+  else if (isValidEthAddress(value)) {
+    startPromise(fetchEnsNames([{ address: value, blockchain: null }]));
+    values.push({
+      address: value,
+    });
   }
 
   set(directOptions, values.filter(item => isNotConnectedAddress(item.address)));
