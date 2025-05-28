@@ -1,6 +1,6 @@
-import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
+import type { RefreshTransactionsParams } from './types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
@@ -33,7 +33,7 @@ import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
-import { type Blockchain, Severity, toHumanReadable } from '@rotki/common';
+import { Severity, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { groupBy, omit, partition } from 'es-toolkit';
 
@@ -251,14 +251,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }, 2);
   };
 
-  const refreshTransactions = async (
-    { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false }: {
-      chains?: Blockchain[];
-      disableEvmEvents?: boolean;
-      userInitiated?: boolean;
-      payload?: HistoryRefreshEventData;
-    } = {},
-  ): Promise<void> => {
+  const refreshTransactions = async (params: RefreshTransactionsParams = {}): Promise<void> => {
+    const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
     if (fetchDisabled(userInitiated)) {
       logger.info('skipping transaction refresh');
       return;
@@ -308,7 +302,15 @@ export const useHistoryTransactions = createSharedComposable(() => {
         : queries;
 
       queriesToExecute?.forEach(query => asyncOperations.push(queryOnlineEvent(query)));
-      await Promise.allSettled(asyncOperations);
+
+      for (const operation of asyncOperations) {
+        try {
+          await operation;
+        }
+        catch (error: any) {
+          logger.error(error);
+        }
+      }
 
       if (!disableEvmEvents && evmAccounts.length > 0)
         queue.queue('undecoded-transactions-status-final', async () => fetchUndecodedTransactionsStatus());
