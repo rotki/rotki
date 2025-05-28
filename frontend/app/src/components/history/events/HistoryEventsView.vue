@@ -46,7 +46,12 @@ import { useHistoryStore } from '@/store/history';
 import { RouterAccountsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { toEvmChainAndTxHash } from '@/utils/history';
-import { isEvmEvent, isEvmEventType, isOnlineHistoryEventType } from '@/utils/history/events';
+import {
+  isEthBlockEvent,
+  isEvmEvent,
+  isEvmEventType,
+  isOnlineHistoryEventType,
+} from '@/utils/history/events';
 import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { flatten, isEqual } from 'es-toolkit';
@@ -391,7 +396,7 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
 async function redecodePageTransactions(): Promise<void> {
   const events = flatten(get(groups).data);
   const evmEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event));
-  const ethBlockEvents = events.filter(item => 'blockNumber' in item);
+  const ethBlockEvents = events.filter(isEthBlockEvent);
 
   if (evmEvents.length > 0 || ethBlockEvents.length > 0) {
     if (evmEvents.length > 0) {

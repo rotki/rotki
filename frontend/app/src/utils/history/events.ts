@@ -51,7 +51,7 @@ export function isEthBlockEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.ETH_BLOCK_EVENT;
 }
 
-export function isEthBlockEvent(event: HistoryEvent): event is EthBlockEvent {
+export function isEthBlockEvent<T extends HistoryEvent>(event: T): event is T & EthBlockEvent {
   return isEthBlockEventType(event.entryType);
 }
 
