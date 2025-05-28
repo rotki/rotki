@@ -43,6 +43,7 @@ def query_extrafi_data(
         inquirer: 'EvmNodeInquirer',
         cache_type: Literal[CacheType.EXTRAFI_NEXT_RESERVE_ID],
         msg_aggregator: 'MessagesAggregator',
+        reload_all: bool,
 ) -> list[ChecksumEvmAddress] | None:
     """Query and store information of rewards pools.
     Updates the last queried ts when executed.
@@ -63,7 +64,7 @@ def query_extrafi_data(
 
     now = ts_now()
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        if (saved_next_reserve_id_str := globaldb_get_unique_cache_value(
+        if reload_all is True or (saved_next_reserve_id_str := globaldb_get_unique_cache_value(
             cursor=cursor,
             key_parts=cache_key,
         )) is None:

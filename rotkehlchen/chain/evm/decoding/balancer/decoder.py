@@ -50,12 +50,13 @@ class BalancerCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             self,
             evm_inquirer=evm_inquirer,
             cache_type_to_check_for_freshness=pool_cache_type,
-            query_data_method=lambda inquirer, cache_type, msg_aggregator: query_balancer_data(
+            query_data_method=lambda inquirer, cache_type, msg_aggregator, reload_all: query_balancer_data(  # noqa: E501
                 inquirer=inquirer,
                 cache_type=cache_type,
                 protocol=counterparty,
                 msg_aggregator=msg_aggregator,
                 version=1 if counterparty == 'balancer-v1' else 2,
+                reload_all=reload_all,
             ),
             read_data_from_cache_method=read_fn,
             chain_id=evm_inquirer.chain_id,

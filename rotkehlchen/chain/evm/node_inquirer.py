@@ -1497,7 +1497,8 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         - cache type: The cache type to check for freshness
         - query_method: The method that queries the remote source for the data
         - save_method: The method that saves the data to the cache tables
-        - force_refresh: If True, the cache will be updated even if it is fresh
+        - force_refresh: If True, the cache will be updated even if it is fresh, and limits will
+          be ignored, refreshing all the cached data.
         - cache_key_parts: The parts to be used to check cache freshness along with cache_type
         """
         if cache_key_parts is None:
@@ -1514,6 +1515,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 inquirer=self,
                 cache_type=cache_type,
                 msg_aggregator=self.database.msg_aggregator,
+                reload_all=force_refresh,
             )
         except RemoteError as e:
             log.error(

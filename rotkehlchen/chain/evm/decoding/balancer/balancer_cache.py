@@ -38,6 +38,7 @@ def query_balancer_data(
         msg_aggregator: 'MessagesAggregator',
         protocol: Literal['balancer-v1', 'balancer-v2'],
         cache_type: Literal[CacheType.BALANCER_V1_POOLS, CacheType.BALANCER_V2_POOLS],
+        reload_all: bool,
 ) -> tuple[set['ChecksumEvmAddress'], set['ChecksumEvmAddress']]:
     """Query and store balancer pools with their gauges.
 
@@ -51,31 +52,32 @@ def query_balancer_data(
     )
     gauge_key_parts = ((str_chain_id := str(inquirer.chain_id.value)), str(version))
     pool_key_parts = (str_chain_id,)
-    with globaldb.conn.read_ctx() as cursor:
-        existing_pools = {
-            string_to_evm_address(address)
-            for address in globaldb_get_general_cache_values(
-                cursor=cursor,
-                key_parts=(cache_type, *pool_key_parts),
-            )
-        }
-        existing_gauges = {
-            string_to_evm_address(address)
-            for address in globaldb_get_general_cache_values(
-                cursor=cursor,
-                key_parts=(CacheType.BALANCER_GAUGES, *gauge_key_parts),
-            )
-        }
+    if reload_all is False:
+        with globaldb.conn.read_ctx() as cursor:
+            existing_pools = {
+                string_to_evm_address(address)
+                for address in globaldb_get_general_cache_values(
+                    cursor=cursor,
+                    key_parts=(cache_type, *pool_key_parts),
+                )
+            }
+            existing_gauges = {
+                string_to_evm_address(address)
+                for address in globaldb_get_general_cache_values(
+                    cursor=cursor,
+                    key_parts=(CacheType.BALANCER_GAUGES, *gauge_key_parts),
+                )
+            }
 
-    if latest_pools_count == len(existing_pools):
-        with globaldb.conn.write_ctx() as write_cursor:
-            globaldb_update_cache_last_ts(
-                write_cursor=write_cursor,
-                key_parts=pool_key_parts,
-                cache_type=cache_type,
-            )
+        if latest_pools_count == len(existing_pools):
+            with globaldb.conn.write_ctx() as write_cursor:
+                globaldb_update_cache_last_ts(
+                    write_cursor=write_cursor,
+                    key_parts=pool_key_parts,
+                    cache_type=cache_type,
+                )
 
-        return existing_pools, existing_gauges
+            return existing_pools, existing_gauges
 
     pools, gauges = set(), set()
     token_encounter_info = TokenEncounterInfo(
@@ -146,7 +148,7 @@ def query_balancer_data(
             key_parts=pool_key_parts,
         )
 
-    return existing_pools, existing_gauges
+    return pools, gauges
 
 
 def read_balancer_pools_and_gauges_from_cache(

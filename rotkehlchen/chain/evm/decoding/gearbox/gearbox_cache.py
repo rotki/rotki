@@ -382,6 +382,7 @@ def query_gearbox_data(
         inquirer: 'EvmNodeInquirer',
         cache_type: Literal[CacheType.GEARBOX_POOL_ADDRESS],
         msg_aggregator: 'MessagesAggregator',
+        reload_all: bool,  # pylint: disable=unused-argument
 ) -> list[GearboxPoolData] | None:
     """
     Queries chain for all gearbox rewards pools and returns a list of the mappings not cached

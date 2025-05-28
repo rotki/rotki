@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, _Call, call, patch
@@ -38,6 +39,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     read_gearbox_data_from_cache,
 )
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
+    POOL_DATA_CHUNK_SIZE,
     query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
 )
@@ -244,32 +246,42 @@ def test_velodrome_cache(optimism_inquirer):
     assert not any((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)  # noqa: E501
     call_count = 0
 
-    def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
-        """Limit pool query to only the first five pools"""
-        nonlocal call_count
-        if method_name == 'all':
-            if call_count > 0:
-                return []  # only do a single chunk
+    def make_mock_call_contract(force_refresh: bool) -> Callable:
+        def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
+            """Limit pool query to only the first five pools"""
+            nonlocal call_count
+            if method_name == 'all':
+                if force_refresh is True:
+                    assert kwargs['arguments'] == [POOL_DATA_CHUNK_SIZE, 0]  # starts from the beginning  # noqa: E501
+                    return []  # don't return any pools. Will test the rest of the pool processing when force_refresh is False  # noqa: E501
 
-            kwargs['arguments'] = [5, 0]  # Only query the first 5 pools
-            call_count += 1
+                if call_count > 0:
+                    return []  # only do a single chunk
 
-        return node_inquirer.call_contract(
-            contract_address=contract.address,
-            abi=contract.abi,
-            method_name=method_name,
-            **kwargs,
-        )
+                assert kwargs['arguments'] == [POOL_DATA_CHUNK_SIZE, 1402]  # only tries to query new pools  # noqa: E501
+                kwargs['arguments'] = [5, 0]  # Only query the first 5 pools for simpler testing
+                call_count += 1
 
-    with (
-        patch(target='rotkehlchen.chain.evm.contracts.EvmContract.call', new=mock_call_contract),
-        patch.object(optimism_inquirer.database.msg_aggregator, 'add_message'),
-        patch('rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache', return_value=True),  # noqa: E501
-    ):
-        optimism_inquirer.ensure_cache_data_is_updated(
-            cache_type=CacheType.VELODROME_POOL_ADDRESS,
-            query_method=query_velodrome_like_data,
-        )  # populates cache, addressbook and assets tables
+            return node_inquirer.call_contract(
+                contract_address=contract.address,
+                abi=contract.abi,
+                method_name=method_name,
+                **kwargs,
+            )
+
+        return mock_call_contract
+
+    for force_refresh in (True, False):
+        with (
+            patch(target='rotkehlchen.chain.evm.contracts.EvmContract.call', new=make_mock_call_contract(force_refresh)),  # noqa: E501
+            patch.object(optimism_inquirer.database.msg_aggregator, 'add_message'),
+            patch('rotkehlchen.chain.evm.node_inquirer.should_update_protocol_cache', return_value=True),  # noqa: E501
+        ):
+            optimism_inquirer.ensure_cache_data_is_updated(
+                cache_type=CacheType.VELODROME_POOL_ADDRESS,
+                query_method=query_velodrome_like_data,
+                force_refresh=force_refresh,
+            )  # populates cache, addressbook and assets tables
 
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert pools >= VELODROME_SOME_EXPECTED_POOLS
@@ -310,6 +322,7 @@ def test_velodrome_cache_with_no_symbol(optimism_inquirer: 'OptimismInquirer'):
             inquirer=optimism_inquirer,
             cache_type=CacheType.VELODROME_POOL_ADDRESS,
             msg_aggregator=optimism_inquirer.database.msg_aggregator,
+            reload_all=False,
         )
 
     assert EvmToken('eip155:10/erc20:0x3241738149B24C9164dA14Fa2040159FFC6Dd237').symbol == 'CL10-USDC/MAI'  # noqa: E501
@@ -553,12 +566,13 @@ def test_balancer_cache(ethereum_inquirer):
 
     ethereum_inquirer.ensure_cache_data_is_updated(
         cache_type=CacheType.BALANCER_V2_POOLS,
-        query_method=lambda inquirer, cache_type, msg_aggregator: query_balancer_data(
+        query_method=lambda inquirer, cache_type, msg_aggregator, reload_all: query_balancer_data(
             inquirer=inquirer,
             cache_type=cache_type,
             protocol=CPT_BALANCER_V2,
             msg_aggregator=msg_aggregator,
             version=2,
+            reload_all=reload_all,
         ),
     )
     pools, gauges = read_balancer_pools_and_gauges_from_cache(
