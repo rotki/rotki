@@ -233,7 +233,7 @@ def test_user_creation_with_premium_credentials(
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    patched_premium_at_start, _, patched_get = create_patched_premium(
+    patched_premium_at_start, _, patched_get, _ = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
@@ -883,7 +883,7 @@ def test_user_set_premium_credentials(
     We mock the server accepting the premium credentials
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    _, patched_premium_at_set, patched_get = create_patched_premium(
+    _, patched_premium_at_set, patched_get, _ = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,
@@ -916,7 +916,7 @@ def test_user_del_premium_credentials(
     We first set up mock the server accepting the premium credentials
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    _, patched_premium_at_set, patched_get = create_patched_premium(
+    _, patched_premium_at_set, patched_get, _ = create_patched_premium(
         PremiumCredentials(VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET),
         username=username,
         patch_get=True,

@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
@@ -118,7 +119,38 @@ def create_patched_premium(
         'rotkehlchen.rotkehlchen.premium_create_and_verify',
         return_value=premium,
     )
-    return patched_premium_at_start, patched_premium_at_set, patched_get
+
+    def mock_perform_userdb_upgrade_steps(db, progress_handler):
+        """The remote encrypted DB in the tests has a remnant combined_trades_view. It's not
+        deleted since that normally gets removed in 34->35 and the remove DB starts from 35 which
+        I assume was a mistake on our side when testing it. I thought it faster to do a mock in
+        the 37->38 upgrade rather than reencrypting it and putting it in the test. And chose
+        37->38 since it's the easier to mock the main changes of.
+        """
+        with db.user_write() as write_cursor:
+            write_cursor.execute('DROP VIEW IF EXISTS combined_trades_view;')  # this we add
+            write_cursor.execute('DROP TABLE IF EXISTS amm_events;')
+            write_cursor.execute('DROP TABLE IF EXISTS aave_events;')
+            write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('h', 40);")
+            update_table_schema(
+                write_cursor=write_cursor,
+                table_name='evm_internal_transactions',
+                schema="""parent_tx_hash BLOB NOT NULL,
+                chain_id INTEGER NOT NULL,
+                trace_id INTEGER NOT NULL,
+                from_address TEXT NOT NULL,
+                to_address TEXT,
+                value TEXT NOT NULL,
+                FOREIGN KEY(parent_tx_hash, chain_id) REFERENCES evm_transactions(tx_hash, chain_id) ON DELETE CASCADE ON UPDATE CASCADE,
+                PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)""",  # noqa: E501
+                insert_columns='parent_tx_hash, chain_id, trace_id, from_address, to_address, value',  # noqa: E501
+            )
+
+    patched_upgrade_37_38 = patch(
+        'rotkehlchen.db.upgrades.v37_v38.perform_userdb_upgrade_steps',
+        wraps=mock_perform_userdb_upgrade_steps,
+    )
+    return patched_premium_at_start, patched_premium_at_set, patched_get, patched_upgrade_37_38
 
 
 def get_different_hash(given_hash: str) -> str:
@@ -170,7 +202,7 @@ def setup_starting_environment(
     else:
         metadata_last_modify_ts = our_last_write_ts - 10
 
-    patched_premium_at_start, _, patched_get = create_patched_premium(
+    patched_premium_at_start, _, patched_get, patched_upgrade = create_patched_premium(
         premium_credentials=premium_credentials,
         username=username,
         patch_get=True,
@@ -188,7 +220,7 @@ def setup_starting_environment(
         given_premium_credentials = None
         create_new = False
 
-    with patched_premium_at_start, patched_get, mock_db_schema_sanity_check():
+    with patched_premium_at_start, patched_get, mock_db_schema_sanity_check(), patched_upgrade:
         rotkehlchen_instance.premium_sync_manager.try_premium_at_start(
             given_premium_credentials=given_premium_credentials,
             username=username,
