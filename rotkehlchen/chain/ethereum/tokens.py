@@ -105,7 +105,15 @@ class EthereumTokens(EvmTokensWithDSProxy):
         # We ignore A_ETH so all other ones should be tokens
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
-        self._detect_tokens(
+        detected_tokens = self._detect_tokens(
             addresses=list(proxies_to_use.values()),
             tokens_to_check=self.tokens_for_proxies,
         )
+        with self.db.user_write() as write_cursor:
+            for addr, tokens in detected_tokens.items():
+                self.db.save_tokens_for_address(
+                    write_cursor=write_cursor,
+                    address=addr,
+                    tokens=tokens,
+                    blockchain=self.evm_inquirer.blockchain,
+                )
