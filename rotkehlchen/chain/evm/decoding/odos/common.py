@@ -135,7 +135,7 @@ class OdosCommonDecoderBase(DecoderInterface):
         for event in context.decoded_events:
             if (
                 ((input_amount := input_tokens.get(event.asset.identifier)) == event.amount) or
-                input_amount == ZERO  # this means https://docs.odos.xyz/product/sor/v2/#max-balance-swapping  # noqa: E501
+                input_amount == ZERO  # this means https://docs.odos.xyz/build/quickstart/sor  # noqa: E501
             ) and (
                 (
                     event.event_type == HistoryEventType.SPEND and
