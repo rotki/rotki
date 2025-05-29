@@ -6,6 +6,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     DEPOSIT_AND_STAKE_ZAP,
 )
 from rotkehlchen.chain.evm.decoding.curve.decoder import CurveCommonDecoder
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_XDAI
 
 if TYPE_CHECKING:
@@ -28,7 +29,11 @@ class CurveDecoder(CurveCommonDecoder):
             msg_aggregator=msg_aggregator,
             native_currency=A_XDAI,
             aave_pools=set(),
-            curve_deposit_contracts={DEPOSIT_AND_STAKE_ZAP},
+            curve_deposit_contracts={
+                DEPOSIT_AND_STAKE_ZAP,
+                string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),  # EURe/3CRV metapool zap contract  # noqa: E501
+                string_to_evm_address('0x87C067fAc25f123554a0E76596BF28cFa37fD5E9'),  # MetaUSD Zap
+            },
             curve_swap_routers={CURVE_SWAP_ROUTER_NG},
             crv_minter_addresses={CHILD_LIQUIDITY_GAUGE_FACTORY},
         )

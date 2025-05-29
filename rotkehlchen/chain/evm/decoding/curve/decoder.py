@@ -171,8 +171,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 (
                     user_or_contract_address == event.location_label or
                     user_or_contract_address in self.curve_deposit_contracts or
-                    tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE or
-                    user_or_contract_address == bytes_to_address(tx_log.topics[1])
+                    tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE
                 )
             ):
                 event.event_type = HistoryEventType.SPEND
@@ -327,19 +326,25 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
+                is_deposit_and_stake = any(  # check if this is a deposit-and-stake operation
+                    _log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE
+                    for _log in all_logs
+                )
+
                 if (
+                    tx_log.address in self.pools and
+                    is_deposit_and_stake is False and
                     (
                         event.location_label == user_or_contract_address or
                         user_or_contract_address in self.curve_deposit_contracts
-                    ) and
-                    tx_log.address in self.pools
+                    )
                 ):
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.counterparty = CPT_CURVE
                     event.notes = f'Deposit {event.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
                     deposit_events.append(event)
-                else:
+                elif is_deposit_and_stake:
                     # when depositing in a gauge with deposit and stake
                     # we need to check if there is a transfer targeting the same contract address
                     # (should not be the user address) and if so save the address of the pool
