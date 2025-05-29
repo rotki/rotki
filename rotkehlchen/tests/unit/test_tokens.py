@@ -540,12 +540,15 @@ def test_erc721_token_ownership_verification(
             )],
         )
 
-    with patch('rotkehlchen.chain.ethereum.tokens.EthereumTokens._detect_tokens', return_value=None):  # noqa: E501
+    # regression test: dai token added here to ensure detected erc20 tokens
+    # aren't removed when erc721 tokens are detected
+    # see https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=112828923
+    with patch('rotkehlchen.chain.ethereum.tokens.EthereumTokens._detect_tokens', return_value={ethereum_accounts[0]: [A_DAI]}):  # noqa: E501
         user_tokens = EthereumTokens(database, ethereum_inquirer).detect_tokens(
             only_cache=False,
             addresses=ethereum_accounts,
         )
-        assert user_tokens[user_address][0] == [token_7776]
+        assert user_tokens[user_address][0] == [A_DAI, token_7776]
 
 
 def test_superfluid_constant_flow_nfts_are_in_token_exceptions(

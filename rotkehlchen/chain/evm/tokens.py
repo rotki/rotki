@@ -298,20 +298,30 @@ class EvmTokens(ABC):  # noqa: B024
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )
-        self._detect_tokens(
+        detected_erc20_tokens = self._detect_tokens(
             addresses=addresses,
             tokens_to_check=erc20_tokens,
         )
-        self._detect_erc721_tokens(
+        all_detected_tokens = self._detect_erc721_tokens(
             addresses=addresses,
             tokens_to_check=erc721_tokens,
+            detected_tokens=detected_erc20_tokens,
         )
+        with self.db.user_write() as write_cursor:
+            for address, detected_tokens in all_detected_tokens.items():
+                self.db.save_tokens_for_address(
+                    write_cursor=write_cursor,
+                    address=address,
+                    blockchain=self.evm_inquirer.blockchain,
+                    tokens=detected_tokens,
+                )
 
     def _detect_erc721_tokens(
             self,
             addresses: Sequence[ChecksumEvmAddress],
             tokens_to_check: list[EvmTokenDetectionData],
-    ) -> None:
+            detected_tokens: dict[ChecksumEvmAddress, list[Asset]],
+    ) -> dict[ChecksumEvmAddress, list[Asset]]:
         """Detect ERC-721 tokens owned by the given addresses based on historical events.
         For each address, checks token ownership from historical events and saves
         detected tokens to the database.
@@ -359,13 +369,9 @@ class EvmTokens(ABC):  # noqa: B024
 
                 valid_tokens.append(token)
 
-            with self.db.user_write() as write_cursor:
-                self.db.save_tokens_for_address(
-                    write_cursor=write_cursor,
-                    address=address,
-                    blockchain=self.evm_inquirer.blockchain,
-                    tokens=valid_tokens,
-                )
+            detected_tokens[address].extend(valid_tokens)
+
+        return detected_tokens
 
     def detect_tokens(
             self,
@@ -393,7 +399,7 @@ class EvmTokens(ABC):  # noqa: B024
             self,
             addresses: Sequence[ChecksumEvmAddress],
             tokens_to_check: list[EvmTokenDetectionData],
-    ) -> None:
+    ) -> dict[ChecksumEvmAddress, list[Asset]]:
         """
         Detect tokens for the given addresses.
 
@@ -404,6 +410,7 @@ class EvmTokens(ABC):  # noqa: B024
           token has no code. That means the chain is not synced
         """
         chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        tokens_per_address = defaultdict(list)
         for address in addresses:
             token_balances = self._query_chunks(
                 address=address,
@@ -412,13 +419,9 @@ class EvmTokens(ABC):  # noqa: B024
                 call_order=call_order,
             )
             detected_tokens = list(token_balances.keys())
-            with self.db.user_write() as write_cursor:
-                self.db.save_tokens_for_address(
-                    write_cursor=write_cursor,
-                    address=address,
-                    blockchain=self.evm_inquirer.blockchain,
-                    tokens=detected_tokens,
-                )
+            tokens_per_address[address] = detected_tokens
+
+        return tokens_per_address
 
     def query_tokens_for_addresses(
             self,
