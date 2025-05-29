@@ -169,25 +169,25 @@ const chartSectionHeight = computed<string>(() => {
         @update:model-value="setTimeframe($event)"
       />
     </div>
-    <div class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart">
+    <div class="lg:col-span-7 flex justify-center items-center overall-balances__net-worth-chart relative">
       <NetWorthChart
-        v-if="!isLoading"
         :chart-data="timeframeData"
         :timeframe="timeframe"
         :timeframes="allTimeframes"
+        :loading="isLoading"
       />
       <div
-        v-else
-        class="overall-balances__net-worth-chart__loader flex h-full flex flex-col text-center justify-center items-center"
+        v-if="isLoading"
+        class="absolute top-0 -left-5 overall-balances__net-worth-chart__loader h-full w-[calc(100%+20px)] flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-[#1e1e1e]/[0.9] z-[6]"
       >
         <RuiProgress
           circular
           variant="indeterminate"
           color="primary"
+          size="24"
+          thickness="2"
         />
-        <div class="pt-5 text-caption">
-          {{ t('overall_balances.loading') }}
-        </div>
+        {{ t('overall_balances.loading') }}
       </div>
     </div>
   </RuiCard>

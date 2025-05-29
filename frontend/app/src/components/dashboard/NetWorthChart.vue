@@ -9,22 +9,35 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { assert, bigNumberify, getTimeframeByRange, type NetValue, type Timeframe, type TimeFramePeriod, type Timeframes } from '@rotki/common';
-import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
+import {
+  Chart,
+  type ChartConfiguration,
+  type ChartDataset,
+  type ChartOptions,
+  type TooltipModel,
+  type TooltipOptions,
+} from 'chart.js';
 
 type ActiveRangeButton = 'start' | 'end' | 'both';
+
+interface Bound {
+  min: number;
+  max: number;
+  range: number;
+}
 
 const props = defineProps<{
   timeframe: TimeFramePeriod;
   timeframes: Timeframes;
   chartData: NetValue;
+  loading: boolean;
 }>();
+
+const ONE_HOUR_TIMESTAMPS = 24 * 60 * 1000;
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { chartData } = toRefs(props);
-const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
-const { currencySymbol, dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
-const { isDark } = useRotkiTheme();
 
 const selectedTimestamp = ref<number>(0);
 const selectedBalance = ref<number>(0);
@@ -33,19 +46,32 @@ const isDblClick = ref<boolean>(false);
 
 const activeRangeButton = ref<ActiveRangeButton>();
 const rangeLastX = ref<number>(0);
-const rangeRef = ref<any>();
+const rangeRef = useTemplateRef<HTMLDivElement>('rangeRef');
 
 const chartId = 'net-worth-chart__chart';
 const tooltipId = 'net-worth-chart__tooltip';
 const rangeId = 'net-worth-chart__range';
-
-const { calculateTooltipPosition, tooltipContent, tooltipDisplayOption } = useTooltip(tooltipId);
 
 const balanceData = ref<ValueOverTime[]>([]);
 const showVirtualCurrentData = ref<boolean>(true);
 
 let chart: Chart | null = null;
 let range: Chart | null = null;
+
+const displayedXRange = ref<Bound>({
+  max: 0,
+  min: 0,
+  range: 0,
+});
+const mouseDownCoor = ref<{ x: number; y: number }>({ x: 0, y: 0 });
+
+const { calculateTooltipPosition, tooltipContent, tooltipDisplayOption } = useTooltip(tooltipId);
+const { backgroundColor, baseColor, fontColor, getCanvasCtx, gradient, gridColor } = useGraph(chartId);
+const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
+
+const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
+const { currencySymbol, dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+const { isDark } = useRotkiTheme();
 
 function getChart(): Chart {
   assert(chart, 'chart was null');
@@ -65,18 +91,6 @@ function updateChart(updateRange = true, calculate = true) {
   if (calculate)
     calculateXRange();
 }
-
-interface Bound {
-  min: number;
-  max: number;
-  range: number;
-}
-
-const displayedXRange = ref<Bound>({
-  max: 0,
-  min: 0,
-  range: 0,
-});
 
 function calculateXRange() {
   if (!chart) {
@@ -99,67 +113,6 @@ function calculateXRange() {
     range: max - min,
   });
 }
-
-const dataTimeRange = computed<Bound>(() => {
-  const data = get(balanceData);
-  if (data.length === 0) {
-    return {
-      max: 0,
-      min: 0,
-      range: 0,
-    };
-  }
-
-  const first = data[0];
-  const last = data.at(-1);
-
-  if (!last) {
-    return {
-      max: first.x,
-      min: 0,
-      range: first.x,
-    };
-  }
-
-  return {
-    max: last.x,
-    min: first.x,
-    range: last.x - first.x,
-  };
-});
-
-const dataValueRange = computed<Bound>(() => {
-  const data = get(balanceData);
-  if (data.length === 0) {
-    return {
-      max: 0,
-      min: 0,
-      range: 0,
-    };
-  }
-
-  const min = Math.min(...data.map(item => item.y));
-  const max = Math.max(...data.map(item => item.y));
-
-  return {
-    max,
-    min,
-    range: max - min,
-  };
-});
-
-const activeTimeframe = computed<Timeframe>(() => {
-  const { max, min } = get(displayedXRange);
-  return getTimeframeByRange(min, max);
-});
-
-const rangeTimeframe = computed<Timeframe>(() => {
-  const range = get(dataTimeRange);
-  const { max, min } = range;
-  return getTimeframeByRange(min, max);
-});
-
-watch(activeTimeframe, () => updateChart(true, false));
 
 function transformData({ data, times }: NetValue) {
   const newBalances: ValueOverTime[] = [];
@@ -201,16 +154,7 @@ function prepareData() {
   transformData(get(chartData));
 }
 
-watch(chartData, () => {
-  if (chart) {
-    prepareData();
-  }
-});
-
-const { backgroundColor, baseColor, fontColor, getCanvasCtx, gradient, gridColor } = useGraph(chartId);
-const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
-
-function createDatasets(isRange = false) {
+function createDatasets(isRange = false): ChartDataset[] {
   const borderColor = () => get(baseColor);
 
   const dataset = {
@@ -290,7 +234,8 @@ function createScales(isRange = false) {
 }
 
 function createTooltip(): Partial<TooltipOptions> {
-  const external = ({ tooltip: tooltipModel }: any) => {
+  const external = (context: { chart: Chart; tooltip: TooltipModel<'line'> }) => {
+    const tooltipModel = context.tooltip;
     const element = document.getElementById(tooltipId);
     assert(element, 'No tooltip element found');
 
@@ -330,16 +275,15 @@ function createTooltip(): Partial<TooltipOptions> {
   };
 }
 
-const oneHourTimestamp = 24 * 60 * 1000;
-
-function createChart(): Chart {
+function createChart() {
+  chart?.destroy();
   const context = getCanvasCtx();
   const datasets = createDatasets();
   const scales = createScales();
   const tooltip = createTooltip();
 
   const options: ChartOptions = {
-    animation: (() => !get(activeRangeButton)) as any,
+    animation: !get(activeRangeButton) ? { duration: 400 } : {},
     clip: 8,
     hover: { intersect: false },
     interaction: {
@@ -355,12 +299,12 @@ function createChart(): Chart {
           x: {
             max: 'original',
             min: 'original',
-            minRange: oneHourTimestamp,
+            minRange: ONE_HOUR_TIMESTAMPS,
           },
         },
         zoom: {
           drag: {
-            enabled: get(dataTimeRange).range > oneHourTimestamp,
+            enabled: get(dataTimeRange).range > ONE_HOUR_TIMESTAMPS,
           },
           mode: 'x',
           onZoomComplete: () => {
@@ -369,7 +313,7 @@ function createChart(): Chart {
         },
       },
     },
-    scales: scales as any,
+    scales,
   };
 
   const config: ChartConfiguration = {
@@ -378,18 +322,11 @@ function createChart(): Chart {
     type: 'line',
   };
 
-  return new Chart(context, config);
+  chart = new Chart(context, config);
 }
 
-watch(dataTimeRange, (dataTimeRange) => {
-  if (!chart)
-    return;
-
-  chart.options.plugins!.zoom!.zoom!.drag!.enabled = dataTimeRange.range > oneHourTimestamp;
-  updateChart(false, false);
-});
-
 function createRange() {
+  range?.destroy();
   const context = getRangeCanvasCtx();
   const datasets = createDatasets(true);
   const scales = createScales(true);
@@ -406,7 +343,7 @@ function createRange() {
       },
     },
     responsive: true,
-    scales: scales as any,
+    scales,
   };
 
   const config: ChartConfiguration = {
@@ -415,30 +352,23 @@ function createRange() {
     type: 'line',
   };
 
-  return new Chart(context, config);
+  range = new Chart(context, config);
 }
 
-function setup() {
-  chart?.destroy();
+function initChart() {
   clearData();
-  chart = createChart();
+  createChart();
   if (get(showGraphRangeSelector)) {
-    range?.destroy();
-    range = createRange();
+    createRange();
   }
 
   prepareData();
 }
 
-onMounted(() => {
-  setup();
-});
-
-watch(isDark, () => {
-  updateChart(true, false);
-});
-
-const mouseDownCoor = ref<{ x: number; y: number }>({ x: 0, y: 0 });
+function resetActiveRangeButton() {
+  set(activeRangeButton, null);
+  set(rangeLastX, 0);
+}
 
 function canvasMouseDown(event: MouseEvent) {
   set(mouseDownCoor, {
@@ -493,21 +423,6 @@ function resetZoom(updateRange = false) {
   updateChart(updateRange, true);
 }
 
-const rangeMarkerStyle = computed<Record<string, string>>(() => {
-  const { min: displayedMin, range: displayedRange } = get(displayedXRange);
-  const { min, range } = get(dataTimeRange);
-
-  const left = (displayedMin - min) / range;
-
-  const length = displayedRange / range;
-
-  return {
-    left: `${left * 100}%`,
-    transition: get(activeRangeButton) ? 'none' : '0.3s all',
-    width: `${length * 100}%`,
-  };
-});
-
 function rangeButtonMouseDown(selectedButton: ActiveRangeButton, event: MouseEvent) {
   set(activeRangeButton, selectedButton);
   set(rangeLastX, Math.round(event.pageX));
@@ -525,7 +440,7 @@ function rangeButtonMouseMove(event: MouseEvent) {
   const scale = x / width;
 
   const { max, min, range } = get(dataTimeRange);
-  if (range < oneHourTimestamp)
+  if (range < ONE_HOUR_TIMESTAMPS)
     return;
 
   const { max: displayedMax, min: displayedMin } = get(displayedXRange);
@@ -539,7 +454,7 @@ function rangeButtonMouseMove(event: MouseEvent) {
   // Drag the start button
   if (activeRangeButtonVal === 'start') {
     const newMin = scale * range + min;
-    const leapMax = displayedMax + oneHourTimestamp;
+    const leapMax = displayedMax + ONE_HOUR_TIMESTAMPS;
 
     if (newMin >= leapMax && leapMax <= max) {
       set(activeRangeButton, 'end');
@@ -547,14 +462,14 @@ function rangeButtonMouseMove(event: MouseEvent) {
       xAxis.max = leapMax;
     }
     else {
-      const closestMin = displayedMax - oneHourTimestamp;
+      const closestMin = displayedMax - ONE_HOUR_TIMESTAMPS;
       xAxis.min = Math.min(Math.max(newMin, min), closestMin);
     }
   }
   // Drag the end button
   else if (activeRangeButtonVal === 'end') {
     const newMax = scale * range + min;
-    const leapMin = displayedMin - oneHourTimestamp;
+    const leapMin = displayedMin - ONE_HOUR_TIMESTAMPS;
 
     if (newMax <= leapMin && leapMin >= min) {
       set(activeRangeButton, 'start');
@@ -562,7 +477,7 @@ function rangeButtonMouseMove(event: MouseEvent) {
       xAxis.min = leapMin;
     }
     else {
-      const closestMax = displayedMin + oneHourTimestamp;
+      const closestMax = displayedMin + ONE_HOUR_TIMESTAMPS;
       xAxis.max = Math.max(Math.min(newMax, max), closestMax);
     }
   }
@@ -579,10 +494,10 @@ function rangeButtonMouseMove(event: MouseEvent) {
     let limitedMax = Math.min(max, newMax);
 
     if (limitedMin === min)
-      limitedMax = Math.min(max, Math.max(limitedMax, limitedMin + oneHourTimestamp));
+      limitedMax = Math.min(max, Math.max(limitedMax, limitedMin + ONE_HOUR_TIMESTAMPS));
 
     if (limitedMax === max)
-      limitedMin = Math.max(min, Math.min(limitedMin, limitedMax - oneHourTimestamp));
+      limitedMin = Math.max(min, Math.min(limitedMin, limitedMax - ONE_HOUR_TIMESTAMPS));
 
     xAxis.min = limitedMin;
     xAxis.max = limitedMax;
@@ -591,17 +506,105 @@ function rangeButtonMouseMove(event: MouseEvent) {
   updateChart(false, true);
 }
 
-function mouseup() {
-  set(activeRangeButton, null);
-  set(rangeLastX, 0);
-}
+const dataTimeRange = computed<Bound>(() => {
+  const data = get(balanceData);
+  if (data.length === 0) {
+    return {
+      max: 0,
+      min: 0,
+      range: 0,
+    };
+  }
+
+  const first = data[0];
+  const last = data.at(-1);
+
+  if (!last) {
+    return {
+      max: first.x,
+      min: 0,
+      range: first.x,
+    };
+  }
+
+  return {
+    max: last.x,
+    min: first.x,
+    range: last.x - first.x,
+  };
+});
+
+const dataValueRange = computed<Bound>(() => {
+  const data = get(balanceData);
+  if (data.length === 0) {
+    return {
+      max: 0,
+      min: 0,
+      range: 0,
+    };
+  }
+
+  const min = Math.min(...data.map(item => item.y));
+  const max = Math.max(...data.map(item => item.y));
+
+  return {
+    max,
+    min,
+    range: max - min,
+  };
+});
+
+const activeTimeframe = computed<Timeframe>(() => {
+  const { max, min } = get(displayedXRange);
+  return getTimeframeByRange(min, max);
+});
+
+const rangeTimeframe = computed<Timeframe>(() => {
+  const range = get(dataTimeRange);
+  const { max, min } = range;
+  return getTimeframeByRange(min, max);
+});
+
+const rangeMarkerStyle = computed<Record<string, string>>(() => {
+  const { min: displayedMin, range: displayedRange } = get(displayedXRange);
+  const { min, range } = get(dataTimeRange);
+
+  const left = (displayedMin - min) / range;
+
+  const length = displayedRange / range;
+
+  return {
+    left: `${left * 100}%`,
+    transition: get(activeRangeButton) ? 'none' : '0.3s all',
+    width: `${length * 100}%`,
+  };
+});
+
+watch(dataTimeRange, (dataTimeRange) => {
+  if (!chart)
+    return;
+
+  chart.options.plugins!.zoom!.zoom!.drag!.enabled = dataTimeRange.range > ONE_HOUR_TIMESTAMPS;
+  updateChart(false, false);
+});
+
+watch(chartData, () => {
+  if (chart) {
+    prepareData();
+  }
+});
+
+watch([isDark, activeTimeframe], () => {
+  updateChart(true, false);
+});
 
 onMounted(() => {
-  window.addEventListener('mouseup', mouseup);
+  initChart();
+  window.addEventListener('mouseup', resetActiveRangeButton);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('mouseup', mouseup);
+  window.removeEventListener('mouseup', resetActiveRangeButton);
   chart?.destroy();
   chart = null;
   range?.destroy();
@@ -652,7 +655,7 @@ onBeforeUnmount(() => {
           :class="[
             $style.range__marker,
             {
-              [$style['range__marker--dark']]: isDark,
+              [$style['range__marker--loading']]: loading,
             },
           ]"
           :style="rangeMarkerStyle"
@@ -728,6 +731,10 @@ onBeforeUnmount(() => {
 
   &__marker {
     @apply absolute w-full h-[90%] top-0 z-[2] cursor-all-scroll bg-black/[0.1];
+
+    &--loading {
+      @apply opacity-50 #{!important};
+    }
 
     &__limit {
       @apply flex items-center absolute w-[0.625rem] h-full cursor-ew-resize;
