@@ -48,7 +48,9 @@ export interface ExchangeFormData extends ExchangePayload {
   readonly newName?: string;
 }
 
-const ExchangeSavingsEvent = AssetBalance.extend({
+const ExchangeSavingsEvent = z.object({
+  amount: NumericString,
+  asset: z.string().min(1),
   location: z.string(),
   timestamp: z.number(),
 });

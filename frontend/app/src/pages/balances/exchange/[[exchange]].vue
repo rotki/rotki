@@ -35,14 +35,13 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 const { exchange } = toRefs(props);
 const { useIsTaskRunning } = useTaskStore();
 const { getBalances } = useExchangeData();
-const { fetchExchangeSavings, refreshExchangeSavings } = useBinanceSavings();
+const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
 const { refreshBalance } = useRefresh();
 
 async function refreshExchangeBalances() {
   await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
-  await checkSavingsData();
 }
 
 const selectedExchange = ref<string>('');
@@ -104,29 +103,11 @@ function navigate() {
   });
 }
 
-const exchangeSavingsExist = ref<boolean>(false);
 const exchangeDetailTabs = ref<number>(0);
 
 watch(exchange, () => {
   set(exchangeDetailTabs, 0);
-  checkSavingsData();
 });
-
-async function checkSavingsData() {
-  const exchangeVal = get(exchange);
-  if (isBinance(exchangeVal)) {
-    const { total } = await fetchExchangeSavings({
-      limit: 1,
-      location: exchangeVal,
-      offset: 0,
-    });
-
-    set(exchangeSavingsExist, !!total);
-  }
-  else {
-    set(exchangeSavingsExist, false);
-  }
-}
 
 onMounted(() => {
   refreshExchangeSavings();
@@ -238,7 +219,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
               color="primary"
             >
               <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-              <RuiTab v-if="exchangeSavingsExist">
+              <RuiTab v-if="isBinance(exchange)">
                 {{ t('exchange_balances.tabs.savings_interest_history') }}
               </RuiTab>
             </RuiTabs>
@@ -255,7 +236,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
                 />
               </RuiTabItem>
               <RuiTabItem
-                v-if="exchangeSavingsExist && isBinance(exchange)"
+                v-if="isBinance(exchange)"
                 class="md:pl-4"
               >
                 <BinanceSavingDetail :exchange="exchange" />
