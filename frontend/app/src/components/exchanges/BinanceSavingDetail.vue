@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
-import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -14,6 +13,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
+import { type AssetBalance, Zero } from '@rotki/common';
 
 const props = defineProps<{
   exchange: 'binance' | 'binanceus';
@@ -189,8 +189,12 @@ onMounted(async () => {
             </template>
             <template #item.usdValue="{ row }">
               <AmountDisplay
-                :value="row.usdValue"
+                :key="row.timestamp"
+                :amount="row.amount"
+                :value="Zero"
+                :price-asset="row.asset"
                 :fiat-currency="CURRENCY_USD"
+                :timestamp="row.timestamp"
               />
             </template>
             <template #item.timestamp="{ row }">
