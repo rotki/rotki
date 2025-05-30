@@ -261,9 +261,6 @@ class HistoricalBalancesManager:
                 from_ts=from_ts,
                 to_ts=to_ts,
                 order_by_rules=[('timestamp', True)],
-                # this only excludes the event that touches the ignored asset
-                # and not the entire group of events per event_identifier.
-                exclude_entire_event_group_on_ignored_asset=False,
                 exclude_ignored_assets=True,
                 assets=assets,
                 exclude_subtypes=[

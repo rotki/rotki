@@ -53,6 +53,7 @@ HISTORY_EVENT_DB_TUPLE_WRITE = tuple[
     str,            # type
     str,            # subtype
     str | None,     # extra_data
+    str,            # asset (need asset twice to properly set the `ignored` column)
 ]
 
 
@@ -190,11 +191,13 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             (
                 'history_events(entry_type, event_identifier, sequence_index,'
                 'timestamp, location, location_label, asset, amount, notes,'
-                'type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                'type, subtype, extra_data, ignored) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+                "(CASE WHEN EXISTS (SELECT 1 FROM multisettings WHERE name = 'ignored_asset' AND value = ?) THEN 1 ELSE 0 END))"  # noqa: E501
             ), (
                 'UPDATE history_events SET entry_type=?, event_identifier=?, '
                 'sequence_index=?, timestamp=?, location=?, location_label=?, asset=?, '
-                'amount=?, notes=?, type=?, subtype=?, extra_data=?'
+                'amount=?, notes=?, type=?, subtype=?, extra_data=?, '
+                "ignored=(CASE WHEN EXISTS (SELECT 1 FROM multisettings WHERE name = 'ignored_asset' AND value = ?) THEN 1 ELSE 0 END)"  # noqa: E501
             ), (
                 self.entry_type.value,
                 self.event_identifier,
@@ -208,6 +211,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
                 self.event_type.serialize(),
                 self.event_subtype.serialize(),
                 json.dumps(self.extra_data) if self.extra_data else None,
+                self.asset.identifier,
             ))
 
     @staticmethod

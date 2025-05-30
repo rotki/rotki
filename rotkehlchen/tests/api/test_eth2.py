@@ -1113,12 +1113,13 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
     assert result['entries_total'] == 21
     event_identifier = None
     for entry in result['entries']:
-        if entry['entry']['block_number'] == block_number:
+        entry_block_number = entry['entry']['event_identifier'][4:]
+        if entry_block_number == str(block_number):
             assert entry['grouped_events_num'] == 3
             event_identifier = entry['entry']['event_identifier']
-        elif entry['entry']['block_number'] in {17055026, 16589592, 15938405}:
+        elif entry_block_number in {17055026, 16589592, 15938405}:
             assert entry['grouped_events_num'] == 2
-        elif entry['entry']['block_number'] in {16135531, 15849710, 15798693}:
+        elif entry_block_number in {16135531, 15849710, 15798693}:
             assert entry['grouped_events_num'] == 1
 
     # now query the events of the combined group
@@ -1498,11 +1499,11 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
         # Check raw data from the db since deserializing EthBlockEvents performs the same check
         # for if the address is tracked that we are trying to test here.
         assert cursor.execute('SELECT * FROM history_events').fetchall() == [
-            (1, 4, f'BP1_{block_number}', 0, timestamp, 'f', mev_builder_address, 'ETH', reward1, f'Validator {v_index} produced block {block_number} with {reward1} ETH going to {mev_builder_address} as the block reward', 'informational', 'block production', None),  # noqa: E501
-            (2, 4, f'BP1_{block_number}', 1, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Validator {v_index} produced block {block_number}. Relayer reported {reward2} ETH as the MEV reward going to {fee_recipient_address}', 'informational', 'mev reward', None),  # noqa: E501
-            (3, 2, f'BP1_{block_number}', 2, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Received {reward2} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash_str}', 'staking', 'mev reward', f'{{"validator_index": {v_index}}}'),  # noqa: E501
-            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'f', fee_recipient_address, 'ETH', reward3, f'Validator {v_index} produced block {block_number + 1} with {reward3} ETH going to {fee_recipient_address} as the block reward', 'staking', 'block production', None),  # noqa: E501
-            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, f'Validator {v_index} produced block {block_number + 2} with {reward4} ETH going to {fee_recipient_address} as the block reward', 'informational', 'block production', None),  # noqa: E501
+            (1, 4, f'BP1_{block_number}', 0, timestamp, 'f', mev_builder_address, 'ETH', reward1, f'Validator {v_index} produced block {block_number} with {reward1} ETH going to {mev_builder_address} as the block reward', 'informational', 'block production', None, 0),  # noqa: E501
+            (2, 4, f'BP1_{block_number}', 1, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Validator {v_index} produced block {block_number}. Relayer reported {reward2} ETH as the MEV reward going to {fee_recipient_address}', 'informational', 'mev reward', None, 0),  # noqa: E501
+            (3, 2, f'BP1_{block_number}', 2, timestamp, 'f', fee_recipient_address, 'ETH', reward2, f'Received {reward2} ETH from {mev_builder_address} as mev reward for block {block_number} in {tx_hash_str}', 'staking', 'mev reward', f'{{"validator_index": {v_index}}}', 0),  # noqa: E501
+            (4, 4, f'BP1_{block_number + 1}', 0, timestamp + 1, 'f', fee_recipient_address, 'ETH', reward3, f'Validator {v_index} produced block {block_number + 1} with {reward3} ETH going to {fee_recipient_address} as the block reward', 'staking', 'block production', None, 0),  # noqa: E501
+            (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, f'Validator {v_index} produced block {block_number + 2} with {reward4} ETH going to {fee_recipient_address} as the block reward', 'informational', 'block production', None, 0),  # noqa: E501
         ]
         # Confirm combine_block_with_tx_events marked the EthBlockEvent as hidden
         assert dbevents.get_hidden_event_ids(cursor) == [2]
