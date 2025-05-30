@@ -24,6 +24,7 @@ EVM_EVENT_DB_TUPLE_READ = tuple[
     str,            # type
     str,            # subtype
     str | None,     # extra_data
+    int,            # ignored
     bytes,          # tx_hash
     str,            # address
     str | None,  # counterparty

@@ -13,7 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_COW, A_ETH
+from rotkehlchen.constants.assets import A_COW, A_ETH, A_LTC
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
     ALLASSETIMAGESDIR_NAME,
@@ -148,7 +148,7 @@ def _init_db_with_target_version(
         stack.enter_context(target_patch(target_version=target_version))
         stack.enter_context(mock_db_schema_sanity_check())
         stack.enter_context(no_tables_created_after_init)
-        if target_version <= 25:
+        if target_version <= 47:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         return DBHandler(
@@ -3168,6 +3168,12 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT * from evm_internal_transactions').fetchall() == [
             (579, 42, '0x9eE457023bB3De16D51A003a247BaEaD7fce313D', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '15'),  # noqa: E501
         ]
+        assert not column_exists(cursor, 'history_events', 'ignored')
+        assert A_LTC.identifier in db_v47.get_ignored_asset_ids(cursor)
+        ignored_asset_event_count = cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE asset=?',
+            (A_LTC.identifier,),
+        ).fetchone()[0]
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -3245,6 +3251,14 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT * from evm_internal_transactions').fetchall() == [
             (579, 42, '0x9eE457023bB3De16D51A003a247BaEaD7fce313D', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '15', '0', '0'),  # noqa: E501
         ]
+        assert column_exists(cursor, 'history_events', 'ignored')
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE asset=?',
+            (A_LTC.identifier,),
+        ).fetchone()[0] == ignored_asset_event_count
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE ignored=1',
+        ).fetchone()[0] == ignored_asset_event_count
 
     db.logout()
 

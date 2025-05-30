@@ -544,6 +544,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,
     extra_data TEXT,
+    ignored INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
 );
@@ -744,6 +745,18 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 );
 """
 
+# The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
+# TODO: add before/after times for each index from the big user DB.
+# Before: 5500ms, After: 7ms
+DB_CREATE_ENTRY_TYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_entry_type ON history_events(entry_type);'  # noqa: E501
+DB_CREATE_TIMESTAMP_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_timestamp ON history_events(timestamp);'  # noqa: E501
+DB_CREATE_LOCATION_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_location ON history_events(location);'  # noqa: E501
+DB_CREATE_LOCATION_LABEL_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_location_label ON history_events(location_label);'  # noqa: E501
+DB_CREATE_ASSET_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);'  # noqa: E501
+DB_CREATE_TYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);'  # noqa: E501
+DB_CREATE_SUBTYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);'  # noqa: E501
+# Before: ~7sec, After ~3.8sec
+DB_CREATE_IGNORED_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);'  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -801,6 +814,14 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
+{DB_CREATE_ENTRY_TYPE_INDEX}
+{DB_CREATE_TIMESTAMP_INDEX}
+{DB_CREATE_LOCATION_INDEX}
+{DB_CREATE_LOCATION_LABEL_INDEX}
+{DB_CREATE_ASSET_INDEX}
+{DB_CREATE_TYPE_INDEX}
+{DB_CREATE_SUBTYPE_INDEX}
+{DB_CREATE_IGNORED_INDEX}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

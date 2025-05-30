@@ -338,7 +338,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrade internal transactions table')
-    def _ugrade_internal_transactions(write_cursor: 'DBCursor') -> None:
+    def _upgrade_internal_transactions(write_cursor: 'DBCursor') -> None:
         """Update the internal transactions table
 
         Again we need to add more info in the internal transactions data due to examples like this:
@@ -365,5 +365,25 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             insert_columns="parent_tx, trace_id, from_address, to_address, value, '0', '0'",
             insert_order='(parent_tx, trace_id, from_address, to_address, value, gas, gas_used)',
         )
+
+    @progress_step(description='Upgrade history events table')
+    def _upgrade_history_events(write_cursor: 'DBCursor') -> None:
+        """Update the history events table, adding a new ignored column and populating it from
+        the ignored asset values in multisettings.
+        Also adds indexes to improve query speed when filtering events.
+        """
+        write_cursor.execute('ALTER TABLE history_events ADD COLUMN ignored INTEGER NOT NULL DEFAULT 0;')  # noqa: E501
+        write_cursor.execute("""
+            UPDATE history_events SET ignored = 1 FROM multisettings ms
+            WHERE history_events.asset = ms.value AND ms.name = 'ignored_asset'
+        """)
+        write_cursor.execute('CREATE INDEX idx_history_events_entry_type ON history_events(entry_type);')  # noqa: E501
+        write_cursor.execute('CREATE INDEX idx_history_events_timestamp ON history_events(timestamp);')  # noqa: E501
+        write_cursor.execute('CREATE INDEX idx_history_events_location ON history_events(location);')  # noqa: E501
+        write_cursor.execute('CREATE INDEX idx_history_events_location_label ON history_events(location_label);')  # noqa: E501
+        write_cursor.execute('CREATE INDEX idx_history_events_asset ON history_events(asset);')
+        write_cursor.execute('CREATE INDEX idx_history_events_type ON history_events(type);')
+        write_cursor.execute('CREATE INDEX idx_history_events_subtype ON history_events(subtype);')
+        write_cursor.execute('CREATE INDEX idx_history_events_ignored ON history_events(ignored);')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

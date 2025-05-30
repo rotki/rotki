@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_DAI,
     A_ETH,
     A_SUSHI,
     A_USD,
@@ -190,6 +191,12 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
+    # Ignore one of the assets used in the events to be added. Used below to ensure
+    # the `ignored` column gets set correctly on added events.
+    assert A_DAI in [entry.asset for entry in entries]
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.add_to_ignored_assets(write_cursor, A_DAI)
+
     for group in grouped_entries:
         json_data = entries_to_input_dict(group, include_identifier=False)
         if isinstance(event := group[0], EvmEvent):
@@ -204,6 +211,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             entry.identifier = result['identifier'] + idx
 
     with rotki.data.db.conn.read_ctx() as cursor:
+        for asset, ignored in cursor.execute('SELECT asset, ignored FROM history_events'):
+            assert ignored == (1 if asset == A_DAI.identifier else 0)
+
         saved_events = db.get_history_events(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
@@ -598,7 +608,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
 
     # test pagination and exclude_ignored_assets and group by event ids works
     toggle_ignore_an_asset(rotkehlchen_api_server, A_ETH)
-    for exclude_ignored_assets, found in ((True, 2), (False, 8)):
+    for exclude_ignored_assets, found in ((True, 3), (False, 8)):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -613,7 +623,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
         assert result['entries_total'] == 8
 
     # test pagination and exclude_ignored_assets without group by event ids works
-    for exclude_ignored_assets, events_found, sub_events_found in ((True, 3, 3), (False, 14, 14)):
+    for exclude_ignored_assets, events_found, sub_events_found in ((True, 4, 4), (False, 14, 14)):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -632,11 +642,11 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     with db_history_events.db.user_write() as cursor:
         for limit, exclude_ignored, total, found in (
             (None, False, 8, 8),  # premium without ignoring assets, we get all the events
-            (None, True, 2, 2),  # premium with ignoring assets (ETH), we get only 2 events
+            (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events
             (3, False, 8, 3),  # free limit (3) without ignoring assets, total events are 8 but we get only 3 (limited)  # noqa: E501
-            (2, True, 2, 2),  # free limit (2) with ignoring assets, total events are 2, all shown (limit not exceeded)  # noqa: E501
+            (3, True, 3, 3),  # free limit (3) with ignoring assets, total events are 3, all shown (limit not exceeded)  # noqa: E501
             (1, False, 8, 1),  # free limit (1) without ignoring assets, total events are 8 but we get only 1 (limited)  # noqa: E501
-            (1, True, 2, 1),  # free limit (1) with ignoring assets, total events are 2 but we get only 1 (limited)  # noqa: E501
+            (1, True, 3, 1),  # free limit (1) with ignoring assets, total events are 2 but we get only 1 (limited)  # noqa: E501
         ):
             assert db_history_events.get_history_events_count(
                 cursor=cursor,

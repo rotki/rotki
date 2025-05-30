@@ -59,8 +59,8 @@ class UpdateType(Enum):
 
 
 # Giving a name for history_events.identifier since without it in the free version case https://github.com/rotki/rotki/issues/7362 we were hitting a no such column: history_events.identifier  # noqa: E501
-HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data '  # noqa: E501
-HISTORY_BASE_ENTRY_LENGTH = 12
+HISTORY_BASE_ENTRY_FIELDS = 'entry_type, history_events.identifier AS history_events_identifier, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data, ignored '  # noqa: E501
+HISTORY_BASE_ENTRY_LENGTH = 13
 
 EVM_EVENT_FIELDS = 'tx_hash, counterparty, product, address'
 EVM_FIELD_LENGTH = 4
