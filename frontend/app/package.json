@@ -18,6 +18,7 @@
     "electron:build": "pnpm run build && pnpm run electron:package",
     "electron:package": "electron-builder build --config .electron-builder.config.ts --publish onTag",
     "electron:serve": "tsx scripts/serve.ts",
+    "get-protocols": "tsx scripts/get-protocols.ts",
     "link:verify": "tsx scripts/check-external-links.ts",
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
     "lint:style:fix": "stylelint --fix 'src/**/*.{vue,scss}'",

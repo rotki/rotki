@@ -34,7 +34,8 @@
     "dev:web": "tsx scripts/start-dev.ts --web",
     "setup:hooks": "cd .. && husky frontend/.husky",
     "lint-staged": "lint-staged",
-    "copy": "tsx scripts/copy-data.ts"
+    "copy": "tsx scripts/copy-data.ts",
+    "get-protocols": "pnpm run --filter rotki get-protocols"
   },
   "devDependencies": {
     "@clack/prompts": "0.10.1",
