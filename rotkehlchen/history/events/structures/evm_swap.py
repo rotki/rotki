@@ -95,10 +95,10 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore  # event type and subtype should always be correct from the DB
             event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
-            tx_hash=deserialize_evm_tx_hash(entry[12]),
-            counterparty=entry[13],
-            product=EvmProduct.deserialize(entry[14]) if entry[14] is not None else None,
-            address=deserialize_optional(input_val=entry[15], fn=string_to_evm_address),
+            tx_hash=deserialize_evm_tx_hash(entry[13]),
+            counterparty=entry[14],
+            product=EvmProduct.deserialize(entry[15]) if entry[15] is not None else None,
+            address=deserialize_optional(input_val=entry[16], fn=string_to_evm_address),
         )
 
     def serialize(self) -> dict[str, Any]:

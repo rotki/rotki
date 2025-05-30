@@ -23,6 +23,7 @@ from rotkehlchen.tests.utils.database import (
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
+    mock_dbhandler_sync_globaldb_assets,
     perform_new_db_unlock_actions,
     run_no_db_upgrades,
 )
@@ -89,6 +90,7 @@ def _init_database(
         use_custom_database: str | None,
         sql_vm_instructions_cb: int,
         perform_upgrades_at_unlock: bool,
+        skip_sync_globaldb_assets: bool,
 ) -> DBHandler:
     if use_custom_database is not None:
         _use_prepared_db(user_data_dir, use_custom_database)
@@ -103,6 +105,8 @@ def _init_database(
                 autospec=True,
             )
             stack.enter_context(upgrades_patch)
+        if skip_sync_globaldb_assets:
+            stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         db = DBHandler(
             user_data_dir=user_data_dir,
             password=password,
@@ -141,6 +145,7 @@ def database(
         new_db_unlock_actions,
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
+        skip_sync_globaldb_assets,
 ) -> Generator[DBHandler | None, None, None]:
     if not start_with_logged_in_user:
         yield None
@@ -160,6 +165,7 @@ def database(
             use_custom_database=use_custom_database,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
             perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+            skip_sync_globaldb_assets=skip_sync_globaldb_assets,
         )
         if new_db_unlock_actions is not None:
             perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501

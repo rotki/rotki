@@ -544,6 +544,7 @@ CREATE TABLE IF NOT EXISTS history_events (
     type TEXT NOT NULL,
     subtype TEXT NOT NULL,
     extra_data TEXT,
+    ignored INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
     UNIQUE(event_identifier, sequence_index)
 );
@@ -744,6 +745,9 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 );
 """
 
+DB_CREATE_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -801,6 +805,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
+{DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

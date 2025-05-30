@@ -1302,11 +1302,11 @@ def test_ignored_assets(
     returned_events = query_events(
         rotkehlchen_api_server,  # test that default exclude_ignored_assets is True
         json={'location': 'ethereum'},
-        expected_num_with_grouping=1,
+        expected_num_with_grouping=2,
         expected_totals_with_grouping=3,
         entries_limit=100,
     )
-    expected = generate_events_response([event3])
+    expected = generate_events_response([event1, event3])
     assert returned_events == expected
 
 

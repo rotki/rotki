@@ -964,26 +964,39 @@ class DBHandler:
 
     def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
-        ignored then we don't do anything.
+        ignored then we don't do anything. Also ignore history events with this asset.
         """
         write_cursor.execute(
             'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             ('ignored_asset', asset.identifier),
         )
+        write_cursor.execute(
+            'UPDATE history_events SET ignored=? WHERE asset=?',
+            (1, asset.identifier),
+        )
 
     def ignore_multiple_assets(self, write_cursor: 'DBCursor', assets: list[str]) -> None:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
-        marked as ignored then we don't do anything.
+        marked as ignored then we don't do anything. Also ignore history events with these assets.
         """
         write_cursor.executemany(
             'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
             [('ignored_asset', asset_identifier) for asset_identifier in assets],
         )
+        write_cursor.executemany(
+            'UPDATE history_events SET ignored=? WHERE asset=?',
+            [(1, asset_identifier) for asset_identifier in assets],
+        )
 
     def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
+        """Remove an asset from the ignored assets and un-ignore history events with this asset."""
         write_cursor.execute(
             "DELETE FROM multisettings WHERE name='ignored_asset' AND value=?;",
             (asset.identifier,),
+        )
+        write_cursor.execute(
+            'UPDATE history_events SET ignored=? WHERE asset=?',
+            (0, asset.identifier),
         )
 
     def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
@@ -2580,9 +2593,9 @@ class DBHandler:
                 'SELECT identifier FROM evm_tokens WHERE protocol=?',
                 (SPAM_PROTOCOL,),
             ).fetchall()
-            write_cursor.executemany(
-                'INSERT OR IGNORE INTO multisettings(name, value) VALUES(?, ?)',
-                [('ignored_asset', identifier[0]) for identifier in globaldb_spam],
+            self.ignore_multiple_assets(
+                write_cursor=write_cursor,
+                assets=[identifier[0] for identifier in globaldb_spam],
             )
 
     def delete_asset_identifier(self, write_cursor: 'DBCursor', asset_id: str) -> None:
