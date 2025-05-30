@@ -85,7 +85,7 @@ log = RotkehlchenLogsAdapter(logger)
 # Binance launched at 2017-07-14T04:00:00Z (12:00 GMT+8, Beijing Time)
 # https://www.binance.com/en/support/articles/115000599831-Binance-Exchange-Launched-Date-Set
 BINANCE_LAUNCH_TS: Final = Timestamp(1500001200)
-API_TIME_INTERVAL_CONSTRAINT_TS: Final = 7776000  # 90 days
+API_TIME_INTERVAL_CONSTRAINT_TS: Final = 7689600  # 89 days
 
 # this determines the length of the data returned, 100 is the maximum value possible.
 BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE: Final = 100
@@ -676,7 +676,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
         "REALTIME" -> Real-time APR.
         "REWARDS" -> Historical rewards.
 
-        `end_ts` - `start_ts` <= 30days. This is handled using `_api_query_list_within_time_delta`
+        `end_ts` - `start_ts` <= 89 days. This is handled using `_api_query_list_within_time_delta`
         using `API_TIME_INTERVAL_CONSTRAINT_TS` as the timedelta.
 
         Lending Interest History Documentation:

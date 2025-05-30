@@ -682,10 +682,10 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
     )
 
 
-def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
+def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
     """Test the not so happy case of binance deposit withdrawal query
 
-    From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
+    From `start_ts` to `end_ts` there is a difference gte 89 days, which forces
     to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS). As
     the `mock_get_deposit_withdrawal()` results are the same as in
     `test_binance_query_deposits_withdrawals`, we only assert the number of
@@ -694,7 +694,7 @@ def test_binance_query_deposits_withdrawals_gte_90_days(function_scope_binance):
     NB: this test implementation must mock 8 requests instead of 4.
     """
     start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
-    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
+    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 89 days after
     binance = function_scope_binance
 
     def get_time_delta_deposit_result():
@@ -768,12 +768,12 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
     """Test the `api_query_list()` arguments when deposit/withdraw history
     requests involve a time delta.
 
-    From `start_ts` to `end_ts` there is a difference gte 90 days, which forces
+    From `start_ts` to `end_ts` there is a difference gte 89 days, which forces
     to request using a time delta (from API_TIME_INTERVAL_CONSTRAINT_TS).
     """
     now_ts_ms = int(datetime.datetime.now(tz=datetime.UTC).timestamp()) * 1000
     start_ts = 0  # Defaults to BINANCE_LAUNCH_TS
-    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 90 days after
+    end_ts = BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS  # eq 89 days after
     expected_calls = [
         call(
             'sapi',
@@ -781,7 +781,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             options={
                 'timestamp': now_ts_ms,
                 'startTime': 1500001200000,
-                'endTime': 1507777199999,
+                'endTime': 1507690799999,
             },
         ),
         call(
@@ -789,8 +789,8 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             'capital/deposit/hisrec',
             options={
                 'timestamp': now_ts_ms,
-                'startTime': 1507777200000,
-                'endTime': 1507777200000,
+                'startTime': 1507690800000,
+                'endTime': 1507690800000,
             },
         ),
         call(
@@ -799,7 +799,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             options={
                 'timestamp': now_ts_ms,
                 'startTime': 1500001200000,
-                'endTime': 1507777199999,
+                'endTime': 1507690799999,
             },
         ),
         call(
@@ -807,8 +807,8 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             'capital/withdraw/history',
             options={
                 'timestamp': now_ts_ms,
-                'startTime': 1507777200000,
-                'endTime': 1507777200000,
+                'startTime': 1507690800000,
+                'endTime': 1507690800000,
             },
         ),
         call(
@@ -817,7 +817,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             options={
                 'timestamp': now_ts_ms,
                 'startTime': 1500001200000,
-                'endTime': 1507777199999,
+                'endTime': 1507690799999,
                 'transactionType': 0,
             },
         ),
@@ -826,8 +826,8 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             'fiat/orders',
             options={
                 'timestamp': now_ts_ms,
-                'startTime': 1507777200000,
-                'endTime': 1507777200000,
+                'startTime': 1507690800000,
+                'endTime': 1507690800000,
                 'transactionType': 0,
             },
         ),
@@ -837,7 +837,7 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             options={
                 'timestamp': now_ts_ms,
                 'startTime': 1500001200000,
-                'endTime': 1507777199999,
+                'endTime': 1507690799999,
                 'transactionType': 1,
             },
         ),
@@ -846,8 +846,8 @@ def test_api_query_list_calls_with_time_delta(function_scope_binance):
             'fiat/orders',
             options={
                 'timestamp': now_ts_ms,
-                'startTime': 1507777200000,
-                'endTime': 1507777200000,
+                'startTime': 1507690800000,
+                'endTime': 1507690800000,
                 'transactionType': 1,
             },
         ),

@@ -48,6 +48,7 @@ Changelog
 * :bug:`-` rotki will now correctly decode mints of CRV from various gauges.
 * :bug:`-` rotki will now correctly decode crvUSD claims from the Curve fees distributor.
 * :bug:`9772` Backups of big DBs for premium users should no longer freeze the app.
+* :bug:`-` Users will now be able to see the savings history for the registered Binance exchange.
 
 * :release:`1.38.4 <2025-05-20>`
 * :feature:`-` Blockscout will now be prioritized when querying block number.
