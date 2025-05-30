@@ -42,13 +42,18 @@ export class SubprocessHandler {
     );
   }
 
+  private matchProcess(processName?: string): boolean {
+    if (this.config.isDev) {
+      return processName?.includes('-m rotkehlchen') ?? false;
+    }
+    return processName?.includes('rotki-core') ?? false;
+  }
+
   async checkForBackendProcess(): Promise<number[]> {
     try {
       this.logger.log('Checking for running rotki-core processes');
       const runningProcesses = await psList({ all: true });
-      const matches = runningProcesses.filter(
-        process => process.cmd?.includes('-m rotkehlchen') || process.cmd?.includes('rotki-core'),
-      );
+      const matches = runningProcesses.filter(process => this.matchProcess(process.cmd));
       return matches.map(p => p.pid);
     }
     catch (error: any) {
