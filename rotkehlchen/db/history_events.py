@@ -26,7 +26,6 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVM_EVENT_JOIN,
-    DBIgnoredAssetsFilter,
     EthDepositEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
@@ -75,29 +74,6 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def filter_ignore_asset_query(include_ignored_assets: bool = False) -> str:
-    """Create and return the subquery to filter ignored assets. If `include_ignored_assets`
-    is true then the filter is returned to include them."""
-    ignored_asset_subquery = "SELECT value FROM multisettings WHERE name='ignored_asset')"
-    if include_ignored_assets:
-        return f'WHERE (asset IN ({ignored_asset_subquery}) '
-    return f'WHERE (asset IS NULL OR asset NOT IN ({ignored_asset_subquery}) '
-
-
-def maybe_filter_ignore_asset(
-        filter_query: HistoryBaseEntryFilterQuery,
-        include_ignored_assets: bool = False,
-) -> str:
-    """An auxiliary function to find if query_filter contains `DBIgnoredAssetsFilter`. If it does
-    then return that filter clause. This is done where we want to filter ignored assets
-    before applying the free limit. If `include_ignored_assets` is true then the filter is returned
-    to include them."""
-    for fil in filter_query.filters:
-        if isinstance(fil, DBIgnoredAssetsFilter):
-            return filter_ignore_asset_query(include_ignored_assets)
-    return ''
-
-
 class DBHistoryEvents:
 
     def __init__(self, database: 'DBHandler') -> None:
@@ -130,6 +106,13 @@ class DBHistoryEvents:
                 identifier = write_cursor.lastrowid  # keep identifier to use in next insertions
             else:
                 write_cursor.execute(f'INSERT OR IGNORE INTO {insertquery}', (identifier, *bindings))  # noqa: E501
+
+        write_cursor.execute(
+            'UPDATE history_events SET ignored=(CASE WHEN EXISTS '
+            "(SELECT 1 FROM multisettings WHERE name = 'ignored_asset' AND value = ?) "
+            'THEN 1 ELSE 0 END) WHERE identifier=?',
+            (event.asset.identifier, identifier),
+        )
 
         if mapping_values is not None:
             write_cursor.executemany(
@@ -166,7 +149,11 @@ class DBHistoryEvents:
         for idx, (_, updatestr, bindings) in enumerate(event.serialize_for_db()):
             if idx == 0:  # base history event data
                 try:
-                    write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
+                    write_cursor.execute(
+                        f'{updatestr}, ignored=(CASE WHEN EXISTS '
+                        "(SELECT 1 FROM multisettings WHERE name = 'ignored_asset' AND value = ?) "
+                        'THEN 1 ELSE 0 END) WHERE identifier=?',
+                        (*bindings, event.asset.identifier, event.identifier))
                 except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                     raise InputError(
                         f'Tried to edit event to have event_identifier {event.event_identifier} '
@@ -366,19 +353,6 @@ class DBHistoryEvents:
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
         base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
-        if (ignore_asset_filter := maybe_filter_ignore_asset(filter_query, include_ignored_assets=True)) != '':  # noqa: E501
-            ignore_asset_filter = (
-                f' WHERE event_identifier NOT IN '
-                f'(SELECT DISTINCT event_identifier FROM history_events {ignore_asset_filter})'
-            )
-
-        premium_base_suffix = f'{base_suffix} {ignore_asset_filter}'
-        free_base_suffix = (
-            f'* FROM (SELECT {base_suffix}) WHERE event_identifier IN ('
-            f'SELECT DISTINCT event_identifier FROM history_events {ignore_asset_filter} '
-            'ORDER BY timestamp DESC,sequence_index ASC LIMIT ?)'  # free query only select the last LIMIT groups  # noqa: E501
-        )
-
         if group_by_event_ids:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
@@ -391,9 +365,13 @@ class DBHistoryEvents:
             prefix = 'SELECT *'
 
         if has_premium:
-            suffix, limit = premium_base_suffix, []
+            suffix, limit = base_suffix, []
         else:
-            suffix, limit = free_base_suffix, [entries_limit]
+            suffix, limit = (
+                f'* FROM (SELECT {base_suffix}) WHERE event_identifier IN ('
+                'SELECT DISTINCT event_identifier FROM history_events '
+                'ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)'  # free query only select the last LIMIT groups  # noqa: E501
+            ), [entries_limit]
 
         if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
             return (

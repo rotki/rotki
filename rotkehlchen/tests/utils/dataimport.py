@@ -1359,14 +1359,6 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
             has_premium=True,
         )
     assert events == [AssetMovement(
-        identifier=2,
-        event_identifier='2bb82301ad9d4b4251e404c11026f53f9f1c5190a943a26aa654e4fa0969ccbd',
-        location=Location.COINBASE,
-        event_type=HistoryEventType.WITHDRAWAL,
-        timestamp=TimestampMS(1504646040000),
-        asset=A_ETH,
-        amount=FVal('0.05770427'),
-    ), AssetMovement(
         identifier=1,
         event_identifier='55220a50d1f1af04042410f6c0223518cd14e1a5ad250dfb65be6404c7b6a01e',
         location=Location.POLONIEX,
@@ -1374,6 +1366,14 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
         timestamp=TimestampMS(1504646040000),
         asset=A_XMR,
         amount=FVal('5.00000000'),
+    ), AssetMovement(
+        identifier=2,
+        event_identifier='2bb82301ad9d4b4251e404c11026f53f9f1c5190a943a26aa654e4fa0969ccbd',
+        location=Location.COINBASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1504646040000),
+        asset=A_ETH,
+        amount=FVal('0.05770427'),
     ), AssetMovement(
         identifier=3,
         event_identifier='2bb82301ad9d4b4251e404c11026f53f9f1c5190a943a26aa654e4fa0969ccbd',

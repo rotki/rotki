@@ -604,12 +604,12 @@ def mock_history_processing(
             assert asset_movements[6].event_type == HistoryEventType.WITHDRAWAL
             assert asset_movements[6].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[6].asset == A_ETH
-            assert asset_movements[7].location == Location.KRAKEN
+            assert asset_movements[7].location == Location.POLONIEX
             assert asset_movements[7].event_type == HistoryEventType.DEPOSIT
-            assert asset_movements[7].asset == A_ETH
-            assert asset_movements[8].location == Location.POLONIEX
+            assert asset_movements[7].asset == A_BTC
+            assert asset_movements[8].location == Location.KRAKEN
             assert asset_movements[8].event_type == HistoryEventType.DEPOSIT
-            assert asset_movements[8].asset == A_BTC
+            assert asset_movements[8].asset == A_ETH
             assert asset_movements[9].location == Location.KRAKEN
             assert asset_movements[9].event_type == HistoryEventType.DEPOSIT
             assert asset_movements[9].asset == A_EUR
@@ -617,11 +617,11 @@ def mock_history_processing(
             assert asset_movements[10].event_type == HistoryEventType.DEPOSIT
             assert asset_movements[10].event_subtype == HistoryEventSubType.FEE
             assert asset_movements[10].asset == A_EUR
-            assert asset_movements[11].location == Location.KRAKEN
-            assert asset_movements[11].event_type == HistoryEventType.DEPOSIT
+            assert asset_movements[11].location == Location.POLONIEX
+            assert asset_movements[11].event_type == HistoryEventType.WITHDRAWAL
             assert asset_movements[11].asset == A_BTC
-            assert asset_movements[12].location == Location.POLONIEX
-            assert asset_movements[12].event_type == HistoryEventType.WITHDRAWAL
+            assert asset_movements[12].location == Location.KRAKEN
+            assert asset_movements[12].event_type == HistoryEventType.DEPOSIT
             assert asset_movements[12].asset == A_BTC
             assert asset_movements[13].location == Location.POLONIEX
             assert asset_movements[13].event_type == HistoryEventType.WITHDRAWAL

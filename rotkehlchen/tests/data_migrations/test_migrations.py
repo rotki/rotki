@@ -176,6 +176,7 @@ def detect_accounts_migration_check(
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('skip_sync_globaldb_assets', [True])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_migration_1(database: DBHandler) -> None:
     """
@@ -251,6 +252,7 @@ def test_migration_1(database: DBHandler) -> None:
 
 @pytest.mark.parametrize('use_custom_database', ['data_migration_v0.db'])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('skip_sync_globaldb_assets', [True])
 @pytest.mark.parametrize('data_migration_version', [0])
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 def test_failed_migration(database: DBHandler) -> None:

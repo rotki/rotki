@@ -110,6 +110,15 @@ def fixture_perform_upgrades_at_unlock():
     return True
 
 
+@pytest.fixture(name='skip_sync_globaldb_assets')
+def fixture_skip_sync_globaldb_assets():
+    """Skip syncing globaldb assets with user db.
+    Needed for tests with older dbs where the history_events `ignored` column isn't present
+    and the test has to not run the DB upgrades.
+    """
+    return False
+
+
 @pytest.fixture(name='add_accounts_to_db')
 def fixture_add_blockchain_accounts_to_db():
     """If True, adds blockchain accounts to the db at unlock"""
