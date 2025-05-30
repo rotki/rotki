@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Users will now be able to see the savings history for the registered Binance exchange.
+
 * :release:`1.38.4 <2025-05-20>`
 * :feature:`-` Blockscout will now be prioritized when querying block number.
 * :bug:`-` Users should no longer experience a loading loop for asset information (name, symbol) on different areas of the application.
