@@ -102,10 +102,10 @@ def retrieve_location_data(data_dir: Path) -> GeolocationData | None:
     try:
         with maxminddb.open_database(filename) as reader:
             data = reader.get(user_ip)
-            location = data['country']['iso_code']
+            location = data['country']['iso_code']   # type: ignore  # should be str
             if location == 'None':
                 return None
-            return GeolocationData(country_code=location)
+            return GeolocationData(country_code=location)  # type: ignore  # should be str
     except maxminddb.errors.InvalidDatabaseError as e:
         filename.unlink()
         log.debug(f'Failed to read database {e!s}')
