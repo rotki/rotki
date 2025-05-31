@@ -1,10 +1,10 @@
-mypy==1.15.0
+mypy==1.16.0
 mypy-extensions==1.1.0
 pylint==3.3.7
 astroid==3.3.10  # engine of pylint, upgrade them together
 ruff==0.11.10
 double-indent-rotki==0.1.7  # our fork of double indent
-pyright==1.1.400
+pyright==1.1.401
 
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
@@ -12,8 +12,8 @@ types-chardet==5.0.4.6
 types-cryptography==3.3.23.2
 types-enum34==1.1.8
 types-ipaddress==1.0.8
-types-setuptools==78.1.0.20250329
-types-requests==2.32.0.20250328
+types-setuptools==80.9.0.20250529
+types-requests==2.32.0.20250515
 types-urllib3==1.26.25.14
 types-toml==0.10.8.20240310
-types-python-dateutil==2.9.0.20241206
+types-python-dateutil==2.9.0.20250516

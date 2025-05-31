@@ -171,7 +171,7 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 globaldb_set_unique_cache_value(
                     write_cursor=write_cursor,
                     key_parts=(CacheType.ENS_LABELHASH, label_hash),
-                    value=found_name,  # type: ignore  # should not be None here
+                    value=found_name,
                 )
 
         return found_name
