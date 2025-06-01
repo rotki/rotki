@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The order of borrowing and fee events in liquity DSProxy events should now be correct.
 * :bug:`-` Binance CSV import now correctly handles complex trade entries that span multiple rows.
 * :bug:`-` Balancer pool token price errors are now properly handled instead of breaking portfolio snapshots.
 * :feature:`-` Users will now be able to redecode the ETH block events.

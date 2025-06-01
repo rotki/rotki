@@ -502,6 +502,71 @@ def test_ds_proxy_liquity_deposit(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x67faB33a151F8d1e57e2aF0E021B11526B71A0f1']])
+def test_ds_proxy_liquity_deposit_and_borrow(ethereum_inquirer, ethereum_accounts):
+    """This test via DSProxy deposit and borrow is to test that the fee comes after borrowing
+    in those cases as we had to add logic to handle it. Otherwise it's a missing acquisition if fee
+    comes before borrowing"""
+    evmhash = deserialize_evm_tx_hash('0x48c93d086f9927f0e2aaadf39fa3bfdcf7f5ac80b11024a7055415c6bac5c829')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1736007179000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.009018175299183188'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            amount=FVal(eth_amount := '40'),
+            location_label=user_address,
+            notes=f'Deposit {eth_amount} ETH as collateral for liquity',
+            counterparty=CPT_LIQUITY,
+            address=(dsproxy_195537 := string_to_evm_address('0x6CD9bD4103437aFaE97b8947ED92e40a92775321')),  # noqa: E501
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=149,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=A_LUSD,
+            amount=FVal(lusd_debt := '40000'),
+            location_label=user_address,
+            notes=f'Generate {lusd_debt} LUSD from liquity',
+            counterparty=CPT_LIQUITY,
+            address=dsproxy_195537,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=150,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_LUSD,
+            amount=FVal(lusd_fee := '201.07208093721936'),
+            location_label=user_address,
+            notes=f'Paid {lusd_fee} LUSD as a borrowing fee',
+            counterparty=CPT_LIQUITY,
+            address=string_to_evm_address('0x24179CD81c9e782A4096035f7eC97fB8B783e007'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0c3ce74FCB2B93F9244544919572818Dc2AC0641']])
 def test_ds_proxy_liquity_withdraw(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xdac8d9273a17b00fb81e89839d0c974e393db406a641552051419646b902c4b3')  # noqa: E501

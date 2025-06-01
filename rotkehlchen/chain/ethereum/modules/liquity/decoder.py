@@ -254,6 +254,10 @@ class LiquityDecoder(DecoderInterface):
             counterparty=CPT_LIQUITY,
             address=context.tx_log.address,
         )
+        max_seq_index = 0  # put ordering logic here too since some times fee is seen last
+        for decoded_event in context.decoded_events:
+            max_seq_index = max(max_seq_index, decoded_event.sequence_index)
+        event.sequence_index = max_seq_index + 1
         return DecodingOutput(event=event)
 
     def _decode_lqty_staking_deposits(
