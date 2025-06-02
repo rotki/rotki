@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.balancer.v2.constants import (
 from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
 from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAPPED
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
-from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ORDERFILLED_RFQ
+from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import DEFI_PLAZA_SWAPPED, ORDERFILLED_RFQ
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
@@ -56,6 +56,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 ORDERFILLED_RFQ,
                 TOKEN_EXCHANGE,  # curve is also used by 1inch
                 KYBER_AGGREGATOR_SWAPPED,
+                DEFI_PLAZA_SWAPPED,
             ],
             counterparty=counterparty,
         )
