@@ -321,7 +321,10 @@ class Eth2(EthereumModule):
                 else:
                     max_balance = MIN_EFFECTIVE_BALANCE
 
-                outstanding_pnl = balance.amount - max_balance
+                # consolidated validators with pending withdrawals have small balances below max_balance,  # noqa: E501
+                # causing negative outstanding rewards. so, take absolute value to avoid negatives and  # noqa: E501
+                # cap at actual balance since outstanding rewards can't exceed validator holdings
+                outstanding_pnl = min(abs(balance.amount - max_balance), balance.amount)
                 entry['outstanding_consensus_pnl'] = outstanding_pnl
                 sums['outstanding_consensus_pnl'] += outstanding_pnl
                 entry['sum'] = entry.get('sum', ZERO) + outstanding_pnl
