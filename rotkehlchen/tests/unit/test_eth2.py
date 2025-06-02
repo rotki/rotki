@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     CONSOLIDATION_REQUEST_CONTRACT,
@@ -1455,3 +1456,30 @@ def test_validator_details_update(
         activation_timestamp=Timestamp(1690165463),
         status=ValidatorStatus.ACTIVE,
     )]
+
+
+def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
+        eth2: 'Eth2',
+        database: 'DBHandler',
+) -> None:
+    """Test that consolidated validators with pending withdrawals don't show negative outstanding rewards"""  # noqa: E501
+    with database.user_write() as write_cursor:
+        DBEth2(database).add_or_update_validators(write_cursor, [ValidatorDetails(
+            validator_index=(validator_index := 999999),
+            validator_type=ValidatorType.DISTRIBUTING,  # consolidated/exited validator
+            public_key=(pub_key := Eth2PubKey('0xb912072ccf65435991175736cd73bcb4b2852a993f7d00c4bf3abab5fcfacbd72b37114320a60d9894eaced1ddee1cae')),  # noqa: E501
+        )])
+
+    with (
+        patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_balances', return_value={pub_key: Balance(amount=(small_balance := FVal('0.5')), usd_value=small_balance)}),  # mock a small balance (pending withdrawal) that's less than MIN_EFFECTIVE_BALANCE  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.modules.eth2.eth2.DBEth2.group_validators_by_type', return_value=(set(), set())),  # no accumulating validators  # noqa: E501
+    ):
+        result = eth2.get_performance(
+            from_ts=Timestamp(0),
+            to_ts=ts_now(),
+            limit=10,
+            offset=0,
+            ignore_cache=True,
+        )
+        assert result['validators'][validator_index]['outstanding_consensus_pnl'] == small_balance
+        assert result['sums']['outstanding_consensus_pnl'] == small_balance

@@ -472,6 +472,7 @@ class DBEth2:
             balances_over_time[validator][to_ts_ms] = MIN_EFFECTIVE_BALANCE
 
         with self.db.conn.read_ctx() as cursor:
+            consolidated_validators = self.get_consolidated_validators(cursor)
             withdrawals_pnl.update(self._validator_stats_process_queries(
                 cursor=cursor,
                 amount_querystr='SUM(CAST(amount AS REAL))',  # note: has precision issues
@@ -485,9 +486,9 @@ class DBEth2:
                     withdrawal_types_filter=WithdrawalTypesFilter.ONLY_PARTIAL,
                 ),
             ))
-            exits_pnl.update(self._validator_stats_process_queries(
+            for v_index, exit_amount in self._validator_stats_process_queries(
                 cursor=cursor,
-                amount_querystr=f'CAST(amount AS REAL) - {MIN_EFFECTIVE_BALANCE}',  # note: has precision issues  # noqa: E501
+                amount_querystr='amount',
                 filter_query=EthWithdrawalFilterQuery.make(
                     from_ts=from_ts,
                     to_ts=to_ts,
@@ -497,7 +498,11 @@ class DBEth2:
                     entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
                     withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
                 ),
-            ))
+            ).items():
+                if v_index in consolidated_validators:
+                    withdrawals_pnl[v_index] += FVal(exit_amount)
+                else:  # for non-consolidated validators, add it to exits
+                    exits_pnl[v_index] += (FVal(exit_amount) - MIN_EFFECTIVE_BALANCE)
 
         return balances_over_time, withdrawals_pnl, exits_pnl
 
