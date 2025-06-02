@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ONEINCH_V4_ROUTE
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import ONEINCH_V5_ROUTER
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
+    A_CRV,
     A_DAI,
     A_ETH,
     A_LUSD,
@@ -934,3 +935,48 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         ),
     ]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x4df4Ab179e3FdaC1930cd0a610D6bA6D5808E8Ff']])
+def test_1inch4_swap_via_defi_plaza(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xa99ce12e628620861215c88ee2c51f6c0468442dfe0504c9e5f2c918cf63fc8c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, user, gas, amount_in, amount_out = TimestampMS(1657035153000), ethereum_accounts[0], '0.01345755735660528', '790.785045156438592337', '710.921537'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas),
+        location_label=user,
+        notes=f'Burn {gas} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDT,
+        amount=FVal(amount_out),
+        location_label=user,
+        notes=f'Swap {amount_out} USDT in {CPT_ONEINCH_V4}',
+        address=ONEINCH_V4_ROUTER,
+        counterparty=CPT_ONEINCH_V4,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_CRV,
+        amount=FVal(amount_in),
+        location_label=user,
+        notes=f'Receive {amount_in} CRV as a result of a {CPT_ONEINCH_V4} swap',
+        address=ONEINCH_V4_ROUTER,
+        counterparty=CPT_ONEINCH_V4,
+    )]
