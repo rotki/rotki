@@ -4,8 +4,10 @@ import AppImage from '@/components/common/AppImage.vue';
 import ListItem from '@/components/common/ListItem.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 
 defineOptions({
@@ -39,21 +41,39 @@ const props = withDefaults(
   },
 );
 
-const { asset } = toRefs(props);
+const { asset, hideMenu, isCollectionParent } = toRefs(props);
 
 const symbol = useRefMap(asset, asset => asset.symbol ?? '');
 const name = useRefMap(asset, asset => asset.name ?? '');
 
 const { isPending } = useAssetCacheStore();
-const loading = computed<boolean>(() => get(isPending(get(asset).identifier)));
+const identifier = useRefMap(asset, asset => asset.identifier);
+const loading = computed<boolean>(() => get(isPending(identifier)));
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
+
+const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
 
 function updateMenuVisibility(value: boolean) {
   if (!value) {
     get(menuContentRef)?.setConfirm(false);
   }
+}
+
+function useContextMenu(attrs: Record<string, any>) {
+  return {
+    ...omit(attrs, ['onClick']),
+    onClick: () => {
+      if (!get(hideMenu)) {
+        navigateToDetails();
+      }
+    },
+    oncontextmenu: (event: MouseEvent) => {
+      event.preventDefault();
+      attrs.onClick(event);
+    },
+  };
 }
 </script>
 
@@ -72,31 +92,29 @@ function updateMenuVisibility(value: boolean) {
       :identifier="asset.identifier"
       :resolution-options="{ associate: enableAssociation }"
       :show-chain="showChain"
-      :no-tooltip="!hideMenu"
       :force-chain="forceChain"
     />
   </DefineImage>
   <RuiMenu
+    :key="identifier"
     class="flex"
     :disabled="hideMenu"
     menu-class="w-[16rem] max-w-[90%]"
-    :open-on-hover="iconOnly"
     :open-delay="400"
-    :close-delay="iconOnly ? 200 : 0"
     :popper="{ placement: 'bottom-start' }"
     @update:model-value="updateMenuVisibility($event)"
   >
     <template #activator="{ attrs }">
       <ReuseImage
         v-if="iconOnly"
-        v-bind="{ ...$attrs, ...attrs }"
+        v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
       />
       <ListItem
         v-else
         no-padding
         no-hover
         class="max-w-[20rem] cursor-pointer"
-        v-bind="{ ...$attrs, ...attrs }"
+        v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
         :size="dense ? 'sm' : 'md'"
         :loading="loading"
         :title="asset.isCustomAsset ? name : symbol"
