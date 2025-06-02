@@ -8,6 +8,8 @@ import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '
 import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
 import { isEmpty } from 'es-toolkit/compat';
 
+const TASKS_TIMEOUT = 90_000;
+
 interface UseTaskApiReturn {
   queryTasks: () => Promise<TaskStatus>;
   queryTaskResult: <T>(id: number, transformer?: AxiosResponseTransformer[]) => Promise<ActionResult<T>>;
@@ -17,6 +19,7 @@ interface UseTaskApiReturn {
 export function useTaskApi(): UseTaskApiReturn {
   const queryTasks = async (): Promise<TaskStatus> => withRetry(async () => {
     const response = await api.instance.get<ActionResult<TaskStatus>>(`/tasks`, {
+      timeout: TASKS_TIMEOUT,
       validateStatus: validTaskStatus,
     });
 
@@ -28,7 +31,7 @@ export function useTaskApi(): UseTaskApiReturn {
     transformer?: AxiosResponseTransformer[],
   ): Promise<ActionResult<T>> => {
     const config: Partial<AxiosRequestConfig> = {
-      timeout: 90_000,
+      timeout: TASKS_TIMEOUT,
       validateStatus: validTaskStatus,
     };
 
