@@ -32,6 +32,6 @@ class HarvestFinanceDecoder(MerkleClaimDecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_HARVEST_FINANCE,
-            label='Harve Finance',
-            image='harvest.svg',
+            label='Harvest Finance',
+            image='harvest.gif',
         ),)
