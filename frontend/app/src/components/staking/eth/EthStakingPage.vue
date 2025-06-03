@@ -35,9 +35,7 @@ const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
 const statsSection = Section.STAKING_ETH2_STATS;
 
-const filter = ref<EthStakingCombinedFilter>({
-  status: 'active',
-});
+const filter = ref<EthStakingCombinedFilter>();
 const selection = ref<EthStakingFilter>({
   validators: [],
 });
