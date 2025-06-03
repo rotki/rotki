@@ -99,6 +99,7 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     CONSOLIDATE = auto()
     DELEGATE = auto()
     LIQUIDITY_PROVISION_LOSS = auto()
+    BURN = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -181,7 +182,7 @@ class EventCategory(Enum):
     HACK_LOSS = 47, EventDirection.OUT
     CLAWBACK = 48, EventDirection.OUT
     MINT_NFT = 49, EventDirection.IN
-    BURN_NFT = 50, EventDirection.OUT
+    BURN = 50, EventDirection.OUT
     COMBINE = 51, EventDirection.NEUTRAL
     DELEGATE = 52, EventDirection.NEUTRAL
     LOSS = 53, EventDirection.OUT

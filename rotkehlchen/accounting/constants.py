@@ -64,6 +64,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.PAYMENT: {DEFAULT: EventCategory.PAY},
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.SEND},
         HistoryEventSubType.CLAWBACK: {DEFAULT: EventCategory.CLAWBACK},
+        HistoryEventSubType.BURN: {DEFAULT: EventCategory.BURN},
     },
     HistoryEventType.LOSS: {
         HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
@@ -128,7 +129,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
     },
     HistoryEventType.BURN: {
-        HistoryEventSubType.NFT: {DEFAULT: EventCategory.BURN_NFT},
+        HistoryEventSubType.NFT: {DEFAULT: EventCategory.BURN},
     },
     HistoryEventType.MULTI_TRADE: {
         HistoryEventSubType.SPEND: {DEFAULT: EventCategory.SWAP_OUT},
@@ -312,8 +313,8 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.MINT_NFT: {DEFAULT: EventCategoryDetails(
         label='mint nft',
         icon='lu-file-image',
-    )}, EventCategory.BURN_NFT: {DEFAULT: EventCategoryDetails(
-        label='burn nft',
+    )}, EventCategory.BURN: {DEFAULT: EventCategoryDetails(
+        label='burn',
         icon='lu-flame-kindling',
     )}, EventCategory.COMBINE: {DEFAULT: EventCategoryDetails(
         label='Combine',
