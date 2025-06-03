@@ -868,36 +868,32 @@ class DBEth2:
         """Get mev reward block production events and combine them with the transaction events
         if they can be found. Optionally limit to only events for the specified block numbers.
         """
-        with self.db.conn.read_ctx() as cursor:
-            query = (
-                """SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, (
-                    SELECT A_S.validator_index FROM history_events A_H
-                    LEFT JOIN eth_staking_events_info A_S ON A_H.identifier=A_S.identifier
-                    WHERE A_H.subtype=? AND A_S.is_exit_or_blocknumber=B_T.block_number
-                    AND A_H.location_label=B_H.location_label
-                ) as validator_index
-                FROM evm_transactions B_T LEFT JOIN evm_events_info B_E ON B_T.tx_hash=B_E.tx_hash
-                LEFT JOIN history_events B_H ON B_E.identifier=B_H.identifier
-                WHERE B_H.asset=? AND B_H.type=? AND B_H.subtype=? AND B_T.block_number=(
-                    SELECT A_S.is_exit_or_blocknumber FROM history_events A_H
-                    LEFT JOIN eth_staking_events_info A_S ON A_H.identifier=A_S.identifier
-                    WHERE A_H.subtype=? AND A_S.is_exit_or_blocknumber=B_T.block_number
-                    AND A_H.location_label=B_H.location_label
-                )"""
-            )
-            bindings: list[int | str] = [
-                HistoryEventSubType.MEV_REWARD.serialize(),
-                A_ETH.identifier,
-                HistoryEventType.RECEIVE.serialize(),
-                HistoryEventSubType.NONE.serialize(),
-                HistoryEventSubType.MEV_REWARD.serialize(),
-            ]
-            if block_numbers is not None and len(block_numbers) > 0:
-                placeholders = ','.join('?' * len(block_numbers))
-                query += f' AND B_T.block_number IN ({placeholders})'
-                bindings += block_numbers
+        log.debug('Entered combining of blocks with tx events')
+        query = (
+            """WITH mev_rewards AS (
+                SELECT A_H.location_label, A_S.is_exit_or_blocknumber, A_S.validator_index FROM
+                history_events A_H JOIN eth_staking_events_info A_S ON A_H.identifier = A_S.identifier
+            WHERE A_H.subtype = ?)
+            SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, mev.validator_index FROM evm_transactions B_T
+            JOIN evm_events_info B_E ON B_T.tx_hash = B_E.tx_hash
+            JOIN history_events B_H ON B_E.identifier = B_H.identifier
+            LEFT JOIN mev_rewards mev ON mev.is_exit_or_blocknumber = B_T.block_number
+            AND mev.location_label = B_H.location_label WHERE B_H.asset = ? AND B_H.type = ?
+            AND B_H.subtype = ? AND mev.validator_index IS NOT NULL"""  # noqa: E501
+        )
+        bindings: list[int | str] = [
+            HistoryEventSubType.MEV_REWARD.serialize(),
+            A_ETH.identifier,
+            HistoryEventType.RECEIVE.serialize(),
+            HistoryEventSubType.NONE.serialize(),
+        ]
+        if block_numbers is not None and len(block_numbers) > 0:
+            placeholders = ','.join('?' * len(block_numbers))
+            query += f' AND B_T.block_number IN ({placeholders})'
+            bindings += block_numbers
 
-            changes = []
+        changes = []
+        with self.db.conn.read_ctx() as cursor:
             for entry in cursor.execute(query, bindings):
                 event_identifier = EthBlockEvent.form_event_identifier(entry[1])
                 tx_hash = deserialize_evm_tx_hash(entry[3])
@@ -912,6 +908,11 @@ class DBEth2:
                     tx_hash,
                 ))
 
+        if (change_count := len(changes)) == 0:
+            log.debug('No tx events to combine with block events')
+            return
+
+        log.debug(f'Will combine {change_count} tx events with block events')
         with self.db.user_write() as write_cursor:
             for changes_entry in changes:
                 result = write_cursor.execute(
@@ -936,3 +937,5 @@ class DBEth2:
                     log.warning(f'Could not update history events with {changes_entry} in combine_block_with_tx_events due to {e!s}')  # noqa: E501
                     # already exists. Probably right after resetting events? Delete old one
                     write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (changes_entry[6],))  # noqa: E501
+
+        log.debug('Finished combining of blocks with tx events')
