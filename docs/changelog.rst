@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`1.39.0 <2025-06-04>`
+* :feature:`-` DigixDAO DGD refunds will now be properly decoded.
 * :feature:`-` Users will be able to perform quick actions for an asset (such as ignoring the asset) by right-clicking the asset icon.
 * :bug:`-` The order of borrowing and fee events in liquity DSProxy events should now be correct.
 * :bug:`-` Binance CSV import now correctly handles complex trade entries that span multiple rows.
