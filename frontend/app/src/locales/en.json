@@ -4336,7 +4336,6 @@
   "trade": {
     "actions": {
       "change_network": "Change Network",
-      "change_network_in_your_wallet": "Change network in your wallet!",
       "connect_wallet": "Connect Wallet",
       "disconnect": "Disconnect",
       "open_wallet": "Open Wallet",
@@ -4356,6 +4355,7 @@
       "hint": "In Electron App, choose \"Wallet Connect\" and then \"Copy link\"",
       "label": "Paste the Pair URI here",
       "link_session": "Link session using Wallet Connect Pair URI",
+      "placeholder": "e.g. wc:b27f7767308...",
       "start_pairing": "Start Pairing",
       "title": "rotki Browser Wallet Bridge",
       "warning": "Keep this page open! Otherwise, you will need to create a new session to connect."

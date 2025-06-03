@@ -8,7 +8,7 @@ import {
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { type ActionResult, type BigNumber, NumericString } from '@rotki/common';
+import { type ActionResult, type BigNumber, NumericString, Zero } from '@rotki/common';
 
 interface UseTradeApiReturn {
   prepareERC20Transfer: (payload: PrepareERC20TransferPayload) => Promise<PrepareERC20TransferResponse>;
@@ -63,7 +63,12 @@ export function useTradeApi(): UseTradeApiReturn {
       },
     );
 
-    return NumericString.parse(response.data.result);
+    if (response.data.result) {
+      return NumericString.parse(response.data.result);
+    }
+    else {
+      return Zero;
+    }
   };
 
   return {

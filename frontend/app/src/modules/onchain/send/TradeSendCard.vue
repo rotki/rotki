@@ -43,7 +43,6 @@ const {
   connectedChainId,
   isWalletConnect,
   preparing,
-  supportedChainIds,
   supportedChainsForConnectedAccount,
   waitingForWalletConfirmation,
 } = storeToRefs(walletStore);
@@ -93,8 +92,6 @@ const valid = computed<boolean>(() => {
 
   return amountValid && toAddressValid && !get(amountExceeded);
 });
-
-const isConnectWalletSupportAllChains = computed(() => get(supportedChainIds).length === 0);
 
 function resetMax() {
   set(max, '0');
@@ -172,11 +169,18 @@ async function send() {
   };
 
   try {
+    set(errorMessage, '');
     await sendTransaction(params);
     resetInput();
   }
-  catch (error) {
-    set(errorMessage, error);
+  catch (error: any) {
+    const errorString = error.toString();
+    if (errorString.includes('ACTION_REJECTED')) {
+      set(errorMessage, 'Request is rejected');
+    }
+    else {
+      set(errorMessage, errorString);
+    }
   }
 }
 
@@ -246,9 +250,8 @@ watchImmediate([
   asset,
   assetChain,
   connectedChainId,
-  assetDetail,
-], async ([currentAsset, chain, connectedChainId, assetDetail]) => {
-  if (!get(connected) || !chain || !currentAsset || !assetDetail) {
+], async ([currentAsset, chain, connectedChainId]) => {
+  if (!get(connected) || !chain || !currentAsset || !get(assetDetail)) {
     resetMax();
     return;
   }
@@ -396,10 +399,9 @@ watch([estimatedGasFee, assetBalance], () => {
         color="primary"
         size="lg"
         class="!w-full"
-        :disabled="!isConnectWalletSupportAllChains"
         @click="switchToDesireNetwork()"
       >
-        {{ isConnectWalletSupportAllChains ? t('trade.actions.change_network') : t('trade.actions.change_network_in_your_wallet') }}
+        {{ t('trade.actions.change_network') }}
       </RuiButton>
       <RuiButton
         v-else
