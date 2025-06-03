@@ -398,7 +398,7 @@ class Coinbase(ExchangeInterface):
             # this next_uri will be used in next iteration
             next_uri = json_ret['pagination']['next_uri']
             if not next_uri:
-                # As per the docs: https://developers.coinbase.com/api/v2?python#pagination
+                # As per the docs: https://docs.cdp.coinbase.com/coinbase-app/docs/pagination
                 # once we get an empty next_uri we are done
 
                 break
@@ -558,10 +558,9 @@ class Coinbase(ExchangeInterface):
         - RemoteError
         """
         history_events: list[HistoryEvent | AssetMovement | SwapEvent] = []
-        options = {}
+        options = {'order': 'asc'}
         if last_tx_id is not None:
             options['starting_after'] = last_tx_id
-            options['order'] = 'asc'
         transactions = self._api_query(f'accounts/{account_id}/transactions', options=options)
         transaction_pairs: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)  # Maps every trade id to their two transactions  # noqa: E501
         if len(transactions) == 0:
