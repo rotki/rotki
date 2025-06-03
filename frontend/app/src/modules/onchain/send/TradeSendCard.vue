@@ -250,9 +250,8 @@ watchImmediate([
   asset,
   assetChain,
   connectedChainId,
-  assetDetail,
-], async ([currentAsset, chain, connectedChainId, assetDetail]) => {
-  if (!get(connected) || !chain || !currentAsset || !assetDetail) {
+], async ([currentAsset, chain, connectedChainId]) => {
+  if (!get(connected) || !chain || !currentAsset || !get(assetDetail)) {
     resetMax();
     return;
   }

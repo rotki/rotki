@@ -11,7 +11,7 @@ import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
-import { type AppKit, createAppKit, useAppKitProvider } from '@reown/appkit/vue';
+import { type AppKit, createAppKit } from '@reown/appkit/vue';
 import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { BrowserProvider, formatUnits, getAddress, type TransactionResponse } from 'ethers';
@@ -104,7 +104,8 @@ export const useWalletStore = defineStore('wallet', () => {
   };
 
   const getBrowserProvider = (): BrowserProvider => {
-    const { walletProvider } = useAppKitProvider(EIP155);
+    assert(appKit);
+    const walletProvider = appKit.getProvider(EIP155);
     return new BrowserProvider(walletProvider as any);
   };
 
