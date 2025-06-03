@@ -53,8 +53,8 @@ function getOwnedAssetsByChain(chain: string) {
 }
 
 async function selectAsset(item: TradableAsset) {
-  set(asset, item.asset);
   set(chain, item.chain);
+  set(asset, item.asset);
   set(openDialog, false);
 }
 
@@ -65,7 +65,7 @@ function setMax() {
 watchImmediate([asset, chain, allOwnedAssets], ([currentAsset, chain, _]) => {
   const ownedByChain = getOwnedAssetsByChain(chain);
 
-  if (!ownedByChain.map(item => item.asset).includes(currentAsset) && ownedByChain.length > 0) {
+  if (ownedByChain.length > 0 && !ownedByChain.map(item => item.asset).includes(currentAsset)) {
     set(asset, ownedByChain[0].asset || '');
   }
 });
@@ -75,9 +75,12 @@ watchImmediate([address, chain], ([_, currentChain]) => {
   if (currentChain) {
     const filteredByChain = owned.filter(item => item.chain === currentChain);
     if (filteredByChain.length > 0) {
-      set(asset, filteredByChain[0].asset);
-      return;
+      const currentAsset = get(asset);
+      if (!currentAsset || !filteredByChain.map(item => item.asset).includes(currentAsset)) {
+        set(asset, filteredByChain[0].asset);
+      }
     }
+    return;
   }
 
   const mostBalance = owned[0];

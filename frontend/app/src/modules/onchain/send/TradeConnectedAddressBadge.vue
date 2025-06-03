@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
+import { useInterop } from '@/composables/electron-interop';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 
 defineProps<{
   appBar?: boolean;
+  showWalletBridge?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -15,6 +17,7 @@ const { connected, connectedAddress, connectedChainId } = storeToRefs(walletStor
 const { disconnect, open } = walletStore;
 
 const { getChainFromChainId } = useWalletHelper();
+const { isPackaged, openWalletConnectBridge } = useInterop();
 
 const chain = computed(() => {
   const chainId = get(connectedChainId);
@@ -80,11 +83,25 @@ const chain = computed(() => {
           {{ t('trade.actions.open_wallet') }}
         </RuiButton>
         <RuiButton
+          v-if="isPackaged"
+          variant="list"
+          size="sm"
+          @click="openWalletConnectBridge()"
+        >
+          {{ t('trade.bridge.connect_browser_wallet') }}
+          <template #append>
+            <RuiIcon
+              name="lu-arrow-up-right"
+              size="18"
+            />
+          </template>
+        </RuiButton>
+        <RuiButton
           variant="list"
           size="sm"
           @click="disconnect()"
         >
-          <template #prepend>
+          <template #append>
             <RuiIcon
               name="lu-log-out"
               size="14"

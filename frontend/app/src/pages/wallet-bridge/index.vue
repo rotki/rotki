@@ -12,7 +12,7 @@ definePage({
 
 const { t } = useI18n({ useScope: 'global' });
 const walletStore = useWalletStore();
-const { connected, connectedAddress, connectedChainId } = storeToRefs(walletStore);
+const { connected, connectedAddress, connectedChainId, supportedChainsIdForConnectedAccount } = storeToRefs(walletStore);
 const { disconnect } = walletStore;
 
 const firstStep = '1';
@@ -52,6 +52,7 @@ const firstStep = '1';
         :connected="connected"
         :address="connectedAddress"
         :connected-chain-id="connectedChainId"
+        :supported-chain-ids="supportedChainsIdForConnectedAccount"
       />
     </div>
   </div>

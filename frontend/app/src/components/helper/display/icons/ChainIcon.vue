@@ -22,6 +22,7 @@ const src = getChainImageUrl(chain);
 <template>
   <AdaptiveWrapper>
     <AppImage
+      :key="src"
       :src="src"
       :width="size"
       :max-width="size"

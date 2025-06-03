@@ -55,6 +55,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     cache,
     deleteCacheKey,
     fetchedAssetCollections,
+    getAssetMappingHandler,
     isPending,
     queueIdentifier,
     reset,
