@@ -51,7 +51,7 @@ async function afterSign(context: AfterPackContext): Promise<void> {
 /**
  module.exports = {
  * @type {import("electron-builder").Configuration}
- * @see https://www.electron.build/configuration/configuration
+ * @see https://www.electron.build/configuration#configuration
  */
 export default {
   appId: 'com.rotki.app',
