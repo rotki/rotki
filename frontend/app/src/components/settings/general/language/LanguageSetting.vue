@@ -62,37 +62,13 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('general_settings.language.subtitle') }}
     </template>
     <template #default="{ error, success, updateImmediate }">
-      <RuiAlert
-        type="warning"
-        class="mb-6"
-      >
-        {{ t('general_settings.language.contribution') }}
-        <ExternalLink
-          :url="externalLinks.contributeSection.language"
-          custom
-        >
-          <RuiButton
-            variant="text"
-            color="primary"
-            size="sm"
-            class="-ml-1.5 mt-3"
-          >
-            {{ t('general_settings.language.click_here') }}
-            <template #append>
-              <RuiIcon
-                name="lu-external-link"
-                size="16"
-              />
-            </template>
-          </RuiButton>
-        </ExternalLink>
-      </RuiAlert>
       <RuiMenuSelect
         v-model="language"
         :options="supportedLanguages"
         :label="t('general_settings.language.label')"
         :success-messages="success"
         :error-messages="error"
+        hide-details
         key-attr="identifier"
         variant="outlined"
         v-bind="$attrs"
@@ -115,13 +91,39 @@ const { t } = useI18n({ useScope: 'global' });
       <RuiCheckbox
         v-if="!useLocalSetting"
         hide-details
-        class="mt-1"
         color="primary"
+        class="mt-2"
         :model-value="forceUpdateMachineLanguage === 'true'"
         @update:model-value="updateForceUpdateMachineLanguage($event)"
       >
         {{ t('general_settings.language.force_saved_language_setting_in_machine_hint') }}
       </RuiCheckbox>
+
+      <RuiAlert
+        type="warning"
+        class="mt-4"
+      >
+        {{ t('general_settings.language.contribution') }}
+        <ExternalLink
+          :url="externalLinks.contributeSection.language"
+          custom
+        >
+          <RuiButton
+            variant="text"
+            color="primary"
+            size="sm"
+            class="-ml-1.5 mt-3"
+          >
+            {{ t('general_settings.language.click_here') }}
+            <template #append>
+              <RuiIcon
+                name="lu-external-link"
+                size="16"
+              />
+            </template>
+          </RuiButton>
+        </ExternalLink>
+      </RuiAlert>
     </template>
   </SettingsOption>
 </template>
