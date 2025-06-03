@@ -1408,6 +1408,7 @@ TRANSACTIONS_RESPONSE = """{
 
 def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
     if 'transactions' in url:
+        assert 'order=asc' in url  # regression test for improperly ordered queries
         return MockResponse(200, TRANSACTIONS_RESPONSE)
     if 'accounts' in url:
         # keep it simple just return a single ID and ignore the rest of the fields
