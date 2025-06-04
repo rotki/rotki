@@ -119,7 +119,13 @@ watch(debouncedSearchValue, async (value) => {
   if (privateBooks.length > 0) {
     values.push(...privateBooks);
   }
-  else if (value.endsWith('.eth')) {
+
+  const tracked = get(trackedAddresses).filter(item => item.includes(value));
+  if (tracked.length > 0) {
+    values.push(...tracked.map(item => ({ address: item })));
+  }
+
+  if (value.endsWith('.eth')) {
     set(resolvingEns, true);
     const address = await resolveEnsNames(value);
     set(resolvingEns, false);

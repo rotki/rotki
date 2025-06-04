@@ -187,7 +187,7 @@ base_args = [
     '--rest-api-port',
     '4242',
     '--api-cors',
-    'http://localhost:*/*,app://.',
+    'http://localhost:*/*,app://localhost/*',
     '--api-host',
     '0.0.0.0',
 ]
@@ -214,7 +214,7 @@ colibri_cmd = [
     '--logfile-path=/logs/colibri.log',
     '--port=4343',
     f'--log-level={log_level}',
-    '--api-cors=http://localhost:*/*,app://.',
+    '--api-cors=http://localhost:*/*,app://localhost/*',
 ]
 
 colibri = subprocess.Popen(colibri_cmd)
