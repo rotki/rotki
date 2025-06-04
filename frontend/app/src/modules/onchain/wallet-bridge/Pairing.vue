@@ -17,7 +17,6 @@ const props = defineProps<{
   connected?: boolean;
   address?: string;
   connectedChainId?: number;
-  supportedChainIds: number[];
 }>();
 
 const COMPATIBLE_METHODS = [
@@ -58,7 +57,7 @@ interface LogEntry {
   type: 'info' | 'success' | 'error';
 }
 
-const { address, connected, connectedChainId, supportedChainIds } = toRefs(props);
+const { address, connected, connectedChainId } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
@@ -196,12 +195,11 @@ async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal)
   const kit = get(walletKit);
   const addressVal = get(address);
   const chainId = get(connectedChainId);
-  const supportedChainIdsVal = get(supportedChainIds);
 
   if (!kit || !addressVal || !chainId)
     return;
 
-  const chainIds = [...new Set([chainId, ...supportedChainIdsVal])];
+  const chainIds = [chainId];
 
   try {
     // ------- namespaces builder util ------------ //
@@ -387,9 +385,7 @@ const secondStep = '2';
       :class="{ 'opacity-30': !connected && activeSessions.length === 0 }"
     >
       <div class="flex gap-2">
-        <div
-          class="rounded-full bg-rui-primary text-white size-8 flex items-center justify-center font-bold"
-        >
+        <div class="rounded-full bg-rui-primary text-white size-8 flex items-center justify-center font-bold">
           {{ secondStep }}
         </div>
         <div class="mt-1 flex-1">
