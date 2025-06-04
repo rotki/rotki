@@ -31,6 +31,10 @@ LINKABLE_ACCOUNTING_PROPERTIES = Literal[
     'count_cost_basis_pnl',
 ]
 
+# Chunk size to use when specifying large numbers of sql variables in a single sql statement.
+# The absolute max would be 32766 - see https://www.sqlite.org/limits.html#max_variable_number
+SQL_VARIABLE_CHUNK_SIZE: Final = 10000
+
 
 class UpdateType(Enum):
     SPAM_ASSETS = 'spam_assets'
