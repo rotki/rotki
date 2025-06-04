@@ -138,7 +138,7 @@ onMounted(() => refresh());
           variant="indeterminate"
           circular
           size="20"
-          thickness="2"
+          thickness="3"
         />
         <template v-if="fetching">
           {{ t('transactions.events_decoding.fetching') }}
@@ -172,7 +172,7 @@ onMounted(() => refresh());
       >
         <RuiProgress
           class="max-w-[5rem] mx-auto"
-          thickness="2"
+          thickness="3"
           size="20"
           color="primary"
           :value="
@@ -262,7 +262,7 @@ onMounted(() => refresh());
             circular
             variant="indeterminate"
             size="18"
-            thickness="2"
+            thickness="3"
           />
         </template>
         {{ t('transactions.events_decoding.actions.redecode_missing_events') }}
@@ -282,7 +282,7 @@ onMounted(() => refresh());
             circular
             variant="indeterminate"
             size="24"
-            thickness="2"
+            thickness="3"
           />
         </template>
         {{ t('transactions.events_decoding.redecode_all') }}

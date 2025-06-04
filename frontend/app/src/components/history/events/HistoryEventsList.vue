@@ -51,7 +51,7 @@ const combinedAllEvents = computed<HistoryEventRow[]>(() => {
     if (allFlattened.length === 1 && Array.isArray(allFlattened[0])) {
       return [allFlattened[0]];
     }
-    return allFlattened;
+    return [allFlattened];
   }
 
   return all.map((item) => {

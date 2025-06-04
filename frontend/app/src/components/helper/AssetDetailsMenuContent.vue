@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import HashLink from '@/modules/common/links/HashLink.vue';
@@ -32,6 +33,7 @@ const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 const isSpamAsset = computed(() => get(asset).protocol === 'spam');
 const isIgnoredAsset = useIsAssetIgnored(identifier);
 const { markAssetsAsSpam } = useSpamAsset();
+const { refetchAssetInfo } = useAssetInfoRetrieval();
 
 function actionClick(action: ConfirmType) {
   set(confirm, true);
@@ -39,12 +41,15 @@ function actionClick(action: ConfirmType) {
 }
 
 async function confirmAction() {
+  const id = get(identifier);
   if (get(confirmType) === 'ignore') {
-    await ignoreAsset(get(identifier));
+    await ignoreAsset(id);
   }
   else {
-    await markAssetsAsSpam([get(identifier)]);
+    await markAssetsAsSpam([id]);
   }
+
+  refetchAssetInfo(id);
   set(confirm, false);
 }
 
