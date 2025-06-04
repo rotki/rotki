@@ -663,7 +663,16 @@ class Eth2(EthereumModule):
 
         dbeth2 = DBEth2(self.database)
         with self.database.conn.read_ctx() as cursor:
-            validator_indices = list(dbeth2.get_active_validator_indices(cursor))
+            # get validators that haven't had any withdrawals marked as exits yet
+            validator_indices = [row[0] for row in cursor.execute(
+                """
+                SELECT DISTINCT v.validator_index
+                FROM eth2_validators v
+                LEFT JOIN eth_staking_events_info s ON s.validator_index = v.validator_index AND s.is_exit_or_blocknumber = 1
+                WHERE v.validator_index IS NOT NULL
+                AND s.validator_index IS NULL
+                """,  # noqa: E501
+            )]
 
         if len(validator_indices) == 0:
             return
