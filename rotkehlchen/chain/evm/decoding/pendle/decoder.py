@@ -168,11 +168,7 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
             asset=(token_0 := self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[3]))),  # noqa: E501
         )
         token_1 = self.base.get_or_create_evm_token(principal_token if context.tx_log.topics[0] == SWAP_TOKEN_FOR_PT_TOPIC else yield_token)  # noqa: E501
-        amount_1 = asset_normalized_value(
-            amount=abs(int.from_bytes(context.tx_log.data[32:64], signed=True)),
-            asset=token_1,
-        )
-        out_event, in_event = None, None
+        out_event, in_events = None, []
         for event in context.decoded_events:
             if event.asset == token_0 and event.amount == amount_0:
                 # When zapping into PT/YT, a swap event is followed by a deposit event.
@@ -192,15 +188,15 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                     event.notes = f'Withdraw {event.amount} {token_0.symbol} from Pendle'
-                    in_event = event
+                    in_events.append(event)
 
-            elif event.asset == token_1 and event.amount == amount_1:
+            elif event.asset == token_1:  # the receive can be broken into multiple events so we check only the token  # noqa: E501
                 if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
                     event.counterparty = CPT_PENDLE
                     event.event_type = HistoryEventType.RECEIVE
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                    event.notes = f'Receive {amount_1} {token_1.symbol} from depositing into Pendle'  # noqa: E501
-                    in_event = event
+                    event.notes = f'Receive {event.amount} {token_1.symbol} from depositing into Pendle'  # noqa: E501
+                    in_events.append(event)
                 elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE:  # noqa: E501
                     event.counterparty = CPT_PENDLE
                     event.event_type = HistoryEventType.SPEND
@@ -209,7 +205,7 @@ class PendleCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                     out_event = event
 
         maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
+            ordered_events=[out_event, *in_events],
             events_list=context.decoded_events,
         )
         return DEFAULT_DECODING_OUTPUT
