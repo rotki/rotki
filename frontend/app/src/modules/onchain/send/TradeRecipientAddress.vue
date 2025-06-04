@@ -196,6 +196,7 @@ watch(openSuggestionsMenu, (curr, prev) => {
         >
           <TradeAddressDisplay
             dense
+            :chain="chain"
             :address="model"
             readonly
           />
@@ -278,6 +279,7 @@ watch(openSuggestionsMenu, (curr, prev) => {
           :key="option.address"
           :address="option.address"
           :name="option.name"
+          :chain="chain"
           @click="select(option.address)"
         />
       </div>
