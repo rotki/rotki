@@ -37,7 +37,7 @@ import {
 } from '@/types/websocket-messages';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { type Notification, Priority, Severity } from '@rotki/common';
+import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { backoff, startPromise } from '@shared/utils';
 
 interface UseMessageHandling {
@@ -148,6 +148,7 @@ export function useMessageHandling(): UseMessageHandling {
       persist: true,
     },
     display: true,
+    group: NotificationGroup.GNOSIS_PAY_SESSION_EXPIRED,
     message: data.error,
     severity: Severity.WARNING,
     title: t('notification_messages.gnosis_pay_session_key_expired.title'),
