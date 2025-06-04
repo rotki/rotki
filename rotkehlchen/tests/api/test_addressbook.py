@@ -370,6 +370,24 @@ def test_insert_into_addressbook(
             ),
         ]
 
+    # try inserting an evm address that is not checksummed valid for all the chains
+    non_checksummed_entry = AddressbookEntry(
+        name='Non checksummed',
+        address=(non_checksummed_addr := string_to_evm_address('0x4675c7e5baafbffbca748158becba61ef3b0a263')),  # noqa: E501
+        blockchain=None,
+    )
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'addressbookresource', book_type=book_type),
+        json={'entries': [non_checksummed_entry.serialize()]},
+    )
+    # check that we can query correctly by the non checksummed version of an address
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'allnamesresource', book_type=book_type),
+        json={'addresses': [{'address': non_checksummed_addr}]},
+    )
+    result = assert_proper_sync_response_with_result(response=response)
+    assert result[0]['address'] == to_checksum_address(non_checksummed_addr)
+
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])

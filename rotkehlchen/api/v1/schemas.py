@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
 import marshmallow
 import webargs
-from eth_utils import to_checksum_address
+from eth_utils import is_hexstr, to_checksum_address
 from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates, validates_schema
 from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
@@ -104,6 +104,7 @@ from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
@@ -3105,12 +3106,17 @@ class AddressWithOptionalBlockchainSchema(Schema):
             cast('SupportedBlockchain', data['blockchain']).get_chain_type() == ChainType.EVM
         ):
             try:
-                address = to_checksum_address(data['address'])
-            except ValueError as e:
+                address = deserialize_evm_address(data['address'])
+            except DeserializationError as e:
                 raise ValidationError(
                     f'Given value {data["address"]} is not a valid {data["blockchain"]} address',
                     field_name='address',
                 ) from e
+        elif data['blockchain'] is None and is_hexstr(data['address']):
+            try:  # if the address looks like an EVM address try to checksum it
+                address = deserialize_evm_address(data['address'])
+            except DeserializationError:
+                address = data['address']
         else:
             address = data['address']
 
