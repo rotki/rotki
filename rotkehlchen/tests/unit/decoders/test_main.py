@@ -178,6 +178,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'aave-v1',
         'aave-v2',
         'aave-v3',
+        'account delegation',
         'compound',
         'compound-v3',
         'dxdaomesa',
