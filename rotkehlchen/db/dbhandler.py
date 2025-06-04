@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Final, Literal, Optional, Unpack, cast, overload
+from typing import Any, Literal, Optional, Unpack, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -84,6 +84,7 @@ from rotkehlchen.db.utils import (
     db_tuple_to_str,
     deserialize_tags_from_db,
     form_query_to_filter_timestamps,
+    get_query_chunks,
     insert_tag_mappings,
     is_valid_db_blockchain_account,
     protect_password_sqlcipher,
@@ -151,10 +152,6 @@ log = RotkehlchenLogsAdapter(logger)
 KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
-
-# Chunk size to use when specifying large numbers of sql variables in a single sql statement.
-# The absolute max would be 32766 - see https://www.sqlite.org/limits.html#max_variable_number
-SQL_VARIABLE_CHUNK_SIZE: Final = 10000
 
 # Tuples that contain first the name of a table and then the columns that
 # reference assets ids. This is used to query all assets that a user has ever owned.
@@ -981,14 +978,12 @@ class DBHandler:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
         marked as ignored then we don't do anything. Also ignore history events with these assets.
         """
-        for i in range(0, len(assets), (chunk_size := SQL_VARIABLE_CHUNK_SIZE)):  # execute in chunks to avoid using too many placeholders  # noqa: E501
-            chunk = assets[i:i + chunk_size]
-            placeholders = ','.join(["('ignored_asset', ?)"] * (current_chunk_len := len(chunk)))
+        for chunk, placeholders in get_query_chunks(data=assets):
+            ms_placeholders = ','.join(["('ignored_asset', ?)"] * len(chunk))
             write_cursor.execute(
-                f'INSERT OR IGNORE INTO multisettings(name, value) VALUES {placeholders}',
+                f'INSERT OR IGNORE INTO multisettings(name, value) VALUES {ms_placeholders}',
                 chunk,
             )
-            placeholders = ','.join(['?'] * current_chunk_len)
             write_cursor.execute(
                 f'UPDATE history_events SET ignored=1 WHERE asset IN ({placeholders})',
                 chunk,
