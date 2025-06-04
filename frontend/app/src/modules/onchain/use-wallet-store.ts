@@ -5,7 +5,6 @@ import type {
   RecentTransaction,
   TransactionParams,
 } from '@/modules/onchain/types';
-import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
@@ -39,8 +38,8 @@ export const supportedNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
 
 const DEFAULT_GAS_LIMIT = 21000n; // for native transfers
 
-function buildAppKit(isPackaged: boolean): AppKit {
-  const projectId = isPackaged ? import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string : 'a8a07e2bdf6f30c0f749ba31504766bf';
+function buildAppKit(): AppKit {
+  const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
 
   const wagmiAdapter = new WagmiAdapter({
     networks: supportedNetworks,
@@ -73,9 +72,8 @@ export const useWalletStore = defineStore('wallet', () => {
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
   const isWalletConnect = ref<boolean>(false);
-  const { isPackaged } = useInterop();
 
-  const appKit: AppKit = buildAppKit(isPackaged);
+  const appKit: AppKit = buildAppKit();
 
   const { getAssetMappingHandler } = useAssetCacheStore();
   const { getChainFromChainId, getChainIdFromNamespace, updateStatePostTransaction } = useWalletHelper();

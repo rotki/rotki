@@ -106,7 +106,7 @@ export class WindowManager {
 
     createProtocol('app');
     // Load the index.html when not in development
-    await window.loadURL('app://./index.html');
+    await window.loadURL('app://localhost/index.html');
   }
 
   private createWindowState() {

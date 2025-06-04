@@ -384,7 +384,7 @@ const secondStep = '2';
   <div>
     <div
       class="py-4 border-t border-default"
-      :class="{ 'opacity-30': !connected }"
+      :class="{ 'opacity-30': !connected && activeSessions.length === 0 }"
     >
       <div class="flex gap-2">
         <div
