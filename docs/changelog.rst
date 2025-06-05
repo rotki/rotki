@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Some specific 0x settler swaps in Optimism will now be properly decoded.
+* :bug:`-` When exporting history as CSV the events will now properly appear sorted by timestamp.
 
 * :release:`1.39.0 <2025-06-04>`
 * :feature:`-` DigixDAO DGD refunds will now be properly decoded.

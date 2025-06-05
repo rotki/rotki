@@ -266,8 +266,8 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
 def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
     """Add history events to the database"""
     entries = predefined_events_to_insert()
-    for entry in entries:
-        with events_db.db.conn.write_ctx() as write_cursor:
+    with events_db.db.conn.write_ctx() as write_cursor:
+        for entry in entries:
             identifier = events_db.add_history_event(
                 write_cursor=write_cursor,
                 event=entry,

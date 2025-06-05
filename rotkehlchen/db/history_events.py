@@ -357,11 +357,15 @@ class DBHistoryEvents:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
                 with_pagination=False,
+                with_order=match_exact_events is True,  # skip order when we want the whole group of events since we order in an outer part of the query later  # noqa: E501
                 without_ignored_asset_filter=True,
             )
             prefix = 'SELECT COUNT(*), *'
         else:
-            filters, query_bindings = filter_query.prepare(with_pagination=False)
+            filters, query_bindings = filter_query.prepare(
+                with_order=match_exact_events is True,  # same as above
+                with_pagination=False,
+            )
             prefix = 'SELECT *'
 
         if has_premium:
@@ -374,8 +378,14 @@ class DBHistoryEvents:
             ), [entries_limit]
 
         if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
+            if filter_query.order_by is not None:
+                order_by = filter_query.order_by.prepare()
+            else:
+                order_by = ''
+
             return (
-                f'{prefix} FROM (SELECT {base_suffix} WHERE event_identifier IN (SELECT event_identifier FROM (SELECT {suffix}) {filters}))',  # noqa: E501
+                f'{prefix} FROM (SELECT {base_suffix} WHERE event_identifier IN '
+                f'(SELECT event_identifier FROM (SELECT {suffix}) {filters}) {order_by})',
                 limit + query_bindings,
             )
 
