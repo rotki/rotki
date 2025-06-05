@@ -189,6 +189,20 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def validate_predicate(
+        func: Callable[[Any], bool],
+) -> Callable[[Any], None]:
+    """Needed to turn a boolean validation function to a marshammlow >4 validator
+
+    Essentially if there is an error raise ValidationError
+    """
+    def inner_validate(value: Any) -> None:
+        if func(value) is False:
+            raise ValidationError('Invalid value.')
+
+    return inner_validate
+
+
 class AssetValueThresholdSchema(Schema):
     usd_value_threshold = AmountField(load_default=None)
 
@@ -328,7 +342,7 @@ class EvmTransactionQuerySchema(
     accounts = fields.List(
         fields.Nested(RequiredEvmAddressOptionalChainSchema),
         load_default=None,
-        validate=lambda data: len(data) != 0,
+        validate=webargs.validate.Length(min=1),
     )
     evm_chain = EvmChainNameField(required=False, load_default=None)
 
@@ -373,7 +387,7 @@ class EvmlikeTransactionQuerySchema(
     accounts = fields.List(
         fields.Nested(RequiredEvmlikeAddressOptionalChainSchema),
         load_default=None,
-        validate=lambda data: len(data) != 0,
+        validate=webargs.validate.Length(min=1),
     )
     chain = StrEnumField(enum_class=EvmlikeChain, load_default=None)
 
@@ -390,7 +404,7 @@ class EvmTransactionSchema(Schema):
 class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
     transactions = fields.List(
         fields.Nested(EvmTransactionSchema),
-        validate=lambda data: len(data) != 0,
+        validate=webargs.validate.Length(min=1),
     )
     delete_custom = fields.Boolean(load_default=False)
 
@@ -403,7 +417,7 @@ class EvmLikeTransactionSchema(Schema):
 class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
     transactions = fields.List(
         fields.Nested(EvmLikeTransactionSchema),
-        validate=lambda data: len(data) != 0,
+        validate=webargs.validate.Length(min=1),
     )
 
 
@@ -762,7 +776,7 @@ class CreateHistoryEventSchema(Schema):
         location = LocationField(required=True, limit_to=EVM_EVMLIKE_LOCATIONS)
 
         @validates('tx_hash')
-        def validate_tx_hash(self, tx_hash: str) -> None:
+        def validate_tx_hash(self, tx_hash: str, data_key: str) -> None:  # pylint: disable=unused-argument
             """Check if the provided tx_hash is present in the db.
             Raises ValidationError if tx_hash is missing.
             """
@@ -1383,13 +1397,13 @@ class ModifiableSettingsSchema(Schema):
         fields.Nested(ExchangeLocationIDSchema),
         load_default=None,
         # Check that all values are unique
-        validate=lambda data: len(data) == len(set(data)),
+        validate=validate_predicate(lambda data: len(data) == len(set(data))),
     )
     evmchains_to_skip_detection = fields.List(
         EvmChainLikeNameField,
         load_default=None,
         # Check that all values are unique
-        validate=lambda data: len(data) == len(set(data)),
+        validate=validate_predicate(lambda data: len(data) == len(set(data))),
     )
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
@@ -3564,7 +3578,7 @@ class BinanceSavingsSchema(BaseStakingQuerySchema):
 
 
 class EnsAvatarsSchema(Schema):
-    ens_name = fields.String(required=True, validate=is_potential_ens_name)
+    ens_name = fields.String(required=True, validate=validate_predicate(is_potential_ens_name))
 
 
 class ClearCacheSchema(Schema):
@@ -3591,7 +3605,7 @@ class ClearIconsCacheSchema(Schema):
 
 class ClearAvatarsCacheSchema(Schema):
     entries = fields.List(
-        fields.String(required=True, validate=is_potential_ens_name),
+        fields.String(required=True, validate=validate_predicate(is_potential_ens_name)),
         load_default=None,
     )
 
