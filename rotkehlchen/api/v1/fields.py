@@ -68,7 +68,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class IncludeExcludeListField(fields.Field):
+class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
     """ A field that accepts an object like the following and deserializes it to the proper types.
     {
         "values": [val1, val2, val3],
@@ -118,7 +118,7 @@ class IncludeExcludeListField(fields.Field):
 
         deserialized_behaviour = 'IN' if behaviour == 'include' else 'NOT IN'
         return IncludeExcludeFilterData(
-            values=deserialized_values,
+            values=deserialized_values,  # type: ignore[arg-type] #  it should be a history event
             operator=deserialized_behaviour,  # type: ignore[arg-type]
         )
 
@@ -272,11 +272,11 @@ class TaxFreeAfterPeriodField(fields.Field):
         return value
 
 
-class AmountField(fields.Field):
+class AmountField(fields.Field[FVal]):
 
     @staticmethod
     def _serialize(
-            value: FVal,
+            value: FVal | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -316,11 +316,11 @@ class PositiveAmountField(AmountField):
         return amount
 
 
-class PriceField(fields.Field):
+class PriceField(fields.Field[FVal]):
 
     @staticmethod
     def _serialize(
-            value: FVal,
+            value: FVal | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -345,15 +345,16 @@ class PriceField(fields.Field):
         return price
 
 
-class FloatingPercentageField(fields.Field):
+class FloatingPercentageField(fields.Field[FVal]):
 
     @staticmethod
     def _serialize(
-            value: FVal,
+            value: FVal | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return str(value)
 
     def _deserialize(
@@ -400,8 +401,7 @@ class BlockchainField(fields.Field):
 
 
 class SerializableEnumField(fields.Field):
-    """A field that takes an enum following the SerializableEnumMixin interface
-    """
+    """A field that takes an enum following the SerializableEnumMixin interface"""
     def __init__(
             self,
             enum_class: type[SerializableEnumNameMixin | (SerializableEnumIntValueMixin | (DBCharEnumMixIn | DBIntEnumMixIn))],  # noqa: E501
@@ -420,11 +420,12 @@ class SerializableEnumField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: SerializableEnumMixin,
+            value: SerializableEnumMixin | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return value.serialize()
 
     def _deserialize(
@@ -460,11 +461,12 @@ class StrEnumField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: SerializableEnumMixin,
+            value: SerializableEnumMixin | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return value.value
 
     def _deserialize(
@@ -493,7 +495,7 @@ class EvmChainNameField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: ChainID,
+            value: ChainID | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -531,7 +533,7 @@ class EvmChainLikeNameField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: SupportedBlockchain,
+            value: SupportedBlockchain | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -574,7 +576,7 @@ class AssetField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: Asset,
+            value: Asset | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -631,7 +633,7 @@ class MaybeAssetField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: Asset,
+            value: Asset | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
@@ -661,11 +663,12 @@ class EvmAddressField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: ChecksumEvmAddress,
+            value: ChecksumEvmAddress | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return str(value)
 
     def _deserialize(
@@ -691,11 +694,12 @@ class EVMTransactionHashField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: EVMTxHash,
+            value: EVMTxHash | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return value.hex()
 
     def _deserialize(
@@ -729,11 +733,12 @@ class AssetTypeField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: AssetType,
+            value: AssetType | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return str(value)
 
     def _deserialize(
@@ -762,11 +767,12 @@ class LocationField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: Location,
+            value: Location | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return str(value)
 
     def _deserialize(
@@ -808,11 +814,12 @@ class ApiSecretField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: ApiSecret,
+            value: ApiSecret | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         return str(value.decode())
 
     def _deserialize(
@@ -850,11 +857,12 @@ class AssetConflictsField(fields.Field):
 
     @staticmethod
     def _serialize(
-            value: dict[str, Any],
+            value: dict[str, Any] | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
             **_kwargs: Any,
     ) -> dict[str, Any]:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
         # TODO: If this ever gets used we probably need to change
         # the dict keys to identifiers from assets
         return value
