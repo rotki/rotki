@@ -137,23 +137,21 @@ const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventRow[]
   const mapping: Record<string, HistoryEventRow[]> = {};
   for (const event of get(events)) {
     if (Array.isArray(event)) {
-      if (event.length > 0) {
-        const subevent = event[0];
-        if (mapping[subevent.eventIdentifier]) {
-          mapping[subevent.eventIdentifier].push(event);
+      const filtered = event.filter(({ hidden }) => !hidden);
+      if (filtered.length > 0) {
+        const eventId = filtered[0].eventIdentifier;
+        if (!mapping[eventId]) {
+          mapping[eventId] = [];
         }
-        else {
-          mapping[subevent.eventIdentifier] = [event];
-        }
+        mapping[eventId].push(filtered);
       }
     }
-    else {
-      if (mapping[event.eventIdentifier]) {
-        mapping[event.eventIdentifier].push(event);
+    else if (!event.hidden) {
+      const eventId = event.eventIdentifier;
+      if (!mapping[eventId]) {
+        mapping[eventId] = [];
       }
-      else {
-        mapping[event.eventIdentifier] = [event];
-      }
+      mapping[eventId].push(event);
     }
   }
   return mapping;
