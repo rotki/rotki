@@ -9,7 +9,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_SOL, A_USDC
+from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_USDC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -18,6 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 

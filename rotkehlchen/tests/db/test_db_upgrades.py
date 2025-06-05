@@ -13,7 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_COW, A_ETH, A_LTC
+from rotkehlchen.constants.assets import A_COW, A_ETH
 from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
     ALLASSETIMAGESDIR_NAME,
@@ -47,6 +47,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.oracles.structures import CurrentPriceOracle
+from rotkehlchen.tests.utils.constants import A_LTC
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     column_exists,

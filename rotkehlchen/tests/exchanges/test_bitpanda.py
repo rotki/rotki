@@ -4,14 +4,14 @@ from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.constants.assets import A_ADA, A_BEST, A_ETH, A_EUR, A_LTC, A_USDT
+from rotkehlchen.constants.assets import A_BEST, A_ETH, A_EUR, A_USDT
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.constants import A_AXS, A_TRY
+from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_LTC, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now

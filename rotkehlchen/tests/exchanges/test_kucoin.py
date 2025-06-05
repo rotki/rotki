@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_SOL, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
@@ -20,7 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO
+from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_SOL
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse

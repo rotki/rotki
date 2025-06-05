@@ -18,7 +18,6 @@ from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
-    A_ADA,
     A_BTC,
     A_DOT,
     A_ETH,
@@ -50,6 +49,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import (
+    A_ADA,
     A_DAO,
     A_EUR,
 )

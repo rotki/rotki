@@ -30,7 +30,6 @@ from rotkehlchen.constants.assets import (
     A_BAT,
     A_CRV,
     A_DAI,
-    A_DOGE,
     A_ETH,
     A_LUSD,
     A_PICKLE,
@@ -56,6 +55,7 @@ from rotkehlchen.globaldb.handler import GLOBAL_DB_VERSION, GlobalDBHandler
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
+from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import (
     create_initial_globaldb_test_tokens,

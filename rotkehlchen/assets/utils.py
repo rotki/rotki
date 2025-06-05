@@ -434,24 +434,6 @@ def symbol_to_asset_or_token(
     return asset
 
 
-def symbol_to_evm_token(symbol: str) -> EvmToken:
-    """Tries to turn the given symbol to an evm token
-
-    May raise:
-    - UnknownAsset if an evm token can't be found by the symbol or if
-    more than one tokens match this symbol
-    """
-    maybe_asset = get_crypto_asset_by_symbol(
-        symbol=symbol,
-        asset_type=AssetType.EVM_TOKEN,
-        chain_id=ChainID.ETHEREUM,
-    )
-    if maybe_asset is None:
-        raise UnknownAsset(symbol)
-
-    return maybe_asset.resolve_to_evm_token()
-
-
 CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.ETHEREUM: A_WETH,
     SupportedBlockchain.ARBITRUM_ONE: A_WETH_ARB,

@@ -4,7 +4,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
-    A_ADA,
     A_BAT,
     A_BCH,
     A_BNB,
@@ -12,7 +11,6 @@ from rotkehlchen.constants.assets import (
     A_BTC,
     A_BUSD,
     A_DAI,
-    A_DOGE,
     A_DOT,
     A_ETC,
     A_ETH,
@@ -20,14 +18,11 @@ from rotkehlchen.constants.assets import (
     A_ETH_MATIC,
     A_EUR,
     A_KNC,
-    A_LTC,
     A_SAI,
-    A_SOL,
     A_UNI,
     A_USD,
     A_USDC,
     A_USDT,
-    A_XRP,
 )
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.db.filtering import (
@@ -43,14 +38,19 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.constants import (
+    A_ADA,
     A_AXS,
     A_CRO,
     A_DASH,
+    A_DOGE,
     A_GBP,
     A_KCS,
+    A_LTC,
     A_MCO,
     A_NANO,
+    A_SOL,
     A_XMR,
+    A_XRP,
     A_XTZ,
 )
 from rotkehlchen.types import Location, Timestamp, TimestampMS
