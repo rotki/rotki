@@ -475,7 +475,7 @@ def test_check_airdrops(
         'link': 'https://eigenfoundation.org',
         'icon': 'eigen.svg',
         'claimed': False,
-        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/eigen.svg',
+        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/eigenlayer.png',
         'has_decoder': True,
     }
     assert len(data[TEST_POAP1]) == 1
