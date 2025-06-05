@@ -1,5 +1,6 @@
 import csv
 import re
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,7 @@ from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import DEFAULT_DATE_DISPLAY_FORMAT
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import (
@@ -89,12 +91,20 @@ def assert_csv_export_response(
     timestamp_check = re.compile(r'\d{2}/\d{2}/\d{4}')
     with csv_path.open(newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
-        count = 0
-        for row in reader:
+        count, last_ts = 0, 0.0
+        for idx, row in enumerate(reader):
             assert tuple(row.keys())[:len(base_headers)] == base_headers, 'order of columns does not match'  # noqa: E501
 
             for attr in base_headers:
                 if attr == 'timestamp':
+                    timestamp_as_int = datetime.strptime(
+                        row['timestamp'],
+                        DEFAULT_DATE_DISPLAY_FORMAT,
+                    ).astimezone().timestamp()
+                    if idx > 0:  # ensure that the events are sorted by timestamp
+                        assert timestamp_as_int <= last_ts
+
+                    last_ts = timestamp_as_int
                     assert timestamp_check.search(row['timestamp']), 'timestamp is not properly formatted'  # noqa: E501
 
                 assert row[attr] is not None
