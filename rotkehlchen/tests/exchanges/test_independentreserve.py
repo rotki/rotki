@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.constants.assets import A_AUD, A_ETC, A_ETH
+from rotkehlchen.constants.assets import A_ETC, A_ETH
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.data_structures import Location
 from rotkehlchen.exchanges.independentreserve import (
@@ -14,6 +14,7 @@ from rotkehlchen.exchanges.independentreserve import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.tests.utils.constants import A_AUD
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
 

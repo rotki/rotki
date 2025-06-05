@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Final, cast
 
 import pytest
 
@@ -38,7 +38,6 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XDAI,
 )
-from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
@@ -67,6 +66,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
+
+
+EXP18: Final = FVal(1e18)
 
 
 @pytest.fixture(name='populate_eure_pool')

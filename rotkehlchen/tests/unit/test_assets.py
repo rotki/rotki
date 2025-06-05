@@ -16,8 +16,8 @@ from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import (
+    get_crypto_asset_by_symbol,
     get_or_create_evm_token,
-    symbol_to_evm_token,
 )
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME
@@ -588,6 +588,23 @@ def test_case_does_not_matter_for_asset_constructor():
     assert a1 == a2
     assert a1.identifier == 'BTC'
     assert a2.identifier == 'BTC'
+
+    def symbol_to_evm_token(symbol: str) -> EvmToken:
+        """Tries to turn the given symbol to an evm token
+
+        May raise:
+        - UnknownAsset if an evm token can't be found by the symbol or if
+        more than one tokens match this symbol
+        """
+        maybe_asset = get_crypto_asset_by_symbol(
+            symbol=symbol,
+            asset_type=AssetType.EVM_TOKEN,
+            chain_id=ChainID.ETHEREUM,
+        )
+        if maybe_asset is None:
+            raise UnknownAsset(symbol)
+
+        return maybe_asset.resolve_to_evm_token()
 
     a3 = symbol_to_evm_token('DAI')
     a4 = symbol_to_evm_token('dAi')

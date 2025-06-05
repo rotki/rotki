@@ -10,13 +10,14 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
-from rotkehlchen.constants.assets import A_CRV, A_DAI, A_DOGE, A_USDT, A_ZRX
+from rotkehlchen.constants.assets import A_CRV, A_DAI, A_USDT, A_ZRX
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS

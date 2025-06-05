@@ -172,9 +172,6 @@ def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
     return klass
 
 
-DEFI_BALANCES_REQUERY_SECONDS = 600
-
-
 # Mapping to token symbols to ignore. True means all
 DEFI_PROTOCOLS_TO_SKIP_ASSETS = {
     # aTokens are already detected at token balance queries

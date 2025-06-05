@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Generic, Literal, NamedTuple, Self, TypeVar
+from typing import Any, Final, Generic, Literal, NamedTuple, Self, TypeVar
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -50,19 +50,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ALL_EVENTS_DATA_JOIN = """FROM history_events
+ALL_EVENTS_DATA_JOIN: Final = """FROM history_events
 LEFT JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier
 LEFT JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier """  # noqa: E501
-EVM_EVENT_JOIN = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
-ETH_STAKING_EVENT_JOIN = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
+EVM_EVENT_JOIN: Final = 'FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier '  # noqa: E501
+ETH_STAKING_EVENT_JOIN: Final = 'FROM history_events INNER JOIN eth_staking_events_info ON history_events.identifier=eth_staking_events_info.identifier '  # noqa: E501
 ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
 
 T = TypeVar('T')
 V = TypeVar('V')
-T_FilterQ = TypeVar('T_FilterQ', bound='DBFilterQuery')
-T_HistoryBaseEntryFilterQ = TypeVar('T_HistoryBaseEntryFilterQ', bound='HistoryBaseEntryFilterQuery')  # noqa: E501
-T_EthSTakingFilterQ = TypeVar('T_EthSTakingFilterQ', bound='EthStakingEventFilterQuery')
 
 
 class DBFilterOrder(NamedTuple):

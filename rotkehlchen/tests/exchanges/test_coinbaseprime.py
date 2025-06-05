@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.converters import Asset
-from rotkehlchen.constants.assets import A_ENS, A_SOL, A_USDC
+from rotkehlchen.constants.assets import A_ENS, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -21,6 +21,7 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.inquirer import A_ETH, A_USD
+from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import FVal, Location

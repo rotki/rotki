@@ -6,7 +6,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_woo
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_SOL, A_USDT, A_WOO
+from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT, A_WOO
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.woo import API_MAX_LIMIT, Woo
@@ -14,6 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 

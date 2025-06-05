@@ -8,7 +8,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_LTC, A_USD
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_GUSD, A_LINK, A_USD
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -21,7 +21,7 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
 )
-from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
+from rotkehlchen.tests.utils.constants import A_LTC, A_PAXG, A_ZEC
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse

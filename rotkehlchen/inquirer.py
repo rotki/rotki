@@ -790,21 +790,6 @@ class Inquirer:
         ).get(from_asset, ZERO_PRICE)
 
     @staticmethod
-    def find_price_and_oracle(
-            from_asset: Asset,
-            to_asset: Asset,
-            ignore_cache: bool = False,
-            skip_onchain: bool = False,
-    ) -> tuple[Price, CurrentPriceOracle]:
-        """Wrapper for find_prices_and_oracles to get the price and oracle for a single asset."""
-        return Inquirer.find_prices_and_oracles(
-            from_assets=[from_asset],
-            to_asset=to_asset,
-            ignore_cache=ignore_cache,
-            skip_onchain=skip_onchain,
-        ).get(from_asset, (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN))
-
-    @staticmethod
     def find_prices(
             from_assets: Sequence[Asset],
             to_asset: Asset,

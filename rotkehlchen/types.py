@@ -134,7 +134,6 @@ class ExternalService(SerializableEnumNameMixin):
     BEACONCHAIN = auto()
     LOOPRING = auto()
     OPENSEA = auto()
-    BINANCE_SC_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
     THEGRAPH = auto()
@@ -219,9 +218,6 @@ TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress,
 
 T_Price = FVal
 Price = NewType('Price', T_Price)
-
-T_TradeID = str
-TradeID = NewType('TradeID', T_TradeID)
 
 
 class AssetAmount(NamedTuple):
@@ -872,7 +868,6 @@ EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + 
 
 # For now Location enum has only evmlike chains. This will change so keep separate variable
 BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE
-BLOCKCHAIN_LOCATIONS: Final = EVM_EVMLIKE_LOCATIONS
 
 
 class ExchangeAuthCredentials(NamedTuple):

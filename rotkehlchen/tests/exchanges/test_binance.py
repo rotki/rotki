@@ -13,7 +13,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants.assets import A_ADA, A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_USDT, A_WBTC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
@@ -31,7 +31,7 @@ from rotkehlchen.exchanges.data_structures import Location
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.tests.utils.constants import A_AXS, A_BUSD, A_LUNA, A_RDN
+from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_FIATBUY_RESPONSE,

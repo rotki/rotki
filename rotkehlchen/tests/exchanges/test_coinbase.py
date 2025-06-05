@@ -8,7 +8,7 @@ import requests
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_coinbase
-from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_SOL, A_USD, A_USDC
+from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_ETH, A_EUR, A_USD, A_USDC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.constants import A_XTZ
+from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TimestampMS

@@ -10,10 +10,8 @@ A_ETH2 = Asset('ETH2')
 A_ETC = Asset('ETC')
 A_KSM = Asset('KSM')
 A_AVAX = Asset('AVAX')
-A_DOGE = Asset('DOGE')
 A_BSQ = Asset('BSQ')
 A_KFEE = Asset('KFEE')
-A_SOL = Asset('SOL-2')
 A_XDAI = Asset('XDAI')
 A_BSC_BNB = Asset('BNB')
 
@@ -132,15 +130,10 @@ A_FARM_CRVRENWBTC = Asset('eip155:1/erc20:0x9aA8F427A17d6B0d91B6262989EdC7D45d6a
 
 
 # Needed by independentreserve
-A_XRP = Asset('XRP')
-A_ADA = Asset('ADA')
 A_DOT = Asset('DOT')
-A_LTC = Asset('LTC')
 A_GRT = Asset('eip155:1/erc20:0xc944E90C64B2c07662A292be6244BDf05Cda44a7')
 A_GRT_ARB = Asset('eip155:42161/erc20:0x9623063377AD1B27544C965cCd7342f7EA7e88C7')
 A_OMG = Asset('eip155:1/erc20:0xd26114cd6EE289AccF82350c8d8487fedB8A0C07')
-
-A_AUD = Asset('AUD')
 
 # Needed by cryptocompare.py
 A_KRW = Asset('KRW')
