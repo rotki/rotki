@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
-NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS: Final = 0
+NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS: Final = 30
 
 
 def _get_all_counterparty_mappings(globaldb: 'GlobalDBHandler') -> dict[str, Any]:
@@ -50,7 +50,7 @@ def test_counterparty_asset_mappings_query(
         json={'counterparty': None},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == 0
+    assert len(result['entries']) == result['entries_found'] == NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS  # noqa: E501
 
     response = requests.post(  # query all hyperliquid mappings
         api_url_for(
@@ -60,7 +60,7 @@ def test_counterparty_asset_mappings_query(
         json={'counterparty': 'hyperliquid'},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) == result['entries_found'] == 0
+    assert len(result['entries']) == result['entries_found'] == NUM_PACKAGED_COUNTERPARTY_ASSETS_MAPPINGS  # noqa: E501
 
     response = requests.post(  # query by symbol all the hyperliquid mappings
         api_url_for(

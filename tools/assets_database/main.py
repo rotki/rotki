@@ -87,6 +87,7 @@ def populate_location_mappings():
         rotki_updater.check_for_updates(updates=[
             UpdateType.LOCATION_ASSET_MAPPINGS,
             UpdateType.LOCATION_UNSUPPORTED_ASSETS,
+            UpdateType.COUNTERPARTY_ASSET_MAPPINGS,
         ])
 
 

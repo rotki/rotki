@@ -696,7 +696,7 @@ def _check_counterparty_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) 
 
     for addition, is_present_count in zip(
         COUNTERPARTY_ASSET_MAPPINGS_DATA['counterparty_asset_mappings']['additions'],
-        (0, 0),
+        (1, 1),
         strict=True,
     ):
         result = cursor.execute(
