@@ -473,6 +473,26 @@ def test_erc721_token_ownership_verification(
         token_kind=EvmTokenKind.ERC721,
         collectible_id='7809',
     )
+    # regression test: broken erc721 implementations to ensure token detection
+    # doesn't fail when ownerOf calls return empty or fail
+    broken_erc721_token_1 = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0x0E3A2A1f2146d86A604adc220b4967A898D7Fe07'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id='1',
+        name='BROKEN #1',
+        symbol='BROKEN',
+    )
+    broken_erc721_token_2 = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xFaC7BEA255a6990f749363002136aF6556b31e04'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+        collectible_id='2',
+        name='BROKEN #2',
+        symbol='BROKEN',
+    )
 
     with database.conn.write_ctx() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -537,6 +557,26 @@ def test_erc721_token_ownership_verification(
                 amount=ONE,
                 location_label=user_address,
                 asset=token_7809,
+            ), HistoryEvent(
+                event_identifier='1x',
+                sequence_index=0,
+                timestamp=TimestampMS(1645360870000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=broken_erc721_token_1,
+            ), HistoryEvent(
+                event_identifier='2x',
+                sequence_index=0,
+                timestamp=TimestampMS(1645460870000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                amount=ONE,
+                location_label=user_address,
+                asset=broken_erc721_token_2,
             )],
         )
 
