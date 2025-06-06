@@ -2516,28 +2516,28 @@ Query supported ethereum modules
    :statuscode 409: Some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Querying evm transactions
+Querying blockchain transactions
 =================================
 
-.. http:post:: /api/(version)/blockchains/evm/transactions/
+.. http:post:: /api/(version)/blockchains/transactions/
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a POST on the evm transactions endpoint will query all evm transactions for all the tracked user addresses and save them to the DB. Caller can also specify a chain and/or an address to further filter the query.
+   Doing a POST on the blockchains transactions endpoint will query all transactions for all the tracked user addresses and save them to the DB. Caller can also specify a list of accounts to further filter the query, where each account contains an address and optionally its blockchain.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/blockchains/evm/transactions HTTP/1.1
+      POST /api/1/blockchains/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {
           "accounts": [{
               "address": "0x3CAdbeB58CB5162439908edA08df0A305b016dA8",
-              "evm_chain": "optimism"
+              "blockchain": "optimism"
           }, {
               "address": "0xF2Eb18a344b2a9dC769b1914ad035Cbb614Fd238"
           }],
@@ -2545,11 +2545,9 @@ Querying evm transactions
           "to_timestamp": 1572080165
       }
 
-   :reqjson list[string] accounts: List of accounts to filter by. Each account contains an ``"address"`` key which is required and is an evm address. It can also contains an ``"evm_chain"`` field which is the specific chain for which to limit the address.
+   :reqjson list[string] accounts: List of accounts to filter by. Each account contains a required ``address`` field which is a blockchain address and an optional ``blockchain`` field which is the specific chain for which to limit the address.
    :reqjson int from_timestamp: The timestamp after which to return transactions. If not given zero is considered as the start.
    :reqjson int to_timestamp: The timestamp until which to return transactions. If not given all transactions from ``from_timestamp`` until now are returned.
-   :reqjson string evm_chain: Optional. The name of the evm chain by which to filter all transactions. ``"ethereum"``, ``"optimism"`` etc.
-
 
    **Example Response**:
 

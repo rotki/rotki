@@ -62,7 +62,7 @@ from rotkehlchen.balances.manual import (
     get_manually_tracked_balances,
     remove_manually_tracked_balances,
 )
-from rotkehlchen.chain.accounts import SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
@@ -100,7 +100,6 @@ from rotkehlchen.chain.evm.names import (
 )
 from rotkehlchen.chain.evm.types import (
     ChainID,
-    EvmlikeAccount,
     NodeName,
     RemoteDataQueryStatus,
     WeightedNode,
@@ -147,7 +146,6 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     DBFilterQuery,
     Eth2DailyStatsFilterQuery,
-    EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
@@ -238,6 +236,7 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
+    CHAINS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_EVMLIKE_LOCATIONS,
@@ -2663,25 +2662,6 @@ class RestAPI:
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @async_api_call()
-    def refresh_evmlike_transactions(
-            self,
-            from_timestamp: Timestamp,  # pylint: disable=unused-argument
-            to_timestamp: Timestamp,  # pylint: disable=unused-argument
-            accounts: list[EvmlikeAccount] | None,
-            chain: EvmlikeChain | None,  # pylint: disable=unused-argument
-    ) -> dict[str, Any]:
-        """Refresh evmlike chain transactions.
-        The chain and timestamps are unused args since this is currently only for zksynclite,
-        and zksynclite's API doesn't support queries by timestamp."""
-        message, status_code = '', HTTPStatus.OK
-        # lazy mode. At the moment this can only be ZKSYnc lite
-        addresses = [x.address for x in accounts] if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
-        for address in addresses:
-            self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(address)
-
-        return {'result': True, 'message': message, 'status_code': status_code}
-
     def reset_eth_staking_data(
             self,
             entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
@@ -2731,21 +2711,58 @@ class RestAPI:
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
-    def refresh_evm_transactions(
+    def refresh_transactions(
             self,
-            filter_query: EvmTransactionsFilterQuery,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[OptionalBlockchainAccount] | None,
     ) -> dict[str, Any]:
-        chain_ids: tuple[SUPPORTED_CHAIN_IDS]
-        if filter_query.chain_id is None:
-            chain_ids = get_args(SUPPORTED_CHAIN_IDS)
-        else:
-            chain_ids = (filter_query.chain_id,)
+        blockchain_addresses: dict[SupportedBlockchain, ListOfBlockchainAddresses]
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            if accounts is None or len(accounts) == 0:  # No accounts specified. Get all accounts from DB.  # noqa: E501
+                blockchain_addresses = {
+                    chain: addr_list for chain in CHAINS_WITH_TRANSACTIONS
+                    if len(addr_list := self.rotkehlchen.data.db.get_single_blockchain_addresses(
+                        cursor=cursor,
+                        blockchain=chain,
+                    )) != 0
+                }
+            else:  # Use specified accounts, getting all chains in which an account is tracked if the chain is not specified.  # noqa: E501
+                blockchain_addresses = defaultdict(list)
+                unspecified_chain_addresses: list[BlockchainAddress] = []
+                for account in accounts:
+                    if account.chain is not None:
+                        blockchain_addresses[account.chain].append(account.address)  # type: ignore[arg-type]  # accounts with the same chain will have the same type of address
+                    else:
+                        unspecified_chain_addresses.append(account.address)
+
+                if len(unspecified_chain_addresses) > 0:
+                    for address, chain in self.rotkehlchen.data.db.get_blockchains_for_accounts(
+                        cursor=cursor,
+                        accounts=unspecified_chain_addresses,
+                    ):
+                        blockchain_addresses[chain].append(address)  # type: ignore[arg-type]  # same as above
 
         result, message, status_code = True, '', HTTPStatus.OK
-        for chain_id in chain_ids:
-            evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
+        for blockchain, addresses in blockchain_addresses.items():
             try:
-                evm_manager.transactions.query_chain(filter_query)
+                if blockchain.is_evm():
+                    self.rotkehlchen.chains_aggregator.get_chain_manager(
+                        blockchain=blockchain,  # type: ignore[arg-type]  # will be evm blockchain
+                    ).transactions.query_chain(
+                        from_timestamp=from_timestamp,
+                        to_timestamp=to_timestamp,
+                        addresses=addresses,
+                    )
+                elif blockchain.is_evmlike():  # currently only zksync lite
+                    for address in addresses:
+                        self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(address)  # type: ignore[arg-type]  # all evmlike will be ChecksumEvmAddress
+                # TODO: Add elif for bitcoin here
+                else:
+                    result = False
+                    message = f'Transaction querying for {blockchain} is not implemented.'
+                    status_code = HTTPStatus.BAD_REQUEST
+                    break
             except RemoteError as e:
                 result, message, status_code = False, str(e), HTTPStatus.BAD_GATEWAY
                 break
