@@ -3,18 +3,33 @@ import type { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
-import process from 'node:process';
 import { getMimeType } from '@electron/main/create-protocol';
 import { assert } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
 import * as httpProxy from 'http-proxy';
 
-export const HttpStatus = {
+const HttpStatus = {
   OK: 200,
   BAD_REQUEST: 400,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONTENT_LENGTH_REQUIRED: 411,
+  INTERNAL_SERVER_ERROR: 500,
 } as const;
+
+type HttpStatus = typeof HttpStatus[keyof typeof HttpStatus];
+
+const HttpErrorMessage = {
+  INVALID_CONTENT_TYPE: 'Invalid content type',
+  INVALID_REQUEST_SCHEMA: 'Invalid request schema',
+  MALFORMED_JSON: 'Malformed JSON',
+  ACCESS_DENIED: 'Access denied',
+  REQUEST_SIZE_LIMIT: 'Only requests up to 0.5MB are allowed',
+  INVALID_CONTENT_LENGTH: 'No valid content length',
+  RESOURCE_NOT_FOUND: 'Resource not found',
+} as const;
+
+type HttpErrorMessage = typeof HttpErrorMessage[keyof typeof HttpErrorMessage];
 
 type Callback = (addresses: string[]) => void;
 
@@ -22,6 +37,7 @@ export class HttpServer {
   private static readonly applicationJson = 'application/json';
   private static readonly headersHtml = { 'Content-Type': 'text/html' };
   private static readonly headerJson = { 'Content-Type': HttpServer.applicationJson };
+  private static readonly maxContentLength = 524288;
 
   private static readonly fileWhitelist = [
     'address-import/img/alert.svg',
@@ -35,13 +51,13 @@ export class HttpServer {
 
   constructor(private readonly logger: LogService) {}
 
-  private error(message: string) {
+  private error(message: HttpErrorMessage) {
     return JSON.stringify({
       message,
     });
   }
 
-  private invalidRequest(res: ServerResponse, message: string, status: number = HttpStatus.BAD_REQUEST) {
+  private invalidRequest(res: ServerResponse, message: HttpErrorMessage, status: HttpStatus = HttpStatus.BAD_REQUEST) {
     res.writeHead(status, HttpServer.headerJson);
     res.write(this.error(message));
     res.end();
@@ -55,7 +71,7 @@ export class HttpServer {
 
   private handleAddresses(req: IncomingMessage, res: ServerResponse, cb: Callback) {
     if (req.headers['content-type'] !== HttpServer.applicationJson) {
-      this.invalidRequest(res, `Invalid content type: ${req.headers['content-type']}`);
+      this.invalidRequest(res, HttpErrorMessage.INVALID_CONTENT_TYPE);
       return;
     }
     let data = '';
@@ -66,7 +82,7 @@ export class HttpServer {
       try {
         const payload = JSON.parse(data);
         if (!('addresses' in payload) || !Array.isArray(payload.addresses)) {
-          this.invalidRequest(res, 'Invalid request schema');
+          this.invalidRequest(res, HttpErrorMessage.INVALID_REQUEST_SCHEMA);
           return;
         }
         cb(payload.addresses);
@@ -74,7 +90,7 @@ export class HttpServer {
         res.end();
       }
       catch {
-        this.invalidRequest(res, 'Malformed JSON');
+        this.invalidRequest(res, HttpErrorMessage.MALFORMED_JSON);
       }
     });
   }
@@ -82,7 +98,7 @@ export class HttpServer {
   private serveFile(res: ServerResponse, paths: string, url: string) {
     const requestedPath = this.sanitize(url);
     if (!HttpServer.fileWhitelist.includes(requestedPath)) {
-      this.invalidRequest(res, 'non whitelisted path accessed');
+      this.invalidRequest(res, HttpErrorMessage.ACCESS_DENIED, HttpStatus.FORBIDDEN);
       return;
     }
     const filePath = path.join(paths, requestedPath);
@@ -118,13 +134,13 @@ export class HttpServer {
     if (contentLengthHeader) {
       try {
         const contentLength = Number.parseInt(contentLengthHeader);
-        if (contentLength > 524288) {
-          this.invalidRequest(res, 'Only requests up to 0.5MB are allowed', HttpStatus.BAD_REQUEST);
+        if (contentLength > HttpServer.maxContentLength) {
+          this.invalidRequest(res, HttpErrorMessage.REQUEST_SIZE_LIMIT, HttpStatus.BAD_REQUEST);
           return;
         }
       }
       catch {
-        this.invalidRequest(res, 'No valid content length', HttpStatus.CONTENT_LENGTH_REQUIRED);
+        this.invalidRequest(res, HttpErrorMessage.INVALID_CONTENT_LENGTH, HttpStatus.CONTENT_LENGTH_REQUIRED);
         return;
       }
     }
@@ -142,7 +158,7 @@ export class HttpServer {
       this.serveFile(res, basePath, url);
     }
     else {
-      this.invalidRequest(res, `${req.url} was not found on server`, HttpStatus.NOT_FOUND);
+      this.invalidRequest(res, HttpErrorMessage.RESOURCE_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
   }
 
@@ -182,8 +198,8 @@ export class HttpServer {
 
         // Proxy request to Vite server
         proxy.web(req, res, {}, (err: any) => {
-          console.error('Proxy error:', err);
-          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          this.logger.log(`Proxy error: ${err}`);
+          res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
           res.end('Proxy error');
         });
       });
@@ -193,42 +209,48 @@ export class HttpServer {
       });
     }
     else {
-      const resourcesDir = process.resourcesPath ? process.resourcesPath : import.meta.dirname;
-      const distPath = path.join(resourcesDir, 'app.asar', 'dist');
-      const indexPath = path.join(distPath, 'index.html');
+      const currentDir = import.meta.dirname;
 
       const server = http.createServer((req, res) => {
-        let requestFile = req.url?.split('?')[0] ?? '/';
+        const url = new URL(`http://localhost:${port}${req.url}`);
+        const pathname = decodeURIComponent(url.pathname);
 
-        requestFile = path.normalize(requestFile).replace(/^(\.\.[/\\])+/, '');
+        let requestFile = path.normalize(pathname)
+          .replace(/^(\.\.[/\\])+/, '') // Remove leading "../" sequences
+          .replace(/^[/\\]+/, '') // Remove leading slashes
+          .replace(/~/g, ''); // Remove tilde characters
 
-        if (requestFile === '/' || requestFile.startsWith('/#/')) {
-          requestFile = '/index.html'; // Always load index.html if on root or SPA route
+        if (!requestFile || requestFile === '/' || requestFile.startsWith('/#/')) {
+          requestFile = 'index.html'; // Always load index.html if on root or SPA route
         }
 
-        const filePath = path.join(distPath, requestFile);
+        const filePath = path.join(currentDir, requestFile);
 
-        if (!filePath.startsWith(distPath)) {
-          res.writeHead(403, { 'Content-Type': 'text/plain' });
+        if (!filePath.startsWith(currentDir)) {
+          res.writeHead(HttpStatus.FORBIDDEN, { 'Content-Type': 'text/plain' });
           return res.end('403 Forbidden: Access Denied');
         }
 
-        const mimeType = getMimeType(filePath);
+        if (!fs.existsSync(filePath)) {
+          res.writeHead(HttpStatus.NOT_FOUND, { 'Content-Type': 'text/plain' });
+          res.end(`404 File not Found`);
+          return;
+        }
 
-        fs.readFile(fs.existsSync(filePath) ? filePath : indexPath, (err, data) => {
+        fs.readFile(filePath, (err, data) => {
           if (err) {
-            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
             res.end(`500 Internal Server Error: Failed to load ${filePath}\nError: ${err.message}`);
           }
           else {
-            res.writeHead(200, { 'Content-Type': mimeType });
+            res.writeHead(HttpStatus.OK, { 'Content-Type': getMimeType(filePath) });
             res.end(data);
           }
         });
       });
 
       server.listen(port, () => {
-        this.logger.log(`Static Server started at http://localhost:${port}`);
+        this.logger.log(`Wallet bridge server started at http://localhost:${port}`);
       });
     }
   }
