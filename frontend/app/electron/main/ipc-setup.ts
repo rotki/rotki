@@ -6,7 +6,7 @@ import type { ProgressInfo } from 'electron-builder';
 import process from 'node:process';
 import { IpcCommands } from '@electron/ipc-commands';
 import { loadConfig } from '@electron/main/config';
-import { startHttp, startWalletConnectBridgeServer, stopHttp } from '@electron/main/http';
+import { HttpServer } from '@electron/main/http';
 import { PasswordManager } from '@electron/main/password-manager';
 import { selectPort } from '@electron/main/port-utils';
 import { assert, type DebugSettings } from '@rotki/common';
@@ -28,6 +28,7 @@ interface Callbacks {
 
 export class IpcManager {
   private readonly passwordManager = new PasswordManager();
+  private readonly httpServer: HttpServer;
   private walletImportTimeout: NodeJS.Timeout | undefined;
 
   private firstStart = true;
@@ -53,7 +54,9 @@ export class IpcManager {
     private readonly logger: LogService,
     private readonly settings: SettingsManager,
     private readonly config: AppConfig,
-  ) {}
+  ) {
+    this.httpServer = new HttpServer(logger);
+  }
 
   initialize(callbacks: Callbacks) {
     this.callbacks = callbacks;
@@ -162,7 +165,7 @@ export class IpcManager {
     try {
       const portNumber = await selectPort(40000);
       return await new Promise((resolve) => {
-        const port = startHttp(
+        const port = this.httpServer.start(
           addresses => resolve({ addresses }),
           portNumber,
         );
@@ -175,7 +178,7 @@ export class IpcManager {
           clearTimeout(this.walletImportTimeout);
 
         this.walletImportTimeout = setTimeout(() => {
-          stopHttp();
+          this.httpServer.stop();
           resolve({ error: 'waiting timeout' });
         }, 120000);
       });
@@ -199,7 +202,7 @@ export class IpcManager {
       const portNumber = await selectPort(40010);
       this.walletConnectBridgePort = portNumber; // Store the port
 
-      startWalletConnectBridgeServer(portNumber, this.logger);
+      this.httpServer.startWalletConnectBridgeServer(portNumber);
 
       // Open the Wallet Connect Bridge in Electron (same URL in dev/prod)
       await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
