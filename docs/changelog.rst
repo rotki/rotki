@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Transaction decoding will no longer fail when encountering a certain rare case of problematic spam tokens.
 * :bug:`-` Some specific 0x settler swaps in Optimism will now be properly decoded.
 * :bug:`-` When exporting history as CSV the events will now properly appear sorted by timestamp.
 
