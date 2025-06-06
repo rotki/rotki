@@ -127,6 +127,7 @@ from rotkehlchen.types import (
     AnyBlockchainAddress,
     ApiKey,
     ApiSecret,
+    BlockchainAddress,
     BTCAddress,
     ChecksumEvmAddress,
     ExchangeApiCredentials,
@@ -1412,6 +1413,49 @@ class DBHandler:
             insert_rows,
         )
 
+    def _deserialize_account_blockchain_from_db(
+            self,
+            chain_str: str,
+            account: str,
+    ) -> SupportedBlockchain | None:
+        try:
+            blockchain = SupportedBlockchain.deserialize(chain_str)
+        except DeserializationError:
+            log.warning(f'Unsupported blockchain {chain_str} found in DB. Ignoring...')
+            return None
+
+        if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=account) is False:  # noqa: E501
+            self.msg_aggregator.add_warning(
+                f'Invalid {chain_str} account in DB: {account}. '
+                f'This should not happen unless the DB was manually modified. '
+                f'Skipping entry. This needs to be fixed manually. If you '
+                f'can not do that alone ask for help in the issue tracker',
+            )
+            return None
+
+        return blockchain
+
+    def get_blockchains_for_accounts(
+            self,
+            cursor: 'DBCursor',
+            accounts: list[BlockchainAddress],
+    ) -> list[tuple[BlockchainAddress, SupportedBlockchain]]:
+        """Gets all blockchains for the specified accounts.
+        Returns a list of tuples containing the address and blockchain entries.
+        """
+        return [
+            (account, blockchain)
+            for entry in cursor.execute(
+                'SELECT blockchain, account FROM blockchain_accounts '
+                f"WHERE account IN ({','.join(['?'] * len(accounts))});",
+                accounts,
+            )
+            if (blockchain := self._deserialize_account_blockchain_from_db(
+                chain_str=entry[0],
+                account=(account := entry[1]),
+            )) is not None
+        ]
+
     def get_evm_accounts(self, cursor: 'DBCursor') -> list[ChecksumEvmAddress]:
         """Returns a list of unique EVM accounts from all EVM chains."""
         placeholders = ','.join('?' * len(SUPPORTED_EVM_CHAINS))
@@ -1428,22 +1472,11 @@ class DBHandler:
         )
         accounts_lists = defaultdict(list)
         for entry in cursor:
-            try:
-                blockchain = SupportedBlockchain.deserialize(entry[0])
-            except DeserializationError:
-                log.warning(f'Unsupported blockchain {entry[0]} found in DB. Ignoring...')
-                continue
-
-            if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=entry[1]) is False:  # noqa: E501
-                self.msg_aggregator.add_warning(
-                    f'Invalid {entry[0]} account in DB: {entry[1]}. '
-                    f'This should not happen unless the DB was manually modified. '
-                    f'Skipping entry. This needs to be fixed manually. If you '
-                    f'can not do that alone ask for help in the issue tracker',
-                )
-                continue
-
-            accounts_lists[blockchain.get_key()].append(entry[1])
+            if (blockchain := self._deserialize_account_blockchain_from_db(
+                chain_str=entry[0],
+                account=(account := entry[1]),
+            )) is not None:
+                accounts_lists[blockchain.get_key()].append(account)
 
         return BlockchainAccounts(**{x: tuple(y) for x, y in accounts_lists.items()})
 

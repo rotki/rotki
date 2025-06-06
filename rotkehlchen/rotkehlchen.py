@@ -22,7 +22,7 @@ from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
 )
-from rotkehlchen.chain.accounts import SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -224,18 +224,18 @@ class Rotkehlchen:
         assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
 
         for address in addresses:
-            account_tuple = (address, blockchain.to_chain_id())
+            account_data = OptionalBlockchainAccount(address=address, chain=blockchain)
             for greenlet in self.api_task_greenlets:
                 is_evm_tx_greenlet = (
                     greenlet.dead is False and
                     len(greenlet.args) >= 1 and
                     isinstance(greenlet.args[0], FunctionType) and
-                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_evm_transactions'
+                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_transactions'
                 )
                 if (
                         is_evm_tx_greenlet and
                         greenlet.kwargs.get('only_cache', False) is False and
-                        account_tuple in greenlet.kwargs['filter_query'].accounts
+                        account_data in greenlet.kwargs['accounts']
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 

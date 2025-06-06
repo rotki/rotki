@@ -89,11 +89,9 @@ from rotkehlchen.api.v1.schemas import (
     EvmAccountsPutSchema,
     EvmlikePendingTransactionDecodingSchema,
     EvmlikeTransactionDecodingSchema,
-    EvmlikeTransactionQuerySchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
-    EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeRatesSchema,
@@ -171,6 +169,7 @@ from rotkehlchen.api.v1.schemas import (
     TagSchema,
     TimedManualPriceSchema,
     TimestampRangeSchema,
+    TransactionQuerySchema,
     UpdateCalendarReminderSchema,
     UpdateCalendarSchema,
     UserActionLoginSchema,
@@ -196,7 +195,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.accounts import SingleBlockchainAccountData
+from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
@@ -216,7 +215,6 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     DBFilterQuery,
     Eth2DailyStatsFilterQuery,
-    EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
@@ -607,6 +605,27 @@ class AssociatedLocations(BaseMethodView):
 class BlockchainTransactionsResource(BaseMethodView):
     delete_schema = BlockchainTransactionDeletionSchema()
 
+    def make_post_schema(self) -> TransactionQuerySchema:
+        return TransactionQuerySchema(
+            database=self.rest_api.rotkehlchen.data.db,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[OptionalBlockchainAccount] | None,
+    ) -> Response:
+        return self.rest_api.refresh_transactions(
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            accounts=accounts,
+        )
+
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
     def delete(
@@ -618,20 +637,7 @@ class BlockchainTransactionsResource(BaseMethodView):
 
 
 class EvmTransactionsResource(BaseMethodView):
-    post_schema = EvmTransactionQuerySchema()
     put_schema = EvmTransactionDecodingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            async_query: bool,
-            filter_query: EvmTransactionsFilterQuery,
-    ) -> Response:
-        return self.rest_api.refresh_evm_transactions(
-            async_query=async_query,
-            filter_query=filter_query,
-        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
@@ -649,26 +655,7 @@ class EvmTransactionsResource(BaseMethodView):
 
 
 class EvmlikeTransactionsResource(BaseMethodView):
-    post_schema = EvmlikeTransactionQuerySchema()
     put_schema = EvmlikeTransactionDecodingSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json_and_query')
-    def post(
-            self,
-            async_query: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-            accounts: list[ChecksumEvmAddress] | None,
-            chain: EvmlikeChain | None,
-    ) -> Response:
-        return self.rest_api.refresh_evmlike_transactions(
-            async_query=async_query,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            accounts=accounts,
-            chain=chain,
-        )
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')

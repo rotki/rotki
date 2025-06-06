@@ -30,10 +30,10 @@ def test_query_decode_history_profiling(
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
-                'evmtransactionsresource',
+                'blockchaintransactionsresource',
             ), json={
                 'async_query': True,
-                'accounts': [{'address': account, 'evm_chain': 'ethereum'}],
+                'accounts': [{'address': account, 'blockchain': 'ethereum'}],
             },
         )
         task_ids.append(assert_ok_async_response(response))

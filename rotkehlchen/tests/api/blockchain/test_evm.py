@@ -470,11 +470,10 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             response = requests.post(
                 api_url_for(
                     rotkehlchen_api_server,
-                    'evmtransactionsresource',
+                    'blockchaintransactionsresource',
                 ), json={
                     'async_query': True,
-                    'accounts': [{'address': address, 'evm_chain': 'ethereum'}],
-                    'evm_chain': 'ethereum',
+                    'accounts': [{'address': address, 'blockchain': 'eth'}],
                 },
             )
             assert_ok_async_response(response)

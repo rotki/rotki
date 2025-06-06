@@ -3,10 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.filtering import (
-    EvmTransactionsFilterQuery,
-    HistoryEventFilterQuery,
-)
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
@@ -185,16 +182,17 @@ class HistoryQueryingManager:
             str_blockchain = str(blockchain)
             self.processing_state_name = f'Querying {str_blockchain} transactions history'
             evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
-            tx_filter_query = EvmTransactionsFilterQuery.make(
-                limit=None,
-                offset=None,
-                # We need to have history of transactions since before the range
-                from_ts=Timestamp(0),
-                to_ts=end_ts,
-                chain_id=blockchain.to_chain_id(),
-            )
+            with self.db.conn.read_ctx() as cursor:
+                addresses = self.db.get_single_blockchain_addresses(
+                    cursor=cursor,
+                    blockchain=blockchain,
+                )
             try:
-                evm_manager.transactions.query_chain(filter_query=tx_filter_query)
+                evm_manager.transactions.query_chain(
+                    from_timestamp=Timestamp(0),  # We need to have history of transactions since before the range  # noqa: E501
+                    to_timestamp=end_ts,
+                    addresses=addresses,
+                )
             except RemoteError as e:
                 msg = str(e)
                 self.msg_aggregator.add_error(

@@ -148,11 +148,14 @@ class EvmTransactions(ABC):  # noqa: B024
             end_ts=end_ts,
         )
 
-    def query_chain(self, filter_query: EvmTransactionsFilterQuery) -> None:
-        """Queries the chain (or a remote such as etherscan) for all transactions of an evm address
-        or of all addresses. Will query only addresses of the filter with same chain_id as this
-        class and query only the time requested in the filter and the part of that time that has
-        not yet been queried.
+    def query_chain(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            addresses: list[ChecksumEvmAddress],
+    ) -> None:
+        """Queries the chain (or a remote such as etherscan) for all transactions of the specified
+        evm addresses. Will query only the part of the time range that has not yet been queried.
 
         Saves the results in the database.
 
@@ -162,26 +165,13 @@ class EvmTransactions(ABC):  # noqa: B024
         - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
-        query_accounts = filter_query.accounts
-        if query_accounts is not None:
-            accounts = tuple(x.address for x in query_accounts if x.chain_id == self.evm_inquirer.chain_id)  # noqa: E501
-        else:
-            with self.database.conn.read_ctx() as cursor:
-                accounts = self.database.get_blockchain_accounts(cursor).get(
-                    blockchain=self.evm_inquirer.blockchain,
-                )
-
-        f_from_ts = filter_query.from_ts
-        f_to_ts = filter_query.to_ts
-        from_ts = Timestamp(0) if f_from_ts is None else f_from_ts
-        to_ts = ts_now() if f_to_ts is None else f_to_ts
-        for address in accounts:
+        for address in addresses:
             self.single_address_query_transactions(
                 address=address,
-                start_ts=from_ts,
-                end_ts=to_ts,
+                start_ts=from_timestamp,
+                end_ts=to_timestamp,
             )
-        self.get_chain_specific_multiaddress_data(accounts)
+        self.get_chain_specific_multiaddress_data(addresses)
 
     def _query_and_save_transactions_for_range(
             self,
