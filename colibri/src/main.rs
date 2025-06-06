@@ -89,7 +89,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Check if the origin matches any of our glob patterns
                 for pattern in &cors_patterns {
                     if pattern.matches(origin_str) {
-                        error!("matched on {}", pattern);
                         return true;
                     }
                     error!("failed to match CORS on {}", pattern);
