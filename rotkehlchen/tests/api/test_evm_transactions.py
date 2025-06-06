@@ -100,7 +100,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
+            'blockchaintransactionsresource',
         ), json={'async_query': async_query},
     )
     if async_query:
@@ -282,7 +282,7 @@ def test_force_refetch_evm_transactions_success(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
+            'blockchaintransactionsresource',
         ), json={'async_query': False},
     )
     assert_proper_sync_response_with_result(response)

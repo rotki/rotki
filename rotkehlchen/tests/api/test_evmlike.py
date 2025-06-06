@@ -58,10 +58,9 @@ def test_evmlike_transactions_refresh(
 
     for json_args, expected_count in [
             ({'async_query': False}, 2),
-            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'chain': 'zksync_lite'}]}, 1),  # noqa: E501
-            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'chain': 'zksync_lite'}, {'address': zksync_lite_accounts[1], 'chain': 'zksync_lite'}]}, 2),  # noqa: E501
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'blockchain': 'zksync_lite'}]}, 1),  # noqa: E501
+            ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0], 'blockchain': 'zksync_lite'}, {'address': zksync_lite_accounts[1], 'blockchain': 'zksync_lite'}]}, 2),  # noqa: E501
             ({'async_query': False, 'accounts': [{'address': zksync_lite_accounts[0]}, {'address': zksync_lite_accounts[1]}]}, 2),  # noqa: E501
-            ({'async_query': False, 'chain': 'zksync_lite'}, 2),
     ]:
         with patch.object(
                 rotki.chains_aggregator.zksync_lite,
@@ -71,7 +70,7 @@ def test_evmlike_transactions_refresh(
             response = requests.post(
                 api_url_for(
                     rotkehlchen_api_server,
-                    'evmliketransactionsresource',
+                    'blockchaintransactionsresource',
                 ), json=json_args,
             )
             assert_simple_ok_response(response)
@@ -257,7 +256,7 @@ def test_decode_pending_evmlike(
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmliketransactionsresource',
+            'blockchaintransactionsresource',
         ), json={'async_query': False},
     )
     assert_simple_ok_response(response)

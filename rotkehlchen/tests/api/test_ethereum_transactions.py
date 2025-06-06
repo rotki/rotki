@@ -327,8 +327,8 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ), json={'async_query': True, 'evm_chain': 'ethereum'},
+            'blockchaintransactionsresource',
+        ), json={'async_query': True},
     )
     task_id = assert_ok_async_response(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
@@ -461,22 +461,6 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
         status_code=HTTPStatus.CONFLICT,
     )
 
-    # trying to get transactions for a chaind that doesn't support them yet
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ), json={
-            'async_query': False,
-            'evm_chain': 'avalanche',
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='rotki does not support evm transactions for avalanche',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
 
 @pytest.mark.skipif(
     'CI' in os.environ,
@@ -519,9 +503,8 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> Non
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
-                'evmtransactionsresource',
+                'blockchaintransactionsresource',
             ),
-            json={'evm_chain': 'ethereum'},
         )
 
     result = assert_proper_sync_response_with_result(response)
@@ -538,55 +521,6 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> Non
     assert rresult[11201]['nonce'] == 11198
     assert rresult[16172]['tx_hash'] == '0x92baec6dbf3351a1aea2371453bfcb5af898ffc8172fcf9577ca2e5335df4c71'  # noqa: E501
     assert rresult[16172]['nonce'] == 16169
-
-
-def test_query_transactions_errors(rotkehlchen_api_server: 'APIServer') -> None:
-    # Malformed address
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ), json={'accounts': [{'address': '0xasdasd'}]},
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='address": ["Given value 0xasdasd is not an ethereum address',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # Malformed from_timestamp
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ),
-        json={
-            'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
-            'from_timestamp': 'foo',
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Failed to deserialize a timestamp entry from string foo',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-
-    # Malformed to_timestamp
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'evmtransactionsresource',
-        ),
-        json={
-            'accounts': [{'address': '0xaFB7ed3beBE50E0b62Fa862FAba93e7A46e59cA7'}],
-            'to_timestamp': 'foo',
-        },
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Failed to deserialize a timestamp entry from string foo',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
@@ -743,9 +677,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
-                'evmtransactionsresource',
+                'blockchaintransactionsresource',
             ),
-            json={'evm_chain': 'ethereum'},
         )
         assert_simple_ok_response(response)
         dbevmtx = DBEvmTx(rotki.data.db)
@@ -790,12 +723,8 @@ def test_query_transactions_check_decoded_events(
             rotki.task_manager._maybe_decode_evm_transactions()
             gevent.joinall(rotki.greenlet_manager.greenlets)
         response = requests.post(
-            api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
-            json={
-                'evm_chain': 'ethereum',
-                'from_timestamp': start_ts,
-                'to_timestamp': end_ts,
-            },
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
         )
         assert_simple_ok_response(response)
 
@@ -1342,8 +1271,8 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
     # retrieve the transaction
     response = requests.post(api_url_for(
         rotkehlchen_api_server,
-        'evmtransactionsresource',
-    ), json={'async_query': False, 'from_timestamp': 1668407732, 'to_timestamp': 1668407737, 'evm_chain': 'ethereum'})  # noqa: E501
+        'blockchaintransactionsresource',
+    ), json={'async_query': False, 'from_timestamp': 1668407732, 'to_timestamp': 1668407737})
 
     assert_simple_ok_response(response)
     dbevmtx = DBEvmTx(rotki.data.db)
