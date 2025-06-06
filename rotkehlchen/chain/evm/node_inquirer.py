@@ -47,6 +47,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     EventNotInABI,
+    NotERC20Conformant,
     NotERC721Conformant,
     RemoteError,
 )
@@ -1200,10 +1201,15 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
             for idx, single_output in enumerate(get_chunks(output, ERC20_PROPERTIES_NUM)):
                 address = addresses_chunk[idx]
-                info = self._process_and_create_erc20_info(
-                    output=single_output,
-                    address=address,
-                )
+                try:
+                    info = self._process_and_create_erc20_info(
+                        output=single_output,
+                        address=address,
+                    )
+                except NotERC20Conformant:
+                    log.warning(f'{address} on {self.chain_name} is not a valid ERC20 token. Skipping')  # noqa: E501
+                    continue
+
                 self.contract_info_erc20_cache.add(address, info)
 
     def _process_and_create_erc20_info(
@@ -1211,6 +1217,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             output: list[tuple[bool, bytes]],
             address: ChecksumEvmAddress,
     ) -> dict[str, Any]:
+        """May raise:
+        - NotERC20Conformant
+        """
         info: dict[str, Any] = {}
         contract = EvmContract(address=address, abi=self.contracts.erc20_abi, deployed_block=0)
         try:
@@ -1231,12 +1240,17 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             )
             abi = self.contracts.univ1lp_abi
             contract = EvmContract(address=address, abi=abi, deployed_block=0)
-            decoded = self._process_contract_info(
-                output=output,
-                properties=ERC20_PROPERTIES,
-                contract=contract,
-                token_kind=EvmTokenKind.ERC20,
-            )
+            try:
+                decoded = self._process_contract_info(
+                    output=output,
+                    properties=ERC20_PROPERTIES,
+                    contract=contract,
+                    token_kind=EvmTokenKind.ERC20,
+                )
+            except (OverflowError, DecodingError) as err:
+                # if even the bytes abi fails, this definitely isn't a valid erc20 token
+                raise NotERC20Conformant from err
+
             log.debug(f'{address} was successfully decoded as ERC20 token')
 
         for prop, value in zip_longest(ERC20_PROPERTIES, decoded):
@@ -1276,6 +1290,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         Although the values might be None.
         if it is provided in the contract. This method may raise:
         - BadFunctionCallOutput: If there is an error calling a bad address
+        - NotERC20Conformant
         """
         if (cache := self.contract_info_erc20_cache.get(address)) is not None:
             return cache

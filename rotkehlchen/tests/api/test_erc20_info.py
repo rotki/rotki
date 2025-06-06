@@ -101,3 +101,19 @@ def test_query_token_with_info(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='is not an ethereum address',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+    # Test an address that is a spam token (does not implement the methods)
+    response_4 = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'erc20tokeninfo',
+        ), json={
+            'address': string_to_evm_address('0x53B1030E68F2aEcFAd04794458ace54EC06dc707'),
+            'evm_chain': 'ethereum',
+        },
+    )
+    assert_error_response(
+        response=response_4,
+        contained_in_msg='seems to not be a deployed contract or not a valid erc20 token',
+        status_code=HTTPStatus.CONFLICT,
+    )
