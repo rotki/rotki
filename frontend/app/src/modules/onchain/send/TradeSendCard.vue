@@ -43,7 +43,6 @@ const {
   connectedChainId,
   isWalletConnect,
   preparing,
-  supportedChainIds,
   supportedChainsForConnectedAccount,
   waitingForWalletConfirmation,
 } = storeToRefs(walletStore);
@@ -93,8 +92,6 @@ const valid = computed<boolean>(() => {
 
   return amountValid && toAddressValid && !get(amountExceeded);
 });
-
-const isConnectWalletSupportAllChains = computed(() => get(supportedChainIds).length === 0);
 
 function resetMax() {
   set(max, '0');
@@ -244,9 +241,9 @@ watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
   }
 });
 
-watchDebounced([assetChain, asset, connectedAddress], async () => {
+watch([assetChain, asset, connectedAddress], async () => {
   await refreshAssetBalance();
-}, { debounce: 200 });
+});
 
 // calculate the gas fee estimation
 watchImmediate([
@@ -402,10 +399,9 @@ watch([estimatedGasFee, assetBalance], () => {
         color="primary"
         size="lg"
         class="!w-full"
-        :disabled="!isConnectWalletSupportAllChains"
         @click="switchToDesireNetwork()"
       >
-        {{ isConnectWalletSupportAllChains ? t('trade.actions.change_network') : t('trade.actions.change_network_in_your_wallet') }}
+        {{ t('trade.actions.change_network') }}
       </RuiButton>
       <RuiButton
         v-else

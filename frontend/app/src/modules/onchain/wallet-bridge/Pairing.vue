@@ -5,6 +5,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { EIP155, ROTKI_DAPP_METADATA, useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 import { type IWalletKit, WalletKit, type WalletKitTypes } from '@reown/walletkit';
 import { assert } from '@rotki/common';
 import { get, set } from '@vueuse/core';
@@ -17,6 +18,7 @@ const props = defineProps<{
   connected?: boolean;
   address?: string;
   connectedChainId?: number;
+  supportedChainIds: number[];
 }>();
 
 const COMPATIBLE_METHODS = [
@@ -57,7 +59,7 @@ interface LogEntry {
   type: 'info' | 'success' | 'error';
 }
 
-const { address, connected, connectedChainId } = toRefs(props);
+const { address, connected, connectedChainId, supportedChainIds } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
@@ -186,7 +188,7 @@ async function triggerTransaction(request: TransactionRequest): Promise<Transact
     return await signer.sendTransaction(request);
   }
   catch (error) {
-    console.error(error);
+    logger.error(error);
     throw error;
   }
 }
@@ -195,11 +197,12 @@ async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal)
   const kit = get(walletKit);
   const addressVal = get(address);
   const chainId = get(connectedChainId);
+  const supportedChainIdsVal = get(supportedChainIds);
 
   if (!kit || !addressVal || !chainId)
     return;
 
-  const chainIds = [chainId];
+  const chainIds = [...new Set([chainId, ...supportedChainIdsVal])];
 
   try {
     // ------- namespaces builder util ------------ //
@@ -224,7 +227,7 @@ async function onSessionProposal({ id, params }: WalletKitTypes.SessionProposal)
     refreshActiveSessions();
   }
   catch (error) {
-    console.error(error);
+    logger.error(error);
   }
 }
 
