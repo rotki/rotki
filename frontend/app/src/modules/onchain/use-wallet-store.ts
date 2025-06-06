@@ -8,7 +8,7 @@ import type {
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
 import { type AppKit, createAppKit } from '@reown/appkit/vue';
 import { assert, bigNumberify } from '@rotki/common';
@@ -41,14 +41,8 @@ const DEFAULT_GAS_LIMIT = 21000n; // for native transfers
 function buildAppKit(): AppKit {
   const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
 
-  const wagmiAdapter = new WagmiAdapter({
-    networks: supportedNetworks,
-    projectId,
-    ssr: false,
-  });
-
   return createAppKit({
-    adapters: [wagmiAdapter],
+    adapters: [new EthersAdapter()],
     allowUnsupportedChain: true,
     features: {
       analytics: true,

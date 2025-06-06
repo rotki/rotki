@@ -76,7 +76,7 @@ export default defineConfig({
       '@reown/appkit',
       '@reown/appkit/vue',
       '@reown/appkit/networks',
-      '@reown/appkit-adapter-wagmi',
+      '@reown/appkit-adapter-ethers',
       '@reown/walletkit',
       '@walletconnect/core',
       '@walletconnect/jsonrpc-utils',
@@ -197,7 +197,7 @@ export default defineConfig({
           'wallet-connect': [
             '@reown/walletkit',
             '@reown/appkit',
-            '@reown/appkit-adapter-wagmi',
+            '@reown/appkit-adapter-ethers',
             '@walletconnect/core',
           ],
         },

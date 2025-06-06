@@ -4336,7 +4336,6 @@
   "trade": {
     "actions": {
       "change_network": "Change Network",
-      "change_network_in_your_wallet": "Change network in your wallet!",
       "connect_wallet": "Connect Wallet",
       "disconnect": "Disconnect",
       "open_wallet": "Open Wallet",
