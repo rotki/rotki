@@ -445,7 +445,7 @@ class Rotkehlchen:
                 ethereum_inquirer=ethereum_inquirer,
                 database=self.data.db,
             ),
-            bitcoin_manager=BitcoinManager(),
+            bitcoin_manager=BitcoinManager(database=self.data.db),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

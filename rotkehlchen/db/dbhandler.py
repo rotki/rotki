@@ -762,12 +762,21 @@ class DBHandler:
     ) -> Timestamp | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_ID],
+            **kwargs: Unpack[AddressArgType],
+    ) -> BTCAddress | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
             name: DBCacheDynamic,
             **kwargs: Any,
-    ) -> int | Timestamp | str | ChecksumEvmAddress | None:
+    ) -> int | Timestamp | str | ChecksumEvmAddress | BTCAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
         value = cursor.execute(
@@ -889,11 +898,21 @@ class DBHandler:
     ) -> None:
         ...
 
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_ID],
+            value: str,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
             name: DBCacheDynamic,
-            value: int | Timestamp | ChecksumEvmAddress,
+            value: int | Timestamp | ChecksumEvmAddress | str,
             **kwargs: Any,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501

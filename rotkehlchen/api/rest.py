@@ -2761,7 +2761,12 @@ class RestAPI:
                 elif blockchain.is_evmlike():  # currently only zksync lite
                     for address in addresses:
                         self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(address)  # type: ignore[arg-type]  # all evmlike will be ChecksumEvmAddress
-                # TODO: Add elif for bitcoin here
+                elif blockchain == SupportedBlockchain.BITCOIN:
+                    self.rotkehlchen.chains_aggregator.bitcoin_manager.query_transactions(
+                        from_timestamp=from_timestamp,
+                        to_timestamp=to_timestamp,
+                        addresses=addresses,  # type: ignore[arg-type]  # all bitcoin will be BTCAddress
+                    )
                 else:
                     result = False
                     message = f'Transaction querying for {blockchain} is not implemented.'

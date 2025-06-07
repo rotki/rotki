@@ -3,7 +3,7 @@ from typing import Any, Final, TypedDict, Unpack, overload
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.mixins.enums import Enum
 
 
@@ -41,8 +41,8 @@ class LabeledLocationIdArgsType(LabeledLocationArgsType):
 
 
 class AddressArgType(TypedDict):
-    """Type of kwargs, used to get the value of `DBCacheDynamic.WITHDRAWALS_TS` and `DBCacheDynamic.WITHDRAWALS_IDX`"""  # noqa: E501
-    address: ChecksumEvmAddress
+    """Type of kwargs, used to get the value of `DBCacheDynamic.WITHDRAWALS_TS`, `DBCacheDynamic.WITHDRAWALS_IDX` and `DBCacheDynamic.LAST_BITCOIN_TX_ID`"""  # noqa: E501
+    address: ChecksumEvmAddress | BTCAddress
 
 
 class IndexArgType(TypedDict):
@@ -86,6 +86,7 @@ class DBCacheDynamic(Enum):
     EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{chain_id}}_{{receiver}}_{{tx_hash}}', string_to_evm_address  # noqa: E501
     LAST_PRODUCED_BLOCKS_QUERY_TS: Final = 'last_produced_blocks_query_ts_{index}', _deserialize_timestamp_from_str  # noqa: E501
     BINANCE_PAIR_LAST_ID: Final = '{location}_{location_name}_{queried_pair}', _deserialize_int_from_str  # noqa: E501  # notice that location is added because it can be either binance or binance_us
+    LAST_BITCOIN_TX_ID: Final = '{address}_last_tx_id', lambda x: x  # return it as is, a string
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
