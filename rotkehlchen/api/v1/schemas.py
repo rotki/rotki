@@ -26,6 +26,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
     validate_bch_address_input,
@@ -39,7 +40,6 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.ens.utils import is_potential_ens_name
-from rotkehlchen.chain.evm.types import EvmAccount, EvmlikeAccount
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -64,7 +64,6 @@ from rotkehlchen.db.filtering import (
     Eth2DailyStatsFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
-    EvmTransactionsFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
@@ -107,13 +106,12 @@ from rotkehlchen.oracles.structures import SETTABLE_CURRENT_PRICE_ORACLES
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
+    CHAINS_WITH_TRANSACTIONS,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
     NON_EVM_CHAINS,
     SUPPORTED_BITCOIN_CHAINS,
-    SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -275,13 +273,9 @@ class DBOrderBySchema(Schema):
             )
 
 
-class RequiredEvmAddressOptionalChainSchema(Schema):
-    address = EvmAddressField(required=True)
-    evm_chain = EvmChainNameField(
-        required=False,
-        limit_to=get_args(SUPPORTED_CHAIN_IDS),  # type: ignore
-        load_default=None,
-    )
+class RequiredAddressOptionalChainSchema(Schema):
+    address = fields.String(required=True)
+    blockchain = BlockchainField(required=False, load_default=None)
 
     @post_load
     def transform_data(
@@ -289,24 +283,7 @@ class RequiredEvmAddressOptionalChainSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
-        return EvmAccount(data['address'], chain_id=data['evm_chain'])
-
-
-class RequiredEvmlikeAddressOptionalChainSchema(Schema):
-    address = EvmAddressField(required=True)
-    chain = EvmChainLikeNameField(
-        required=False,
-        limit_to=SUPPORTED_EVM_EVMLIKE_CHAINS,  # type: ignore
-        load_default=None,
-    )
-
-    @post_load
-    def transform_data(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> Any:
-        return EvmlikeAccount(data['address'], chain=data['chain'])
+        return BlockchainAccountData(address=data['address'], chain=data['blockchain'])
 
 
 class BlockchainTransactionDeletionSchema(Schema):
@@ -335,61 +312,54 @@ class BlockchainTransactionDeletionSchema(Schema):
             )
 
 
-class EvmTransactionQuerySchema(
+class TransactionQuerySchema(
         AsyncQueryArgumentSchema,
         TimestampRangeSchema,
 ):
     accounts = fields.List(
-        fields.Nested(RequiredEvmAddressOptionalChainSchema),
+        fields.Nested(RequiredAddressOptionalChainSchema),
         load_default=None,
         validate=webargs.validate.Length(min=1),
     )
-    evm_chain = EvmChainNameField(required=False, load_default=None)
+
+    def __init__(self, database: 'DBHandler') -> None:
+        super().__init__()
+        self.database = database
 
     @validates_schema
-    def validate_evmtx_query_schema(
+    def validate_query_schema(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if (
-            data['evm_chain'] is not None and
-            data['evm_chain'] not in get_args(SUPPORTED_CHAIN_IDS)
-        ):
-            raise ValidationError(
-                message=f'rotki does not support evm transactions for {data["evm_chain"]}',
-                field_name='evm_chain',
-            )
+        if (accounts := data['accounts']) is None:
+            return
 
-    @post_load
-    def make_evm_transaction_query(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        filter_query = EvmTransactionsFilterQuery.make(
-            accounts=data['accounts'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            chain_id=data['evm_chain'],
-        )
+        with self.database.conn.read_ctx() as cursor:
+            tracked_accounts = self.database.get_blockchain_accounts(cursor)
 
-        return {
-            'async_query': data['async_query'],
-            'filter_query': filter_query,
-        }
-
-
-class EvmlikeTransactionQuerySchema(
-        AsyncQueryArgumentSchema,
-        TimestampRangeSchema,
-):
-    accounts = fields.List(
-        fields.Nested(RequiredEvmlikeAddressOptionalChainSchema),
-        load_default=None,
-        validate=webargs.validate.Length(min=1),
-    )
-    chain = StrEnumField(enum_class=EvmlikeChain, load_default=None)
+        tracked_addresses = [
+            address
+            for blockchain in CHAINS_WITH_TRANSACTIONS
+            for address in tracked_accounts.get(blockchain)
+        ]
+        for account in accounts:
+            if account.chain is not None:
+                if account.chain not in CHAINS_WITH_TRANSACTIONS:
+                    raise ValidationError(
+                        message=f'rotki does not support transactions for {account.chain}',
+                        field_name='accounts.blockchain',
+                    )
+                if account.address not in tracked_accounts.get(account.chain):
+                    raise ValidationError(
+                        message=f'The address {account.address} on {account.chain} is not tracked in rotki',  # noqa: E501
+                        field_name='accounts.address',
+                    )
+            elif account.address not in tracked_addresses:
+                raise ValidationError(
+                    message=f'The address {account.address} is not tracked on any chain in rotki',
+                    field_name='accounts.address',
+                )
 
 
 class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):

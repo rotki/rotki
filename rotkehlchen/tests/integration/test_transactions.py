@@ -19,10 +19,12 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 from rotkehlchen.types import ChainID, EvmTransaction, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
 def test_get_transaction_receipt(
         database: 'DBHandler',
         eth_transactions: 'EthereumTransactions',
+        ethereum_accounts: list['ChecksumEvmAddress'],
         transaction_already_queried: bool,
 ) -> None:
     """Test that getting a transaction receipt from the network and saving it in the DB works"""
@@ -43,7 +46,11 @@ def test_get_transaction_receipt(
     receipt = eth_transactions.get_or_query_transaction_receipt(transactions[0].tx_hash)
     assert receipt == receipts[0]
     filter_query = EvmTransactionsFilterQuery.make(tx_hash=transactions[0].tx_hash)
-    eth_transactions.query_chain(filter_query)
+    eth_transactions.query_chain(
+        from_timestamp=Timestamp(0),
+        to_timestamp=ts_now(),
+        addresses=ethereum_accounts,
+    )
     dbevmtx = DBEvmTx(database)
     with database.conn.read_ctx() as cursor:
         results = dbevmtx.get_evm_transactions(
