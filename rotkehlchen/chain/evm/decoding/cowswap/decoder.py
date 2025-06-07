@@ -177,9 +177,9 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             to_amount = asset_normalized_value(amount=raw_to_amount, asset=to_asset)
 
             trades.append(CowswapSwapData(
-                from_asset=from_asset,
+                from_asset=self.base.exceptions_mappings.get(from_asset.identifier, from_asset).resolve_to_crypto_asset(),  # noqa: E501
                 from_amount=from_amount - fee_amount,  # fee is taken as part of from asset
-                to_asset=to_asset,
+                to_asset=self.base.exceptions_mappings.get(to_asset.identifier, to_asset).resolve_to_crypto_asset(),  # noqa: E501
                 to_amount=to_amount,
                 fee_amount=fee_amount,
                 order_uid=order_uid,

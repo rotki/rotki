@@ -40,9 +40,9 @@ class PolygonPOSTransactionDecoder(EVMTransactionDecoder):
                 evm_inquirer=polygon_pos_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
+                exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
             ),
             addresses_exceptions=dict.fromkeys(POLYGON_MONERIUM_LEGACY_ADDRESSES, MONERIUM_V2_CONTRACTS_BLOCK),  # noqa: E501
-            exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
         )
 
     # -- methods that need to be implemented by child classes --

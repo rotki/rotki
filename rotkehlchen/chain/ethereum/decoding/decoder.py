@@ -83,8 +83,8 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 evm_inquirer=ethereum_inquirer,
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
+                exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
             ),
-            exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
             beacon_chain=beacon_chain,
         )
 
