@@ -18,6 +18,7 @@ from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
 from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+from rotkehlchen.chain.bitcoin.manager import BitcoinManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -814,6 +815,11 @@ def fixture_zksync_lite_manager(ethereum_inquirer, database):
     )
 
 
+@pytest.fixture(name='bitcoin_manager')
+def fixture_bitcoin_manager():
+    return BitcoinManager()
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> list[str]:
     return []
@@ -852,6 +858,7 @@ def fixture_blockchain(
         polkadot_manager,
         avalanche_manager,
         zksync_lite_manager,
+        bitcoin_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -883,6 +890,7 @@ def fixture_blockchain(
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
         zksync_lite_manager=zksync_lite_manager,
+        bitcoin_manager=bitcoin_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,
