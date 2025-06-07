@@ -31,7 +31,6 @@ from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesBase,
 )
-from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
@@ -127,6 +126,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
+    from rotkehlchen.chain.bitcoin.manager import BitcoinManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
@@ -290,6 +290,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
             zksync_lite_manager: 'ZksyncLiteManager',
+            bitcoin_manager: 'BitcoinManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -313,6 +314,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
         self.zksync_lite = zksync_lite_manager
+        self.bitcoin_manager = bitcoin_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -606,7 +608,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.btc = {}
         btc_usd_price = Inquirer.find_usd_price(A_BTC)
-        balances = get_bitcoin_addresses_balances(self.accounts.btc)
+        balances = self.bitcoin_manager.get_balances(self.accounts.btc)
         for account, balance in balances.items():
             self.balances.btc[account] = Balance(
                 amount=balance,

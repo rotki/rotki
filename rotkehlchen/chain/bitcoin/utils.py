@@ -1,14 +1,35 @@
 import hashlib
 import platform
+import logging
+from collections.abc import Callable
+from collections.abc import Sequence
 from enum import Enum, auto
 from typing import Any
 
 import base58check
 import bech32
-from bip_utils import Bech32ChecksumError, P2TRAddrEncoder, P2WPKHAddrEncoder, SegwitBech32Decoder
+import requests
+from bip_utils import (
+    Bech32ChecksumError,
+    P2TRAddrEncoder,
+    SegwitBech32Decoder,
+    Secp256k1PublicKey,
+    P2PKHAddrEncoder,
+    P2WPKHAddrEncoder,
+)
 
-from rotkehlchen.errors.serialization import EncodingError
-from rotkehlchen.types import BTCAddress
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.serialization import DeserializationError, EncodingError
+from rotkehlchen.serialization.deserialize import ensure_type
+from rotkehlchen.types import BTCAddress, FVal
+from rotkehlchen.utils.misc import satoshis_to_btc
+from rotkehlchen.utils.network import request_get_dict, request_get
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from .constants import BLOCKSTREAM_BASE_URL, MEMPOOL_SPACE_BASE_URL
+from .types import string_to_btc_address
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 BIP32_HARDEN: int = 0x80000000
 
@@ -264,3 +285,127 @@ def scriptpubkey_to_btc_address(data: bytes) -> BTCAddress:
         return scriptpubkey_to_p2sh_address(data)
 
     return scriptpubkey_to_bech32_address(data)
+
+
+def query_apis_via_callbacks(api_callbacks: dict[str, Callable], *args, **kwargs):
+    errors: dict[str, str] = {}
+    for api_name, callback in api_callbacks.items():
+        try:
+            return callback(*args, **kwargs)
+        except (
+            requests.exceptions.RequestException,
+            UnableToDecryptRemoteData,
+            requests.exceptions.Timeout,
+            RemoteError,
+            DeserializationError,
+        ) as e:
+            errors[api_name] = str(e)
+            continue
+        except KeyError as e:
+            errors[api_name] = f"Got unexpected response from {api_name}. Couldn't find key {e!s}"
+
+    serialized_errors = ', '.join(f'{source} error is: "{error}"' for (source, error) in errors.items())  # noqa: E501
+    raise RemoteError(f'Bitcoin external API request for balances failed. {serialized_errors}')
+
+
+def query_blockstream_or_mempool_api(url_suffix: str) -> dict | list:
+    return query_apis_via_callbacks(
+        api_callbacks={
+            'blockstream.info': lambda: request_get(f'{BLOCKSTREAM_BASE_URL}/{url_suffix}'),
+            'mempool.space': lambda: request_get(f'{MEMPOOL_SPACE_BASE_URL}/{url_suffix}'),
+        },
+    )
+
+
+def have_bc1_accounts(accounts: Sequence[BTCAddress]) -> bool:
+    return any(account.lower()[0:3] == 'bc1' for account in accounts)
+
+
+def _check_blockstream_for_transactions(
+        accounts: list[BTCAddress],
+) -> dict[BTCAddress, tuple[bool, FVal]]:
+    """May raise:
+    - RemoteError if couldn't query
+    - KeyError if response structure differs from the expected one
+    - DeserializationError if response values differ from the expected
+    """
+    have_transactions = {}
+    for account in accounts:
+        url = f'https://blockstream.info/api/address/{account}'
+        response_data = request_get_dict(url=url, handle_429=True, backoff_in_seconds=4)
+        stats = response_data['chain_stats']
+        funded_txo_sum = satoshis_to_btc(
+            ensure_type(
+                symbol=stats['funded_txo_sum'],
+                expected_type=int,
+                location='blockstream funded_txo_sum',
+            ),
+        )
+        spent_txo_sum = satoshis_to_btc(
+            ensure_type(
+                symbol=stats['spent_txo_sum'],
+                expected_type=int,
+                location='blockstream spent_txo_sum',
+            ),
+        )
+        balance = funded_txo_sum - spent_txo_sum
+        have_txs = stats['tx_count'] != 0
+        have_transactions[account] = (have_txs, balance)
+
+    return have_transactions
+
+
+def _check_blockchaininfo_for_transactions(
+        accounts: list[BTCAddress],
+) -> dict[BTCAddress, tuple[bool, FVal]]:
+    """May raise RemoteError or KeyError"""
+    have_transactions = {}
+    params = '|'.join(accounts)
+    btc_resp = request_get_dict(
+        url=f'https://blockchain.info/multiaddr?active={params}',
+        handle_429=True,
+        # If we get a 429 then their docs suggest 10 seconds
+        # https://blockchain.infoq/
+        backoff_in_seconds=15,
+    )
+    for entry in btc_resp['addresses']:
+        balance = satoshis_to_btc(entry['final_balance'])
+        have_transactions[entry['address']] = (entry['n_tx'] != 0, balance)
+
+    return have_transactions
+
+
+def have_bitcoin_transactions(accounts: list[BTCAddress]) -> dict[BTCAddress, tuple[bool, FVal]]:
+    """
+    Takes a list of addresses and returns a mapping of which addresses have had transactions
+    and also their current balance
+
+    May raise:
+    - RemoteError if any of the queried websites fail to be queried
+    """
+    try:
+        if have_bc1_accounts(accounts):
+            have_transactions = _check_blockstream_for_transactions(accounts)
+        else:
+            have_transactions = _check_blockchaininfo_for_transactions(accounts)
+    except (
+            requests.exceptions.RequestException,
+            UnableToDecryptRemoteData,
+            requests.exceptions.Timeout,
+    ) as e:
+        raise RemoteError(f'bitcoin external API request for transactions failed due to {e!s}') from e  # noqa: E501
+    except KeyError as e:
+        raise RemoteError(
+            'Malformed response when querying the bitcoin blockchain.'
+            f'Did not find key {e!s}',
+        ) from e
+    except DeserializationError as e:
+        raise RemoteError(f"Couldn't read data from the response due to {e!s}") from e
+
+    return have_transactions
+
+
+def derive_p2pkh_from_p2pk(pubkey_hex) -> BTCAddress:
+    """Convert P2PK public key to a p2pkh public key hash (normal bitcoin address)."""
+    pub_key = Secp256k1PublicKey.FromBytes(bytes.fromhex(pubkey_hex))
+    return string_to_btc_address(P2PKHAddrEncoder.EncodeKey(pub_key))

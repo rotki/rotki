@@ -17,6 +17,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price, UniqueCacheType
@@ -34,8 +35,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['EvmEvent']],
-        events_list: list['EvmEvent'],
+        ordered_events: Sequence[Optional['HistoryBaseEntry']],
+        events_list: list['HistoryBaseEntry'],
 ) -> None:
     """Takes a list of events to order and makes sure that the sequence index of each
     of them is in ascending order and that the events are consecutive in the
