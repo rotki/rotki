@@ -155,7 +155,8 @@ class EvmTransactions(ABC):  # noqa: B024
             addresses: list[ChecksumEvmAddress],
     ) -> None:
         """Queries the chain (or a remote such as etherscan) for all transactions of the specified
-        evm addresses. Will query only the part of the time range that has not yet been queried.
+        evm addresses. It is the responsibility of the caller to only specify addresses for the
+        correct chain. Will query only the part of the time range that has not yet been queried.
 
         Saves the results in the database.
 
