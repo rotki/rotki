@@ -526,7 +526,7 @@ def test_bitcoin_balance_api_resolver(
         balances = bitcoin_manager.get_balances(addresses)
     check_balances(balances)
 
-    original_query_blockstream_or_mempool = bitcoin_manager._query_blockstream_or_mempool
+    original_query_blockstream_or_mempool = bitcoin_manager._query_blockstream_or_mempool_balances
 
     def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs):
         if only_blockstream and 'blockstream' in kwargs['base_url']:
@@ -535,14 +535,17 @@ def test_bitcoin_balance_api_resolver(
         return original_query_blockstream_or_mempool(**kwargs)
 
     # First source fails
-    with patch('rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockchain_info', MagicMock(side_effect=KeyError('someProperty'))):  # noqa: E501
+    with patch(
+            'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockchain_info_balances',
+            MagicMock(side_effect=KeyError('someProperty')),
+    ):
         with blockstream_mempool_mock:
             balances = bitcoin_manager.get_balances(addresses)
         check_balances(balances)
 
         # Second source fails
         with patch(
-            'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockstream_or_mempool',
+            'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockstream_or_mempool_balances',
             new=lambda *args, **kwargs: mock_query_blockstream_or_mempool(
                 only_blockstream=True,
                 **kwargs,
@@ -554,7 +557,7 @@ def test_bitcoin_balance_api_resolver(
 
             # Third source fails - FATALITY!!!
             with patch(
-                'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockstream_or_mempool',
+                'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockstream_or_mempool_balances',
                 new=lambda *args, **kwargs: mock_query_blockstream_or_mempool(
                     only_blockstream=False,
                     **kwargs,

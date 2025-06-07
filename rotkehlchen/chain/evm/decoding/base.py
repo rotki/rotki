@@ -12,6 +12,7 @@ from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import decode_transfer_direction
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -134,54 +135,15 @@ class BaseDecoderTools:
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress | None,
     ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, ChecksumEvmAddress, str, str] | None:  # noqa: E501
-        """Depending on addresses, if they are tracked by the user or not, if they
-        are an exchange address etc. determine the type of event to classify the transfer as.
-
-        Returns event type, location label, address, counterparty and verb.
-        address is the address on the opposite side of the event. counterparty is the exchange name
-        if it is a deposit / withdrawal to / from an exchange.
+        """Wrapper for decode_transfer_direction automatically specifying the
+        tracked_accounts and maybe_get_exchange_fn.
         """
-        tracked_from = from_address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())  # noqa: E501
-        tracked_to = to_address in self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain())  # noqa: E501
-        if not tracked_from and not tracked_to:
-            return None
-
-        from_exchange = self.address_is_exchange(from_address)
-        to_exchange = self.address_is_exchange(to_address) if to_address else None
-
-        counterparty: str | None = None
-        event_subtype = HistoryEventSubType.NONE
-        if tracked_from and tracked_to:
-            event_type = HistoryEventType.TRANSFER
-            location_label = from_address
-            address = to_address
-            verb = 'Transfer'
-        elif tracked_from:
-            if to_exchange is not None:
-                event_type = HistoryEventType.DEPOSIT
-                verb = 'Deposit'
-                counterparty = to_exchange
-                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            else:
-                event_type = HistoryEventType.SPEND
-                verb = 'Send'
-
-            address = to_address
-            location_label = from_address
-        else:  # can only be tracked_to
-            if from_exchange:
-                event_type = HistoryEventType.WITHDRAWAL
-                verb = 'Withdraw'
-                counterparty = from_exchange
-                event_subtype = HistoryEventSubType.REMOVE_ASSET
-            else:
-                event_type = HistoryEventType.RECEIVE
-                verb = 'Receive'
-
-            address = from_address
-            location_label = to_address  # type: ignore  # to_address can't be None here
-
-        return event_type, event_subtype, location_label, address, counterparty, verb  # type: ignore
+        return decode_transfer_direction(
+            from_address=from_address,
+            to_address=to_address,
+            tracked_accounts=self.tracked_accounts.get(self.evm_inquirer.chain_id.to_blockchain()),  # type: ignore[arg-type]
+            maybe_get_exchange_fn=self.address_is_exchange,
+        )
 
     def decode_erc20_721_transfer(
             self,

@@ -816,8 +816,8 @@ def fixture_zksync_lite_manager(ethereum_inquirer, database):
 
 
 @pytest.fixture(name='bitcoin_manager')
-def fixture_bitcoin_manager():
-    return BitcoinManager()
+def fixture_bitcoin_manager(database):
+    return BitcoinManager(database=database)
 
 
 @pytest.fixture(name='ethereum_modules')
