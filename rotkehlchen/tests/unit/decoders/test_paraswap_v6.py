@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -111,7 +112,7 @@ def test_swap_amount_in(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xbF4EBEa7279DE8517f60BD5fdbe9AebE03De90ED']])
 def test_gnosis_swap_amount_in(
-        gnosis_inquirer: 'BaseInquirer',
+        gnosis_inquirer: 'GnosisInquirer',
         gnosis_accounts: list['ChecksumEvmAddress'],
 ):
     tx_hash = deserialize_evm_tx_hash('0x421c23d305703a57ea0b64cfc75e8f13b6db2ef30fba321ae19eecd1b91695bc')  # noqa: E501
@@ -133,7 +134,7 @@ def test_gnosis_swap_amount_in(
         counterparty=CPT_GAS,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=58,
+        sequence_index=1,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.SPEND,
@@ -145,7 +146,7 @@ def test_gnosis_swap_amount_in(
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=59,
+        sequence_index=2,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -157,7 +158,7 @@ def test_gnosis_swap_amount_in(
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=60,
+        sequence_index=3,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.FEE,
@@ -807,3 +808,53 @@ def test_swap_on_augustus_rfq(
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x70F256DC42E7f6eC5c59466A4Eb3e888d4A4dceE']])
+def test_eure_receive_swap(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+):
+    """Regression test for a bug where swaps in Gnosis receiving EURe were not decoded properly"""
+    tx_hash = deserialize_evm_tx_hash('0x81130d4e9695b1e03c5960e51864740a7d6a3c3cab7b708f717dc5f18caad079')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_amount, spend_amount, receive_amount = gnosis_accounts[0], TimestampMS(1749200310000), '0.000105481', '2497.622499', '2185.911263467705546005'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_amount),
+        location_label=user_address,
+        notes=f'Burn {gas_amount} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:100/erc20:0x2a22f9c3b484c3629090FeED35F17Ff8F88f76F0'),  # USDC.e
+        amount=FVal(spend_amount),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} USDC.e in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),  # EURe
+        amount=FVal(receive_amount),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} EURe as the result of a swap in paraswap',
+        counterparty=CPT_PARASWAP,
+        address=PARASWAP_AUGUSTUS_V6_ROUTER,
+    )]
+    assert events == expected_events

@@ -1049,7 +1049,7 @@ def test_gnosis_eure_v2(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     timestamp, swap_amount, received_amount, fee_amount, user_address = TimestampMS(1725445370000), '0.00009974865514625', '0.254038701346779266', '0.00000025134485375', gnosis_accounts[0]  # noqa: E501
     assert events == [EvmSwapEvent(
-        sequence_index=33,
+        sequence_index=0,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.SPEND,
@@ -1061,7 +1061,7 @@ def test_gnosis_eure_v2(
         counterparty=CPT_COWSWAP,
         address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
     ), EvmSwapEvent(
-        sequence_index=34,
+        sequence_index=1,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -1074,7 +1074,7 @@ def test_gnosis_eure_v2(
         address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
     ), EvmSwapEvent(
         tx_hash=tx_hash,
-        sequence_index=35,
+        sequence_index=2,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.FEE,

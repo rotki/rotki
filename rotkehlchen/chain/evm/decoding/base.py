@@ -43,7 +43,12 @@ class BaseDecoderTools:
             evm_inquirer: 'EvmNodeInquirer',
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
+            exceptions_mappings: dict[str, 'Asset'] | None = None,
     ) -> None:
+        """
+        `exceptions_mappings` is introduced to handle the monerium exceptions. It maps the v1
+        tokens to the v2 tokens and it's later used during the decoding to change the asset in
+        events from v1 tokens to v2 tokens."""
         self.database = database
         self.evm_inquirer = evm_inquirer
         self.address_is_exchange = address_is_exchange_fn
@@ -52,6 +57,7 @@ class BaseDecoderTools:
             self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
         self.sequence_counter = 0
         self.sequence_offset = 0
+        self.exceptions_mappings = exceptions_mappings or {}
 
     def reset_sequence_counter(self, tx_receipt: 'EvmTxReceipt') -> None:
         """Reset the sequence index counter before decoding a transaction.
@@ -408,12 +414,14 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
             evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyL2WithL1FeesInquirerWithCacheData'],  # noqa: E501
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
+            exceptions_mappings: dict[str, 'Asset'] | None = None,
     ) -> None:
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
             is_non_conformant_erc721_fn=is_non_conformant_erc721_fn,
             address_is_exchange_fn=address_is_exchange_fn,
+            exceptions_mappings=exceptions_mappings,
         )
         self.evm_inquirer: EvmNodeInquirerWithDSProxy  # to specify the type
 
