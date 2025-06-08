@@ -1194,6 +1194,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
             validator_indices: list[int] | None = None,
             withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
     ) -> 'EthWithdrawalFilterQuery':
@@ -1223,6 +1224,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
             validator_indices=validator_indices,
         )
         if withdrawal_types_filter != WithdrawalTypesFilter.ALL:

@@ -82,7 +82,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'ETH'},
     )
-    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
 
     # Should find events 1, 3, and 4
     assert result['entries_found'] == 3
@@ -97,7 +97,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'exchange'},
     )
-    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
 
     # Should find event 1 only
     assert result['entries_found'] == 1
@@ -111,7 +111,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'Custom'},
     )
-    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
 
     # Should find event 4 only
     assert result['entries_found'] == 1
@@ -125,7 +125,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'nonexistent'},
     )
-    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
 
     # Should find no events
     assert result['entries_found'] == 0
@@ -176,7 +176,7 @@ def test_history_events_search_by_event_identifier(
         ),
         json={'event_identifiers': ['unique_event_123']},
     )
-    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
 
     # Should find exactly one event
     assert result['entries_found'] == 1
@@ -240,7 +240,7 @@ def test_history_events_combined_filters(
             'location': 'binance',
         },
     )
-    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
 
     # Should find only the ETH event from Binance
     assert result['entries_found'] == 1
