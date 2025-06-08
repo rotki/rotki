@@ -307,12 +307,12 @@ export function useHistoryEventFilter(
     [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
+    [HistoryEventFilterValueKeys.NOTES]: OptionalString,
     [HistoryEventFilterValueKeys.PRODUCT]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.NOTES]: OptionalString,
   });
 
   return {

@@ -32,17 +32,17 @@ def test_history_events_search_by_notes(
             timestamp=TimestampMS(1000),
             location=Location.BINANCE,
             asset=A_ETH,
-            balance=FVal('1.5'),
+            amount=FVal('1.5'),
             notes='Bought ETH on Binance exchange',
             event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.BUY,
+            event_subtype=HistoryEventSubType.SPEND,
         ), HistoryEvent(
             event_identifier='event2',
             sequence_index=0,
             timestamp=TimestampMS(2000),
             location=Location.KRAKEN,
             asset=A_USD,
-            balance=FVal('100'),
+            amount=FVal('100'),
             notes='Deposited USD to Kraken',
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -52,7 +52,7 @@ def test_history_events_search_by_notes(
             timestamp=TimestampMS(3000),
             location=Location.COINBASE,
             asset=A_ETH,
-            balance=FVal('0.5'),
+            amount=FVal('0.5'),
             notes='Transferred ETH from Coinbase to cold wallet',
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -62,7 +62,7 @@ def test_history_events_search_by_notes(
             timestamp=TimestampMS(4000),
             location=Location.EXTERNAL,
             asset=A_ETH,
-            balance=FVal('2.0'),
+            amount=FVal('2.0'),
             notes='Custom event for ETH staking rewards',
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
@@ -82,7 +82,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'ETH'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
 
     # Should find events 1, 3, and 4
     assert result['entries_found'] == 3
@@ -97,7 +97,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'exchange'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
 
     # Should find event 1 only
     assert result['entries_found'] == 1
@@ -111,7 +111,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'Custom'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
 
     # Should find event 4 only
     assert result['entries_found'] == 1
@@ -125,7 +125,7 @@ def test_history_events_search_by_notes(
         ),
         json={'notes_substring': 'nonexistent'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
 
     # Should find no events
     assert result['entries_found'] == 0
@@ -146,7 +146,7 @@ def test_history_events_search_by_event_identifier(
             timestamp=TimestampMS(1000),
             location=Location.EXTERNAL,
             asset=A_ETH,
-            balance=FVal('1.0'),
+            amount=FVal('1.0'),
             notes='Event with unique identifier',
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -156,7 +156,7 @@ def test_history_events_search_by_event_identifier(
             timestamp=TimestampMS(2000),
             location=Location.EXTERNAL,
             asset=A_USD,
-            balance=FVal('50'),
+            amount=FVal('50'),
             notes='Another event',
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
@@ -176,7 +176,7 @@ def test_history_events_search_by_event_identifier(
         ),
         json={'event_identifiers': ['unique_event_123']},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
 
     # Should find exactly one event
     assert result['entries_found'] == 1
@@ -197,27 +197,27 @@ def test_history_events_combined_filters(
             timestamp=TimestampMS(1000),
             location=Location.BINANCE,
             asset=A_ETH,
-            balance=FVal('1.0'),
+            amount=FVal('1.0'),
             notes='Bought ETH on Binance',
             event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.BUY,
+            event_subtype=HistoryEventSubType.SPEND,
         ), HistoryEvent(
             event_identifier='eth_event_2',
             sequence_index=0,
             timestamp=TimestampMS(2000),
             location=Location.KRAKEN,
             asset=A_ETH,
-            balance=FVal('2.0'),
+            amount=FVal('2.0'),
             notes='Bought ETH on Kraken',
             event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.BUY,
+            event_subtype=HistoryEventSubType.SPEND,
         ), HistoryEvent(
             event_identifier='usd_event',
             sequence_index=0,
             timestamp=TimestampMS(3000),
             location=Location.BINANCE,
             asset=A_USD,
-            balance=FVal('100'),
+            amount=FVal('100'),
             notes='Deposited USD on Binance',
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
@@ -240,7 +240,7 @@ def test_history_events_combined_filters(
             'location': 'binance',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_response_with_result(rotkehlchen_api_server, response)
 
     # Should find only the ETH event from Binance
     assert result['entries_found'] == 1
