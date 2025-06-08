@@ -132,7 +132,6 @@ def test_history_events_search_by_notes(
     assert result['entries'] == []
 
 
-
 def test_history_events_combined_filters(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
