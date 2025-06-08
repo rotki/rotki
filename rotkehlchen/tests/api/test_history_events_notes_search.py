@@ -86,7 +86,7 @@ def test_history_events_search_by_notes(
 
     # Should find events 1, 3, and 4
     assert result['entries_found'] == 3
-    found_identifiers = {entry['event_identifier'] for entry in result['entries']}
+    found_identifiers = {entry['entry']['event_identifier'] for entry in result['entries']}
     assert found_identifiers == {'event1', 'event3', 'event4'}
 
     # Test 2: Search for "exchange" in notes (case insensitive)
@@ -101,7 +101,7 @@ def test_history_events_search_by_notes(
 
     # Should find event 1 only
     assert result['entries_found'] == 1
-    assert result['entries'][0]['event_identifier'] == 'event1'
+    assert result['entries'][0]['entry']['event_identifier'] == 'event1'
 
     # Test 3: Search for "Custom" in notes
     response = requests.post(
@@ -115,7 +115,7 @@ def test_history_events_search_by_notes(
 
     # Should find event 4 only
     assert result['entries_found'] == 1
-    assert result['entries'][0]['event_identifier'] == 'event4'
+    assert result['entries'][0]['entry']['event_identifier'] == 'event4'
 
     # Test 4: Search for non-existent substring
     response = requests.post(
@@ -180,7 +180,7 @@ def test_history_events_search_by_event_identifier(
 
     # Should find exactly one event
     assert result['entries_found'] == 1
-    assert result['entries'][0]['event_identifier'] == 'unique_event_123'
+    assert result['entries'][0]['entry']['event_identifier'] == 'unique_event_123'
 
 
 def test_history_events_combined_filters(
@@ -244,5 +244,5 @@ def test_history_events_combined_filters(
 
     # Should find only the ETH event from Binance
     assert result['entries_found'] == 1
-    assert result['entries'][0]['event_identifier'] == 'eth_event_1'
-    assert result['entries'][0]['location'] == 'binance'
+    assert result['entries'][0]['entry']['event_identifier'] == 'eth_event_1'
+    assert result['entries'][0]['entry']['location'] == 'binance'
