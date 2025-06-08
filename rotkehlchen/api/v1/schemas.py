@@ -632,7 +632,7 @@ class HistoryEventSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        valid_ordering_attr = {None, 'timestamp', 'identifier'}
+        valid_ordering_attr = {None, 'timestamp'}
         if (
             data['order_by_attributes'] is not None and
             not set(data['order_by_attributes']).issubset(valid_ordering_attr)

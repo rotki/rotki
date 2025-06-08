@@ -1,7 +1,7 @@
 import type { PaginationRequestPayload } from '@/types/common';
 import type { FilterObjectWithBehaviour } from '@/types/filtering';
 
-export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number; identifier: number }> {
+export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;
   readonly toTimestamp?: string | number;
   readonly groupByEventIds: boolean;

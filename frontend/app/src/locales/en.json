@@ -4696,11 +4696,6 @@
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"
     },
-    "sort": {
-      "by_date": "Date",
-      "by_recently_added": "Recently Added",
-      "label": "Sort by"
-    },
     "form": {
       "account": {
         "no_address_found": "No address found",
