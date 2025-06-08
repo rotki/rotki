@@ -48,7 +48,7 @@ jobs:
           cache-on-failure: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           package_json_file: frontend/package.json
 
@@ -96,7 +96,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           flags: frontend_integration
           env_vars: GROUP
