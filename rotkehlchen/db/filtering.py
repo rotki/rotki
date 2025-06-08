@@ -779,6 +779,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
     ) -> Self:
         """May raise:
         - InvalidFilter for invalid combination of filters
@@ -906,6 +907,14 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                     values=identifiers,
                 ),
             )
+        if notes_substring is not None:
+            filters.append(
+                DBSubStringFilter(
+                    and_op=True,
+                    field='notes',
+                    search_string=notes_substring,
+                ),
+            )
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -979,6 +988,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
             counterparties: list[str] | None = None,
             products: list[EvmProduct] | None = None,
@@ -1010,6 +1020,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
         )
         if counterparties is not None:
             filter_query.filters.append(DBMultiStringFilter(
@@ -1101,6 +1112,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
+            notes_substring: str | None = None,
             validator_indices: list[int] | None = None,
     ) -> Self:
         if entry_types is None:
@@ -1129,6 +1141,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
             customized_events_only=customized_events_only,
+            notes_substring=notes_substring,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
