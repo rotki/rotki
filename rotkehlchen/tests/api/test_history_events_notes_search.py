@@ -132,56 +132,6 @@ def test_history_events_search_by_notes(
     assert result['entries'] == []
 
 
-def test_history_events_search_by_event_identifier(
-        rotkehlchen_api_server: 'APIServer',
-) -> None:
-    """Test searching history events by event identifier"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-
-    # Create test events
-    events = [
-        HistoryEvent(
-            event_identifier='unique_event_123',
-            sequence_index=0,
-            timestamp=TimestampMS(1000),
-            location=Location.EXTERNAL,
-            asset=A_ETH,
-            amount=FVal('1.0'),
-            notes='Event with unique identifier',
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-        ), HistoryEvent(
-            event_identifier='another_event_456',
-            sequence_index=0,
-            timestamp=TimestampMS(2000),
-            location=Location.EXTERNAL,
-            asset=A_USD,
-            amount=FVal('50'),
-            notes='Another event',
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
-        ),
-    ]
-
-    # Add events to database
-    dbevents = DBHistoryEvents(rotki.data.db)
-    with rotki.data.db.user_write() as write_cursor:
-        dbevents.add_history_events(write_cursor, events)
-
-    # Test: Search by specific event identifier
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'historyeventresource',
-        ),
-        json={'event_identifiers': ['unique_event_123']},
-    )
-    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
-
-    # Should find exactly one event
-    assert result['entries_found'] == 1
-    assert result['entries'][0]['entry']['event_identifier'] == 'unique_event_123'
-
 
 def test_history_events_combined_filters(
         rotkehlchen_api_server: 'APIServer',

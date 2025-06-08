@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`9913` History events can now be filtered by description.
+
 * :release:`1.39.0 <2025-06-04>`
 * :feature:`-` DigixDAO DGD refunds will now be properly decoded.
 * :feature:`-` Users will be able to perform quick actions for an asset (such as ignoring the asset) by right-clicking the asset icon.
