@@ -33,6 +33,7 @@ enum HistoryEventFilterKeys {
   TX_HASHES = 'tx_hash',
   VALIDATOR_INDICES = 'validator_index',
   ADDRESSES = 'address',
+  NOTES = 'notes',
 }
 
 enum HistoryEventFilterValueKeys {
@@ -48,6 +49,7 @@ enum HistoryEventFilterValueKeys {
   TX_HASHES = 'txHashes',
   VALIDATOR_INDICES = 'validatorIndices',
   ADDRESSES = 'addresses',
+  NOTES = 'notesSubstring',
 }
 
 export type Matcher = SearchMatcher<HistoryEventFilterKeys, HistoryEventFilterValueKeys>;
@@ -118,6 +120,14 @@ export function useHistoryEventFilter(
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
         suggestions: assetSuggestions(assetSearch, selectedLocation?.toString()),
+      },
+      {
+        description: t('transactions.filter.notes'),
+        key: HistoryEventFilterKeys.NOTES,
+        keyValue: HistoryEventFilterValueKeys.NOTES,
+        string: true,
+        suggestions: () => [],
+        validate: (notes: string) => !!notes,
       },
     ];
 
@@ -302,6 +312,7 @@ export function useHistoryEventFilter(
     [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
+    [HistoryEventFilterValueKeys.NOTES]: OptionalString,
   });
 
   return {

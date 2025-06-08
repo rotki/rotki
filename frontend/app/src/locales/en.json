@@ -4688,12 +4688,18 @@
       "location": "filter by event location",
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_hint": "If enabled, it will show only the events that match the filter, excluding the other events in the same group.",
+      "notes": "filter by notes content",
       "product": "filter by product",
       "protocol": "filter by the protocol of the events",
       "show_ignored_assets": "Show entries with ignored assets",
       "start_date": "filter by the start date of the transaction period",
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"
+    },
+    "sort": {
+      "by_date": "Date",
+      "by_recently_added": "Recently Added",
+      "label": "Sort by"
     },
     "form": {
       "account": {

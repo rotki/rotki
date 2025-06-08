@@ -517,6 +517,7 @@ onMounted(async () => {
         <HistoryEventsTableActions
           v-model:filters="filters"
           v-model:toggles="toggles"
+          v-model:sort="sort"
           :accounts="accounts"
           :processing="processing"
           :matchers="matchers"

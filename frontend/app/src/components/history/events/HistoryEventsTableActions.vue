@@ -21,6 +21,8 @@ const toggles = defineModel<{
   matchExactEvents: boolean;
 }>('toggles', { required: true });
 
+const sort = defineModel<{ column: string; ascending: boolean }>('sort', { required: true });
+
 withDefaults(defineProps<{
   matchers: SearchMatcher<any, any>[];
   exportParams: HistoryEventRequestPayload;
@@ -43,6 +45,20 @@ const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
 const { txChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
+
+const sortOptions = [
+  { key: 'timestamp', label: t('transactions.sort.by_date') },
+  { key: 'identifier', label: t('transactions.sort.by_recently_added') },
+];
+
+const selectedSort = computed({
+  get() {
+    return sort.value.column;
+  },
+  set(value: string) {
+    sort.value = { column: value, ascending: value === 'timestamp' ? false : false };
+  },
+});
 </script>
 
 <template>
@@ -82,6 +98,17 @@ const txChainIds = useArrayMap(txChains, x => x.id);
         :location="SavedFilterLocation.HISTORY_EVENTS"
       />
     </template>
+
+    <RuiMenuSelect
+      v-model="selectedSort"
+      :options="sortOptions"
+      :label="t('transactions.sort.label')"
+      key-attr="key"
+      text-attr="label"
+      variant="outlined"
+      dense
+      class="w-[12rem]"
+    />
 
     <HistoryRedecodeButton
       :processing="processing"
