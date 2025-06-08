@@ -35,6 +35,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -825,7 +826,10 @@ class Bitstamp(ExchangeInterface):
                 amount=deserialize_fval_or_zero(raw_trade['fee']),
             ),
             location_label=self.name,
-            unique_id=(reference := str(raw_trade['id'])),
+            event_identifier=create_event_identifier_from_unique_id(
+                location=self.location,
+                unique_id=(reference := str(raw_trade['id'])),
+            ),
             extra_data={'reference': reference},
         )
 

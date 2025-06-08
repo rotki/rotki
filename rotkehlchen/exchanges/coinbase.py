@@ -42,6 +42,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -775,7 +776,10 @@ class Coinbase(ExchangeInterface):
             receive=AssetAmount(asset=native_asset, amount=native_amount),
             fee=fee,
             location_label=self.name,
-            unique_id=str(tx_a['trade']['id']),
+            event_identifier=create_event_identifier_from_unique_id(
+                location=self.location,
+                unique_id=str(tx_a['trade']['id']),
+            ),
         )
 
     def _process_coinbase_trade(self, event: dict[str, Any]) -> list[SwapEvent]:
@@ -866,7 +870,10 @@ class Coinbase(ExchangeInterface):
                 asset=asset_from_coinbase(event['fee']['currency'], time=timestamp),
             ) if 'fee' in event else None,
             location_label=self.name,
-            unique_id=str(event['id']),
+            event_identifier=create_event_identifier_from_unique_id(
+                location=self.location,
+                unique_id=str(event['id']),
+            ),
         )
 
     def _process_advanced_trade(
@@ -929,7 +936,10 @@ class Coinbase(ExchangeInterface):
                 amount=abs(deserialize_fval_or_zero(event['advanced_trade_fill']['commission'])),
             ),
             location_label=self.name,
-            unique_id=str(event['id']),
+            event_identifier=create_event_identifier_from_unique_id(
+                location=self.location,
+                unique_id=str(event['id']),
+            ),
         )
 
     def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> list[AssetMovement] | None:

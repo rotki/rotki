@@ -37,6 +37,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -387,7 +388,10 @@ class Bybit(ExchangeInterface):
                         spend=spend,
                         receive=receive,
                         location_label=self.name,
-                        unique_id=raw_trade['orderId'],
+                        event_identifier=create_event_identifier_from_unique_id(
+                            location=self.location,
+                            unique_id=raw_trade['orderId'],
+                        ),
                     ))
                 except DeserializationError as e:
                     log.error(f'{e} when reading rate for bybit trade {raw_trade}')

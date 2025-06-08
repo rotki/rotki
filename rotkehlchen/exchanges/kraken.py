@@ -44,6 +44,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -620,7 +621,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 location=Location.KRAKEN,
                 spend=AssetAmount(asset=spend_asset, amount=spend_amount),
                 receive=AssetAmount(asset=receive_asset, amount=receive_amount),
-                unique_id=exchange_uuid,
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=self.location,
+                    unique_id=exchange_uuid,
+                ),
             )
 
         if spend_part is None or receive_part is None:
@@ -647,7 +651,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             spend=AssetAmount(asset=spend_part.asset, amount=spend_part.amount),
             receive=AssetAmount(asset=receive_part.asset, amount=receive_part.amount),
             fee=fee,
-            unique_id=exchange_uuid,
+            event_identifier=create_event_identifier_from_unique_id(
+                location=self.location,
+                unique_id=exchange_uuid,
+            ),
         )
 
     def process_kraken_trades(
@@ -711,7 +718,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     location=Location.KRAKEN,
                     spend=AssetAmount(asset=spend_event.asset, amount=spend_event.amount),
                     receive=AssetAmount(asset=receive_event.asset, amount=receive_event.amount),
-                    unique_id='adjustment' + a1.event_identifier + a2.event_identifier,
+                    event_identifier=create_event_identifier_from_unique_id(
+                        location=self.location,
+                        unique_id='adjustment' + a1.event_identifier + a2.event_identifier,
+                    ),
                 ))
                 # Remove these adjustments since they are now represented by SwapEvents
                 adjustments.remove(a1)

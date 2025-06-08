@@ -14,6 +14,7 @@ from rotkehlchen.data_import.utils import (
     SkippedCSVEntry,
     UnsupportedCSVEntry,
     detect_duplicate_event,
+    hash_csv_row,
 )
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
@@ -150,6 +151,7 @@ class CointrackingImporter(BaseExchangeImporter):
                     receive=AssetAmount(asset=base_asset, amount=base_amount_bought),
                     fee=fee,
                     spend_notes=notes,
+                    event_identifier=f'{COINTRACKING_EVENT_PREFIX}{hash_csv_row(csv_row)}',
                 ),
             )
         elif row_type in {'Deposit', 'Withdrawal'}:

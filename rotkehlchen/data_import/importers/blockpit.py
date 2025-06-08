@@ -9,7 +9,7 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import BLOCKPIT_EVENT_PREFIX
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
+from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -109,6 +109,7 @@ class BlockpitImporter(BaseExchangeImporter):
                         amount=fee_amount,
                     ),
                     spend_notes=notes,
+                    event_identifier=f'{BLOCKPIT_EVENT_PREFIX}{hash_csv_row(csv_row)}',
                 ),
             )
         elif transaction_type in {'Deposit', 'Withdrawal', 'NonTaxableIn', 'NonTaxableOut'}:

@@ -242,7 +242,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
         amount=FVal('5792.2972152799999995'),
-        unique_id='TRADE1',
+        event_identifier='TRADE1',
         location_label='Okx 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
@@ -250,7 +250,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('4.5'),
-        unique_id='TRADE1',
+        event_identifier='TRADE1',
         location_label='Okx 1',
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
@@ -258,7 +258,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.00315'),
-        unique_id='TRADE1',
+        event_identifier='TRADE1',
         location_label='Okx 1',
     )]
 

@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_AXS, A_TRY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
@@ -175,7 +176,10 @@ def test_trades(mock_bitpanda):
         asset=A_EUR,
         amount=FVal('1.6599986395'),
         location_label='bitpanda',
-        unique_id='tradeid1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITPANDA,
+            unique_id='tradeid1',
+        ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1634963958000),
@@ -184,7 +188,10 @@ def test_trades(mock_bitpanda):
         asset=A_LTC,
         amount=FVal('0.00917887'),
         location_label='bitpanda',
-        unique_id='tradeid1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITPANDA,
+            unique_id='tradeid1',
+        ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1634963958000),
@@ -193,7 +200,10 @@ def test_trades(mock_bitpanda):
         asset=A_BEST,
         amount=FVal('1.71800028'),
         location_label='bitpanda',
-        unique_id='tradeid1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITPANDA,
+            unique_id='tradeid1',
+        ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1629440767000),
@@ -202,7 +212,10 @@ def test_trades(mock_bitpanda):
         asset=A_ADA,
         amount=FVal('5.37267451'),
         location_label='bitpanda',
-        unique_id='tradeid2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITPANDA,
+            unique_id='tradeid2',
+        ),
     ),
     SwapEvent(
         timestamp=TimestampMS(1629440767000),
@@ -211,7 +224,10 @@ def test_trades(mock_bitpanda):
         asset=A_EUR,
         amount=FVal('12.936862952629'),
         location_label='bitpanda',
-        unique_id='tradeid2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITPANDA,
+            unique_id='tradeid2',
+        ),
     )]
 
 

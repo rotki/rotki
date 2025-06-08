@@ -47,7 +47,10 @@ class EvmSwapEvent(EvmEvent, SwapEvent):
             extra_data: dict[str, Any] | None = None,
             event_identifier: str | None = None,
     ):
-        """Combines EvmEvent with SwapEvent to represent evm swaps."""
+        """Combines EvmEvent with SwapEvent to represent evm swaps.
+
+        The event_identifier is initialized from EvmEvent constructor
+        """
         super().__init__(
             tx_hash=tx_hash,
             sequence_index=sequence_index,

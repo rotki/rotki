@@ -13,6 +13,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -94,7 +95,10 @@ def upgrade_trade_to_swap_events(
             amount=FVal(row[7]),
         ) if row[8] is not None and row[7] is not None else None,
         location_label=location_label,
-        unique_id=link,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=location,
+            unique_id=link,
+        ),
         spend_notes=row[10],
     )
 
