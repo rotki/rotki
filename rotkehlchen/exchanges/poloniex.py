@@ -36,6 +36,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -107,7 +108,10 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
         spend=spend,
         receive=receive,
         fee=fee,
-        unique_id=str(poloniex_trade['id']),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.POLONIEX,
+            unique_id=str(poloniex_trade['id']),
+        ),
     )
 
 

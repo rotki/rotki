@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_kucoin
-from rotkehlchen.data_import.utils import BaseExchangeImporter
+from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -96,6 +96,7 @@ class KucoinImporter(BaseExchangeImporter):
                                 asset=asset_from_kucoin(fee_currency),
                                 amount=deserialize_fval_or_zero(get_key_if_has_val(row, fee_key)),
                             ) if fee_currency is not None else None,
+                            event_identifier=f'KU{hash_csv_row(row)}',
                         ),
                     )
                     self.imported_entries += 1

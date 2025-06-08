@@ -10,6 +10,7 @@ Changelog
 * :bug:`-` When exporting history as CSV the events will now properly appear sorted by timestamp.
 * :bug:`10087` Users will now be able to use the electron app wallet bridge when using Windows.
 * :bug:`-` Token detection will no longer fail when encountering certain NFTs with improper implementations.
+* :bug:`10096` CSV imports for trades from rotki custom trades, uphold, cointracking, shapeshift, kucoin and blockpit should now work properly and not show only a single event per trade/swap.
 
 * :release:`1.39.0 <2025-06-04>`
 * :feature:`-` DigixDAO DGD refunds will now be properly decoded.

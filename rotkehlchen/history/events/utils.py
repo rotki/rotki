@@ -4,7 +4,7 @@ from rotkehlchen.db.filtering import DBMultiStringFilter
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.types import Location
+from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
@@ -36,6 +36,13 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
     return data
 
 
+def create_event_identifier_from_unique_id(
+        location: Location,
+        unique_id: str,
+) -> str:
+    return hash_id(str(location) + unique_id)
+
+
 def create_event_identifier(
         location: Location,
         timestamp: 'TimestampMS',
@@ -49,13 +56,29 @@ def create_event_identifier(
     timestamp, asset, and balance must all be combined to ensure a unique identifier.
     """
     if unique_id is not None:
-        return hash_id(str(location) + unique_id)
+        return create_event_identifier_from_unique_id(location, unique_id)
 
     return hash_id(
         str(location) +
         str(timestamp) +
         asset.identifier +
         str(amount),
+    )
+
+
+def create_event_identifier_from_swap(
+        location: Location,
+        timestamp: 'TimestampMS',
+        spend: AssetAmount,
+        receive: AssetAmount,
+) -> str:
+    return hash_id(
+        str(location)
+        + str(timestamp)
+        + spend.asset.identifier
+        + str(spend.amount)
+        + receive.asset.identifier
+        + str(receive.amount),
     )
 
 

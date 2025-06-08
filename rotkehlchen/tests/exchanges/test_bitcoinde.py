@@ -12,6 +12,7 @@ from rotkehlchen.exchanges.bitcoinde import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -85,48 +86,66 @@ def test_query_trade_history(function_scope_bitcoinde):
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('2341.21'),
-        unique_id='X1',
         location_label='bitcoinde',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITCOINDE,
+            unique_id='X1',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1512531092000),
         location=Location.BITCOINDE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('10'),
-        unique_id='X1',
         location_label='bitcoinde',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITCOINDE,
+            unique_id='X1',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1512531092000),
         location=Location.BITCOINDE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('1.5214'),
-        unique_id='X1',
         location_label='bitcoinde',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITCOINDE,
+            unique_id='X1',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1502439199000),
         location=Location.BITCOINDE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('4124.124'),
-        unique_id='X2',
         location_label='bitcoinde',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITCOINDE,
+            unique_id='X2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1502439199000),
         location=Location.BITCOINDE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('241.214'),
-        unique_id='X2',
         location_label='bitcoinde',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITCOINDE,
+            unique_id='X2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1502439199000),
         location=Location.BITCOINDE,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
         amount=FVal('0.93452135'),
-        unique_id='X2',
         location_label='bitcoinde',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITCOINDE,
+            unique_id='X2',
+        ),
     )]
 
 

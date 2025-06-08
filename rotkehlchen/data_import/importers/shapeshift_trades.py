@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_SAI
-from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry
+from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -90,6 +90,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
                 receive=AssetAmount(asset=buy_asset, amount=buy_amount),
                 fee=AssetAmount(asset=buy_asset, amount=fee),  # Assumption that minerFee is denominated in outputCurrency  # noqa: E501
                 spend_notes=notes,
+                event_identifier=f'SHF{hash_csv_row(csv_row)}',
             ),
         )
 

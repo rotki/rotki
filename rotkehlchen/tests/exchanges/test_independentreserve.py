@@ -14,6 +14,7 @@ from rotkehlchen.exchanges.independentreserve import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
 
@@ -207,7 +208,10 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_ETH,
         amount=FVal('0.5'),
         location_label=exchange.name,
-        unique_id=(unique_id_1 := 'foo1'),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.INDEPENDENTRESERVE,
+            unique_id=(unique_id_1 := 'foo1'),
+        ),
     ), SwapEvent(
         timestamp=timestamp_1,
         location=Location.INDEPENDENTRESERVE,
@@ -215,7 +219,10 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_AUD,
         amount=FVal('301.85'),
         location_label=exchange.name,
-        unique_id=unique_id_1,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.INDEPENDENTRESERVE,
+            unique_id=unique_id_1,
+        ),
     ), SwapEvent(
         timestamp=timestamp_1,
         location=Location.INDEPENDENTRESERVE,
@@ -223,7 +230,10 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_ETH,
         amount=FVal('0.0025'),
         location_label=exchange.name,
-        unique_id=unique_id_1,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.INDEPENDENTRESERVE,
+            unique_id=unique_id_1,
+        ),
     ), SwapEvent(
         timestamp=(timestamp_2 := TimestampMS(1501234760000)),
         location=Location.INDEPENDENTRESERVE,
@@ -231,7 +241,10 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_AUD,
         amount=FVal('679.4419574775'),
         location_label=exchange.name,
-        unique_id=(unique_id_2 := 'foo2'),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.INDEPENDENTRESERVE,
+            unique_id=(unique_id_2 := 'foo2'),
+        ),
     ), SwapEvent(
         timestamp=timestamp_2,
         location=Location.INDEPENDENTRESERVE,
@@ -239,7 +252,10 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_ETH,
         amount=FVal('2.64117379'),
         location_label=exchange.name,
-        unique_id=unique_id_2,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.INDEPENDENTRESERVE,
+            unique_id=unique_id_2,
+        ),
     ), SwapEvent(
         timestamp=timestamp_2,
         location=Location.INDEPENDENTRESERVE,
@@ -247,7 +263,10 @@ def test_query_trade_history(function_scope_independentreserve):
         asset=A_ETH,
         amount=FVal('0.01320586895'),
         location_label=exchange.name,
-        unique_id=unique_id_2,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.INDEPENDENTRESERVE,
+            unique_id=unique_id_2,
+        ),
     )]
 
 

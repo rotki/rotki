@@ -32,6 +32,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -459,7 +460,10 @@ class Htx(ExchangeInterface):
                             amount=deserialize_fval(raw_trade['filled-fees']),
                         ) if raw_trade['filled-fees'] else None,
                         location_label=self.name,
-                        unique_id=str(raw_trade['id']),
+                        event_identifier=create_event_identifier_from_unique_id(
+                            location=self.location,
+                            unique_id=str(raw_trade['id']),
+                        ),
                     ))
                 except DeserializationError as e:
                     log.error(f'{e} when reading rate for HTX trade {raw_trade}')

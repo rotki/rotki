@@ -15,6 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_AIR2
 from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
@@ -61,21 +62,30 @@ def test_trade_from_poloniex():
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal(TEST_AMOUNT_STR),
-        unique_id='192167',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.POLONIEX,
+            unique_id='192167',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1500758317000),
         location=Location.POLONIEX,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.1411665444631867'),
-        unique_id='192167',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.POLONIEX,
+            unique_id='192167',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1500758317000),
         location=Location.POLONIEX,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal(TEST_FEE_STR),
-        unique_id='192167',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.POLONIEX,
+            unique_id='192167',
+        ),
     )]
 
 
@@ -152,42 +162,60 @@ def test_query_trade_history(poloniex: 'Poloniex'):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BCH,
             amount=FVal('1.40308443'),
-            unique_id='394131412',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.POLONIEX,
+                unique_id='394131412',
+            ),
         ), SwapEvent(
             timestamp=TimestampMS(1539713117000),
             location=Location.POLONIEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=FVal('0.0973073287465092'),
-            unique_id='394131412',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.POLONIEX,
+                unique_id='394131412',
+            ),
         ), SwapEvent(
             timestamp=TimestampMS(1539713117000),
             location=Location.POLONIEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_BTC,
             amount=FVal('0.00009730732'),
-            unique_id='394131412',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.POLONIEX,
+                unique_id='394131412',
+            ),
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
             location=Location.POLONIEX,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=FVal('0.1235704463578728'),
-            unique_id='13536350',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.POLONIEX,
+                unique_id='13536350',
+            ),
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
             location=Location.POLONIEX,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('3600.53748129'),
-            unique_id='13536350',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.POLONIEX,
+                unique_id='13536350',
+            ),
         ), SwapEvent(
             timestamp=TimestampMS(1539709423000),
             location=Location.POLONIEX,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('7.20107496258'),
-            unique_id='13536350',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.POLONIEX,
+                unique_id='13536350',
+            ),
         )]
 
 

@@ -14,6 +14,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
@@ -88,7 +89,10 @@ class BisqTradesImporter(BaseExchangeImporter):
                 spend=spend,
                 receive=receive,
                 fee=AssetAmount(asset=fee_currency, amount=fee_amount),
-                unique_id=(trade_id := csv_row['Trade ID']),
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.BISQ,
+                    unique_id=(trade_id := csv_row['Trade ID']),
+                ),
                 spend_notes=f'ID: {trade_id}',
             ),
         )

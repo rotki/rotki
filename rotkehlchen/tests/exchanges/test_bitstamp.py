@@ -26,6 +26,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
@@ -273,8 +274,11 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.0000250000000000'),
         location_label='bitstamp',
-        unique_id='2',
         extra_data={'reference': '2'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -282,7 +286,10 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_BTC,
         amount=FVal('0.50000000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -290,7 +297,10 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_USD,
         amount=FVal('20.00000000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     )]
 
     assert mock_bitstamp._deserialize_trade(raw_trade={
@@ -310,8 +320,11 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('5.018400000'),
         location_label='bitstamp',
-        unique_id='2',
         extra_data={'reference': '2'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1555402145000),
         location=Location.BITSTAMP,
@@ -319,7 +332,10 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_BTC,
         amount=FVal('0.00060000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1555402145000),
         location=Location.BITSTAMP,
@@ -327,7 +343,10 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('0.02'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     )]
 
     assert mock_bitstamp._deserialize_trade(raw_trade={
@@ -347,8 +366,11 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_USD,
         amount=FVal('7.7099826120'),
         location_label='bitstamp',
-        unique_id='15',
         extra_data={'reference': '15'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='15',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1555345154000),
         location=Location.BITSTAMP,
@@ -356,7 +378,10 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('6.87630'),
         location_label='bitstamp',
-        unique_id='15',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='15',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1555345154000),
         location=Location.BITSTAMP,
@@ -364,7 +389,10 @@ def test_deserialize_trade_buy(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.02'),
         location_label='bitstamp',
-        unique_id='15',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='15',
+        ),
     )]
 
 
@@ -385,8 +413,11 @@ def test_deserialize_trade_sell(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('1.00000000'),
         location_label='bitstamp',
-        unique_id='5',
         extra_data={'reference': '5'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -394,7 +425,10 @@ def test_deserialize_trade_sell(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.8196721300000000'),
         location_label='bitstamp',
-        unique_id='5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -402,7 +436,10 @@ def test_deserialize_trade_sell(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.00610000'),
         location_label='bitstamp',
-        unique_id='5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     )]
 
     assert mock_bitstamp._deserialize_trade(raw_trade={
@@ -422,8 +459,11 @@ def test_deserialize_trade_sell(mock_bitstamp):
         asset=A_BTC,
         amount=FVal('1.81213214'),
         location_label='bitstamp',
-        unique_id='10',
         extra_data={'reference': '10'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='10',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1561498868000),
         location=Location.BITSTAMP,
@@ -431,7 +471,10 @@ def test_deserialize_trade_sell(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('18338.4510730148'),
         location_label='bitstamp',
-        unique_id='10',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='10',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1561498868000),
         location=Location.BITSTAMP,
@@ -439,7 +482,10 @@ def test_deserialize_trade_sell(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('40.35000'),
         location_label='bitstamp',
-        unique_id='10',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='10',
+        ),
     )]
 
 
@@ -764,8 +810,11 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.0000250000000000'),
         location_label='bitstamp',
-        unique_id='2',
         extra_data={'reference': '2'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -773,7 +822,10 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         asset=A_BTC,
         amount=FVal('0.50000000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -781,7 +833,10 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         asset=A_USD,
         amount=FVal('20.00000000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -789,8 +844,11 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         asset=A_EUR,
         amount=FVal('1.00000000'),
         location_label='bitstamp',
-        unique_id='5',
         extra_data={'reference': '5'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -798,7 +856,10 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.8196721300000000'),
         location_label='bitstamp',
-        unique_id='5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -806,7 +867,10 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
         asset=A_USD,
         amount=FVal('0.00610000'),
         location_label='bitstamp',
-        unique_id='5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     )]
 
 
@@ -822,8 +886,11 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         asset=A_EUR,
         amount=FVal('1.22000000'),
         location_label='bitstamp',
-        unique_id='5',
         extra_data={'reference': '5'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -831,7 +898,10 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         asset=A_USD,
         amount=FVal('0.9999999986'),
         location_label='bitstamp',
-        unique_id='5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606995000000),
         location=Location.BITSTAMP,
@@ -839,7 +909,10 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         asset=A_EUR,
         amount=FVal('0.00610000'),
         location_label='bitstamp',
-        unique_id='5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='5',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -847,8 +920,11 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         asset=A_USD,
         amount=FVal('0.000025'),
         location_label='bitstamp',
-        unique_id='2',
         extra_data={'reference': '2'},
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -856,7 +932,10 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         asset=A_BTC,
         amount=FVal('0.50000000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1606901400000),
         location=Location.BITSTAMP,
@@ -864,7 +943,10 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         asset=A_USD,
         amount=FVal('20.00000000'),
         location_label='bitstamp',
-        unique_id='2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BITSTAMP,
+            unique_id='2',
+        ),
     )]
     with mock_bitstamp.db.user_write() as write_cursor:
         DBHistoryEvents(mock_bitstamp.db).add_history_events(

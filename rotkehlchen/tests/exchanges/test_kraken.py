@@ -43,6 +43,7 @@ from rotkehlchen.history.events.structures.asset_movement import create_asset_mo
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_floatstr
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -398,7 +399,10 @@ def test_kraken_trade_with_spend_receive(kraken):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_EUR,
             amount=FVal('100'),
-            unique_id='11636406000865',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.KRAKEN,
+                unique_id='11636406000865',
+            ),
         ), SwapEvent(
             identifier=2,
             timestamp=TimestampMS(1636406000865),
@@ -406,7 +410,10 @@ def test_kraken_trade_with_spend_receive(kraken):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('1'),
-            unique_id='11636406000865',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.KRAKEN,
+                unique_id='11636406000865',
+            ),
         ), SwapEvent(
             identifier=3,
             timestamp=TimestampMS(1636406000865),
@@ -414,7 +421,10 @@ def test_kraken_trade_with_spend_receive(kraken):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_EUR,
             amount=FVal('0.4500'),
-            unique_id='11636406000865',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.KRAKEN,
+                unique_id='11636406000865',
+            ),
         )]
 
     errors = kraken.msg_aggregator.consume_errors()
@@ -474,7 +484,10 @@ def test_kraken_trade_with_adjustment(kraken):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_DAO,
                 amount=FVal('0.0008854800'),
-                unique_id='adjustment12',
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.KRAKEN,
+                    unique_id='adjustment12',
+                ),
             ), SwapEvent(
                 identifier=2,
                 timestamp=TimestampMS(1636406000855),
@@ -482,7 +495,10 @@ def test_kraken_trade_with_adjustment(kraken):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_ETH,
                 amount=FVal('0.0000088548'),
-                unique_id='adjustment12',
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.KRAKEN,
+                    unique_id='adjustment12',
+                ),
             )]
 
     errors = kraken.msg_aggregator.consume_errors()
@@ -584,7 +600,10 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
                 amount=FVal('0.000001'),
-                unique_id='11636406000855',
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.KRAKEN,
+                    unique_id='11636406000855',
+                ),
             ), SwapEvent(
                 identifier=2,
                 timestamp=TimestampMS(1636406000855),
@@ -592,7 +611,10 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_USD,
                 amount=ZERO,
-                unique_id='11636406000855',
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.KRAKEN,
+                    unique_id='11636406000855',
+                ),
             ), SwapEvent(
                 identifier=3,
                 timestamp=TimestampMS(1636406000865),
@@ -600,7 +622,10 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.SPEND,
                 asset=A_USD,
                 amount=ZERO,
-                unique_id='21636406000865',
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.KRAKEN,
+                    unique_id='21636406000865',
+                ),
             ), SwapEvent(
                 identifier=4,
                 timestamp=TimestampMS(1636406000865),
@@ -608,7 +633,10 @@ def test_kraken_trade_no_counterpart(kraken):
                 event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_BTC,
                 amount=FVal('0.0000001'),
-                unique_id='21636406000865',
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=Location.KRAKEN,
+                    unique_id='21636406000865',
+                ),
             )]
 
     errors = kraken.msg_aggregator.consume_errors()
@@ -1137,6 +1165,10 @@ def test_kraken_event_serialization_with_custom_asset(database):
         spend=AssetAmount(asset=custom_asset, amount=ONE),
         receive=AssetAmount(asset=custom_asset, amount=ONE),
         fee=AssetAmount(asset=custom_asset, amount=ONE),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.KRAKEN,
+            unique_id='UNIQUE_ID',
+        ),
     )
     for idx, expected_notes in enumerate((
         'Swap 1 Gold Bar in Kraken',

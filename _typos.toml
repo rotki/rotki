@@ -22,6 +22,8 @@ extend-ignore-identifiers-re = [
     "^CCM_.+$",  # CCM prefixed words
     "^BLF_.+$",  # BLF prefixed words
     "^BNC_.+$",  # BNC prefixed words
+    "^COT.+$",  # COT prefixed words
+    "^KU.+$",  # KU prefixed words
     "^NEXO_.+$",  # NEXO prefixed words
     "^A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum$",  # uniswap subgraph id
     "^10x6c27ea39e5046646aaf24e1bb451caf466058278685102d89979197fdb89d007",  # event identifier in test

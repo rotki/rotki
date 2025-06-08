@@ -46,6 +46,7 @@ def test_get_associated_locations(
                 location=Location.NEXO,
                 spend=AssetAmount(asset=A_EUR, amount=ONE),
                 receive=AssetAmount(asset=A_ETH, amount=FVal('281.14')),
+                event_identifier='tradeid',
             ))
 
     # get locations

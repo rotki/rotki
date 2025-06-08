@@ -41,7 +41,7 @@ from rotkehlchen.types import (
 history5 = history1 + create_swap_events(
     timestamp=TimestampMS(1512693374000),  # cryptocompare hourly BTC/EUR price: 537.805
     location=Location.KRAKEN,
-    event_identifier='',
+    event_identifier='atradeidentifier',
     spend=AssetAmount(asset=A_BTC, amount=FVal('20')),
     receive=AssetAmount(asset=A_EUR, amount=FVal('13503.35') * FVal('20')),
 )

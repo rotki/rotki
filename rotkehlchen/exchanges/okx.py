@@ -33,6 +33,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
@@ -413,7 +414,10 @@ class Okx(ExchangeInterface):
                 receive=receive,
                 fee=AssetAmount(asset=fee_asset, amount=fee_amount),
                 location_label=self.name,
-                unique_id=unique_id,
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=self.location,
+                    unique_id=unique_id,
+                ),
             )
 
         return []  # this is the error case

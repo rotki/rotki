@@ -99,6 +99,10 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEventExtraData, create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import (
+    create_event_identifier_from_swap,
+    create_event_identifier_from_unique_id,
+)
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.inquirer import CurrentPriceOracle
@@ -1004,20 +1008,36 @@ class CreateHistoryEventSchema(Schema):
             if (unique_id := data['unique_id']) is not None:
                 extra_data['reference'] = unique_id
 
+            spend = AssetAmount(asset=data['spend_asset'], amount=data['spend_amount'])
+            receive = AssetAmount(asset=data['receive_asset'], amount=data['receive_amount'])
+            if (event_identifier := data['event_identifier']) is None:
+                if unique_id is not None:
+                    extra_data['reference'] = unique_id
+                    event_identifier = create_event_identifier_from_unique_id(
+                        location=data['location'],
+                        unique_id=unique_id,
+                    )
+                else:
+                    event_identifier = create_event_identifier_from_swap(
+                        location=data['location'],
+                        timestamp=data['timestamp'],
+                        spend=spend,
+                        receive=receive,
+                    )
+
             context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
             events = create_swap_events(
                 timestamp=data['timestamp'],
                 location=data['location'],
-                spend=AssetAmount(asset=data['spend_asset'], amount=data['spend_amount']),
-                receive=AssetAmount(asset=data['receive_asset'], amount=data['receive_amount']),
+                spend=spend,
+                receive=receive,
                 fee=AssetAmount(asset=data['fee_asset'], amount=data['fee_amount']) if data['fee_asset'] is not None else None,  # noqa: E501
                 location_label=data['location_label'],
-                unique_id=data['unique_id'],
                 spend_notes=spend_notes,
                 receive_notes=receive_notes,
                 fee_notes=fee_notes,
                 identifier=data.get('identifier'),
-                event_identifier=data['event_identifier'],
+                event_identifier=event_identifier,
                 receive_identifier=context_schema.get_grouped_event_identifier(
                     data=data,
                     subtype=HistoryEventSubType.RECEIVE,

@@ -20,6 +20,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import A_ETH, A_USD
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -129,21 +130,30 @@ def test_process_trade():
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
         amount=FVal('49950.06'),
-        unique_id=str(unique_id_1),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASEPRIME,
+            unique_id=str(unique_id_1),
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1728997300000),
         location=Location.COINBASEPRIME,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('SUI'),
         amount=FVal('23304.3'),
-        unique_id=str(unique_id_1),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASEPRIME,
+            unique_id=str(unique_id_1),
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1728997300000),
         location=Location.COINBASEPRIME,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
         amount=FVal('49.94'),
-        unique_id=str(unique_id_1),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASEPRIME,
+            unique_id=str(unique_id_1),
+        ),
     )]
 
     assert _process_trade(trade_data={
@@ -176,21 +186,30 @@ def test_process_trade():
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),  # cbETH
         amount=FVal('251.0195712209'),
-        unique_id=str(unique_id_2),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASEPRIME,
+            unique_id=str(unique_id_2),
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1679777345000),
         location=Location.COINBASEPRIME,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('247.96947'),
-        unique_id=str(unique_id_2),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASEPRIME,
+            unique_id=str(unique_id_2),
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1679777345000),
         location=Location.COINBASEPRIME,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.2510195712209'),
-        unique_id=str(unique_id_2),
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASEPRIME,
+            unique_id=str(unique_id_2),
+        ),
     )]
 
 
@@ -530,7 +549,10 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USD,
             amount=FVal('49950.06'),
-            unique_id=fifth_id,
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASEPRIME,
+                unique_id=fifth_id,
+            ),
         ), SwapEvent(
             identifier=9,
             timestamp=TimestampMS(1728997300000),
@@ -538,7 +560,10 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('SUI'),
             amount=FVal('23304.3'),
-            unique_id=fifth_id,
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASEPRIME,
+                unique_id=fifth_id,
+            ),
         ), SwapEvent(
             identifier=10,
             timestamp=TimestampMS(1728997300000),
@@ -546,7 +571,10 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USD,
             amount=FVal('49.94'),
-            unique_id=fifth_id,
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASEPRIME,
+                unique_id=fifth_id,
+            ),
         ),
     ]
 

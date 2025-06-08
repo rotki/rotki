@@ -18,6 +18,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_force_positive,
@@ -110,7 +111,10 @@ class BittrexImporter(BaseExchangeImporter):
                 asset=quote_asset,
                 amount=deserialize_fval_or_zero(fee),
             ),
-            unique_id=order_id,
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BITTREX,
+                unique_id=order_id,
+            ),
             spend_notes=notes,
         )
 
