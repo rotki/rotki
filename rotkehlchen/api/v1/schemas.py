@@ -616,6 +616,7 @@ class HistoryEventSchema(
         ),
         load_default=None,
     )
+    notes_substring = fields.String(load_default=None)
 
     # EvmEvent only
     tx_hashes = DelimitedOrNormalList(EVMTransactionHashField(), load_default=None)
@@ -704,6 +705,7 @@ class HistoryEventSchema(
             'location': data['location'],
             'customized_events_only': data['customized_events_only'],
             'identifiers': data['identifiers'],
+            'notes_substring': data['notes_substring'],
         }
 
         filter_query: HistoryEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)
