@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-06-09T19:01:44.218334",
+  "timestamp": "2025-06-09T19:09:38.431460",
   "modules": {
     "API": {
-      "total_files": 32,
+      "total_files": 33,
       "gevent_direct": 3,
       "using_compat": 2,
-      "using_asyncio": 13,
-      "fully_async": 2,
+      "using_asyncio": 14,
+      "fully_async": 3,
       "mixed_async_sync": 9,
       "files": {
         "rotkehlchen/api/server.py": {
@@ -930,6 +930,34 @@
             "validate_numeric_string"
           ],
           "feature_flags": []
+        },
+        "rotkehlchen/api/v1/async_base.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [],
+          "async_functions": [
+            "get_rest_api",
+            "ping",
+            "get_info",
+            "get_settings",
+            "update_settings",
+            "get_async_tasks",
+            "delete_async_task"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "PING_ENDPOINT",
+            "INFO_ENDPOINT",
+            "SETTINGS_ENDPOINT",
+            "SETTINGS_ENDPOINT",
+            "TASK_ENDPOINT",
+            "TASK_ENDPOINT"
+          ]
         },
         "rotkehlchen/api/v1/endpoint_migration_example.py": {
           "uses_gevent_direct": false,
@@ -20610,11 +20638,11 @@
       }
     },
     "Core": {
-      "total_files": 1811,
+      "total_files": 1812,
       "gevent_direct": 8,
       "using_compat": 62,
-      "using_asyncio": 34,
-      "fully_async": 2,
+      "using_asyncio": 35,
+      "fully_async": 3,
       "mixed_async_sync": 30,
       "files": {
         "rotki/rotkehlchen/user_messages.py": {
@@ -52994,6 +53022,34 @@
           ],
           "feature_flags": []
         },
+        "rotki/rotkehlchen/api/v1/async_base.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [],
+          "async_functions": [
+            "get_rest_api",
+            "ping",
+            "get_info",
+            "get_settings",
+            "update_settings",
+            "get_async_tasks",
+            "delete_async_task"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "PING_ENDPOINT",
+            "INFO_ENDPOINT",
+            "SETTINGS_ENDPOINT",
+            "SETTINGS_ENDPOINT",
+            "TASK_ENDPOINT",
+            "TASK_ENDPOINT"
+          ]
+        },
         "rotki/rotkehlchen/api/v1/endpoint_migration_example.py": {
           "uses_gevent_direct": false,
           "uses_compat_layer": false,
@@ -54619,20 +54675,21 @@
   },
   "totals": {
     "compat": 87,
-    "async": 58,
+    "async": 60,
     "direct": 13,
-    "total": 3002
+    "total": 3004
   },
   "endpoints": {
     "flask_endpoints": 131,
-    "fastapi_endpoints": 4,
-    "migration_percentage": 3.0534351145038165,
+    "fastapi_endpoints": 5,
+    "migration_percentage": 3.816793893129771,
     "async_files": [
       "async_auth.py",
       "async_assets.py",
+      "async_base.py",
       "async_history_events.py",
       "async_transactions.py"
     ]
   },
-  "estimated_days_remaining": 64.8
+  "estimated_days_remaining": 64.3
 }

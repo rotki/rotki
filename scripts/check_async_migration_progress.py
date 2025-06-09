@@ -137,17 +137,23 @@ def check_endpoint_migration() -> dict[str, Any]:
     # Find all FastAPI routers
     fastapi_endpoints = set()
     async_files = list(v1_dir.glob('async_*.py'))
+    
+    # Count endpoints in each async file
+    endpoint_count = 0
     for async_file in async_files:
         with open(async_file, 'r') as f:
             content = f.read()
             # Look for router definitions
             if 'router = APIRouter' in content:
                 fastapi_endpoints.add(async_file.stem)
+                # Count @router decorators
+                endpoint_count += content.count('@router.')
                 
     return {
         'flask_endpoints': len(flask_endpoints),
-        'fastapi_endpoints': len(fastapi_endpoints),
-        'migration_percentage': (len(fastapi_endpoints) / len(flask_endpoints) * 100) if flask_endpoints else 0,
+        'fastapi_endpoints': endpoint_count,
+        'fastapi_files': len(fastapi_endpoints),
+        'migration_percentage': (endpoint_count / len(flask_endpoints) * 100) if flask_endpoints else 0,
         'async_files': [f.name for f in async_files],
     }
 
@@ -238,7 +244,7 @@ def main():
     print(f"\n{BOLD}🌐 API Endpoint Migration:{RESET}")
     endpoint_stats = check_endpoint_migration()
     print(f"Flask endpoints: {endpoint_stats['flask_endpoints']}")
-    print(f"FastAPI endpoints: {endpoint_stats['fastapi_endpoints']}")
+    print(f"FastAPI endpoints: {endpoint_stats['fastapi_endpoints']} (in {endpoint_stats['fastapi_files']} files)")
     print(f"Migration progress: {print_progress_bar(endpoint_stats['migration_percentage'])}")
     if endpoint_stats['async_files']:
         print(f"Async endpoint files: {', '.join(endpoint_stats['async_files'])}")

@@ -11,10 +11,14 @@ class AsyncFeature(Enum):
     PING_ENDPOINT = "ping"
     INFO_ENDPOINT = "info"
     SETTINGS_ENDPOINT = "settings"
+    TASK_ENDPOINT = "tasks"
     DATABASE_ENDPOINTS = "database"
     HISTORY_ENDPOINTS = "history"
     ASSETS_ENDPOINT = "assets"
     TRANSACTIONS_ENDPOINT = "transactions"
+    BALANCES_ENDPOINT = "balances"
+    EXCHANGES_ENDPOINT = "exchanges"
+    HISTORY_EVENTS_ENDPOINT = "history_events"
     ALL_ENDPOINTS = "all_endpoints"
 
 
