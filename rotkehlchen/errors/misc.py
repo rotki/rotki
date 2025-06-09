@@ -86,6 +86,10 @@ class GreenletKilledError(Exception):
     """Raised when a greenlet is killed"""
 
 
+class TaskKilledError(Exception):
+    """Raised when an async task is killed/cancelled"""
+
+
 class AccountingError(Exception):
     """Fatal error while processing accounting events during a PnL report"""
 
