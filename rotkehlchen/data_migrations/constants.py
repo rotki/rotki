@@ -1,3 +1,3 @@
 from typing import Final
 
-LAST_DATA_MIGRATION: Final = 19
+LAST_DATA_MIGRATION: Final = 20
