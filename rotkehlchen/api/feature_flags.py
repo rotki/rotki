@@ -19,6 +19,8 @@ class AsyncFeature(Enum):
     BALANCES_ENDPOINT = "balances"
     EXCHANGES_ENDPOINT = "exchanges"
     HISTORY_EVENTS_ENDPOINT = "history_events"
+    USERS_ENDPOINT = "users"
+    TAGS_ENDPOINT = "tags"
     ALL_ENDPOINTS = "all_endpoints"
 
 

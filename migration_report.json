@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-06-09T19:09:38.431460",
+  "timestamp": "2025-06-09T19:21:48.804173",
   "modules": {
     "API": {
-      "total_files": 33,
+      "total_files": 37,
       "gevent_direct": 3,
       "using_compat": 2,
-      "using_asyncio": 14,
-      "fully_async": 3,
+      "using_asyncio": 18,
+      "fully_async": 7,
       "mixed_async_sync": 9,
       "files": {
         "rotkehlchen/api/server.py": {
@@ -605,6 +605,42 @@
           ],
           "feature_flags": []
         },
+        "rotkehlchen/api/v1/async_assets_extended.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_all_assets",
+            "get_asset_types",
+            "search_assets",
+            "get_ignored_assets",
+            "add_ignored_assets",
+            "remove_ignored_assets",
+            "get_latest_asset_prices",
+            "get_historical_asset_price",
+            "check_for_asset_updates"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT"
+          ]
+        },
         "rotkehlchen/api/v1/async_auth.py": {
           "uses_gevent_direct": false,
           "uses_compat_layer": false,
@@ -914,6 +950,36 @@
           ],
           "feature_flags": []
         },
+        "rotkehlchen/api/v1/async_balances.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_all_balances",
+            "get_blockchain_balances",
+            "get_manual_balances",
+            "add_manual_balance",
+            "delete_manual_balance",
+            "get_historical_balances"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT"
+          ]
+        },
         "rotkehlchen/api/v1/schemas_fastapi.py": {
           "uses_gevent_direct": false,
           "uses_compat_layer": false,
@@ -930,6 +996,72 @@
             "validate_numeric_string"
           ],
           "feature_flags": []
+        },
+        "rotkehlchen/api/v1/async_users.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_users",
+            "create_user",
+            "login_user",
+            "logout_user",
+            "change_user_password",
+            "get_premium_status",
+            "set_premium_credentials",
+            "delete_premium_credentials",
+            "sync_premium_database"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT"
+          ]
+        },
+        "rotkehlchen/api/v1/async_exchanges.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_exchanges",
+            "add_exchange",
+            "edit_exchange",
+            "remove_exchange",
+            "get_exchange_balances",
+            "query_exchange_data"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT"
+          ]
         },
         "rotkehlchen/api/v1/async_base.py": {
           "uses_gevent_direct": false,
@@ -20638,11 +20770,11 @@
       }
     },
     "Core": {
-      "total_files": 1812,
+      "total_files": 1816,
       "gevent_direct": 8,
       "using_compat": 62,
-      "using_asyncio": 35,
-      "fully_async": 3,
+      "using_asyncio": 39,
+      "fully_async": 7,
       "mixed_async_sync": 30,
       "files": {
         "rotki/rotkehlchen/user_messages.py": {
@@ -52696,6 +52828,42 @@
           ],
           "feature_flags": []
         },
+        "rotki/rotkehlchen/api/v1/async_assets_extended.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_all_assets",
+            "get_asset_types",
+            "search_assets",
+            "get_ignored_assets",
+            "add_ignored_assets",
+            "remove_ignored_assets",
+            "get_latest_asset_prices",
+            "get_historical_asset_price",
+            "check_for_asset_updates"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT",
+            "ASSETS_ENDPOINT"
+          ]
+        },
         "rotki/rotkehlchen/api/v1/async_auth.py": {
           "uses_gevent_direct": false,
           "uses_compat_layer": false,
@@ -53005,6 +53173,36 @@
           ],
           "feature_flags": []
         },
+        "rotki/rotkehlchen/api/v1/async_balances.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_all_balances",
+            "get_blockchain_balances",
+            "get_manual_balances",
+            "add_manual_balance",
+            "delete_manual_balance",
+            "get_historical_balances"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT",
+            "BALANCES_ENDPOINT"
+          ]
+        },
         "rotki/rotkehlchen/api/v1/schemas_fastapi.py": {
           "uses_gevent_direct": false,
           "uses_compat_layer": false,
@@ -53021,6 +53219,72 @@
             "validate_numeric_string"
           ],
           "feature_flags": []
+        },
+        "rotki/rotkehlchen/api/v1/async_users.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_users",
+            "create_user",
+            "login_user",
+            "logout_user",
+            "change_user_password",
+            "get_premium_status",
+            "set_premium_credentials",
+            "delete_premium_credentials",
+            "sync_premium_database"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT",
+            "USERS_ENDPOINT"
+          ]
+        },
+        "rotki/rotkehlchen/api/v1/async_exchanges.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_exchanges",
+            "add_exchange",
+            "edit_exchange",
+            "remove_exchange",
+            "get_exchange_balances",
+            "query_exchange_data"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT",
+            "EXCHANGES_ENDPOINT"
+          ]
         },
         "rotki/rotkehlchen/api/v1/async_base.py": {
           "uses_gevent_direct": false,
@@ -54675,21 +54939,26 @@
   },
   "totals": {
     "compat": 87,
-    "async": 60,
+    "async": 68,
     "direct": 13,
-    "total": 3004
+    "total": 3012
   },
   "endpoints": {
     "flask_endpoints": 131,
-    "fastapi_endpoints": 5,
-    "migration_percentage": 3.816793893129771,
+    "fastapi_endpoints": 55,
+    "fastapi_files": 9,
+    "migration_percentage": 41.98473282442748,
     "async_files": [
+      "async_assets_extended.py",
       "async_auth.py",
       "async_assets.py",
+      "async_balances.py",
+      "async_users.py",
+      "async_exchanges.py",
       "async_base.py",
       "async_history_events.py",
       "async_transactions.py"
     ]
   },
-  "estimated_days_remaining": 64.3
+  "estimated_days_remaining": 39.3
 }
