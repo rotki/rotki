@@ -36,6 +36,8 @@ from rotkehlchen.api.v1.async_accounting import router as accounting_router
 from rotkehlchen.api.v1.async_blockchain import router as blockchain_router
 from rotkehlchen.api.v1.async_nfts import router as nfts_router
 from rotkehlchen.api.v1.async_eth2 import router as eth2_router
+from rotkehlchen.api.v1.async_defi import router as defi_router
+from rotkehlchen.api.v1.async_utils import router as utils_router
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -113,6 +115,8 @@ class RotkiASGIServer:
         self.app.include_router(blockchain_router)
         self.app.include_router(nfts_router)
         self.app.include_router(eth2_router)
+        self.app.include_router(defi_router)
+        self.app.include_router(utils_router)
         
         # TODO: As we migrate endpoints to FastAPI, include their routers here
         
@@ -241,7 +245,7 @@ from rotkehlchen.api.v1 import (
     async_transactions, async_base, async_balances, async_exchanges,
     async_assets_extended, async_users, async_database,
     async_statistics, async_history, async_accounting,
-    async_blockchain, async_nfts, async_eth2
+    async_blockchain, async_nfts, async_eth2, async_defi, async_utils
 )
 
 # Set up dependency injection for all routers
@@ -249,7 +253,7 @@ for module in [
     async_transactions, async_base, async_balances, async_exchanges,
     async_assets_extended, async_users, async_database,
     async_statistics, async_history, async_accounting,
-    async_blockchain, async_nfts, async_eth2
+    async_blockchain, async_nfts, async_eth2, async_defi, async_utils
 ]:
     module.get_rest_api = get_rest_api
 
