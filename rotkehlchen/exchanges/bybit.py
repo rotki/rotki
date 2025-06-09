@@ -50,7 +50,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

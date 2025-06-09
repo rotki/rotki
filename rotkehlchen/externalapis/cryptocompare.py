@@ -55,7 +55,7 @@ from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from collections.abc import Callable

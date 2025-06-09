@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData

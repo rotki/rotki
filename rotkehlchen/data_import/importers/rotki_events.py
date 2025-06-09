@@ -9,7 +9,7 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     process_rotki_generic_import_csv_fields,
 )
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError

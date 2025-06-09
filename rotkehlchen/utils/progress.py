@@ -13,7 +13,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.sqlite import DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 

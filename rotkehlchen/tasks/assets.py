@@ -52,7 +52,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.db.filtering import EVM_EVENT_JOIN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError

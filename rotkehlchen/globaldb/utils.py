@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 # Whenever you upgrade the global DB make sure to:

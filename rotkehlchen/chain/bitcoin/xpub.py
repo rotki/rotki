@@ -15,12 +15,12 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BTCAddress, SupportedBlockchain
 
-from rotkehlchen.utils.gevent_compat import Semaphore
+from rotkehlchen.utils.concurrency import Semaphore
 
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 logger = logging.getLogger(__name__)

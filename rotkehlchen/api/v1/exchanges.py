@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.feature_flags import AsyncFeature, async_features
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,

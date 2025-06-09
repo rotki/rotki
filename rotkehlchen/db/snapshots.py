@@ -20,7 +20,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.snapshots import get_main_currency_price
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 BALANCES_FILENAME = 'balances_snapshot.csv'
 BALANCES_FOR_IMPORT_FILENAME = 'balances_snapshot_import.csv'

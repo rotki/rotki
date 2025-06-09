@@ -12,7 +12,7 @@ from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import sleep
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

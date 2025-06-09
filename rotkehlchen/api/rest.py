@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overlo
 from zipfile import BadZipFile, ZipFile
 
 from flask import Response, after_this_request, make_response, send_file
-from rotkehlchen.utils.gevent_compat import Event, Semaphore, spawn
+from rotkehlchen.utils.concurrency import Event, Semaphore, spawn
 from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
@@ -283,7 +283,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
-from rotkehlchen.utils.gevent_compat import Event, Semaphore
+from rotkehlchen.utils.concurrency import Event, Semaphore
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
@@ -293,7 +293,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 

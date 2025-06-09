@@ -71,7 +71,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
-from rotkehlchen.utils.gevent_compat import Semaphore, sleep
+from rotkehlchen.utils.concurrency import Semaphore, sleep
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import (
@@ -97,7 +97,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator

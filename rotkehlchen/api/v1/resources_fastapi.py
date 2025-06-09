@@ -6,7 +6,6 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from rotkehlchen.api.feature_flags import AsyncFeature, async_features, feature_enabled
 from rotkehlchen.api.rest import RestAPI, process_result
 from rotkehlchen.api.v1.schemas_fastapi import (
     AppInfoModel,
@@ -279,8 +278,7 @@ def create_migrated_endpoint(flask_resource_class):
 @router.get("/async/features", response_model=dict)
 async def get_async_features():
     """Get status of async feature flags"""
-    from rotkehlchen.api.feature_flags import get_migration_metrics
-    return create_success_response(get_migration_metrics())
+        return create_success_response(get_migration_metrics())
 
 
 @router.put("/async/features/{feature}", response_model=dict)

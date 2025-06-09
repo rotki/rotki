@@ -9,7 +9,6 @@ from flask import Flask
 from flask.testing import FlaskClient
 
 from rotkehlchen.api.async_server import AsyncAPIServer
-from rotkehlchen.api.feature_flags import AsyncFeature, async_features
 from rotkehlchen.api.rest import RestAPI, api_response, process_result
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
@@ -196,8 +195,7 @@ class TestFeatureFlagSystem:
         os.environ["ASYNC_FEATURE_INFO"] = "false"
         
         # Create new instance to load from env
-        from rotkehlchen.api.feature_flags import FeatureFlags
-        flags = FeatureFlags()
+                flags = FeatureFlags()
         
         assert flags.is_enabled(AsyncFeature.PING_ENDPOINT) is True
         assert flags.is_enabled(AsyncFeature.INFO_ENDPOINT) is False
@@ -210,8 +208,7 @@ class TestFeatureFlagSystem:
         """Test ASYNC_MODE environment variable"""
         # Test full mode
         os.environ["ASYNC_MODE"] = "full"
-        from rotkehlchen.api.feature_flags import FeatureFlags
-        flags = FeatureFlags()
+                flags = FeatureFlags()
         
         # All features should be enabled
         for feature in AsyncFeature:
@@ -232,8 +229,7 @@ class TestFeatureFlagSystem:
     
     def test_migration_metrics(self):
         """Test migration metrics calculation"""
-        from rotkehlchen.api.feature_flags import get_migration_metrics
-        
+                
         # Enable some features
         async_features.enable(AsyncFeature.PING_ENDPOINT)
         async_features.enable(AsyncFeature.INFO_ENDPOINT)

@@ -11,7 +11,7 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     maybe_set_transaction_extra_data,
 )
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition

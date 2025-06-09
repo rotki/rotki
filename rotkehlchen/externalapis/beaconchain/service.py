@@ -42,7 +42,7 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.gevent_compat import Semaphore, sleep
+from rotkehlchen.utils.concurrency import Semaphore, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

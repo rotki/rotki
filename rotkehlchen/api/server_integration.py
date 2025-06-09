@@ -14,7 +14,7 @@ from rotkehlchen.api.server_async import RotkiASGIServer, set_global_dependencie
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier, WebSocketCompatibilityWrapper
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.gevent_compat import spawn
+from rotkehlchen.utils.concurrency import spawn
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

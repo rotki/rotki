@@ -20,7 +20,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin

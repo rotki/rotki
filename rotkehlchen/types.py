@@ -34,7 +34,7 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 ModuleName = Literal[
     'makerdao_dsr',

@@ -2,7 +2,7 @@ import logging
 import os
 import signal
 
-from rotkehlchen.utils.gevent_compat import Event, get_hub, signal
+from rotkehlchen.utils.concurrency import Event, get_hub, signal
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args

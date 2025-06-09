@@ -24,7 +24,7 @@ from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 TAG_REFERENCE_ENTRY_TYPE = Union[
     'ManuallyTrackedBalance',

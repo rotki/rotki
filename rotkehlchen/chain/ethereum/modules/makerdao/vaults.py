@@ -21,7 +21,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.utils.misc import (
-from rotkehlchen.utils.gevent_compat import Semaphore
+from rotkehlchen.utils.concurrency import Semaphore
     ts_now,
 )
 

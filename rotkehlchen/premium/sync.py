@@ -4,7 +4,7 @@ import tempfile
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
-from rotkehlchen.utils.gevent_compat import get_hub
+from rotkehlchen.utils.concurrency import get_hub
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME

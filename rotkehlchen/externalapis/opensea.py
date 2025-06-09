@@ -32,7 +32,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

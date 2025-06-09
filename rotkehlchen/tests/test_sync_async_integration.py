@@ -17,7 +17,6 @@ from flask.testing import FlaskClient
 from fastapi.testclient import TestClient
 
 from rotkehlchen.api.async_server import AsyncAPIServer
-from rotkehlchen.api.feature_flags import AsyncFeature, async_features
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
 from rotkehlchen.api.websockets.notifier import RotkiNotifier

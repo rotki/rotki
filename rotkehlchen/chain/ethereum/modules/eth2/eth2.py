@@ -33,7 +33,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
-from rotkehlchen.utils.gevent_compat import Semaphore, sleep
+from rotkehlchen.utils.concurrency import Semaphore, sleep
 
 from .constants import (
     CPT_ETH2,
@@ -56,7 +56,7 @@ from .utils import create_profit_filter_queries
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
