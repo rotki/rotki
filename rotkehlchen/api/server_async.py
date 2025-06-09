@@ -30,6 +30,9 @@ from rotkehlchen.api.v1.async_exchanges import router as exchanges_router
 from rotkehlchen.api.v1.async_assets_extended import router as assets_extended_router
 from rotkehlchen.api.v1.async_users import router as users_router
 from rotkehlchen.api.v1.async_database import router as database_router
+from rotkehlchen.api.v1.async_statistics import router as statistics_router
+from rotkehlchen.api.v1.async_history import router as history_router
+from rotkehlchen.api.v1.async_accounting import router as accounting_router
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -101,6 +104,9 @@ class RotkiASGIServer:
         self.app.include_router(assets_extended_router)
         self.app.include_router(users_router)
         self.app.include_router(database_router)
+        self.app.include_router(statistics_router)
+        self.app.include_router(history_router)
+        self.app.include_router(accounting_router)
         
         # TODO: As we migrate endpoints to FastAPI, include their routers here
         
@@ -227,13 +233,15 @@ async def get_ws_notifier() -> AsyncRotkiNotifier:
 # Override the dependency in the routers
 from rotkehlchen.api.v1 import (
     async_transactions, async_base, async_balances, async_exchanges,
-    async_assets_extended, async_users, async_database
+    async_assets_extended, async_users, async_database,
+    async_statistics, async_history, async_accounting
 )
 
 # Set up dependency injection for all routers
 for module in [
     async_transactions, async_base, async_balances, async_exchanges,
-    async_assets_extended, async_users, async_database
+    async_assets_extended, async_users, async_database,
+    async_statistics, async_history, async_accounting
 ]:
     module.get_rest_api = get_rest_api
 

@@ -21,6 +21,8 @@ class AsyncFeature(Enum):
     HISTORY_EVENTS_ENDPOINT = "history_events"
     USERS_ENDPOINT = "users"
     TAGS_ENDPOINT = "tags"
+    STATISTICS_ENDPOINT = "statistics"
+    ACCOUNTING_ENDPOINT = "accounting"
     ALL_ENDPOINTS = "all_endpoints"
 
 

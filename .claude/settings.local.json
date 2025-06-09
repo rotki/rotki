@@ -21,7 +21,8 @@
       "Bash(git pull:*)",
       "Bash(git restore:*)",
       "Bash(git rm:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(gh pr diff:*)"
     ],
     "deny": []
   }

@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-06-09T19:21:48.804173",
+  "timestamp": "2025-06-09T19:24:37.100170",
   "modules": {
     "API": {
-      "total_files": 37,
+      "total_files": 38,
       "gevent_direct": 3,
       "using_compat": 2,
-      "using_asyncio": 18,
-      "fully_async": 7,
+      "using_asyncio": 19,
+      "fully_async": 8,
       "mixed_async_sync": 9,
       "files": {
         "rotkehlchen/api/server.py": {
@@ -525,6 +525,40 @@
             "INFO_ENDPOINT",
             "SETTINGS_ENDPOINT",
             "SETTINGS_ENDPOINT"
+          ]
+        },
+        "rotkehlchen/api/v1/async_database.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_database_info",
+            "manage_database_backup",
+            "upload_database_backup",
+            "get_tags",
+            "add_tag",
+            "edit_tag",
+            "delete_tag",
+            "clear_cache"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "DATABASE_ENDPOINTS",
+            "DATABASE_ENDPOINTS",
+            "DATABASE_ENDPOINTS",
+            "TAGS_ENDPOINT",
+            "TAGS_ENDPOINT",
+            "TAGS_ENDPOINT",
+            "TAGS_ENDPOINT",
+            "DATABASE_ENDPOINTS"
           ]
         },
         "rotkehlchen/api/v1/fields.py": {
@@ -20770,11 +20804,11 @@
       }
     },
     "Core": {
-      "total_files": 1816,
+      "total_files": 1817,
       "gevent_direct": 8,
       "using_compat": 62,
-      "using_asyncio": 39,
-      "fully_async": 7,
+      "using_asyncio": 40,
+      "fully_async": 8,
       "mixed_async_sync": 30,
       "files": {
         "rotki/rotkehlchen/user_messages.py": {
@@ -52750,6 +52784,40 @@
             "SETTINGS_ENDPOINT"
           ]
         },
+        "rotki/rotkehlchen/api/v1/async_database.py": {
+          "uses_gevent_direct": false,
+          "uses_compat_layer": false,
+          "uses_asyncio": true,
+          "has_async_functions": true,
+          "has_sync_functions": false,
+          "gevent_imports": [],
+          "compat_imports": [],
+          "asyncio_imports": [
+            "import asyncio"
+          ],
+          "async_functions": [
+            "get_rest_api",
+            "get_database_info",
+            "manage_database_backup",
+            "upload_database_backup",
+            "get_tags",
+            "add_tag",
+            "edit_tag",
+            "delete_tag",
+            "clear_cache"
+          ],
+          "sync_functions": [],
+          "feature_flags": [
+            "DATABASE_ENDPOINTS",
+            "DATABASE_ENDPOINTS",
+            "DATABASE_ENDPOINTS",
+            "TAGS_ENDPOINT",
+            "TAGS_ENDPOINT",
+            "TAGS_ENDPOINT",
+            "TAGS_ENDPOINT",
+            "DATABASE_ENDPOINTS"
+          ]
+        },
         "rotki/rotkehlchen/api/v1/fields.py": {
           "uses_gevent_direct": false,
           "uses_compat_layer": false,
@@ -54939,16 +55007,17 @@
   },
   "totals": {
     "compat": 87,
-    "async": 68,
+    "async": 70,
     "direct": 13,
-    "total": 3012
+    "total": 3014
   },
   "endpoints": {
     "flask_endpoints": 131,
-    "fastapi_endpoints": 55,
-    "fastapi_files": 9,
-    "migration_percentage": 41.98473282442748,
+    "fastapi_endpoints": 63,
+    "fastapi_files": 10,
+    "migration_percentage": 48.091603053435115,
     "async_files": [
+      "async_database.py",
       "async_assets_extended.py",
       "async_auth.py",
       "async_assets.py",
@@ -54960,5 +55029,5 @@
       "async_transactions.py"
     ]
   },
-  "estimated_days_remaining": 39.3
+  "estimated_days_remaining": 35.3
 }
