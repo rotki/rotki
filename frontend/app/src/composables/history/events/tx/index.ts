@@ -18,6 +18,7 @@ import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import {
   type AddTransactionHashPayload,
+  type BlockchainAddress,
   type EvmChainAddress,
   OnlineHistoryEventsQueryType,
   type RepullingTransactionPayload,
@@ -79,11 +80,15 @@ export const useHistoryTransactions = createSharedComposable(() => {
   ): Promise<void> => {
     const taskType = TaskType.TX;
     const isEvm = type === TransactionChainType.EVM;
+    const blockchainAccount: BlockchainAddress = {
+      address: account.address,
+      blockchain: account.evmChain,
+    };
     const defaults: TransactionRequestPayload = {
-      accounts: [account],
+      accounts: [blockchainAccount],
     };
 
-    const { taskId } = await fetchTransactionsTask(defaults, type);
+    const { taskId } = await fetchTransactionsTask(defaults);
     const taskMeta = {
       address: account.address,
       chain: account.evmChain,
