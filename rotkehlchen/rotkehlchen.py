@@ -11,11 +11,10 @@ from pathlib import Path
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
-import gevent
-
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.unified import create_ws_notifier
+from rotkehlchen.utils.gevent_compat import Event, Greenlet, spawn
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, Nft
 from rotkehlchen.balances.manual import (
@@ -165,7 +164,7 @@ class Rotkehlchen:
                 f'The given data directory {self.data_dir} is not readable or writable',
             )
         self.main_loop_spawned = False
-        self.api_task_greenlets: list[gevent.Greenlet] = []
+        self.api_task_greenlets: list[Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier()
@@ -211,7 +210,7 @@ class Rotkehlchen:
         # Initialize EVM Contracts common abis
         EvmContracts.initialize_common_abis()
         self.task_manager: TaskManager | None = None
-        self.shutdown_event = gevent.event.Event()
+        self.shutdown_event = Event()
         self.migration_manager = DataMigrationManager(self)
 
     def maybe_kill_running_tx_query_tasks(
@@ -630,9 +629,9 @@ class Rotkehlchen:
         self.deactivate_premium_status()
         return success, msg
 
-    def start(self) -> gevent.Greenlet:
+    def start(self) -> Greenlet:
         assert not self.main_loop_spawned, 'Tried to spawn the main loop twice'
-        greenlet = gevent.spawn(self.main_loop)
+        greenlet = spawn(self.main_loop)
         self.main_loop_spawned = True
         return greenlet
 

@@ -53,4 +53,14 @@ except ImportError:
         """Kill all greenlets"""
         gevent.killall(greenlets)
 
-__all__ = ['sleep', 'spawn', 'Semaphore', 'Event', 'Lock', 'Queue', 'kill_all']
+# Export Greenlet type for type annotations
+try:
+    if async_features.is_enabled(AsyncFeature.TASK_MANAGER):
+        # For async mode, we use asyncio.Task as Greenlet equivalent
+        from asyncio import Task as Greenlet
+    else:
+        from gevent import Greenlet
+except (ImportError, NameError):
+    from gevent import Greenlet
+
+__all__ = ['sleep', 'spawn', 'Semaphore', 'Event', 'Lock', 'Queue', 'kill_all', 'Greenlet']
