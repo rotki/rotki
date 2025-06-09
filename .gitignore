@@ -18,6 +18,7 @@ ui/.ignore
 pytestdebug.log
 dist/
 .eggs
+.claude/
 docs/_build
 .idea
 failure-screenshots/
