@@ -30,3 +30,4 @@ frontend/logs
 .venv
 .pnpm-debug.log
 colibri/target
+uv.lock
