@@ -2,7 +2,8 @@ import logging
 import os
 import signal
 
-import gevent
+from rotkehlchen.utils.gevent_compat import Event
+import gevent  # Still needed for hub operations
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args
@@ -30,7 +31,7 @@ class RotkehlchenServer:
         add_logging_level('TRACE', TRACE)
         configure_logging(self.args)
         self.rotkehlchen = Rotkehlchen(self.args)
-        self.stop_event = gevent.event.Event()
+        self.stop_event = Event()
         if ',' in self.args.api_cors:
             domain_list = [str(domain) for domain in self.args.api_cors.split(',')]
         else:

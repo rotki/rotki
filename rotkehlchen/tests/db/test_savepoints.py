@@ -1,11 +1,11 @@
 import sqlite3
 from contextlib import suppress
 
-import gevent
 import pytest
 
 from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.utils.gevent_compat import joinall, sleep, spawn
 
 
 def test_unnamed_savepoints():
@@ -90,30 +90,30 @@ def test_write_transaction_with_savepoint_other_context():
     conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('INSERT INTO a VALUES (1)')
-        greenlet1 = gevent.spawn(other_context, conn, True)
-        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        greenlet1 = spawn(other_context, conn, True)
+        sleep(.3)  # context switch for a bit to let the other greenlet run
         assert greenlet1.exception is None
         assert greenlet1.dead is False, 'the other greenlet should still run'
 
     with conn.read_ctx() as cursor:
         assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
 
-    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    joinall([greenlet1])  # wait till the other greenlet finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other greenlet should write to the DB'  # noqa: E501
 
     # now let's try with the other greenlet also rolling back part of the savepoint
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('INSERT INTO a VALUES (3)')
-        greenlet1 = gevent.spawn(other_context, conn, False)
-        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        greenlet1 = spawn(other_context, conn, False)
+        sleep(.3)  # context switch for a bit to let the other greenlet run
         assert greenlet1.exception is None
         assert greenlet1.dead is False, 'the other greenlet should still run'
 
     with conn.read_ctx() as cursor:
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other greenlet should not have written to the DB'  # noqa: E501
 
-    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    joinall([greenlet1])  # wait till the other greenlet finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB but not the last one
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
 
@@ -160,15 +160,15 @@ def test_savepoint_with_write_transaction_other_context():
     conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
-        greenlet1 = gevent.spawn(other_context, conn)
-        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        greenlet1 = spawn(other_context, conn)
+        sleep(.3)  # context switch for a bit to let the other greenlet run
         assert greenlet1.exception is None
         assert greenlet1.dead is False, 'the other greenlet should still run'
 
     with conn.read_ctx() as cursor:
         assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
 
-    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    joinall([greenlet1])  # wait till the other greenlet finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
 
@@ -194,30 +194,30 @@ def test_open_savepoint_with_savepoint_other_context():
     conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
-        greenlet1 = gevent.spawn(other_context, conn, True)
-        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        greenlet1 = spawn(other_context, conn, True)
+        sleep(.3)  # context switch for a bit to let the other greenlet run
         assert greenlet1.exception is None
         assert greenlet1.dead is False, 'the other greenlet should still run'
 
     with conn.read_ctx() as cursor:
         assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
 
-    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    joinall([greenlet1])  # wait till the other greenlet finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other greenlet should write to the DB'  # noqa: E501
 
     # now let's try with the other greenlet also rolling back part of the savepoint
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (3)')
-        greenlet1 = gevent.spawn(other_context, conn, False)
-        gevent.sleep(.3)  # context switch for a bit to let the other greenlet run
+        greenlet1 = spawn(other_context, conn, False)
+        sleep(.3)  # context switch for a bit to let the other greenlet run
         assert greenlet1.exception is None
         assert greenlet1.dead is False, 'the other greenlet should still run'
 
     with conn.read_ctx() as cursor:
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other greenlet should not have written to the DB'  # noqa: E501
 
-    gevent.joinall([greenlet1])  # wait till the other greenlet finishes
+    joinall([greenlet1])  # wait till the other greenlet finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB but not the last one
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
 

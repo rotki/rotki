@@ -5,7 +5,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 
-import gevent
 import pytest
 import requests
 from requests import Response
@@ -73,6 +72,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.gevent_compat import joinall
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -786,9 +786,9 @@ def test_query_transactions_check_decoded_events(
         assert rotki.task_manager is not None
         with mock_evm_chains_with_transactions():
             rotki.task_manager._maybe_schedule_evm_txreceipts()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            joinall(rotki.greenlet_manager.greenlets)
             rotki.task_manager._maybe_decode_evm_transactions()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            joinall(rotki.greenlet_manager.greenlets)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
             json={

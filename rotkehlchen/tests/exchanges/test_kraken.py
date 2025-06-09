@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 from uuid import uuid4
 
-import gevent
 import pytest
 import requests
 
@@ -63,6 +62,7 @@ from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
+from rotkehlchen.utils.gevent_compat import Timeout
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -203,7 +203,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
     patch_dividend = patch('rotkehlchen.exchanges.kraken.KRAKEN_BACKOFF_DIVIDEND', new=1)
 
     with ExitStack() as stack:
-        stack.enter_context(gevent.Timeout(8))
+        stack.enter_context(Timeout(8))
         stack.enter_context(patch_retries)
         stack.enter_context(patch_dividend)
         stack.enter_context(patch_kraken)

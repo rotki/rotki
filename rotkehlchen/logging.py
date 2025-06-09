@@ -5,7 +5,13 @@ from collections.abc import Callable, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
+try:
+    import gevent
+    getcurrent = gevent.getcurrent
+except ImportError:
+    # For asyncio mode, provide a fallback
+    import threading
+    getcurrent = threading.current_thread
 
 from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import is_production, timestamp_to_date, ts_now
@@ -95,7 +101,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         - appends all kwargs to the final message, redacting any sensitive information
         - appends the greenlet id in the log message
         """
-        msg, greenlet = str(given_msg), gevent.getcurrent()
+        msg, greenlet = str(given_msg), getcurrent()
         greenlet_name = get_greenlet_name(greenlet)
         if (
                 'json_data' in kwargs and

@@ -4,13 +4,13 @@ from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Any
 
-import gevent
 import psutil
 import requests
 from flask import url_for
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.utils.gevent_compat import Timeout, sleep
 
 if platform.system() == 'Darwin':
     ASYNC_TASK_WAIT_TIMEOUT = 60
@@ -24,7 +24,7 @@ def _wait_for_listening_port(
     if pid is None:
         pid = os.getpid()
     for _ in range(tries):
-        gevent.sleep(sleep)
+        sleep(sleep)
         # macOS requires root access for the connections api to work
         # so get connections of the current process only
         connections = psutil.Process(pid).net_connections()
@@ -178,7 +178,7 @@ def wait_for_async_task(
     """Waits until an async task is ready and when it is returns the response's outcome
 
     If the task's outcome is not ready within timeout seconds then the test fails"""
-    with gevent.Timeout(timeout):
+    with Timeout(timeout):
         while True:
             response = requests.get(
                 api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
@@ -201,7 +201,7 @@ def wait_for_async_task(
             if status == 'not-found':
                 raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
             if status == 'pending':
-                gevent.sleep(1)
+                sleep(1)
             else:
                 raise AssertionError(
                     f'Waiting for task id {task_id} returned unexpected status {status}',
@@ -215,7 +215,7 @@ def wait_for_async_tasks(
 ) -> None:
     """Waits until a number of async tasks are ready"""
     searching_set = set(task_ids)
-    with gevent.Timeout(timeout):
+    with Timeout(timeout):
         while True:
             response = requests.get(
                 api_url_for(server, 'asynctasksresource', task_id=None),
@@ -225,7 +225,7 @@ def wait_for_async_tasks(
             if searching_set - set(data['completed']) == set():
                 break
             else:
-                gevent.sleep(1)
+                sleep(1)
 
 
 def wait_for_async_task_with_result(

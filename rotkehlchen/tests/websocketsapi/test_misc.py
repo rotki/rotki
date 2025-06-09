@@ -1,6 +1,6 @@
 import platform
+from rotkehlchen.utils.gevent_compat import Timeout, joinall, spawn
 
-import gevent
 import pytest
 
 
@@ -27,11 +27,11 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     string_len = 27000 if platform.system() == 'Darwin' else 100000
-    with gevent.Timeout(10):
-        g1 = gevent.spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
+    with Timeout(10):
+        g1 = spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
         _send_stuff(rotki.msg_aggregator, websocket_connection, string_len)
-        g2 = gevent.spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
-        gevent.joinall([g1, g2])
+        g2 = spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
+        joinall([g1, g2])
         assert all(
             isinstance(x.exception, gevent.exceptions.ConcurrentObjectUseError) is False
             for x in [g1, g2] + rotki.greenlet_manager.greenlets

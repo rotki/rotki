@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import gevent
 from more_itertools import peekable
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
@@ -21,6 +20,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
@@ -214,7 +214,7 @@ class Accountant:
                 # This loop can take a very long time depending on the amount of events
                 # to process. We need to yield to other greenlets or else calls to the
                 # API may time out
-                gevent.sleep(0.5)
+                sleep(0.5)
             count += processed_events_num
             if not active_premium and count >= FREE_PNL_EVENTS_LIMIT:
                 log.debug(

@@ -4,7 +4,6 @@ from collections import defaultdict
 from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
-import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -77,6 +76,7 @@ from rotkehlchen.types import (
     get_args,
 )
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.gevent_compat import kill_all
 
 from .events import process_events
 
@@ -1057,7 +1057,7 @@ class TaskManager:
     def clear(self) -> None:
         """Ensure that no task is kept referenced. Used when removing the task manager"""
         for task_list in self.running_greenlets.values():
-            gevent.killall(task_list)
+            kill_all(task_list)
 
         self.running_greenlets.clear()
         self.should_schedule = False

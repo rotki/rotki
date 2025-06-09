@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest import mock
 
-import gevent
 import pytest
 import requests
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -37,6 +36,7 @@ from rotkehlchen.tests.utils.premium import (
 )
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -612,7 +612,7 @@ def test_user_logout(
     with mock.patch.object(
         target=rotkehlchen_api_server.rest_api.rotkehlchen,
         attribute='query_balances',
-        side_effect=lambda *args, **kwargs: gevent.sleep(10),
+        side_effect=lambda *args, **kwargs: sleep(10),
     ):
         response = requests.get(
             api_url_for(rotkehlchen_api_server, 'allbalancesresource', name=username),

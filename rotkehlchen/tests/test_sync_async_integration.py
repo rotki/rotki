@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-import gevent
+from rotkehlchen.utils.gevent_compat import sleep
 import pytest
 from flask.testing import FlaskClient
 from fastapi.testclient import TestClient
@@ -184,7 +184,7 @@ class TestMixedOperation:
         
         # Define tasks
         def sync_task():
-            gevent.sleep(0.1)
+            sleep(0.1)
             return 'sync_complete'
             
         async def async_task():

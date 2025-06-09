@@ -32,7 +32,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 if TYPE_CHECKING:
-    from gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
     from rotkehlchen.db.dbhandler import DBHandler
 

@@ -1,7 +1,6 @@
 import logging
 from collections.abc import Sequence
 
-import gevent
 import requests
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
@@ -17,6 +16,7 @@ from rotkehlchen.chain.substrate.types import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.utils.gevent_compat import Timeout, joinall, sleep, spawn
 
 NODE_CONNECTION_TIMEOUT = 15
 
@@ -83,8 +83,8 @@ def attempt_connect_test_nodes(
     else:
         raise AssertionError(f'Unexpected substrate chain type: {chain} at test')
 
-    greenlets = [gevent.spawn(attempt_connect_node, node) for node in node_names]
-    jobs = gevent.joinall(greenlets, timeout=timeout)
+    greenlets = [spawn(attempt_connect_node, node) for node in node_names]
+    jobs = joinall(greenlets, timeout=timeout)
 
     # Populate available node attributes map
     available_node_attributes_map: DictNodeNameNodeAttributes = {}
@@ -113,14 +113,14 @@ def wait_until_all_substrate_nodes_connected(
     all_nodes: set[NodeName] = set(substrate_manager_connect_at_start)
     connected: set[NodeName] = set()
     try:
-        with gevent.Timeout(timeout):
+        with Timeout(timeout):
             while connected != all_nodes:
                 for node in substrate_manager_connect_at_start:
                     if node in substrate_manager.available_node_attributes_map:
                         connected.add(node)
 
-                gevent.sleep(0.1)
-    except gevent.Timeout:
+                sleep(0.1)
+    except Timeout:
         not_connected_nodes = all_nodes - connected
         log.info(
             f'{substrate_manager.chain} manager failed to connect to '

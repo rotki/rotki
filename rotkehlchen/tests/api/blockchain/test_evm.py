@@ -5,7 +5,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 from eth_utils import to_checksum_address
@@ -38,6 +37,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
 )
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.gevent_compat import Timeout, kill_all, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -443,7 +443,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     task_manager = rotki.task_manager
     assert task_manager is not None
-    gevent.killall(task_manager.greenlet_manager.greenlets)
+    kill_all(task_manager.greenlet_manager.greenlets)
     task_manager.max_tasks_num = 2
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
@@ -454,7 +454,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
 
     def patch_single_query(**kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:
-            gevent.sleep(2)
+            sleep(2)
 
     patch_obj = patch('rotkehlchen.chain.evm.transactions.EvmTransactions._get_transactions_for_range', side_effect=patch_single_query)  # noqa: E501
     with patch_obj:
@@ -483,7 +483,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             assert not api_task_greenlets[idx].dead
 
     # now delete one address from api task and 1 from periodic task manager and see it's immediate
-    with gevent.Timeout(5):
+    with Timeout(5):
         for address in (api_addies[0], task_manager_addy):
             response = requests.delete(
                 api_url_for(

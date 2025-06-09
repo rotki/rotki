@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -16,6 +15,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.utils.gevent_compat import Timeout, sleep
 
 
 @pytest.fixture(name='monerium_credentials')
@@ -40,11 +40,11 @@ def mock_monerium_and_run_periodic_task(task_manager, contents):
     timeout = 4
     task_manager.chains_aggregator.premium = MockPremium()
     task_manager.potential_tasks = [task_manager._maybe_query_monerium]
-    with gevent.Timeout(timeout), patch('requests.Session.get', side_effect=mock_monerium):
+    with Timeout(timeout), patch('requests.Session.get', side_effect=mock_monerium):
         try:
             task_manager.schedule()
-            gevent.sleep(.5)
-        except gevent.Timeout as e:
+            sleep(.5)
+        except Timeout as e:
             raise AssertionError(f'monerium order query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 

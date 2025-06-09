@@ -1,3 +1,4 @@
+# TODO: Remove monkey patching when fully migrated to asyncio
 from gevent import monkey  # isort:skip
 monkey.patch_all()  # isort:skip
 import logging

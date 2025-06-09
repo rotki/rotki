@@ -2,7 +2,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -16,6 +15,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
 from rotkehlchen.types import Location
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -75,7 +75,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: 'APIServer') -
             json_data = response.json()
             if json_data['result']['status'] == 'pending':
                 # context switch so that the greenlet to query balances can operate
-                gevent.sleep(1)
+                sleep(1)
             elif json_data['result']['status'] == 'completed':
                 break
             else:
@@ -138,7 +138,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: 'APIS
         result = assert_proper_sync_response_with_result(response)
         if result['status'] == 'pending':
             # context switch so that the greenlet to query balances can operate
-            gevent.sleep(1)
+            sleep(1)
         elif result['status'] == 'completed':
             break
         else:
@@ -161,7 +161,7 @@ def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: 'APIServer') -
 
     def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:  # infinite loop so we can cancel it
-            gevent.sleep(1)
+            sleep(1)
 
     binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 

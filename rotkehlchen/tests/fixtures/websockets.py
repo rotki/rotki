@@ -1,9 +1,9 @@
 import json
+from rotkehlchen.utils.gevent_compat import Timeout, joinall, sleep, spawn
 from collections import deque
 from collections.abc import Generator
 from typing import Any
 
-import gevent
 import pytest
 from websocket import create_connection
 
@@ -21,7 +21,7 @@ class WebsocketReader:
             if msg not in {'', '{}'}:
                 data = json.loads(msg)
                 self.messages.appendleft(data)
-            gevent.sleep(0.2)
+            sleep(0.2)
 
         # cleanup
         self.ws.close()
@@ -37,10 +37,10 @@ class WebsocketReader:
 
     def wait_until_messages_num(self, num: int, timeout: int) -> None:
         try:
-            with gevent.Timeout(timeout):
+            with Timeout(timeout):
                 while self.messages_num() < num:
-                    gevent.sleep(0.2)
-        except gevent.Timeout as e:
+                    sleep(0.2)
+        except Timeout as e:
             msg = f'Websocket reader did not contain {num} messages within {timeout} seconds. Only found {self.messages_num()}'  # noqa: E501
             raise AssertionError(msg) from e
 
@@ -52,7 +52,7 @@ def fixture_websocket_connection_reader(
     ws = create_connection(f'ws://127.0.0.1:{rest_api_port}/ws')
     websocket_reader = WebsocketReader(ws)
     ws.send('{}')  # whatever -- just to subscribe
-    greenlet = gevent.spawn(websocket_reader.read_forever)
+    greenlet = spawn(websocket_reader.read_forever)
     yield websocket_reader
     websocket_reader.close()
-    gevent.joinall([greenlet], timeout=10)
+    joinall([greenlet], timeout=10)

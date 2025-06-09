@@ -5,7 +5,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -64,6 +63,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -240,7 +240,7 @@ def test_query_all_balances(
 
         # wait for at least 1 second to make sure that new balances can be saved.
         # Can't save balances again if it's the same timestamp
-        gevent.sleep(1)
+        sleep(1)
         # now do the same but test that balance are saved since the balance save frequency delay
         # is overridden via `save_data` = True
         with ExitStack() as stack:

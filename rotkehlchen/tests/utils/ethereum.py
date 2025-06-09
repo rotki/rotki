@@ -3,7 +3,6 @@ import os
 from typing import TYPE_CHECKING, Any, overload
 from unittest.mock import patch
 
-import gevent
 from eth_typing import ChecksumAddress
 
 from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
@@ -45,6 +44,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.gevent_compat import Timeout, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -175,14 +175,14 @@ def wait_until_all_nodes_connected(
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
     connected = [False] * len(connect_at_start)
     try:
-        with gevent.Timeout(timeout):
+        with Timeout(timeout):
             while not all(connected):
                 for idx, weighted_node in enumerate(connect_at_start):
                     if weighted_node.node_info in evm_inquirer.web3_mapping:
                         connected[idx] = True
 
-                gevent.sleep(0.1)
-    except gevent.Timeout:
+                sleep(0.1)
+    except Timeout:
         names = [
             str(x) for idx, x in enumerate(connect_at_start) if not connected[idx]
         ]

@@ -1,7 +1,6 @@
 import logging
 import subprocess  # noqa: S404  # is only used to execute rotki code here
 
-import gevent
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
@@ -12,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import Price
+from rotkehlchen.utils.gevent_compat import joinall, spawn
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,12 +30,12 @@ def test_search_assets_levenshtein_multiple(globaldb, database):  # pylint: disa
         )
 
     greenlets = [
-        gevent.spawn(do_search),
-        gevent.spawn(do_search),
-        gevent.spawn(do_search),
+        spawn(do_search),
+        spawn(do_search),
+        spawn(do_search),
     ]
 
-    gevent.joinall(greenlets)
+    joinall(greenlets)
     assert all(x.exception is None for x in greenlets)
 
 

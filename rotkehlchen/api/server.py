@@ -8,6 +8,7 @@ import werkzeug
 from flask import Blueprint, Flask, Response, abort, jsonify, request
 from flask.views import MethodView
 from flask_cors import CORS
+# TODO: Replace with ASGI server when migrating to FastAPI
 from gevent.pywsgi import WSGIServer
 from geventwebsocket import Resource as WebsocketResource
 from geventwebsocket.handler import WebSocketHandler

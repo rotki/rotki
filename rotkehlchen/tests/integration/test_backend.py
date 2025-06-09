@@ -1,8 +1,8 @@
 import subprocess  # noqa: S404
+from rotkehlchen.utils.gevent_compat import Timeout
 import sys
 from http import HTTPStatus
 
-import gevent
 import requests
 
 
@@ -20,7 +20,7 @@ def test_backend():
     timeout = 10
     if sys.platform == 'darwin':
         timeout = 30  # in macos the backend may take a long time to start
-    with gevent.Timeout(timeout):
+    with Timeout(timeout):
         try:
             while True:
                 output = proc.stdout.readline().decode('utf-8')
@@ -35,7 +35,7 @@ def test_backend():
             assert response.status_code == HTTPStatus.OK
             assert 'data_directory' in response.json()['result']
 
-        except gevent.Timeout as e:
+        except Timeout as e:
             raise AssertionError(
                 f'Did not get all expected output in the stdout after {timeout} seconds',
             ) from e

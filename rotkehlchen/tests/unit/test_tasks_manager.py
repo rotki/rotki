@@ -2,7 +2,6 @@ import datetime
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
-import gevent
 import gevent.lock
 import pytest
 from freezegun import freeze_time
@@ -74,6 +73,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.gevent_compat import Timeout, joinall, kill_all, sleep, wait
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -110,18 +110,18 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
     )
     timeout = 8
     try:
-        with gevent.Timeout(timeout), tx_query_patch as tx_mock:
+        with Timeout(timeout), tx_query_patch as tx_mock:
             # First two calls to schedule should handle the addresses
             for i in range(2):
                 task_manager.schedule()
                 while tx_mock.call_count != i + 1:
-                    gevent.sleep(.2)
+                    sleep(.2)
 
             task_manager.schedule()
-            gevent.sleep(.5)
+            sleep(.5)
             assert tx_mock.call_count == 2, '3rd schedule should do nothing'
 
-    except gevent.Timeout as e:
+    except Timeout as e:
         raise AssertionError(f'The transaction query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 
@@ -150,12 +150,12 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
 
     timeout = 4
     try:
-        with gevent.Timeout(timeout), xpub_derive_patch as xpub_mock:
+        with Timeout(timeout), xpub_derive_patch as xpub_mock:
             task_manager.schedule()
             while xpub_mock.call_count != 2:
-                gevent.sleep(.2)
+                sleep(.2)
 
-    except gevent.Timeout as e:
+    except Timeout as e:
         raise AssertionError(f'xpub derivation query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 
@@ -173,16 +173,16 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
 
     timeout = 5
     try:
-        with gevent.Timeout(timeout), poloniex_patch as poloniex_mock:
+        with Timeout(timeout), poloniex_patch as poloniex_mock:
             task_manager.schedule()
             while poloniex_mock.call_count != 1:
-                gevent.sleep(.2)
+                sleep(.2)
 
             task_manager.schedule()
-            gevent.sleep(.5)
+            sleep(.5)
             assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
 
-    except gevent.Timeout as e:
+    except Timeout as e:
         raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e
 
 
@@ -226,7 +226,7 @@ def test_maybe_schedule_ethereum_txreceipts(
     receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # noqa: E501
     queried_receipts = set()
     try:
-        with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():  # noqa: E501
+        with Timeout(timeout), receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():  # noqa: E501
             task_manager.schedule()
             with database.conn.read_ctx() as cursor:
                 while len(queried_receipts) != 2:
@@ -234,13 +234,13 @@ def test_maybe_schedule_ethereum_txreceipts(
                         if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
                             queried_receipts.add(txhash)
 
-                    gevent.sleep(.3)
+                    sleep(.3)
 
             task_manager.schedule()
-            gevent.sleep(.5)
+            sleep(.5)
             assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
 
-    except gevent.Timeout as e:
+    except Timeout as e:
         raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e
 
     receipt1 = eth_transactions.get_or_query_transaction_receipt(tx_hash_1)
@@ -257,7 +257,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
     and verifies that after the task was scheduled the users premium is deactivated.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    gevent.killall(rotki.api_task_greenlets)
+    kill_all(rotki.api_task_greenlets)
     task_manager = rotki.task_manager
     task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
     task_manager.last_premium_status_check = ts_now() - 3601
@@ -336,7 +336,7 @@ def test_premium_status_error_conditions(
         task_manager.premium_check_retries = 3
         task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
         task_manager.schedule()
-        gevent.joinall(task_manager.running_greenlets)
+        joinall(task_manager.running_greenlets)
 
         messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
         assert messages[0].data == {'is_premium_active': False, 'expired': error_case[1]}
@@ -420,7 +420,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
     timeout = 5
     try:
         with (
-            gevent.Timeout(timeout),
+            Timeout(timeout),
             patch.object(task_manager, 'query_balances') as query_mock,
             patch.object(
                 task_manager.database,
@@ -430,7 +430,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
         ):
             task_manager.schedule()
             while query_mock.call_count != 1:
-                gevent.sleep(.2)
+                sleep(.2)
 
             query_mock.assert_called_once_with(
                 requested_save_data=True,
@@ -446,7 +446,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
             assert save_tokens_mock.call_args_list[1].kwargs['address'] == accounts[2]
             assert save_tokens_mock.call_args_list[1].kwargs['blockchain'] == SupportedBlockchain.OPTIMISM  # noqa: E501
             assert save_tokens_mock.call_args_list[1].kwargs['tokens'] == [A_USDC]
-    except gevent.Timeout as e:
+    except Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
 
     # verify that newly saved tokens respects the list of already existing tokens
@@ -477,7 +477,7 @@ def test_try_start_same_task(rotkehlchen_api_server):
 
     def simple_task():
         return [rotki.greenlet_manager.spawn_and_track(
-            method=lambda: gevent.sleep(0.1),
+            method=lambda: sleep(0.1),
             after_seconds=None,
             task_name='Lol kek',
             exception_is_error=True,
@@ -500,7 +500,7 @@ def test_try_start_same_task(rotkehlchen_api_server):
             simple_task,  # check that mapping was updated
         }
         # Wait until our small greenlet finishes
-        gevent.wait(rotki.task_manager.running_greenlets[simple_task])
+        wait(rotki.task_manager.running_greenlets[simple_task])
         rotki.task_manager.potential_tasks = []
         rotki.task_manager.schedule()  # clear the mapping
         assert rotki.task_manager.running_greenlets.keys() == {  # and check that it was removed
@@ -569,7 +569,7 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
 
     def patched_address_query_transactions(self, address, start_ts, end_ts):  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
-            gevent.sleep(1)
+            sleep(1)
 
     query_patch = patch.object(
         eth_manager.transactions,
@@ -635,7 +635,7 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
             ),
         ):
             task_manager.schedule()
-            gevent.joinall(task_manager.greenlet_manager.greenlets)
+            joinall(task_manager.greenlet_manager.greenlets)
             assert get_withdrawals_mock.call_count == expected_call_count
             assert queried_addresses == expected_addresses
 
@@ -683,7 +683,7 @@ def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
             ),
         ):
             task_manager.schedule()
-            gevent.sleep(0)
+            sleep(0)
             assert get_blocks_mock.call_count == expected_call_count
 
     # Both validators should be queried initially
@@ -715,7 +715,7 @@ def test_maybe_detect_new_spam_tokens(
 
     task_manager.potential_tasks = [task_manager._maybe_detect_new_spam_tokens]
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    joinall(task_manager.running_greenlets[task_manager._maybe_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
 
     updated_token = EvmToken(token.identifier)
     assert updated_token.protocol == SPAM_PROTOCOL
@@ -732,7 +732,7 @@ def test_maybe_detect_new_spam_tokens(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> None:
     """Test that we don't execute extra logic in tasks if no ethereum address is tracked"""
-    with gevent.Timeout(5):  # this should not take long. Otherwise a long running task ran
+    with Timeout(5):  # this should not take long. Otherwise a long running task ran
         task_manager.should_schedule = True
         for func in (
             task_manager._maybe_update_yearn_vaults,
@@ -744,7 +744,7 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
                 task_manager.potential_tasks = [func]
                 task_manager.schedule()
                 if len(task_manager.running_greenlets) != 0:
-                    gevent.joinall(task_manager.running_greenlets[func])
+                    joinall(task_manager.running_greenlets[func])
                 assert mocked_func.call_count == 0
 
 
@@ -833,7 +833,7 @@ def test_update_lending_protocol_underlying_assets_task(
             new=wrapped_find_missing_tokens,
         ):
             task_manager.schedule()
-            gevent.joinall(task_manager.running_greenlets[task_to_run])  # wait for the task to finish since it might context switch while running  # noqa: E501
+            joinall(task_manager.running_greenlets[task_to_run])  # wait for the task to finish since it might context switch while running  # noqa: E501
 
         # check the aave v3 like underlying assets table in globaldb after running the task
         with globaldb.conn.read_ctx() as write_cursor:
@@ -952,13 +952,13 @@ def test_send_ws_calendar_reminder(
     task_manager.potential_tasks = [task_manager._maybe_trigger_calendar_reminder]
     task_manager.schedule()
     if len(task_manager.running_greenlets):
-        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+        joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
     assert websocket_connection.messages_num() == 0
 
     # move the timestamp to trigger the first event and the event without reminder
     freezer.move_to(datetime.datetime(2024, 4, 19, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
     websocket_connection.wait_until_messages_num(num=1, timeout=2)
     msg = websocket_connection.pop_message()
     assert msg == {
@@ -986,7 +986,7 @@ def test_send_ws_calendar_reminder(
     # the event, we should still get the notification
     freezer.move_to(datetime.datetime(2024, 5, 20, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
     websocket_connection.wait_until_messages_num(num=2, timeout=5)
     msg = websocket_connection.pop_message()
     # first, we get the previous reminder since it was never acknowledged
@@ -1079,7 +1079,7 @@ def test_calendar_entries_get_deleted(
     task_manager.potential_tasks = [task_manager._maybe_delete_past_calendar_events]
     task_manager.schedule()
     if len(task_manager.running_greenlets):
-        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+        joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
 
     with database.conn.read_ctx() as cursor:  # event should be there because we don't delete due to the setting  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM calendar').fetchone()[0] == 2
@@ -1093,7 +1093,7 @@ def test_calendar_entries_get_deleted(
         CachedSettings().update_entry('auto_delete_calendar_entries', True)
     freezer.move_to(datetime.datetime(2024, 6, 4, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+    joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
 
     with database.conn.read_ctx() as cursor:  # the calendar should still be present as the reminder has not been acknowledged  # noqa: E501
         assert cursor.execute(
@@ -1109,7 +1109,7 @@ def test_calendar_entries_get_deleted(
             acknowledged=True,
     ))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+    joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
     with database.conn.read_ctx() as cursor:  # events that are allowed to be deleted shouldn't be there anymore  # noqa: E501
         assert cursor.execute(
             'SELECT description FROM calendar',
@@ -1157,7 +1157,7 @@ def test_maybe_create_calendar_reminders(
         task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
         task_manager.schedule()
         if len(task_manager.running_greenlets):
-            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
+            joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
 
     if db_settings['auto_create_calendar_reminders'] is False:
         assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_total'] == 0
@@ -1190,7 +1190,7 @@ def test_deadlock_logout(
         GlobalDBHandler().packaged_db_lock.acquire()
         while True:
             task_runs += 1
-            gevent.sleep(1)
+            sleep(1)
 
     def maybe_task():
         return [task_manager.greenlet_manager.spawn_and_track(
@@ -1207,14 +1207,14 @@ def test_deadlock_logout(
 
     # ensure that the task runs
     assert task_runs == 0
-    gevent.sleep(0)
+    sleep(0)
     assert task_runs == 1
 
     # logout
     rotkehlchen_instance.logout()
 
     # context switch to be sure that the task has not been executed again
-    gevent.sleep(0)
+    sleep(0)
     assert task_runs == 1
 
     # shouldn't raise any exception because we released it
@@ -1240,22 +1240,22 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
 
         # Schedule the task and check that we got one snapshot.
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        joinall(rotki.greenlet_manager.greenlets)
         assert cursor.execute(query).fetchone()[0] == 1
 
         # Schedule again. The job shouldn't run.
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        joinall(rotki.greenlet_manager.greenlets)
         assert cursor.execute(query).fetchone()[0] == 1
 
         with patch(  # Force a new snapshot.
             'rotkehlchen.db.dbhandler.DBHandler.get_last_balance_save_time',
             return_value=Timestamp(0),
         ):
-            gevent.sleep(1)  # wait for 1 second to save the next timestamp
+            sleep(1)  # wait for 1 second to save the next timestamp
             task_manager.last_balance_query_ts = Timestamp(0)  # reset last query timestamp
             task_manager.schedule()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            joinall(rotki.greenlet_manager.greenlets)
 
         assert cursor.execute(query).fetchone()[0] == 2
 
@@ -1282,12 +1282,12 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> 
     ) as query_patch:
         # Schedule the task and check that we got one query_balances call
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        joinall(rotki.greenlet_manager.greenlets)
         assert query_patch.call_count == 1
 
         # Schedule again - query_balances shouldn't get called a second time.
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        joinall(rotki.greenlet_manager.greenlets)
         assert query_patch.call_count == 1
 
         # Move time into the future
@@ -1295,7 +1295,7 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> 
         with freeze_time(future_timestamp):
             # Schedule again - query_balances should get called a second time now.
             task_manager.schedule()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            joinall(rotki.greenlet_manager.greenlets)
             assert query_patch.call_count == 2
 
 
@@ -1419,7 +1419,7 @@ def test_morpho_reward_task_repetition(task_manager: TaskManager) -> None:
                 )
 
     with (
-        gevent.Timeout(5),  # this should not take long. Otherwise a long running task ran
+        Timeout(5),  # this should not take long. Otherwise a long running task ran
         patch.object(target=task_manager, attribute='query_morpho_vaults'),
         patch.object(
             target=task_manager,
@@ -1430,7 +1430,7 @@ def test_morpho_reward_task_repetition(task_manager: TaskManager) -> None:
         for _ in range(2):
             task_manager.schedule()
             if len(task_manager.running_greenlets) != 0:
-                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
+                joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
             assert mocked_query_distributors.call_count == 1  # will only get called once
 
 
@@ -1441,6 +1441,6 @@ def test_query_pendle_yield_tokens_task(task_manager: TaskManager) -> None:
     with patch.object(target=task_manager, attribute='query_pendle_yield_tokens') as mocked_query_pendle_yield_tokens:  # noqa: E501
         task_manager.schedule()
         if len(task_manager.running_greenlets) != 0:
-            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_pendle_cache])
+            joinall(task_manager.running_greenlets[task_manager._maybe_update_pendle_cache])
 
         assert mocked_query_pendle_yield_tokens.call_count == len(PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM) + 1  # noqa: E501

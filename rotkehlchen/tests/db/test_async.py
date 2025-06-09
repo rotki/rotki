@@ -1,7 +1,6 @@
 from random import randint
 from uuid import uuid4
 
-import gevent
 import pytest
 
 from rotkehlchen.constants.assets import A_ETH
@@ -11,6 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.utils.gevent_compat import joinall, sleep, spawn
 
 
 def make_history_event():
@@ -43,7 +43,7 @@ def write_single_event(database, event):
 def write_single_event_frequently(database, num, sleep_between_writes):
     for _ in range(num):
         write_single_event(database, make_history_event())
-        gevent.sleep(sleep_between_writes)
+        sleep(sleep_between_writes)
 
 
 def read_single_event_frequently(database, num, limit, sleep_between_reads):
@@ -51,7 +51,7 @@ def read_single_event_frequently(database, num, limit, sleep_between_reads):
     for _ in range(num):
         with database.conn.read_ctx() as cursor:
             dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(limit=limit), has_premium=True)  # noqa: E501
-        gevent.sleep(sleep_between_reads)
+        sleep(sleep_between_reads)
 
 
 def read_events(database, limit):
@@ -82,14 +82,14 @@ def test_callback_segfault_simple(database):
     write_events(database, 1000)
 
     # Then start reading from one greenlet and writing from others to create the problem
-    a = gevent.spawn(
+    a = spawn(
         read_events,
         database=database,
         limit=100,
     )
-    b = gevent.spawn(write_events, database=database, num=200)
-    c = gevent.spawn(write_events, database=database, num=200)
-    gevent.joinall([a, b, c])
+    b = spawn(write_events, database=database, num=200)
+    c = spawn(write_events, database=database, num=200)
+    joinall([a, b, c])
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
@@ -112,35 +112,35 @@ def test_callback_segfault_complex(database):
 
     # Then have lots of stuff happen at the same time so that the situation described
     # in the docstring occurs
-    a = gevent.spawn(
+    a = spawn(
         read_events,
         database=database,
         limit=50,
     )
-    b = gevent.spawn(
+    b = spawn(
         write_events,
         database=database,
         num=100,
     )
-    c = gevent.spawn(
+    c = spawn(
         write_single_event_frequently,
         database=database,
         num=10,
         sleep_between_writes=0.5,
     )
-    d = gevent.spawn(
+    d = spawn(
         read_single_event_frequently,
         database=database,
         num=10,
         limit=1,
         sleep_between_reads=0.5,
     )
-    e = gevent.spawn(
+    e = spawn(
         write_events,
         database=database,
         num=100,
     )
-    gevent.joinall([a, b, c, d, e])
+    joinall([a, b, c, d, e])
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [0])

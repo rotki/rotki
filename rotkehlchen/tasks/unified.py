@@ -8,9 +8,8 @@ import logging
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Callable, Optional, Union
 
-import gevent
-
 from rotkehlchen.api.feature_flags import AsyncFeature, async_features
+from rotkehlchen.utils.gevent_compat import Greenlet
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.async_manager import AsyncTaskManager, AsyncTask
@@ -60,7 +59,7 @@ class UnifiedTaskManager:
         task_fn: Callable,
         timeout: Optional[float] = None,
         **kwargs,
-    ) -> Union[gevent.Greenlet, Future]:
+    ) -> Union[Greenlet, Future]:
         """Spawn a task using appropriate manager"""
         if self.use_async:
             # Convert sync function to async if needed

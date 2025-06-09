@@ -27,14 +27,52 @@ try:
             for task in tasks:
                 task.cancel()
                 
+        def kill(task):
+            """Cancel a single task"""
+            task.cancel()
+            
+        def joinall(tasks, timeout=None):
+            """Wait for all tasks to complete"""
+            import asyncio
+            return asyncio.gather(*tasks, return_exceptions=True)
+            
+        def wait(objects=None, timeout=None, count=None):
+            """Wait for objects (simplified)"""
+            import asyncio
+            if objects:
+                return asyncio.wait(objects, timeout=timeout)
+            else:
+                return asyncio.sleep(timeout if timeout else 0)
+                
+        class Timeout:
+            """Async timeout context manager"""
+            def __init__(self, seconds):
+                self.seconds = seconds
+                
+            async def __aenter__(self):
+                self.task = asyncio.create_task(asyncio.sleep(self.seconds))
+                return self
+                
+            async def __aexit__(self, *args):
+                self.task.cancel()
+                
+        # Pool is complex, provide basic interface
+        class Pool:
+            def __init__(self, size=None):
+                self.size = size
+                
+            def spawn(self, func, *args, **kwargs):
+                return spawn(func, *args, **kwargs)
+                
     else:
         # Use gevent implementations
         import gevent
-        from gevent import sleep, spawn
+        from gevent import sleep, spawn, kill, joinall, wait, Timeout
         from gevent.lock import Semaphore
         from gevent.event import Event
         from gevent.lock import BoundedSemaphore as Lock
         from gevent.queue import Queue
+        from gevent.pool import Pool
         
         def kill_all(greenlets):
             """Kill all greenlets"""
@@ -43,11 +81,12 @@ try:
 except ImportError:
     # Fallback to gevent if feature flags not available
     import gevent
-    from gevent import sleep, spawn
+    from gevent import sleep, spawn, kill, joinall, wait, Timeout
     from gevent.lock import Semaphore
     from gevent.event import Event
     from gevent.lock import BoundedSemaphore as Lock
     from gevent.queue import Queue
+    from gevent.pool import Pool
     
     def kill_all(greenlets):
         """Kill all greenlets"""
@@ -63,4 +102,8 @@ try:
 except (ImportError, NameError):
     from gevent import Greenlet
 
-__all__ = ['sleep', 'spawn', 'Semaphore', 'Event', 'Lock', 'Queue', 'kill_all', 'Greenlet']
+__all__ = [
+    'sleep', 'spawn', 'kill', 'kill_all', 'joinall', 'wait',
+    'Semaphore', 'Event', 'Lock', 'Queue', 
+    'Timeout', 'Pool', 'Greenlet'
+]

@@ -2,7 +2,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -16,6 +15,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -291,7 +291,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') ->
     rotki.task_manager.last_xpub_derivation_ts = 0   # to be sure that the task will be scheduled
     with patch('rotkehlchen.tasks.manager.XpubManager.check_for_new_xpub_addresses') as patch_method:  # noqa: E501
         rotki.task_manager._maybe_schedule_xpub_derivation()
-        gevent.sleep(0)
+        sleep(0)
         assert patch_method.call_count == 1
 
     # Check that bch accounts were detected while btc accounts were not affected

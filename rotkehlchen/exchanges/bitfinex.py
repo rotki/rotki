@@ -10,7 +10,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests.adapters import Response
 

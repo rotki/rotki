@@ -3,7 +3,6 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, patch
 
-import gevent
 import pytest
 
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
@@ -34,6 +33,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.gevent_compat import sleep, spawn
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -256,10 +256,10 @@ def _do_read(database):
 
 def _do_spawn(database):
     while True:
-        gevent.spawn(_do_read, database)
+        spawn(_do_read, database)
         with database.user_write() as write_cursor:
             database.set_setting(write_cursor, 'last_write_ts', 15)
-            gevent.sleep(0.1)
+            sleep(0.1)
             database.set_setting(write_cursor, 'last_write_ts', 15)
 
 
@@ -300,8 +300,8 @@ def test_flaky_binding_parameter_zero(
         )
 
     # Create the conditions for the bug to hit. Can verify by removing the retry in dbhandler.py
-    gevent.spawn(_do_spawn, database)
-    gevent.sleep(.1)
+    spawn(_do_spawn, database)
+    sleep(.1)
     with database.conn.read_ctx() as cursor:
         for address in ethereum_accounts:
             database.get_tokens_for_address(

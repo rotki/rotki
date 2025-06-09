@@ -1,10 +1,8 @@
-from typing import TYPE_CHECKING, Union
-
-if TYPE_CHECKING:
-    import gevent
+from typing import Any, Union
 
 
-def get_greenlet_name(greenlet: Union['gevent.Greenlet', 'gevent.greenlet']) -> str:
+def get_greenlet_name(greenlet: Union[Any, Any]) -> str:
+    """Get name of a greenlet or thread for logging"""
     if greenlet.parent is None:
         greenlet_name = 'Main Greenlet'
     else:

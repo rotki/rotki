@@ -1,6 +1,5 @@
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -10,6 +9,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
 from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.utils.gevent_compat import joinall, sleep
 
 
 def test_query_btc_balances(blockchain):
@@ -58,7 +58,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
         """This function will make sure all greenlets end up hitting the balance addition
         at the same time thus double +++ counting balance ... in the way the code
         was written before"""
-        gevent.sleep(2)  # make sure all greenlets stop here
+        sleep(2)  # make sure all greenlets stop here
         # and then let them all go in the same time in the adding
         for account, defi_balances in blockchain.defi_balances.items():
             blockchain._add_account_defi_balances_to_token(
@@ -86,7 +86,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
             gevent.spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for x in range(5)
         ]
-        gevent.joinall(greenlets)
+        joinall(greenlets)
 
     assert blockchain.totals.assets[A_DAI].amount == ONE
     assert blockchain.balances.eth[addr1].assets[A_DAI].amount == ONE

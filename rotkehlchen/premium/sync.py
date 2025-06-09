@@ -4,7 +4,7 @@ import tempfile
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
-import gevent
+import gevent  # Still needed for threadpool operations
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME

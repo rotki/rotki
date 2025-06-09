@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from unittest.mock import patch
 
-import gevent
 import pytest
 from requests.models import Response
 
@@ -17,6 +16,7 @@ from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.utils.gevent_compat import Timeout, sleep
 
 
 @pytest.fixture(name='gnosispay_credentials')
@@ -41,11 +41,11 @@ def mock_gnosispay_and_run_periodic_task(task_manager, contents):
     timeout = 4
     task_manager.chains_aggregator.premium = MockPremium()
     task_manager.potential_tasks = [task_manager._maybe_query_gnosispay]
-    with gevent.Timeout(timeout), patch('requests.Session.get', side_effect=mock_gnosispay):
+    with Timeout(timeout), patch('requests.Session.get', side_effect=mock_gnosispay):
         try:
             task_manager.schedule()
-            gevent.sleep(.5)
-        except gevent.Timeout as e:
+            sleep(.5)
+        except Timeout as e:
             raise AssertionError(f'gnosispay query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 

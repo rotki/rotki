@@ -5,7 +5,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -42,6 +41,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainType, SupportedBlockchain, Timestamp
+from rotkehlchen.utils.gevent_compat import Timeout, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -629,7 +629,7 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer')
     # if this happens. Can't think of a better way to do this at the moment
     task_ids = dict(enumerate(query_accounts))
 
-    with gevent.Timeout(ASYNC_TASK_WAIT_TIMEOUT):
+    with Timeout(ASYNC_TASK_WAIT_TIMEOUT):
         while len(task_ids) != 0:
             task_id, account = random.choice(list(task_ids.items()))
             response = requests.get(
@@ -640,14 +640,14 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer')
                 ),
             )
             if response.status_code == HTTPStatus.NOT_FOUND:
-                gevent.sleep(.1)  # not started yet
+                sleep(.1)  # not started yet
                 continue
 
             assert_proper_response(response, status_code=None)  # do not check status code here
             result = response.json()['result']
             status = result['status']
             if status == 'pending':
-                gevent.sleep(.1)
+                sleep(.1)
                 continue
             if status == 'completed':
                 result = result['outcome']
