@@ -25,7 +25,10 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
         progress_handler.new_step(name='Removing Aave data due to addition of Aave 2.')
         cursor.execute('DELETE FROM aave_events;')
-        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'aave_events%';")
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('aave\\_events%', '\\'),
+        )
 
         progress_handler.new_step(name='Creating Gitcoin tables.')
         # Create the gitcoin tables that are added in this DB version

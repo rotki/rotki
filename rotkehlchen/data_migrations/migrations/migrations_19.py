@@ -56,6 +56,6 @@ def data_migration_19(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     @progress_step(description='Refresh coinbase queries')
     def _refresh_coinbase_queries(rotki: 'Rotkehlchen') -> None:
         with rotki.data.db.user_write() as write_cursor:
-            write_cursor.execute("DELETE FROM key_value_cache WHERE name LIKE 'coinbase_%_last_query_ts'")  # noqa: E501
+            write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?', ('coinbase\\_%\\_last\\_query\\_ts', '\\'))  # noqa: E501
 
     perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=True)

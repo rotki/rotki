@@ -43,7 +43,8 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DROP TABLE IF EXISTS adex_events')
         if table_exists(write_cursor, 'used_query_ranges'):
             write_cursor.execute(
-                'DELETE FROM used_query_ranges WHERE name LIKE ?', ('adex_events%',),
+                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+                ('adex\\_events%', '\\'),
             )
 
         write_cursor.execute("SELECT value FROM settings where name='active_modules'")

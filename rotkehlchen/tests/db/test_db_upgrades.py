@@ -1619,8 +1619,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     ]
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
     assert cursor.execute('SELECT identifier from history_events WHERE entry_type=2;').fetchall() == [(1,), (74,), (238,)]  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'uniswap_events_%'").fetchone() == (1,)  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'sushiswap_events_%'").fetchone() == (1,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('uniswap\\_events\\_%', '\\')).fetchone() == (1,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('sushiswap\\_events\\_%', '\\')).fetchone() == (1,)  # noqa: E501
 
     db_v37.logout()
     # Execute upgrade
@@ -1647,8 +1647,8 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT COUNT(*) FROM used_query_ranges WHERE name=?', (aave_range_key,)).fetchone()[0] == 0  # noqa: E501
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='aave_events';").fetchone()[0] == 0  # noqa: E501
     assert cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='amm_events';").fetchone()[0] == 0  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'uniswap_events_%'").fetchone() == (0,)  # noqa: E501
-    assert cursor.execute("SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE 'sushiswap_events_%'").fetchone() == (0,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('uniswap\\_events\\_%', '\\')).fetchone() == (0,)  # noqa: E501
+    assert cursor.execute('SELECT COUNT(name) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('sushiswap\\_events\\_%', '\\')).fetchone() == (0,)  # noqa: E501
     # Make sure that duplicate events were removed
     expected_history_events = [expected_history_events[0]] + expected_history_events[2:6]
     assert cursor.execute('SELECT * from history_events WHERE entry_type=4;').fetchall() == expected_history_events  # noqa: E501
@@ -2575,7 +2575,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             "SELECT value FROM settings WHERE name='historical_price_oracles'",
         ).fetchone()[0] == '["manual", "cryptocompare", "coingecko", "defillama", "uniswapv3", "uniswapv2"]'  # noqa: E501
         assert cursor.execute(
-            "SELECT * FROM used_query_ranges WHERE name LIKE 'zksynclitetxs_%'",
+            "SELECT * FROM used_query_ranges WHERE name LIKE 'zksynclitetxs\\_%' ESCAPE '\\'",
         ).fetchone() is None
         assert cursor.execute(  # check that the new locations we add are now in the DB
             'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
@@ -2919,7 +2919,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             "SELECT value FROM settings WHERE name='active_modules'",
         ).fetchone()[0]) == ['aave', 'sushiswap', 'uniswap', 'nfts', 'loopring', 'eth2', 'compound', 'makerdao_vaults', 'liquity', 'yearn_vaults_v2', 'yearn_vaults', 'pickle_finance']  # noqa: E501
         assert set(cursor.execute(
-            "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
+            "SELECT * FROM multisettings WHERE name LIKE 'queried\\_address\\_%' ESCAPE '\\'",
         ).fetchall()) == {
             ('queried_address_aave', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
             ('queried_address_aave', '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'),
@@ -3047,7 +3047,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
             "SELECT value FROM settings WHERE name='active_modules'",
         ).fetchone()[0]) == ['sushiswap', 'uniswap', 'nfts', 'loopring', 'eth2', 'makerdao_vaults', 'liquity', 'pickle_finance']  # noqa: E501
         assert cursor.execute(
-            "SELECT * FROM multisettings WHERE name LIKE 'queried_address_%'",
+            "SELECT * FROM multisettings WHERE name LIKE 'queried\\_address\\_%' ESCAPE '\\'",
         ).fetchall() == []
         # After tests for the avalanche/binance tokens deletion
         assert cursor.execute('SELECT * FROM manually_tracked_balances').fetchall() == [
@@ -3142,7 +3142,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('0xefef1234abcd1234abcd1234abcd1234abcd5678',),
             (None,),
         ]
-        assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE "%_trades_%"').fetchall() == [  # noqa: E501
+        assert cursor.execute('SELECT * from used_query_ranges WHERE name LIKE ? ESCAPE ?', ('%\\_trades\\_%', '\\')).fetchall() == [  # noqa: E501
             ('kraken_trades_kraken', 1577836800, 1609459200),
             ('binance_trades_binance', 1609459200, 1640995200),
             ('coinbase_trades_coinbase', 1640995200, 1672531200),
@@ -3239,7 +3239,7 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             ('0xefef1234abcd1234abcd1234abcd1234abcd5678', 1),
             (None, 0),
         ]
-        assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE "%_trades_%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from used_query_ranges WHERE name LIKE ? ESCAPE ?', ('%\\_trades\\_%', '\\')).fetchone()[0] == 0  # noqa: E501
         assert not table_exists(cursor, 'action_type')
         assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes').fetchone()[0] == 43
         assert cursor.execute('SELECT COUNT(*) FROM rpc_nodes WHERE endpoint=""').fetchone()[0] == 0  # noqa: E501

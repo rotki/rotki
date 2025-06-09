@@ -74,9 +74,18 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     @progress_step(description='Cleaning amm swaps.')
     def _clean_amm_swaps(cursor: 'DBCursor') -> None:
         """Since we remove the amm swaps, clean all related DB tables and entries"""
-        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'uniswap_trades%';")
-        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'sushiswap_trades%';")
-        cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'balancer_trades%';")
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('uniswap\\_trades%', '\\'),
+        )
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('sushiswap\\_trades%', '\\'),
+        )
+        cursor.execute(
+            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
+            ('balancer\\_trades%', '\\'),
+        )
         cursor.execute('DROP VIEW IF EXISTS combined_trades_view;')
         cursor.execute('DROP TABLE IF EXISTS amm_swaps;')
 
