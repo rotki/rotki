@@ -13,8 +13,11 @@ from starlette.responses import Response
 from rotkehlchen.api.flask_fastapi_bridge import FlaskFastAPIBridge
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.resources_fastapi import router as v1_router
+from rotkehlchen.api.v1.async_history_events import router as history_router
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
+from rotkehlchen.db.async_handler import AsyncDBHandler
+from rotkehlchen.tasks.async_manager import AsyncTaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
@@ -31,8 +34,12 @@ class AsyncAPIServer:
             rest_api: RestAPI,
             ws_notifier: RotkiNotifier | AsyncRotkiNotifier,
             cors_domain_list: list[str] | None = None,
+            async_db: AsyncDBHandler | None = None,
+            task_manager: AsyncTaskManager | None = None,
     ) -> None:
         self.rest_api = rest_api
+        self.async_db = async_db
+        self.task_manager = task_manager
         self.app = FastAPI(title="Rotki API", version="1.0.0")
         
         # Setup async notifier
@@ -60,11 +67,14 @@ class AsyncAPIServer:
         # Setup WebSocket endpoint
         self.app.websocket("/ws")(self.websocket_endpoint)
         
-        # Include FastAPI router
+        # Include FastAPI routers
         self.app.include_router(v1_router)
+        self.app.include_router(history_router)
         
-        # Inject RestAPI dependency
+        # Inject dependencies
         self.app.dependency_overrides[self._get_rest_api] = lambda: self.rest_api
+        self.app.dependency_overrides[self._get_async_db] = lambda: self.async_db
+        self.app.dependency_overrides[self._get_task_manager] = lambda: self.task_manager
         
         # Setup routes
         self._setup_routes()
@@ -92,6 +102,16 @@ class AsyncAPIServer:
     
     @staticmethod
     def _get_rest_api() -> RestAPI:
+        """Dependency injection placeholder"""
+        raise NotImplementedError("Should be overridden")
+    
+    @staticmethod
+    def _get_async_db() -> AsyncDBHandler:
+        """Dependency injection placeholder"""
+        raise NotImplementedError("Should be overridden")
+    
+    @staticmethod
+    def _get_task_manager() -> AsyncTaskManager:
         """Dependency injection placeholder"""
         raise NotImplementedError("Should be overridden")
     
