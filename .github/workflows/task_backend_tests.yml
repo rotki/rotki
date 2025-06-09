@@ -123,7 +123,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --group dev
-          uv pip install pytest-github-actions-annotate-failures
+          uv run pip install pytest-github-actions-annotate-failures
 
       - name: Run tests
         env:
