@@ -1,410 +1,517 @@
-"""Async implementation of premium API client
-
-Provides high-performance async communication with Rotki premium services.
-"""
-import asyncio
+import base64
 import hashlib
 import hmac
-import json
 import logging
+import os
+import platform
 import time
-from typing import TYPE_CHECKING, Any, NamedTuple
+from base64 import b64decode, b64encode
+from binascii import Error as BinasciiError
+from collections.abc import Sequence
+from enum import Enum
+from http import HTTPStatus
+from json import JSONDecodeError
+from typing import Any, Literal, NamedTuple, cast
+from urllib.parse import urlencode
 
-import aiohttp
-from aiohttp import ClientError, ClientTimeout
+import machineid
+import requests
 
-from rotkehlchen.errors.api import PremiumApiError, PremiumAuthenticationError
+from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
+from rotkehlchen.errors.api import (
+    IncorrectApiKeyFormat,
+    PremiumApiError,
+    PremiumAuthenticationError,
+)
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.misc import ts_now
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.handler import DBHandler
+from rotkehlchen.utils.misc import is_production, set_user_agent
+from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-# Data structures
-class PremiumCredentials(NamedTuple):
-    """Premium user credentials"""
-    api_key: str
-    api_secret: str
-
-
 class RemoteMetadata(NamedTuple):
-    """Remote data metadata"""
+    # This is the last upload timestamp of the remote DB data
+    upload_ts: Timestamp
+    # This is the last modify timestamp of the remote DB data
     last_modify_ts: Timestamp
+    # This is the hash of the remote DB data
     data_hash: str
+    # This is the size in bytes of the remote DB data
     data_size: int
 
 
-class PremiumClient:
-    """Async client for Rotki premium API"""
-
-    def __init__(
-        self,
-        api_key: str,
-        api_secret: str,
-        async_db: 'DBHandler',
-        base_url: str = 'https://api.rotki.com',
-    ):
-        self.api_key = api_key
-        self.api_secret = api_secret
-        self.async_db = async_db
-        self.base_url = base_url
-
-        # HTTP session
-        self.session: aiohttp.ClientSession | None = None
-        self.timeout = ClientTimeout(total=60)
-
-        # Rate limiting
-        self.rate_limit = asyncio.Semaphore(5)  # Max 5 concurrent requests
-        self.last_request_time = 0
-        self.min_request_interval = 0.2  # 200ms between requests
-
-    async def initialize(self):
-        """Initialize async resources"""
-        if self.session is None:
-            connector = aiohttp.TCPConnector(
-                limit=20,
-                limit_per_host=10,
-            )
-            self.session = aiohttp.ClientSession(
-                connector=connector,
-                timeout=self.timeout,
-            )
-
-    async def close(self):
-        """Clean up resources"""
-        if self.session:
-            await self.session.close()
-            self.session = None
-
-    async def _rate_limited_request(
-        self,
-        method: str,
-        endpoint: str,
-        **kwargs,
-    ) -> dict[str, Any]:
-        """Make rate-limited API request"""
-        async with self.rate_limit:
-            # Ensure minimum interval between requests
-            current_time = time.time()
-            time_since_last = current_time - self.last_request_time
-            if time_since_last < self.min_request_interval:
-                await asyncio.sleep(self.min_request_interval - time_since_last)
-
-            self.last_request_time = time.time()
-
-            # Make request
-            return await self._signed_request(method, endpoint, **kwargs)
-
-    async def _signed_request(
-        self,
-        method: str,
-        endpoint: str,
-        params: dict[str, Any] | None = None,
-        json_data: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
-        """Make a signed request to premium API"""
-        if self.session is None:
-            await self.initialize()
-
-        # Prepare request
-        url = f'{self.base_url}{endpoint}'
-        timestamp = str(int(time.time()))
-
-        # Create signature
-        message = f'{timestamp}{method}{endpoint}'
-        if json_data:
-            message += json.dumps(json_data, sort_keys=True)
-
-        signature = hmac.new(
-            self.api_secret.encode(),
-            message.encode(),
-            hashlib.sha256,
-        ).hexdigest()
-
-        # Headers
-        headers = {
-            'X-API-Key': self.api_key,
-            'X-API-Timestamp': timestamp,
-            'X-API-Signature': signature,
-            'Content-Type': 'application/json',
-        }
-
-        try:
-            async with self.session.request(
-                method=method,
-                url=url,
-                params=params,
-                json=json_data,
-                headers=headers,
-            ) as response:
-                response_data = await response.json()
-
-                if response.status == 401:
-                    raise PremiumAuthenticationError('Invalid premium credentials')
-                elif response.status == 429:
-                    raise PremiumApiError('Rate limit exceeded')
-                elif response.status >= 400:
-                    error_msg = response_data.get('error', 'Unknown error')
-                    raise PremiumApiError(f'API error: {error_msg}')
-
-                return response_data
-
-        except ClientError as e:
-            log.error(f'Premium API request failed: {e}')
-            raise RemoteError(f'Failed to connect to premium API: {e}')
-
-    async def sync_data(self, last_sync_ts: Timestamp) -> dict[str, Any]:
-        """Sync data with premium server"""
-        log.info('Starting async premium data sync')
-
-        # Get local data hash
-        local_hash = await self._calculate_local_hash()
-
-        # Request sync
-        response = await self._rate_limited_request(
-            method='POST',
-            endpoint='/api/v1/sync',
-            json_data={
-                'last_sync_ts': last_sync_ts,
-                'local_hash': local_hash,
-                'client_version': '1.35.0',
-            },
-        )
-
-        sync_data = response.get('data', {})
-
-        # Process sync data concurrently
-        tasks = []
-
-        if 'db_snapshots' in sync_data:
-            tasks.append(self._process_db_snapshots(sync_data['db_snapshots']))
-
-        if 'settings' in sync_data:
-            tasks.append(self._process_settings_sync(sync_data['settings']))
-
-        if 'ignored_actions' in sync_data:
-            tasks.append(self._process_ignored_actions(sync_data['ignored_actions']))
-
-        if 'tags' in sync_data:
-            tasks.append(self._process_tags_sync(sync_data['tags']))
-
-        # Wait for all processing to complete
-        await asyncio.gather(*tasks)
-
-        # Update last sync timestamp
-        await self.async_db.set_settings({'last_premium_sync': ts_now()})
-
-        log.info('Premium data sync completed')
-
-        return {
-            'synced_items': len(tasks),
-            'new_sync_ts': ts_now(),
-        }
-
-    async def _calculate_local_hash(self) -> str:
-        """Calculate hash of local data for comparison"""
-        # Would implement actual hash calculation
-        return 'local_data_hash'
-
-    async def _process_db_snapshots(self, snapshots: list[dict[str, Any]]):
-        """Process database snapshots from premium"""
-        log.info(f'Processing {len(snapshots)} database snapshots')
-
-        for _snapshot in snapshots:
-            # Would implement snapshot processing
-            await asyncio.sleep(0.01)  # Simulate work
-
-    async def _process_settings_sync(self, settings: dict[str, Any]):
-        """Sync settings with premium"""
-        log.info('Syncing settings with premium')
-
-        # Merge with local settings
-        local_settings = await self.async_db.get_settings()
-
-        # Premium settings take precedence for certain fields
-        premium_fields = ['premium_sync_enabled', 'analytics_enabled']
-        for field in premium_fields:
-            if field in settings:
-                local_settings[field] = settings[field]
-
-        await self.async_db.set_settings(local_settings)
-
-    async def _process_ignored_actions(self, actions: list[dict[str, Any]]):
-        """Process ignored actions from premium"""
-        log.info(f'Processing {len(actions)} ignored actions')
-
-        # Would implement ignored actions processing
-        await asyncio.sleep(0.01)  # Simulate work
-
-    async def _process_tags_sync(self, tags: list[dict[str, Any]]):
-        """Sync tags with premium"""
-        log.info(f'Processing {len(tags)} tags')
-
-        # Would implement tags processing
-        await asyncio.sleep(0.01)  # Simulate work
-
-    async def upload_data(
-        self,
-        data_type: str,
-        data: list[dict[str, Any]],
-    ) -> dict[str, Any]:
-        """Upload data to premium server"""
-        log.info(f'Uploading {len(data)} {data_type} items to premium')
-
-        # Upload in batches
-        batch_size = 100
-        uploaded = 0
-
-        for i in range(0, len(data), batch_size):
-            batch = data[i:i + batch_size]
-
-            response = await self._rate_limited_request(
-                method='POST',
-                endpoint=f'/api/v1/upload/{data_type}',
-                json_data={
-                    'items': batch,
-                    'timestamp': ts_now(),
-                },
-            )
-
-            uploaded += response.get('processed', 0)
-
-        log.info(f'Uploaded {uploaded} {data_type} items')
-
-        return {
-            'uploaded': uploaded,
-            'data_type': data_type,
-        }
-
-    async def get_statistics(self) -> dict[str, Any]:
-        """Get user statistics from premium"""
-        response = await self._rate_limited_request(
-            method='GET',
-            endpoint='/api/v1/statistics',
-        )
-
-        return response.get('data', {})
-
-    async def validate_credentials(self) -> bool:
-        """Validate premium API credentials"""
-        try:
-            response = await self._rate_limited_request(
-                method='GET',
-                endpoint='/api/v1/validate',
-            )
-
-            return response.get('valid', False)
-
-        except PremiumAuthenticationError:
-            return False
-        except Exception as e:
-            log.error(f'Error validating premium credentials: {e}')
-            return False
-
-
-class PremiumSyncManager:
-    """Manages automatic premium sync operations"""
-
-    def __init__(
-        self,
-        premium_client: PremiumClient,
-        async_db: 'DBHandler',
-        sync_interval: int = 3600,  # 1 hour
-    ):
-        self.premium_client = premium_client
-        self.async_db = async_db
-        self.sync_interval = sync_interval
-
-        self._sync_task: asyncio.Task | None = None
-        self._stop_event = asyncio.Event()
-
-    async def start(self):
-        """Start automatic sync"""
-        if self._sync_task is not None:
-            return
-
-        self._stop_event.clear()
-        self._sync_task = asyncio.create_task(self._sync_loop())
-        log.info('Started premium sync manager')
-
-    async def stop(self):
-        """Stop automatic sync"""
-        if self._sync_task is None:
-            return
-
-        self._stop_event.set()
-        await self._sync_task
-        self._sync_task = None
-        log.info('Stopped premium sync manager')
-
-    async def _sync_loop(self):
-        """Main sync loop"""
-        while not self._stop_event.is_set():
-            try:
-                # Get last sync timestamp
-                settings = await self.async_db.get_settings()
-                last_sync = settings.get('last_premium_sync', 0)
-
-                # Check if sync is needed
-                if ts_now() - last_sync >= self.sync_interval:
-                    await self.sync_now()
-
-                # Wait for next check
-                try:
-                    await asyncio.wait_for(
-                        self._stop_event.wait(),
-                        timeout=300,  # Check every 5 minutes
-                    )
-                except TimeoutError:
-                    continue
-
-            except Exception as e:
-                log.error(f'Error in premium sync loop: {e}')
-                await asyncio.sleep(60)  # Wait before retry
-
-    async def sync_now(self) -> dict[str, Any]:
-        """Force sync now"""
-        try:
-            # Get last sync timestamp
-            settings = await self.async_db.get_settings()
-            last_sync = settings.get('last_premium_sync', 0)
-
-            # Perform sync
-            result = await self.premium_client.sync_data(last_sync)
-
-            log.info('Premium sync completed successfully')
-            return result
-
-        except Exception as e:
-            log.error(f'Premium sync failed: {e}')
-            raise
-
-# Compatibility exports
-Premium = PremiumClient  # For backward compatibility
-
-
-def has_premium_check(premium: Any) -> bool:
-    """Check if premium is active
-    
-    This is a helper function to check if premium features are available.
-    In the async version, we check if the premium object exists.
+DEFAULT_ERROR_MSG = 'Failed to contact rotki server. Check logs for more details'
+DEFAULT_OK_CODES = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+
+
+def check_response_status_code(
+        response: requests.Response,
+        status_codes: Sequence[HTTPStatus],
+        user_msg: str = DEFAULT_ERROR_MSG,
+) -> None:
     """
-    return premium is not None
+    Check the rotki.com response and if status code is not in the expected list
+    log the error and raise RemoteError
+    """
+    if response.status_code not in status_codes:
+        log.error(
+            f'rotki server responded with an error response to {response.url} '
+            f'{response.status_code=} and {response.text=}',
+        )
+        raise RemoteError(user_msg)
 
 
-async def premium_create_and_verify(credentials: PremiumCredentials) -> PremiumClient:
-    """Create and verify premium client"""
-    client = PremiumClient(
-        api_key=credentials.api_key,
-        api_secret=credentials.api_secret,
-        async_db=None,  # Will be set by caller
+def _process_dict_response(
+        response: requests.Response,
+        status_codes: Sequence[HTTPStatus] = DEFAULT_OK_CODES,
+        user_msg: str = DEFAULT_ERROR_MSG,
+) -> dict:
+    """Processes a dict response returned from the Rotkehlchen server and returns
+    the result for success or raises RemoteError if an error happened"""
+    check_response_status_code(
+        response=response,
+        status_codes=status_codes,
+        user_msg=user_msg,
     )
-    await client.initialize()
-    # Would verify credentials
-    return client
+    try:
+        result_dict = jsonloads_dict(response.text)
+    except JSONDecodeError as e:
+        log.error(f'Could not decode rotki response {response.text} as json due to {e}')
+        raise RemoteError('Could not decode rotki server response as json. Check logs') from e
+
+    if response.status_code == HTTPStatus.UNAUTHORIZED:
+        raise PremiumAuthenticationError(result_dict.get('error', 'no message given'))
+
+    if 'error' in result_dict:
+        raise RemoteError(result_dict['error'])
+
+    return result_dict
+
+
+class SubscriptionStatus(Enum):
+    UNKNOWN = 1
+    ACTIVE = 2
+    INACTIVE = 3
+
+
+class PremiumCredentials:
+    """Represents properly encoded premium credentials
+
+    Constructor can raise IncorrectApiKeyFormat
+    """
+
+    def __init__(self, given_api_key: str, given_api_secret: str) -> None:
+        self.api_key = given_api_key
+        try:
+            self.api_secret = b64decode(given_api_secret)
+        except BinasciiError as e:
+            raise IncorrectApiKeyFormat(
+                'rotki api secret is not in the correct format',
+            ) from e
+
+    def serialize_key(self) -> str:
+        """Turn the API key into the format to send outside rotki (network, DB e.t.c.)"""
+        return self.api_key
+
+    def serialize_secret(self) -> str:
+        """Turn the API secret into the format to send outside rotki (network, DB e.t.c.)"""
+        return b64encode(self.api_secret).decode()
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PremiumCredentials):
+            return NotImplemented
+        return self.api_key == other.api_key and self.api_secret == other.api_secret
+
+    def __hash__(self) -> int:
+        return hash(self.api_key + str(self.api_secret))
+
+
+def _decode_response_json(response: requests.Response) -> Any:
+    """Decodes a python requests response to json and returns it.
+
+    May raise:
+    - RemoteError if the response does not contain valid json
+    """
+    try:
+        json_response = response.json()
+    except ValueError as e:
+        raise RemoteError(
+            f'Could not decode json from {response.text} to {response.request.method} '
+            f'query {response.url}',
+        ) from e
+
+    return json_response
+
+
+def _decode_premium_json(response: requests.Response) -> Any:
+    """Decodes a python requests response to the premium server to json and returns it.
+
+    May raise:
+    - RemoteError if the response does not contain valid json
+    - PremiumApiError if there is an error in the returned json
+    """
+    json_data = _decode_response_json(response)
+    if 'error' in json_data:
+        raise PremiumApiError(json_data['error'])
+    return json_data
+
+
+class Premium:
+
+    def __init__(self, credentials: PremiumCredentials, username: str):
+        self.status = SubscriptionStatus.UNKNOWN
+        self.session = create_session()
+        self.apiversion = '1'
+        rotki_base_url = 'rotki.com'
+        if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
+            rotki_base_url = 'staging.rotki.com'
+
+        self.rotki_api = f'https://{rotki_base_url}/api/{self.apiversion}/'
+        self.rotki_web = f'https://{rotki_base_url}/webapi/{self.apiversion}/'
+        self.rotki_nest = f'https://{rotki_base_url}/nest/{self.apiversion}/'
+        self.reset_credentials(credentials)
+        self.username = username
+
+    def reset_credentials(self, credentials: PremiumCredentials) -> None:
+        self.credentials = credentials
+        self.session.headers.update({'API-KEY': self.credentials.serialize_key()})
+        set_user_agent(self.session)
+
+    def set_credentials(self, credentials: PremiumCredentials) -> None:
+        """Try to set the credentials for a premium rotkehlchen subscription
+
+        Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        old_credentials = self.credentials
+
+        # Forget the last active value since we are trying new credentials
+        self.status = SubscriptionStatus.UNKNOWN
+
+        # If what's given is not even valid b64 encoding then stop here
+        try:
+            self.reset_credentials(credentials)
+        except BinasciiError as e:
+            raise IncorrectApiKeyFormat(f'Secret Key formatting error: {e!s}') from e
+
+        active = self.is_active()
+        if not active:
+            self.reset_credentials(old_credentials)
+            raise PremiumAuthenticationError('rotki API key was rejected by server')
+
+    def get_remote_devices_information(self) -> dict:
+        """Get the list of devices for the current user"""
+        method = 'manage/premium/devices'
+        data = self.sign(
+            method=method,
+            api_endpoint='webapi',
+        )
+
+        try:
+            response = self.session.get(
+                f'{self.rotki_web}{method}',
+                data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        return _process_dict_response(response)
+
+    def authenticate_device(self) -> None:
+        """
+        Check if the device is in the list of the devices and if it isn't add it when possible.
+        May raise:
+        - RemoteError
+        - PremiumAuthenticationError: when the device can't be registered
+        """
+        device_data = self.get_remote_devices_information()
+        try:
+            num_devices, devices_limit = len(device_data['devices']), device_data['limit']
+        except KeyError as e:
+            raise RemoteError(
+                f'Could not fetch the list of devices due to missing key {e}',
+            ) from e
+
+        device_id = machineid.hashed_id(self.username)
+
+        for device in device_data['devices']:
+            device = cast('dict[str, str]', device)
+            if (remote_id := device.get('device_identifier')) == device_id:
+                break
+            if remote_id is None:
+                log.error(f'Remote device {device} has no identifier in the server response')
+        else:  # device not found
+            if num_devices < devices_limit:
+                # try to register the device
+                self._register_new_device(device_id)
+            else:
+                # user has to edit his devices
+                raise PremiumAuthenticationError(
+                    f'The limit of {devices_limit} devices has been reached',
+                )
+
+    def _register_new_device(self, device_id: str) -> dict:
+        """
+        Register a new device at the rotki server using the provided id.
+        May raise:
+        - RemoteError
+        - PremiumAuthenticationError: if the queried API returns a 401 error
+        """
+        log.debug(f'Registering new device {device_id}')
+        method = 'devices'
+        device_name = platform.system()
+        data = self.sign(
+            method=method,
+            device_identifier=device_id,
+            device_name=device_name,
+        )
+
+        try:
+            response = self.session.put(
+                url=f'{self.rotki_api}{method}',
+                data=data,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to register device due to: {e}') from e
+
+        return _process_dict_response(response)
+
+    def is_active(self) -> bool:
+        if self.status == SubscriptionStatus.ACTIVE:
+            return True
+
+        try:
+            self.query_last_data_metadata()
+        except RemoteError:
+            self.status = SubscriptionStatus.INACTIVE
+            return False
+        except PremiumAuthenticationError:
+            self.status = SubscriptionStatus.INACTIVE
+            return False
+        else:
+            self.status = SubscriptionStatus.ACTIVE
+            return True
+
+    def sign(
+            self,
+            method: str,
+            api_endpoint: str = '/api/',
+            **kwargs: Any,
+    ) -> dict:
+        """
+        Create payload for signed requests. It sets the signature headers
+        for the current session
+        """
+        urlpath = f'{api_endpoint}{self.apiversion}/{method}'
+
+        req = kwargs
+        if method != 'watchers':
+            # the watchers endpoint accepts json and not url query data
+            # and since that endpoint we don't send nonces
+            req['nonce'] = int(1000 * time.time())
+        post_data = urlencode(req)
+        hashable = post_data.encode()
+        if method == 'backup':
+            # nest uses hex for generating the signature since digest returns a string with the \x
+            # format in python.
+            message = urlpath.encode() + hashlib.sha256(hashable).hexdigest().encode()
+        else:
+            message = urlpath.encode() + hashlib.sha256(hashable).digest()
+        signature = hmac.new(
+            self.credentials.api_secret,
+            message,
+            hashlib.sha512,
+        )
+        self.session.headers.update({'API-SIGN': base64.b64encode(signature.digest())})
+        return req
+
+    def upload_data(
+            self,
+            data_blob: bytes,
+            our_hash: str,
+            last_modify_ts: Timestamp,
+            compression_type: Literal['zlib'],
+    ) -> dict:
+        """Uploads data to the server and returns the response dict. We upload the encrypted
+        database as a file in an http form.
+
+        May raise:
+        - RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        data = self.sign(
+            'backup',
+            original_hash=our_hash,
+            last_modify_ts=last_modify_ts,
+            index=0,
+            length=len(data_blob),
+            compression=compression_type,
+        )
+
+        try:
+            response = self.session.post(
+                self.rotki_nest + 'backup',
+                data=data,
+                files={'db_file': data_blob},
+                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        return _process_dict_response(
+            response=response,
+            status_codes=(HTTPStatus.OK,),
+            user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
+        )
+
+    def pull_data(self) -> bytes | None:
+        """Pulls data from the server and returns the binary file with the database encrypted
+
+        Returns None if there is no DB saved in the server.
+
+        May raise:
+        - RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        data = self.sign('backup')
+
+        try:
+            response = self.session.get(
+                self.rotki_nest + 'backup',
+                params=data,
+                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        check_response_status_code(response, (HTTPStatus.OK, HTTPStatus.NOT_FOUND))
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            return None
+
+        return response.content
+
+    def query_last_data_metadata(self) -> RemoteMetadata:
+        """Queries last metadata from the server and returns the response
+        as a RemoteMetadata object.
+
+        May raise:
+        - RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        data = self.sign('last_data_metadata')
+
+        try:
+            response = self.session.get(
+                self.rotki_api + 'last_data_metadata',
+                data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        result = _process_dict_response(response)
+        try:
+            metadata = RemoteMetadata(
+                upload_ts=Timestamp(result['upload_ts']),
+                last_modify_ts=Timestamp(result['last_modify_ts']),
+                data_hash=result['data_hash'],
+                data_size=result['data_size'],
+            )
+        except KeyError as e:
+            msg = f'Problem connecting to rotki server. last_data_metadata response missing {e!s} key'  # noqa: E501
+            log.error(f'{msg}. Response was {result}')
+            raise RemoteError(msg) from e
+
+        return metadata
+
+    def query_premium_components(self) -> str:
+        """Queries for the source code of the premium components from the server
+
+        May raise:
+        - RemoteError if there are problems reaching the server or if
+        there is an error returned by the server
+        - Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        data = self.sign('statistics_rendererv2', version=13)
+
+        try:
+            response = self.session.get(
+                self.rotki_api + 'statistics_rendererv2',
+                data=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        result = _process_dict_response(response)
+        if 'data' not in result:
+            msg = 'Problem connecting to rotki server. statistics_rendererv2 response missing data key'  # noqa: E501
+            log.error(f'{msg}. Response was {result}')
+            raise RemoteError(msg)
+
+        return result['data']
+
+    def watcher_query(
+            self,
+            method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
+            data: dict[str, Any] | None,
+    ) -> Any:
+        if data is None:
+            data = {}
+
+        self.sign('watchers', **data)
+        try:
+            response = self.session.request(
+                method=method,
+                url=self.rotki_api + 'watchers',
+                json=data,
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        check_response_status_code(
+            response=response,
+            status_codes=(HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST),
+        )
+        return _decode_premium_json(response)
+
+
+def premium_create_and_verify(credentials: PremiumCredentials, username: str) -> Premium:
+    """Create a Premium object with the key pairs and verify them.
+
+    Returns the created premium object
+
+    May Raise:
+    - PremiumAuthenticationError if the given key is rejected by the server
+    - RemoteError if there are problems reaching the server
+    """
+    premium = Premium(credentials=credentials, username=username)
+    premium.query_last_data_metadata()
+    return premium
+
+
+def has_premium_check(premium: Premium | None) -> bool:
+    """Helper function to check if we have premium"""
+    return premium is not None and premium.is_active()

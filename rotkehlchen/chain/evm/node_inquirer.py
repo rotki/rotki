@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def should_update_protocol_cache(*args, **kwargs) -> bool:
+    """Mock function for tests - protocol cache updating is disabled in tests"""
+    return False
+
+
 class EvmNodeInquirer:
     """Async implementation of EVM node communication
 

@@ -1,5 +1,6 @@
 import os
 import platform
+import time
 from http import HTTPStatus
 from typing import Any
 
@@ -23,7 +24,7 @@ def _wait_for_listening_port(
     if pid is None:
         pid = os.getpid()
     for _ in range(tries):
-        sleep(sleep)
+        time.sleep(sleep)
         # macOS requires root access for the connections api to work
         # so get connections of the current process only
         connections = psutil.Process(pid).net_connections()
@@ -34,31 +35,43 @@ def _wait_for_listening_port(
     raise RuntimeError(f'{port_number} is not bound')
 
 
-# TODO: Update to FastAPI equivalent
-# def create_api_server(
-#         rotki: Rotkehlchen,
-#         rest_port_number: int,
-# ) -> APIServer:
-#     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
-#
-#     api_server.flask_app.config['SERVER_NAME'] = f'127.0.0.1:{rest_port_number}'
-#     api_server.start(
-#         host='127.0.0.1',
-#         rest_port=rest_port_number,
-#     )
-#
-#     # Fixes flaky test, where requests are done prior to the server initializing
-#     # the listening socket.
-#     # https://github.com/raiden-network/raiden/issues/389#issuecomment-305551563
-#     _wait_for_listening_port(rest_port_number)
-#
-#     return api_server
+def create_api_server(
+        rotki: Any,
+        rest_port_number: int,
+) -> Any:
+    """Create API server for tests - temporary mock implementation"""
+    from rotkehlchen.api.server import APIServer
+    
+    # Create API server with the rotki instance
+    api_server = APIServer(rotkehlchen=rotki)
+    
+    # Start the server
+    api_server.start(
+        host='127.0.0.1',
+        rest_port=rest_port_number,
+    )
+    
+    # Wait for the server to start listening
+    _wait_for_listening_port(rest_port_number)
+    
+    return api_server
 
 
-# TODO: Update to FastAPI equivalent
-# def api_url_for(api_server: APIServer, endpoint: str, **kwargs) -> str:
-#     with api_server.flask_app.app_context():
-#         return url_for(f'v1_resources.{endpoint}', **kwargs)
+def api_url_for(api_server: Any, endpoint: str, **kwargs) -> str:
+    """Generate API URL for tests - adapted for FastAPI"""
+    # For FastAPI, we build URLs directly
+    base_url = f'http://127.0.0.1:{api_server.rest_port}'
+    
+    # Convert endpoint to URL path
+    path = f'/api/{api_server.version}/{endpoint}'
+    
+    # Add any path parameters
+    if kwargs:
+        # Convert kwargs to URL parameters
+        params = '&'.join(f'{k}={v}' for k, v in kwargs.items())
+        path = f'{path}?{params}'
+    
+    return base_url + path
 
 
 def assert_proper_response(response: requests.Response, status_code: HTTPStatus | None = None):
@@ -93,19 +106,25 @@ def assert_proper_sync_response_with_result(
     return data['result']
 
 
-# TODO: Update to FastAPI equivalent - all functions below need APIServer
-# def assert_proper_response_with_result(
-#         response: requests.Response,
-#         rotkehlchen_api_server: APIServer,
-#         async_query: bool = False,
-#         timeout: int = ASYNC_TASK_WAIT_TIMEOUT,
-# ) -> Any:
-#     """Asserts that the response (sync or async) is okay and returns the result."""
-#     return wait_for_async_task_with_result(
-#         server=rotkehlchen_api_server,
-#         task_id=assert_ok_async_response(response),
-#         timeout=timeout,
-#     ) if async_query else assert_proper_sync_response_with_result(response)
+def assert_proper_response_with_result(
+        response: requests.Response,
+        rotkehlchen_api_server: Any = None,
+        async_query: bool = False,
+        timeout: int = ASYNC_TASK_WAIT_TIMEOUT,
+) -> Any:
+    """Asserts that the response (sync or async) is okay and returns the result."""
+    # For now, we only support sync responses
+    if async_query:
+        raise NotImplementedError("Async query handling not yet implemented")
+    return assert_proper_sync_response_with_result(response)
+
+
+def assert_simple_ok_response(response: requests.Response) -> None:
+    """Assert that the response is a simple OK response"""
+    assert_proper_response(response)
+    data = response.json()
+    assert data['result'] is True
+    assert data['message'] == ''
 
 
 def _check_error_response_properties(
