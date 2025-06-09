@@ -3,7 +3,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
@@ -22,6 +21,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.utils.misc import (
+from rotkehlchen.utils.gevent_compat import Semaphore
     ts_now,
 )
 

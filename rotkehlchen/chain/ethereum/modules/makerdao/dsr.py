@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, NamedTuple
 
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import RAY
@@ -13,6 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
+from rotkehlchen.utils.gevent_compat import Semaphore
     ChecksumEvmAddress,
     Price,
 )

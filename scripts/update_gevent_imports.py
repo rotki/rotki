@@ -15,6 +15,7 @@ class GeventImportUpdater(ast.NodeTransformer):
     def __init__(self):
         self.imports_to_add = set()
         self.modified = False
+        self.has_direct_gevent = False
         
     def visit_ImportFrom(self, node):
         """Update from imports"""
@@ -36,6 +37,14 @@ class GeventImportUpdater(ast.NodeTransformer):
                     self.imports_to_add.add('Event')
                     self.modified = True
                     return None
+        return node
+        
+    def visit_Import(self, node):
+        """Check for direct gevent imports"""
+        for alias in node.names:
+            if alias.name == 'gevent':
+                # Mark that we found gevent but can't auto-replace it
+                self.has_direct_gevent = True
         return node
 
 
