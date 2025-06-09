@@ -389,6 +389,15 @@ class PremiumSyncManager:
 Premium = PremiumClient  # For backward compatibility
 
 
+def has_premium_check(premium: Any) -> bool:
+    """Check if premium is active
+    
+    This is a helper function to check if premium features are available.
+    In the async version, we check if the premium object exists.
+    """
+    return premium is not None
+
+
 async def premium_create_and_verify(credentials: PremiumCredentials) -> PremiumClient:
     """Create and verify premium client"""
     client = PremiumClient(
