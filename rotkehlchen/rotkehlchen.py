@@ -25,6 +25,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from rotkehlchen.tasks.manager import TaskManager
+from rotkehlchen.tasks.tasks import TaskOrchestrator
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -68,16 +69,16 @@ class Rotkehlchen:
         self.auth_manager: AuthManager | None = None
 
         # Exchange manager
-        self.exchange_manager: AsyncExchangeManager | None = None
+        self.exchange_manager: ExchangeManager | None = None
 
         # Chains aggregator
         self.chains_aggregator: ChainsAggregator | None = None
 
         # Task orchestrator
-        self.task_orchestrator: AsyncTaskOrchestrator | None = None
+        self.task_orchestrator: TaskOrchestrator | None = None
 
         # API server
-        self.api_server: AsyncAPIServer | None = None
+        self.api_server: APIServer | None = None
 
         # Price historian
         self.price_historian: PriceHistorian | None = None
@@ -125,7 +126,7 @@ class Rotkehlchen:
             await self._initialize_chains()
 
             # Initialize exchange manager
-            self.exchange_manager = AsyncExchangeManager(
+            self.exchange_manager = ExchangeManager(
                 database=self.data.db,
                 msg_aggregator=self.msg_aggregator,
             )
@@ -139,7 +140,7 @@ class Rotkehlchen:
             )
 
             # Initialize task orchestrator
-            self.task_orchestrator = AsyncTaskOrchestrator(
+            self.task_orchestrator = TaskOrchestrator(
                 chains_aggregator=self.chains_aggregator,
                 async_db=self.async_db,
                 ws_notifier=self.ws_notifier,

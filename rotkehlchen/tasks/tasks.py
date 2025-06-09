@@ -9,9 +9,9 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
 
-from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
+from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.chain.aggregator import ChainsAggregator
-from rotkehlchen.db.async_handler import AsyncDBHandler
+from rotkehlchen.db.handler import DBHandler
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncPeriodicTask:
+class PeriodicTask:
     """Base class for periodic async tasks"""
 
     def __init__(
@@ -101,14 +101,14 @@ class AsyncPeriodicTask:
             log.error(f'Error in periodic task {self.name}: {e}')
 
 
-class AsyncBalanceUpdater:
+class BalanceUpdater:
     """Async task for updating blockchain balances"""
 
     def __init__(
         self,
         chains_aggregator: ChainsAggregator,
-        async_db: AsyncDBHandler,
-        ws_notifier: AsyncRotkiNotifier,
+        async_db: DBHandler,
+        ws_notifier: RotkiNotifier,
     ):
         self.chains_aggregator = chains_aggregator
         self.async_db = async_db
@@ -179,14 +179,14 @@ class AsyncBalanceUpdater:
         # Implementation would save to DB
 
 
-class AsyncPriceUpdater:
+class PriceUpdater:
     """Async task for updating asset prices"""
 
     def __init__(
         self,
         inquirer: Inquirer,
-        async_db: AsyncDBHandler,
-        ws_notifier: AsyncRotkiNotifier,
+        async_db: DBHandler,
+        ws_notifier: RotkiNotifier,
     ):
         self.inquirer = inquirer
         self.async_db = async_db
@@ -260,14 +260,14 @@ class AsyncPriceUpdater:
         # Implementation would save to DB
 
 
-class AsyncHistoryProcessor:
+class HistoryProcessor:
     """Async task for processing blockchain history"""
 
     def __init__(
         self,
         chains_aggregator: ChainsAggregator,
-        async_db: AsyncDBHandler,
-        ws_notifier: AsyncRotkiNotifier,
+        async_db: DBHandler,
+        ws_notifier: RotkiNotifier,
     ):
         self.chains_aggregator = chains_aggregator
         self.async_db = async_db
@@ -319,14 +319,14 @@ class AsyncHistoryProcessor:
         return 0
 
 
-class AsyncTaskOrchestrator:
+class TaskOrchestrator:
     """Orchestrates all async background tasks"""
 
     def __init__(
         self,
         chains_aggregator: ChainsAggregator,
-        async_db: AsyncDBHandler,
-        ws_notifier: AsyncRotkiNotifier,
+        async_db: DBHandler,
+        ws_notifier: RotkiNotifier,
         inquirer: Inquirer,
     ):
         self.chains_aggregator = chains_aggregator
@@ -335,31 +335,31 @@ class AsyncTaskOrchestrator:
         self.inquirer = inquirer
 
         # Initialize task handlers
-        self.balance_updater = AsyncBalanceUpdater(
+        self.balance_updater = BalanceUpdater(
             chains_aggregator,
             async_db,
             ws_notifier,
         )
-        self.price_updater = AsyncPriceUpdater(
+        self.price_updater = PriceUpdater(
             inquirer,
             async_db,
             ws_notifier,
         )
-        self.history_processor = AsyncHistoryProcessor(
+        self.history_processor = HistoryProcessor(
             chains_aggregator,
             async_db,
             ws_notifier,
         )
 
         # Periodic tasks
-        self.tasks: dict[str, AsyncPeriodicTask] = {}
+        self.tasks: dict[str, PeriodicTask] = {}
 
     async def start(self):
         """Start all background tasks"""
         log.info('Starting async task orchestrator')
 
         # Balance update task (every 5 minutes)
-        self.tasks['balance_update'] = AsyncPeriodicTask(
+        self.tasks['balance_update'] = PeriodicTask(
             name='balance_update',
             interval=300,
             task_fn=self.balance_updater.update_balances,
@@ -367,7 +367,7 @@ class AsyncTaskOrchestrator:
         )
 
         # Price update task (every 30 minutes)
-        self.tasks['price_update'] = AsyncPeriodicTask(
+        self.tasks['price_update'] = PeriodicTask(
             name='price_update',
             interval=1800,
             task_fn=self.price_updater.update_prices,
@@ -375,7 +375,7 @@ class AsyncTaskOrchestrator:
         )
 
         # History processing task (every hour)
-        self.tasks['history_processing'] = AsyncPeriodicTask(
+        self.tasks['history_processing'] = PeriodicTask(
             name='history_processing',
             interval=3600,
             task_fn=self.history_processor.process_history,
