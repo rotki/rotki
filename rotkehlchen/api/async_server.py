@@ -15,6 +15,7 @@ from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.resources_fastapi import router as v1_router
 from rotkehlchen.api.v1.async_history_events import router as history_router
 from rotkehlchen.api.v1.async_transactions import router as transactions_router
+from rotkehlchen.api.v1.async_assets import router as assets_router
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.db.async_handler import AsyncDBHandler
@@ -72,6 +73,7 @@ class AsyncAPIServer:
         self.app.include_router(v1_router)
         self.app.include_router(history_router)
         self.app.include_router(transactions_router)
+        self.app.include_router(assets_router)
         
         # Inject dependencies
         self.app.dependency_overrides[self._get_rest_api] = lambda: self.rest_api

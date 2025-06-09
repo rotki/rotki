@@ -13,6 +13,8 @@ class AsyncFeature(Enum):
     SETTINGS_ENDPOINT = "settings"
     DATABASE_ENDPOINTS = "database"
     HISTORY_ENDPOINTS = "history"
+    ASSETS_ENDPOINT = "assets"
+    TRANSACTIONS_ENDPOINT = "transactions"
     ALL_ENDPOINTS = "all_endpoints"
 
 
