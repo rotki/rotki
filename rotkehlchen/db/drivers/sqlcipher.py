@@ -13,8 +13,8 @@ from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 from typing import Any, ContextManager
 
-import sqlcipher3
-from sqlcipher3 import Connection, Cursor
+from pysqlcipher3 import dbapi2 as sqlcipher
+from pysqlcipher3.dbapi2 import Connection, Cursor
 
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -55,7 +55,7 @@ class DBConnection:
 
     def _create_connection(self) -> Connection:
         """Create a new SQLCipher connection"""
-        connection = sqlcipher3.connect(
+        connection = sqlcipher.connect(
             str(self.path),
             timeout=self.timeout,
             check_same_thread=False,  # Allow multi-threading

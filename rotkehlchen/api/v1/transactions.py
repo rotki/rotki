@@ -19,10 +19,10 @@ from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
 )
-from rotkehlchen.chain.ethereum.utils import deserialize_evm_address
-from rotkehlchen.db.async_handler import AsyncDBHandler
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.db.handler import DBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.tasks.async_manager import AsyncTaskManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp
 
 logger = logging.getLogger(__name__)
@@ -37,14 +37,14 @@ async def get_rotkehlchen() -> "Rotkehlchen":
     raise NotImplementedError('Rotkehlchen injection not configured')
 
 
-async def get_async_db() -> AsyncDBHandler:
+async def get_async_db() -> DBHandler:
     """Get async database handler - will be injected by the app"""
-    raise NotImplementedError('AsyncDBHandler injection not configured')
+    raise NotImplementedError('DBHandler injection not configured')
 
 
-async def get_task_manager() -> AsyncTaskManager:
+async def get_task_manager() -> TaskManager:
     """Get async task manager - will be injected by the app"""
-    raise NotImplementedError('AsyncTaskManager injection not configured')
+    raise NotImplementedError('TaskManager injection not configured')
 
 
 @router.get('/blockchains/evm/transactions', response_model=dict)
@@ -66,8 +66,8 @@ async def query_evm_transactions(
     async_query: bool = Query(False),
     # Dependencies
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
-    async_db: AsyncDBHandler = Depends(get_async_db),
-    task_manager: AsyncTaskManager = Depends(get_task_manager),
+    async_db: DBHandler = Depends(get_async_db),
+    task_manager: TaskManager = Depends(get_task_manager),
 ):
     """Query EVM transactions with high performance async implementation"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):
@@ -136,7 +136,7 @@ async def query_evm_transactions(
 
 
 async def _do_query_transactions(
-    async_db: AsyncDBHandler,
+    async_db: DBHandler,
     chain: ChainID | None,
     address: ChecksumEvmAddress | None,
     from_ts: Timestamp | None,
@@ -222,7 +222,7 @@ async def _do_query_transactions(
 async def get_transaction_details(
     tx_hash: str,
     evm_chain: str = Query(...),
-    async_db: AsyncDBHandler = Depends(get_async_db),
+    async_db: DBHandler = Depends(get_async_db),
 ):
     """Get detailed information about a specific transaction"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):
@@ -289,8 +289,8 @@ async def decode_transactions(
     tx_hashes: list[str] = Query(...),
     evm_chain: str = Query(...),
     ignore_cache: bool = Query(False),
-    async_db: AsyncDBHandler = Depends(get_async_db),
-    task_manager: AsyncTaskManager = Depends(get_task_manager),
+    async_db: DBHandler = Depends(get_async_db),
+    task_manager: TaskManager = Depends(get_task_manager),
 ):
     """Decode multiple transactions asynchronously"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):

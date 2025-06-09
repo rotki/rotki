@@ -25,7 +25,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.timing import TIMESTAMP_MAX_VALUE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
-from rotkehlchen.history.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
