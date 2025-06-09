@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.auth import AuthManager
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -57,7 +56,7 @@ class Rotkehlchen:
         )
 
         # Async database
-        self.async_db: AsyncDBHandler | None = None
+        self.async_db: DBHandler | None = None
 
         # WebSocket notifier
         self.ws_notifier = RotkiNotifier()
@@ -66,7 +65,7 @@ class Rotkehlchen:
         self.task_manager = TaskManager(self.msg_aggregator)
 
         # Auth manager
-        self.auth_manager: AsyncAuthManager | None = None
+        self.auth_manager: AuthManager | None = None
 
         # Exchange manager
         self.exchange_manager: AsyncExchangeManager | None = None
@@ -98,7 +97,7 @@ class Rotkehlchen:
 
         try:
             # Initialize async database
-            self.async_db = AsyncDBHandler(
+            self.async_db = DBHandler(
                 db_path=self.data.user_data_dir,
                 password=self.args.sqlite_init_code,
                 msg_aggregator=self.msg_aggregator,
@@ -106,7 +105,7 @@ class Rotkehlchen:
             await self.async_db.initialize()
 
             # Initialize auth manager
-            self.auth_manager = AsyncAuthManager(self.async_db)
+            self.auth_manager = AuthManager(self.async_db)
 
             # Initialize inquirer (singleton)
             Inquirer(
@@ -147,17 +146,12 @@ class Rotkehlchen:
                 inquirer=Inquirer(),
             )
 
-            # Create REST API
-            rest_api = RestAPI(
-                rotkehlchen=self,  # Note: might need adapter
-            )
-
             # Initialize API server
-            self.api_server = AsyncAPIServer(
-                rest_api=rest_api,
+            self.api_server = APIServer(
+                rotkehlchen=self,
                 ws_notifier=self.ws_notifier,
                 cors_domain_list=self.args.cors_domain_list,
-                async_db=self.async_db,
+                db_handler=self.data.db,
                 task_manager=self.task_manager,
             )
 
