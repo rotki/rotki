@@ -4,14 +4,15 @@ import logging
 from typing import Any
 
 import uvicorn
-import websockets
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.requests import Request
 from starlette.responses import Response
 
+from rotkehlchen.api.flask_fastapi_bridge import FlaskFastAPIBridge
 from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.resources_fastapi import router as v1_router
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -59,6 +60,12 @@ class AsyncAPIServer:
         # Setup WebSocket endpoint
         self.app.websocket("/ws")(self.websocket_endpoint)
         
+        # Include FastAPI router
+        self.app.include_router(v1_router)
+        
+        # Inject RestAPI dependency
+        self.app.dependency_overrides[self._get_rest_api] = lambda: self.rest_api
+        
         # Setup routes
         self._setup_routes()
         
@@ -83,17 +90,15 @@ class AsyncAPIServer:
         
         return response
     
+    @staticmethod
+    def _get_rest_api() -> RestAPI:
+        """Dependency injection placeholder"""
+        raise NotImplementedError("Should be overridden")
+    
     def _setup_routes(self):
         """Setup API routes (placeholder for migration)"""
-        # During migration, we'll gradually move routes from Flask to FastAPI
-        # For now, create a catch-all that proxies to Flask
-        
-        @self.app.get("/api/1/ping")
-        async def ping():
-            """Simple ping endpoint for testing"""
-            return {"result": {"status": "pong"}, "message": ""}
-        
-        # More routes will be added during migration
+        # Routes are now in resources_fastapi.py via router
+        pass
     
     async def websocket_endpoint(self, websocket: WebSocket):
         """Handle WebSocket connections"""
