@@ -4,7 +4,6 @@ import re
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
-import gevent
 import requests
 from eth_utils import to_checksum_address
 
@@ -33,6 +32,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, ExternalService
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -195,7 +195,7 @@ class Opensea(ExternalServiceWithApiKey):
                 log.debug(
                     f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
                 )
-                gevent.sleep(backoff)
+                sleep(backoff)
                 backoff *= 2
                 if backoff >= backoff_limit:
                     raise RemoteError(

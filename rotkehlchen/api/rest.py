@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
 from zipfile import BadZipFile, ZipFile
 
-import gevent
 from flask import Response, after_this_request, make_response, send_file
+from rotkehlchen.utils.gevent_compat import Event, Semaphore, spawn
 from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
@@ -475,7 +475,7 @@ class RestAPI:
 
     def _query_async(self, command: Callable, **kwargs: Any) -> Response:
         task_id = self._new_task_id()
-        greenlet = gevent.spawn(
+        greenlet = spawn(
             self._do_query_async,
             command,
             task_id,

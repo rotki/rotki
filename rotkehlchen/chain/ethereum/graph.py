@@ -3,7 +3,6 @@ import logging
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
 import requests
 from gql import Client, gql
 from gql.transport.exceptions import TransportError, TransportQueryError, TransportServerError
@@ -18,6 +17,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ApiKey, ExternalService
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -143,7 +143,7 @@ class Graph(ExternalServiceWithApiKey):
                         f'Retries left: {retries_left}.'
                     )
                     log.error(f'{retry_base_msg}. {retry_msg}')
-                    gevent.sleep(sleep_seconds)
+                    sleep(sleep_seconds)
                 else:
                     raise RemoteError(f'{base_msg}. No retries left.') from e
 

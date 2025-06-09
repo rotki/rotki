@@ -8,7 +8,6 @@ from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -50,6 +49,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -217,7 +217,7 @@ class Independentreserve(ExchangeInterface):
                     backoff_seconds = 10 / tries
                     log.debug(
                         f'Got a 429 from IndependentReserve. Backing off for {backoff_seconds}')
-                    gevent.sleep(backoff_seconds)
+                    sleep(backoff_seconds)
                     tries -= 1
                     continue
 

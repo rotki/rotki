@@ -3,7 +3,6 @@ import sys
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-import gevent
 import requests
 
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -29,6 +28,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -107,7 +107,7 @@ class Blockscout(ExternalServiceWithApiKey):
                     f'Blockscout API request {response.url} got rate limited. Sleeping for '
                     f'{sleep_seconds}. We have {times} tries left.',
                 )
-                gevent.sleep(sleep_seconds)
+                sleep(sleep_seconds)
                 continue
 
             if response.status_code != 200:

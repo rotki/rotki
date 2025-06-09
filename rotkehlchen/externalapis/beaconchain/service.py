@@ -4,9 +4,7 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, cast
 from urllib.parse import urlencode
 
-import gevent
 import requests
-from gevent.lock import Semaphore
 
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats, ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
@@ -44,6 +42,7 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import Semaphore, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -174,7 +173,7 @@ class BeaconChain(ExternalServiceWithApiKey):
                     f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
                     f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
                 )
-                gevent.sleep(sleep_seconds)
+                sleep(sleep_seconds)
                 continue
             # else
             break

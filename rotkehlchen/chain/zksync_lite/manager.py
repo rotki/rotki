@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from pysqlcipher3.dbapi2 import IntegrityError
 
@@ -40,6 +39,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -133,7 +133,7 @@ class ZksyncLiteManager:
                     f'Got too many requests error from zksync lite. Will '
                     f'backoff for {backoff} seconds.',
                 )
-                gevent.sleep(backoff)
+                sleep(backoff)
                 backoff *= 2
                 continue
 

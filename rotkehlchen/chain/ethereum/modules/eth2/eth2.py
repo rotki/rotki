@@ -5,8 +5,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
-import gevent
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
@@ -35,6 +33,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
+from rotkehlchen.utils.gevent_compat import Semaphore, sleep
 
 from .constants import (
     CPT_ETH2,
@@ -416,7 +415,7 @@ class Eth2(EthereumModule):
                 f'{VALIDATOR_STATS_QUERY_BACKOFF_TIME} seconds.',
             )
             self.validator_stats_queried = 0
-            gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
+            sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
 
     def _query_services_for_validator_daily_stats(
             self,

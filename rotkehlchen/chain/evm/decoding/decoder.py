@@ -11,8 +11,6 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional, Protocol
 
-import gevent
-from gevent.lock import Semaphore
 from more_itertools import peekable
 from web3.exceptions import Web3Exception
 
@@ -73,6 +71,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
+from rotkehlchen.utils.gevent_compat import Semaphore, sleep
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import (
@@ -700,7 +699,7 @@ class EVMTransactionDecoder(ABC):
 
             if (idx + 1) % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
                 log.debug(f'Context switching out of the log event nr. {idx + 1} of {self.evm_inquirer.chain_name} {transaction}')  # noqa: E501
-                gevent.sleep(0)
+                sleep(0)
 
             context = DecoderContext(
                 tx_log=tx_log,

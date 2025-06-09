@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 from typing import Any, NamedTuple, cast
 from urllib.parse import urlparse
 
-import gevent
 import requests
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import BlockNotFound, SubstrateRequestException
@@ -25,6 +24,7 @@ from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 from .types import (
     BlockNumber,
@@ -646,7 +646,7 @@ def wait_until_a_node_is_available(
     try:
         with gevent.Timeout(seconds):
             while len(substrate_manager.available_nodes_call_order) == 0:
-                gevent.sleep(0.1)
+                sleep(0.1)
     except gevent.Timeout as e:
         chain = substrate_manager.chain
         raise RemoteError(

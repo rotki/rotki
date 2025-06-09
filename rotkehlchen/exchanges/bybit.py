@@ -8,7 +8,6 @@ from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -51,6 +50,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -244,7 +244,7 @@ class Bybit(ExchangeInterface):
                 if tries >= 1:
                     backoff_seconds = 10 / tries
                     log.debug(f'Got a 429 from Bybit. Backing off for {backoff_seconds}')
-                    gevent.sleep(backoff_seconds)
+                    sleep(backoff_seconds)
                     tries -= 1
                     continue
 

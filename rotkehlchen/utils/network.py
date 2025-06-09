@@ -4,7 +4,6 @@ from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any, Literal, overload
 
-import gevent
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -13,6 +12,7 @@ from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.gevent_compat import sleep
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -165,7 +165,7 @@ def retry_calls(
                     f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
                     f'{backoff_in_seconds} seconds',
                 )
-                gevent.sleep(backoff_in_seconds)
+                sleep(backoff_in_seconds)
                 tries -= 1
                 continue
 

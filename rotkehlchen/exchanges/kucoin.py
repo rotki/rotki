@@ -11,7 +11,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests.adapters import Response
 
@@ -62,6 +61,7 @@ from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -281,7 +281,7 @@ class Kucoin(ExchangeInterface):
                     options=call_options,
                 )
                 retries_left -= 1
-                gevent.sleep(retries_after_seconds)
+                sleep(retries_after_seconds)
                 retries_after_seconds *= 2
                 continue
 

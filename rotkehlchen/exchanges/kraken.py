@@ -13,7 +13,6 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests import Response
 
@@ -62,6 +61,7 @@ from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
@@ -305,7 +305,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                         call_counter=self.call_counter,
                     )
                     tries -= 1
-                    gevent.sleep(backoff_in_seconds)
+                    sleep(backoff_in_seconds)
                     continue
 
             log.debug(
@@ -323,7 +323,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     f'for {backoff_in_seconds} seconds',
                 )
                 tries -= 1
-                gevent.sleep(backoff_in_seconds)
+                sleep(backoff_in_seconds)
                 continue
 
             # else success

@@ -6,7 +6,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -49,6 +48,7 @@ from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
@@ -371,7 +371,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
                     f'for {backoff_in_seconds} seconds. {retries_left} retries left',
                 )
-                gevent.sleep(backoff_in_seconds)
+                sleep(backoff_in_seconds)
                 continue
 
             if response.status_code != HTTPStatus.OK:

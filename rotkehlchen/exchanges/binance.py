@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -76,6 +75,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -400,7 +400,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         f'retry after value ({retry_after} > {RETRY_AFTER_LIMIT})',
                     )
 
-                gevent.sleep(retry_after)
+                sleep(retry_after)
                 continue
 
             # else success

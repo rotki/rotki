@@ -8,7 +8,6 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-import gevent
 import requests
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -52,6 +51,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import from_gwei, hexstr_to_int, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -252,7 +252,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                     f'Got too many requests error from {chain_id} etherscan. Will '
                     f'backoff for {backoff} seconds.',
                 )
-                gevent.sleep(backoff)
+                sleep(backoff)
                 backoff *= 2
                 continue
 
@@ -294,7 +294,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                                     f'Got response: {response.text} from etherscan while '
                                     f'querying chain {chain_id}. Will backoff for {backoff} seconds.',  # noqa: E501
                                 )
-                                gevent.sleep(backoff)
+                                sleep(backoff)
                                 backoff *= 2
                                 continue
 

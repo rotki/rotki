@@ -4,7 +4,6 @@ from enum import StrEnum
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -56,6 +55,7 @@ from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -314,7 +314,7 @@ class Cryptocompare(
                             f'Got rate limited by cryptocompare. '
                             f'Backing off for {backoff_seconds}',
                         )
-                        gevent.sleep(backoff_seconds)
+                        sleep(backoff_seconds)
                         tries -= 1
                         continue
 

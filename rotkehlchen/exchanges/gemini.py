@@ -8,7 +8,6 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -58,6 +57,7 @@ from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
+from rotkehlchen.utils.gevent_compat import sleep
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -216,7 +216,7 @@ class Gemini(ExchangeInterface):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(retry_limit / retries_left)
+                sleep(retry_limit / retries_left)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint
