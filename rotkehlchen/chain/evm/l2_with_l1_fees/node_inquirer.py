@@ -9,8 +9,8 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.utils import maybe_read_integer
-from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.manager import TaskManager
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

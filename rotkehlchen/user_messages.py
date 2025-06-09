@@ -27,7 +27,7 @@ class MessagesAggregator:
         self.warnings: deque = deque()
         self.errors: deque = deque()
         self.rotki_notifier: RotkiNotifier | None = None
-    
+
     def _sync_broadcast(
             self,
             message_type: WSMessageType,
@@ -40,7 +40,7 @@ class MessagesAggregator:
         """Helper to call async broadcast from sync context"""
         if self.rotki_notifier is None:
             return
-            
+
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():
@@ -53,7 +53,7 @@ class MessagesAggregator:
                         success_callback_args=success_callback_args,
                         failure_callback=failure_callback,
                         failure_callback_args=failure_callback_args,
-                    )
+                    ),
                 )
             else:
                 # Run in thread-safe manner
@@ -66,7 +66,7 @@ class MessagesAggregator:
                         failure_callback=failure_callback,
                         failure_callback_args=failure_callback_args,
                     ),
-                    loop
+                    loop,
                 )
         except RuntimeError:
             # No event loop - call failure callback

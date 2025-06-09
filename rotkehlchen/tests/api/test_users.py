@@ -35,8 +35,8 @@ from rotkehlchen.tests.utils.premium import (
     create_patched_premium,
 )
 from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.concurrency import sleep
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

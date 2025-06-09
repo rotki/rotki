@@ -1,9 +1,10 @@
 import subprocess  # noqa: S404
-from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout
 import sys
 from http import HTTPStatus
 
 import requests
+
+from rotkehlchen.utils.concurrency import Timeout, timeout as Timeout
 
 
 def test_backend():

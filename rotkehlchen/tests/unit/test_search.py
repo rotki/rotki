@@ -1,7 +1,6 @@
 import logging
 import subprocess  # noqa: S404  # is only used to execute rotki code here
 
-
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
@@ -11,7 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import Price
-from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, spawn
+from rotkehlchen.utils.concurrency import joinall, spawn
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

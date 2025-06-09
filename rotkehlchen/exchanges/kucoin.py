@@ -57,11 +57,11 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import sleep
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

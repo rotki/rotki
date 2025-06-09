@@ -5,7 +5,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -30,10 +29,10 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import Semaphore, sleep
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
-from rotkehlchen.utils.concurrency import Semaphore, sleep
 
 from .constants import (
     CPT_ETH2,

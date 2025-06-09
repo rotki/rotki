@@ -17,5 +17,5 @@ def set_rotkehlchen_instance(rotkehlchen: 'Rotkehlchen') -> None:
 async def get_rotkehlchen() -> 'Rotkehlchen':
     """Get Rotkehlchen instance for dependency injection"""
     if _rotkehlchen_instance is None:
-        raise RuntimeError("Rotkehlchen instance not configured")
+        raise RuntimeError('Rotkehlchen instance not configured')
     return _rotkehlchen_instance

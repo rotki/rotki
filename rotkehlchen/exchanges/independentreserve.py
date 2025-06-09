@@ -48,8 +48,8 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 from rotkehlchen.utils.concurrency import sleep
+from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

@@ -31,6 +31,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import Semaphore, sleep
 from rotkehlchen.utils.misc import (
     create_timestamp,
     from_gwei,
@@ -42,7 +43,6 @@ from rotkehlchen.utils.misc import (
 )
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.concurrency import Semaphore, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

@@ -36,8 +36,8 @@ from rotkehlchen.types import (
     OptionalChainAddress,
     SupportedBlockchain,
 )
+from rotkehlchen.utils.concurrency import Timeout, kill_all, sleep, timeout as Timeout
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, kill_all, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

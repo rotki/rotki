@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
 from rotkehlchen.types import Location
-from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
+from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

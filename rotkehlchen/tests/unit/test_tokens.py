@@ -32,8 +32,8 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     TimestampMS,
 )
+from rotkehlchen.utils.concurrency import sleep, spawn
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.concurrency import timeout as Timeout, sleep, spawn
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator

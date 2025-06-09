@@ -16,7 +16,7 @@ from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
-from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, sleep
+from rotkehlchen.utils.concurrency import Timeout, sleep, timeout as Timeout
 
 
 @pytest.fixture(name='gnosispay_credentials')

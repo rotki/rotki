@@ -48,10 +48,10 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.concurrency import sleep
 from rotkehlchen.utils.misc import from_gwei, hexstr_to_int, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

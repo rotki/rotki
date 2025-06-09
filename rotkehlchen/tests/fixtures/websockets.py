@@ -1,11 +1,12 @@
 import json
-from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn
 from collections import deque
 from collections.abc import Generator
 from typing import Any
 
 import pytest
 from websocket import create_connection
+
+from rotkehlchen.utils.concurrency import joinall, sleep, spawn, timeout as Timeout
 
 
 class WebsocketReader:

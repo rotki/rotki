@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.types import SupportedBlockchain
-from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
+from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

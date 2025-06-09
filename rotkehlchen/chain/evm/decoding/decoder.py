@@ -69,9 +69,9 @@ from rotkehlchen.types import (
     EVMTxHash,
     Location,
 )
+from rotkehlchen.utils.concurrency import Semaphore, sleep
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
-from rotkehlchen.utils.concurrency import Semaphore, sleep
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import (

@@ -4,8 +4,6 @@ import tempfile
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
-from rotkehlchen.utils.concurrency import get_hub
-
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
@@ -21,6 +19,7 @@ from rotkehlchen.premium.premium import (
     premium_create_and_verify,
 )
 from rotkehlchen.types import Timestamp
+from rotkehlchen.utils.concurrency import get_hub
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -208,7 +207,7 @@ class PremiumSyncManager(LockableQueryMixIn):
 
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             tempdbpath = self.data.db.export_unencrypted(tempdbfile)
-            greenlet = get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)  # noqa: E501
+            greenlet = get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)
             data, our_hash = greenlet.get()
 
         log.debug(

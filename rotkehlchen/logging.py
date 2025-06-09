@@ -5,7 +5,7 @@ from collections.abc import Callable, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.utils.concurrency import getcurrent, get_task_name
+from rotkehlchen.utils.concurrency import get_task_name, getcurrent
 from rotkehlchen.utils.misc import is_production, timestamp_to_date, ts_now
 
 PYWSGI_RE = re.compile(r'\[(.*)\] ')

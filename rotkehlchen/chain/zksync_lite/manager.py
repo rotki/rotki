@@ -36,10 +36,10 @@ from rotkehlchen.types import (
     Location,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.concurrency import sleep
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer

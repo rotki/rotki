@@ -54,11 +54,11 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_list
-from rotkehlchen.utils.concurrency import Semaphore
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles

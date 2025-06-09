@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
-from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -35,6 +34,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     Timestamp,
 )
+from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 

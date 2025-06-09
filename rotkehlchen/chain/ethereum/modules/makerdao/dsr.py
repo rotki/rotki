@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, NamedTuple
 
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
@@ -12,10 +11,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
-from rotkehlchen.utils.concurrency import Semaphore
     ChecksumEvmAddress,
     Price,
 )
+from rotkehlchen.utils.concurrency import Semaphore
 
 from .constants import RAD
 

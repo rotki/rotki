@@ -3,11 +3,9 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-
 from rotkehlchen.utils.concurrency import Semaphore
 
 from .common import function_sig_key
-
 
 
 class LockableQueryMixIn:

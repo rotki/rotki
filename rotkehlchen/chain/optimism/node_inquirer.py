@@ -11,8 +11,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
-from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
 from .constants import (

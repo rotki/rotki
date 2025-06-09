@@ -37,7 +37,7 @@ async def async_main() -> None:
 
     # For now, still call the sync main() until server is fully async
     rotkehlchen_server.main()
-    
+
     # Future: await rotkehlchen_server.async_main()
 
 
@@ -46,7 +46,7 @@ def main() -> None:
     # Configure asyncio for better debugging in development
     if __debug__:
         asyncio.set_event_loop_debug(True)
-    
+
     # Run the async main
     asyncio.run(async_main())
 

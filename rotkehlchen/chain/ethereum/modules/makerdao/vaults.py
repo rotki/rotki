@@ -3,7 +3,6 @@ from collections import defaultdict
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY
@@ -20,8 +19,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
-from rotkehlchen.utils.misc import (
 from rotkehlchen.utils.concurrency import Semaphore
+from rotkehlchen.utils.misc import (
     ts_now,
 )
 

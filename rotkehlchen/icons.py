@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 
 import requests
 from fastapi import Response
-from fastapi.responses import FileResponse
 
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.constants.misc import (

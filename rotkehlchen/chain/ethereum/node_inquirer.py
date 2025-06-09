@@ -28,9 +28,9 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
-from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,

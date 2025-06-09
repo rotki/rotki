@@ -29,8 +29,8 @@ from rotkehlchen.tests.utils.premium import (
     setup_starting_environment,
 )
 from rotkehlchen.types import ChainID
+from rotkehlchen.utils.concurrency import joinall, sleep, spawn, wait
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn, wait
 
 if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -566,13 +566,13 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     with patched_get_hashes_not_decoded, patch_decoder_reload_data(), patched_get, patched_post as post_mock:  # noqa: E501
         greenlets = [
             spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
             spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
             spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
             spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
         ]
         joinall(greenlets)
         for g in greenlets:

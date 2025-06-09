@@ -16,7 +16,7 @@ from rotkehlchen.chain.substrate.types import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
-from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn
+from rotkehlchen.utils.concurrency import joinall, sleep, spawn, timeout as Timeout
 
 NODE_CONNECTION_TIMEOUT = 15
 

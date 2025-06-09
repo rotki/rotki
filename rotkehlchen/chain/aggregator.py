@@ -14,7 +14,6 @@ from web3.exceptions import BadFunctionCallOutput, Web3Exception
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
@@ -90,10 +89,10 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.externalapis.etherscan import HasChainActivity
 from rotkehlchen.fval import FVal
-from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import (
     CHAIN_IDS_WITH_BALANCE_PROTOCOLS,
     CHAINS_WITH_CHAIN_MANAGER,
@@ -114,6 +113,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise

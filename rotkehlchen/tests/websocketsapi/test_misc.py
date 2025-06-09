@@ -1,7 +1,8 @@
 import platform
-from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, joinall, spawn
 
 import pytest
+
+from rotkehlchen.utils.concurrency import Timeout, joinall, spawn, timeout as Timeout
 
 
 def _send_stuff(msg_aggregator, websocket_connection, string_len):

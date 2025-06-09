@@ -51,11 +51,11 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
+from rotkehlchen.utils.concurrency import sleep
 from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from collections.abc import Callable

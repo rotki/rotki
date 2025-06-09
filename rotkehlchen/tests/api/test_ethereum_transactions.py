@@ -71,8 +71,8 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.utils.concurrency import joinall
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.concurrency import timeout as Timeout, joinall
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

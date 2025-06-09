@@ -5,8 +5,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
-from rotkehlchen.utils.concurrency import Semaphore
-
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -51,6 +49,7 @@ from rotkehlchen.types import (
     Price,
     Timestamp,
 )
+from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
     deserialize_asset_with_oracles_from_db,

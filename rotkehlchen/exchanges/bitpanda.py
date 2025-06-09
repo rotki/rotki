@@ -44,11 +44,11 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import sleep
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.concurrency import sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles

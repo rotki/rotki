@@ -48,7 +48,7 @@ class RotkiNotifier:
             failure_callback_args: dict[str, Any] | None = None,
     ) -> bool:
         """Send message to a single websocket with error handling
-        
+
         Returns True if successful, False otherwise
         """
         try:
@@ -82,7 +82,7 @@ class RotkiNotifier:
             failure_callback_args: dict[str, Any] | None = None,
     ) -> None:
         """Broadcasts a websocket message to all subscribers
-        
+
         A callback to run on message success and a callback to run on message
         failure can be optionally provided.
         """
@@ -99,12 +99,12 @@ class RotkiNotifier:
         # Collect closed connections to remove after iteration
         closed_websockets = set()
         tasks = []
-        
+
         for websocket in self.subscribers.copy():
             if websocket.closed:
                 closed_websockets.add(websocket)
                 continue
-            
+
             # Create task for each send operation
             task = self._send_to_websocket(
                 websocket=websocket,
@@ -136,10 +136,10 @@ class RotkiNotifier:
 
 class RotkiWSHandler:
     """WebSocket connection handler for the async implementation"""
-    
+
     def __init__(self, notifier: RotkiNotifier):
         self.notifier = notifier
-    
+
     async def handle_connection(
             self,
             websocket: WebSocketServerProtocol,
@@ -148,7 +148,7 @@ class RotkiWSHandler:
         """Handle a WebSocket connection lifecycle"""
         # Subscribe on connection
         await self.notifier.subscribe(websocket)
-        
+
         try:
             # Keep connection alive and handle any incoming messages
             async for message in websocket:
@@ -168,4 +168,3 @@ class RotkiWSHandler:
         finally:
             # Unsubscribe on close
             await self.notifier.unsubscribe(websocket)
-

@@ -1,18 +1,15 @@
 import os
 import platform
-from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Any
 
 import psutil
 import requests
-# TODO: Update to FastAPI equivalent
-# from flask import url_for
 
 # TODO: Update to FastAPI equivalent
+# from flask import url_for
+# TODO: Update to FastAPI equivalent
 # from rotkehlchen.api.server import APIServer, RestAPI
-from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
 
 if platform.system() == 'Darwin':
     ASYNC_TASK_WAIT_TIMEOUT = 60

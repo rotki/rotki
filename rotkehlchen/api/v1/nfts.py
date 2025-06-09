@@ -3,11 +3,9 @@
 This module provides high-performance async NFT operations.
 """
 import asyncio
-import json
 import logging
-from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -16,15 +14,13 @@ from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
 )
-from rotkehlchen.errors.api import APIError
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-router = APIRouter(prefix="/api/1", tags=["nfts"])
+router = APIRouter(prefix='/api/1', tags=['nfts'])
 
 
 # Pydantic models
@@ -32,7 +28,7 @@ class NFTQuery(BaseModel):
     """Parameters for NFT queries"""
     async_query: bool = Field(default=True)
     ignore_cache: bool = Field(default=False)
-    addresses: Optional[list[str]] = None
+    addresses: list[str] | None = None
 
 
 class NFTBalanceQuery(BaseModel):
@@ -50,28 +46,28 @@ class NFTPriceQuery(BaseModel):
 # Dependency injection
 async def get_rest_api() -> RestAPI:
     """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError("RestAPI injection not configured")
+    raise NotImplementedError('RestAPI injection not configured')
 
 
-@router.get("/nfts", response_model=dict)
+@router.get('/nfts', response_model=dict)
 async def get_nfts(
     async_query: bool = Query(default=True),
     ignore_cache: bool = Query(default=False),
-    addresses: Optional[str] = Query(default=None),
+    addresses: str | None = Query(default=None),
     rest_api: RestAPI = Depends(get_rest_api),
 ) -> dict:
     """Get NFTs for user accounts"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail="Endpoint not migrated")
-    
+        raise HTTPException(status_code=404, detail='Endpoint not migrated')
+
     try:
         # Check authentication
         if not rest_api.rotkehlchen.user_is_logged_in:
             return JSONResponse(
-                content=create_error_response("No user is logged in"),
+                content=create_error_response('No user is logged in'),
                 status_code=401,
             )
-        
+
         # Parse addresses if provided
         address_list = None
         if addresses:
@@ -79,10 +75,10 @@ async def get_nfts(
                 address_list = [string_to_evm_address(addr.strip()) for addr in addresses.split(',')]
             except Exception as e:
                 return JSONResponse(
-                    content=create_error_response(f"Invalid address: {e}"),
+                    content=create_error_response(f'Invalid address: {e}'),
                     status_code=400,
                 )
-        
+
         if async_query:
             # Spawn async task
             task = rest_api.rotkehlchen.task_manager.spawn_task(
@@ -91,46 +87,46 @@ async def get_nfts(
                 addresses=address_list,
                 ignore_cache=ignore_cache,
             )
-            
+
             return create_success_response({
                 'task_id': task.id,
                 'status': 'pending',
             })
-        
+
         # Synchronous query
         result = await asyncio.to_thread(
             rest_api.rotkehlchen.nft_manager.get_nfts,
             addresses=address_list,
             ignore_cache=ignore_cache,
         )
-        
+
         return create_success_response(result)
-        
+
     except Exception as e:
-        log.error(f"Error getting NFTs: {e}")
+        log.error(f'Error getting NFTs: {e}')
         return JSONResponse(
             content=create_error_response(str(e)),
             status_code=500,
         )
 
 
-@router.post("/nfts/balances", response_model=dict)
+@router.post('/nfts/balances', response_model=dict)
 async def get_nft_balances(
     query: NFTBalanceQuery,
     rest_api: RestAPI = Depends(get_rest_api),
 ) -> dict:
     """Get NFT balances for user accounts"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail="Endpoint not migrated")
-    
+        raise HTTPException(status_code=404, detail='Endpoint not migrated')
+
     try:
         # Check authentication
         if not rest_api.rotkehlchen.user_is_logged_in:
             return JSONResponse(
-                content=create_error_response("No user is logged in"),
+                content=create_error_response('No user is logged in'),
                 status_code=401,
             )
-        
+
         if query.async_query:
             # Spawn async task
             task = rest_api.rotkehlchen.task_manager.spawn_task(
@@ -138,61 +134,61 @@ async def get_nft_balances(
                 method=rest_api.rotkehlchen.nft_manager.get_balances,
                 ignore_cache=query.ignore_cache,
             )
-            
+
             return create_success_response({
                 'task_id': task.id,
                 'status': 'pending',
             })
-        
+
         # Synchronous query
         result = await asyncio.to_thread(
             rest_api.rotkehlchen.nft_manager.get_balances,
             ignore_cache=query.ignore_cache,
         )
-        
+
         return create_success_response(result)
-        
+
     except Exception as e:
-        log.error(f"Error getting NFT balances: {e}")
+        log.error(f'Error getting NFT balances: {e}')
         return JSONResponse(
             content=create_error_response(str(e)),
             status_code=500,
         )
 
 
-@router.post("/nfts/prices", response_model=dict)
+@router.post('/nfts/prices', response_model=dict)
 async def get_nft_prices(
     query: NFTPriceQuery,
     rest_api: RestAPI = Depends(get_rest_api),
 ) -> dict:
     """Get current prices for specific NFTs"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail="Endpoint not migrated")
-    
+        raise HTTPException(status_code=404, detail='Endpoint not migrated')
+
     try:
         # Check authentication
         if not rest_api.rotkehlchen.user_is_logged_in:
             return JSONResponse(
-                content=create_error_response("No user is logged in"),
+                content=create_error_response('No user is logged in'),
                 status_code=401,
             )
-        
+
         # Validate NFT data
         nft_identifiers = []
         try:
             for nft_data in query.nfts:
                 if 'token_identifier' not in nft_data:
                     return JSONResponse(
-                        content=create_error_response("token_identifier is required for each NFT"),
+                        content=create_error_response('token_identifier is required for each NFT'),
                         status_code=400,
                     )
                 nft_identifiers.append(nft_data['token_identifier'])
         except Exception as e:
             return JSONResponse(
-                content=create_error_response(f"Invalid NFT data: {e}"),
+                content=create_error_response(f'Invalid NFT data: {e}'),
                 status_code=400,
             )
-        
+
         if query.async_query:
             # Spawn async task
             task = rest_api.rotkehlchen.task_manager.spawn_task(
@@ -200,22 +196,22 @@ async def get_nft_prices(
                 method=rest_api.rotkehlchen.nft_manager.get_current_price,
                 nft_identifiers=nft_identifiers,
             )
-            
+
             return create_success_response({
                 'task_id': task.id,
                 'status': 'pending',
             })
-        
+
         # Synchronous query
         result = await asyncio.to_thread(
             rest_api.rotkehlchen.nft_manager.get_current_price,
             nft_identifiers=nft_identifiers,
         )
-        
+
         return create_success_response(result)
-        
+
     except Exception as e:
-        log.error(f"Error getting NFT prices: {e}")
+        log.error(f'Error getting NFT prices: {e}')
         return JSONResponse(
             content=create_error_response(str(e)),
             status_code=500,

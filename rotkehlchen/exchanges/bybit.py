@@ -49,8 +49,8 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.concurrency import sleep
+from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler

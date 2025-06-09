@@ -13,7 +13,6 @@ from typing import Any, Literal, Optional, Unpack, cast, overload
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -142,6 +141,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps

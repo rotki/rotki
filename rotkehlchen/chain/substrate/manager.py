@@ -18,13 +18,13 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.serialization import jsonloads_dict
 from rotkehlchen.utils.concurrency import sleep
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .types import (
     BlockNumber,
