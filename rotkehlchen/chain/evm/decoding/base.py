@@ -397,12 +397,19 @@ class BaseDecoderTools:
 
         return resolved_result
 
-    def get_token_or_native(self, address: ChecksumEvmAddress) -> CryptoAsset | EvmToken:
+    def get_token_or_native(
+            self,
+            address: ChecksumEvmAddress,
+            encounter: 'TokenEncounterInfo | None' = None,
+    ) -> CryptoAsset | EvmToken:
         """Return the native token if the address is special or zero; otherwise return the EVM token."""  # noqa: E501
         if address in (ZERO_ADDRESS, ETH_SPECIAL_ADDRESS):
             return self.evm_inquirer.native_token
 
-        return self.get_or_create_evm_token(address)
+        return self.get_or_create_evm_token(
+            address=address,
+            encounter=encounter,
+        )
 
 
 class BaseDecoderToolsWithDSProxy(BaseDecoderTools):

@@ -710,6 +710,10 @@ def test_compound_v3_token_balances_liabilities(
             target='rotkehlchen.chain.evm.decoding.pendle.decoder.should_update_protocol_cache',
             return_value=False,
         ),
+        patch(
+            target='rotkehlchen.chain.evm.decoding.beefy_finance.decoder.should_update_protocol_cache',
+            return_value=False,
+        ),
     ):
         blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,
