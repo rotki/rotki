@@ -113,6 +113,7 @@ python tools/scripts/create_test_user_db.py
 - Bugfix branch: `bugfixes`
 - Use conventional commits (lowercase preferred)
 - Don't include "generated with claude" in commit messages
+- Add `[skip ci]` to every commit message
 
 ## Important Notes
 - The project uses SQLCipher for encrypted databases - handle database connections carefully

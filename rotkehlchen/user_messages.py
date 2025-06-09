@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
 from collections import deque
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -25,6 +27,52 @@ class MessagesAggregator:
         self.warnings: deque = deque()
         self.errors: deque = deque()
         self.rotki_notifier: RotkiNotifier | None = None
+    
+    def _sync_broadcast(
+            self,
+            message_type: WSMessageType,
+            to_send_data: dict[str, Any] | list[Any],
+            success_callback: Callable | None = None,
+            success_callback_args: dict[str, Any] | None = None,
+            failure_callback: Callable | None = None,
+            failure_callback_args: dict[str, Any] | None = None,
+    ) -> None:
+        """Helper to call async broadcast from sync context"""
+        if self.rotki_notifier is None:
+            return
+            
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Schedule the coroutine
+                asyncio.create_task(
+                    self.rotki_notifier.broadcast(
+                        message_type=message_type,
+                        to_send_data=to_send_data,
+                        success_callback=success_callback,
+                        success_callback_args=success_callback_args,
+                        failure_callback=failure_callback,
+                        failure_callback_args=failure_callback_args,
+                    )
+                )
+            else:
+                # Run in thread-safe manner
+                asyncio.run_coroutine_threadsafe(
+                    self.rotki_notifier.broadcast(
+                        message_type=message_type,
+                        to_send_data=to_send_data,
+                        success_callback=success_callback,
+                        success_callback_args=success_callback_args,
+                        failure_callback=failure_callback,
+                        failure_callback_args=failure_callback_args,
+                    ),
+                    loop
+                )
+        except RuntimeError:
+            # No event loop - call failure callback
+            if failure_callback:
+                failure_callback_args = failure_callback_args or {}
+                failure_callback(**failure_callback_args)
 
     def _append_warning(self, msg: str) -> None:
         self.warnings.appendleft(msg)
@@ -33,7 +81,7 @@ class MessagesAggregator:
         log.warning(msg)
         if self.rotki_notifier is not None:
             data = {'verbosity': 'warning', 'value': msg}
-            self.rotki_notifier.broadcast(
+            self._sync_broadcast(
                 message_type=WSMessageType.LEGACY,
                 to_send_data=data,
                 failure_callback=self._append_warning,
@@ -56,7 +104,7 @@ class MessagesAggregator:
         log.error(msg)
         if self.rotki_notifier is not None:
             data = {'verbosity': 'error', 'value': msg}
-            self.rotki_notifier.broadcast(
+            self._sync_broadcast(
                 message_type=WSMessageType.LEGACY,
                 to_send_data=data,
                 failure_callback=self._append_error,
@@ -74,13 +122,12 @@ class MessagesAggregator:
 
         Specify its type and data.
 
-        `wait_on_send` is used to determine if the message should be sent asynchronously
-        by spawning a greenlet or if it should just do it synchronously.
+        Messages are sent asynchronously via asyncio tasks when an event loop is available.
         """
         fallback_msg = json.dumps(process_result({'type': message_type, 'data': data}))  # kind of silly to repeat it here. Same code in broadcast  # noqa: E501
 
         if self.rotki_notifier is not None:
-            self.rotki_notifier.broadcast(
+            self._sync_broadcast(
                 message_type=message_type,
                 to_send_data=data,
                 failure_callback=self._append_error,

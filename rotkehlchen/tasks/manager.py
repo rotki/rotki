@@ -98,22 +98,126 @@ class TaskManager:
         self.tasks.append(tracked)
         return tracked
     
-    async def spawn_and_track(
+    def spawn_and_track(
+            self,
+            after_seconds: float | None = None,
+            task_name: str = '',
+            exception_is_error: bool = True,
+            method: Callable | None = None,
+            delay: float | None = None,
+            coro: Coroutine[Any, Any, T] | None = None,
+            **kwargs: Any,
+    ) -> TrackedTask | None:
+        """Spawn and track a task - supports both old sync and new async styles
+        
+        Old gevent style:
+            spawn_and_track(
+                after_seconds=5,
+                task_name='my task',
+                method=some_function,
+                arg1='value'
+            )
+            
+        New async style:
+            spawn_and_track(
+                task_name='my task',
+                coro=some_coroutine(),
+                delay=5
+            )
+        """
+        # Handle the delay parameter
+        actual_delay = delay if delay is not None else after_seconds
+        
+        # New async style - called with coro parameter
+        if coro is not None:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # We're in an async context, create task directly
+                    return self._create_tracked_task(
+                        task_name=task_name,
+                        coro=coro,
+                        exception_is_error=exception_is_error,
+                        delay=actual_delay,
+                    )
+                else:
+                    # We're in a sync context, use run_coroutine_threadsafe
+                    future = asyncio.run_coroutine_threadsafe(
+                        self._async_spawn_and_track(
+                            task_name=task_name,
+                            coro=coro,
+                            exception_is_error=exception_is_error,
+                            delay=actual_delay,
+                        ),
+                        loop
+                    )
+                    return future.result()
+            except RuntimeError:
+                # No event loop, create one
+                return asyncio.run(
+                    self._async_spawn_and_track(
+                        task_name=task_name,
+                        coro=coro,
+                        exception_is_error=exception_is_error,
+                        delay=actual_delay,
+                    )
+                )
+        
+        # Old gevent style - called with method parameter
+        if method is not None:
+            # Convert sync method to async
+            async def async_wrapper():
+                if asyncio.iscoroutinefunction(method):
+                    return await method(**kwargs)
+                else:
+                    # Run sync method in thread pool to avoid blocking
+                    loop = asyncio.get_event_loop()
+                    return await loop.run_in_executor(None, lambda: method(**kwargs))
+            
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # We're in an async context
+                    return self._create_tracked_task(
+                        task_name=task_name,
+                        coro=async_wrapper(),
+                        exception_is_error=exception_is_error,
+                        delay=actual_delay,
+                    )
+                else:
+                    # We're in a sync context
+                    future = asyncio.run_coroutine_threadsafe(
+                        self._async_spawn_and_track(
+                            task_name=task_name,
+                            coro=async_wrapper(),
+                            exception_is_error=exception_is_error,
+                            delay=actual_delay,
+                        ),
+                        loop
+                    )
+                    return future.result()
+            except RuntimeError:
+                # No event loop
+                return asyncio.run(
+                    self._async_spawn_and_track(
+                        task_name=task_name,
+                        coro=async_wrapper(),
+                        exception_is_error=exception_is_error,
+                        delay=actual_delay,
+                    )
+                )
+        
+        return None
+    
+    def _create_tracked_task(
             self,
             task_name: str,
             coro: Coroutine[Any, Any, T],
             exception_is_error: bool = True,
             delay: float | None = None,
     ) -> TrackedTask:
-        """Spawn a coroutine as a task and track it
-        
-        Args:
-            task_name: Name for the task (for logging)
-            coro: Coroutine to run
-            exception_is_error: Whether exceptions should be treated as errors
-            delay: Optional delay in seconds before starting the task
-        """
-        log.debug(f'Spawning async task "{task_name}"')
+        """Create and track a task (must be called from async context)"""
+        log.debug(f'Creating async task "{task_name}"')
         
         if delay is not None:
             async def delayed_coro():
@@ -125,6 +229,16 @@ class TaskManager:
             
         task.set_name(task_name)
         return self.add(task_name, task, exception_is_error)
+    
+    async def _async_spawn_and_track(
+            self,
+            task_name: str,
+            coro: Coroutine[Any, Any, T],
+            exception_is_error: bool = True,
+            delay: float | None = None,
+    ) -> TrackedTask:
+        """Internal async spawn_and_track implementation"""
+        return self._create_tracked_task(task_name, coro, exception_is_error, delay)
     
     def clear(self) -> None:
         """Cancel all tracked tasks. To be called when logging out or shutting down"""
@@ -173,4 +287,3 @@ class TaskManager:
     def task_count(self) -> int:
         """Get count of running tasks"""
         return len(self.running_tasks)
-
