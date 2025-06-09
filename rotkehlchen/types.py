@@ -1209,6 +1209,7 @@ class CacheType(Enum):
     PENDLE_POOLS = auto()
     PENDLE_SY_TOKENS = auto()
     PENDLE_YIELD_TOKENS = auto()  # store the count of all SYs, PTs, YTs & LP tokens per chain
+    BEEFY_VAULTS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1297,6 +1298,7 @@ GeneralCacheType = Literal[
     CacheType.STAKEDAO_GAUGES,
     CacheType.PENDLE_POOLS,
     CacheType.PENDLE_SY_TOKENS,
+    CacheType.BEEFY_VAULTS,
 ]
 
 

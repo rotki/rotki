@@ -40,6 +40,10 @@ def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> Ex
             target='rotkehlchen.chain.evm.decoding.pendle.decoder.should_update_protocol_cache',
             new=lambda *args, **kwargs: False,
         ))
+        stack.enter_context(patch(  # patch to not refresh cache by not downloading new data
+            target='rotkehlchen.chain.evm.decoding.beefy_finance.decoder.should_update_protocol_cache',
+            new=lambda *args, **kwargs: False,
+        ))
         # patch_general and patch_unique are booleans to indicate if we want to patch
         # globaldb_get_general_cache_values and/or unique globaldb_get_unique_cache_value
         for counterparties, path, patch_general, patch_unique in (  # patch to not load cache from DB by default  # noqa: E501
