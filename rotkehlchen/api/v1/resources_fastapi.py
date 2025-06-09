@@ -1,11 +1,13 @@
 """FastAPI resources to gradually replace Flask resources"""
+import asyncio
 import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.feature_flags import AsyncFeature, async_features, feature_enabled
+from rotkehlchen.api.rest import RestAPI, process_result
 from rotkehlchen.api.v1.schemas_fastapi import (
     AppInfoModel,
     AppInfoResponseModel,
@@ -48,35 +50,50 @@ router = APIRouter(prefix="/api/1", tags=["v1"])
 
 
 # Simple endpoints
-@router.get("/ping", response_model=PingResponseModel)
+@router.get("/ping", response_model=dict)
 async def ping():
-    """Simple ping endpoint"""
-    return create_success_response({"status": "pong"})
+    """Simple ping endpoint - matches Flask implementation exactly"""
+    if not async_features.is_enabled(AsyncFeature.PING_ENDPOINT):
+        raise HTTPException(status_code=404, detail="Endpoint not migrated")
+    
+    # Match Flask response exactly
+    return {"result": True, "message": ""}
 
 
-@router.get("/info", response_model=AppInfoResponseModel)
+@router.get("/info", response_model=dict)
 async def get_info(
     check_for_updates: bool = Query(default=False),
     rest_api: RestAPI = Depends(get_rest_api),
 ):
-    """Get application information"""
-    # Adapt sync RestAPI method to async
-    # In real implementation, RestAPI methods would be made async
+    """Get application information - async version of Flask endpoint"""
+    if not async_features.is_enabled(AsyncFeature.INFO_ENDPOINT):
+        raise HTTPException(status_code=404, detail="Endpoint not migrated")
+    
     try:
-        # For now, simulate the response
-        info = AppInfoModel(
-            version="1.35.0",
-            latest_version="1.35.0" if check_for_updates else None,
-            data_directory="/home/user/.rotki",
-            log_level="debug",
-            accept_docker_risk=False,
-            backend_default_arguments={},
-        )
-        return create_success_response(info.model_dump())
+        # Run sync method in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        
+        def _get_info():
+            # This matches the Flask implementation
+            result = rest_api.get_info(check_for_updates=check_for_updates)
+            # Extract the actual data from the Flask Response
+            if hasattr(result, 'json'):
+                return result.json
+            elif hasattr(result, 'get_json'):
+                return result.get_json()
+            else:
+                # If it's already a dict, return it
+                return result
+        
+        info_data = await loop.run_in_executor(None, _get_info)
+        
+        # Return in same format as Flask
+        return info_data
+        
     except Exception as e:
         log.error(f"Error getting info: {e}")
         return JSONResponse(
-            content=create_error_response(str(e), 500),
+            content={"result": None, "message": str(e), "error": True},
             status_code=500,
         )
 
@@ -98,32 +115,65 @@ async def get_database_info(
 
 
 # Settings endpoints
-@router.get("/settings", dependencies=[Depends(require_logged_in_user)])
+@router.get("/settings", dependencies=[Depends(require_logged_in_user)], response_model=dict)
 async def get_settings(
     rest_api: RestAPI = Depends(get_rest_api),
 ):
-    """Get current settings"""
-    # Placeholder - would call rest_api.get_settings()
-    settings = SettingsModel()
-    return create_success_response(settings.model_dump())
+    """Get current settings - async version"""
+    if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
+        raise HTTPException(status_code=404, detail="Endpoint not migrated")
+    
+    try:
+        loop = asyncio.get_event_loop()
+        
+        def _get_settings():
+            # Match Flask implementation
+            with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                settings = process_result(rest_api.rotkehlchen.get_settings(cursor))
+                cache = rest_api.rotkehlchen.data.db.get_cache_for_api(cursor)
+            return {"result": settings | cache, "message": ""}
+        
+        result = await loop.run_in_executor(None, _get_settings)
+        return result
+        
+    except Exception as e:
+        log.error(f"Error getting settings: {e}")
+        return JSONResponse(
+            content={"result": None, "message": str(e), "error": True},
+            status_code=500,
+        )
 
 
-@router.patch("/settings", dependencies=[Depends(require_logged_in_user)])
+@router.patch("/settings", dependencies=[Depends(require_logged_in_user)], response_model=dict)
 async def update_settings(
-    settings: EditSettingsModel,
+    settings: dict,  # Accept raw dict to match Flask
     rest_api: RestAPI = Depends(get_rest_api),
 ):
-    """Update settings"""
-    # Validate and update only provided fields
-    update_data = settings.model_dump(exclude_unset=True)
-    if not update_data:
-        return JSONResponse(
-            content=create_error_response("No settings to update", 400),
-            status_code=400,
-        )
+    """Update settings - async version"""
+    if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
+        raise HTTPException(status_code=404, detail="Endpoint not migrated")
     
-    # Placeholder - would call rest_api.update_settings()
-    return create_success_response({"updated": list(update_data.keys())})
+    try:
+        loop = asyncio.get_event_loop()
+        
+        def _update_settings():
+            # Call the Flask implementation
+            result = rest_api.set_settings(settings)
+            if hasattr(result, 'json'):
+                return result.json
+            elif hasattr(result, 'get_json'):
+                return result.get_json()
+            return result
+        
+        result = await loop.run_in_executor(None, _update_settings)
+        return result
+        
+    except Exception as e:
+        log.error(f"Error updating settings: {e}")
+        return JSONResponse(
+            content={"result": None, "message": str(e), "error": True},
+            status_code=500,
+        )
 
 
 # History events endpoints with async query support
@@ -223,6 +273,39 @@ def create_migrated_endpoint(flask_resource_class):
     # This would analyze the Flask resource and create FastAPI equivalents
     # For now, it's a conceptual helper
     pass
+
+
+# Migration management endpoints
+@router.get("/async/features", response_model=dict)
+async def get_async_features():
+    """Get status of async feature flags"""
+    from rotkehlchen.api.feature_flags import get_migration_metrics
+    return create_success_response(get_migration_metrics())
+
+
+@router.put("/async/features/{feature}", response_model=dict)
+async def toggle_async_feature(
+    feature: str,
+    enabled: bool = Query(...),
+):
+    """Toggle an async feature flag"""
+    try:
+        feature_enum = AsyncFeature(feature)
+        if enabled:
+            async_features.enable(feature_enum)
+        else:
+            async_features.disable(feature_enum)
+        
+        return create_success_response({
+            "feature": feature,
+            "enabled": enabled,
+            "all_features": async_features.get_status()
+        })
+    except ValueError:
+        return JSONResponse(
+            content=create_error_response(f"Unknown feature: {feature}", 400),
+            status_code=400,
+        )
 
 
 # Export router for inclusion in main app
