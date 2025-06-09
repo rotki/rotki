@@ -9,7 +9,6 @@ import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
@@ -404,9 +403,7 @@ def initialize_mock_rotkehlchen_instance(
         maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
         evm_manager.node_inquirer.maybe_connect_to_nodes(when_tracked_accounts=True)
-        # Check if any connection tasks are pending to wait for
-        if rotki.greenlet_manager.has_task(_connect_task_prefix(evm_manager.node_inquirer.chain_name)):  # noqa: E501
-            evm_nodes_wait.append((evm_manager.node_inquirer, connect_at_start))
+        # Since we're using asyncio now, no need to check for greenlet tasks
 
     if start_with_valid_premium:
         rotki.premium = rotki_premium_object

@@ -365,6 +365,28 @@ class ExchangeWithExtras:
     pass
 
 
+class ExchangeWithoutApiSecret(ExchangeInterface):
+    """Base class for exchanges that don't require an API secret"""
+    
+    def __init__(
+        self,
+        name: str,
+        location: Location,
+        api_key: ApiKey,
+        database: Any,
+        msg_aggregator: Any,
+    ):
+        # Pass empty secret for exchanges that don't need it
+        super().__init__(
+            name=name,
+            location=location,
+            api_key=api_key,
+            secret=ApiSecret(b''),  # Empty secret
+            database=database,
+            msg_aggregator=msg_aggregator,
+        )
+
+
 class ExchangeManager:
     """Manages multiple async exchange connections"""
 
