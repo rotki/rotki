@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
@@ -32,14 +32,14 @@ class PolygonPOSInquirer(EvmNodeInquirer):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_manager: TaskManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.POLYGON_POS]](chain_id=ChainID.POLYGON_POS)
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_manager=task_manager,
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.POLYGON_POS,

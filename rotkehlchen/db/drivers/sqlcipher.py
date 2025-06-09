@@ -15,7 +15,6 @@ from typing import Any, AsyncGenerator, ContextManager, Generator, Optional
 import sqlcipher3
 from sqlcipher3 import Connection, Cursor
 
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 

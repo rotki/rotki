@@ -14,7 +14,7 @@ from web3.exceptions import BadFunctionCallOutput, Web3Exception
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.utils.gevent_compat import Semaphore
+from rotkehlchen.utils.concurrency import Semaphore
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
@@ -90,7 +90,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.externalapis.etherscan import HasChainActivity
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -147,7 +147,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -292,7 +292,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             zksync_lite_manager: 'ZksyncLiteManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
-            greenlet_manager: GreenletManager,
+            task_manager: TaskManager,
             premium: Premium | None,
             data_directory: Path,
             beaconchain: 'BeaconChain',
@@ -342,7 +342,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # Per asset total balances
         self.totals: BalanceSheet = BalanceSheet()
         self.premium = premium
-        self.greenlet_manager = greenlet_manager
+        self.task_manager = task_manager
         self.eth_modules: dict[ModuleName, EthereumModule] = {}
         for given_module in eth_modules:
             self.activate_module(given_module)
@@ -441,7 +441,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         self.eth_modules[module_name] = instance
         if instance.on_startup is not None:  # run startup initialization actions for the module
-            self.greenlet_manager.spawn_and_track(
+            self.task_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'startup of {module_name}',
                 exception_is_error=True,

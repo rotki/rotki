@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BSC_BNB
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -32,13 +32,13 @@ class BinanceSCInquirer(EvmNodeInquirer):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_manager: TaskManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_manager=task_manager,
             database=database,
             etherscan=etherscan,
             blockchain=SupportedBlockchain.BINANCE_SC,

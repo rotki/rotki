@@ -1,4 +1,4 @@
-"""AsyncIO-based SQLite driver to replace the gevent implementation
+"""AsyncIO-based SQLite driver
 
 This implementation doesn't need progress handlers because asyncio naturally
 yields control at await points. Long-running queries are handled by running
@@ -17,7 +17,10 @@ import aiosqlite
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
-from rotkehlchen.db.drivers.gevent import DBConnectionType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlite3 import Connection as DBConnectionType
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
 from rotkehlchen.utils.misc import ts_now
@@ -38,7 +41,7 @@ class AsyncDBCursor:
     async def execute(self, statement: str, *bindings: Sequence) -> 'AsyncDBCursor':
         """Execute a SQL statement
         
-        Unlike gevent version, this naturally yields control during execution
+        Naturally yields control during execution
         without needing progress callbacks.
         """
         if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
@@ -92,9 +95,9 @@ class AsyncDBCursor:
 
 
 class AsyncDBConnection:
-    """Asyncio replacement for gevent DBConnection
+    """Asyncio DBConnection
     
-    Key differences from gevent version:
+    Key features:
     1. No progress handler needed - asyncio yields naturally at await points
     2. No complex callback mechanism or CONNECTION_MAP
     3. Uses asyncio locks instead of gevent semaphores

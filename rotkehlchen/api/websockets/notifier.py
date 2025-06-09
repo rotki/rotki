@@ -169,21 +169,3 @@ class RotkiWSHandler:
             # Unsubscribe on close
             await self.notifier.unsubscribe(websocket)
 
-
-# Compatibility layer for gradual migration
-class WebSocketCompatibilityWrapper:
-    """Wraps the async notifier to provide sync-like interface during migration"""
-    
-    def __init__(self, async_notifier: AsyncRotkiNotifier, loop: asyncio.AbstractEventLoop):
-        self.async_notifier = async_notifier
-        self.loop = loop
-    
-    def broadcast(self, *args, **kwargs) -> None:
-        """Sync wrapper for broadcast method"""
-        # Schedule the coroutine in the event loop
-        future = asyncio.run_coroutine_threadsafe(
-            self.async_notifier.broadcast(*args, **kwargs),
-            self.loop
-        )
-        # Don't wait for result to maintain non-blocking behavior
-        # This matches gevent's fire-and-forget pattern

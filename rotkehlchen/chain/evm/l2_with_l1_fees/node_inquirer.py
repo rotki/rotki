@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.utils import maybe_read_integer
-from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
     """
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_manager: TaskManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             blockchain: SupportedL2WithL1FeesType,
@@ -39,7 +39,7 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_manager=task_manager,
             database=database,
             etherscan=etherscan,
             blockchain=blockchain,
@@ -66,7 +66,7 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_manager: TaskManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             blockchain: SupportedL2WithL1FeesType,
@@ -79,7 +79,7 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_manager=task_manager,
             database=database,
             etherscan=etherscan,
             blockchain=blockchain,

@@ -18,13 +18,13 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS, SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import sleep
 
 from .types import (
     BlockNumber,
@@ -118,7 +118,7 @@ class SubstrateManager:
     def __init__(
             self,
             chain: SUPPORTED_SUBSTRATE_CHAINS,
-            greenlet_manager: GreenletManager,
+            task_manager: TaskManager,
             msg_aggregator: MessagesAggregator,
             connect_at_start: Sequence[NodeName],
             connect_on_startup: bool,
@@ -149,7 +149,7 @@ class SubstrateManager:
         """
         log.debug(f'Initializing {chain} manager')
         self.chain = chain
-        self.greenlet_manager = greenlet_manager
+        self.task_manager = task_manager
         self.msg_aggregator = msg_aggregator
         self.connect_at_start = connect_at_start
         self.own_rpc_endpoint = own_rpc_endpoint
@@ -536,7 +536,7 @@ class SubstrateManager:
             if node.is_owned() and len(self.own_rpc_endpoint) == 0:
                 continue
 
-            self.greenlet_manager.spawn_and_track(
+            self.task_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'{self.chain} manager connection to {node} node',
                 exception_is_error=True,

@@ -81,6 +81,15 @@ def getcurrent() -> threading.Thread:
     """Get current context (thread in async mode)"""
     return threading.current_thread()
 
+def get_task_name(context: threading.Thread | asyncio.Task) -> str:
+    """Get a readable name for the current execution context"""
+    if isinstance(context, asyncio.Task):
+        return f"Task-{context.get_name()}"
+    elif isinstance(context, threading.Thread):
+        return f"Thread-{context.name}"
+    else:
+        return f"Context-{id(context)}"
+
 def spawn_later(seconds: float, coro: Coroutine) -> asyncio.Task:
     """Schedule a coroutine to run after specified seconds"""
     async def delayed_task():
@@ -101,5 +110,5 @@ __all__ = [
     'sleep', 'spawn', 'kill', 'kill_all', 'joinall', 'wait',
     'Semaphore', 'Event', 'Lock', 'Queue', 
     'timeout', 'Pool', 'Task', 'Greenlet', 'get_hub', 'signal', 
-    'getcurrent', 'spawn_later', 'ConcurrentObjectUseError'
+    'getcurrent', 'get_task_name', 'spawn_later', 'ConcurrentObjectUseError'
 ]

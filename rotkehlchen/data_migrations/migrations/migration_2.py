@@ -32,10 +32,10 @@ def data_migration_2(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
     This migration does the same thing so that users can still see their eth2 validators
     when downloading v1.23.0 without having to do anything special
 
-    Since this function happens at user unlock we spawn a greenlet to do the work
+    Since this function happens at user unlock we spawn a task to do the work
     asynchronously to not slow down unlock too much.
     """
-    rotki.greenlet_manager.spawn_and_track(
+    rotki.task_manager.spawn_and_track(
         after_seconds=None,
         task_name='data migration 2',
         exception_is_error=False,

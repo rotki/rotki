@@ -12,7 +12,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.api.async_server import AsyncAPIServer
 from rotkehlchen.api.rest import RestAPI
 from rotkehlchen.api.v1.async_auth import AsyncAuthManager
-from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
+from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.manager import EthereumInquirer
@@ -25,12 +25,12 @@ from rotkehlchen.exchanges.async_exchange import AsyncExchangeManager
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import CryptoCompare
-from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.tasks.async_manager import AsyncTaskManager
+# TaskManager import already exists above
 from rotkehlchen.tasks.async_tasks import AsyncTaskOrchestrator
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -64,10 +64,10 @@ class AsyncRotkehlchen:
         self.async_db: Optional[AsyncDBHandler] = None
         
         # WebSocket notifier
-        self.ws_notifier = AsyncRotkiNotifier()
+        self.ws_notifier = RotkiNotifier()
         
         # Task manager
-        self.task_manager = AsyncTaskManager()
+        self.task_manager = TaskManager(self.msg_aggregator)
         
         # Auth manager
         self.auth_manager: Optional[AsyncAuthManager] = None
@@ -182,13 +182,13 @@ class AsyncRotkehlchen:
             blockchain_accounts=[],
             data_directory=self.data_dir,
             ethereum_inquirer=EthereumInquirer(
-                greenlet_manager=GreenletManager(self.msg_aggregator),
+                task_manager=TaskManager(self.msg_aggregator),
                 database=self.data.db,
                 connect_at_start=[],
             ),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
-            greenlet_manager=GreenletManager(self.msg_aggregator),
+            task_manager=TaskManager(self.msg_aggregator),
             premium=self.premium,
             eth_modules=[],
             data_updater=None,
