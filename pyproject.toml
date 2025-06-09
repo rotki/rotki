@@ -42,6 +42,24 @@ fallback_version = "1.39.0"
 "rotkehlchen.data" = ["*"]
 "rotkehlchen.chain" = ["ethereum/modules/dxdaomesa/data/contracts.json"]
 
+# -- Pytest config section --
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "asyncio: mark test as async (auto-detected with asyncio_mode=auto)",
+]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "-v",
+]
+testpaths = ["rotkehlchen/tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
 # -- Mypy config section --
 
 [tool.mypy]
