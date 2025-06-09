@@ -30,7 +30,7 @@ from rotkehlchen.tests.utils.premium import (
 )
 from rotkehlchen.types import ChainID
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.gevent_compat import joinall, sleep, spawn, wait
+from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn, wait
 
 if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen

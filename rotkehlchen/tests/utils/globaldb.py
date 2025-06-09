@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.asyncio_sqlite import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST

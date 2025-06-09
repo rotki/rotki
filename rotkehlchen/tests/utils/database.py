@@ -26,7 +26,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.asyncio_sqlite import DBCursor
 
 
 def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> None:
@@ -152,7 +152,7 @@ def mock_dbhandler_sync_globaldb_assets() -> _patch:
 
 def mock_db_schema_sanity_check() -> _patch:
     return patch(
-        'rotkehlchen.db.drivers.gevent.DBConnection.schema_sanity_check',
+        'rotkehlchen.db.drivers.asyncio_sqlite.DBConnection.schema_sanity_check',
         new=lambda x: None,
     )
 

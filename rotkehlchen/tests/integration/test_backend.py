@@ -1,5 +1,5 @@
 import subprocess  # noqa: S404
-from rotkehlchen.utils.gevent_compat import Timeout
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout
 import sys
 from http import HTTPStatus
 

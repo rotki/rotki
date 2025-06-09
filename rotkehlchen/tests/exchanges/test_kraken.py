@@ -62,7 +62,7 @@ from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
-from rotkehlchen.utils.gevent_compat import Timeout
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

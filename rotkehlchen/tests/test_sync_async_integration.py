@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
 import pytest
 from flask.testing import FlaskClient
 from fastapi.testclient import TestClient

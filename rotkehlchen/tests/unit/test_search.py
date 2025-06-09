@@ -11,7 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import Price
-from rotkehlchen.utils.gevent_compat import joinall, spawn
+from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, spawn
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

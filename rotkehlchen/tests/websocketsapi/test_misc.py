@@ -1,5 +1,5 @@
 import platform
-from rotkehlchen.utils.gevent_compat import Timeout, joinall, spawn
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, joinall, spawn
 
 import pytest
 

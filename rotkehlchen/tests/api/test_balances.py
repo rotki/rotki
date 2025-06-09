@@ -63,7 +63,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.gevent_compat import sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

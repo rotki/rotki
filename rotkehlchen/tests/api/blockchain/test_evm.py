@@ -37,7 +37,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.gevent_compat import Timeout, kill_all, sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, kill_all, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

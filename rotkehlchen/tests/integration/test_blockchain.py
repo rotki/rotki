@@ -9,7 +9,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
 from rotkehlchen.types import SupportedBlockchain
-from rotkehlchen.utils.gevent_compat import joinall, sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep
 
 
 def test_query_btc_balances(blockchain):

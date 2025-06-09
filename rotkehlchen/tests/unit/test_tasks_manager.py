@@ -2,7 +2,7 @@ import datetime
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
-from rotkehlchen.utils.gevent_compat import Lock
+from rotkehlchen.utils.concurrency import timeout as Timeout, Lock
 import pytest
 from freezegun import freeze_time
 
@@ -73,7 +73,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.gevent_compat import Timeout, joinall, kill_all, sleep, wait
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, joinall, kill_all, sleep, wait
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

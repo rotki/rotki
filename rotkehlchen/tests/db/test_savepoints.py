@@ -5,7 +5,7 @@ import pytest
 
 from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.utils.gevent_compat import joinall, sleep, spawn
+from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn
 
 
 def test_unnamed_savepoints():

@@ -41,7 +41,7 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainType, SupportedBlockchain, Timestamp
-from rotkehlchen.utils.gevent_compat import Timeout, sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, sleep
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer

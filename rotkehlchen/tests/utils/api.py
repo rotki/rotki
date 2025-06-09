@@ -12,7 +12,7 @@ import requests
 # TODO: Update to FastAPI equivalent
 # from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.utils.gevent_compat import Timeout, sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, sleep
 
 if platform.system() == 'Darwin':
     ASYNC_TASK_WAIT_TIMEOUT = 60

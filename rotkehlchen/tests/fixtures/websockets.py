@@ -1,5 +1,5 @@
 import json
-from rotkehlchen.utils.gevent_compat import Timeout, joinall, sleep, spawn
+from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn
 from collections import deque
 from collections.abc import Generator
 from typing import Any

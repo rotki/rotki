@@ -10,7 +10,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS
-from rotkehlchen.utils.gevent_compat import joinall, sleep, spawn
+from rotkehlchen.utils.concurrency import timeout as Timeout, joinall, sleep, spawn
 
 
 def make_history_event():

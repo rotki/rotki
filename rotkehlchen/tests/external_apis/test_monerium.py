@@ -15,7 +15,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
-from rotkehlchen.utils.gevent_compat import Timeout, sleep
+from rotkehlchen.utils.concurrency import timeout as Timeout, Timeout, sleep
 
 
 @pytest.fixture(name='monerium_credentials')

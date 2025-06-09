@@ -33,7 +33,7 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.gevent_compat import sleep, spawn
+from rotkehlchen.utils.concurrency import timeout as Timeout, sleep, spawn
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
