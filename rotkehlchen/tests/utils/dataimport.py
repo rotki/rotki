@@ -35,6 +35,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.constants import (
@@ -116,7 +117,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         is_fee=True,
     ), SwapEvent(
         identifier=6,
-        event_identifier='a9610bfcaa74db4c71c656f33f88e44203a8483e9c14ddbfa1a03e1c569a6cd3',
+        event_identifier='COT294e300a1564b1f2822b97c560e9751be451d828c4854051e1ab781542565e0f',
         timestamp=TimestampMS(1566687719000),
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
@@ -124,7 +125,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         amount=FVal('10.99000000'),
     ), SwapEvent(
         identifier=7,
-        event_identifier='09e42264602d834aa8faccc437b66bcf38cb980fdf051eb2a1cfcd7627c05acf',
+        event_identifier='COT294e300a1564b1f2822b97c560e9751be451d828c4854051e1ab781542565e0f',
         timestamp=TimestampMS(1566687719000),
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
@@ -132,7 +133,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         amount=FVal('0.05772716'),
     ), SwapEvent(
         identifier=8,
-        event_identifier='bb116bc99ef30fd8d93a0c05af2dd27802b4e4dbd86872f5c27331723fbdddeb',
+        event_identifier='COT294e300a1564b1f2822b97c560e9751be451d828c4854051e1ab781542565e0f',
         timestamp=TimestampMS(1566687719000),
         event_subtype=HistoryEventSubType.FEE,
         asset=A_EUR,
@@ -140,7 +141,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         amount=FVal('0.02'),
     ), SwapEvent(
         identifier=1,
-        event_identifier='87aac7b10944ad85d1d5a293a16f3ffa37e3af9856bd063eb8e969095508da30',
+        event_identifier='COT0f2ce7aff39dcc979efe6e60523d7e4afe2465af2277b7063716d23f6465aafe',
         timestamp=TimestampMS(1567418410000),
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
@@ -149,7 +150,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         notes='Just a small gift from someone. Data from -no exchange- not known by rotki.',
     ), SwapEvent(
         identifier=2,
-        event_identifier='f523915b2b20e25abaa3232e6eb9999e9f36d365826a988b11345dce754fef2a',
+        event_identifier='COT0f2ce7aff39dcc979efe6e60523d7e4afe2465af2277b7063716d23f6465aafe',
         timestamp=TimestampMS(1567418410000),
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
@@ -157,7 +158,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         amount=FVal('0.00100000'),
     ), SwapEvent(
         identifier=3,
-        event_identifier='3e764855f80a214bba839c674b9c6cb13223a58376f25c3979de37d606c582a9',
+        event_identifier='COTced23da81fd6e1a3276d0a1162686200e2a7aa41527fe8475b676c561a787775',
         timestamp=TimestampMS(1567504805000),
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
@@ -166,7 +167,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
         notes='Sign up bonus. Data from -no exchange- not known by rotki.',
     ), SwapEvent(
         identifier=4,
-        event_identifier='1c69e96eca4026b3e86ce551022556ed4d3087958032846e711c4c5c68ebc88a',
+        event_identifier='COTced23da81fd6e1a3276d0a1162686200e2a7aa41527fe8475b676c561a787775',
         timestamp=TimestampMS(1567504805000),
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
@@ -1149,7 +1150,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
     expected_events = [
         SwapEvent(
             identifier=4,
-            event_identifier='3524d0001a3be82a69c13e3b2fd954be272f1aafa86764f599ccbc4c7edb0b89',
+            event_identifier='SHF37751fe6752dc1ee2a37e366c104a17072b8f0d9c3cdf657f1ed4d02621f9e90',
             timestamp=TimestampMS(1561551116000),
             asset=A_SAI,
             amount=FVal('103.0142883'),
@@ -1158,7 +1159,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             location=Location.SHAPESHIFT,
         ), SwapEvent(
             identifier=5,
-            event_identifier='61e4fc8d28b1484107eb237f7ea33bcd745dcff20d2d96cc62c0fd4038e7e1fd',
+            event_identifier='SHF37751fe6752dc1ee2a37e366c104a17072b8f0d9c3cdf657f1ed4d02621f9e90',
             timestamp=TimestampMS(1561551116000),
             asset=A_DASH,
             amount=FVal('0.59420343'),
@@ -1166,7 +1167,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             location=Location.SHAPESHIFT,
         ), SwapEvent(
             identifier=6,
-            event_identifier='9bf984f502cb04c41e4de3282b9ca4c05daea2278b50f1c832127b5a676d8524',
+            event_identifier='SHF37751fe6752dc1ee2a37e366c104a17072b8f0d9c3cdf657f1ed4d02621f9e90',
             timestamp=TimestampMS(1561551116000),
             asset=A_DASH,
             amount=FVal('0.002'),
@@ -1174,7 +1175,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             location=Location.SHAPESHIFT,
         ), SwapEvent(
             identifier=1,
-            event_identifier='e1521c61ba84a0a13776de61a186f4c68b56771fde7d56a987faeaf75cdd7db0',
+            event_identifier='SHF67054c5ad174eccd57b727dea0b77ac78d4bac301f85c378978037f04d6a80ac',
             timestamp=TimestampMS(1630856301000),
             asset=A_USDC,
             amount=FVal('101.82'),
@@ -1183,7 +1184,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             location=Location.SHAPESHIFT,
         ), SwapEvent(
             identifier=2,
-            event_identifier='6faadaaea29cc455775893c1d709a6a915ca3459645acd0ab570cce7204b88c4',
+            event_identifier='SHF67054c5ad174eccd57b727dea0b77ac78d4bac301f85c378978037f04d6a80ac',
             timestamp=TimestampMS(1630856301000),
             asset=A_ETH,
             amount=FVal('0.06198721'),
@@ -1191,7 +1192,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
             location=Location.SHAPESHIFT,
         ), SwapEvent(
             identifier=3,
-            event_identifier='d8bc00418b56fe2c97b3772c9ca2a8f8de27aedf002a072f01a0747cabcc88dc',
+            event_identifier='SHF67054c5ad174eccd57b727dea0b77ac78d4bac301f85c378978037f04d6a80ac',
             timestamp=TimestampMS(1630856301000),
             asset=A_ETH,
             amount=FVal('0.0042'),
@@ -1263,6 +1264,7 @@ Activity from uphold with uphold transaction id:
         notes=notes5,
     ), SwapEvent(
         identifier=10,
+        event_identifier='UPH_ca138ecb5850b20ada7cbc02916f98c452496bf678f0230f68520f817821658b',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1581426837000),
         event_subtype=HistoryEventSubType.SPEND,
@@ -1271,6 +1273,7 @@ Activity from uphold with uphold transaction id:
         amount=FVal('25'),
     ), SwapEvent(
         identifier=11,
+        event_identifier='UPH_ca138ecb5850b20ada7cbc02916f98c452496bf678f0230f68520f817821658b',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1581426837000),
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -1278,6 +1281,7 @@ Activity from uphold with uphold transaction id:
         amount=FVal('0.00331961'),
     ), SwapEvent(
         identifier=8,
+        event_identifier='UPH_bfec53b1f8968eed54806c887dbf93da46d17bb31ee8da90b2ca028fbeb6fd64',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1585484504000),
         event_subtype=HistoryEventSubType.SPEND,
@@ -1286,6 +1290,7 @@ Activity from uphold with uphold transaction id:
         amount=FVal('0.00421'),
     ), SwapEvent(
         identifier=9,
+        event_identifier='UPH_bfec53b1f8968eed54806c887dbf93da46d17bb31ee8da90b2ca028fbeb6fd64',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1585484504000),
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -1301,6 +1306,7 @@ Activity from uphold with uphold transaction id:
         amount=FVal('24.65'),
     ), SwapEvent(
         identifier=4,
+        event_identifier='UPH_643f948173b4829e6a933e5102fe8cf9d35fde3da830da488da7d05b2c4e8972',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1589940026000),
         event_subtype=HistoryEventSubType.SPEND,
@@ -1309,6 +1315,7 @@ Activity from uphold with uphold transaction id:
         notes=notes3,
     ), SwapEvent(
         identifier=5,
+        event_identifier='UPH_643f948173b4829e6a933e5102fe8cf9d35fde3da830da488da7d05b2c4e8972',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1589940026000),
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -1316,6 +1323,7 @@ Activity from uphold with uphold transaction id:
         amount=FVal('1.26155562'),
     ), SwapEvent(
         identifier=6,
+        event_identifier='UPH_643f948173b4829e6a933e5102fe8cf9d35fde3da830da488da7d05b2c4e8972',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1589940026000),
         event_subtype=HistoryEventSubType.FEE,
@@ -1324,6 +1332,7 @@ Activity from uphold with uphold transaction id:
     ), SwapEvent(
         identifier=1,
         location=Location.UPHOLD,
+        event_identifier='UPH_9c817cf738e47cde664fb26290f18c3f3a773c84f6341c2132a3a95bdf4e1e36',
         timestamp=TimestampMS(1590516388000),
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_BTC,
@@ -1331,6 +1340,7 @@ Activity from uphold with uphold transaction id:
         notes=notes4,
     ), SwapEvent(
         identifier=2,
+        event_identifier='UPH_9c817cf738e47cde664fb26290f18c3f3a773c84f6341c2132a3a95bdf4e1e36',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1590516388000),
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -1338,6 +1348,7 @@ Activity from uphold with uphold transaction id:
         amount=FVal('314.642101'),
     ), SwapEvent(
         identifier=3,
+        event_identifier='UPH_9c817cf738e47cde664fb26290f18c3f3a773c84f6341c2132a3a95bdf4e1e36',
         location=Location.UPHOLD,
         timestamp=TimestampMS(1590516388000),
         event_subtype=HistoryEventSubType.FEE,
@@ -1407,7 +1418,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=symbol_to_asset_or_token('SC'),
         amount=FVal('9811.32075471'),
         notes='ID: exxXE',
-        unique_id='exxXE',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='exxXE',
+        ),
     ), SwapEvent(
         identifier=26,
         timestamp=TimestampMS(1517195493000),
@@ -1415,7 +1429,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.0363999999999741'),
-        unique_id='exxXE',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='exxXE',
+        ),
     ), SwapEvent(
         identifier=27,
         timestamp=TimestampMS(1517195493000),
@@ -1423,7 +1440,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal('0.0002'),
-        unique_id='exxXE',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='exxXE',
+        ),
     ), SwapEvent(
         identifier=22,
         timestamp=TimestampMS(1545136553000),
@@ -1432,7 +1452,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_EUR,
         amount=FVal('848.720000'),
         notes='ID: IxxWl',
-        unique_id='IxxWl',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='IxxWl',
+        ),
     ), SwapEvent(
         identifier=23,
         timestamp=TimestampMS(1545136553000),
@@ -1440,7 +1463,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.25'),
-        unique_id='IxxWl',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='IxxWl',
+        ),
     ), SwapEvent(
         identifier=24,
         timestamp=TimestampMS(1545136553000),
@@ -1448,7 +1474,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal('0.0005'),
-        unique_id='IxxWl',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='IxxWl',
+        ),
     ), SwapEvent(
         identifier=19,
         timestamp=TimestampMS(1545416958000),
@@ -1457,7 +1486,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_EUR,
         amount=FVal('624.73390000'),
         notes='ID: VxxABMN',
-        unique_id='VxxABMN',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='VxxABMN',
+        ),
     ), SwapEvent(
         identifier=20,
         timestamp=TimestampMS(1545416958000),
@@ -1465,7 +1497,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.1850'),
-        unique_id='VxxABMN',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='VxxABMN',
+        ),
     ), SwapEvent(
         identifier=21,
         timestamp=TimestampMS(1545416958000),
@@ -1473,7 +1508,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal('0.000370'),
-        unique_id='VxxABMN',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='VxxABMN',
+        ),
     ), SwapEvent(
         identifier=16,
         timestamp=TimestampMS(1560284504000),
@@ -1482,7 +1520,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_DASH,
         amount=FVal('19.45685539'),
         notes='ID: LxxAob',
-        unique_id='LxxAob',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='LxxAob',
+        ),
     ), SwapEvent(
         identifier=17,
         timestamp=TimestampMS(1560284504000),
@@ -1490,7 +1531,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.2999999999074547'),
-        unique_id='LxxAob',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='LxxAob',
+        ),
     ), SwapEvent(
         identifier=18,
         timestamp=TimestampMS(1560284504000),
@@ -1498,7 +1542,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal('0.0009'),
-        unique_id='LxxAob',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='LxxAob',
+        ),
     ), SwapEvent(
         identifier=13,
         timestamp=TimestampMS(1577082782000),
@@ -1507,7 +1554,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_EUR,
         amount=FVal('67.856724'),
         notes='ID: GxxL',
-        unique_id='GxxL',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='GxxL',
+        ),
     ), SwapEvent(
         identifier=14,
         timestamp=TimestampMS(1577082782000),
@@ -1515,7 +1565,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
         amount=FVal('0.01'),
-        unique_id='GxxL',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='GxxL',
+        ),
     ), SwapEvent(
         identifier=15,
         timestamp=TimestampMS(1577082782000),
@@ -1523,7 +1576,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal('0.00109140'),
-        unique_id='GxxL',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='GxxL',
+        ),
     ), SwapEvent(
         identifier=10,
         timestamp=TimestampMS(1577898084000),
@@ -1532,7 +1588,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_BTC,
         amount=FVal('0.0099000855'),
         notes='ID: 552',
-        unique_id='552',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='552',
+        ),
     ), SwapEvent(
         identifier=11,
         timestamp=TimestampMS(1577898084000),
@@ -1540,7 +1599,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BSQ,
         amount=FVal('116.65'),
-        unique_id='552',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='552',
+        ),
     ), SwapEvent(
         identifier=12,
         timestamp=TimestampMS(1577898084000),
@@ -1548,7 +1610,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BTC,
         amount=FVal('0.00005940'),
-        unique_id='552',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='552',
+        ),
     ), SwapEvent(
         identifier=7,
         timestamp=TimestampMS(1607706820000),
@@ -1557,7 +1622,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_BTC,
         amount=FVal('0.05'),
         notes='ID: xxYARFU',
-        unique_id='xxYARFU',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxYARFU',
+        ),
     ), SwapEvent(
         identifier=8,
         timestamp=TimestampMS(1607706820000),
@@ -1565,7 +1633,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('794.166415'),
-        unique_id='xxYARFU',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxYARFU',
+        ),
     ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1607706820000),
@@ -1573,7 +1644,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BSQ,
         amount=FVal('2.01'),
-        unique_id='xxYARFU',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxYARFU',
+        ),
     ), SwapEvent(
         identifier=4,
         timestamp=TimestampMS(1615371360000),
@@ -1582,7 +1656,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_BTC,
         amount=FVal('0.01'),
         notes='ID: xxcz',
-        unique_id='xxcz',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxcz',
+        ),
     ), SwapEvent(
         identifier=5,
         timestamp=TimestampMS(1615371360000),
@@ -1590,7 +1667,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('505.000000'),
-        unique_id='xxcz',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxcz',
+        ),
     ), SwapEvent(
         identifier=6,
         timestamp=TimestampMS(1615371360000),
@@ -1598,7 +1678,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BSQ,
         amount=FVal('0.40'),
-        unique_id='xxcz',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxcz',
+        ),
     ), SwapEvent(
         identifier=1,
         timestamp=TimestampMS(1615372820000),
@@ -1607,7 +1690,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         asset=A_BTC,
         amount=FVal('0.01'),
         notes='ID: xxhee',
-        unique_id='xxhee',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxhee',
+        ),
     ), SwapEvent(
         identifier=2,
         timestamp=TimestampMS(1615372820000),
@@ -1615,7 +1701,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('490.000000'),
-        unique_id='xxhee',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxhee',
+        ),
     ), SwapEvent(
         identifier=3,
         timestamp=TimestampMS(1615372820000),
@@ -1623,7 +1712,10 @@ def assert_bisq_trades_import_results(rotki: Rotkehlchen):
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BSQ,
         amount=FVal('0.29'),
-        unique_id='xxhee',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.BISQ,
+            unique_id='xxhee',
+        ),
     )]
     assert swap_events == expected_swap_events
 
@@ -2546,10 +2638,11 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
             has_premium=True,
         )
 
+    trade1_id, trade2_id, trade3_id, trade4_id, trade5_id = '39324bc8b48e567efdfdd8b04709f9681285fae0845f0ae09a9744ac37e71184', '468eefc8785bcb4755fdeab34c259bb90839df4689707918738d81d3d8f0e222', '5c5f3e50672360a5765ce521cac1b01d6acc2e8257350fa84f161493dd07880b', '504e930f842eb62b5e4bbbc319497e4d9d3afa0adf37869b21b2f305b9a2f490', 'd68e17cae1ce5548c320227218b7c984e263be4b4b1ff72a3d1dbdde7b8f5312'  # noqa: E501
     expected_events = [SwapEvent(
         identifier=1,
         timestamp=TimestampMS(1659085200000),
-        event_identifier='8201d7f8a520bd68a25e350104b50aa93cd65b1a82037b4a080016f48ebcc8d2',
+        event_identifier=trade1_id,
         location=Location.BINANCE,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDC,
@@ -2558,7 +2651,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=2,
         timestamp=TimestampMS(1659085200000),
-        event_identifier='30a4f24e74690eda15c201ad037844e66725e097048459817264bf27675992e3',
+        event_identifier=trade1_id,
         location=Location.BINANCE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
@@ -2566,7 +2659,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=3,
         timestamp=TimestampMS(1659171600000),
-        event_identifier='a9abd4557d83e142b0abf466c94df9d7d502fe7cfeab5588e303a50384fe7b5b',
+        event_identifier=trade2_id,
         location=Location.KRAKEN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_LTC,
@@ -2575,7 +2668,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=4,
         timestamp=TimestampMS(1659171600000),
-        event_identifier='949994727e9473c2146516d53fe12a88f380beb11f7814930d3c269db3cbfb11',
+        event_identifier=trade2_id,
         location=Location.KRAKEN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BTC,
@@ -2583,7 +2676,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=5,
         timestamp=TimestampMS(1659344400000),
-        event_identifier='4da80539bea53968ae70c4ad928f3ebac76afdc23dd21d46a7f370668f45ee72',
+        event_identifier=trade3_id,
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_UNI,
@@ -2592,7 +2685,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=6,
         timestamp=TimestampMS(1659344400000),
-        event_identifier='09265391ed365d51d38112d68362274162c6ed54257fa5d2d22f34c129a3f689',
+        event_identifier=trade3_id,
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DAI,
@@ -2600,7 +2693,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=7,
         timestamp=TimestampMS(1659344400000),
-        event_identifier='9c9a209b04c0968fa1b8caa5f62626a94f5c3354833967f9078b98b32fec4e46',
+        event_identifier=trade3_id,
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
@@ -2608,7 +2701,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=8,
         timestamp=TimestampMS(1659344900000),
-        event_identifier='fcf2bf577b441b79009079669ad59475df7c9f8c03160f5de8866b37fdac1363',
+        event_identifier=trade4_id,
         location=Location.EXTERNAL,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_ADA,
@@ -2617,7 +2710,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1659344900000),
-        event_identifier='5d47aca9f29f52c3d889cff2e16257ea00d906eb019d6b2ed4ec74d0a4a8f61c',
+        event_identifier=trade4_id,
         location=Location.EXTERNAL,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_BCH,
@@ -2625,7 +2718,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=10,
         timestamp=TimestampMS(1659344900000),
-        event_identifier='1f983e79980f7c491c2392a0df53d44ed500b65cf4448181f6322ed240332c45',
+        event_identifier=trade4_id,
         location=Location.EXTERNAL,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
@@ -2633,7 +2726,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=11,
         timestamp=TimestampMS(1659345600000),
-        event_identifier='009193a33205dd3f1c844638932dd8253f3b3dda25f8dacaa7f729ffcf9513b9',
+        event_identifier=trade5_id,
         location=Location.BISQ,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USDT,
@@ -2642,7 +2735,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=12,
         timestamp=TimestampMS(1659345600000),
-        event_identifier='46385f027819f4936b78a1edc3efbd8170124f8fbefb2f9c10fc2a4863facfcd',
+        event_identifier=trade5_id,
         location=Location.BISQ,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_DAI,
@@ -2650,7 +2743,7 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     ), SwapEvent(
         identifier=13,
         timestamp=TimestampMS(1659345600000),
-        event_identifier='d55beb4f545e5633b6045d79a4313b518391950cebf0870c28af2aefce582f79',
+        event_identifier=trade5_id,
         location=Location.BISQ,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_USD,
@@ -3135,6 +3228,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
     assert len(warnings) == 0
     expected_swap_events = [SwapEvent(
         identifier=7,
+        event_identifier='KUe59e969261df8f5c3224aed041c4e827d9afe527091d4152ff1f3c2232882d58',
         timestamp=TimestampMS(1557570437000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
@@ -3142,6 +3236,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('0.0015240225'),
     ), SwapEvent(
         identifier=8,
+        event_identifier='KUe59e969261df8f5c3224aed041c4e827d9afe527091d4152ff1f3c2232882d58',
         timestamp=TimestampMS(1557570437000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -3149,6 +3244,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('10.01'),
     ), SwapEvent(
         identifier=9,
+        event_identifier='KUe59e969261df8f5c3224aed041c4e827d9afe527091d4152ff1f3c2232882d58',
         timestamp=TimestampMS(1557570437000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
@@ -3156,6 +3252,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00000152'),
     ), SwapEvent(
         identifier=10,
+        event_identifier='KU0ff9a604ad6bf438284ab3632b25e8bd1670e6bb7a8012694910ccd0a429435a',
         timestamp=TimestampMS(1557570438000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
@@ -3163,6 +3260,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('10.02'),
     ), SwapEvent(
         identifier=11,
+        event_identifier='KU0ff9a604ad6bf438284ab3632b25e8bd1670e6bb7a8012694910ccd0a429435a',
         timestamp=TimestampMS(1557570438000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -3170,6 +3268,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('0.0015256452'),
     ), SwapEvent(
         identifier=12,
+        event_identifier='KU0ff9a604ad6bf438284ab3632b25e8bd1670e6bb7a8012694910ccd0a429435a',
         timestamp=TimestampMS(1557570438000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
@@ -3177,6 +3276,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00000153'),
     ), SwapEvent(
         identifier=1,
+        event_identifier='KUc3acf7ffda6afa76573425419ab9ce4973aaa94c297da04bd9923dac9ef507fa',
         timestamp=TimestampMS(1651149360000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
@@ -3184,6 +3284,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('36.4479'),
     ), SwapEvent(
         identifier=2,
+        event_identifier='KUc3acf7ffda6afa76573425419ab9ce4973aaa94c297da04bd9923dac9ef507fa',
         timestamp=TimestampMS(1651149360000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -3191,6 +3292,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('3.73590975'),
     ), SwapEvent(
         identifier=3,
+        event_identifier='KUc3acf7ffda6afa76573425419ab9ce4973aaa94c297da04bd9923dac9ef507fa',
         timestamp=TimestampMS(1651149360000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
@@ -3198,6 +3300,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('0.00373590975'),
     ), SwapEvent(
         identifier=4,
+        event_identifier='KU7d8ea180dd203a993685f4fe1699642b992ae5865616c4cc00c0c5702c211584',
         timestamp=TimestampMS(1651160767000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.SPEND,
@@ -3205,6 +3308,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('280.8559209946952'),
     ), SwapEvent(
         identifier=5,
+        event_identifier='KU7d8ea180dd203a993685f4fe1699642b992ae5865616c4cc00c0c5702c211584',
         timestamp=TimestampMS(1651160767000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.RECEIVE,
@@ -3212,6 +3316,7 @@ def assert_kucoin_import_results(rotki: Rotkehlchen):
         amount=FVal('432.59183198'),
     ), SwapEvent(
         identifier=6,
+        event_identifier='KU7d8ea180dd203a993685f4fe1699642b992ae5865616c4cc00c0c5702c211584',
         timestamp=TimestampMS(1651160767000),
         location=Location.KUCOIN,
         event_subtype=HistoryEventSubType.FEE,
@@ -3267,6 +3372,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             notes='Receive 0.01061899 EUR in binance',
         ), SwapEvent(
             identifier=4,
+            event_identifier='BPT558f00b5b6297cc7b2036b266f6c0a7d60c21fd4659bb66f30d62493f02ea4d9',
             timestamp=TimestampMS(1673181840000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -3275,6 +3381,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             notes='spot',
         ), SwapEvent(
             identifier=5,
+            event_identifier='BPT558f00b5b6297cc7b2036b266f6c0a7d60c21fd4659bb66f30d62493f02ea4d9',
             timestamp=TimestampMS(1673181840000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -3282,6 +3389,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('223.7'),
         ), SwapEvent(
             identifier=6,
+            event_identifier='BPT558f00b5b6297cc7b2036b266f6c0a7d60c21fd4659bb66f30d62493f02ea4d9',
             timestamp=TimestampMS(1673181840000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.FEE,
@@ -3289,6 +3397,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('0.2237'),
         ), SwapEvent(
             identifier=7,
+            event_identifier='BPT0b5b344d00eaa6b7b4aebbc15684e1b997daeb8bf685532f6b427ed4fa55e0e6',
             timestamp=TimestampMS(1673192880000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -3297,6 +3406,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             notes='spot',
         ), SwapEvent(
             identifier=8,
+            event_identifier='BPT0b5b344d00eaa6b7b4aebbc15684e1b997daeb8bf685532f6b427ed4fa55e0e6',
             timestamp=TimestampMS(1673192880000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -3304,6 +3414,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             amount=FVal('106.1899'),
         ), SwapEvent(
             identifier=9,
+            event_identifier='BPT0b5b344d00eaa6b7b4aebbc15684e1b997daeb8bf685532f6b427ed4fa55e0e6',
             timestamp=TimestampMS(1673192880000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.FEE,
@@ -3366,6 +3477,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             is_fee=True,
         ), SwapEvent(
             identifier=17,
+            event_identifier='BPT73ea29fba318fcf8b32f1fd3e964528c4db0554060691063f4ddd61cb8550ce7',
             timestamp=TimestampMS(1673195040000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.SPEND,
@@ -3373,6 +3485,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             asset=A_USDT,
         ), SwapEvent(
             identifier=18,
+            event_identifier='BPT73ea29fba318fcf8b32f1fd3e964528c4db0554060691063f4ddd61cb8550ce7',
             timestamp=TimestampMS(1673195040000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.RECEIVE,
@@ -3380,6 +3493,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
             asset=A_BNB,
         ), SwapEvent(
             identifier=19,
+            event_identifier='BPT73ea29fba318fcf8b32f1fd3e964528c4db0554060691063f4ddd61cb8550ce7',
             timestamp=TimestampMS(1673195040000),
             location=Location.BINANCE,
             event_subtype=HistoryEventSubType.FEE,

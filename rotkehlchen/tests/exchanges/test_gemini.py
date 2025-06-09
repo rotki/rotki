@@ -17,6 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
     SANDBOX_GEMINI_WP_API_SECRET,
@@ -151,7 +152,10 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('3311.315'),
         location_label='gemini',
-        unique_id='560627330',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.GEMINI,
+            unique_id='560627330',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1584720549000),
         location=Location.GEMINI,
@@ -159,7 +163,10 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_BTC,
         amount=FVal('0.5'),
         location_label='gemini',
-        unique_id='560627330',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.GEMINI,
+            unique_id='560627330',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1584720549000),
         location=Location.GEMINI,
@@ -167,7 +174,10 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('33.11315'),
         location_label='gemini',
-        unique_id='560627330',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.GEMINI,
+            unique_id='560627330',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1584721109000),
         location=Location.GEMINI,
@@ -175,7 +185,10 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_ETH,
         amount=FVal('1'),
         location_label='gemini',
-        unique_id='560628883',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.GEMINI,
+            unique_id='560628883',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1584721109000),
         location=Location.GEMINI,
@@ -183,7 +196,10 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('20.00'),
         location_label='gemini',
-        unique_id='560628883',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.GEMINI,
+            unique_id='560628883',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1584721109000),
         location=Location.GEMINI,
@@ -191,7 +207,10 @@ def test_gemini_query_trades(sandbox_gemini):
         asset=A_USD,
         amount=FVal('0.20'),
         location_label='gemini',
-        unique_id='560628883',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.GEMINI,
+            unique_id='560628883',
+        ),
     )]
 
 

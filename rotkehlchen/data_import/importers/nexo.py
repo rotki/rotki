@@ -191,7 +191,6 @@ class NexoImporter(BaseExchangeImporter):
                         amount=deserialize_fval_force_positive(csv_row['Input Amount']),
                     ),
                     receive=AssetAmount(asset=asset, amount=amount),
-                    unique_id=transaction,
                     spend_notes=f'{entry_type} from Nexo',
                 ),
             )

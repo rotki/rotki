@@ -18,6 +18,7 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XTZ
 from rotkehlchen.tests.utils.exchanges import TRANSACTIONS_RESPONSE, mock_normal_coinbase_query
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -457,7 +458,10 @@ def test_coinbase_query_history_events(
         asset=A_EUR,
         amount=FVal('10.99'),
         location_label=coinbase.name,
-        unique_id='txid-1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='txid-1',
+        ),
     ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1566687695000),
@@ -466,7 +470,10 @@ def test_coinbase_query_history_events(
         asset=A_ETH,
         amount=FVal('0.05772716'),
         location_label=coinbase.name,
-        unique_id='txid-1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='txid-1',
+        ),
     ), AssetMovement(
         identifier=1,
         event_identifier='157b922cd6b7d3be91d0d3c2e197153dfb91dd9f8d2507eb83b9e3d477a5e6fd',
@@ -512,7 +519,10 @@ def test_coinbase_query_history_events(
         asset=A_ETH,
         amount=FVal('0.05772715'),
         location_label=coinbase.name,
-        unique_id='txid-2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='txid-2',
+        ),
     ), SwapEvent(
         identifier=11,
         timestamp=TimestampMS(1569366095000),
@@ -521,7 +531,10 @@ def test_coinbase_query_history_events(
         asset=A_EUR,
         amount=FVal('10.98'),
         location_label=coinbase.name,
-        unique_id='txid-2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='txid-2',
+        ),
     ), HistoryEvent(
         identifier=5,
         event_identifier='CBE_id4',
@@ -576,7 +589,10 @@ def test_coinbase_query_history_events(
         asset=A_USDC,
         amount=FVal('10.482180'),
         location_label=coinbase.name,
-        unique_id='id9',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id9',
+        ),
     ), SwapEvent(
         identifier=14,
         timestamp=TimestampMS(1733150783000),
@@ -585,7 +601,10 @@ def test_coinbase_query_history_events(
         asset=A_EUR,
         amount=FVal('9.98'),
         location_label=coinbase.name,
-        unique_id='id9',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id9',
+        ),
     ), SwapEvent(
         identifier=15,
         timestamp=TimestampMS(1733150783000),
@@ -594,7 +613,10 @@ def test_coinbase_query_history_events(
         asset=A_USDC,
         amount=FVal('0.099839'),
         location_label=coinbase.name,
-        unique_id='id9',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id9',
+        ),
     )]
     assert expected_events == events
 
@@ -673,7 +695,10 @@ def test_asset_conversion(mock_coinbase):
         asset=A_USDC,
         amount=FVal('1000.000000'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -681,7 +706,10 @@ def test_asset_conversion(mock_coinbase):
         asset=A_BTC,
         amount=FVal('0.01694165'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -689,7 +717,10 @@ def test_asset_conversion(mock_coinbase):
         asset=A_USDC,
         amount=FVal('90.000000'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     )]
 
 
@@ -707,7 +738,10 @@ def test_conversion_with_fee(mock_coinbase):
         asset=A_USDC,
         amount=FVal('10.571942'),
         location_label='coinbase1',
-        unique_id=tx_id,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id,
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1733480877000),
         location=Location.COINBASE,
@@ -715,7 +749,10 @@ def test_conversion_with_fee(mock_coinbase):
         asset=A_ETH,
         amount=FVal('0.00266121'),
         location_label='coinbase1',
-        unique_id=tx_id,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id,
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1733480877000),
         location=Location.COINBASE,
@@ -723,7 +760,10 @@ def test_conversion_with_fee(mock_coinbase):
         asset=A_USDC,
         amount=FVal('0.1162638749508'),
         location_label='coinbase1',
-        unique_id=tx_id,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id,
+        ),
     )]
 
 
@@ -764,7 +804,10 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
         asset=A_XTZ,
         amount=FVal('450'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -772,7 +815,10 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
         asset=A_USD,
         amount=FVal('540'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -780,7 +826,10 @@ def test_asset_conversion_no_second_transaction(mock_coinbase):
         asset=A_XTZ,
         amount=FVal('1'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     )]
 
 
@@ -859,7 +908,10 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
         asset=A_1INCH,
         amount=FVal('6000.000000'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -867,7 +919,10 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
         asset=A_BTC,
         amount=FVal('0.01694165'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -875,7 +930,10 @@ def test_asset_conversion_not_stable_coin(mock_coinbase):
         asset=A_1INCH,
         amount=FVal('540.000000'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     )]
 
 
@@ -954,7 +1012,10 @@ def test_asset_conversion_zero_fee(mock_coinbase):
         asset=A_1INCH,
         amount=FVal('6000.000000'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1623119536000),
         location=Location.COINBASE,
@@ -962,7 +1023,10 @@ def test_asset_conversion_zero_fee(mock_coinbase):
         asset=A_BTC,
         amount=FVal('0.01694165'),
         location_label='coinbase1',
-        unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='5dceef97-ef34-41e6-9171-3e60cd01639e',
+        ),
     )]
 
 
@@ -1045,7 +1109,10 @@ def test_asset_conversion_choosing_fee_asset(mock_coinbase):
         asset=A_ETH,
         amount=FVal('37734.034561'),
         location_label='coinbase1',
-        unique_id='id_of_trade',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id_of_trade',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1634045036000),
         location=Location.COINBASE,
@@ -1053,7 +1120,10 @@ def test_asset_conversion_choosing_fee_asset(mock_coinbase):
         asset=A_BTC,
         amount=FVal('552.315885836'),
         location_label='coinbase1',
-        unique_id='id_of_trade',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id_of_trade',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1634045036000),
         location=Location.COINBASE,
@@ -1061,7 +1131,10 @@ def test_asset_conversion_choosing_fee_asset(mock_coinbase):
         asset=A_BTC,
         amount=FVal('10.8882133758192505159458158599598036386418553542596656162298526724464247672494'),
         location_label='coinbase1',
-        unique_id='id_of_trade',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id_of_trade',
+        ),
     )]
 
 
@@ -1325,7 +1398,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USDC,
         amount=FVal('192.790000'),
         location_label='coinbase',
-        unique_id='id1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id1',
+        ),
     ), SwapEvent(
         identifier=2,
         timestamp=TimestampMS(1709799171000),
@@ -1334,7 +1410,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_EUR,
         amount=FVal('176.8655460000'),
         location_label='coinbase',
-        unique_id='id1',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id1',
+        ),
     ), SwapEvent(
         identifier=3,
         timestamp=TimestampMS(1709802771000),
@@ -1343,7 +1422,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USDC,
         amount=FVal('485.330000'),
         location_label='coinbase',
-        unique_id='id2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id2',
+        ),
     ), SwapEvent(
         identifier=4,
         timestamp=TimestampMS(1709802771000),
@@ -1352,7 +1434,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_EUR,
         amount=FVal('445.2417420000'),
         location_label='coinbase',
-        unique_id='id2',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id2',
+        ),
     ), SwapEvent(
         identifier=5,
         timestamp=TimestampMS(1709802771000),
@@ -1361,7 +1446,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_ETH,
         amount=FVal('1.120000'),
         location_label='coinbase',
-        unique_id='id3',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id3',
+        ),
     ), SwapEvent(
         identifier=6,
         timestamp=TimestampMS(1709802771000),
@@ -1370,7 +1458,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USDC,
         amount=FVal('3734.461920000'),
         location_label='coinbase',
-        unique_id='id3',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id3',
+        ),
     ), SwapEvent(
         identifier=7,
         timestamp=TimestampMS(1709802771000),
@@ -1379,7 +1470,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USDC,
         amount=FVal('0.0000005'),
         location_label='coinbase',
-        unique_id='id3',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id3',
+        ),
     ), SwapEvent(
         identifier=8,
         timestamp=TimestampMS(1709802771000),
@@ -1388,7 +1482,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USDC,
         amount=FVal('100.25001480'),
         location_label='coinbase',
-        unique_id='id4',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id4',
+        ),
     ), SwapEvent(
         identifier=9,
         timestamp=TimestampMS(1709802771000),
@@ -1397,7 +1494,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_SOL,
         amount=FVal('0.589290'),
         location_label='coinbase',
-        unique_id='id4',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id4',
+        ),
     ), SwapEvent(
         identifier=10,
         timestamp=TimestampMS(1709802771000),
@@ -1406,7 +1506,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USDC,
         amount=FVal('0.5710371002622'),
         location_label='coinbase',
-        unique_id='id4',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id4',
+        ),
     ), SwapEvent(
         identifier=11,
         timestamp=TimestampMS(1711371791000),
@@ -1415,7 +1518,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USD,
         amount=FVal('191.2262900000000000000'),
         location_label='coinbase',
-        unique_id='id5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id5',
+        ),
     ), SwapEvent(
         identifier=12,
         timestamp=TimestampMS(1711371791000),
@@ -1424,7 +1530,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=Asset('NEAR'),
         amount=FVal('25.8100000000000000'),
         location_label='coinbase',
-        unique_id='id5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id5',
+        ),
     ), SwapEvent(
         identifier=13,
         timestamp=TimestampMS(1711371791000),
@@ -1433,7 +1542,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USD,
         amount=FVal('1.9122629'),
         location_label='coinbase',
-        unique_id='id5',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id5',
+        ),
     ), SwapEvent(
         identifier=14,
         timestamp=TimestampMS(1711371791000),
@@ -1442,7 +1554,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USD,
         amount=FVal('14.8160000000000000000'),
         location_label='coinbase',
-        unique_id='id6',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id6',
+        ),
     ), SwapEvent(
         identifier=15,
         timestamp=TimestampMS(1711371791000),
@@ -1451,7 +1566,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=Asset('NEAR'),
         amount=FVal('2.0000000000000000'),
         location_label='coinbase',
-        unique_id='id6',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id6',
+        ),
     ), SwapEvent(
         identifier=16,
         timestamp=TimestampMS(1711371791000),
@@ -1460,7 +1578,10 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         asset=A_USD,
         amount=FVal('0.14816'),
         location_label='coinbase',
-        unique_id='id6',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id='id6',
+        ),
     )]
 
 
@@ -1496,7 +1617,10 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         asset=A_USD,
         amount=FVal('205.50'),
         location_label='coinbase1',
-        unique_id=tx_id1,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id1,
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1653075484000),
         location=Location.COINBASE,
@@ -1504,7 +1628,10 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         asset=A_ETH,
         amount=FVal('0.105600147994367992106967040420961757844215372914975180111201323727402596067872'),
         location_label='coinbase1',
-        unique_id=tx_id1,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id1,
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1653075484000),
         location=Location.COINBASE,
@@ -1512,7 +1639,10 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         asset=A_USD,
         amount=FVal('0.85'),
         location_label='coinbase1',
-        unique_id=tx_id1,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id1,
+        ),
     )]
 
     tx_id2 = '66c5ad72-764e-2f4b-8bdb-b5aed20fb389'
@@ -1545,7 +1675,10 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         asset=A_ETH,
         amount=FVal('0.00100000'),
         location_label='coinbase1',
-        unique_id=tx_id2,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id2,
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1653588330000),
         location=Location.COINBASE,
@@ -1553,7 +1686,10 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         asset=A_USD,
         amount=FVal('1.8701600000'),
         location_label='coinbase1',
-        unique_id=tx_id2,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id2,
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1653588330000),
         location=Location.COINBASE,
@@ -1561,7 +1697,10 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         asset=A_USD,
         amount=FVal('0.0047'),
         location_label='coinbase1',
-        unique_id=tx_id2,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id2,
+        ),
     )]
 
 

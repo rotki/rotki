@@ -4,6 +4,7 @@ import operator
 import pkgutil
 import traceback
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
@@ -93,7 +94,7 @@ from .structures import (
 from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
+    from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -207,7 +208,6 @@ class EVMTransactionDecoder(ABC):
             base_tools: BaseDecoderTools,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
-            exceptions_mappings: dict[str, 'Asset'] | None = None,
             beacon_chain: 'BeaconChain | None' = None,
     ):
         """
@@ -225,10 +225,6 @@ class EVMTransactionDecoder(ABC):
         `addresses_exceptions` is a dict of address to the block number at which we should start
         ignoring transfers for that address. It was introduced to ignore events for monerium
         legacy tokens.
-
-        `exceptions_mappings` also introduced to handle the monerium exceptions. It maps the v1
-        tokens to the v2 tokens and it's later used during the decoding to change the asset in
-        events from v1 tokens to v2 tokens.
         """
         self.database = database
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='lu-flame')] + misc_counterparties  # noqa: E501
@@ -257,7 +253,6 @@ class EVMTransactionDecoder(ABC):
         self.value_asset = value_asset
         self.decoders: dict[str, DecoderInterface] = {}
         self.addresses_exceptions = addresses_exceptions or {}
-        self.exceptions_mappings = exceptions_mappings or {}
 
         # Add the built-in decoders
         self._add_builtin_decoders(self.rules)
@@ -760,6 +755,50 @@ class EVMTransactionDecoder(ABC):
                 if rules_decoding_output.process_swaps:
                     process_swaps = True
 
+        if monerium_special_handling_event is True:
+            # When events that need special handling exist iterate over the decoded events and
+            # exchange the legacy assets by the v2 assets. Also delete v2 events to
+            # avoid duplications. In the case of this exception handling, v2 events exist only
+            # for the case of interacting with the v1 tokens since interacting
+            # with v2 doesn't emit v1 transfers.
+            replacement_assets = self.base.exceptions_mappings.values()
+            potential_duplicates_map = defaultdict(list)
+            for event in events:
+                if (replacement := self.base.exceptions_mappings.get(event.asset.identifier)) is not None:  # noqa: E501
+                    event.asset = replacement  # otherwise change the asset
+                    potential_duplicates_map[replacement, event.amount, event.maybe_get_direction()].append(event)  # noqa: E501
+
+                elif event.asset.identifier in replacement_assets:
+                    potential_duplicates_map[event.asset, event.amount, event.maybe_get_direction()].append(event)  # noqa: E501
+
+            eventids_to_remove = set()
+            for potential_duplicates in potential_duplicates_map.values():
+                if len(potential_duplicates) != 2:
+                    continue
+
+                if (
+                        potential_duplicates[0].asset == potential_duplicates[1].asset and
+                        potential_duplicates[0].amount == potential_duplicates[1].amount and
+                        potential_duplicates[0].event_type == potential_duplicates[1].event_type and  # noqa: E501
+                        potential_duplicates[0].event_subtype == potential_duplicates[1].event_subtype and  # noqa: E501
+                        potential_duplicates[0].counterparty == potential_duplicates[1].counterparty  # noqa: E501
+                ):
+                    eventids_to_remove.add(potential_duplicates[0].sequence_index)
+                    continue
+
+                # else just choose the one that has not been decoded
+                for duplicate in potential_duplicates:
+                    if duplicate.counterparty is not None:
+                        continue  # keep events that have been decoded properly
+
+                    eventids_to_remove.add(duplicate.sequence_index)  # using sequence index since identifier does not exist here  # noqa: E501
+                    break
+
+            new_events = [x for x in events if x.sequence_index not in eventids_to_remove]
+            events = new_events
+
+        # should run after monerium special handling as in paraswap decoder, during post-decoding,
+        # the extra EURe event receive is seen as a receival
         events, maybe_modified = self.run_all_post_decoding_rules(
             transaction=transaction,
             decoded_events=events,
@@ -768,24 +807,6 @@ class EVMTransactionDecoder(ABC):
         )
         if maybe_modified:
             process_swaps = True  # a swap may have been created in post decoding
-
-        if monerium_special_handling_event is True:
-            # When events that need special handling exist iterate over the decoded events and
-            # exchange the legacy assets by the v2 assets. Also delete v2 events to
-            # avoid duplications. In the case of this exception handling, v2 events exist only
-            # for the case of interacting with the v1 tokens since interacting
-            # with v2 doesn't emit v1 transfers.
-            new_events = []  # we create a new list to avoid remove operations and modifying while iterating  # noqa: E501
-            replacements = self.exceptions_mappings.values()
-            for event in events:
-                if (replacement := self.exceptions_mappings.get(event.asset.identifier)) is not None:  # noqa: E501
-                    event.asset = replacement
-                elif event.asset.identifier in replacements:
-                    continue  # skip the duplicated event
-
-                new_events.append(event)
-
-            events = new_events
 
         if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
             events = [eth_event]
@@ -1498,7 +1519,6 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderToolsWithDSProxy,
-            exceptions_mappings: dict[str, 'Asset'] | None = None,
             beacon_chain: 'BeaconChain | None' = None,
     ):
         super().__init__(
@@ -1509,7 +1529,6 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             event_rules=event_rules,
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
-            exceptions_mappings=exceptions_mappings,
             beacon_chain=beacon_chain,
         )
         self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type

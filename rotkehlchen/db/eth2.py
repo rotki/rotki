@@ -31,6 +31,7 @@ from rotkehlchen.db.filtering import (
     WithdrawalTypesFilter,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
@@ -248,12 +249,16 @@ class DBEth2:
         """
         query = 'SELECT validator_index FROM eth2_validators WHERE exited_timestamp IS NOT NULL'
         if validator_indices is not None:
-            query = f'{query} AND validator_index IN ({",".join("?" * len(validator_indices))})'
-            cursor.execute(query, tuple(validator_indices))
+            return {
+                row[0]
+                for chunk, placeholders in get_query_chunks(data=list(validator_indices))
+                for row in cursor.execute(
+                    f'{query} AND validator_index IN ({placeholders})',
+                    tuple(chunk),
+                )
+            }
         else:
-            cursor.execute(query)
-
-        return {x[0] for x in cursor}
+            return {x[0] for x in cursor.execute(query)}
 
     def get_associated_with_addresses_validator_indices(
             self,
@@ -434,21 +439,56 @@ class DBEth2:
         If no validator indices are specified, all known validators will be returned.
         Returns a tuple containing the non-accumulating and accumulating validators in two lists.
         """  # noqa: E501
-        where_str = ''
-        bindings: tuple[int, ...] = ()
+        where_strs = ['']
+        bindings_list: list[tuple[int | str, ...]] = [()]
         if validator_indices is not None:
-            where_str = f"AND validator_index IN ({','.join(['?'] * len(validator_indices))})"
-            bindings = tuple(validator_indices)
+            where_strs, bindings_list = [], []
+            for chunk, placeholders in get_query_chunks(data=list(validator_indices)):
+                where_strs.append(f'AND validator_index IN ({placeholders})')
+                bindings_list.append(tuple(chunk))
 
         with database.conn.read_ctx() as cursor:
             validator_lists = [
-                [row[0] for row in cursor.execute(
-                    f'SELECT validator_index FROM eth2_validators WHERE validator_type {operator} ? {where_str}',  # noqa: E501
-                    [ValidatorType.ACCUMULATING.value, *bindings],
-                )] for operator in ('!=', '=')
+                [
+                    row[0]
+                    for where_str, bindings in zip(where_strs, bindings_list, strict=False)
+                    for row in cursor.execute(
+                        f'SELECT validator_index FROM eth2_validators WHERE validator_type {operator} ? {where_str}',  # noqa: E501
+                        [ValidatorType.ACCUMULATING.value, *bindings],
+                    )
+                ] for operator in ('!=', '=')
             ]
 
         return tuple(validator_lists)  # type: ignore  # will be two list[int]
+
+    def _query_chunked_withdrawal_amount_sums(
+            self,
+            cursor: 'DBCursor',
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            amount_querystr: str,
+            validator_indices: list[int],
+            withdrawal_types_filter: WithdrawalTypesFilter,
+    ) -> dict[int, FVal]:
+        """Query eth2 withdrawal amount sums in chunks to avoid using too many placeholders."""
+        withdrawal_sums: dict[int, FVal] = defaultdict(lambda: ZERO)
+        for chunk, _ in get_query_chunks(data=validator_indices):
+            for key, value in self._validator_stats_process_queries(
+                cursor=cursor,
+                amount_querystr=amount_querystr,
+                filter_query=EthWithdrawalFilterQuery.make(
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                    validator_indices=chunk,  # type: ignore  # chunk will be a list[int]
+                    event_types=[HistoryEventType.STAKING],
+                    event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+                    entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
+                    withdrawal_types_filter=withdrawal_types_filter,
+                ),
+            ).items():
+                withdrawal_sums[key] += value
+
+        return withdrawal_sums
 
     def process_non_accumulating_validators_balances_and_pnl(
             self,
@@ -473,31 +513,21 @@ class DBEth2:
 
         with self.db.conn.read_ctx() as cursor:
             consolidated_validators = self.get_consolidated_validators(cursor)
-            withdrawals_pnl.update(self._validator_stats_process_queries(
+            withdrawals_pnl.update(self._query_chunked_withdrawal_amount_sums(
                 cursor=cursor,
-                amount_querystr='SUM(CAST(amount AS REAL))',  # note: has precision issues
-                filter_query=EthWithdrawalFilterQuery.make(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    validator_indices=validator_indices,
-                    event_types=[HistoryEventType.STAKING],
-                    event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-                    entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
-                    withdrawal_types_filter=WithdrawalTypesFilter.ONLY_PARTIAL,
-                ),
+                from_ts=from_ts,
+                to_ts=to_ts,
+                amount_querystr='SUM(CAST(amount AS REAL))',
+                validator_indices=validator_indices,
+                withdrawal_types_filter=WithdrawalTypesFilter.ONLY_PARTIAL,
             ))
-            for v_index, exit_amount in self._validator_stats_process_queries(
+            for v_index, exit_amount in self._query_chunked_withdrawal_amount_sums(
                 cursor=cursor,
                 amount_querystr='amount',
-                filter_query=EthWithdrawalFilterQuery.make(
-                    from_ts=from_ts,
-                    to_ts=to_ts,
-                    validator_indices=validator_indices,
-                    event_types=[HistoryEventType.STAKING],
-                    event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
-                    entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]),
-                    withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
-                ),
+                from_ts=from_ts,
+                to_ts=to_ts,
+                validator_indices=validator_indices,
+                withdrawal_types_filter=WithdrawalTypesFilter.ONLY_EXITS,
             ).items():
                 if v_index in consolidated_validators:
                     withdrawals_pnl[v_index] += FVal(exit_amount)
@@ -892,26 +922,29 @@ class DBEth2:
             HistoryEventType.RECEIVE.serialize(),
             HistoryEventSubType.NONE.serialize(),
         ]
+        queries_and_bindings = []
         if block_numbers is not None and len(block_numbers) > 0:
-            placeholders = ','.join('?' * len(block_numbers))
-            query += f' AND B_T.block_number IN ({placeholders})'
-            bindings += block_numbers
+            for chunk, placeholders in get_query_chunks(data=block_numbers):
+                queries_and_bindings.append((
+                    f'{query} AND B_T.block_number IN ({placeholders})',
+                    bindings + list(chunk),
+                ))
+        else:
+            queries_and_bindings = [(query, bindings)]
 
-        changes = []
         with self.db.conn.read_ctx() as cursor:
-            for entry in cursor.execute(query, bindings):
-                event_identifier = EthBlockEvent.form_event_identifier(entry[1])
-                tx_hash = deserialize_evm_tx_hash(entry[3])
-                changes.append((
+            changes = [
+                (
+                    (event_identifier := EthBlockEvent.form_event_identifier(entry[1])),
                     event_identifier,
-                    event_identifier,
-                    f'{entry[2]} as mev reward for block {entry[1]} in {tx_hash.hex()}',  # pylint: disable=no-member
+                    f'{entry[2]} as mev reward for block {entry[1]} in {(tx_hash := deserialize_evm_tx_hash(entry[3])).hex()}',  # pylint: disable=no-member  # noqa: E501
                     HistoryEventType.STAKING.serialize(),
                     HistoryEventSubType.MEV_REWARD.serialize(),
                     json.dumps({'validator_index': entry[4]}),  # extra data
                     entry[0],  # identifier
                     tx_hash,
-                ))
+                ) for q, b in queries_and_bindings for entry in cursor.execute(q, b)
+            ]
 
         if (change_count := len(changes)) == 0:
             log.debug('No tx events to combine with block events')

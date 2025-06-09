@@ -353,8 +353,12 @@ class EvmTokens(ABC):  # noqa: B024
                     ))
                     filtered_tokens.append(token)
 
-            valid_tokens, results = [], self.evm_inquirer.multicall(calls=calls)
-            for token, result in zip(filtered_tokens, results, strict=False):
+            valid_tokens, outputs = [], self.evm_inquirer.multicall_2(calls=calls, require_success=False)  # noqa: E501
+            for token, (status, result) in zip(filtered_tokens, outputs, strict=False):
+                if status is False or len(result) == 0:  # multicall can return success but with empty data when contract call fails  # noqa: E501
+                    log.error(f'Skipping token {token} for address {address} due to failed ownerOf call')  # noqa: E501
+                    continue
+
                 try:
                     if deserialize_evm_address(erc721_contract.decode(
                             result=result,

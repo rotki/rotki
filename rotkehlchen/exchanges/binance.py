@@ -10,6 +10,7 @@ from json.decoder import JSONDecodeError
 from sqlite3 import IntegrityError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import gevent
 import requests
@@ -51,6 +52,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -170,7 +172,10 @@ def trade_from_binance(
         spend=spend,
         receive=receive,
         fee=fee,
-        unique_id=unique_id,
+        event_identifier=create_event_identifier_from_unique_id(
+            location=location,
+            unique_id=unique_id,
+        ),
     )
 
 
@@ -1301,6 +1306,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 amount=deserialize_fval_force_positive(raw_data['obtainAmount']),
                 rate=deserialize_price(raw_data['price']),
             )
+            unique_id = get_key_if_has_val(raw_data, 'orderNo')
             return create_swap_events(
                 timestamp=deserialize_timestamp_ms_from_intms(raw_data['createTime']),
                 location=self.location,
@@ -1311,7 +1317,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     amount=deserialize_fval(raw_data['totalFee']),
                 ),
                 location_label=self.name,
-                unique_id=get_key_if_has_val(raw_data, 'orderNo'),
+                event_identifier=create_event_identifier_from_unique_id(
+                    location=self.location,
+                    unique_id=unique_id,
+                ) if unique_id else f'{uuid4().hex}',
             )
         except UnknownAsset as e:
             self.send_unknown_asset_message(

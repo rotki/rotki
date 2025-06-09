@@ -1,4 +1,5 @@
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Union
 
@@ -9,6 +10,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
+from rotkehlchen.db.constants import SQL_VARIABLE_CHUNK_SIZE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     HexColorCode,
@@ -393,3 +395,13 @@ def update_table_schema(
         return True
 
     return False
+
+
+def get_query_chunks(data: Sequence[int | str]) -> list[tuple[Sequence[int | str], str]]:
+    """Chunk data to be included in a query as placeholder variables.
+    Returns a list of tuples containing the bindings and string of placeholders for each chunk.
+    """
+    return [
+        ((chunk := data[i:i + SQL_VARIABLE_CHUNK_SIZE]), ','.join(['?'] * len(chunk)))
+        for i in range(0, len(data), SQL_VARIABLE_CHUNK_SIZE)
+    ]

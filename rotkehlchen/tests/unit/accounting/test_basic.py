@@ -408,12 +408,14 @@ def test_no_fiat_missing_acquisitions(accountant):
             location=Location.UPHOLD,
             spend=AssetAmount(asset=A_USD, amount=FVal('0.8982')),
             receive=AssetAmount(asset=A_EUR, amount=ONE),
+            event_identifier='trade1',
         ),
         *create_swap_events(
             timestamp=TimestampMS(1446979735000),
             location=Location.POLONIEX,
             spend=AssetAmount(asset=A_EUR, amount=FVal(355.9)),
             receive=AssetAmount(asset=A_BTC, amount=ONE),
+            event_identifier='trade2',
         ),
     ]
     accounting_history_process(accountant, Timestamp(1446979735), Timestamp(1635314397), history)

@@ -17,6 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -189,7 +190,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('0.40570207780497658421490'),
         location_label='htx',
-        unique_id='8208887641319065',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='8208887641319065',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
         location=Location.HTX,
@@ -197,7 +201,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DOGE,
         amount=FVal('0.587616346289181345'),
         location_label='htx',
-        unique_id='8208887641319065',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='8208887641319065',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
         location=Location.HTX,
@@ -205,7 +212,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DOGE,
         amount=FVal('0.62254395'),
         location_label='htx',
-        unique_id='8208887641319065',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='8208887641319065',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
         location=Location.HTX,
@@ -213,7 +223,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('5.638107804'),
         location_label='htx',
-        unique_id='1836658935934866',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='1836658935934866',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
         location=Location.HTX,
@@ -221,7 +234,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DOGE,
         amount=FVal('8.1662'),
         location_label='htx',
-        unique_id='1836658935934866',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='1836658935934866',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117673),
         location=Location.HTX,
@@ -229,7 +245,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DOGE,
         amount=FVal('0.006007'),
         location_label='htx',
-        unique_id='1836658935934866',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='1836658935934866',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117672),
         location=Location.HTX,
@@ -237,7 +256,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('59.7459566'),
         location_label='htx',
-        unique_id='2186266790953303',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='2186266790953303',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117672),
         location=Location.HTX,
@@ -245,7 +267,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DOGE,
         amount=FVal('1.537'),
         location_label='htx',
-        unique_id='2186266790953303',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='2186266790953303',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1792370117672),
         location=Location.HTX,
@@ -253,7 +278,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DOGE,
         amount=FVal('0.003074'),
         location_label='htx',
-        unique_id='2186266790953303',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='2186266790953303',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800452),
         location=Location.HTX,
@@ -261,7 +289,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DAI,
         amount=FVal('1038.18'),
         location_label='htx',
-        unique_id='1552611026239689',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='1552611026239689',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800452),
         location=Location.HTX,
@@ -269,7 +300,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('1037.660910'),
         location_label='htx',
-        unique_id='1552611026239689',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='1552611026239689',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800452),
         location=Location.HTX,
@@ -277,7 +311,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('2.07532182'),
         location_label='htx',
-        unique_id='1552611026239689',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='1552611026239689',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800451),
         location=Location.HTX,
@@ -285,7 +322,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_DAI,
         amount=FVal('26.3'),
         location_label='htx',
-        unique_id='3409716930791340',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='3409716930791340',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800451),
         location=Location.HTX,
@@ -293,7 +333,10 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('26.28948'),
         location_label='htx',
-        unique_id='3409716930791340',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='3409716930791340',
+        ),
     ), SwapEvent(
         timestamp=TimestampMS(1710354800451),
         location=Location.HTX,
@@ -301,5 +344,8 @@ def test_trades(htx_exchange: Htx) -> None:
         asset=A_USDT,
         amount=FVal('0.05257896'),
         location_label='htx',
-        unique_id='3409716930791340',
+        event_identifier=create_event_identifier_from_unique_id(
+            location=Location.HTX,
+            unique_id='3409716930791340',
+        ),
     )]

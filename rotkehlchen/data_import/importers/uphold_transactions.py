@@ -106,6 +106,7 @@ Activity from uphold with uphold transaction id:
                             receive=AssetAmount(asset=destination_asset, amount=destination_amount),  # noqa: E501
                             fee=AssetAmount(asset=fee_asset, amount=fee),
                             spend_notes=notes,
+                            event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                         ),
                     )
                 else:
@@ -140,6 +141,7 @@ Activity from uphold with uphold transaction id:
                         receive=AssetAmount(asset=destination_asset, amount=destination_amount),
                         fee=AssetAmount(asset=fee_asset, amount=fee),
                         spend_notes=notes,
+                        event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                     ),
                 )
             else:
@@ -175,6 +177,7 @@ Activity from uphold with uphold transaction id:
                         receive=AssetAmount(asset=destination_asset, amount=destination_amount),
                         fee=AssetAmount(asset=fee_asset, amount=fee),
                         spend_notes=notes,
+                        event_identifier=f'{UPHOLD_PREFIX}{hash_csv_row(csv_row)}',
                     ),
                 )
             else:

@@ -28,6 +28,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -112,7 +113,10 @@ def _process_trade(trade_data: dict[str, Any]) -> list[SwapEvent]:
                 asset=quote_asset,
                 amount=deserialize_fval(trade_data['commission']),
             ) if len(trade_data['commission']) != 0 else None,
-            unique_id=str(trade_data['id']),
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASEPRIME,
+                unique_id=str(trade_data['id']),
+            ),
         )
     except KeyError as e:
         raise DeserializationError(

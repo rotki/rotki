@@ -165,6 +165,7 @@ def test_get_historical_asset_balance(
                 location=Location.EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('3200.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.2')),
+                event_identifier='tradeid',
             ),
         )
 
@@ -199,11 +200,13 @@ def test_get_historical_asset_amounts_over_time(
                 location=Location.EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('24000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('1.5')),
+                event_identifier='trade1',
             ), *create_swap_events(  # Second swap with same asset and timestamp (multiple fill events of the same order)  # noqa: E501
                 timestamp=ts_sec_to_ms(Timestamp(START_TS + DAY_IN_SECONDS * 3)),
                 location=Location.EXTERNAL,
                 spend=AssetAmount(asset=A_EUR, amount=FVal('8000.0')),
                 receive=AssetAmount(asset=A_BTC, amount=FVal('0.5')),
+                event_identifier='trade2',
             )],
         )
 

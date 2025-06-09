@@ -35,6 +35,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
 )
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -1008,9 +1009,12 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.01'),
-            unique_id='TRADE2',
             notes='Example note',
             extra_data={'reference': 'TRADE2'},
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BITFINEX,
+                unique_id='TRADE2',
+            ),
         ), SwapEvent(
             identifier=4,
             timestamp=TimestampMS(1569924576000),
@@ -1018,7 +1022,10 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('20'),
-            unique_id='TRADE2',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BITFINEX,
+                unique_id='TRADE2',
+            ),
         ), SwapEvent(
             identifier=5,
             timestamp=TimestampMS(1569924576000),
@@ -1026,7 +1033,10 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.000004'),
-            unique_id='TRADE2',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BITFINEX,
+                unique_id='TRADE2',
+            ),
         ), SwapEvent(
             identifier=6,
             timestamp=TimestampMS(1569954576000),
@@ -1034,9 +1044,12 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.02'),
-            unique_id='TRADE3',
             notes='Example note',
             extra_data={'reference': 'TRADE3'},
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASE,
+                unique_id='TRADE3',
+            ),
         ), SwapEvent(
             identifier=7,
             timestamp=TimestampMS(1569954576000),
@@ -1044,8 +1057,11 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USD,
             amount=FVal('200'),
-            unique_id='TRADE3',
             notes='Second note',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASE,
+                unique_id='TRADE3',
+            ),
         ), SwapEvent(
             identifier=8,
             timestamp=TimestampMS(1569954576000),
@@ -1053,7 +1069,10 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.000044'),
-            unique_id='TRADE3',
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.COINBASE,
+                unique_id='TRADE3',
+            ),
         )]
 
     # Check event serialization.

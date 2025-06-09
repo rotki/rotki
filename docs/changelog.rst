@@ -3,6 +3,15 @@ Changelog
 =========
 
 * :feature:`9913` History events can now be filtered by description.
+* :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.
+* :bug:`-` For ETH staking MEV rewards the informational event will no longer be shown as it will be superseded by the combined MEV reward events.
+* :bug:`-` Transaction decoding will no longer fail when encountering a certain rare case of problematic spam tokens.
+* :bug:`-` Swaps receiving EURe in Gnosis that were not working for selected DEXes will now be properly decoded again.
+* :bug:`-` Some specific 0x settler swaps in Optimism will now be properly decoded.
+* :bug:`-` When exporting history as CSV the events will now properly appear sorted by timestamp.
+* :bug:`10087` Users will now be able to use the electron app wallet bridge when using Windows.
+* :bug:`-` Token detection will no longer fail when encountering certain NFTs with improper implementations.
+* :bug:`10096` CSV imports for trades from rotki custom trades, uphold, cointracking, shapeshift, kucoin and blockpit should now work properly and not show only a single event per trade/swap.
 
 * :release:`1.39.0 <2025-06-04>`
 * :feature:`-` DigixDAO DGD refunds will now be properly decoded.

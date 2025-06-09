@@ -182,6 +182,7 @@ from rotkehlchen.errors.misc import (
     GreenletKilledError,
     InputError,
     ModuleInactive,
+    NotERC20Conformant,
     NotFoundError,
     RemoteError,
     SystemPermissionError,
@@ -3202,9 +3203,9 @@ class RestAPI:
         evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
         try:
             info = evm_manager.node_inquirer.get_erc20_contract_info(address=address)
-        except BadFunctionCallOutput:
+        except (BadFunctionCallOutput, NotERC20Conformant):
             return wrap_in_fail_result(
-                f'{chain_id!s} address {address} seems to not be a deployed contract',
+                f'{chain_id!s} address {address} seems to not be a deployed contract or not a valid erc20 token',  # noqa: E501
                 status_code=HTTPStatus.CONFLICT,
             )
         return _wrap_in_ok_result(info)

@@ -20,6 +20,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
+from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -252,7 +253,10 @@ class Bitcoinde(ExchangeInterface):
             receive=AssetAmount(asset=receive_asset, amount=receive_amount),
             fee=AssetAmount(asset=A_EUR, amount=deserialize_fval_or_zero(raw_trade['fee_currency_to_pay'])),  # noqa: E501
             location_label=self.name,
-            unique_id=raw_trade['trade_id'],
+            event_identifier=create_event_identifier_from_unique_id(
+                location=self.location,
+                unique_id=raw_trade['trade_id'],
+            ),
         )
 
     def query_online_history_events(
