@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.async_sqlcipher import AsyncDBConnection, DBConnectionWrapper
+from rotkehlchen.db.drivers.sqlcipher import AsyncDBConnection, DBConnectionWrapper
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter

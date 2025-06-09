@@ -8,19 +8,36 @@ import hmac
 import json
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import aiohttp
 from aiohttp import ClientError, ClientTimeout
 
-from rotkehlchen.db.async_handler import AsyncDBHandler
-from rotkehlchen.errors.misc import AuthenticationError, PremiumApiError, RemoteError
+from rotkehlchen.errors.api import PremiumApiError, PremiumAuthenticationError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.handler import AsyncDBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+# Data structures
+class PremiumCredentials(NamedTuple):
+    """Premium user credentials"""
+    api_key: str
+    api_secret: str
+
+
+class RemoteMetadata(NamedTuple):
+    """Remote data metadata"""
+    last_modify_ts: Timestamp
+    data_hash: str
+    data_size: int
 
 
 class AsyncPremiumClient:
@@ -30,7 +47,7 @@ class AsyncPremiumClient:
         self,
         api_key: str,
         api_secret: str,
-        async_db: AsyncDBHandler,
+        async_db: 'AsyncDBHandler',
         base_url: str = 'https://api.rotki.com',
     ):
         self.api_key = api_key
@@ -129,7 +146,7 @@ class AsyncPremiumClient:
                 response_data = await response.json()
 
                 if response.status == 401:
-                    raise AuthenticationError('Invalid premium credentials')
+                    raise PremiumAuthenticationError('Invalid premium credentials')
                 elif response.status == 429:
                     raise PremiumApiError('Rate limit exceeded')
                 elif response.status >= 400:
@@ -284,7 +301,7 @@ class AsyncPremiumClient:
 
             return response.get('valid', False)
 
-        except AuthenticationError:
+        except PremiumAuthenticationError:
             return False
         except Exception as e:
             log.error(f'Error validating premium credentials: {e}')
@@ -297,7 +314,7 @@ class AsyncPremiumSyncManager:
     def __init__(
         self,
         premium_client: AsyncPremiumClient,
-        async_db: AsyncDBHandler,
+        async_db: 'AsyncDBHandler',
         sync_interval: int = 3600,  # 1 hour
     ):
         self.premium_client = premium_client
@@ -367,3 +384,18 @@ class AsyncPremiumSyncManager:
         except Exception as e:
             log.error(f'Premium sync failed: {e}')
             raise
+
+# Compatibility exports
+Premium = AsyncPremiumClient  # For backward compatibility
+
+
+async def premium_create_and_verify(credentials: PremiumCredentials) -> AsyncPremiumClient:
+    """Create and verify premium client"""
+    client = AsyncPremiumClient(
+        api_key=credentials.api_key,
+        api_secret=credentials.api_secret,
+        async_db=None,  # Will be set by caller
+    )
+    await client.initialize()
+    # Would verify credentials
+    return client

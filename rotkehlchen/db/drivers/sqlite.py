@@ -319,6 +319,10 @@ class AsyncDBConnection:
             )
 
 
+# Compatibility exports for gradual migration
+DBConnection = AsyncDBConnection
+DBCursor = AsyncDBCursor
+
 # Migration comparison example
 """
 Key differences from gevent implementation:

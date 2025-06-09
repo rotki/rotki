@@ -350,3 +350,8 @@ class DBConnectionWrapper:
     def async_write_ctx(self) -> AsyncGenerator['AsyncDBCursor', None]:
         """Async write context"""
         return self.async_conn.write_ctx()
+
+
+# Compatibility exports for gradual migration
+DBConnection = AsyncDBConnection
+DBCursor = AsyncDBCursor

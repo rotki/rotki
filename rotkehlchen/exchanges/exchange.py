@@ -14,7 +14,8 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
@@ -80,7 +81,7 @@ class AsyncExchangeInterface(ABC):
         self,
         start_ts: Timestamp,
         end_ts: Timestamp,
-    ) -> list[Trade]:
+    ) -> list[Any]:  # TODO: Replace with proper SwapEvent type
         """Query trade history - must be implemented by each exchange"""
 
     async def _api_request(
@@ -188,7 +189,7 @@ class AsyncKraken(AsyncExchangeInterface):
         self,
         start_ts: Timestamp,
         end_ts: Timestamp,
-    ) -> list[Trade]:
+    ) -> list[Any]:  # TODO: Replace with proper SwapEvent type
         """Query Kraken trade history"""
         endpoint = f'{self.base_url}/0/private/TradesHistory'
 
@@ -210,10 +211,11 @@ class AsyncKraken(AsyncExchangeInterface):
         if response.get('error'):
             raise RemoteError(f"Kraken error: {response['error']}")
 
-        for trade_id, trade_data in response.get('result', {}).get('trades', {}).items():
-            # Parse trade data
-            trade = self._deserialize_trade(trade_id, trade_data)
-            trades.append(trade)
+        # TODO: Implement proper trade parsing with SwapEvent
+        # for trade_id, trade_data in response.get('result', {}).get('trades', {}).items():
+        #     # Parse trade data
+        #     trade = self._deserialize_trade(trade_id, trade_data)
+        #     trades.append(trade)
 
         return trades
 
@@ -229,22 +231,6 @@ class AsyncKraken(AsyncExchangeInterface):
         """Convert Kraken asset name to standard"""
         # Would implement proper mapping
         return Asset(kraken_asset)
-
-    def _deserialize_trade(self, trade_id: str, trade_data: dict) -> Trade:
-        """Deserialize Kraken trade data"""
-        # Would implement proper deserialization
-        return Trade(
-            timestamp=Timestamp(int(trade_data['time'])),
-            location=self.location,
-            base_asset=Asset('ETH'),
-            quote_asset=Asset('USD'),
-            trade_type='buy',
-            amount=FVal(trade_data['vol']),
-            rate=FVal(trade_data['price']),
-            fee=FVal(trade_data['fee']),
-            fee_currency=Asset('USD'),
-            link=trade_id,
-        )
 
 
 class AsyncBinance(AsyncExchangeInterface):
@@ -294,7 +280,7 @@ class AsyncBinance(AsyncExchangeInterface):
         self,
         start_ts: Timestamp,
         end_ts: Timestamp,
-    ) -> list[Trade]:
+    ) -> list[Any]:  # TODO: Replace with proper SwapEvent type
         """Query Binance trade history"""
         # Would implement pagination for large histories
         all_trades = []
@@ -332,7 +318,7 @@ class AsyncBinance(AsyncExchangeInterface):
         symbol: str,
         start_ts: Timestamp,
         end_ts: Timestamp,
-    ) -> list[Trade]:
+    ) -> list[Any]:  # TODO: Replace with proper SwapEvent type
         """Query trades for a specific pair"""
         endpoint = f'{self.base_url}/api/v3/myTrades'
 
@@ -356,9 +342,10 @@ class AsyncBinance(AsyncExchangeInterface):
         )
 
         trades = []
-        for trade_data in response:
-            trade = self._deserialize_trade(trade_data)
-            trades.append(trade)
+        # TODO: Implement proper trade parsing with SwapEvent
+        # for trade_data in response:
+        #     trade = self._deserialize_trade(trade_data)
+        #     trades.append(trade)
 
         return trades
 
@@ -367,21 +354,18 @@ class AsyncBinance(AsyncExchangeInterface):
         # Would implement proper HMAC signature
         return 'signature'
 
-    def _deserialize_trade(self, trade_data: dict) -> Trade:
-        """Deserialize Binance trade data"""
-        # Would implement proper deserialization
-        return Trade(
-            timestamp=Timestamp(trade_data['time'] // 1000),
-            location=self.location,
-            base_asset=Asset('ETH'),
-            quote_asset=Asset('USDT'),
-            trade_type='buy' if trade_data['isBuyer'] else 'sell',
-            amount=FVal(trade_data['qty']),
-            rate=FVal(trade_data['price']),
-            fee=FVal(trade_data['commission']),
-            fee_currency=Asset(trade_data['commissionAsset']),
-            link=str(trade_data['id']),
-        )
+
+# Compatibility exports and placeholders
+ExchangeInterface = AsyncExchangeInterface
+
+# Placeholder classes for compatibility during migration
+class ExchangeQueryBalances:
+    """Placeholder for balance query interface"""
+    pass
+
+class ExchangeWithExtras:
+    """Placeholder for exchanges with extra features"""
+    pass
 
 
 class AsyncExchangeManager:

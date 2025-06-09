@@ -373,3 +373,16 @@ class AsyncBatchEvmQuerier:
                 receipts[tx_hash] = result
 
         return receipts
+
+# Constants
+WEB3_LOGQUERY_BLOCK_RANGE = 250000  # Default block range for log queries
+
+# Placeholder for missing type
+from typing import NamedTuple
+class DSProxyInquirerWithCacheData(NamedTuple):
+    """Placeholder for DSProxy data"""
+    address: str
+    timestamp: int
+
+# Compatibility export
+EvmNodeInquirer = AsyncEvmNodeInquirer
