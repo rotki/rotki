@@ -6,11 +6,16 @@ import asyncio
 import logging
 from typing import Any
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -62,9 +67,9 @@ class ExternalServiceData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/blockchains/{blockchain}/transactions', response_model=dict)
@@ -73,7 +78,7 @@ async def get_blockchain_transactions(
     async_query: bool = Query(default=True),
     only_cache: bool = Query(default=False),
     ignore_gas: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get transactions for a specific blockchain"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):
@@ -81,7 +86,7 @@ async def get_blockchain_transactions(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -98,9 +103,9 @@ async def get_blockchain_transactions(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'query_{blockchain}_transactions',
-                method=rest_api.rotkehlchen.chains_aggregator.query_blockchain_transactions,
+                method=rotkehlchen.chains_aggregator.query_blockchain_transactions,
                 blockchain=chain_id,
                 only_cache=only_cache,
                 ignore_gas=ignore_gas,
@@ -113,7 +118,7 @@ async def get_blockchain_transactions(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.query_blockchain_transactions,
+            rotkehlchen.chains_aggregator.query_blockchain_transactions,
             blockchain=chain_id,
             only_cache=only_cache,
             ignore_gas=ignore_gas,
@@ -137,7 +142,7 @@ async def get_evm_transactions(
     ignore_gas: bool = Query(default=False),
     from_timestamp: int | None = Query(default=None, ge=0),
     to_timestamp: int | None = Query(default=None, ge=0),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get EVM transactions for a specific blockchain"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):
@@ -145,7 +150,7 @@ async def get_evm_transactions(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -161,7 +166,7 @@ async def get_evm_transactions(
             )
 
         # Get chain manager
-        chain_manager = rest_api.rotkehlchen.chains_aggregator.get_chain_manager(chain_id)
+        chain_manager = rotkehlchen.chains_aggregator.get_chain_manager(chain_id)
         if not chain_manager:
             return JSONResponse(
                 content=create_error_response(f'Chain {blockchain} not supported'),
@@ -170,7 +175,7 @@ async def get_evm_transactions(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'query_{blockchain}_evm_transactions',
                 method=chain_manager.query_evm_transactions,
                 only_cache=only_cache,
@@ -207,7 +212,7 @@ async def get_evm_transactions(
 async def decode_evm_transactions(
     blockchain: str,
     async_query: bool = Query(default=True),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Decode pending EVM transactions"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):
@@ -215,7 +220,7 @@ async def decode_evm_transactions(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -231,7 +236,7 @@ async def decode_evm_transactions(
             )
 
         # Get chain manager
-        chain_manager = rest_api.rotkehlchen.chains_aggregator.get_chain_manager(chain_id)
+        chain_manager = rotkehlchen.chains_aggregator.get_chain_manager(chain_id)
         if not chain_manager:
             return JSONResponse(
                 content=create_error_response(f'Chain {blockchain} not supported'),
@@ -240,7 +245,7 @@ async def decode_evm_transactions(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'decode_{blockchain}_transactions',
                 method=chain_manager.decode_undecoded_transactions,
             )
@@ -270,7 +275,7 @@ async def get_blockchain_balances(
     blockchain: str,
     async_query: bool = Query(default=True),
     ignore_cache: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get balances for a specific blockchain"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -278,7 +283,7 @@ async def get_blockchain_balances(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -295,9 +300,9 @@ async def get_blockchain_balances(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'query_{blockchain}_balances',
-                method=rest_api.rotkehlchen.chains_aggregator.query_balances,
+                method=rotkehlchen.chains_aggregator.query_balances,
                 blockchain=chain_id,
                 ignore_cache=ignore_cache,
             )
@@ -309,7 +314,7 @@ async def get_blockchain_balances(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.query_balances,
+            rotkehlchen.chains_aggregator.query_balances,
             blockchain=chain_id,
             ignore_cache=ignore_cache,
         )
@@ -327,7 +332,7 @@ async def get_blockchain_balances(
 @router.get('/blockchains/{blockchain}/accounts', response_model=dict)
 async def get_blockchain_accounts(
     blockchain: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get accounts for a specific blockchain"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -335,7 +340,7 @@ async def get_blockchain_accounts(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -351,7 +356,7 @@ async def get_blockchain_accounts(
             )
 
         # Get accounts
-        accounts = rest_api.rotkehlchen.chains_aggregator.accounts.get(chain_id, [])
+        accounts = rotkehlchen.chains_aggregator.accounts.get(chain_id, [])
 
         return create_success_response({
             'result': [str(account) for account in accounts],
@@ -369,7 +374,7 @@ async def get_blockchain_accounts(
 async def add_blockchain_accounts(
     blockchain: str,
     accounts_data: EvmAccountsData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add accounts for a specific blockchain"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -377,7 +382,7 @@ async def add_blockchain_accounts(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -403,7 +408,7 @@ async def add_blockchain_accounts(
 
         # Add accounts
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.add_blockchain_accounts,
+            rotkehlchen.chains_aggregator.add_blockchain_accounts,
             blockchain=chain_id,
             accounts=addresses,
         )
@@ -422,7 +427,7 @@ async def add_blockchain_accounts(
 async def remove_blockchain_accounts(
     blockchain: str,
     accounts: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove accounts for a specific blockchain"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -430,7 +435,7 @@ async def remove_blockchain_accounts(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -456,7 +461,7 @@ async def remove_blockchain_accounts(
 
         # Remove accounts
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.remove_blockchain_accounts,
+            rotkehlchen.chains_aggregator.remove_blockchain_accounts,
             blockchain=chain_id,
             accounts=addresses,
         )
@@ -475,7 +480,7 @@ async def remove_blockchain_accounts(
 async def get_ethereum_airdrops(
     async_query: bool = Query(default=True),
     addresses: str | None = Query(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get Ethereum airdrops for addresses"""
     if not async_features.is_enabled(AsyncFeature.TRANSACTIONS_ENDPOINT):
@@ -483,7 +488,7 @@ async def get_ethereum_airdrops(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -502,9 +507,9 @@ async def get_ethereum_airdrops(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_ethereum_airdrops',
-                method=rest_api.rotkehlchen.chains_aggregator.get_ethereum_manager().airdrops.check_airdrops,
+                method=rotkehlchen.chains_aggregator.get_ethereum_manager().airdrops.check_airdrops,
                 addresses=address_list,
             )
 
@@ -515,7 +520,7 @@ async def get_ethereum_airdrops(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.get_ethereum_manager().airdrops.check_airdrops,
+            rotkehlchen.chains_aggregator.get_ethereum_manager().airdrops.check_airdrops,
             addresses=address_list,
         )
 
@@ -531,7 +536,7 @@ async def get_ethereum_airdrops(
 
 @router.get('/external_services', response_model=dict)
 async def get_external_services(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get external service configurations"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -539,14 +544,14 @@ async def get_external_services(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get external services
-        services = rest_api.rotkehlchen.get_external_service_configurations()
+        services = rotkehlchen.get_external_service_configurations()
 
         return create_success_response(services)
 
@@ -561,7 +566,7 @@ async def get_external_services(
 @router.put('/external_services', response_model=dict)
 async def set_external_services(
     services: dict[str, Any] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Set external service configurations"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -569,7 +574,7 @@ async def set_external_services(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -577,7 +582,7 @@ async def set_external_services(
 
         # Set external services
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.set_external_service_configurations,
+            rotkehlchen.set_external_service_configurations,
             services=services,
         )
 

@@ -38,6 +38,7 @@ marshmallow==4.0.0
 webargs==8.6.0
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
+python-multipart==0.0.9
 
 # for icon validation
 filetype==1.2.0

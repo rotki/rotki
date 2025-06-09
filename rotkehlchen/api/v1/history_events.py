@@ -7,10 +7,15 @@ import asyncio
 import logging
 from typing import Any
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     CreateHistoryEventModel,
     EditHistoryEventModel,
@@ -29,9 +34,9 @@ router = APIRouter(prefix='/api/1/history', tags=['history'])
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 async def get_async_db() -> AsyncDBHandler:
@@ -62,7 +67,7 @@ async def get_history_events(
     # Async query
     async_query: bool = Query(False),
     # Dependencies
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
     async_db: AsyncDBHandler = Depends(get_async_db),
     task_manager: AsyncTaskManager = Depends(get_task_manager),
 ):

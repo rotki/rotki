@@ -5,11 +5,16 @@ This module provides high-performance async calendar and reminder operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -48,16 +53,16 @@ class CalendarReminderData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/calendar', response_model=dict)
 async def get_calendar_entries(
     from_timestamp: int | None = Query(default=None, ge=0),
     to_timestamp: int | None = Query(default=None, ge=0),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get calendar entries"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -65,15 +70,15 @@ async def get_calendar_entries(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get calendar entries
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            entries = rest_api.rotkehlchen.data.db.get_calendar_entries(
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            entries = rotkehlchen.data.db.get_calendar_entries(
                 cursor,
                 from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
                 to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,
@@ -101,7 +106,7 @@ async def get_calendar_entries(
 @router.put('/calendar', response_model=dict)
 async def add_calendar_entry(
     entry_data: CalendarEntry,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a calendar entry"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -109,15 +114,15 @@ async def add_calendar_entry(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Add calendar entry
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            identifier = rest_api.rotkehlchen.data.db.add_calendar_entry(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            identifier = rotkehlchen.data.db.add_calendar_entry(
                 write_cursor,
                 name=entry_data.name,
                 description=entry_data.description,
@@ -147,7 +152,7 @@ async def add_calendar_entry(
 @router.patch('/calendar', response_model=dict)
 async def update_calendar_entry(
     update_data: CalendarUpdate,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Update a calendar entry"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -155,15 +160,15 @@ async def update_calendar_entry(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Update calendar entry
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.update_calendar_entry(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.update_calendar_entry(
                 write_cursor,
                 identifier=update_data.identifier,
                 name=update_data.name,
@@ -191,7 +196,7 @@ async def update_calendar_entry(
 @router.delete('/calendar', response_model=dict)
 async def delete_calendar_entries(
     identifiers: list[int] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete calendar entries"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -199,15 +204,15 @@ async def delete_calendar_entries(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete calendar entries
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            deleted_count = rest_api.rotkehlchen.data.db.delete_calendar_entries(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            deleted_count = rotkehlchen.data.db.delete_calendar_entries(
                 write_cursor,
                 identifiers=identifiers,
             )
@@ -228,7 +233,7 @@ async def delete_calendar_entries(
 @router.post('/calendar', response_model=dict)
 async def create_calendar_from_history(
     query_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Create calendar entries from history events"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -236,7 +241,7 @@ async def create_calendar_from_history(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -244,7 +249,7 @@ async def create_calendar_from_history(
 
         # Create entries from history
         created_entries = await asyncio.to_thread(
-            rest_api.rotkehlchen.create_calendar_from_history,
+            rotkehlchen.create_calendar_from_history,
             query_data=query_data,
         )
 
@@ -263,7 +268,7 @@ async def create_calendar_from_history(
 
 @router.get('/calendar/reminders', response_model=dict)
 async def get_calendar_reminders(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get calendar reminders"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -271,15 +276,15 @@ async def get_calendar_reminders(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get reminders
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            reminders = rest_api.rotkehlchen.data.db.get_calendar_reminders(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            reminders = rotkehlchen.data.db.get_calendar_reminders(cursor)
 
         # Format response
         result = [{
@@ -301,7 +306,7 @@ async def get_calendar_reminders(
 @router.put('/calendar/reminders', response_model=dict)
 async def add_calendar_reminder(
     reminder_data: CalendarReminderData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a calendar reminder"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -309,15 +314,15 @@ async def add_calendar_reminder(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Add reminder
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            identifier = rest_api.rotkehlchen.data.db.add_calendar_reminder(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            identifier = rotkehlchen.data.db.add_calendar_reminder(
                 write_cursor,
                 calendar_id=reminder_data.calendar_id,
                 secs_before=reminder_data.secs_before,
@@ -343,7 +348,7 @@ async def add_calendar_reminder(
 @router.patch('/calendar/reminders', response_model=dict)
 async def update_calendar_reminder(
     reminder_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Update a calendar reminder"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -351,7 +356,7 @@ async def update_calendar_reminder(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -365,8 +370,8 @@ async def update_calendar_reminder(
                 status_code=400,
             )
 
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.update_calendar_reminder(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.update_calendar_reminder(
                 write_cursor,
                 identifier=identifier,
                 secs_before=reminder_data.get('secs_before'),
@@ -391,7 +396,7 @@ async def update_calendar_reminder(
 @router.delete('/calendar/reminders', response_model=dict)
 async def delete_calendar_reminders(
     identifiers: list[int] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete calendar reminders"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -399,15 +404,15 @@ async def delete_calendar_reminders(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete reminders
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            deleted_count = rest_api.rotkehlchen.data.db.delete_calendar_reminders(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            deleted_count = rotkehlchen.data.db.delete_calendar_reminders(
                 write_cursor,
                 identifiers=identifiers,
             )
@@ -427,7 +432,7 @@ async def delete_calendar_reminders(
 
 @router.post('/calendar/reminders', response_model=dict)
 async def process_calendar_reminders(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Process due calendar reminders"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -435,7 +440,7 @@ async def process_calendar_reminders(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -443,7 +448,7 @@ async def process_calendar_reminders(
 
         # Process reminders
         processed = await asyncio.to_thread(
-            rest_api.rotkehlchen.process_calendar_reminders,
+            rotkehlchen.process_calendar_reminders,
         )
 
         return create_success_response({

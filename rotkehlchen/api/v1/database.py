@@ -8,11 +8,16 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -38,7 +43,7 @@ class DatabaseInfo(BaseModel):
 
 class DatabaseBackup(BaseModel):
     """Database backup request"""
-    action: str = Field(..., regex='^(create|download|upload)$')
+    action: str = Field(..., pattern='^(create|download|upload)$')
     path: Path | None = None
 
 
@@ -46,19 +51,19 @@ class TagData(BaseModel):
     """Tag data model"""
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1000)
-    background_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
-    foreground_color: str = Field(..., regex='^#[0-9A-Fa-f]{6}$')
+    background_color: str = Field(..., pattern='^#[0-9A-Fa-f]{6}$')
+    foreground_color: str = Field(..., pattern='^#[0-9A-Fa-f]{6}$')
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/database/info', response_model=dict)
 async def get_database_info(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get database information"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -66,14 +71,14 @@ async def get_database_info(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get database info
-        db = rest_api.rotkehlchen.data.db
+        db = rotkehlchen.data.db
         info = DatabaseInfo(
             version=db.get_version(),
             size=db.get_db_size(),
@@ -93,8 +98,8 @@ async def get_database_info(
 
 @router.post('/database/backups', response_model=dict)
 async def manage_database_backup(
-    action: str = Query(..., regex='^(create|download)$'),
-    rest_api: RestAPI = Depends(get_rest_api),
+    action: str = Query(..., pattern='^(create|download)$'),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> Any:
     """Create or download database backup"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -102,7 +107,7 @@ async def manage_database_backup(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -111,7 +116,7 @@ async def manage_database_backup(
         if action == 'create':
             # Create backup
             backup_path = await asyncio.to_thread(
-                rest_api.rotkehlchen.data.db.create_backup,
+                rotkehlchen.data.db.create_backup,
             )
 
             return create_success_response({
@@ -123,7 +128,7 @@ async def manage_database_backup(
             # Create and download backup
             with TemporaryDirectory() as temp_dir:
                 backup_path = await asyncio.to_thread(
-                    rest_api.rotkehlchen.data.db.create_backup,
+                    rotkehlchen.data.db.create_backup,
                     directory=Path(temp_dir),
                 )
 
@@ -144,7 +149,7 @@ async def manage_database_backup(
 @router.post('/database/backups/upload', response_model=dict)
 async def upload_database_backup(
     file: UploadFile = File(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Upload and restore database backup"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -152,7 +157,7 @@ async def upload_database_backup(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -167,7 +172,7 @@ async def upload_database_backup(
 
             # Restore from backup
             await asyncio.to_thread(
-                rest_api.rotkehlchen.data.db.restore_backup,
+                rotkehlchen.data.db.restore_backup,
                 backup_path=temp_path,
             )
 
@@ -188,7 +193,7 @@ async def upload_database_backup(
 
 @router.get('/tags', response_model=dict)
 async def get_tags(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get all tags"""
     if not async_features.is_enabled(AsyncFeature.TAGS_ENDPOINT):
@@ -196,15 +201,15 @@ async def get_tags(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get tags from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            tags_data = rest_api.rotkehlchen.data.db.get_tags(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            tags_data = rotkehlchen.data.db.get_tags(cursor)
 
         # Format response
         tags = {}
@@ -229,7 +234,7 @@ async def get_tags(
 @router.put('/tags', response_model=dict)
 async def add_tag(
     tag: TagData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a new tag"""
     if not async_features.is_enabled(AsyncFeature.TAGS_ENDPOINT):
@@ -237,15 +242,15 @@ async def add_tag(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if tag already exists
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            existing_tags = rest_api.rotkehlchen.data.db.get_tags(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            existing_tags = rotkehlchen.data.db.get_tags(cursor)
 
         if tag.name in existing_tags:
             return JSONResponse(
@@ -254,8 +259,8 @@ async def add_tag(
             )
 
         # Add tag to database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.add_tag(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.add_tag(
                 write_cursor,
                 name=tag.name,
                 description=tag.description,
@@ -277,7 +282,7 @@ async def add_tag(
 async def edit_tag(
     name: str,
     tag: TagData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit an existing tag"""
     if not async_features.is_enabled(AsyncFeature.TAGS_ENDPOINT):
@@ -285,15 +290,15 @@ async def edit_tag(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if tag exists
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            existing_tags = rest_api.rotkehlchen.data.db.get_tags(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            existing_tags = rotkehlchen.data.db.get_tags(cursor)
 
         if name not in existing_tags:
             return JSONResponse(
@@ -302,8 +307,8 @@ async def edit_tag(
             )
 
         # Edit tag in database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.edit_tag(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.edit_tag(
                 write_cursor,
                 old_name=name,
                 new_name=tag.name,
@@ -325,7 +330,7 @@ async def edit_tag(
 @router.delete('/tags/{name}', response_model=dict)
 async def delete_tag(
     name: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete a tag"""
     if not async_features.is_enabled(AsyncFeature.TAGS_ENDPOINT):
@@ -333,15 +338,15 @@ async def delete_tag(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if tag exists
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            existing_tags = rest_api.rotkehlchen.data.db.get_tags(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            existing_tags = rotkehlchen.data.db.get_tags(cursor)
 
         if name not in existing_tags:
             return JSONResponse(
@@ -350,8 +355,8 @@ async def delete_tag(
             )
 
         # Delete tag from database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.delete_tag(write_cursor, name)
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.delete_tag(write_cursor, name)
 
         return create_success_response({'result': True})
 
@@ -366,7 +371,7 @@ async def delete_tag(
 @router.post('/cache/{cache_type}/clear', response_model=dict)
 async def clear_cache(
     cache_type: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Clear various caches"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -374,7 +379,7 @@ async def clear_cache(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -383,15 +388,15 @@ async def clear_cache(
         # Clear cache based on type
         if cache_type == 'icons':
             await asyncio.to_thread(
-                rest_api.rotkehlchen.icon_manager.clear_cache,
+                rotkehlchen.icon_manager.clear_cache,
             )
         elif cache_type == 'avatars':
             await asyncio.to_thread(
-                rest_api.rotkehlchen.avatars_manager.clear_cache,
+                rotkehlchen.avatars_manager.clear_cache,
             )
         elif cache_type == 'history':
-            with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-                rest_api.rotkehlchen.data.db.clear_history_cache(write_cursor)
+            with rotkehlchen.data.db.user_write() as write_cursor:
+                rotkehlchen.data.db.clear_history_cache(write_cursor)
         else:
             return JSONResponse(
                 content=create_error_response(f'Unknown cache type: {cache_type}'),

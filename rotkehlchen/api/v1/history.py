@@ -7,15 +7,23 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
 )
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants.timing import TIMESTAMP_MAX_VALUE
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -32,7 +40,7 @@ router = APIRouter(prefix='/api/1', tags=['history'])
 class HistoryProcessingQuery(BaseModel):
     """Parameters for history processing"""
     from_timestamp: int = Field(0, ge=0)
-    to_timestamp: int = Field(Timestamp.max_value(), ge=0)
+    to_timestamp: int = Field(TIMESTAMP_MAX_VALUE, ge=0)
     async_query: bool = Field(default=True)
 
 
@@ -67,14 +75,14 @@ class CreateHistoryEvent(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/history/status', response_model=dict)
 async def get_history_status(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get status of history processing"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -82,14 +90,14 @@ async def get_history_status(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get processing status
-        status = rest_api.rotkehlchen.history_manager.get_history_status()
+        status = rotkehlchen.history_manager.get_history_status()
 
         return create_success_response({
             'processing': status.processing,
@@ -108,7 +116,7 @@ async def get_history_status(
 @router.post('/history', response_model=dict)
 async def process_history(
     query: HistoryProcessingQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Process history for given time range"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -116,7 +124,7 @@ async def process_history(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -131,9 +139,9 @@ async def process_history(
 
         if query.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='process_history',
-                method=rest_api.rotkehlchen.process_history,
+                method=rotkehlchen.process_history,
                 from_timestamp=Timestamp(query.from_timestamp),
                 to_timestamp=Timestamp(query.to_timestamp),
             )
@@ -145,7 +153,7 @@ async def process_history(
 
         # Synchronous processing
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.process_history,
+            rotkehlchen.process_history,
             from_timestamp=Timestamp(query.from_timestamp),
             to_timestamp=Timestamp(query.to_timestamp),
         )
@@ -163,7 +171,7 @@ async def process_history(
 @router.post('/history/export', response_model=dict)
 async def export_history(
     query: HistoryExportQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Export processed history to CSV files"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -171,7 +179,7 @@ async def export_history(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -179,17 +187,17 @@ async def export_history(
 
         # Use user directory if not specified
         if query.directory_path is None:
-            query.directory_path = rest_api.rotkehlchen.user_directory / 'exports'
+            query.directory_path = rotkehlchen.user_directory / 'exports'
 
         # Create directory if needed
         query.directory_path.mkdir(parents=True, exist_ok=True)
 
         # Export history
         from_ts = Timestamp(query.from_timestamp) if query.from_timestamp else Timestamp(0)
-        to_ts = Timestamp(query.to_timestamp) if query.to_timestamp else Timestamp.max_value()
+        to_ts = Timestamp(query.to_timestamp) if query.to_timestamp else Timestamp(TIMESTAMP_MAX_VALUE)
 
         exported_files = await asyncio.to_thread(
-            rest_api.rotkehlchen.history_exporter.export,
+            rotkehlchen.history_exporter.export,
             directory=query.directory_path,
             from_timestamp=from_ts,
             to_timestamp=to_ts,
@@ -210,7 +218,7 @@ async def export_history(
 
 @router.get('/history/download', response_model=Any)
 async def download_history(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> Any:
     """Download exported history as zip file"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -218,7 +226,7 @@ async def download_history(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -228,7 +236,7 @@ async def download_history(
         import zipfile
         from tempfile import NamedTemporaryFile
 
-        export_dir = rest_api.rotkehlchen.user_directory / 'exports'
+        export_dir = rotkehlchen.user_directory / 'exports'
 
         with NamedTemporaryFile(suffix='.zip', delete=False) as tmp_file:
             with zipfile.ZipFile(tmp_file, 'w') as zip_file:
@@ -255,7 +263,7 @@ async def get_history_events(
     offset: int = Query(0, ge=0),
     order_by_attribute: str | None = Query(default='timestamp'),
     ascending: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get history events"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -263,15 +271,15 @@ async def get_history_events(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Query events from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events, total_count = rest_api.rotkehlchen.data.db.get_history_events(
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            events, total_count = rotkehlchen.data.db.get_history_events(
                 cursor=cursor,
                 limit=limit,
                 offset=offset,
@@ -300,7 +308,7 @@ async def get_history_events(
 @router.post('/history/events', response_model=dict)
 async def add_history_event(
     event_data: CreateHistoryEvent,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a new history event"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -308,7 +316,7 @@ async def add_history_event(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -361,8 +369,8 @@ async def add_history_event(
         )
 
         # Add to database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            identifier = rest_api.rotkehlchen.data.db.add_history_event(write_cursor, event)
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            identifier = rotkehlchen.data.db.add_history_event(write_cursor, event)
 
         return create_success_response({
             'identifier': identifier,
@@ -380,7 +388,7 @@ async def add_history_event(
 @router.patch('/history/events', response_model=dict)
 async def edit_history_event(
     event_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit an existing history event"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -388,7 +396,7 @@ async def edit_history_event(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -403,8 +411,8 @@ async def edit_history_event(
             )
 
         # Update event in database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.edit_history_event(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.edit_history_event(
                 write_cursor,
                 identifier=identifier,
                 event_data=event_data,
@@ -429,7 +437,7 @@ async def edit_history_event(
 @router.delete('/history/events', response_model=dict)
 async def delete_history_events(
     identifiers: list[int] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete history events"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -437,15 +445,15 @@ async def delete_history_events(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete events from database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            deleted_count = rest_api.rotkehlchen.data.db.delete_history_events(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            deleted_count = rotkehlchen.data.db.delete_history_events(
                 write_cursor,
                 identifiers=identifiers,
             )
@@ -465,7 +473,7 @@ async def delete_history_events(
 
 @router.get('/history/actionable_items', response_model=dict)
 async def get_actionable_items(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get actionable items from history processing"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -473,7 +481,7 @@ async def get_actionable_items(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -481,7 +489,7 @@ async def get_actionable_items(
 
         # Get actionable items
         items = await asyncio.to_thread(
-            rest_api.rotkehlchen.get_actionable_items,
+            rotkehlchen.get_actionable_items,
         )
 
         return create_success_response(items)

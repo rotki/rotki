@@ -5,11 +5,16 @@ This module provides high-performance async spam token operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -35,14 +40,14 @@ class FalsePositiveData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/spam/evm/tokens/false_positive', response_model=dict)
 async def get_false_positive_spam_tokens(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get false positive spam tokens"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -50,15 +55,15 @@ async def get_false_positive_spam_tokens(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get false positive tokens
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            tokens = rest_api.rotkehlchen.data.db.get_false_positive_spam_tokens(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            tokens = rotkehlchen.data.db.get_false_positive_spam_tokens(cursor)
 
         return create_success_response({
             'tokens': [token.identifier for token in tokens],
@@ -75,7 +80,7 @@ async def get_false_positive_spam_tokens(
 @router.post('/spam/evm/tokens/false_positive', response_model=dict)
 async def add_false_positive_spam_token(
     token_data: FalsePositiveData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Mark a token as false positive (not spam)"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -83,7 +88,7 @@ async def add_false_positive_spam_token(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -99,8 +104,8 @@ async def add_false_positive_spam_token(
             )
 
         # Add false positive
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.add_false_positive_spam_token(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.add_false_positive_spam_token(
                 write_cursor,
                 token=asset,
             )
@@ -124,7 +129,7 @@ async def add_false_positive_spam_token(
 @router.delete('/spam/evm/tokens/false_positive', response_model=dict)
 async def remove_false_positive_spam_tokens(
     tokens: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove tokens from false positive list"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -132,7 +137,7 @@ async def remove_false_positive_spam_tokens(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -150,8 +155,8 @@ async def remove_false_positive_spam_tokens(
                 )
 
         # Remove false positives
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            removed_count = rest_api.rotkehlchen.data.db.remove_false_positive_spam_tokens(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            removed_count = rotkehlchen.data.db.remove_false_positive_spam_tokens(
                 write_cursor,
                 tokens=assets,
             )
@@ -172,7 +177,7 @@ async def remove_false_positive_spam_tokens(
 @router.post('/spam/evm/tokens', response_model=dict)
 async def mark_tokens_as_spam(
     tokens: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Mark tokens as spam"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -180,7 +185,7 @@ async def mark_tokens_as_spam(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -199,7 +204,7 @@ async def mark_tokens_as_spam(
 
         # Mark as spam
         marked_count = await asyncio.to_thread(
-            rest_api.rotkehlchen.mark_tokens_as_spam,
+            rotkehlchen.mark_tokens_as_spam,
             tokens=assets,
         )
 
@@ -219,7 +224,7 @@ async def mark_tokens_as_spam(
 @router.delete('/spam/evm/tokens', response_model=dict)
 async def unmark_tokens_as_spam(
     tokens: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Unmark tokens as spam"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -227,7 +232,7 @@ async def unmark_tokens_as_spam(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -246,7 +251,7 @@ async def unmark_tokens_as_spam(
 
         # Unmark as spam
         unmarked_count = await asyncio.to_thread(
-            rest_api.rotkehlchen.unmark_tokens_as_spam,
+            rotkehlchen.unmark_tokens_as_spam,
             tokens=assets,
         )
 

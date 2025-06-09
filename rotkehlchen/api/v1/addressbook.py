@@ -5,18 +5,23 @@ This module provides high-performance async address book and ENS operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Blockchain, ChainAddress
+from rotkehlchen.types import SupportedBlockchain, ChainAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -52,15 +57,15 @@ class EnsLookup(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/addressbook', response_model=dict)
 async def get_addressbook(
     blockchain: str | None = Query(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get address book entries"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -68,17 +73,17 @@ async def get_addressbook(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get address book entries
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            entries = rest_api.rotkehlchen.data.db.get_addressbook_entries(
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            entries = rotkehlchen.data.db.get_addressbook_entries(
                 cursor,
-                blockchain=Blockchain.deserialize(blockchain) if blockchain else None,
+                blockchain=SupportedBlockchain.deserialize(blockchain) if blockchain else None,
             )
 
         # Format response
@@ -102,7 +107,7 @@ async def get_addressbook(
 @router.post('/addressbook', response_model=dict)
 async def add_addressbook_entries(
     entries_data: AddressBookUpdate,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add address book entries"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -110,21 +115,21 @@ async def add_addressbook_entries(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Add entries
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        with rotkehlchen.data.db.user_write() as write_cursor:
             for entry in entries_data.entries:
-                rest_api.rotkehlchen.data.db.add_addressbook_entry(
+                rotkehlchen.data.db.add_addressbook_entry(
                     write_cursor,
                     name=entry.name,
                     address=ChainAddress(
                         address=entry.address,
-                        blockchain=Blockchain.deserialize(entry.blockchain) if entry.blockchain else None,
+                        blockchain=SupportedBlockchain.deserialize(entry.blockchain) if entry.blockchain else None,
                     ),
                     notes=entry.notes,
                 )
@@ -142,7 +147,7 @@ async def add_addressbook_entries(
 @router.put('/addressbook', response_model=dict)
 async def update_addressbook_entries(
     entries_data: AddressBookUpdate,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Update address book entries"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -150,20 +155,20 @@ async def update_addressbook_entries(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Update entries
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        with rotkehlchen.data.db.user_write() as write_cursor:
             for entry in entries_data.entries:
-                rest_api.rotkehlchen.data.db.update_addressbook_entry(
+                rotkehlchen.data.db.update_addressbook_entry(
                     write_cursor,
                     old_address=ChainAddress(
                         address=entry.address,
-                        blockchain=Blockchain.deserialize(entry.blockchain) if entry.blockchain else None,
+                        blockchain=SupportedBlockchain.deserialize(entry.blockchain) if entry.blockchain else None,
                     ),
                     name=entry.name,
                     notes=entry.notes,
@@ -182,7 +187,7 @@ async def update_addressbook_entries(
 @router.patch('/addressbook', response_model=dict)
 async def edit_addressbook_entry(
     entry_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit a single address book entry"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -190,15 +195,15 @@ async def edit_addressbook_entry(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Edit entry
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.edit_addressbook_entry(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.edit_addressbook_entry(
                 write_cursor,
                 entry_data=entry_data,
             )
@@ -222,7 +227,7 @@ async def edit_addressbook_entry(
 @router.delete('/addressbook', response_model=dict)
 async def delete_addressbook_entries(
     addresses: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete address book entries"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -230,15 +235,15 @@ async def delete_addressbook_entries(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete entries
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            deleted_count = rest_api.rotkehlchen.data.db.delete_addressbook_entries(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            deleted_count = rotkehlchen.data.db.delete_addressbook_entries(
                 write_cursor,
                 addresses=addresses,
             )
@@ -258,7 +263,7 @@ async def delete_addressbook_entries(
 
 @router.get('/queried_addresses', response_model=dict)
 async def get_queried_addresses(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get addresses queried by modules"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -266,15 +271,15 @@ async def get_queried_addresses(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get queried addresses
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            addresses = rest_api.rotkehlchen.data.db.get_queried_addresses(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            addresses = rotkehlchen.data.db.get_queried_addresses(cursor)
 
         # Format response
         result = {}
@@ -294,7 +299,7 @@ async def get_queried_addresses(
 @router.put('/queried_addresses', response_model=dict)
 async def add_queried_address(
     address_data: QueriedAddressData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a queried address for a module"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -302,15 +307,15 @@ async def add_queried_address(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Add queried address
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.add_queried_address(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.add_queried_address(
                 write_cursor,
                 module=address_data.module,
                 address=string_to_evm_address(address_data.address),
@@ -330,7 +335,7 @@ async def add_queried_address(
 async def remove_queried_addresses(
     module: str = Body(...),
     addresses: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove queried addresses for a module"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -338,15 +343,15 @@ async def remove_queried_addresses(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Remove queried addresses
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            removed_count = rest_api.rotkehlchen.data.db.remove_queried_addresses(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            removed_count = rotkehlchen.data.db.remove_queried_addresses(
                 write_cursor,
                 module=module,
                 addresses=[string_to_evm_address(addr) for addr in addresses],
@@ -368,7 +373,7 @@ async def remove_queried_addresses(
 @router.get('/ens/avatars', response_model=dict)
 async def get_ens_avatars(
     addresses: str = Query(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get ENS avatars for addresses"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -376,7 +381,7 @@ async def get_ens_avatars(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -387,7 +392,7 @@ async def get_ens_avatars(
 
         # Get ENS avatars
         avatars = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.get_ens_avatars,
+            rotkehlchen.chains_aggregator.get_ens_avatars,
             addresses=address_list,
         )
 
@@ -404,7 +409,7 @@ async def get_ens_avatars(
 @router.post('/ens/resolve', response_model=dict)
 async def resolve_ens_name(
     ens_data: EnsLookup,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Resolve ENS name to address"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -412,7 +417,7 @@ async def resolve_ens_name(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -425,9 +430,9 @@ async def resolve_ens_name(
             )
 
         # Resolve ENS name
-        blockchain = Blockchain.deserialize(ens_data.blockchain)
+        blockchain = SupportedBlockchain.deserialize(ens_data.blockchain)
         address = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.resolve_ens_name,
+            rotkehlchen.chains_aggregator.resolve_ens_name,
             name=ens_data.name,
             blockchain=blockchain,
         )
@@ -451,7 +456,7 @@ async def resolve_ens_name(
 @router.post('/ens/reverse', response_model=dict)
 async def reverse_ens_lookup(
     ens_data: EnsLookup,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Reverse ENS lookup - get name from address"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -459,7 +464,7 @@ async def reverse_ens_lookup(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -472,9 +477,9 @@ async def reverse_ens_lookup(
             )
 
         # Reverse ENS lookup
-        blockchain = Blockchain.deserialize(ens_data.blockchain)
+        blockchain = SupportedBlockchain.deserialize(ens_data.blockchain)
         name = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.reverse_ens_lookup,
+            rotkehlchen.chains_aggregator.reverse_ens_lookup,
             address=string_to_evm_address(ens_data.address),
             blockchain=blockchain,
         )

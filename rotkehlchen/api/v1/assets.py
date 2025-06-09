@@ -5,10 +5,15 @@ Provides high-performance asset querying and management.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     CreateAssetModel,
     EditAssetModel,
@@ -29,9 +34,9 @@ router = APIRouter(prefix='/api/1/assets', tags=['assets'])
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 async def get_async_db() -> AsyncDBHandler:
@@ -46,7 +51,7 @@ async def get_all_assets(
     limit: int | None = Query(None, ge=1, le=10000),
     offset: int | None = Query(None, ge=0),
     # Dependencies
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
     async_db: AsyncDBHandler = Depends(get_async_db),
 ):
     """Get all assets with optional filtering"""
@@ -102,10 +107,10 @@ async def get_all_assets(
 async def search_assets(
     # Search parameters
     search_query: str = Query(..., min_length=1),
-    search_type: str = Query('all', regex='^(all|name|symbol)$'),
+    search_type: str = Query('all', pattern='^(all|name|symbol)$'),
     limit: int = Query(50, ge=1, le=100),
     # Dependencies
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Search for assets by name or symbol"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -160,7 +165,7 @@ async def search_assets(
 @router.get('/{asset_identifier}', response_model=dict)
 async def get_asset_details(
     asset_identifier: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Get detailed information about a specific asset"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -378,7 +383,7 @@ async def get_current_asset_prices(
     assets: list[str] = Query(...),
     target_asset: str = Query('USD'),
     ignore_cache: bool = Query(False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Get current prices for multiple assets"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):

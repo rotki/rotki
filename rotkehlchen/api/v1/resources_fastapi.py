@@ -2,11 +2,16 @@
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from rotkehlchen.api.feature_flags import AsyncFeature, async_features, get_migration_metrics
-from rotkehlchen.api.rest import RestAPI, process_result
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     AsyncQueryModel,
     AsyncTaskResponseModel,
@@ -26,10 +31,10 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
     # This is a placeholder - actual implementation would get from app state
-    raise NotImplementedError('RestAPI injection not configured')
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 async def require_logged_in_user():
@@ -56,7 +61,7 @@ async def ping():
 @router.get('/info', response_model=dict)
 async def get_info(
     check_for_updates: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Get application information - async version of Flask endpoint"""
     if not async_features.is_enabled(AsyncFeature.INFO_ENDPOINT):
@@ -68,7 +73,7 @@ async def get_info(
 
         def _get_info():
             # This matches the Flask implementation
-            result = rest_api.get_info(check_for_updates=check_for_updates)
+            result = rotkehlchen.get_info(check_for_updates=check_for_updates)
             # Extract the actual data from the Flask Response
             if hasattr(result, 'json'):
                 return result.json
@@ -93,7 +98,7 @@ async def get_info(
 # Database endpoints
 @router.get('/database/info', dependencies=[Depends(require_logged_in_user)])
 async def get_database_info(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Get database information"""
     # Placeholder implementation
@@ -109,7 +114,7 @@ async def get_database_info(
 # Settings endpoints
 @router.get('/settings', dependencies=[Depends(require_logged_in_user)], response_model=dict)
 async def get_settings(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Get current settings - async version"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -120,9 +125,9 @@ async def get_settings(
 
         def _get_settings():
             # Match Flask implementation
-            with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                settings = process_result(rest_api.rotkehlchen.get_settings(cursor))
-                cache = rest_api.rotkehlchen.data.db.get_cache_for_api(cursor)
+            with rotkehlchen.data.db.conn.read_ctx() as cursor:
+                settings = process_result(rotkehlchen.get_settings(cursor))
+                cache = rotkehlchen.data.db.get_cache_for_api(cursor)
             return {'result': settings | cache, 'message': ''}
 
         return await loop.run_in_executor(None, _get_settings)
@@ -138,7 +143,7 @@ async def get_settings(
 @router.patch('/settings', dependencies=[Depends(require_logged_in_user)], response_model=dict)
 async def update_settings(
     settings: dict,  # Accept raw dict to match Flask
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Update settings - async version"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -149,7 +154,7 @@ async def update_settings(
 
         def _update_settings():
             # Call the Flask implementation
-            result = rest_api.set_settings(settings)
+            result = rotkehlchen.set_settings(settings)
             if hasattr(result, 'json'):
                 return result.json
             elif hasattr(result, 'get_json'):
@@ -172,7 +177,7 @@ async def query_history_events(
     async_query: AsyncQueryModel,
     filters: TimestampFilterModel,
     pagination: PaginationModel,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Query history events"""
     if async_query.async_query:
@@ -208,12 +213,12 @@ async def query_history_events(
 @router.put('/history/events', dependencies=[Depends(require_logged_in_user)])
 async def add_history_event(
     event: CreateHistoryEventModel,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Add a new history event"""
     # Validate event data
     try:
-        # Placeholder - would call rest_api.add_history_event()
+        # Placeholder - would call rotkehlchen.add_history_event()
         created_event = HistoryEventModel(
             identifier=999,
             **event.model_dump(),
@@ -229,10 +234,10 @@ async def add_history_event(
 @router.patch('/history/events', dependencies=[Depends(require_logged_in_user)])
 async def edit_history_event(
     event: EditHistoryEventModel,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Edit an existing history event"""
-    # Placeholder - would call rest_api.edit_history_event()
+    # Placeholder - would call rotkehlchen.edit_history_event()
     return create_success_response(event.model_dump())
 
 
@@ -240,7 +245,7 @@ async def edit_history_event(
 @router.get('/tasks/{task_id}', dependencies=[Depends(require_logged_in_user)])
 async def get_task_status(
     task_id: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ):
     """Get async task status"""
     # Placeholder - would check actual task status

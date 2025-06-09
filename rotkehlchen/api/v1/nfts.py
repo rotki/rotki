@@ -5,11 +5,16 @@ This module provides high-performance async NFT operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -44,9 +49,9 @@ class NFTPriceQuery(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/nfts', response_model=dict)
@@ -54,7 +59,7 @@ async def get_nfts(
     async_query: bool = Query(default=True),
     ignore_cache: bool = Query(default=False),
     addresses: str | None = Query(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get NFTs for user accounts"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -62,7 +67,7 @@ async def get_nfts(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -81,9 +86,9 @@ async def get_nfts(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_nfts',
-                method=rest_api.rotkehlchen.nft_manager.get_nfts,
+                method=rotkehlchen.nft_manager.get_nfts,
                 addresses=address_list,
                 ignore_cache=ignore_cache,
             )
@@ -95,7 +100,7 @@ async def get_nfts(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.nft_manager.get_nfts,
+            rotkehlchen.nft_manager.get_nfts,
             addresses=address_list,
             ignore_cache=ignore_cache,
         )
@@ -113,7 +118,7 @@ async def get_nfts(
 @router.post('/nfts/balances', response_model=dict)
 async def get_nft_balances(
     query: NFTBalanceQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get NFT balances for user accounts"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -121,7 +126,7 @@ async def get_nft_balances(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -129,9 +134,9 @@ async def get_nft_balances(
 
         if query.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_nft_balances',
-                method=rest_api.rotkehlchen.nft_manager.get_balances,
+                method=rotkehlchen.nft_manager.get_balances,
                 ignore_cache=query.ignore_cache,
             )
 
@@ -142,7 +147,7 @@ async def get_nft_balances(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.nft_manager.get_balances,
+            rotkehlchen.nft_manager.get_balances,
             ignore_cache=query.ignore_cache,
         )
 
@@ -159,7 +164,7 @@ async def get_nft_balances(
 @router.post('/nfts/prices', response_model=dict)
 async def get_nft_prices(
     query: NFTPriceQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get current prices for specific NFTs"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -167,7 +172,7 @@ async def get_nft_prices(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -191,9 +196,9 @@ async def get_nft_prices(
 
         if query.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_nft_prices',
-                method=rest_api.rotkehlchen.nft_manager.get_current_price,
+                method=rotkehlchen.nft_manager.get_current_price,
                 nft_identifiers=nft_identifiers,
             )
 
@@ -204,7 +209,7 @@ async def get_nft_prices(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.nft_manager.get_current_price,
+            rotkehlchen.nft_manager.get_current_price,
             nft_identifiers=nft_identifiers,
         )
 

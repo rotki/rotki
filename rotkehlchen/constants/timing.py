@@ -1,5 +1,8 @@
 from typing import Final
 
+# Maximum timestamp value (32-bit signed integer max, represents 2038-01-19 03:14:07 UTC)
+TIMESTAMP_MAX_VALUE: Final = 2**31 - 1  # 2147483647
+
 ETH_DAO_FORK_TS: Final = 1469020840  # 2016-07-20 13:20:40 UTC
 BTC_BCH_FORK_TS: Final = 1501593374  # 2017-08-01 13:16:14 UTC
 BCH_BSV_FORK_TS: Final = 1542304352  # 2018-11-15 18:52:00 UTC

@@ -5,16 +5,22 @@ This module provides high-performance async exchange operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
 )
-from rotkehlchen.errors.api import APIError
+from fastapi import HTTPException
+from rotkehlchen.constants.timing import TIMESTAMP_MAX_VALUE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -51,14 +57,14 @@ class ExchangeEdit(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/exchanges', response_model=dict)
 async def get_exchanges(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of connected exchanges"""
     if not async_features.is_enabled(AsyncFeature.EXCHANGES_ENDPOINT):
@@ -66,7 +72,7 @@ async def get_exchanges(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -74,7 +80,7 @@ async def get_exchanges(
 
         # Get connected exchanges
         exchanges_list = []
-        for exchange_name, exchange_obj in rest_api.rotkehlchen.exchange_manager.connected_exchanges.items():
+        for exchange_name, exchange_obj in rotkehlchen.exchange_manager.connected_exchanges.items():
             exchanges_list.append({
                 'name': exchange_name,
                 'location': str(exchange_obj.location),
@@ -95,7 +101,7 @@ async def get_exchanges(
 async def add_exchange(
     credentials: ExchangeCredentials,
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a new exchange connection"""
     if not async_features.is_enabled(AsyncFeature.EXCHANGES_ENDPOINT):
@@ -103,7 +109,7 @@ async def add_exchange(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -125,7 +131,7 @@ async def add_exchange(
             )
 
         # Check if exchange already exists
-        if credentials.name in rest_api.rotkehlchen.exchange_manager.connected_exchanges:
+        if credentials.name in rotkehlchen.exchange_manager.connected_exchanges:
             return JSONResponse(
                 content=create_error_response(f'Exchange {credentials.name} already exists'),
                 status_code=400,
@@ -133,9 +139,9 @@ async def add_exchange(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'add_exchange_{credentials.name}',
-                method=rest_api.rotkehlchen.exchange_manager.setup_exchange,
+                method=rotkehlchen.exchange_manager.setup_exchange,
                 name=credentials.name,
                 location=location,
                 api_key=credentials.api_key,
@@ -152,7 +158,7 @@ async def add_exchange(
 
         # Synchronous add
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.exchange_manager.setup_exchange,
+            rotkehlchen.exchange_manager.setup_exchange,
             name=credentials.name,
             location=location,
             api_key=credentials.api_key,
@@ -180,7 +186,7 @@ async def add_exchange(
 @router.patch('/exchanges', response_model=dict)
 async def edit_exchange(
     exchange_edit: ExchangeEdit,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit an existing exchange connection"""
     if not async_features.is_enabled(AsyncFeature.EXCHANGES_ENDPOINT):
@@ -188,14 +194,14 @@ async def edit_exchange(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if exchange exists
-        if exchange_edit.name not in rest_api.rotkehlchen.exchange_manager.connected_exchanges:
+        if exchange_edit.name not in rotkehlchen.exchange_manager.connected_exchanges:
             return JSONResponse(
                 content=create_error_response(f'Exchange {exchange_edit.name} not found'),
                 status_code=404,
@@ -203,7 +209,7 @@ async def edit_exchange(
 
         # Edit exchange
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.exchange_manager.edit_exchange,
+            rotkehlchen.exchange_manager.edit_exchange,
             name=exchange_edit.name,
             new_name=exchange_edit.new_name,
             api_key=exchange_edit.api_key,
@@ -226,7 +232,7 @@ async def edit_exchange(
 @router.delete('/exchanges/{name}', response_model=dict)
 async def remove_exchange(
     name: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove an exchange connection"""
     if not async_features.is_enabled(AsyncFeature.EXCHANGES_ENDPOINT):
@@ -234,14 +240,14 @@ async def remove_exchange(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if exchange exists
-        if name not in rest_api.rotkehlchen.exchange_manager.connected_exchanges:
+        if name not in rotkehlchen.exchange_manager.connected_exchanges:
             return JSONResponse(
                 content=create_error_response(f'Exchange {name} not found'),
                 status_code=404,
@@ -249,7 +255,7 @@ async def remove_exchange(
 
         # Remove exchange
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.exchange_manager.delete_exchange,
+            rotkehlchen.exchange_manager.delete_exchange,
             name=name,
         )
 
@@ -267,7 +273,7 @@ async def remove_exchange(
 async def get_exchange_balances(
     location: str | None = Query(default=None),
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get balances for exchanges"""
     if not async_features.is_enabled(AsyncFeature.EXCHANGES_ENDPOINT):
@@ -275,7 +281,7 @@ async def get_exchange_balances(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -294,9 +300,9 @@ async def get_exchange_balances(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_exchange_balances',
-                method=rest_api.rotkehlchen.query_exchange_balances,
+                method=rotkehlchen.query_exchange_balances,
                 location=location_obj,
             )
 
@@ -307,7 +313,7 @@ async def get_exchange_balances(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.query_exchange_balances,
+            rotkehlchen.query_exchange_balances,
             location=location_obj,
         )
 
@@ -330,9 +336,9 @@ async def get_exchange_balances(
 async def query_exchange_data(
     location: str,
     from_timestamp: int = Query(0, ge=0),
-    to_timestamp: int = Query(Timestamp.max_value(), ge=0),
+    to_timestamp: int = Query(TIMESTAMP_MAX_VALUE, ge=0),
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Query exchange historical data (trades, deposits, withdrawals)"""
     if not async_features.is_enabled(AsyncFeature.EXCHANGES_ENDPOINT):
@@ -340,7 +346,7 @@ async def query_exchange_data(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -357,7 +363,7 @@ async def query_exchange_data(
 
         # Check if exchange is connected
         exchange_names = [
-            name for name, exchange in rest_api.rotkehlchen.exchange_manager.connected_exchanges.items()
+            name for name, exchange in rotkehlchen.exchange_manager.connected_exchanges.items()
             if exchange.location == location_obj
         ]
 
@@ -369,9 +375,9 @@ async def query_exchange_data(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'query_{location}_data',
-                method=rest_api.rotkehlchen.query_exchange_data,
+                method=rotkehlchen.query_exchange_data,
                 location=location_obj,
                 from_ts=Timestamp(from_timestamp),
                 to_ts=Timestamp(to_timestamp),
@@ -384,7 +390,7 @@ async def query_exchange_data(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.query_exchange_data,
+            rotkehlchen.query_exchange_data,
             location=location_obj,
             from_ts=Timestamp(from_timestamp),
             to_ts=Timestamp(to_timestamp),

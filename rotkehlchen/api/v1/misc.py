@@ -5,11 +5,16 @@ This module provides various remaining endpoints for complete feature parity.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -66,15 +71,15 @@ class StakingData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.put('/blockchains/btc/xpub', response_model=dict)
 async def add_bitcoin_xpub(
     xpub_data: XpubData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add Bitcoin xpub"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -82,7 +87,7 @@ async def add_bitcoin_xpub(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -90,7 +95,7 @@ async def add_bitcoin_xpub(
 
         # Add xpub
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.add_bitcoin_xpub,
+            rotkehlchen.chains_aggregator.add_bitcoin_xpub,
             xpub=xpub_data.xpub,
             label=xpub_data.label,
             tags=xpub_data.tags,
@@ -109,7 +114,7 @@ async def add_bitcoin_xpub(
 @router.patch('/blockchains/btc/xpub', response_model=dict)
 async def edit_bitcoin_xpub(
     xpub_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit Bitcoin xpub"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -117,7 +122,7 @@ async def edit_bitcoin_xpub(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -125,7 +130,7 @@ async def edit_bitcoin_xpub(
 
         # Edit xpub
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.edit_bitcoin_xpub,
+            rotkehlchen.chains_aggregator.edit_bitcoin_xpub,
             xpub_data=xpub_data,
         )
 
@@ -142,7 +147,7 @@ async def edit_bitcoin_xpub(
 @router.delete('/blockchains/btc/xpub', response_model=dict)
 async def delete_bitcoin_xpub(
     xpub: str = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete Bitcoin xpub"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -150,7 +155,7 @@ async def delete_bitcoin_xpub(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -158,7 +163,7 @@ async def delete_bitcoin_xpub(
 
         # Delete xpub
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.delete_bitcoin_xpub,
+            rotkehlchen.chains_aggregator.delete_bitcoin_xpub,
             xpub=xpub,
         )
 
@@ -174,7 +179,7 @@ async def delete_bitcoin_xpub(
 
 @router.get('/watchers', response_model=dict)
 async def get_watchers(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get premium watchers"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -182,21 +187,21 @@ async def get_watchers(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check premium
-        if not rest_api.rotkehlchen.premium:
+        if not rotkehlchen.premium:
             return JSONResponse(
                 content=create_error_response('Premium subscription required'),
                 status_code=402,
             )
 
         # Get watchers
-        watchers = rest_api.rotkehlchen.get_watchers()
+        watchers = rotkehlchen.get_watchers()
 
         return create_success_response(watchers)
 
@@ -211,7 +216,7 @@ async def get_watchers(
 @router.put('/watchers', response_model=dict)
 async def add_watcher(
     watcher_data: WatcherData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a premium watcher"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -219,14 +224,14 @@ async def add_watcher(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check premium
-        if not rest_api.rotkehlchen.premium:
+        if not rotkehlchen.premium:
             return JSONResponse(
                 content=create_error_response('Premium subscription required'),
                 status_code=402,
@@ -234,7 +239,7 @@ async def add_watcher(
 
         # Add watcher
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.add_watcher,
+            rotkehlchen.add_watcher,
             watcher_type=watcher_data.watcher_type,
             args=watcher_data.args,
         )
@@ -252,7 +257,7 @@ async def add_watcher(
 @router.patch('/watchers', response_model=dict)
 async def edit_watcher(
     watcher_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit a premium watcher"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -260,14 +265,14 @@ async def edit_watcher(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check premium
-        if not rest_api.rotkehlchen.premium:
+        if not rotkehlchen.premium:
             return JSONResponse(
                 content=create_error_response('Premium subscription required'),
                 status_code=402,
@@ -275,7 +280,7 @@ async def edit_watcher(
 
         # Edit watcher
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.edit_watcher,
+            rotkehlchen.edit_watcher,
             watcher_data=watcher_data,
         )
 
@@ -292,7 +297,7 @@ async def edit_watcher(
 @router.delete('/watchers', response_model=dict)
 async def delete_watchers(
     watcher_ids: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete premium watchers"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -300,14 +305,14 @@ async def delete_watchers(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check premium
-        if not rest_api.rotkehlchen.premium:
+        if not rotkehlchen.premium:
             return JSONResponse(
                 content=create_error_response('Premium subscription required'),
                 status_code=402,
@@ -315,7 +320,7 @@ async def delete_watchers(
 
         # Delete watchers
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.delete_watchers,
+            rotkehlchen.delete_watchers,
             watcher_ids=watcher_ids,
         )
 
@@ -333,7 +338,7 @@ async def delete_watchers(
 async def import_data(
     source: str = Body(...),
     file: UploadFile | None = File(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Import data from external source"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -341,7 +346,7 @@ async def import_data(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -354,7 +359,7 @@ async def import_data(
 
         # Import data
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.import_data,
+            rotkehlchen.import_data,
             source=source,
             file_content=file_content,
         )
@@ -372,7 +377,7 @@ async def import_data(
 @router.post('/import', response_model=dict)
 async def process_import_data(
     import_data: DataImportData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Process imported data"""
     if not async_features.is_enabled(AsyncFeature.DATABASE_ENDPOINTS):
@@ -380,7 +385,7 @@ async def process_import_data(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -388,7 +393,7 @@ async def process_import_data(
 
         # Process import
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.process_import_data,
+            rotkehlchen.process_import_data,
             source=import_data.source,
             data=import_data.data,
         )
@@ -406,7 +411,7 @@ async def process_import_data(
 @router.put('/ignored/actions', response_model=dict)
 async def add_ignored_action(
     action_data: IgnoredActionData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add ignored action"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -414,15 +419,15 @@ async def add_ignored_action(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Add ignored action
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.add_ignored_action(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.add_ignored_action(
                 write_cursor,
                 action_type=action_data.action_type,
                 identifier=action_data.identifier,
@@ -441,7 +446,7 @@ async def add_ignored_action(
 @router.delete('/ignored/actions', response_model=dict)
 async def remove_ignored_actions(
     action_ids: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove ignored actions"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -449,15 +454,15 @@ async def remove_ignored_actions(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Remove ignored actions
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            removed = rest_api.rotkehlchen.data.db.remove_ignored_actions(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            removed = rotkehlchen.data.db.remove_ignored_actions(
                 write_cursor,
                 action_ids=action_ids,
             )
@@ -478,7 +483,7 @@ async def remove_ignored_actions(
 @router.get('/blockchains/{blockchain}/evm/chains/supported', response_model=dict)
 async def get_supported_evm_chains(
     blockchain: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get supported EVM chains"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -486,14 +491,14 @@ async def get_supported_evm_chains(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get supported chains
-        chains = rest_api.rotkehlchen.get_supported_evm_chains(blockchain)
+        chains = rotkehlchen.get_supported_evm_chains(blockchain)
 
         return create_success_response(chains)
 
@@ -507,7 +512,7 @@ async def get_supported_evm_chains(
 
 @router.get('/blockchains/all', response_model=dict)
 async def get_all_evm_chains(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get all EVM chains"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -515,14 +520,14 @@ async def get_all_evm_chains(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get all chains
-        chains = rest_api.rotkehlchen.get_all_evm_chains()
+        chains = rotkehlchen.get_all_evm_chains()
 
         return create_success_response(chains)
 
@@ -538,7 +543,7 @@ async def get_all_evm_chains(
 async def detect_evm_tokens(
     blockchain: str,
     detect_data: DetectTokensData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Detect EVM tokens for addresses"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -546,7 +551,7 @@ async def detect_evm_tokens(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -559,9 +564,9 @@ async def detect_evm_tokens(
 
         if detect_data.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'detect_{blockchain}_tokens',
-                method=rest_api.rotkehlchen.chains_aggregator.detect_tokens,
+                method=rotkehlchen.chains_aggregator.detect_tokens,
                 blockchain=SupportedBlockchain.deserialize(blockchain),
                 addresses=addresses,
             )
@@ -573,7 +578,7 @@ async def detect_evm_tokens(
 
         # Synchronous detection
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.detect_tokens,
+            rotkehlchen.chains_aggregator.detect_tokens,
             blockchain=SupportedBlockchain.deserialize(blockchain),
             addresses=addresses,
         )

@@ -5,11 +5,16 @@ This module provides high-performance async asset management operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -57,9 +62,9 @@ class CustomAssetData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/assets/all', response_model=dict)
@@ -67,7 +72,7 @@ async def get_all_assets(
     asset_type: str | None = Query(default=None),
     limit: int | None = Query(default=None, ge=1),
     offset: int | None = Query(default=0, ge=0),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of all known assets"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -126,7 +131,7 @@ async def get_all_assets(
 
 @router.get('/assets/types', response_model=dict)
 async def get_asset_types(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of valid asset types"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -149,7 +154,7 @@ async def get_asset_types(
 @router.post('/assets/search', response_model=dict)
 async def search_assets(
     params: AssetSearchParams,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Search for assets by name, symbol, or other attributes"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -198,7 +203,7 @@ async def search_assets(
 
 @router.get('/assets/ignored', response_model=dict)
 async def get_ignored_assets(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of ignored assets"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -206,15 +211,15 @@ async def get_ignored_assets(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get ignored assets from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            ignored_assets = rest_api.rotkehlchen.data.db.get_ignored_asset_ids(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            ignored_assets = rotkehlchen.data.db.get_ignored_asset_ids(cursor)
 
         return create_success_response(list(ignored_assets))
 
@@ -229,7 +234,7 @@ async def get_ignored_assets(
 @router.put('/assets/ignored', response_model=dict)
 async def add_ignored_assets(
     assets: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add assets to ignore list"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -237,7 +242,7 @@ async def add_ignored_assets(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -258,9 +263,9 @@ async def add_ignored_assets(
             )
 
         # Add to ignored list
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        with rotkehlchen.data.db.user_write() as write_cursor:
             for asset_id in assets:
-                rest_api.rotkehlchen.data.db.add_to_ignored_assets(write_cursor, Asset(asset_id))
+                rotkehlchen.data.db.add_to_ignored_assets(write_cursor, Asset(asset_id))
 
         return create_success_response({'result': True})
 
@@ -275,7 +280,7 @@ async def add_ignored_assets(
 @router.delete('/assets/ignored', response_model=dict)
 async def remove_ignored_assets(
     assets: list[str] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove assets from ignore list"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -283,18 +288,18 @@ async def remove_ignored_assets(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Remove from ignored list
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        with rotkehlchen.data.db.user_write() as write_cursor:
             for asset_id in assets:
                 try:
                     asset = Asset(asset_id)
-                    rest_api.rotkehlchen.data.db.remove_from_ignored_assets(write_cursor, asset)
+                    rotkehlchen.data.db.remove_from_ignored_assets(write_cursor, asset)
                 except UnknownAsset:
                     # Skip unknown assets silently
                     pass
@@ -315,7 +320,7 @@ async def get_latest_asset_prices(
     target_asset: str = Query(default='USD'),
     ignore_cache: bool = Query(default=False),
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get latest prices for given assets"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -344,9 +349,9 @@ async def get_latest_asset_prices(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_latest_asset_prices',
-                method=rest_api.rotkehlchen.inquirer.query_prices,
+                method=rotkehlchen.inquirer.query_prices,
                 assets=asset_objects,
                 target_asset=target,
                 ignore_cache=ignore_cache,
@@ -360,7 +365,7 @@ async def get_latest_asset_prices(
         # Synchronous query
         prices = {}
         for asset in asset_objects:
-            price = rest_api.rotkehlchen.inquirer.find_price(
+            price = rotkehlchen.inquirer.find_price(
                 from_asset=asset,
                 to_asset=target,
                 ignore_cache=ignore_cache,
@@ -386,7 +391,7 @@ async def get_historical_asset_price(
     target_asset: str = Body(default='USD'),
     timestamp: int = Body(..., ge=0),
     async_query: bool = Body(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get historical price for assets at specific timestamp"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -415,9 +420,9 @@ async def get_historical_asset_price(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_historical_prices',
-                method=rest_api.rotkehlchen.query_historical_prices,
+                method=rotkehlchen.query_historical_prices,
                 assets=asset_objects,
                 target_asset=target,
                 timestamp=Timestamp(timestamp),
@@ -457,7 +462,7 @@ async def get_historical_asset_price(
 @router.post('/assets/updates', response_model=dict)
 async def check_for_asset_updates(
     params: AssetUpdateCheck,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Check for asset database updates"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -465,7 +470,7 @@ async def check_for_asset_updates(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -473,9 +478,9 @@ async def check_for_asset_updates(
 
         if params.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='check_asset_updates',
-                method=rest_api.rotkehlchen.check_for_asset_updates,
+                method=rotkehlchen.check_for_asset_updates,
                 up_to_version=params.up_to_version,
             )
 
@@ -486,7 +491,7 @@ async def check_for_asset_updates(
 
         # Synchronous check
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.check_for_asset_updates,
+            rotkehlchen.check_for_asset_updates,
             up_to_version=params.up_to_version,
         )
 

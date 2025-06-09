@@ -5,16 +5,21 @@ This module provides high-performance async balance querying.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
 )
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.errors.api import APIError
+# APIError was removed, using HTTPException instead
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Timestamp
@@ -25,10 +30,8 @@ log = RotkehlchenLogsAdapter(logger)
 router = APIRouter(prefix='/api/1', tags=['balances'])
 
 
-# Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+# Import dependency injection
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 
 
 @router.get('/balances', response_model=dict)
@@ -36,15 +39,13 @@ async def get_all_balances(
     save_data: bool = Query(default=False),
     ignore_cache: bool = Query(default=False),
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get all balances across all accounts"""
-    if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -52,9 +53,9 @@ async def get_all_balances(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_all_balances',
-                method=rest_api.rotkehlchen.query_balances,
+                method=rotkehlchen.query_balances,
                 save_data=save_data,
                 ignore_cache=ignore_cache,
             )
@@ -66,16 +67,16 @@ async def get_all_balances(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.query_balances,
+            rotkehlchen.query_balances,
             save_data=save_data,
             ignore_cache=ignore_cache,
         )
 
         return create_success_response(result)
 
-    except APIError as e:
+    except HTTPException as e:
         return JSONResponse(
-            content=create_error_response(str(e)),
+            content=create_error_response(e.detail),
             status_code=e.status_code,
         )
     except Exception as e:
@@ -91,15 +92,13 @@ async def get_blockchain_balances(
     blockchain: str,
     ignore_cache: bool = Query(default=False),
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get balances for a specific blockchain"""
-    if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -107,7 +106,7 @@ async def get_blockchain_balances(
 
         # Validate blockchain
         try:
-            blockchain_obj = rest_api.rotkehlchen.chains_aggregator.get_chain(blockchain)
+            blockchain_obj = rotkehlchen.chains_aggregator.get_chain(blockchain)
         except KeyError:
             return JSONResponse(
                 content=create_error_response(f'Unknown blockchain: {blockchain}'),
@@ -116,7 +115,7 @@ async def get_blockchain_balances(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'query_{blockchain}_balances',
                 method=blockchain_obj.query_balances,
                 ignore_cache=ignore_cache,
@@ -135,9 +134,9 @@ async def get_blockchain_balances(
 
         return create_success_response(result)
 
-    except APIError as e:
+    except HTTPException as e:
         return JSONResponse(
-            content=create_error_response(str(e)),
+            content=create_error_response(e.detail),
             status_code=e.status_code,
         )
     except Exception as e:
@@ -150,23 +149,21 @@ async def get_blockchain_balances(
 
 @router.get('/balances/manual', response_model=dict)
 async def get_manual_balances(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get manually tracked balances"""
-    if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get manual balances from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            manual_balances = rest_api.rotkehlchen.data.db.get_manually_tracked_balances(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            manual_balances = rotkehlchen.data.db.get_manually_tracked_balances(cursor)
 
         # Format response
         balances = [{
@@ -195,15 +192,13 @@ async def add_manual_balance(
     asset: str = Query(...),
     amount: str = Query(...),
     tags: list[str] | None = Query(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a manually tracked balance"""
-    if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -219,7 +214,7 @@ async def add_manual_balance(
             )
 
         try:
-            asset_obj = rest_api.rotkehlchen.resolve_asset(asset)
+            asset_obj = rotkehlchen.resolve_asset(asset)
         except Exception as e:
             return JSONResponse(
                 content=create_error_response(f'Invalid asset: {e}'),
@@ -244,8 +239,8 @@ async def add_manual_balance(
         )
 
         # Add to database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.add_manually_tracked_balances(write_cursor, [balance])
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.add_manually_tracked_balances(write_cursor, [balance])
 
         return create_success_response({'result': True})
 
@@ -260,23 +255,21 @@ async def add_manual_balance(
 @router.delete('/balances/manual', response_model=dict)
 async def delete_manual_balance(
     ids: list[int] = Query(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete manually tracked balances"""
-    if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete from database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.remove_manually_tracked_balances(write_cursor, ids)
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.remove_manually_tracked_balances(write_cursor, ids)
 
         return create_success_response({'result': True})
 
@@ -292,15 +285,13 @@ async def delete_manual_balance(
 async def get_historical_balances(
     timestamp: int = Query(..., ge=0),
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get balances at a specific timestamp"""
-    if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -308,9 +299,9 @@ async def get_historical_balances(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_historical_balances',
-                method=rest_api.rotkehlchen.query_balances_at_timestamp,
+                method=rotkehlchen.query_balances_at_timestamp,
                 timestamp=Timestamp(timestamp),
             )
 
@@ -321,15 +312,15 @@ async def get_historical_balances(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.query_balances_at_timestamp,
+            rotkehlchen.query_balances_at_timestamp,
             timestamp=Timestamp(timestamp),
         )
 
         return create_success_response(result)
 
-    except APIError as e:
+    except HTTPException as e:
         return JSONResponse(
-            content=create_error_response(str(e)),
+            content=create_error_response(e.detail),
             status_code=e.status_code,
         )
     except Exception as e:

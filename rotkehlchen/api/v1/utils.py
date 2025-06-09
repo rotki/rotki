@@ -5,11 +5,16 @@ This module provides high-performance async utility operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -52,14 +57,14 @@ class ProtocolRefreshData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/blockchains/evm/rpc', response_model=dict)
 async def get_rpc_nodes(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get configured RPC nodes"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -67,14 +72,14 @@ async def get_rpc_nodes(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get RPC nodes
-        nodes = rest_api.rotkehlchen.get_rpc_nodes()
+        nodes = rotkehlchen.get_rpc_nodes()
 
         return create_success_response(nodes)
 
@@ -89,7 +94,7 @@ async def get_rpc_nodes(
 @router.put('/blockchains/evm/rpc', response_model=dict)
 async def add_rpc_node(
     node_data: RpcNodeData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a new RPC node"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -97,7 +102,7 @@ async def add_rpc_node(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -105,7 +110,7 @@ async def add_rpc_node(
 
         # Add RPC node
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.add_rpc_node,
+            rotkehlchen.add_rpc_node,
             name=node_data.name,
             endpoint=node_data.endpoint,
             owned=node_data.owned,
@@ -127,7 +132,7 @@ async def add_rpc_node(
 @router.patch('/blockchains/evm/rpc', response_model=dict)
 async def edit_rpc_node(
     node_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit an existing RPC node"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -135,7 +140,7 @@ async def edit_rpc_node(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -143,7 +148,7 @@ async def edit_rpc_node(
 
         # Edit RPC node
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.edit_rpc_node,
+            rotkehlchen.edit_rpc_node,
             node_data=node_data,
         )
 
@@ -160,7 +165,7 @@ async def edit_rpc_node(
 @router.delete('/blockchains/evm/rpc', response_model=dict)
 async def delete_rpc_node(
     identifier: str = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete an RPC node"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -168,7 +173,7 @@ async def delete_rpc_node(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -176,7 +181,7 @@ async def delete_rpc_node(
 
         # Delete RPC node
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.delete_rpc_node,
+            rotkehlchen.delete_rpc_node,
             identifier=identifier,
         )
 
@@ -194,7 +199,7 @@ async def delete_rpc_node(
 async def upload_asset_icon(
     file: UploadFile = File(...),
     asset: str = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Upload custom asset icon"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -202,7 +207,7 @@ async def upload_asset_icon(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -213,7 +218,7 @@ async def upload_asset_icon(
 
         # Upload icon
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.upload_asset_icon,
+            rotkehlchen.upload_asset_icon,
             asset=asset,
             file_content=content,
             filename=file.filename,
@@ -232,7 +237,7 @@ async def upload_asset_icon(
 @router.post('/assets/icon/refresh', response_model=dict)
 async def refresh_asset_icons(
     async_query: bool = Query(default=True),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Refresh asset icons from external sources"""
     if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
@@ -240,7 +245,7 @@ async def refresh_asset_icons(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -248,9 +253,9 @@ async def refresh_asset_icons(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='refresh_asset_icons',
-                method=rest_api.rotkehlchen.refresh_asset_icons,
+                method=rotkehlchen.refresh_asset_icons,
             )
 
             return create_success_response({
@@ -260,7 +265,7 @@ async def refresh_asset_icons(
 
         # Synchronous refresh
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.refresh_asset_icons,
+            rotkehlchen.refresh_asset_icons,
         )
 
         return create_success_response(result)
@@ -275,7 +280,7 @@ async def refresh_asset_icons(
 
 @router.get('/oracles', response_model=dict)
 async def get_oracles(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get configured oracles"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -283,14 +288,14 @@ async def get_oracles(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get oracles
-        oracles = rest_api.rotkehlchen.get_oracles()
+        oracles = rotkehlchen.get_oracles()
 
         return create_success_response(oracles)
 
@@ -305,7 +310,7 @@ async def get_oracles(
 @router.put('/oracles', response_model=dict)
 async def set_oracle_settings(
     oracle_data: OracleData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Set oracle configuration"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -313,7 +318,7 @@ async def set_oracle_settings(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -321,7 +326,7 @@ async def set_oracle_settings(
 
         # Set oracle configuration
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.set_oracle_settings,
+            rotkehlchen.set_oracle_settings,
             oracle=oracle_data.oracle,
             active=oracle_data.active,
         )
@@ -339,7 +344,7 @@ async def set_oracle_settings(
 @router.delete('/oracles/{oracle}/cache', response_model=dict)
 async def purge_oracle_cache(
     oracle: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Purge oracle cache"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -347,7 +352,7 @@ async def purge_oracle_cache(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -355,7 +360,7 @@ async def purge_oracle_cache(
 
         # Purge cache
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.purge_oracle_cache,
+            rotkehlchen.purge_oracle_cache,
             oracle=oracle,
         )
 
@@ -371,7 +376,7 @@ async def purge_oracle_cache(
 
 @router.get('/messages', response_model=dict)
 async def get_messages(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get system messages"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -379,14 +384,14 @@ async def get_messages(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get messages
-        messages = rest_api.rotkehlchen.get_messages()
+        messages = rotkehlchen.get_messages()
 
         return create_success_response(messages)
 
@@ -400,7 +405,7 @@ async def get_messages(
 
 @router.get('/evm/counterparties', response_model=dict)
 async def get_evm_counterparties(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get EVM counterparties"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -408,14 +413,14 @@ async def get_evm_counterparties(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get counterparties
-        counterparties = rest_api.rotkehlchen.get_evm_counterparties()
+        counterparties = rotkehlchen.get_evm_counterparties()
 
         return create_success_response(counterparties)
 
@@ -429,7 +434,7 @@ async def get_evm_counterparties(
 
 @router.get('/evm/products', response_model=dict)
 async def get_evm_products(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get EVM products"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -437,14 +442,14 @@ async def get_evm_products(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get products
-        products = rest_api.rotkehlchen.get_evm_products()
+        products = rotkehlchen.get_evm_products()
 
         return create_success_response(products)
 
@@ -458,7 +463,7 @@ async def get_evm_products(
 
 @router.get('/locations', response_model=dict)
 async def get_locations(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get supported locations"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -466,14 +471,14 @@ async def get_locations(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get locations
-        locations = rest_api.rotkehlchen.get_locations()
+        locations = rotkehlchen.get_locations()
 
         return create_success_response(locations)
 
@@ -487,7 +492,7 @@ async def get_locations(
 
 @router.get('/types/mappings', response_model=dict)
 async def get_type_mappings(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get type mappings"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -495,14 +500,14 @@ async def get_type_mappings(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get type mappings
-        mappings = rest_api.rotkehlchen.get_type_mappings()
+        mappings = rotkehlchen.get_type_mappings()
 
         return create_success_response(mappings)
 
@@ -517,7 +522,7 @@ async def get_type_mappings(
 @router.delete('/cache', response_model=dict)
 async def clear_cache(
     cache_type: str | None = Query(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Clear application cache"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -525,7 +530,7 @@ async def clear_cache(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -533,7 +538,7 @@ async def clear_cache(
 
         # Clear cache
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.clear_cache,
+            rotkehlchen.clear_cache,
             cache_type=cache_type,
         )
 
@@ -550,7 +555,7 @@ async def clear_cache(
 @router.post('/protocol/data/refresh', response_model=dict)
 async def refresh_protocol_data(
     refresh_data: ProtocolRefreshData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Refresh protocol data"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -558,7 +563,7 @@ async def refresh_protocol_data(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -566,9 +571,9 @@ async def refresh_protocol_data(
 
         if refresh_data.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='refresh_protocol_data',
-                method=rest_api.rotkehlchen.refresh_protocol_data,
+                method=rotkehlchen.refresh_protocol_data,
                 ignore_cache=refresh_data.ignore_cache,
             )
 
@@ -579,7 +584,7 @@ async def refresh_protocol_data(
 
         # Synchronous refresh
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.refresh_protocol_data,
+            rotkehlchen.refresh_protocol_data,
             ignore_cache=refresh_data.ignore_cache,
         )
 

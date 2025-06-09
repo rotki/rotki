@@ -4,10 +4,15 @@ This module provides high-performance async implementations of basic endpoints.
 """
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     AppInfoModel,
     EditSettingsModel,
@@ -25,9 +30,9 @@ router = APIRouter(prefix='/api/1', tags=['base'])
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/ping', response_model=dict)
@@ -42,7 +47,7 @@ async def ping() -> dict:
 @router.get('/info', response_model=dict)
 async def get_info(
     check_for_updates: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get application information"""
     if not async_features.is_enabled(AsyncFeature.INFO_ENDPOINT):
@@ -60,7 +65,7 @@ async def get_info(
         # Update version check if requested
         if check_for_updates:
             try:
-                await rest_api.rotkehlchen.perform_version_check()
+                await rotkehlchen.perform_version_check()
                 # Re-fetch after check
                 our_version = get_current_version()
                 version_info['latest_version'] = str(our_version.latest_version) if our_version.latest_version else None
@@ -69,12 +74,12 @@ async def get_info(
                 log.error(f'Failed to check for updates: {e}')
 
         # Get configuration info
-        config_args = rest_api.rotkehlchen.args
+        config_args = rotkehlchen.args
 
         result = AppInfoModel(
             version=version_info['version'],
             latest_version=version_info['latest_version'],
-            data_directory=str(rest_api.rotkehlchen.user_directory),
+            data_directory=str(rotkehlchen.user_directory),
             log_level=logging.getLevelName(logging.root.level),
             accept_docker_risk=config_args.accept_docker_risk,
             backend_default_arguments={
@@ -102,7 +107,7 @@ async def get_info(
 
 @router.get('/settings', response_model=dict)
 async def get_settings(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get current settings"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -110,15 +115,15 @@ async def get_settings(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get settings from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = rest_api.rotkehlchen.data.db.get_settings(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = rotkehlchen.data.db.get_settings(cursor)
 
         # Convert to dict for response
         settings_dict = settings.serialize()
@@ -136,7 +141,7 @@ async def get_settings(
 @router.put('/settings', response_model=dict)
 async def update_settings(
     settings: EditSettingsModel,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Update settings"""
     if not async_features.is_enabled(AsyncFeature.SETTINGS_ENDPOINT):
@@ -144,7 +149,7 @@ async def update_settings(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -155,15 +160,15 @@ async def update_settings(
         modifiable_settings = ModifiableDBSettings(**settings_dict)
 
         # Apply settings
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            rest_api.rotkehlchen.data.db.set_settings(write_cursor, modifiable_settings)
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            rotkehlchen.data.db.set_settings(write_cursor, modifiable_settings)
 
         # Get updated settings
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            updated_settings = rest_api.rotkehlchen.data.db.get_settings(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            updated_settings = rotkehlchen.data.db.get_settings(cursor)
 
         # Update rotkehlchen instance
-        rest_api.rotkehlchen.data.db.update_owned_assets_in_globaldb()
+        rotkehlchen.data.db.update_owned_assets_in_globaldb()
 
         return create_success_response(updated_settings.serialize())
 
@@ -178,7 +183,7 @@ async def update_settings(
 @router.get('/tasks', response_model=dict)
 async def get_async_tasks(
     task_id: int | None = Query(default=None),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Query async task status"""
     if not async_features.is_enabled(AsyncFeature.TASK_ENDPOINT):
@@ -187,7 +192,7 @@ async def get_async_tasks(
     try:
         if task_id is not None:
             # Get specific task
-            result = rest_api.rotkehlchen.task_manager.query_task(task_id)
+            result = rotkehlchen.task_manager.query_task(task_id)
             if result is None:
                 return JSONResponse(
                     content=create_error_response(f'No task with id {task_id} found'),
@@ -202,8 +207,8 @@ async def get_async_tasks(
             })
         else:
             # Get all pending tasks
-            pending = rest_api.rotkehlchen.task_manager.get_pending_tasks()
-            completed = rest_api.rotkehlchen.task_manager.get_completed_tasks()
+            pending = rotkehlchen.task_manager.get_pending_tasks()
+            completed = rotkehlchen.task_manager.get_completed_tasks()
 
             return create_success_response({
                 'pending': pending,
@@ -221,14 +226,14 @@ async def get_async_tasks(
 @router.delete('/tasks/{task_id}', response_model=dict)
 async def delete_async_task(
     task_id: int,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Cancel or delete an async task"""
     if not async_features.is_enabled(AsyncFeature.TASK_ENDPOINT):
         raise HTTPException(status_code=404, detail='Endpoint not migrated')
 
     try:
-        success = rest_api.rotkehlchen.task_manager.delete_task(task_id)
+        success = rotkehlchen.task_manager.delete_task(task_id)
 
         if not success:
             return JSONResponse(

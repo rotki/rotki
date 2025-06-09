@@ -5,11 +5,16 @@ This module provides high-performance async ETH2 staking operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -54,16 +59,16 @@ class Eth2ValidatorData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/eth2/validators', response_model=dict)
 async def get_eth2_validators(
     async_query: bool = Query(default=True),
     ignore_cache: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get ETH2 validators"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -71,7 +76,7 @@ async def get_eth2_validators(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -79,9 +84,9 @@ async def get_eth2_validators(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_eth2_validators',
-                method=rest_api.rotkehlchen.chains_aggregator.eth2.get_validators,
+                method=rotkehlchen.chains_aggregator.eth2.get_validators,
                 ignore_cache=ignore_cache,
             )
 
@@ -92,7 +97,7 @@ async def get_eth2_validators(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.eth2.get_validators,
+            rotkehlchen.chains_aggregator.eth2.get_validators,
             ignore_cache=ignore_cache,
         )
 
@@ -109,7 +114,7 @@ async def get_eth2_validators(
 @router.put('/eth2/validators', response_model=dict)
 async def add_eth2_validators(
     validators: list[Eth2ValidatorData],
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add ETH2 validators to track"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -117,7 +122,7 @@ async def add_eth2_validators(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -137,7 +142,7 @@ async def add_eth2_validators(
 
         # Add validators
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.eth2.add_validators,
+            rotkehlchen.chains_aggregator.eth2.add_validators,
             validator_data=validator_data,
         )
 
@@ -154,7 +159,7 @@ async def add_eth2_validators(
 @router.delete('/eth2/validators', response_model=dict)
 async def remove_eth2_validators(
     validators: list[int] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove ETH2 validators from tracking"""
     if not async_features.is_enabled(AsyncFeature.BALANCES_ENDPOINT):
@@ -162,7 +167,7 @@ async def remove_eth2_validators(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -170,7 +175,7 @@ async def remove_eth2_validators(
 
         # Remove validators
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.eth2.remove_validators,
+            rotkehlchen.chains_aggregator.eth2.remove_validators,
             validator_indices=validators,
         )
 
@@ -190,7 +195,7 @@ async def get_eth2_stake_performance(
     validators: str | None = Query(default=None),
     from_timestamp: int | None = Query(default=None, ge=0),
     to_timestamp: int | None = Query(default=None, ge=0),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get ETH2 staking performance"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -198,7 +203,7 @@ async def get_eth2_stake_performance(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -217,9 +222,9 @@ async def get_eth2_stake_performance(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_eth2_stake_performance',
-                method=rest_api.rotkehlchen.chains_aggregator.eth2.get_staking_performance,
+                method=rotkehlchen.chains_aggregator.eth2.get_staking_performance,
                 validators=validator_list,
                 from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
                 to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,
@@ -232,7 +237,7 @@ async def get_eth2_stake_performance(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.eth2.get_staking_performance,
+            rotkehlchen.chains_aggregator.eth2.get_staking_performance,
             validators=validator_list,
             from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
             to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,
@@ -254,7 +259,7 @@ async def get_eth2_daily_stats(
     validators: str | None = Query(default=None),
     from_timestamp: int | None = Query(default=None, ge=0),
     to_timestamp: int | None = Query(default=None, ge=0),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get ETH2 daily statistics"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -262,7 +267,7 @@ async def get_eth2_daily_stats(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -281,9 +286,9 @@ async def get_eth2_daily_stats(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_eth2_daily_stats',
-                method=rest_api.rotkehlchen.chains_aggregator.eth2.get_daily_stats,
+                method=rotkehlchen.chains_aggregator.eth2.get_daily_stats,
                 validators=validator_list,
                 from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
                 to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,
@@ -296,7 +301,7 @@ async def get_eth2_daily_stats(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.eth2.get_daily_stats,
+            rotkehlchen.chains_aggregator.eth2.get_daily_stats,
             validators=validator_list,
             from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
             to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,
@@ -318,7 +323,7 @@ async def get_eth2_staking_events(
     validators: str | None = Query(default=None),
     from_timestamp: int | None = Query(default=None, ge=0),
     to_timestamp: int | None = Query(default=None, ge=0),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get ETH2 staking events"""
     if not async_features.is_enabled(AsyncFeature.HISTORY_ENDPOINTS):
@@ -326,7 +331,7 @@ async def get_eth2_staking_events(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -345,9 +350,9 @@ async def get_eth2_staking_events(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='query_eth2_staking_events',
-                method=rest_api.rotkehlchen.chains_aggregator.eth2.get_staking_events,
+                method=rotkehlchen.chains_aggregator.eth2.get_staking_events,
                 validators=validator_list,
                 from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
                 to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,
@@ -360,7 +365,7 @@ async def get_eth2_staking_events(
 
         # Synchronous query
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.chains_aggregator.eth2.get_staking_events,
+            rotkehlchen.chains_aggregator.eth2.get_staking_events,
             validators=validator_list,
             from_timestamp=Timestamp(from_timestamp) if from_timestamp else None,
             to_timestamp=Timestamp(to_timestamp) if to_timestamp else None,

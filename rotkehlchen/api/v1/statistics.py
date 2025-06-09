@@ -6,11 +6,16 @@ import asyncio
 import logging
 import operator
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -47,26 +52,26 @@ class AssetBalanceQuery(BaseModel):
 
 class ValueDistributionQuery(BaseModel):
     """Parameters for value distribution statistics"""
-    distribution_by: str = Field(default='location', regex='^(location|asset)$')
+    distribution_by: str = Field(default='location', pattern='^(location|asset)$')
 
 
 class StatisticsRenderQuery(BaseModel):
     """Parameters for rendering statistics"""
     from_timestamp: int | None = Field(default=None, ge=0)
     to_timestamp: int | None = Field(default=None, ge=0)
-    render_type: str = Field(default='graph', regex='^(graph|table)$')
+    render_type: str = Field(default='graph', pattern='^(graph|table)$')
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.post('/statistics/netvalue', response_model=dict)
 async def get_net_value_statistics(
     query: NetValueQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get net value statistics over time"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -74,7 +79,7 @@ async def get_net_value_statistics(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -107,8 +112,8 @@ async def get_net_value_statistics(
                     )
 
         # Get statistics
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            stats = rest_api.rotkehlchen.data.db.get_netvalue_statistics(
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            stats = rotkehlchen.data.db.get_netvalue_statistics(
                 cursor=cursor,
                 from_ts=Timestamp(query.from_timestamp) if query.from_timestamp else Timestamp(0),
                 to_ts=Timestamp(query.to_timestamp) if query.to_timestamp else None,
@@ -139,7 +144,7 @@ async def get_net_value_statistics(
 @router.post('/statistics/balance', response_model=dict)
 async def get_asset_balance_statistics(
     query: AssetBalanceQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get balance statistics for a specific asset over time"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -147,7 +152,7 @@ async def get_asset_balance_statistics(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -189,8 +194,8 @@ async def get_asset_balance_statistics(
                     )
 
         # Get statistics
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            stats = rest_api.rotkehlchen.data.db.get_asset_balance_statistics(
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            stats = rotkehlchen.data.db.get_asset_balance_statistics(
                 cursor=cursor,
                 asset=asset,
                 from_ts=Timestamp(query.from_timestamp) if query.from_timestamp else Timestamp(0),
@@ -226,7 +231,7 @@ async def get_asset_balance_statistics(
 @router.post('/statistics/value_distribution', response_model=dict)
 async def get_value_distribution(
     query: ValueDistributionQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get current value distribution by location or asset"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -234,7 +239,7 @@ async def get_value_distribution(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -242,7 +247,7 @@ async def get_value_distribution(
 
         # Get current balances
         balances = await asyncio.to_thread(
-            rest_api.rotkehlchen.query_balances,
+            rotkehlchen.query_balances,
             save_data=False,
             ignore_cache=False,
         )
@@ -304,7 +309,7 @@ async def get_value_distribution(
 @router.post('/statistics/renderer', response_model=dict)
 async def render_statistics(
     query: StatisticsRenderQuery,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Render statistics in various formats"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -312,15 +317,15 @@ async def render_statistics(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get net value statistics
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            stats = rest_api.rotkehlchen.data.db.get_netvalue_statistics(
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            stats = rotkehlchen.data.db.get_netvalue_statistics(
                 cursor=cursor,
                 from_ts=Timestamp(query.from_timestamp) if query.from_timestamp else Timestamp(0),
                 to_ts=Timestamp(query.to_timestamp) if query.to_timestamp else None,
@@ -369,7 +374,7 @@ async def render_statistics(
 
 @router.get('/statistics/wrap', response_model=dict)
 async def get_statistics_wrap(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get year-end wrap statistics"""
     if not async_features.is_enabled(AsyncFeature.STATISTICS_ENDPOINT):
@@ -377,7 +382,7 @@ async def get_statistics_wrap(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -391,13 +396,13 @@ async def get_statistics_wrap(
         year_start = Timestamp(int(datetime(current_year, 1, 1).timestamp()))
         year_end = Timestamp(int(datetime(current_year, 12, 31, 23, 59, 59).timestamp()))
 
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
             # Get net value at start and end of year
-            start_value = rest_api.rotkehlchen.data.db.get_netvalue_at_timestamp(
+            start_value = rotkehlchen.data.db.get_netvalue_at_timestamp(
                 cursor=cursor,
                 timestamp=year_start,
             )
-            end_value = rest_api.rotkehlchen.data.db.get_netvalue_at_timestamp(
+            end_value = rotkehlchen.data.db.get_netvalue_at_timestamp(
                 cursor=cursor,
                 timestamp=year_end,
             )

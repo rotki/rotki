@@ -5,11 +5,16 @@ This module provides high-performance async user operations.
 import asyncio
 import logging
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -45,7 +50,7 @@ class UserAction(BaseModel):
     """Model for user actions (login/logout)"""
     name: str = Field(..., min_length=1, description='Username')
     password: str = Field(..., min_length=1, description='Password')
-    sync_approval: str = Field(default='unknown', regex='^(yes|no|unknown)$')
+    sync_approval: str = Field(default='unknown', pattern='^(yes|no|unknown)$')
     async_query: bool = Field(default=False, description='Run as async task')
 
 
@@ -62,14 +67,14 @@ class PremiumCredentialsModel(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
+async def get_rotkehlchen() -> "Rotkehlchen":
+    """Get Rotkehlchen instance - will be injected by the app"""
+    raise NotImplementedError('Rotkehlchen injection not configured')
 
 
 @router.get('/users', response_model=dict)
 async def get_users(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of all users"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -77,13 +82,13 @@ async def get_users(
 
     try:
         # Get users from data handler
-        users = rest_api.rotkehlchen.data_importer.db_handler.get_users()
+        users = rotkehlchen.data_importer.db_handler.get_users()
 
         # Get logged in user if any
         logged_in_user = None
-        if rest_api.rotkehlchen.user_is_logged_in:
-            with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                logged_in_user = rest_api.rotkehlchen.data.db.get_main_user_properties(cursor)
+        if rotkehlchen.user_is_logged_in:
+            with rotkehlchen.data.db.conn.read_ctx() as cursor:
+                logged_in_user = rotkehlchen.data.db.get_main_user_properties(cursor)
 
         result = {'result': users}
         if logged_in_user:
@@ -102,7 +107,7 @@ async def get_users(
 @router.put('/users', response_model=dict)
 async def create_user(
     credentials: UserCredentials,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Create a new user"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -110,7 +115,7 @@ async def create_user(
 
     try:
         # Check if user already exists
-        users = rest_api.rotkehlchen.data_importer.db_handler.get_users()
+        users = rotkehlchen.data_importer.db_handler.get_users()
         if credentials.name in users:
             return JSONResponse(
                 content=create_error_response(f'User {credentials.name} already exists'),
@@ -118,7 +123,7 @@ async def create_user(
             )
 
         # Check if another user is logged in
-        if rest_api.rotkehlchen.user_is_logged_in:
+        if rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('Cannot create user while another user is logged in'),
                 status_code=403,
@@ -134,9 +139,9 @@ async def create_user(
 
         if credentials.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'create_user_{credentials.name}',
-                method=rest_api.rotkehlchen.unlock_user,
+                method=rotkehlchen.unlock_user,
                 user=credentials.name,
                 password=credentials.password,
                 create_new=True,
@@ -152,7 +157,7 @@ async def create_user(
 
         # Synchronous creation
         await asyncio.to_thread(
-            rest_api.rotkehlchen.unlock_user,
+            rotkehlchen.unlock_user,
             user=credentials.name,
             password=credentials.password,
             create_new=True,
@@ -162,9 +167,9 @@ async def create_user(
         )
 
         # Get settings and exchanges
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = rest_api.rotkehlchen.data.db.get_settings(cursor)
-            exchanges = rest_api.rotkehlchen.exchange_manager.get_connected_exchange_names()
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = rotkehlchen.data.db.get_settings(cursor)
+            exchanges = rotkehlchen.exchange_manager.get_connected_exchange_names()
 
         return create_success_response({
             'settings': settings.serialize(),
@@ -193,7 +198,7 @@ async def create_user(
 async def login_user(
     name: str,
     action: UserAction,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Login a user"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -208,7 +213,7 @@ async def login_user(
             )
 
         # Check if user exists
-        users = rest_api.rotkehlchen.data_importer.db_handler.get_users()
+        users = rotkehlchen.data_importer.db_handler.get_users()
         if name not in users:
             return JSONResponse(
                 content=create_error_response(f'User {name} does not exist'),
@@ -216,7 +221,7 @@ async def login_user(
             )
 
         # Check if another user is logged in
-        if rest_api.rotkehlchen.user_is_logged_in:
+        if rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('Another user is already logged in'),
                 status_code=403,
@@ -224,9 +229,9 @@ async def login_user(
 
         if action.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name=f'login_user_{name}',
-                method=rest_api.rotkehlchen.unlock_user,
+                method=rotkehlchen.unlock_user,
                 user=name,
                 password=action.password,
                 sync_approval=action.sync_approval,
@@ -239,16 +244,16 @@ async def login_user(
 
         # Synchronous login
         await asyncio.to_thread(
-            rest_api.rotkehlchen.unlock_user,
+            rotkehlchen.unlock_user,
             user=name,
             password=action.password,
             sync_approval=action.sync_approval,
         )
 
         # Get settings and exchanges
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            settings = rest_api.rotkehlchen.data.db.get_settings(cursor)
-            exchanges = rest_api.rotkehlchen.exchange_manager.get_connected_exchange_names()
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = rotkehlchen.data.db.get_settings(cursor)
+            exchanges = rotkehlchen.exchange_manager.get_connected_exchange_names()
 
         return create_success_response({
             'settings': settings.serialize(),
@@ -276,7 +281,7 @@ async def login_user(
 @router.post('/users/{name}/logout', response_model=dict)
 async def logout_user(
     name: str,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Logout a user"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -284,15 +289,15 @@ async def logout_user(
 
     try:
         # Check if user is logged in
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if correct user
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            username = rest_api.rotkehlchen.data.db.get_main_user_properties(cursor)[0]
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            username = rotkehlchen.data.db.get_main_user_properties(cursor)[0]
 
         if username != name:
             return JSONResponse(
@@ -301,7 +306,7 @@ async def logout_user(
             )
 
         # Logout
-        await asyncio.to_thread(rest_api.rotkehlchen.logout)
+        await asyncio.to_thread(rotkehlchen.logout)
 
         return create_success_response({'result': True})
 
@@ -317,7 +322,7 @@ async def logout_user(
 async def change_user_password(
     name: str,
     password_data: PasswordChange,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Change user password"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -325,15 +330,15 @@ async def change_user_password(
 
     try:
         # Check if user is logged in
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check if correct user
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            username = rest_api.rotkehlchen.data.db.get_main_user_properties(cursor)[0]
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            username = rotkehlchen.data.db.get_main_user_properties(cursor)[0]
 
         if username != name:
             return JSONResponse(
@@ -343,7 +348,7 @@ async def change_user_password(
 
         # Change password
         success = await asyncio.to_thread(
-            rest_api.rotkehlchen.data.db.update_user_password,
+            rotkehlchen.data.db.update_user_password,
             password=password_data.current_password,
             new_password=password_data.new_password,
         )
@@ -366,7 +371,7 @@ async def change_user_password(
 
 @router.get('/premium', response_model=dict)
 async def get_premium_status(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get premium subscription status"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -374,14 +379,14 @@ async def get_premium_status(
 
     try:
         # Check if user is logged in
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get premium status
-        premium = rest_api.rotkehlchen.premium
+        premium = rotkehlchen.premium
         if premium is None:
             return create_success_response({'result': False})
 
@@ -403,7 +408,7 @@ async def get_premium_status(
 @router.put('/premium', response_model=dict)
 async def set_premium_credentials(
     credentials: PremiumCredentialsModel,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Set premium API credentials"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -411,7 +416,7 @@ async def set_premium_credentials(
 
     try:
         # Check if user is logged in
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -419,7 +424,7 @@ async def set_premium_credentials(
 
         # Set premium credentials
         success = await asyncio.to_thread(
-            rest_api.rotkehlchen.set_premium_credentials,
+            rotkehlchen.set_premium_credentials,
             given_api_key=credentials.api_key,
             given_api_secret=credentials.api_secret,
         )
@@ -442,7 +447,7 @@ async def set_premium_credentials(
 
 @router.delete('/premium', response_model=dict)
 async def delete_premium_credentials(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete premium API credentials"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -450,7 +455,7 @@ async def delete_premium_credentials(
 
     try:
         # Check if user is logged in
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -458,7 +463,7 @@ async def delete_premium_credentials(
 
         # Delete premium credentials
         await asyncio.to_thread(
-            rest_api.rotkehlchen.delete_premium_credentials,
+            rotkehlchen.delete_premium_credentials,
         )
 
         return create_success_response({'result': True})
@@ -474,7 +479,7 @@ async def delete_premium_credentials(
 @router.post('/premium/sync', response_model=dict)
 async def sync_premium_database(
     async_query: bool = Query(default=False),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Sync user database with premium server"""
     if not async_features.is_enabled(AsyncFeature.USERS_ENDPOINT):
@@ -482,14 +487,14 @@ async def sync_premium_database(
 
     try:
         # Check if user is logged in
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Check premium status
-        if rest_api.rotkehlchen.premium is None:
+        if rotkehlchen.premium is None:
             return JSONResponse(
                 content=create_error_response('No premium subscription'),
                 status_code=403,
@@ -497,9 +502,9 @@ async def sync_premium_database(
 
         if async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='premium_sync',
-                method=rest_api.rotkehlchen.premium_sync_manager.sync_data,
+                method=rotkehlchen.premium_sync_manager.sync_data,
             )
 
             return create_success_response({
@@ -509,7 +514,7 @@ async def sync_premium_database(
 
         # Synchronous sync
         result = await asyncio.to_thread(
-            rest_api.rotkehlchen.premium_sync_manager.sync_data,
+            rotkehlchen.premium_sync_manager.sync_data,
         )
 
         return create_success_response(result)
