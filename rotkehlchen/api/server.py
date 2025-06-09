@@ -162,7 +162,9 @@ from rotkehlchen.api.v1.wallet_resources import (
     PrepareNativeTransferResource,
     PrepareTokenTransferResource,
 )
-from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
+from rotkehlchen.api.websockets.unified import create_ws_notifier
+from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
+from rotkehlchen.api.websockets.ws_app import RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -403,7 +405,7 @@ class APIServer:
     def __init__(
             self,
             rest_api: RestAPI,
-            ws_notifier: RotkiNotifier,
+            ws_notifier: RotkiNotifier | AsyncRotkiNotifier,
             cors_domain_list: list[str] | None = None,
     ) -> None:
         flask_app = Flask(__name__)

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
-from gevent.lock import Semaphore
+from rotkehlchen.utils.gevent_compat import Semaphore
 
 from rotkehlchen.assets.asset import (
     Asset,

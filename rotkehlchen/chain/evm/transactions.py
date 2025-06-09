@@ -6,11 +6,10 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
-from gevent.lock import Semaphore
-
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
+from rotkehlchen.utils.gevent_compat import Semaphore
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange

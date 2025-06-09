@@ -10,10 +10,10 @@ from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Any, Literal, Optional, Unpack, cast, overload
 
-from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.utils.gevent_compat import Semaphore
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance

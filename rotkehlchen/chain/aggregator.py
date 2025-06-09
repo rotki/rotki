@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, get_args, overload
 
 import requests
-from gevent.lock import Semaphore
 from web3 import Web3
 from web3.exceptions import BadFunctionCallOutput, Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from rotkehlchen.utils.gevent_compat import Semaphore
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,

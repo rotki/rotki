@@ -15,7 +15,7 @@ import gevent
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.api.websockets.notifier import RotkiNotifier
+from rotkehlchen.api.websockets.unified import create_ws_notifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, Nft
 from rotkehlchen.balances.manual import (

@@ -3,9 +3,11 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from gevent.lock import Semaphore
+
+from rotkehlchen.utils.gevent_compat import Semaphore
 
 from .common import function_sig_key
+
 
 
 class LockableQueryMixIn:
