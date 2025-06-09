@@ -34,7 +34,8 @@ def migrate_to_v9(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         an invalid last_queried_ts.
         """
         write_cursor.execute(
-            "DELETE FROM general_cache WHERE last_queried_ts=0 AND key LIKE 'CURVE_LP_TOKENS%'",
+            'DELETE FROM general_cache WHERE last_queried_ts=0 AND key LIKE ? ESCAPE ?',
+            ('CURVE\\_LP\\_TOKENS%', '\\'),
         )
 
     @progress_step('Removing underlying tokens pointing to themselves.')

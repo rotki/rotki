@@ -1115,7 +1115,10 @@ class DBHandler:
 
     def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all loopring related data"""
-        write_cursor.execute("DELETE FROM multisettings WHERE name LIKE 'loopring_%';")
+        write_cursor.execute(
+            'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
+            ('loopring\\_%', '\\'),
+        )
 
     def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
@@ -2163,8 +2166,8 @@ class DBHandler:
         if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
             write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
             write_cursor.execute(  # queried addresses per module
-                "DELETE FROM multisettings WHERE name LIKE 'queried_address_%' AND value = ?",
-                (address,),
+                'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ? AND value = ?',
+                ('queried\\_address\\_%', '\\', address),
             )
             loopring = DBLoopring(self)
             loopring.remove_accountid_mapping(write_cursor, address)
@@ -2178,8 +2181,8 @@ class DBHandler:
         )
 
         write_cursor.execute(
-            f"DELETE FROM key_value_cache WHERE name LIKE '{EXTRAINTERNALTXPREFIX}_{blockchain.to_chain_id().value}%' AND value = ?",  # noqa: E501
-            (address,),
+            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ? AND value = ?',
+            (f'{EXTRAINTERNALTXPREFIX}\\_{blockchain.to_chain_id().value}%', '\\', address),
         )
 
         dbtx = DBEvmTx(self)

@@ -140,7 +140,10 @@ def migrate_to_v8(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         write_cursor.execute("UPDATE unique_cache SET key=replace(key, 'CURVE_GAUGE_ADDRESS', 'CURVE_GAUGE_ADDRESS1'), last_queried_ts=0")  # noqa: E501
         write_cursor.execute("UPDATE unique_cache SET key=replace(key, 'CURVE_POOL_ADDRESS', 'CURVE_POOL_ADDRESS1'), last_queried_ts=0")  # noqa: E501
         # remove CURVE_POOL_UNDERLYING_TOKENS because they are no longer needed
-        write_cursor.execute("DELETE FROM general_cache WHERE key LIKE 'CURVE_POOL_UNDERLYING_TOKENS%'")  # noqa: E501
+        write_cursor.execute(
+            'DELETE FROM general_cache WHERE key LIKE ? ESCAPE ?',
+            ('CURVE\\_POOL\\_UNDERLYING\\_TOKENS%', '\\'),
+        )
 
     @progress_step('Updating contracts ABI schema.')
     def _update_contracts_abis(write_cursor: 'DBCursor') -> None:

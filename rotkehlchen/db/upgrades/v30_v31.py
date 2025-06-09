@@ -27,7 +27,9 @@ def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler'
     progress_handler.new_step(name='Deleting all kraken trades and their used query ranges.')
     # Delete kraken trades so they can be requeried
     cursor.execute("DELETE FROM trades WHERE location='B';")
-    cursor.execute("DELETE FROM used_query_ranges WHERE name LIKE 'kraken_trades_%';")
+    cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('kraken\\_trades\\_%', '\\'),
+    )
 
     progress_handler.new_step(name='Updating eth2 tables.')
     # Add all new tables

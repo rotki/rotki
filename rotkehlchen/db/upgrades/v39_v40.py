@@ -313,7 +313,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DELETE from settings WHERE name=?', ('taxable_ledger_actions',))
 
         with db.conn.read_ctx() as cursor:  # migrate coinbase ledger action query ranges
-            cursor.execute("SELECT name FROM used_query_ranges WHERE name LIKE '%_ledger_actions_%'")  # noqa: E501
+            cursor.execute('SELECT name FROM used_query_ranges WHERE name LIKE ? ESCAPE ?', ('%\\_ledger\\_actions\\_%', '\\'))  # noqa: E501
             for entry in cursor:
                 try:
                     write_cursor.execute(
@@ -345,7 +345,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'DELETE FROM history_events WHERE identifier IN ('
             'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
             'ON H.identifier=E.identifier AND E.tx_hash IN '
-            '(SELECT tx_hash from_evm_transactions))'
+            '(SELECT tx_hash FROM evm_transactions))'
         )
         bindings: tuple = ()
         if customized_events != 0:
