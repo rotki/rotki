@@ -1,0 +1,18 @@
+# Asyncio migration dependencies
+# These will eventually replace gevent-related packages
+
+# WebSocket support
+websockets==13.1
+
+# Async SQLite
+aiosqlite==0.20.0
+
+# Async web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Async HTTP client (to replace requests in async code)
+httpx==0.28.1
+
+# Testing
+pytest-asyncio==0.24.0
