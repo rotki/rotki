@@ -38,6 +38,10 @@ from rotkehlchen.api.v1.async_nfts import router as nfts_router
 from rotkehlchen.api.v1.async_eth2 import router as eth2_router
 from rotkehlchen.api.v1.async_defi import router as defi_router
 from rotkehlchen.api.v1.async_utils import router as utils_router
+from rotkehlchen.api.v1.async_addressbook import router as addressbook_router
+from rotkehlchen.api.v1.async_calendar import router as calendar_router
+from rotkehlchen.api.v1.async_spam import router as spam_router
+from rotkehlchen.api.v1.async_misc import router as misc_router
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -117,6 +121,10 @@ class RotkiASGIServer:
         self.app.include_router(eth2_router)
         self.app.include_router(defi_router)
         self.app.include_router(utils_router)
+        self.app.include_router(addressbook_router)
+        self.app.include_router(calendar_router)
+        self.app.include_router(spam_router)
+        self.app.include_router(misc_router)
         
         # TODO: As we migrate endpoints to FastAPI, include their routers here
         
@@ -245,7 +253,8 @@ from rotkehlchen.api.v1 import (
     async_transactions, async_base, async_balances, async_exchanges,
     async_assets_extended, async_users, async_database,
     async_statistics, async_history, async_accounting,
-    async_blockchain, async_nfts, async_eth2, async_defi, async_utils
+    async_blockchain, async_nfts, async_eth2, async_defi, async_utils,
+    async_addressbook, async_calendar, async_spam, async_misc
 )
 
 # Set up dependency injection for all routers
@@ -253,7 +262,8 @@ for module in [
     async_transactions, async_base, async_balances, async_exchanges,
     async_assets_extended, async_users, async_database,
     async_statistics, async_history, async_accounting,
-    async_blockchain, async_nfts, async_eth2, async_defi, async_utils
+    async_blockchain, async_nfts, async_eth2, async_defi, async_utils,
+    async_addressbook, async_calendar, async_spam, async_misc
 ]:
     module.get_rest_api = get_rest_api
 
