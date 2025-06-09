@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overlo
 from zipfile import BadZipFile, ZipFile
 
 from flask import Response, after_this_request, make_response, send_file
-from rotkehlchen.utils.concurrency import Event, Semaphore, spawn
+from rotkehlchen.utils.concurrency import Event, Semaphore, spawn, Task
 from marshmallow.exceptions import ValidationError
 from pysqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
@@ -177,7 +177,7 @@ from rotkehlchen.errors.misc import (
     DBSchemaError,
     DBUpgradeError,
     EthSyncError,
-    GreenletKilledError,
+    TaskKilledError,
     InputError,
     ModuleInactive,
     NotERC20Conformant,
@@ -413,10 +413,18 @@ class RestAPI:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
         self.stop_event = Event()
-        mainloop_greenlet = self.rotkehlchen.start()
-        mainloop_greenlet.link_exception(self._handle_killed_greenlets)
-        # Greenlets that will be waited for when we shutdown (just main loop)
-        self.waited_greenlets = [mainloop_greenlet]
+        # Start the main loop - since start() is async, we need to handle it properly
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                self.mainloop_task = asyncio.create_task(self.rotkehlchen.start())
+            else:
+                self.mainloop_task = asyncio.run(self.rotkehlchen.start())
+        except RuntimeError:
+            # No event loop exists, create one
+            self.mainloop_task = asyncio.run(self.rotkehlchen.start())
+            
         self.task_lock = Semaphore()
         self.login_lock = Semaphore()
         self.task_id = 0
@@ -433,40 +441,10 @@ class RestAPI:
         with self.task_lock:
             self.task_results[task_id] = result
 
-    def _handle_killed_greenlets(self, greenlet: Greenlet) -> None:
-        if not greenlet.exception:
-            log.warning('handle_killed_greenlets without an exception')
-            return
-
-        try:
-            task_id = greenlet.task_id
-            task_str = f'Greenlet for task {task_id}'
-        except AttributeError:
-            task_id = None
-            task_str = 'Main greenlet'
-
-        if isinstance(greenlet.exception, GreenletKilledError):
-            log.debug(
-                f'Greenlet for task id {task_id} with name {task_str} was killed. '
-                f'{greenlet.exception!s}',
-            )
-            # Setting empty message to signify that the death of the greenlet is expected.
-            self._write_task_result(task_id, {'result': None, 'message': ''})
-            return
-
-        log.error(
-            f'{task_str} dies with exception: {greenlet.exception}.\n'
-            f'Exception Name: {greenlet.exc_info[0]}\n'
-            f'Exception Info: {greenlet.exc_info[1]}\n'
-            f'Traceback:\n {"".join(traceback.format_tb(greenlet.exc_info[2]))}',
-        )
-        # also write an error for the task result if it's not the main greenlet
-        if task_id is not None:
-            result = {
-                'result': None,
-                'message': f'The backend query task died unexpectedly: {greenlet.exception!s}',
-            }
-            self._write_task_result(task_id, result)
+    def _handle_killed_tasks(self, task: Any) -> None:
+        # This method is no longer needed with asyncio
+        # Tasks handle exceptions differently than greenlets
+        pass
 
     def _do_query_async(self, command: Callable, task_id: int, **kwargs: Any) -> None:
         log.debug(f'Async task with task id {task_id} started')

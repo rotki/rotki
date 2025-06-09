@@ -22,7 +22,7 @@ POLKADOT_NODES_TO_CONNECT_AT_START = (
 )
 
 # This is a timeout in gevent, so should be generous as it's not only for
-# the single connection, but for all other greenlets that can be context
+# the single connection, but for all other tasks that can be context
 # switched in the meantime
 SUBSTRATE_NODE_CONNECTION_TIMEOUT = 60
 

@@ -212,7 +212,7 @@ class Accountant:
             last_event_ts = prev_time
             if count % 500 == 0:
                 # This loop can take a very long time depending on the amount of events
-                # to process. We need to yield to other greenlets or else calls to the
+                # to process. We need to yield to other tasks or else calls to the
                 # API may time out
                 sleep(0.5)
             count += processed_events_num

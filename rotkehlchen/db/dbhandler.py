@@ -546,7 +546,7 @@ class DBHandler:
 
         The critical section is absolutely needed as a context switch
         from inside this execute script can result in:
-        1. coming into this code again from another greenlet which can result
+        1. coming into this code again from another task which can result
         to DB plaintext already in use
         2. Having a DB transaction open between the attach and detach and not
         closed when we detach which will result in DB plaintext locked.

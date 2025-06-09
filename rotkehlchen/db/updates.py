@@ -158,7 +158,7 @@ class RotkiDataUpdater:
         """
         log.info(f'Applying update for spam assets to v{version}. {len(data)} tokens to add')
         with GlobalDBHandler().conn.critical_section():
-            # Use a critical section to avoid another greenlet adding spam assets at
+            # Use a critical section to avoid another task adding spam assets at
             # the same time
             update_spam_assets(db=self.user_db, assets_info=data)
 

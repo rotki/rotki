@@ -27,7 +27,7 @@ class EthereumModule(ABC):
 
     # Optional callback to run on a module's startup
     # Is optional as opposed to a no-op  since at initialization we
-    # start a greenlet to run it and there is no reason to bring up no-op greenlets
+    # start a task to run it and there is no reason to bring up no-op tasks
     on_startup: Callable[['EthereumModule'], None] | None = None
 
     @abstractmethod
