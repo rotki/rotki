@@ -13,13 +13,13 @@ from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.v1.auth import AuthManager
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.chain.aggregator import ChainsAggregator
-from rotkehlchen.chain.ethereum.manager import EthereumInquirer
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.handler import DBHandler
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
-from rotkehlchen.externalapis.cryptocompare import CryptoCompare
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -94,7 +94,7 @@ class Rotkehlchen:
 
     async def initialize(self):
         """Initialize all async components"""
-        log.info('Initializing AsyncRotkehlchen')
+        log.info('Initializing Rotkehlchen')
 
         try:
             # Initialize async database
@@ -111,14 +111,14 @@ class Rotkehlchen:
             # Initialize inquirer (singleton)
             Inquirer(
                 data_dir=self.data_dir,
-                cryptocompare=CryptoCompare(self.data_dir),
+                cryptocompare=Cryptocompare(self.data_dir),
                 coingecko=Coingecko(),
             )
 
             # Initialize price historian
             self.price_historian = PriceHistorian(
                 data_directory=self.data_dir,
-                cryptocompare=CryptoCompare(self.data_dir),
+                cryptocompare=Cryptocompare(self.data_dir),
                 coingecko=Coingecko(),
             )
 
@@ -159,10 +159,10 @@ class Rotkehlchen:
             # Inject dependencies
             self.api_server.app.state.auth_manager = self.auth_manager
 
-            log.info('AsyncRotkehlchen initialization complete')
+            log.info('Rotkehlchen initialization complete')
 
         except Exception as e:
-            log.error(f'Failed to initialize AsyncRotkehlchen: {e}')
+            log.error(f'Failed to initialize Rotkehlchen: {e}')
             raise
 
     async def _initialize_chains(self):
@@ -190,7 +190,7 @@ class Rotkehlchen:
         if self._running:
             return
 
-        log.info('Starting AsyncRotkehlchen services')
+        log.info('Starting Rotkehlchen services')
 
         try:
             # Start WebSocket notifier
@@ -211,7 +211,7 @@ class Rotkehlchen:
             )
 
             self._running = True
-            log.info('AsyncRotkehlchen services started')
+            log.info('Rotkehlchen services started')
 
             # Keep running until stopped
             await server_task
@@ -226,7 +226,7 @@ class Rotkehlchen:
         if not self._running:
             return
 
-        log.info('Stopping AsyncRotkehlchen services')
+        log.info('Stopping Rotkehlchen services')
 
         try:
             # Stop API server
@@ -254,7 +254,7 @@ class Rotkehlchen:
                 await self.async_db.close()
 
             self._running = False
-            log.info('AsyncRotkehlchen services stopped')
+            log.info('Rotkehlchen services stopped')
 
         except Exception as e:
             log.error(f'Error stopping services: {e}')
@@ -369,15 +369,15 @@ class Rotkehlchen:
         }
 
 
-async def create_app(args: Any) -> AsyncRotkehlchen:
-    """Create and initialize AsyncRotkehlchen app"""
+async def create_app(args: Any) -> Rotkehlchen:
+    """Create and initialize Rotkehlchen app"""
     # Setup data directory
     data_dir = Path(args.data_dir)
     if not data_dir.exists():
         data_dir.mkdir(parents=True)
 
     # Create app
-    app = AsyncRotkehlchen(data_dir=data_dir, args=args)
+    app = Rotkehlchen(data_dir=data_dir, args=args)
 
     # Initialize
     await app.initialize()

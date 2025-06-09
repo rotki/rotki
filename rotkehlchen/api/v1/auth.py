@@ -67,7 +67,7 @@ class Session:
 class AuthManager:
     """Manages authentication and sessions asynchronously"""
 
-    def __init__(self, async_db: AsyncDBHandler):
+    def __init__(self, async_db: DBHandler):
         self.async_db = async_db
         self._sessions: dict[str, Session] = {}
         self._user_sessions: dict[str, list[str]] = {}  # username -> [tokens]
@@ -293,14 +293,14 @@ class AuthManager:
 
 
 # FastAPI dependencies
-async def get_auth_manager(request: Request) -> AsyncAuthManager:
+async def get_auth_manager(request: Request) -> AuthManager:
     """Get auth manager from app state"""
     return request.app.state.auth_manager
 
 
 async def get_current_session(
     request: Request,
-    auth_manager: AsyncAuthManager = Depends(get_auth_manager),
+    auth_manager: AuthManager = Depends(get_auth_manager),
 ) -> Session:
     """Get current session from request"""
     # Check Authorization header
@@ -331,7 +331,7 @@ router = APIRouter(prefix='/api/1', tags=['auth'])
 @router.post('/users', response_model=dict)
 async def create_user(
     user_data: CreateUserModel,
-    auth_manager: AsyncAuthManager = Depends(get_auth_manager),
+    auth_manager: AuthManager = Depends(get_auth_manager),
 ):
     """Create a new user"""
     try:
@@ -353,7 +353,7 @@ async def create_user(
 async def login(
     credentials: LoginModel,
     request: Request,
-    auth_manager: AsyncAuthManager = Depends(get_auth_manager),
+    auth_manager: AuthManager = Depends(get_auth_manager),
 ):
     """Login and create session"""
     try:
@@ -373,7 +373,7 @@ async def login(
 @router.post('/logout', response_model=dict)
 async def logout(
     session: Session = Depends(get_current_session),
-    auth_manager: AsyncAuthManager = Depends(get_auth_manager),
+    auth_manager: AuthManager = Depends(get_auth_manager),
 ):
     """Logout and destroy session"""
     await auth_manager.logout(session.token)
