@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
-from flask import Response, make_response
+from fastapi import Response
+from fastapi.responses import FileResponse
 
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.constants.misc import (
@@ -55,12 +56,11 @@ def check_if_image_is_cached(image_path: Path, match_header: str | None) -> Resp
     md5_hash = file_md5(image_path)
     if md5_hash and match_header and match_header == md5_hash:
         # Response content unmodified
-        return make_response(
-            (
-                b'',
-                HTTPStatus.NOT_MODIFIED,
-                _build_http_header_for_images(image_path),
-            ),
+        headers = _build_http_header_for_images(image_path)
+        return Response(
+            content=b'',
+            status_code=HTTPStatus.NOT_MODIFIED,
+            headers=headers,
         )
 
     return None
@@ -73,15 +73,13 @@ def create_image_response(image_path: Path) -> Response:
     - OSError if the file doesn't exists
     """
     image_data = image_path.read_bytes()
-    response = make_response(
-        (
-            image_data,
-            HTTPStatus.OK,
-            _build_http_header_for_images(image_path),
-        ),
+    headers = _build_http_header_for_images(image_path)
+    headers['etag'] = hashlib.md5(image_data).hexdigest()
+    return Response(
+        content=image_data,
+        status_code=HTTPStatus.OK,
+        headers=headers,
     )
-    response.set_etag(hashlib.md5(image_data).hexdigest())
-    return response
 
 
 def maybe_create_image_response(image_path: Path | None) -> Response:
@@ -90,11 +88,10 @@ def maybe_create_image_response(image_path: Path | None) -> Response:
     Returns a response with the image if it exists, otherwise a NOT FOUND response.
     """
     if image_path is None or image_path.is_file() is False:
-        return make_response(
-            (
-                b'',
-                HTTPStatus.NOT_FOUND, {'mimetype': 'image/png', 'Content-Type': 'image/png'},
-            ),
+        return Response(
+            content=b'',
+            status_code=HTTPStatus.NOT_FOUND,
+            headers={'mimetype': 'image/png', 'Content-Type': 'image/png'},
         )
 
     return create_image_response(image_path)

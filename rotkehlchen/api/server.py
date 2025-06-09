@@ -15,8 +15,8 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.websockets import WebSocket
 
-from rotkehlchen.api.rest import RestAPI, wrap_in_fail_result
 from rotkehlchen.api.v1.schemas_fastapi import create_error_response
+from rotkehlchen.api.v1.dependencies import set_rotkehlchen_instance
 from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier, AsyncRotkiWSHandler
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -52,13 +52,17 @@ class RotkiASGIServer:
     
     def __init__(
         self,
-        rest_api: RestAPI,
-        ws_notifier: AsyncRotkiNotifier,
+        rotkehlchen: 'Rotkehlchen',
         cors_domain_list: list[str] | None = None,
     ) -> None:
-        self.rest_api = rest_api
-        self.ws_notifier = ws_notifier
-        self.ws_handler = AsyncRotkiWSHandler(ws_notifier)
+        from rotkehlchen.rotkehlchen import Rotkehlchen
+        
+        self.rotkehlchen = rotkehlchen
+        self.ws_notifier = AsyncRotkiNotifier()
+        self.ws_handler = AsyncRotkiWSHandler(self.ws_notifier)
+        
+        # Set up dependency injection for FastAPI endpoints
+        set_rotkehlchen_instance(rotkehlchen)
         
         # Create FastAPI app with lifespan management
         @asynccontextmanager
@@ -68,7 +72,7 @@ class RotkiASGIServer:
             yield
             # Shutdown
             log.info('Stopping rotki ASGI server')
-            self.rest_api.stop()
+            self.rotkehlchen.shutdown()
         
         self.app = FastAPI(
             title="rotki API",
@@ -222,51 +226,3 @@ class RotkiASGIServer:
         )
 
 
-# Dependency injection helpers that will be overridden by the app
-_rest_api_instance: RestAPI | None = None
-_ws_notifier_instance: AsyncRotkiNotifier | None = None
-
-
-def set_global_dependencies(rest_api: RestAPI, ws_notifier: AsyncRotkiNotifier) -> None:
-    """Set global instances for dependency injection"""
-    global _rest_api_instance, _ws_notifier_instance
-    _rest_api_instance = rest_api
-    _ws_notifier_instance = ws_notifier
-
-
-async def get_rest_api() -> RestAPI:
-    """Dependency to get RestAPI instance"""
-    if _rest_api_instance is None:
-        raise RuntimeError("RestAPI not initialized")
-    return _rest_api_instance
-
-
-async def get_ws_notifier() -> AsyncRotkiNotifier:
-    """Dependency to get WebSocket notifier"""
-    if _ws_notifier_instance is None:
-        raise RuntimeError("WebSocket notifier not initialized") 
-    return _ws_notifier_instance
-
-
-# Override the dependency in the routers
-from rotkehlchen.api.v1 import (
-    async_transactions, async_base, async_balances, async_exchanges,
-    async_assets_extended, async_users, async_database,
-    async_statistics, async_history, async_accounting,
-    async_blockchain, async_nfts, async_eth2, async_defi, async_utils,
-    async_addressbook, async_calendar, async_spam, async_misc
-)
-
-# Set up dependency injection for all routers
-for module in [
-    async_transactions, async_base, async_balances, async_exchanges,
-    async_assets_extended, async_users, async_database,
-    async_statistics, async_history, async_accounting,
-    async_blockchain, async_nfts, async_eth2, async_defi, async_utils,
-    async_addressbook, async_calendar, async_spam, async_misc
-]:
-    module.get_rest_api = get_rest_api
-
-# Special dependencies for transactions
-async_transactions.get_task_manager = lambda: _rest_api_instance.rotkehlchen.task_manager if _rest_api_instance else None
-async_transactions.get_async_db = lambda: _rest_api_instance.rotkehlchen.data.db if _rest_api_instance else None

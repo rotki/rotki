@@ -1,10 +1,17 @@
+"""Main rotki server using FastAPI
+
+This is the async replacement for the Flask/WSGI server.
+"""
 import logging
 import os
 import signal
+from contextlib import asynccontextmanager
 
-from rotkehlchen.utils.concurrency import Event, get_hub, signal
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from rotkehlchen.api.server import APIServer, RestAPI
+from rotkehlchen.api.server import RotkiASGIServer
 from rotkehlchen.args import app_args
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -14,6 +21,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class RotkehlchenServer:
+    """Main server that starts the FastAPI application"""
+    
     def __init__(self) -> None:
         """Initializes the backend server
         May raise:
@@ -29,47 +38,63 @@ class RotkehlchenServer:
         self.args = arg_parser.parse_args()
         add_logging_level('TRACE', TRACE)
         configure_logging(self.args)
+        
+        # Initialize Rotkehlchen instance
         self.rotkehlchen = Rotkehlchen(self.args)
-        self.stop_event = Event()
+        
+        # Parse CORS domains
         if ',' in self.args.api_cors:
-            domain_list = [str(domain) for domain in self.args.api_cors.split(',')]
+            self.cors_domains = [str(domain) for domain in self.args.api_cors.split(',')]
         else:
-            domain_list = [str(self.args.api_cors)]
-        self.api_server = APIServer(
-            rest_api=RestAPI(rotkehlchen=self.rotkehlchen),
-            ws_notifier=self.rotkehlchen.rotki_notifier,
-            cors_domain_list=domain_list,
+            self.cors_domains = [str(self.args.api_cors)]
+            
+        # Create ASGI server
+        self.asgi_server = RotkiASGIServer(
+            rotkehlchen=self.rotkehlchen,
+            cors_domain_list=self.cors_domains,
         )
-
-    def shutdown(self) -> None:
-        log.debug('Shutdown initiated')
-        self.api_server.stop()
-        self.stop_event.set()
-
+        
     def main(self) -> None:
-        # disable printing hub exceptions in stderr. With using the hub to do various
-        # tasks that should raise exceptions and have them handled outside the hub
-        # printing them in stdout is now too much spam (and would worry users too)
-        hub = get_hub()
-        hub.exception_stream = None
-        # we don't use threadpool much so go to 2 instead of default 10
-        hub.threadpool_size = 2
-        hub.threadpool.maxsize = 2
-        if os.name != 'nt':
-            signal(signal.SIGQUIT, self.shutdown)
-            signal(signal.SIGTERM, self.shutdown)
-        else:
-            # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
-            # This logic handles the signal sent from the bootloader equivalent to sigterm in
-            # addition to the signals sent by windows's taskkill.
-            # Research documented in https://github.com/yabirgb/rotki-python-research
-            import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
-            win32api.SetConsoleCtrlHandler(self.shutdown, True)
-
-        signal(signal.SIGINT, self.shutdown)
-        # The api server's RestAPI starts rotki main loop
-        self.api_server.start(
-            host=self.args.api_host,
-            rest_port=self.args.rest_api_port,
+        """Start the FastAPI server"""
+        log.info(
+            f'rotki v{self.rotkehlchen.get_version()} starting '
+            f'on host {self.args.api_host} and port {self.args.api_port}'
         )
-        self.stop_event.wait()
+        
+        # Configure uvicorn
+        config = uvicorn.Config(
+            app=self.asgi_server.app,
+            host=self.args.api_host,
+            port=self.args.api_port,
+            log_level="info" if __debug__ else "warning",
+            access_log=__debug__,
+        )
+        
+        # Run server
+        server = uvicorn.Server(config)
+        server.run()
+        
+    async def async_main(self) -> None:
+        """Async version of main - for future use"""
+        log.info(
+            f'rotki v{self.rotkehlchen.get_version()} starting '
+            f'on host {self.args.api_host} and port {self.args.api_port}'
+        )
+        
+        # Configure uvicorn
+        config = uvicorn.Config(
+            app=self.asgi_server.app,
+            host=self.args.api_host,
+            port=self.args.api_port,
+            log_level="info" if __debug__ else "warning",
+            access_log=__debug__,
+        )
+        
+        # Run server
+        server = uvicorn.Server(config)
+        await server.serve()
+        
+    def shutdown(self) -> None:
+        """Shutdown the server"""
+        log.debug('Shutdown initiated')
+        # TODO: Implement graceful shutdown for uvicorn
