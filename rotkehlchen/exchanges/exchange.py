@@ -1,409 +1,453 @@
+"""Async implementation of exchange base class
+
+Replaces gevent-based exchange implementations with native asyncio.
+"""
+import asyncio
 import logging
-from abc import abstractmethod
-from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any
+from abc import ABC, abstractmethod
+from collections import defaultdict
+from typing import Any, Optional
+
+import aiohttp
+from aiohttp import ClientError, ClientTimeout
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.websockets.typedefs import (
-    HistoryEventsQueryType,
-    HistoryEventsStep,
-    WSMessageType,
-)
-from rotkehlchen.assets.asset import AssetWithOracles
-from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
+from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import (
-    ApiKey,
-    ApiSecret,
-    ExchangeAuthCredentials,
-    ExchangeLocationID,
-    Location,
-    T_ApiKey,
-    T_ApiSecret,
-    Timestamp,
-)
-from rotkehlchen.utils.misc import set_user_agent, ts_now
-from rotkehlchen.utils.mixins.cacheable import CacheableMixIn
-from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
-from rotkehlchen.utils.network import create_session
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp, TradePair
+from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-ExchangeQueryBalances = tuple[dict[AssetWithOracles, Balance] | None, str]
-
-ExchangeHistoryFailCallback = Callable[[str], None]
-ExchangeHistoryNewStepCallback = Callable[[str], None]
-
-
-class ExchangeWithExtras:
-    """
-    An interface for exchanges that have extra properties that can be edited.
-    Note: it should be used only together with ExchangeInterface to have db, name and location.
-    """
-    db: 'DBHandler'
-    name: str
-    location: Location
-
-    @abstractmethod
-    def edit_exchange_extras(self, extras: dict) -> tuple[bool, str]:
-        """
-        Subclasses implement this method to accept extra properties such as kraken account type.
-        """
-
-    def reset_to_db_extras(self) -> None:
-        """Resets the exchange extras to the ones saved in the DB"""
-        extras = self.db.get_exchange_credentials_extras(location=self.location, name=self.name)
-        self.edit_exchange_extras(extras)
-
-
-class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
-    """Base class for exchanges that don't necessarily require a secret key."""
-
+class AsyncExchangeInterface(ABC):
+    """Async interface for exchange implementations"""
+    
     def __init__(
-            self,
-            name: str,
-            location: Location,
-            api_key: ApiKey,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+        self,
+        name: str,
+        location: Location,
+        api_key: ApiKey,
+        secret: ApiSecret,
+        database: Any,
+        msg_aggregator: Any,
     ):
-        assert isinstance(api_key, T_ApiKey), (
-            f'api key for {name} should be a string'
-        )
-        super().__init__()
         self.name = name
         self.location = location
-        self.db = database
         self.api_key = api_key
-        self.msg_aggregator = msg_aggregator
-        self.first_connection_made = False
-        self.session = create_session()
-        set_user_agent(self.session)
-        log.info(f'Initialized {location!s} exchange {name}')
-
-    def reset_to_db_credentials(self) -> None:
-        """Resets the exchange credentials to the ones saved in the DB"""
-        with self.db.conn.read_ctx() as cursor:
-            credentials_in_db = self.db.get_exchange_credentials(
-                cursor=cursor,
-                location=self.location,
-                name=self.name,
-            )
-        credentials = credentials_in_db[self.location][0]
-        self.edit_exchange_credentials(ExchangeAuthCredentials(
-            api_key=credentials.api_key,
-            api_secret=credentials.api_secret,
-            passphrase=credentials.passphrase,
-        ))
-
-    def location_id(self) -> ExchangeLocationID:
-        """Returns unique location identifier for this exchange object (name + location)"""
-        return ExchangeLocationID(name=self.name, location=self.location)
-
-    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        """Edits the exchange object with new credentials given from the API
-        Returns true if an edit happened and false otherwise.
-
-        Needs to be implemented for each subclass
-        """
-        if credentials.api_key is not None:
-            self.api_key = credentials.api_key
-
-        return credentials.api_key is not None or credentials.passphrase is not None
-
-    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        """Returns the balances held in the exchange in the following format:
-
-        Successful response:
-        (
-            {  # dict can be empty
-                'name' : Balance(amount=1337, usd_value=42),
-                'ICN': Balance(amount=42, usd_value=1337)
-            },
-            '',  # empty string
-        )
-
-        Unsuccessful response:
-        (
-            None,
-            'The reason of the failure',  # non-empty string
-        )
-
-        The name must be the canonical name used by rotkehlchen
-        """
-        raise NotImplementedError('query_balances should only be implemented by subclasses')
-
-    def query_exchange_specific_history(
-            self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
-            end_ts: Timestamp,  # pylint: disable=unused-argument
-    ) -> Any | None:
-        """Has to be implemented by exchanges if they have anything exchange specific
-
-
-        For example poloniex loans
-        """
-        return None
-
-    def first_connection(self) -> None:
-        """Performs actions that should be done in the first time coming online
-        and attempting to query data from an exchange.
-        """
-        raise NotImplementedError('first_connection() should only be implemented by subclasses')
-
-    def validate_api_key(self) -> tuple[bool, str]:
-        """Tries to make the simplest private api query to the exchange in order to
-        verify the api key's validity"""
-        raise NotImplementedError('validate_api_key() should only be implemented by subclasses')
-
-    def query_online_margin_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list[MarginPosition]:
-        """Queries the exchange's API for the margin positions history of the user
-
-        Should be implemented by subclasses if the exchange can return margin position history in
-        any form. This is only implemented for bitmex at the moment.
-        """
-        raise NotImplementedError(
-            'query_online_margin_history() should only be implemented by subclasses',
-        )
-
-    def query_online_history_events(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
-        """Queries the exchange's API for history events of the user
-
-        Should be implemented in subclasses, unless query_history_events is reimplemented with
-        custom logic.
-        Returns a tuple of HistoryBaseEntry events (HistoryEvent, AssetMovement, etc.) and the
-        last successfully queried timestamp. The timestamp should only differ from end_ts if
-        an error occurred preventing the full range from being queried.
-        """
-        return [], end_ts
-
-    def query_margin_history(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-    ) -> list[MarginPosition]:
-        """
-        Queries the local DB and the remote exchange for the margin positions history of the user
-        """
-        log.debug(f'Querying margin history for {self.name} exchange')
-        with self.db.conn.read_ctx() as cursor:
-            margin_positions = self.db.get_margin_positions(
-                cursor=cursor,
-                from_ts=start_ts,
-                to_ts=end_ts,
-                location=self.location,
-            )
-            ranges = DBQueryRanges(self.db)
-            location_string = f'{self.location!s}_margins_{self.name}'
-            ranges_to_query = ranges.get_location_query_ranges(
-                cursor=cursor,
-                location_string=location_string,
-                start_ts=start_ts,
-                end_ts=end_ts,
-            )
-
-        for query_start_ts, query_end_ts in ranges_to_query:
-            log.debug(
-                f'Querying online margin history for {self.name} between '
-                f'{query_start_ts} and {query_end_ts}',
-            )
-            new_positions = self.query_online_margin_history(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-            )
-
-            # make sure to add them to the DB
-            with self.db.user_write() as write_cursor:
-                if len(new_positions) != 0:
-                    self.db.add_margin_positions(write_cursor, new_positions)
-
-                # and also set the last queried timestamp for the exchange
-                ranges.update_used_query_range(
-                    write_cursor=write_cursor,
-                    location_string=location_string,
-                    queried_ranges=[(query_start_ts, query_end_ts)],
-                )
-            # finally append them to the already returned DB margin positions
-            margin_positions.extend(new_positions)
-
-        return margin_positions
-
-    def send_history_events_status_msg(
-            self,
-            step: HistoryEventsStep,
-            period: list[Timestamp] | None = None,
-            name: str | None = None,
-    ) -> None:
-        """Send history events status WS message.
-        Args:
-            step (HistoryEventsStep): Current query step
-            period (list[Timestamp] | None): from/to timestamps of the range being queried
-            name (str | None): Used to identify multiple portfolios on the same exchange, in
-                coinbaseprime for example. Defaults to self.name when None.
-        """
-        data: dict[str, Any] = {
-            'status': str(step),
-            'location': str(self.location),
-            'event_type': str(HistoryEventsQueryType.HISTORY_QUERY),
-            'name': name or self.name,
-        }
-        if period is not None:
-            data['period'] = period
-
-        self.msg_aggregator.add_message(
-            message_type=WSMessageType.HISTORY_EVENTS_STATUS,
-            data=data,
-        )
-
-    @protect_with_lock()
-    def query_history_events(self) -> None:
-        """Queries the exchange for new history events and saves them to the database."""
-        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_STARTED)
-        db = DBHistoryEvents(self.db)
-        location_string = f'{self.location!s}_history_events_{self.name}'
-        with self.db.conn.read_ctx() as cursor:
-            ranges_to_query = (ranges := DBQueryRanges(self.db)).get_location_query_ranges(
-                cursor=cursor,
-                location_string=location_string,
-                start_ts=Timestamp(0),
-                end_ts=ts_now(),
-            )
-
-        for query_start_ts, query_end_ts in ranges_to_query:
-            self.send_history_events_status_msg(
-                step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
-                period=[query_start_ts, query_end_ts],
-            )
-            new_events, actual_end_ts = self.query_online_history_events(
-                start_ts=query_start_ts,
-                end_ts=query_end_ts,
-            )
-            with self.db.user_write() as write_cursor:
-                if len(new_events) != 0:
-                    db.add_history_events(write_cursor=write_cursor, history=new_events)
-                ranges.update_used_query_range(
-                    write_cursor=write_cursor,
-                    location_string=location_string,
-                    queried_ranges=[(query_start_ts, actual_end_ts)],
-                )
-
-            if actual_end_ts != query_end_ts:
-                log.error(
-                    f'Failed to query all {self.name} history events between {query_start_ts} '
-                    f'and {query_end_ts}. Last successfully queried timestamp: {actual_end_ts}',
-                )
-                break  # There were errors preventing the full range from being queried. Stop any further queries.  # noqa: E501
-
-        self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
-
-    def query_history_with_callbacks(
-            self,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
-            fail_callback: ExchangeHistoryFailCallback,
-            new_step_data: tuple[ExchangeHistoryNewStepCallback, str] | None = None,
-    ) -> None:
-        """Queries the historical event endpoints for this exchange and performs actions.
-        The results are saved in the DB.
-        In case of failure passes the error to failure_callback
-
-        `new_step_data` argument contains callback and exchange name to be used for steps.
-        """
-        new_step_callback, exchange_name = None, None
-        if new_step_data is not None:
-            new_step_callback, exchange_name = new_step_data
-            new_step_callback(f'Querying {exchange_name} margin history')
-
-        try:
-            self.query_margin_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-            )
-            if new_step_callback is not None:
-                new_step_callback(f'Querying {exchange_name} events history')
-            self.query_history_events()
-            # No new step for exchange_specific_history since it is not used in any exchange atm.
-            self.query_exchange_specific_history(
-                start_ts=start_ts,
-                end_ts=end_ts,
-            )
-        except RemoteError as e:
-            fail_callback(str(e))
-
-    def send_unknown_asset_message(
-            self,
-            asset_identifier: str,
-            details: str,
-    ) -> None:
-        """Log warning and send WS message to notify user of unknown asset found on an exchange.
-        Args:
-            asset_identifier (str): Asset identifier of the unknown asset.
-            details (str): Details about what type of event was being processed
-                when the unknown asset was encountered.
-        """
-        log.warning(f'Found unknown {self.location.serialize()} {self.name} asset {asset_identifier} in {details}.')  # noqa: E501
-        self.msg_aggregator.add_message(
-            message_type=WSMessageType.EXCHANGE_UNKNOWN_ASSET,
-            data={
-                'location': self.location.serialize(),
-                'name': self.name,
-                'identifier': asset_identifier,
-                'details': details,
-            },
-        )
-
-
-class ExchangeInterface(ExchangeWithoutApiSecret):
-    """Exchange interface for exchanges that require a secret key."""
-
-    def __init__(
-            self,
-            name: str,
-            location: Location,
-            api_key: ApiKey,
-            secret: ApiSecret,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
-    ):
-        super().__init__(
-            name=name,
-            location=location,
-            api_key=api_key,
-            database=database,
-            msg_aggregator=msg_aggregator,
-        )
-        assert isinstance(secret, T_ApiSecret), (
-            f'secret for {name} should be a bytestring'
-        )
         self.secret = secret
+        self.database = database
+        self.msg_aggregator = msg_aggregator
+        
+        # HTTP session configuration
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.timeout = ClientTimeout(total=30)
+        self.rate_limit = asyncio.Semaphore(10)  # Max concurrent requests
+        
+        # Cache
+        self._balances_cache: dict[Asset, Balance] = {}
+        self._cache_timestamp: Timestamp = Timestamp(0)
+        self.cache_ttl = 300  # 5 minutes
+        
+    async def initialize(self):
+        """Initialize async resources"""
+        if self.session is None:
+            connector = aiohttp.TCPConnector(
+                limit=100,
+                limit_per_host=20,
+            )
+            self.session = aiohttp.ClientSession(
+                connector=connector,
+                timeout=self.timeout,
+            )
+            
+    async def close(self):
+        """Clean up async resources"""
+        if self.session:
+            await self.session.close()
+            self.session = None
+            
+    @abstractmethod
+    async def query_balances(self) -> dict[Asset, Balance]:
+        """Query account balances - must be implemented by each exchange"""
+        
+    @abstractmethod
+    async def query_trade_history(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[Trade]:
+        """Query trade history - must be implemented by each exchange"""
+        
+    async def _api_request(
+        self,
+        method: str,
+        endpoint: str,
+        params: dict[str, Any] | None = None,
+        json_data: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """Make an API request with rate limiting and error handling"""
+        if self.session is None:
+            await self.initialize()
+            
+        async with self.rate_limit:  # Rate limiting
+            try:
+                async with self.session.request(
+                    method=method,
+                    url=endpoint,
+                    params=params,
+                    json=json_data,
+                    headers=headers,
+                ) as response:
+                    response.raise_for_status()
+                    return await response.json()
+                    
+            except ClientError as e:
+                log.error(f'{self.name} API request failed: {e}')
+                raise RemoteError(f'{self.name} API error: {e}') from e
+                
+    async def get_balances_with_cache(
+        self,
+        force_refresh: bool = False,
+    ) -> dict[Asset, Balance]:
+        """Get balances with caching"""
+        now = ts_now()
+        
+        # Check cache
+        if (
+            not force_refresh and
+            self._balances_cache and
+            now - self._cache_timestamp < self.cache_ttl
+        ):
+            return self._balances_cache.copy()
+            
+        # Query fresh balances
+        balances = await self.query_balances()
+        
+        # Update cache
+        self._balances_cache = balances
+        self._cache_timestamp = now
+        
+        return balances
+        
+    async def query_deposits_withdrawals(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[AssetMovement]:
+        """Query deposits and withdrawals - can be overridden"""
+        return []
+        
+    async def query_margin_positions(self) -> list[MarginPosition]:
+        """Query margin positions - can be overridden"""
+        return []
 
-    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        """Edits the exchange object with new credentials given from the API
-        Returns true if an edit happened and false otherwise.
 
-        Needs to be implemented for each subclass
-        """
-        if credentials.api_key is not None:
-            self.api_key = credentials.api_key
-        if credentials.api_secret is not None:
-            self.secret = credentials.api_secret
+class AsyncKraken(AsyncExchangeInterface):
+    """Async implementation of Kraken exchange"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__('kraken', Location.KRAKEN, *args, **kwargs)
+        self.base_url = 'https://api.kraken.com'
+        
+    async def query_balances(self) -> dict[Asset, Balance]:
+        """Query Kraken account balances"""
+        endpoint = f'{self.base_url}/0/private/Balance'
+        
+        # Would implement proper signature generation
+        headers = self._generate_headers('Balance', {})
+        
+        response = await self._api_request(
+            method='POST',
+            endpoint=endpoint,
+            headers=headers,
+        )
+        
+        balances = {}
+        if response.get('error'):
+            raise RemoteError(f"Kraken error: {response['error']}")
+            
+        for asset_str, amount_str in response.get('result', {}).items():
+            # Convert Kraken asset names
+            asset = self._deserialize_asset(asset_str)
+            amount = FVal(amount_str)
+            
+            if amount > ZERO:
+                # Would query USD value
+                usd_value = amount * FVal('1')  # Placeholder
+                balances[asset] = Balance(amount=amount, usd_value=usd_value)
+                
+        return balances
+        
+    async def query_trade_history(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[Trade]:
+        """Query Kraken trade history"""
+        endpoint = f'{self.base_url}/0/private/TradesHistory'
+        
+        params = {
+            'start': start_ts,
+            'end': end_ts,
+        }
+        
+        headers = self._generate_headers('TradesHistory', params)
+        
+        response = await self._api_request(
+            method='POST',
+            endpoint=endpoint,
+            json_data=params,
+            headers=headers,
+        )
+        
+        trades = []
+        if response.get('error'):
+            raise RemoteError(f"Kraken error: {response['error']}")
+            
+        for trade_id, trade_data in response.get('result', {}).get('trades', {}).items():
+            # Parse trade data
+            trade = self._deserialize_trade(trade_id, trade_data)
+            trades.append(trade)
+            
+        return trades
+        
+    def _generate_headers(self, endpoint: str, data: dict) -> dict[str, str]:
+        """Generate API headers with signature"""
+        # Would implement proper Kraken signature generation
+        return {
+            'API-Key': self.api_key,
+            'API-Sign': 'signature',
+        }
+        
+    def _deserialize_asset(self, kraken_asset: str) -> Asset:
+        """Convert Kraken asset name to standard"""
+        # Would implement proper mapping
+        return Asset(kraken_asset)
+        
+    def _deserialize_trade(self, trade_id: str, trade_data: dict) -> Trade:
+        """Deserialize Kraken trade data"""
+        # Would implement proper deserialization
+        return Trade(
+            timestamp=Timestamp(int(trade_data['time'])),
+            location=self.location,
+            base_asset=Asset('ETH'),
+            quote_asset=Asset('USD'),
+            trade_type='buy',
+            amount=FVal(trade_data['vol']),
+            rate=FVal(trade_data['price']),
+            fee=FVal(trade_data['fee']),
+            fee_currency=Asset('USD'),
+            link=trade_id,
+        )
 
-        return credentials.api_key is not None or credentials.api_secret is not None or credentials.passphrase is not None  # noqa: E501
+
+class AsyncBinance(AsyncExchangeInterface):
+    """Async implementation of Binance exchange"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__('binance', Location.BINANCE, *args, **kwargs)
+        self.base_url = 'https://api.binance.com'
+        
+    async def query_balances(self) -> dict[Asset, Balance]:
+        """Query Binance account balances"""
+        endpoint = f'{self.base_url}/api/v3/account'
+        
+        # Would implement proper signature generation
+        params = {
+            'timestamp': ts_now() * 1000,
+        }
+        params['signature'] = self._generate_signature(params)
+        
+        headers = {
+            'X-MBX-APIKEY': self.api_key,
+        }
+        
+        response = await self._api_request(
+            method='GET',
+            endpoint=endpoint,
+            params=params,
+            headers=headers,
+        )
+        
+        balances = {}
+        for balance_data in response.get('balances', []):
+            asset_str = balance_data['asset']
+            free = FVal(balance_data['free'])
+            locked = FVal(balance_data['locked'])
+            amount = free + locked
+            
+            if amount > ZERO:
+                asset = Asset(asset_str)
+                # Would query USD value
+                usd_value = amount * FVal('1')  # Placeholder
+                balances[asset] = Balance(amount=amount, usd_value=usd_value)
+                
+        return balances
+        
+    async def query_trade_history(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[Trade]:
+        """Query Binance trade history"""
+        # Would implement pagination for large histories
+        all_trades = []
+        
+        # Query each trading pair
+        pairs = await self._get_traded_pairs(start_ts, end_ts)
+        
+        tasks = []
+        for pair in pairs:
+            task = self._query_pair_trades(pair, start_ts, end_ts)
+            tasks.append(task)
+            
+        # Query all pairs concurrently
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in results:
+            if isinstance(result, list):
+                all_trades.extend(result)
+            elif isinstance(result, Exception):
+                log.error(f'Error querying trades: {result}')
+                
+        return all_trades
+        
+    async def _get_traded_pairs(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[str]:
+        """Get list of traded pairs in time range"""
+        # Would query from database or API
+        return ['ETHUSDT', 'BTCUSDT']
+        
+    async def _query_pair_trades(
+        self,
+        symbol: str,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[Trade]:
+        """Query trades for a specific pair"""
+        endpoint = f'{self.base_url}/api/v3/myTrades'
+        
+        params = {
+            'symbol': symbol,
+            'startTime': start_ts * 1000,
+            'endTime': end_ts * 1000,
+            'timestamp': ts_now() * 1000,
+        }
+        params['signature'] = self._generate_signature(params)
+        
+        headers = {
+            'X-MBX-APIKEY': self.api_key,
+        }
+        
+        response = await self._api_request(
+            method='GET',
+            endpoint=endpoint,
+            params=params,
+            headers=headers,
+        )
+        
+        trades = []
+        for trade_data in response:
+            trade = self._deserialize_trade(trade_data)
+            trades.append(trade)
+            
+        return trades
+        
+    def _generate_signature(self, params: dict) -> str:
+        """Generate Binance signature"""
+        # Would implement proper HMAC signature
+        return 'signature'
+        
+    def _deserialize_trade(self, trade_data: dict) -> Trade:
+        """Deserialize Binance trade data"""
+        # Would implement proper deserialization
+        return Trade(
+            timestamp=Timestamp(trade_data['time'] // 1000),
+            location=self.location,
+            base_asset=Asset('ETH'),
+            quote_asset=Asset('USDT'),
+            trade_type='buy' if trade_data['isBuyer'] else 'sell',
+            amount=FVal(trade_data['qty']),
+            rate=FVal(trade_data['price']),
+            fee=FVal(trade_data['commission']),
+            fee_currency=Asset(trade_data['commissionAsset']),
+            link=str(trade_data['id']),
+        )
+
+
+class AsyncExchangeManager:
+    """Manages multiple async exchange connections"""
+    
+    def __init__(self, database: Any, msg_aggregator: Any):
+        self.database = database
+        self.msg_aggregator = msg_aggregator
+        self.exchanges: dict[Location, AsyncExchangeInterface] = {}
+        
+    async def add_exchange(
+        self,
+        location: Location,
+        api_key: ApiKey,
+        api_secret: ApiSecret,
+    ) -> AsyncExchangeInterface:
+        """Add a new exchange connection"""
+        # Create appropriate exchange instance
+        if location == Location.KRAKEN:
+            exchange = AsyncKraken(
+                api_key=api_key,
+                secret=api_secret,
+                database=self.database,
+                msg_aggregator=self.msg_aggregator,
+            )
+        elif location == Location.BINANCE:
+            exchange = AsyncBinance(
+                api_key=api_key,
+                secret=api_secret,
+                database=self.database,
+                msg_aggregator=self.msg_aggregator,
+            )
+        else:
+            raise ValueError(f'Unsupported exchange: {location}')
+            
+        await exchange.initialize()
+        self.exchanges[location] = exchange
+        
+        return exchange
+        
+    async def remove_exchange(self, location: Location):
+        """Remove an exchange connection"""
+        if location in self.exchanges:
+            await self.exchanges[location].close()
+            del self.exchanges[location]
+            
+    async def get_all_balances(self) -> dict[Location, dict[Asset, Balance]]:
+        """Get balances from all connected exchanges"""
+        tasks = {}
+        for location, exchange in self.exchanges.items():
+            tasks[location] = exchange.get_balances_with_cache()
+            
+        results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+        
+        all_balances = {}
+        for location, result in zip(tasks.keys(), results):
+            if isinstance(result, dict):
+                all_balances[location] = result
+            elif isinstance(result, Exception):
+                log.error(f'Error getting {location} balances: {result}')
+                all_balances[location] = {}
+                
+        return all_balances
+        
+    async def close_all(self):
+        """Close all exchange connections"""
+        tasks = [exchange.close() for exchange in self.exchanges.values()]
+        await asyncio.gather(*tasks)

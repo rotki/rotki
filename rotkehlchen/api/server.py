@@ -1,520 +1,272 @@
-import json
+"""FastAPI-based ASGI server for rotki
+
+This is the async replacement for the Flask/WSGI server.
+It uses FastAPI with uvicorn for high-performance async operation.
+"""
 import logging
 import sys
-from http import HTTPStatus
+from contextlib import asynccontextmanager
 from typing import Any
 
-import werkzeug
-from flask import Blueprint, Flask, Response, abort, jsonify, request
-from flask.views import MethodView
-from flask_cors import CORS
-# TODO: Replace with ASGI server when migrating to FastAPI
-from gevent.pywsgi import WSGIServer
-from geventwebsocket import Resource as WebsocketResource
-from geventwebsocket.handler import WebSocketHandler
-from marshmallow import Schema
-from marshmallow.exceptions import ValidationError
-from webargs.flaskparser import parser
-from werkzeug.exceptions import NotFound
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.websockets import WebSocket
 
-from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
-from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
-from rotkehlchen.api.v1.resources import (
-    AccountingLinkablePropertiesResource,
-    AccountingReportDataResource,
-    AccountingReportsResource,
-    AccountingRulesConflictsResource,
-    AccountingRulesExportResource,
-    AccountingRulesImportResource,
-    AccountingRulesResource,
-    AddressbookResource,
-    AirdropsMetadataResource,
-    AllAssetsResource,
-    AllBalancesResource,
-    AllEvmChainsResource,
-    AllLatestAssetsPriceResource,
-    AllNamesResource,
-    AssetIconsResource,
-    AssetsMappingResource,
-    AssetsReplaceResource,
-    AssetsSearchLevenshteinResource,
-    AssetsSearchResource,
-    AssetsTypesResource,
-    AssetUpdatesResource,
-    AssociatedLocations,
-    AsyncTasksResource,
-    BinanceAvailableMarkets,
-    BinanceSavingsResource,
-    BinanceUserMarkets,
-    BlockchainBalancesResource,
-    BlockchainsAccountsResource,
-    BlockchainTransactionsResource,
-    BTCXpubResource,
-    CalendarRemindersResource,
-    CalendarResource,
-    ChainTypeAccountResource,
-    ClearCacheResource,
-    ConfigurationsResource,
-    CounterpartyAssetMappingsResource,
-    CustomAssetsResource,
-    CustomAssetsTypesResource,
-    DatabaseBackupsResource,
-    DatabaseInfoResource,
-    DataImportResource,
-    DBSnapshotsResource,
-    DefiMetadataResource,
-    DetectTokensResource,
-    EnsAvatarsResource,
-    ERC20TokenInfo,
-    Eth2DailyStatsResource,
-    Eth2StakePerformanceResource,
-    Eth2StakingEventsResource,
-    Eth2ValidatorsResource,
-    EthereumAirdropsResource,
-    EthereumModuleDataResource,
-    EthereumModuleResource,
-    EventDetailsResource,
-    EventsOnlineQueryResource,
-    EvmAccountsResource,
-    EvmCounterpartiesResource,
-    EvmlikePendingTransactionsDecodingResource,
-    EvmlikeTransactionsResource,
-    EvmModuleBalancesResource,
-    EvmModuleBalancesWithVersionResource,
-    EvmPendingTransactionsDecodingResource,
-    EvmProductsResource,
-    EvmTransactionsHashResource,
-    EvmTransactionsResource,
-    ExchangeBalancesResource,
-    ExchangeEventsQueryResource,
-    ExchangeRatesResource,
-    ExchangesDataResource,
-    ExchangesResource,
-    ExportHistoryDownloadResource,
-    ExportHistoryEventResource,
-    ExternalServicesResource,
-    FalsePositiveSpamTokenResource,
-    HistoricalAssetAmountsResource,
-    HistoricalAssetsPriceResource,
-    HistoricalNetValueResource,
-    HistoricalPricesPerAssetResource,
-    HistoryActionableItemsResource,
-    HistoryDownloadingResource,
-    HistoryEventResource,
-    HistoryExportingResource,
-    HistoryProcessingDebugResource,
-    HistoryProcessingResource,
-    HistorySkippedExternalEventResource,
-    HistoryStatusResource,
-    IgnoredActionsResource,
-    IgnoredAssetsResource,
-    InfoResource,
-    LatestAssetsPriceResource,
-    LiquityStabilityPoolResource,
-    LiquityStakingResource,
-    LiquityTrovesResource,
-    LocationAssetMappingsResource,
-    LocationResource,
-    LoopringBalancesResource,
-    ManuallyTrackedBalancesResource,
-    MessagesResource,
-    ModuleStatsResource,
-    NamedEthereumModuleDataResource,
-    NamedOracleCacheResource,
-    NFTSBalanceResource,
-    NFTSPricesResource,
-    NFTSResource,
-    OraclesResource,
-    OwnedAssetsResource,
-    PeriodicDataResource,
-    PickleDillResource,
-    PingResource,
-    ProtocolDataRefreshResource,
-    QueriedAddressesResource,
-    RefetchEvmTransactionsResource,
-    ResolveEnsResource,
-    ReverseEnsResource,
-    RpcNodesResource,
-    SettingsResource,
-    SpamEvmTokenResource,
-    StakingResource,
-    StatisticsAssetBalanceResource,
-    StatisticsNetvalueResource,
-    StatisticsRendererResource,
-    StatisticsValueDistributionResource,
-    StatsWrapResource,
-    SupportedChainsResource,
-    TagsResource,
-    TimestampHistoricalBalanceResource,
-    TypesMappingsResource,
-    UserAssetsResource,
-    UserNotesResource,
-    UserPasswordChangeResource,
-    UserPremiumKeyResource,
-    UserPremiumSyncResource,
-    UsersByNameResource,
-    UsersResource,
-    WatchersResource,
-    create_blueprint,
-)
-from rotkehlchen.api.v1.wallet_resources import (
-    AccountTokenBalanceResource,
-    AddressesInteractedResource,
-    PrepareNativeTransferResource,
-    PrepareTokenTransferResource,
-)
-from rotkehlchen.api.websockets.unified import create_ws_notifier
-from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier
-from rotkehlchen.api.websockets.ws_app import RotkiWSApp
+from rotkehlchen.api.rest import RestAPI, wrap_in_fail_result
+from rotkehlchen.api.v1.schemas_fastapi import create_error_response
+from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier, AsyncRotkiWSHandler
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
 
-URLS = list[
-    tuple[str, type[MethodView]] | tuple[str, type[MethodView], str]
-]
-
-
-URLS_V1: URLS = [
-    ('/users', UsersResource),
-    ('/watchers', WatchersResource),
-    ('/users/<string:name>', UsersByNameResource),
-    ('/users/<string:name>/password', UserPasswordChangeResource),
-    ('/premium', UserPremiumKeyResource),
-    ('/premium/sync', UserPremiumSyncResource),
-    ('/settings', SettingsResource),
-    ('/settings/configuration', ConfigurationsResource),
-    ('/tasks', AsyncTasksResource),
-    ('/tasks/<int:task_id>', AsyncTasksResource, 'specific_async_tasks_resource'),
-    ('/exchange_rates', ExchangeRatesResource),
-    ('/external_services', ExternalServicesResource),
-    ('/oracles', OraclesResource),
-    ('/oracles/<string:oracle>/cache', NamedOracleCacheResource),
-    ('/exchanges', ExchangesResource),
-    ('/exchanges/balances', ExchangeBalancesResource),
-    (
-        '/exchanges/balances/<string:location>',
-        ExchangeBalancesResource,
-        'named_exchanges_balances_resource',
-    ),
-    ('/assets/icon/modify', AssetIconsResource),
-    ('/assets/locationmappings', LocationAssetMappingsResource),
-    ('/assets/counterpartymappings', CounterpartyAssetMappingsResource),
-    ('/tags', TagsResource),
-    ('/exchanges/binance/pairs', BinanceAvailableMarkets),
-    ('/exchanges/<string:location>/savings', BinanceSavingsResource),  # this can only be Binance/BinanceUS  # noqa: E501
-    ('/exchanges/binance/pairs/<string:name>', BinanceUserMarkets),
-    ('/exchanges/data', ExchangesDataResource),
-    ('/exchanges/data/<string:location>', ExchangesDataResource, 'named_exchanges_data_resource'),
-    ('/balances/blockchains', BlockchainBalancesResource),
-    (
-        '/balances/blockchains/<string:blockchain>',
-        BlockchainBalancesResource,
-        'named_blockchain_balances_resource',
-    ),
-    ('/balances', AllBalancesResource),
-    ('/balances/manual', ManuallyTrackedBalancesResource),
-    ('/statistics/netvalue', StatisticsNetvalueResource),
-    ('/statistics/balance', StatisticsAssetBalanceResource),
-    ('/statistics/value_distribution', StatisticsValueDistributionResource),
-    ('/statistics/renderer', StatisticsRendererResource),
-    ('/statistics/wrap', StatsWrapResource),
-    ('/messages', MessagesResource),
-    ('/periodic', PeriodicDataResource),
-    ('/history', HistoryProcessingResource),
-    ('/history/debug', HistoryProcessingDebugResource),
-    ('/history/status', HistoryStatusResource),
-    ('/history/export', HistoryExportingResource),
-    ('/history/download', HistoryDownloadingResource),
-    ('/history/skipped_external_events', HistorySkippedExternalEventResource),
-    ('/history/events', HistoryEventResource),
-    ('/history/events/query', EventsOnlineQueryResource),
-    ('/history/events/query/exchange', ExchangeEventsQueryResource),
-    ('/history/events/type_mappings', TypesMappingsResource),
-    ('/history/events/counterparties', EvmCounterpartiesResource),
-    ('/history/events/products', EvmProductsResource),
-    ('/history/events/details', EventDetailsResource),
-    ('/history/events/export', ExportHistoryEventResource),
-    ('/history/events/export/download', ExportHistoryDownloadResource),
-    ('/history/actionable_items', HistoryActionableItemsResource),
-    ('/reports', AccountingReportsResource),
-    (
-        '/reports/<int:report_id>',
-        AccountingReportsResource,
-        'per_report_resource',
-    ),
-    (
-        '/reports/<int:report_id>/data',
-        AccountingReportDataResource,
-        'per_report_data_resource',
-    ),
-    ('/accounting/rules', AccountingRulesResource),
-    ('/accounting/rules/import', AccountingRulesImportResource),
-    ('/accounting/rules/export', AccountingRulesExportResource),
-    ('/accounting/rules/conflicts', AccountingRulesConflictsResource),
-    ('/accounting/rules/info', AccountingLinkablePropertiesResource),
-    ('/queried_addresses', QueriedAddressesResource),
-    ('/blockchains/supported', SupportedChainsResource),
-    ('/blockchains/transactions', BlockchainTransactionsResource),
-    ('blockchains/evm/all', AllEvmChainsResource),
-    ('/blockchains/evm/transactions', EvmTransactionsResource),
-    ('/blockchains/evm/transactions/refetch', RefetchEvmTransactionsResource),
-    ('/blockchains/evmlike/transactions', EvmlikeTransactionsResource),
-    ('/blockchains/evm/transactions/decode', EvmPendingTransactionsDecodingResource),
-    ('/blockchains/evmlike/transactions/decode', EvmlikePendingTransactionsDecodingResource),
-    ('/blockchains/eth2/validators', Eth2ValidatorsResource),
-    ('/blockchains/eth2/stake/performance', Eth2StakePerformanceResource),
-    ('/blockchains/eth2/stake/dailystats', Eth2DailyStatsResource),
-    ('/blockchains/eth2/stake/events', Eth2StakingEventsResource),
-    ('/blockchains/eth/airdrops', EthereumAirdropsResource),
-    ('/blockchains/evm/erc20details', ERC20TokenInfo),
-    ('/blockchains/eth/modules/<string:module_name>/data', NamedEthereumModuleDataResource),
-    ('/blockchains/eth/modules/data', EthereumModuleDataResource),
-    ('/blockchains/eth/modules', EthereumModuleResource),
-    ('/blockchains/eth/modules/liquity/balances', LiquityTrovesResource),
-    ('/blockchains/eth/modules/liquity/staking', LiquityStakingResource),
-    ('/blockchains/eth/modules/liquity/pool', LiquityStabilityPoolResource),
-    ('/blockchains/eth/modules/<string:module>/balances', EvmModuleBalancesResource),
-    ('/blockchains/eth/modules/<string:module>/v<string:version>/balances', EvmModuleBalancesWithVersionResource),  # noqa: E501
-    ('/blockchains/eth/modules/<string:module>/stats', ModuleStatsResource),
-    ('/blockchains/eth/modules/pickle/dill', PickleDillResource),
-    ('/blockchains/eth/modules/loopring/balances', LoopringBalancesResource),
-    ('/blockchains/evm/accounts', EvmAccountsResource),
-    ('/blockchains/type/<string:chain_type>/accounts', ChainTypeAccountResource),
-    ('/blockchains/<string:blockchain>/accounts', BlockchainsAccountsResource),
-    ('/blockchains/<string:blockchain>/nodes', RpcNodesResource),
-    ('/blockchains/<string:blockchain>/tokens/detect', DetectTokensResource),
-    ('/blockchains/<string:blockchain>/xpub', BTCXpubResource),
-    ('/blockchains/evm/transactions/add-hash', EvmTransactionsHashResource),
-    ('/assets', OwnedAssetsResource),
-    ('/assets/types', AssetsTypesResource),
-    ('/assets/replace', AssetsReplaceResource),
-    ('/assets/all', AllAssetsResource),
-    ('/assets/mappings', AssetsMappingResource),
-    ('/assets/search', AssetsSearchResource),
-    ('/assets/search/levenshtein', AssetsSearchLevenshteinResource),
-    ('/assets/prices/latest', LatestAssetsPriceResource),
-    ('/assets/prices/latest/all', AllLatestAssetsPriceResource),
-    ('/assets/prices/historical', HistoricalAssetsPriceResource),
-    ('/assets/ignored', IgnoredAssetsResource),
-    ('/assets/ignored/whitelist', FalsePositiveSpamTokenResource),
-    ('/assets/evm/spam/', SpamEvmTokenResource),
-    ('/assets/updates', AssetUpdatesResource),
-    ('/assets/user', UserAssetsResource),
-    ('/assets/custom', CustomAssetsResource),
-    ('/assets/custom/types', CustomAssetsTypesResource),
-    ('/actions/ignored', IgnoredActionsResource),
-    ('/info', InfoResource),
-    ('/ping', PingResource),
-    ('/import', DataImportResource),
-    ('/nfts', NFTSResource),
-    ('/nfts/balances', NFTSBalanceResource),
-    ('/nfts/prices', NFTSPricesResource),
-    ('/database/info', DatabaseInfoResource),
-    ('/database/backups', DatabaseBackupsResource),
-    ('/locations/all', LocationResource),
-    ('/locations/associated', AssociatedLocations),
-    ('/staking/kraken', StakingResource),
-    ('/names', AllNamesResource),
-    ('/names/ens/reverse', ReverseEnsResource),
-    ('/names/ens/resolve', ResolveEnsResource),
-    ('/avatars/ens/<string:ens_name>', EnsAvatarsResource),
-    ('/names/addressbook/<string:book_type>', AddressbookResource),
-    ('/snapshots', DBSnapshotsResource),
-    (
-        '/snapshots/<int:timestamp>',
-        DBSnapshotsResource,
-        'per_timestamp_db_snapshots_resource',
-    ),
-    ('/notes', UserNotesResource),
-    ('/cache/<string:cache_type>/clear', ClearCacheResource),
-    ('/protocols/data/refresh', ProtocolDataRefreshResource),
-    ('/airdrops/metadata', AirdropsMetadataResource),
-    ('/defi/metadata', DefiMetadataResource),
-    ('/calendar', CalendarResource),
-    ('/calendar/reminders', CalendarRemindersResource),
-    ('/balances/historical', TimestampHistoricalBalanceResource),
-    ('/balances/historical/asset', HistoricalAssetAmountsResource),
-    ('/balances/historical/asset/prices', HistoricalPricesPerAssetResource),
-    ('/balances/historical/netvalue', HistoricalNetValueResource),
-    ('/wallet/transfer/token', PrepareTokenTransferResource),
-    ('/wallet/transfer/native', PrepareNativeTransferResource),
-    ('/wallet/interacted', AddressesInteractedResource),
-    ('/wallet/balance', AccountTokenBalanceResource),
-]
+# Import all async route modules
+from rotkehlchen.api.v1.async_transactions import router as transactions_router
+from rotkehlchen.api.v1.async_base import router as base_router
+from rotkehlchen.api.v1.async_balances import router as balances_router
+from rotkehlchen.api.v1.async_exchanges import router as exchanges_router
+from rotkehlchen.api.v1.async_assets_extended import router as assets_extended_router
+from rotkehlchen.api.v1.async_users import router as users_router
+from rotkehlchen.api.v1.async_database import router as database_router
+from rotkehlchen.api.v1.async_statistics import router as statistics_router
+from rotkehlchen.api.v1.async_history import router as history_router
+from rotkehlchen.api.v1.async_accounting import router as accounting_router
+from rotkehlchen.api.v1.async_blockchain import router as blockchain_router
+from rotkehlchen.api.v1.async_nfts import router as nfts_router
+from rotkehlchen.api.v1.async_eth2 import router as eth2_router
+from rotkehlchen.api.v1.async_defi import router as defi_router
+from rotkehlchen.api.v1.async_utils import router as utils_router
+from rotkehlchen.api.v1.async_addressbook import router as addressbook_router
+from rotkehlchen.api.v1.async_calendar import router as calendar_router
+from rotkehlchen.api.v1.async_spam import router as spam_router
+from rotkehlchen.api.v1.async_misc import router as misc_router
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def setup_urls(
-        rest_api: RestAPI,
-        blueprint: Blueprint,
-        urls: URLS,
-) -> None:
-    for url_tuple in urls:
-        if len(url_tuple) == 2:
-            route, resource_cls = url_tuple
-            endpoint = resource_cls.__name__.lower()
-        elif len(url_tuple) == 3:
-            route, resource_cls, endpoint = url_tuple
-        else:
-            raise ValueError(f'Invalid URL format: {url_tuple!r}')
-        blueprint.add_url_rule(
-            route,
-            view_func=resource_cls.as_view(endpoint, rest_api_object=rest_api),
-        )
-
-
-def endpoint_not_found(e: NotFound) -> Response:
-    msg = 'invalid endpoint'
-    # The isinstance check is because I am not sure if `e` is always going to
-    # be a "NotFound" error here
-    if isinstance(e, NotFound):
-        msg = e.description
-    return api_response(wrap_in_fail_result(msg), HTTPStatus.NOT_FOUND)
-
-
-@parser.error_handler  # type: ignore
-@resource_parser.error_handler
-@ignore_kwarg_parser.error_handler
-def handle_request_parsing_error(
-        err: ValidationError,
-        _request: werkzeug.local.LocalProxy,
-        _schema: Schema,
-        error_status_code: int | None,  # pylint: disable=unused-argument
-        error_headers: dict | None,  # pylint: disable=unused-argument
-) -> None:
-    """ This handles request parsing errors generated for example by schema
-    field validation failing."""
-    msg = str(err)
-    if isinstance(err.messages, dict):
-        # first key is just the location. Ignore
-        key = next(iter(err.messages.keys()))
-        msg = json.dumps(err.messages[key])
-    elif isinstance(err.messages, list):
-        msg = ','.join(err.messages)
-
-    err_response = jsonify(result=None, message=msg)
-    err_response.status_code = HTTPStatus.BAD_REQUEST
-    abort(err_response)
-
-
-class APIServer:
-
-    _api_prefix = '/api/1'
-
+class RotkiASGIServer:
+    """FastAPI-based ASGI server for rotki"""
+    
     def __init__(
-            self,
-            rest_api: RestAPI,
-            ws_notifier: RotkiNotifier | AsyncRotkiNotifier,
-            cors_domain_list: list[str] | None = None,
+        self,
+        rest_api: RestAPI,
+        ws_notifier: AsyncRotkiNotifier,
+        cors_domain_list: list[str] | None = None,
     ) -> None:
-        flask_app = Flask(__name__)
-        if cors_domain_list:
-            CORS(flask_app, origins=cors_domain_list)
-        blueprint = create_blueprint(self._api_prefix)
-        setup_urls(
-            blueprint=blueprint,
-            rest_api=rest_api,
-            urls=URLS_V1,
-        )
-
         self.rest_api = rest_api
-        self.rotki_notifier = ws_notifier
-        self.flask_app = flask_app
-        self.blueprint = blueprint
-
-        self.wsgiserver: WSGIServer | None = None
-        self.flask_app.register_blueprint(self.blueprint)
-
-        self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
-        self.flask_app.register_error_handler(Exception, self.unhandled_exception)
-        self.flask_app.before_request(self.before_request_callback)
-        self.flask_app.after_request(self.after_request_callback)
-
-    @staticmethod
-    def unhandled_exception(exception: Exception) -> Response:
-        """ Flask.errorhandler when an exception wasn't correctly handled """
+        self.ws_notifier = ws_notifier
+        self.ws_handler = AsyncRotkiWSHandler(ws_notifier)
+        
+        # Create FastAPI app with lifespan management
+        @asynccontextmanager
+        async def lifespan(app: FastAPI):
+            # Startup
+            log.info(f'Starting rotki ASGI server {get_current_version().our_version}')
+            yield
+            # Shutdown
+            log.info('Stopping rotki ASGI server')
+            self.rest_api.stop()
+        
+        self.app = FastAPI(
+            title="rotki API",
+            version=get_current_version().our_version,
+            lifespan=lifespan,
+            docs_url="/api/1/docs",
+            redoc_url="/api/1/redoc",
+            openapi_url="/api/1/openapi.json",
+        )
+        
+        # Configure CORS
+        if cors_domain_list:
+            self.app.add_middleware(
+                CORSMiddleware,
+                allow_origins=cors_domain_list,
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+        
+        # Add exception handlers
+        self.app.add_exception_handler(StarletteHTTPException, self.http_exception_handler)
+        self.app.add_exception_handler(RequestValidationError, self.validation_exception_handler)
+        self.app.add_exception_handler(Exception, self.general_exception_handler)
+        
+        # Add middleware for logging
+        self.app.middleware("http")(self.log_requests)
+        
+        # Include routers
+        self._setup_routes()
+        
+        # WebSocket endpoint
+        self.app.websocket("/ws")(self.websocket_endpoint)
+        
+    def _setup_routes(self) -> None:
+        """Setup all API routes"""
+        # Include async routers as they become available
+        self.app.include_router(base_router)
+        self.app.include_router(transactions_router)
+        self.app.include_router(balances_router)
+        self.app.include_router(exchanges_router)
+        self.app.include_router(assets_extended_router)
+        self.app.include_router(users_router)
+        self.app.include_router(database_router)
+        self.app.include_router(statistics_router)
+        self.app.include_router(history_router)
+        self.app.include_router(accounting_router)
+        self.app.include_router(blockchain_router)
+        self.app.include_router(nfts_router)
+        self.app.include_router(eth2_router)
+        self.app.include_router(defi_router)
+        self.app.include_router(utils_router)
+        self.app.include_router(addressbook_router)
+        self.app.include_router(calendar_router)
+        self.app.include_router(spam_router)
+        self.app.include_router(misc_router)
+        
+        # TODO: As we migrate endpoints to FastAPI, include their routers here
+        
+        # For now, we can also mount the Flask app for non-migrated endpoints
+        # This allows gradual migration
+        # from fastapi.middleware.wsgi import WSGIMiddleware
+        # self.app.mount("/api/1", WSGIMiddleware(flask_app))
+    
+    async def websocket_endpoint(self, websocket: WebSocket) -> None:
+        """Handle WebSocket connections"""
+        await websocket.accept()
+        await self.ws_handler.handle_connection(websocket, str(websocket.url.path))
+    
+    async def log_requests(self, request: Request, call_next):
+        """Middleware to log all requests"""
+        # Log request
+        log.debug(
+            f'start rotki api {request.method} {request.url.path}',
+            query_params=dict(request.query_params),
+            headers=dict(request.headers),
+        )
+        
+        # Process request
+        response = await call_next(request)
+        
+        # Log response
+        log.debug(
+            f'end rotki api {request.method} {request.url.path}',
+            status_code=response.status_code,
+        )
+        
+        return response
+    
+    async def http_exception_handler(self, request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        """Handle HTTP exceptions"""
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=create_error_response(exc.detail),
+        )
+    
+    async def validation_exception_handler(self, request: Request, exc: RequestValidationError) -> JSONResponse:
+        """Handle validation errors"""
+        # Format validation errors
+        errors = []
+        for error in exc.errors():
+            loc = " -> ".join(str(l) for l in error["loc"])
+            errors.append(f"{loc}: {error['msg']}")
+        
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content=create_error_response(", ".join(errors)),
+        )
+    
+    async def general_exception_handler(self, request: Request, exc: Exception) -> JSONResponse:
+        """Handle unhandled exceptions"""
         if __debug__:
-            logger.exception(exception)  # noqa: LOG004  -- this is an error handler
+            logger.exception(exc)
         log.critical(
             'Unhandled exception when processing endpoint request',
-            exc_info=True,  # noqa: LOG014  -- this is an error handler
-            exception=str(exception),
+            exc_info=True,
+            exception=str(exc),
         )
-        return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
-
-    @staticmethod
-    def before_request_callback() -> None:
-        """Function that runs before each request"""
-        log.debug(
-            f'start rotki api {request.method} {request.path}',
-            view_args=request.view_args,
-            query_string=request.query_string,
-            json_data=request.json if request.is_json else None,
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content=create_error_response(str(exc)),
         )
-
-    @staticmethod
-    def after_request_callback(response: Response) -> Response:
-        """Function that runs after each completed request
-
-        Logs the response if required. This is determined by the
-        fake header rotki-log-result passed to all responses.
+    
+    def run(self, host: str = '127.0.0.1', port: int = 5042) -> None:
+        """Run the server using uvicorn
+        
+        This is the main entry point for production use.
         """
-        if response.headers.pop('rotki-log-result', 'True') == 'True':
-            result = response.json
-        else:
-            result = 'redacted'
-
-        log.debug(
-            f'end rotki api {request.method} {request.path}',
-            view_args=request.view_args,
-            query_string=request.query_string,
-            status_code=response.status_code,
-            result=result,
-        )
-        return response
-
-    def run(self, host: str = '127.0.0.1', port: int = 5042, **kwargs: Any) -> None:
-        """This is only used for the data faker and not used in production"""
-        self.flask_app.run(host=host, port=port, **kwargs)
-
-    def start(
-            self,
-            host: str = '127.0.0.1',
-            rest_port: int = 5042,
-    ) -> None:
-        """This is used to start the API server in production"""
-        wsgi_logger = logging.getLogger(__name__ + '.pywsgi')
-        self.wsgiserver = WSGIServer(
-            listener=(host, rest_port),
-            application=WebsocketResource([
-                ('^/ws', RotkiWSApp),
-                ('^/', self.flask_app),
-            ]),
-            log=None,
-            handler_class=WebSocketHandler,
-            environ={'rotki_notifier': self.rotki_notifier},
-            error_log=wsgi_logger,
-        )
-        # this is to prevent littering logs with geventwebsocket upgrade messages
-        logging.getLogger('geventwebsocket.handler').setLevel(logging.ERROR)
-
-        if 'pytest' not in sys.modules:  # do not check
+        import uvicorn
+        
+        log_level = "debug" if __debug__ else "info"
+        
+        if 'pytest' not in sys.modules:
             if __debug__:
                 msg = 'rotki is running in __debug__ mode'
                 print(msg)
                 log.info(msg)
             log.info(f'Starting rotki {get_current_version().our_version}')
-            msg = f'rotki REST API server is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
+            msg = f'rotki REST API server is running at: {host}:{port} with loglevel {logging.getLevelName(logging.root.level)}'
             print(msg)
             log.info(msg)
-        self.wsgiserver.start()
+        
+        # Run with uvicorn
+        uvicorn.run(
+            self.app,
+            host=host,
+            port=port,
+            log_level=log_level,
+            access_log=False,  # We handle logging ourselves
+            lifespan="on",
+        )
 
-    def stop(self, timeout: int = 5) -> None:
-        """Stops the API server. If handlers are running after timeout they are killed"""
-        if self.wsgiserver is not None:
-            self.wsgiserver.stop(timeout)
-            self.wsgiserver = None
 
-        self.rest_api.stop()
+# Dependency injection helpers that will be overridden by the app
+_rest_api_instance: RestAPI | None = None
+_ws_notifier_instance: AsyncRotkiNotifier | None = None
+
+
+def set_global_dependencies(rest_api: RestAPI, ws_notifier: AsyncRotkiNotifier) -> None:
+    """Set global instances for dependency injection"""
+    global _rest_api_instance, _ws_notifier_instance
+    _rest_api_instance = rest_api
+    _ws_notifier_instance = ws_notifier
+
+
+async def get_rest_api() -> RestAPI:
+    """Dependency to get RestAPI instance"""
+    if _rest_api_instance is None:
+        raise RuntimeError("RestAPI not initialized")
+    return _rest_api_instance
+
+
+async def get_ws_notifier() -> AsyncRotkiNotifier:
+    """Dependency to get WebSocket notifier"""
+    if _ws_notifier_instance is None:
+        raise RuntimeError("WebSocket notifier not initialized") 
+    return _ws_notifier_instance
+
+
+# Override the dependency in the routers
+from rotkehlchen.api.v1 import (
+    async_transactions, async_base, async_balances, async_exchanges,
+    async_assets_extended, async_users, async_database,
+    async_statistics, async_history, async_accounting,
+    async_blockchain, async_nfts, async_eth2, async_defi, async_utils,
+    async_addressbook, async_calendar, async_spam, async_misc
+)
+
+# Set up dependency injection for all routers
+for module in [
+    async_transactions, async_base, async_balances, async_exchanges,
+    async_assets_extended, async_users, async_database,
+    async_statistics, async_history, async_accounting,
+    async_blockchain, async_nfts, async_eth2, async_defi, async_utils,
+    async_addressbook, async_calendar, async_spam, async_misc
+]:
+    module.get_rest_api = get_rest_api
+
+# Special dependencies for transactions
+async_transactions.get_task_manager = lambda: _rest_api_instance.rotkehlchen.task_manager if _rest_api_instance else None
+async_transactions.get_async_db = lambda: _rest_api_instance.rotkehlchen.data.db if _rest_api_instance else None

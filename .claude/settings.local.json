@@ -22,7 +22,9 @@
       "Bash(git restore:*)",
       "Bash(git rm:*)",
       "Bash(python:*)",
-      "Bash(gh pr diff:*)"
+      "Bash(gh pr diff:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
     ],
     "deny": []
   }

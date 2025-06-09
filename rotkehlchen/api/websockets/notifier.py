@@ -1,4 +1,4 @@
-"""Asyncio-based WebSocket notifier using websockets library"""
+"""WebSocket notifier using websockets library and asyncio"""
 import asyncio
 import json
 import logging
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncRotkiNotifier:
+class RotkiNotifier:
     """Async WebSocket notification manager using websockets library"""
 
     def __init__(self) -> None:
@@ -134,10 +134,10 @@ class AsyncRotkiNotifier:
             failure_callback(**failure_callback_args)
 
 
-class AsyncRotkiWSHandler:
+class RotkiWSHandler:
     """WebSocket connection handler for the async implementation"""
     
-    def __init__(self, notifier: AsyncRotkiNotifier):
+    def __init__(self, notifier: RotkiNotifier):
         self.notifier = notifier
     
     async def handle_connection(
