@@ -20,7 +20,7 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.handler import AsyncDBHandler
+    from rotkehlchen.db.handler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -40,14 +40,14 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
-class AsyncPremiumClient:
+class PremiumClient:
     """Async client for Rotki premium API"""
 
     def __init__(
         self,
         api_key: str,
         api_secret: str,
-        async_db: 'AsyncDBHandler',
+        async_db: 'DBHandler',
         base_url: str = 'https://api.rotki.com',
     ):
         self.api_key = api_key
@@ -308,13 +308,13 @@ class AsyncPremiumClient:
             return False
 
 
-class AsyncPremiumSyncManager:
+class PremiumSyncManager:
     """Manages automatic premium sync operations"""
 
     def __init__(
         self,
-        premium_client: AsyncPremiumClient,
-        async_db: 'AsyncDBHandler',
+        premium_client: PremiumClient,
+        async_db: 'DBHandler',
         sync_interval: int = 3600,  # 1 hour
     ):
         self.premium_client = premium_client
@@ -386,12 +386,12 @@ class AsyncPremiumSyncManager:
             raise
 
 # Compatibility exports
-Premium = AsyncPremiumClient  # For backward compatibility
+Premium = PremiumClient  # For backward compatibility
 
 
-async def premium_create_and_verify(credentials: PremiumCredentials) -> AsyncPremiumClient:
+async def premium_create_and_verify(credentials: PremiumCredentials) -> PremiumClient:
     """Create and verify premium client"""
-    client = AsyncPremiumClient(
+    client = PremiumClient(
         api_key=credentials.api_key,
         api_secret=credentials.api_secret,
         async_db=None,  # Will be set by caller

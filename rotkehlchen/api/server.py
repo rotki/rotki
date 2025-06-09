@@ -14,30 +14,30 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.websockets import WebSocket
 
-from rotkehlchen.api.v1.async_accounting import router as accounting_router
-from rotkehlchen.api.v1.async_addressbook import router as addressbook_router
-from rotkehlchen.api.v1.async_assets_extended import router as assets_extended_router
-from rotkehlchen.api.v1.async_balances import router as balances_router
-from rotkehlchen.api.v1.async_base import router as base_router
-from rotkehlchen.api.v1.async_blockchain import router as blockchain_router
-from rotkehlchen.api.v1.async_calendar import router as calendar_router
-from rotkehlchen.api.v1.async_database import router as database_router
-from rotkehlchen.api.v1.async_defi import router as defi_router
-from rotkehlchen.api.v1.async_eth2 import router as eth2_router
-from rotkehlchen.api.v1.async_exchanges import router as exchanges_router
-from rotkehlchen.api.v1.async_history import router as history_router
-from rotkehlchen.api.v1.async_misc import router as misc_router
-from rotkehlchen.api.v1.async_nfts import router as nfts_router
-from rotkehlchen.api.v1.async_spam import router as spam_router
-from rotkehlchen.api.v1.async_statistics import router as statistics_router
+from rotkehlchen.api.v1.accounting import router as accounting_router
+from rotkehlchen.api.v1.addressbook import router as addressbook_router
+from rotkehlchen.api.v1.assets_extended import router as assets_extended_router
+from rotkehlchen.api.v1.balances import router as balances_router
+from rotkehlchen.api.v1.base import router as base_router
+from rotkehlchen.api.v1.blockchain import router as blockchain_router
+from rotkehlchen.api.v1.calendar import router as calendar_router
+from rotkehlchen.api.v1.database import router as database_router
+from rotkehlchen.api.v1.defi import router as defi_router
+from rotkehlchen.api.v1.eth2 import router as eth2_router
+from rotkehlchen.api.v1.exchanges import router as exchanges_router
+from rotkehlchen.api.v1.history import router as history_router
+from rotkehlchen.api.v1.misc import router as misc_router
+from rotkehlchen.api.v1.nfts import router as nfts_router
+from rotkehlchen.api.v1.spam import router as spam_router
+from rotkehlchen.api.v1.statistics import router as statistics_router
 
-# Import all async route modules
-from rotkehlchen.api.v1.async_transactions import router as transactions_router
-from rotkehlchen.api.v1.async_users import router as users_router
-from rotkehlchen.api.v1.async_utils import router as utils_router
+# Import all route modules
+from rotkehlchen.api.v1.transactions import router as transactions_router
+from rotkehlchen.api.v1.users import router as users_router
+from rotkehlchen.api.v1.utils import router as utils_router
 from rotkehlchen.api.v1.dependencies import set_rotkehlchen_instance
 from rotkehlchen.api.v1.schemas_fastapi import create_error_response
-from rotkehlchen.api.websockets.async_notifier import AsyncRotkiNotifier, AsyncRotkiWSHandler
+from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class RotkiASGIServer:
+class APIServer:
     """FastAPI-based ASGI server for rotki"""
 
     def __init__(
@@ -220,3 +220,4 @@ class RotkiASGIServer:
             access_log=False,  # We handle logging ourselves
             lifespan='on',
         )
+

@@ -10,8 +10,8 @@ from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from rotkehlchen.accounting.rules import AccountingRule
-from rotkehlchen.api.rest import RestAPI
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
+from rotkehlchen.api.v1.dependencies import get_rotkehlchen
 from rotkehlchen.api.v1.schemas_fastapi import (
     create_error_response,
     create_success_response,
@@ -47,14 +47,11 @@ class AccountingRuleData(BaseModel):
 
 
 # Dependency injection
-async def get_rest_api() -> RestAPI:
-    """Get RestAPI instance - will be injected by the app"""
-    raise NotImplementedError('RestAPI injection not configured')
 
 
 @router.get('/reports', response_model=dict)
 async def get_reports(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of all accounting reports"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -62,15 +59,15 @@ async def get_reports(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get reports from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            reports = rest_api.rotkehlchen.data.db.get_accounting_reports(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            reports = rotkehlchen.data.db.get_accounting_reports(cursor)
 
         # Format response
         report_list = [{
@@ -98,7 +95,7 @@ async def get_reports(
 @router.post('/reports', response_model=dict)
 async def generate_report(
     params: ReportGeneration,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Generate a new accounting report"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -106,7 +103,7 @@ async def generate_report(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -121,9 +118,9 @@ async def generate_report(
 
         if params.async_query:
             # Spawn async task
-            task = rest_api.rotkehlchen.task_manager.spawn_task(
+            task = rotkehlchen.task_manager.spawn_task(
                 task_name='generate_accounting_report',
-                method=rest_api.rotkehlchen.generate_report,
+                method=rotkehlchen.generate_report,
                 from_ts=Timestamp(params.from_timestamp),
                 to_ts=Timestamp(params.to_timestamp),
                 profit_currency=params.profit_currency,
@@ -136,7 +133,7 @@ async def generate_report(
 
         # Synchronous generation
         report = await asyncio.to_thread(
-            rest_api.rotkehlchen.generate_report,
+            rotkehlchen.generate_report,
             from_ts=Timestamp(params.from_timestamp),
             to_ts=Timestamp(params.to_timestamp),
             profit_currency=params.profit_currency,
@@ -158,7 +155,7 @@ async def generate_report(
 @router.get('/reports/{report_id}', response_model=dict)
 async def get_report(
     report_id: int,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Get a specific accounting report"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -166,15 +163,15 @@ async def get_report(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get report from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            report = rest_api.rotkehlchen.data.db.get_accounting_report(cursor, report_id)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            report = rotkehlchen.data.db.get_accounting_report(cursor, report_id)
 
         if not report:
             return JSONResponse(
@@ -195,7 +192,7 @@ async def get_report(
 @router.get('/reports/{report_id}/data', response_model=dict)
 async def get_report_data(
     report_id: int,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Get report data (events and trades)"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -203,15 +200,15 @@ async def get_report_data(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get report data
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            report_data = rest_api.rotkehlchen.data.db.get_report_data(cursor, report_id)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            report_data = rotkehlchen.data.db.get_report_data(cursor, report_id)
 
         if not report_data:
             return JSONResponse(
@@ -232,7 +229,7 @@ async def get_report_data(
 @router.delete('/reports/{report_id}', response_model=dict)
 async def delete_report(
     report_id: int,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete an accounting report"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -240,15 +237,15 @@ async def delete_report(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete report
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.delete_accounting_report(write_cursor, report_id)
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.delete_accounting_report(write_cursor, report_id)
 
         if not success:
             return JSONResponse(
@@ -268,7 +265,7 @@ async def delete_report(
 
 @router.get('/accounting/rules', response_model=dict)
 async def get_accounting_rules(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Get all accounting rules"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -276,15 +273,15 @@ async def get_accounting_rules(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Get rules from database
-        with rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            rules = rest_api.rotkehlchen.data.db.get_accounting_rules(cursor)
+        with rotkehlchen.data.db.conn.read_ctx() as cursor:
+            rules = rotkehlchen.data.db.get_accounting_rules(cursor)
 
         # Format response
         rule_list = [rule.serialize() for rule in rules]
@@ -302,7 +299,7 @@ async def get_accounting_rules(
 @router.post('/accounting/rules', response_model=dict)
 async def add_accounting_rule(
     rule_data: AccountingRuleData,
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Add a new accounting rule"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -310,18 +307,14 @@ async def add_accounting_rule(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Create accounting rule
-        rule = AccountingRule(
-            event_type=rule_data.event_type,
-            event_subtype=rule_data.event_subtype,
-            counterparty=rule_data.counterparty,
-            rule=rule_data.rule,
+        rule = BaseEventSettings(
             taxable=rule_data.taxable,
             count_entire_amount_spend=rule_data.count_entire_amount_spend,
             count_cost_basis_pnl=rule_data.count_cost_basis_pnl,
@@ -329,8 +322,8 @@ async def add_accounting_rule(
         )
 
         # Add to database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            identifier = rest_api.rotkehlchen.data.db.add_accounting_rule(write_cursor, rule)
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            identifier = rotkehlchen.data.db.add_accounting_rule(write_cursor, rule)
 
         return create_success_response({
             'identifier': identifier,
@@ -348,7 +341,7 @@ async def add_accounting_rule(
 @router.patch('/accounting/rules', response_model=dict)
 async def edit_accounting_rule(
     rule_data: dict = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Edit an existing accounting rule"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -356,7 +349,7 @@ async def edit_accounting_rule(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -371,8 +364,8 @@ async def edit_accounting_rule(
             )
 
         # Update rule in database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            success = rest_api.rotkehlchen.data.db.edit_accounting_rule(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            success = rotkehlchen.data.db.edit_accounting_rule(
                 write_cursor,
                 identifier=identifier,
                 rule_data=rule_data,
@@ -397,7 +390,7 @@ async def edit_accounting_rule(
 @router.delete('/accounting/rules', response_model=dict)
 async def delete_accounting_rules(
     identifiers: list[int] = Body(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Delete accounting rules"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -405,15 +398,15 @@ async def delete_accounting_rules(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
             )
 
         # Delete rules from database
-        with rest_api.rotkehlchen.data.db.user_write() as write_cursor:
-            deleted_count = rest_api.rotkehlchen.data.db.delete_accounting_rules(
+        with rotkehlchen.data.db.user_write() as write_cursor:
+            deleted_count = rotkehlchen.data.db.delete_accounting_rules(
                 write_cursor,
                 identifiers=identifiers,
             )
@@ -434,7 +427,7 @@ async def delete_accounting_rules(
 @router.post('/accounting/rules/import', response_model=dict)
 async def import_accounting_rules(
     file: UploadFile = File(...),
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> dict:
     """Import accounting rules from file"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -442,7 +435,7 @@ async def import_accounting_rules(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -453,7 +446,7 @@ async def import_accounting_rules(
 
         # Import rules
         imported_count = await asyncio.to_thread(
-            rest_api.rotkehlchen.import_accounting_rules,
+            rotkehlchen.import_accounting_rules,
             rules_data=content,
         )
 
@@ -472,7 +465,7 @@ async def import_accounting_rules(
 
 @router.get('/accounting/rules/export', response_model=Any)
 async def export_accounting_rules(
-    rest_api: RestAPI = Depends(get_rest_api),
+    rotkehlchen = Depends(get_rotkehlchen),
 ) -> Any:
     """Export accounting rules to file"""
     if not async_features.is_enabled(AsyncFeature.ACCOUNTING_ENDPOINT):
@@ -480,7 +473,7 @@ async def export_accounting_rules(
 
     try:
         # Check authentication
-        if not rest_api.rotkehlchen.user_is_logged_in:
+        if not rotkehlchen.user_is_logged_in:
             return JSONResponse(
                 content=create_error_response('No user is logged in'),
                 status_code=401,
@@ -488,7 +481,7 @@ async def export_accounting_rules(
 
         # Export rules
         export_path = await asyncio.to_thread(
-            rest_api.rotkehlchen.export_accounting_rules,
+            rotkehlchen.export_accounting_rules,
         )
 
         return FileResponse(

@@ -26,14 +26,14 @@ if TYPE_CHECKING:
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
 
 
-class AsyncDBCursor:
+class DBCursor:
     """Async wrapper for database cursor operations"""
 
-    def __init__(self, cursor: aiosqlite.Cursor, connection: 'AsyncDBConnection'):
+    def __init__(self, cursor: aiosqlite.Cursor, connection: 'DBConnection'):
         self._cursor = cursor
         self.connection = connection
 
-    async def execute(self, statement: str, *bindings: Sequence) -> 'AsyncDBCursor':
+    async def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
         """Execute a SQL statement
 
         Naturally yields control during execution
@@ -48,7 +48,7 @@ class AsyncDBCursor:
             logger.trace(f'FINISH ASYNC EXECUTE {statement}')  # type: ignore[attr-defined]
         return self
 
-    async def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> 'AsyncDBCursor':
+    async def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> 'DBCursor':
         if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'ASYNC EXECUTEMANY {statement}')  # type: ignore[attr-defined]
 
@@ -58,7 +58,7 @@ class AsyncDBCursor:
             logger.trace(f'FINISH ASYNC EXECUTEMANY {statement}')  # type: ignore[attr-defined]
         return self
 
-    async def executescript(self, script: str) -> 'AsyncDBCursor':
+    async def executescript(self, script: str) -> 'DBCursor':
         if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'ASYNC EXECUTESCRIPT {script}')  # type: ignore[attr-defined]
 
@@ -89,7 +89,7 @@ class AsyncDBCursor:
         await self._cursor.close()
 
 
-class AsyncDBConnection:
+class DBConnection:
     """Asyncio DBConnection
 
     Key features:
@@ -147,29 +147,29 @@ class AsyncDBConnection:
         await self._conn.execute('PRAGMA cache_size=10000')
         await self._conn.execute('PRAGMA page_size=4096')
 
-    async def execute(self, statement: str, *bindings: Sequence) -> AsyncDBCursor:
+    async def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         """Execute a SQL statement"""
         if not self._conn:
             raise RuntimeError('Database not connected')
 
         cursor = await self._conn.execute(statement, *bindings)
-        return AsyncDBCursor(cursor, self)
+        return DBCursor(cursor, self)
 
-    async def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> AsyncDBCursor:
+    async def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> DBCursor:
         """Execute a SQL statement with multiple parameter sets"""
         if not self._conn:
             raise RuntimeError('Database not connected')
 
         cursor = await self._conn.executemany(statement, *bindings)
-        return AsyncDBCursor(cursor, self)
+        return DBCursor(cursor, self)
 
-    async def executescript(self, script: str) -> AsyncDBCursor:
+    async def executescript(self, script: str) -> DBCursor:
         """Execute a SQL script"""
         if not self._conn:
             raise RuntimeError('Database not connected')
 
         cursor = await self._conn.executescript(script)
-        return AsyncDBCursor(cursor, self)
+        return DBCursor(cursor, self)
 
     async def commit(self) -> None:
         """Commit the current transaction"""
@@ -198,20 +198,20 @@ class AsyncDBConnection:
             self._conn = None
 
     @asynccontextmanager
-    async def read_ctx(self) -> AsyncGenerator[AsyncDBCursor, None]:
+    async def read_ctx(self) -> AsyncGenerator[DBCursor, None]:
         """Context manager for read operations"""
         if not self._conn:
             raise RuntimeError('Database not connected')
 
         cursor = await self._conn.cursor()
-        async_cursor = AsyncDBCursor(cursor, self)
+        async_cursor = DBCursor(cursor, self)
         try:
             yield async_cursor
         finally:
             await async_cursor.close()
 
     @asynccontextmanager
-    async def write_ctx(self, commit_ts: bool = False) -> AsyncGenerator[AsyncDBCursor, None]:
+    async def write_ctx(self, commit_ts: bool = False) -> AsyncGenerator[DBCursor, None]:
         """Context manager for write operations with transaction
 
         This replaces the complex gevent version with simpler async logic.
@@ -236,7 +236,7 @@ class AsyncDBConnection:
 
         async with self.transaction_lock:
             cursor = await self._conn.cursor()
-            async_cursor = AsyncDBCursor(cursor, self)
+            async_cursor = DBCursor(cursor, self)
             self.write_task_id = current_task_id
 
             await async_cursor.execute('BEGIN TRANSACTION')
@@ -261,7 +261,7 @@ class AsyncDBConnection:
     async def savepoint_ctx(
             self,
             savepoint_name: str | None = None,
-    ) -> AsyncGenerator[AsyncDBCursor, None]:
+    ) -> AsyncGenerator[DBCursor, None]:
         """Context manager for savepoint operations"""
         if not self._conn:
             raise RuntimeError('Database not connected')
@@ -270,7 +270,7 @@ class AsyncDBConnection:
             savepoint_name = str(uuid4())
 
         cursor = await self._conn.cursor()
-        async_cursor = AsyncDBCursor(cursor, self)
+        async_cursor = DBCursor(cursor, self)
 
         # Create savepoint
         await async_cursor.execute(f"SAVEPOINT '{savepoint_name}'")
@@ -318,10 +318,6 @@ class AsyncDBConnection:
                 self.minimized_schema,
             )
 
-
-# Compatibility exports for gradual migration
-DBConnection = AsyncDBConnection
-DBCursor = AsyncDBCursor
 
 # Migration comparison example
 """

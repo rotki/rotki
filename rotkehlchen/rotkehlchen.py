@@ -9,24 +9,22 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.accountant import Accountant
-from rotkehlchen.api.async_server import AsyncAPIServer
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.rest import RestAPI
-from rotkehlchen.api.v1.async_auth import AsyncAuthManager
+from rotkehlchen.api.v1.auth import AuthManager
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.manager import EthereumInquirer
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_handler import DataHandler
-from rotkehlchen.db.async_handler import AsyncDBHandler
-from rotkehlchen.exchanges.async_exchange import AsyncExchangeManager
+from rotkehlchen.db.handler import DBHandler
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import CryptoCompare
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
-# TaskManager import already exists above
-from rotkehlchen.tasks.async_tasks import AsyncTaskOrchestrator
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -38,7 +36,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncRotkehlchen:
+class Rotkehlchen:
     """Main async Rotkehlchen class coordinating all modules"""
 
     def __init__(

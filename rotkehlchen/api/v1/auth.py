@@ -34,7 +34,7 @@ MAX_SESSIONS_PER_USER = 5
 SESSION_TOKEN_LENGTH = 32
 
 
-class AsyncSession:
+class Session:
     """Async session data"""
 
     def __init__(
@@ -64,12 +64,12 @@ class AsyncSession:
         self.last_activity = Timestamp(int(time.time()))
 
 
-class AsyncAuthManager:
+class AuthManager:
     """Manages authentication and sessions asynchronously"""
 
     def __init__(self, async_db: AsyncDBHandler):
         self.async_db = async_db
-        self._sessions: dict[str, AsyncSession] = {}
+        self._sessions: dict[str, Session] = {}
         self._user_sessions: dict[str, list[str]] = {}  # username -> [tokens]
         self._session_lock = asyncio.Lock()
 
@@ -177,7 +177,7 @@ class AsyncAuthManager:
 
                 log.info(f'User {session.username} logged out')
 
-    async def get_session(self, token: str) -> AsyncSession | None:
+    async def get_session(self, token: str) -> Session | None:
         """Get session by token"""
         async with self._session_lock:
             session = self._sessions.get(token)
@@ -194,7 +194,7 @@ class AsyncAuthManager:
             session.update_activity()
             return session
 
-    async def validate_session(self, token: str) -> AsyncSession:
+    async def validate_session(self, token: str) -> Session:
         """Validate session token or raise exception"""
         session = await self.get_session(token)
         if session is None:
@@ -210,7 +210,7 @@ class AsyncAuthManager:
         username: str,
         ip_address: str,
         user_agent: str,
-    ) -> AsyncSession:
+    ) -> Session:
         """Create a new session"""
         async with self._session_lock:
             # Clean up old sessions for user
@@ -227,7 +227,7 @@ class AsyncAuthManager:
 
             # Create session
             now = Timestamp(int(time.time()))
-            session = AsyncSession(
+            session = Session(
                 user_id=user_id,
                 username=username,
                 token=token,
@@ -301,7 +301,7 @@ async def get_auth_manager(request: Request) -> AsyncAuthManager:
 async def get_current_session(
     request: Request,
     auth_manager: AsyncAuthManager = Depends(get_auth_manager),
-) -> AsyncSession:
+) -> Session:
     """Get current session from request"""
     # Check Authorization header
     auth_header = request.headers.get('Authorization')
@@ -316,8 +316,8 @@ async def get_current_session(
 
 
 async def require_logged_in_user(
-    session: AsyncSession = Depends(get_current_session),
-) -> AsyncSession:
+    session: Session = Depends(get_current_session),
+) -> Session:
     """Require authenticated user"""
     return session
 
@@ -372,7 +372,7 @@ async def login(
 
 @router.post('/logout', response_model=dict)
 async def logout(
-    session: AsyncSession = Depends(get_current_session),
+    session: Session = Depends(get_current_session),
     auth_manager: AsyncAuthManager = Depends(get_auth_manager),
 ):
     """Logout and destroy session"""
@@ -382,7 +382,7 @@ async def logout(
 
 @router.get('/user', response_model=dict)
 async def get_current_user(
-    session: AsyncSession = Depends(get_current_session),
+    session: Session = Depends(get_current_session),
 ):
     """Get current user information"""
     return create_success_response({
@@ -392,4 +392,5 @@ async def get_current_user(
 
 
 # Export for inclusion
-__all__ = ['AsyncAuthManager', 'require_logged_in_user', 'router']
+__all__ = ['AuthManager', 'require_logged_in_user', 'router']
+

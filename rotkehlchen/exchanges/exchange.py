@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncExchangeInterface(ABC):
+class ExchangeInterface(ABC):
     """Async interface for exchange implementations"""
 
     def __init__(
@@ -149,7 +149,7 @@ class AsyncExchangeInterface(ABC):
         return []
 
 
-class AsyncKraken(AsyncExchangeInterface):
+class Kraken(ExchangeInterface):
     """Async implementation of Kraken exchange"""
 
     def __init__(self, *args, **kwargs):
@@ -233,7 +233,7 @@ class AsyncKraken(AsyncExchangeInterface):
         return Asset(kraken_asset)
 
 
-class AsyncBinance(AsyncExchangeInterface):
+class Binance(ExchangeInterface):
     """Async implementation of Binance exchange"""
 
     def __init__(self, *args, **kwargs):
@@ -355,9 +355,6 @@ class AsyncBinance(AsyncExchangeInterface):
         return 'signature'
 
 
-# Compatibility exports and placeholders
-ExchangeInterface = AsyncExchangeInterface
-
 # Placeholder classes for compatibility during migration
 class ExchangeQueryBalances:
     """Placeholder for balance query interface"""
@@ -368,31 +365,31 @@ class ExchangeWithExtras:
     pass
 
 
-class AsyncExchangeManager:
+class ExchangeManager:
     """Manages multiple async exchange connections"""
 
     def __init__(self, database: Any, msg_aggregator: Any):
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.exchanges: dict[Location, AsyncExchangeInterface] = {}
+        self.exchanges: dict[Location, ExchangeInterface] = {}
 
     async def add_exchange(
         self,
         location: Location,
         api_key: ApiKey,
         api_secret: ApiSecret,
-    ) -> AsyncExchangeInterface:
+    ) -> ExchangeInterface:
         """Add a new exchange connection"""
         # Create appropriate exchange instance
         if location == Location.KRAKEN:
-            exchange = AsyncKraken(
+            exchange = Kraken(
                 api_key=api_key,
                 secret=api_secret,
                 database=self.database,
                 msg_aggregator=self.msg_aggregator,
             )
         elif location == Location.BINANCE:
-            exchange = AsyncBinance(
+            exchange = Binance(
                 api_key=api_key,
                 secret=api_secret,
                 database=self.database,

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncEvmNodeInquirer:
+class EvmNodeInquirer:
     """Async implementation of EVM node communication
 
     This eliminates gevent and uses native asyncio for better performance
@@ -301,10 +301,10 @@ class AsyncEvmNodeInquirer:
         raise RemoteError(f'Failed to get code for {address} from all nodes')
 
 
-class AsyncBatchEvmQuerier:
+class BatchEvmQuerier:
     """Batch multiple blockchain queries for efficiency"""
 
-    def __init__(self, inquirer: AsyncEvmNodeInquirer):
+    def __init__(self, inquirer: EvmNodeInquirer):
         self.inquirer = inquirer
 
     async def get_balances(
@@ -384,5 +384,3 @@ class DSProxyInquirerWithCacheData(NamedTuple):
     address: str
     timestamp: int
 
-# Compatibility export
-EvmNodeInquirer = AsyncEvmNodeInquirer

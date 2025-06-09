@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncDBConnection:
+class DBConnection:
     """Async wrapper for SQLCipher connection using thread pool
 
     This replaces the gevent-based DBConnection without the progress handler hack.
@@ -126,20 +126,20 @@ class AsyncDBConnection:
             )
 
     @asynccontextmanager
-    async def read_ctx(self) -> AsyncGenerator['AsyncDBCursor', None]:
+    async def read_ctx(self) -> AsyncGenerator['DBCursor', None]:
         """Async context manager for read operations"""
         async with self.get_connection() as conn:
-            cursor = AsyncDBCursor(conn, self._executor)
+            cursor = DBCursor(conn, self._executor)
             try:
                 yield cursor
             finally:
                 await cursor.close()
 
     @asynccontextmanager
-    async def write_ctx(self) -> AsyncGenerator['AsyncDBCursor', None]:
+    async def write_ctx(self) -> AsyncGenerator['DBCursor', None]:
         """Async context manager for write operations"""
         async with self.get_connection() as conn:
-            cursor = AsyncDBCursor(conn, self._executor)
+            cursor = DBCursor(conn, self._executor)
             try:
                 # Begin transaction
                 await cursor.execute('BEGIN')
@@ -209,7 +209,7 @@ class AsyncDBConnection:
         self._executor.shutdown(wait=True)
 
 
-class AsyncDBCursor:
+class DBCursor:
     """Async wrapper for database cursor operations"""
 
     def __init__(self, connection: Connection, executor: ThreadPoolExecutor):
@@ -227,7 +227,7 @@ class AsyncDBCursor:
                 self.connection.cursor,
             )
 
-    async def execute(self, query: str, params: tuple | None = None) -> 'AsyncDBCursor':
+    async def execute(self, query: str, params: tuple | None = None) -> 'DBCursor':
         """Execute a query"""
         await self._ensure_cursor()
         loop = asyncio.get_event_loop()
@@ -248,7 +248,7 @@ class AsyncDBCursor:
 
         return self
 
-    async def executemany(self, query: str, params: list[tuple]) -> 'AsyncDBCursor':
+    async def executemany(self, query: str, params: list[tuple]) -> 'DBCursor':
         """Execute a query with multiple parameter sets"""
         await self._ensure_cursor()
         loop = asyncio.get_event_loop()
@@ -325,7 +325,7 @@ class AsyncDBCursor:
 class DBConnectionWrapper:
     """Wrapper to provide both sync and async interfaces during migration"""
 
-    def __init__(self, async_conn: AsyncDBConnection):
+    def __init__(self, async_conn: DBConnection):
         self.async_conn = async_conn
 
     # Sync methods for compatibility
@@ -343,15 +343,12 @@ class DBConnectionWrapper:
         return self.async_conn.sync_write_ctx()
 
     # Async methods
-    def async_read_ctx(self) -> AsyncGenerator['AsyncDBCursor', None]:
+    def async_read_ctx(self) -> AsyncGenerator['DBCursor', None]:
         """Async read context"""
         return self.async_conn.read_ctx()
 
-    def async_write_ctx(self) -> AsyncGenerator['AsyncDBCursor', None]:
+    def async_write_ctx(self) -> AsyncGenerator['DBCursor', None]:
         """Async write context"""
         return self.async_conn.write_ctx()
 
 
-# Compatibility exports for gradual migration
-DBConnection = AsyncDBConnection
-DBCursor = AsyncDBCursor

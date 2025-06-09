@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AsyncDBHandler:
+class DBHandler:
     """Async version of DBHandler for migrated endpoints
 
     This class provides async methods while maintaining compatibility
@@ -315,9 +315,9 @@ def create_db_handler(
     password: str,
     msg_aggregator: MessagesAggregator,
     use_async: bool = False,
-) -> DBHandler | AsyncDBHandler:
+) -> DBHandler | DBHandler:
     """Create appropriate database handler based on feature flags"""
     if use_async:
-        return AsyncDBHandler(db_path, password, msg_aggregator)
+        return DBHandler(db_path, password, msg_aggregator)
     else:
         return DBHandler(db_path, password, msg_aggregator)
