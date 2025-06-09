@@ -20,8 +20,8 @@ from rotkehlchen.api.v1.schemas_fastapi import (
     create_success_response,
 )
 from rotkehlchen.crypto import encrypt
-from rotkehlchen.db.async_handler import AsyncDBHandler
-from rotkehlchen.errors.misc import AuthenticationError
+from rotkehlchen.db.handler import DBHandler
+from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 

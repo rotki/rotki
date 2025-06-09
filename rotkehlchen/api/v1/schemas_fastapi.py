@@ -153,6 +153,23 @@ class DatabaseInfoModel(BaseModel):
     backup_path: str | None = None
 
 
+# User models
+class CreateUserModel(BaseModel):
+    """Model for creating a new user"""
+    username: str
+    password: str
+    premium_api_key: str | None = None
+    premium_api_secret: str | None = None
+    initial_settings: dict[str, Any] | None = None
+
+
+class LoginModel(BaseModel):
+    """Model for user login"""
+    username: str
+    password: str
+    sync_approval: str = 'unknown'
+
+
 # Settings models
 class SettingsModel(BaseModel):
     """Settings model matching the Marshmallow schema"""
