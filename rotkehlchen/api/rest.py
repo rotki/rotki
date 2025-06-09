@@ -433,7 +433,7 @@ class RestAPI:
         with self.task_lock:
             self.task_results[task_id] = result
 
-    def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
+    def _handle_killed_greenlets(self, greenlet: Greenlet) -> None:
         if not greenlet.exception:
             log.warning('handle_killed_greenlets without an exception')
             return
@@ -490,9 +490,9 @@ class RestAPI:
     def stop(self) -> None:
         self.rotkehlchen.shutdown()
         log.debug('Waiting for greenlets')
-        gevent.wait(self.waited_greenlets)
+        wait(self.waited_greenlets)
         log.debug('Waited for greenlets. Killing all other greenlets')
-        gevent.killall(self.rotkehlchen.api_task_greenlets)
+        kill_all(self.rotkehlchen.api_task_greenlets)
         self.rotkehlchen.api_task_greenlets.clear()
         log.debug('Cleaning up global DB')
         GlobalDBHandler().cleanup()
@@ -1238,7 +1238,7 @@ class RestAPI:
         #    All results would be discarded anyway since we are logging out.
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
-        gevent.killall(self.rotkehlchen.api_task_greenlets)
+        kill_all(self.rotkehlchen.api_task_greenlets)
         self.rotkehlchen.api_task_greenlets.clear()
         with self.task_lock:
             self.task_results = {}

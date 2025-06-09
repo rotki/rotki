@@ -2242,7 +2242,7 @@ class GlobalDBHandler:
         We saw that when killing a greenlet the locks are not released and has to
         be done manually.
         It won't raise errors if the lock is over-released
-        https://www.gevent.org/api/gevent.lock.html#gevent.lock.Semaphore.release
+        Reference: Semaphore.release allows over-releasing without errors
         The killall that happens in this logic can trigger a greenlet switch as per
         https://github.com/gevent/gevent/issues/1473#issuecomment-548327614
         """

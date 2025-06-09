@@ -33,6 +33,6 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
         g2 = spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
         joinall([g1, g2])
         assert all(
-            isinstance(x.exception, gevent.exceptions.ConcurrentObjectUseError) is False
+            isinstance(x.exception, ConcurrentObjectUseError) is False
             for x in [g1, g2] + rotki.greenlet_manager.greenlets
         ), 'At least one ConcurrentObjectUseError exception happened'

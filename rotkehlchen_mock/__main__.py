@@ -6,7 +6,7 @@ import logging
 from http import HTTPStatus
 from typing import Any
 
-import gevent
+from rotkehlchen.utils.gevent_compat import Event
 from flask import Response
 
 from rotkehlchen.api.rest import RestAPI, api_response
@@ -49,7 +49,7 @@ class RotkehlchenServerMock(RotkehlchenServer):
 
         self.args = args
         self.rotkehlchen = rotkehlchen
-        self.stop_event = gevent.event.Event()
+        self.stop_event = Event()
 
         self.api_server = APIServer(
             rest_api=rest_api,

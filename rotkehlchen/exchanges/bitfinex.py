@@ -291,7 +291,7 @@ class Bitfinex(ExchangeInterface):
                             options=call_options,
                         )
                         retries_left -= 1
-                        gevent.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
+                        sleep(API_REQUEST_RETRY_AFTER_SECONDS)
                         continue
 
                     # Unexpected JSON dict case, better to log it

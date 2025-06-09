@@ -614,7 +614,7 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer')
         query_accounts.extend(ethereum_accounts)
     # Fire all requests almost concurrently. And don't wait for them
     for idx, account in enumerate(query_accounts):
-        gevent.spawn_later(
+        spawn_later(
             0.01 * idx,
             requests.put,
             api_url_for(

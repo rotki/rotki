@@ -5,13 +5,7 @@ from collections.abc import Callable, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-try:
-    import gevent
-    getcurrent = gevent.getcurrent
-except ImportError:
-    # For asyncio mode, provide a fallback
-    import threading
-    getcurrent = threading.current_thread
+from rotkehlchen.utils.gevent_compat import getcurrent
 
 from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import is_production, timestamp_to_date, ts_now

@@ -2,7 +2,7 @@ import datetime
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
-import gevent.lock
+from rotkehlchen.utils.gevent_compat import Lock
 import pytest
 from freezegun import freeze_time
 

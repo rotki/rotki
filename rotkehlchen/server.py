@@ -2,8 +2,7 @@ import logging
 import os
 import signal
 
-from rotkehlchen.utils.gevent_compat import Event
-import gevent  # Still needed for hub operations
+from rotkehlchen.utils.gevent_compat import Event, get_hub, signal
 
 from rotkehlchen.api.server import APIServer, RestAPI
 from rotkehlchen.args import app_args
@@ -51,14 +50,14 @@ class RotkehlchenServer:
         # disable printing hub exceptions in stderr. With using the hub to do various
         # tasks that should raise exceptions and have them handled outside the hub
         # printing them in stdout is now too much spam (and would worry users too)
-        hub = gevent.hub.get_hub()
+        hub = get_hub()
         hub.exception_stream = None
         # we don't use threadpool much so go to 2 instead of default 10
         hub.threadpool_size = 2
         hub.threadpool.maxsize = 2
         if os.name != 'nt':
-            gevent.hub.signal(signal.SIGQUIT, self.shutdown)
-            gevent.hub.signal(signal.SIGTERM, self.shutdown)
+            signal(signal.SIGQUIT, self.shutdown)
+            signal(signal.SIGTERM, self.shutdown)
         else:
             # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
             # This logic handles the signal sent from the bootloader equivalent to sigterm in
@@ -67,7 +66,7 @@ class RotkehlchenServer:
             import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
             win32api.SetConsoleCtrlHandler(self.shutdown, True)
 
-        gevent.hub.signal(signal.SIGINT, self.shutdown)
+        signal(signal.SIGINT, self.shutdown)
         # The api server's RestAPI starts rotki main loop
         self.api_server.start(
             host=self.args.api_host,

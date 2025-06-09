@@ -4,7 +4,7 @@ import tempfile
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
-import gevent  # Still needed for threadpool operations
+from rotkehlchen.utils.gevent_compat import get_hub
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.misc import USERSDIR_NAME
@@ -208,7 +208,7 @@ class PremiumSyncManager(LockableQueryMixIn):
 
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             tempdbpath = self.data.db.export_unencrypted(tempdbfile)
-            greenlet = gevent.get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)  # noqa: E501
+            greenlet = get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)  # noqa: E501
             data, our_hash = greenlet.get()
 
         log.debug(

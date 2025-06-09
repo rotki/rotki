@@ -338,7 +338,7 @@ Key differences from gevent implementation:
    AsyncIO: Native async locks and task IDs
 
 4. Context Switching:
-   Gevent: gevent.sleep(0) in callbacks
+   Sync mode: yield control in callbacks
    AsyncIO: await naturally yields control
 
 5. Critical Sections:

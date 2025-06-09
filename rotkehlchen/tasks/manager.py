@@ -76,7 +76,7 @@ from rotkehlchen.types import (
     get_args,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.gevent_compat import kill_all
+from rotkehlchen.utils.gevent_compat import kill_all, Greenlet, Semaphore
 
 from .events import process_events
 
@@ -121,7 +121,7 @@ class TaskManager:
             self,
             max_tasks_num: int,
             greenlet_manager: 'GreenletManager',
-            api_task_greenlets: list[gevent.Greenlet],
+            api_task_greenlets: list[Greenlet],
             database: 'DBHandler',
             cryptocompare: 'Cryptocompare',
             premium_sync_manager: Optional['PremiumSyncManager'],
@@ -147,7 +147,7 @@ class TaskManager:
         self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
         self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
-        self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
+        self.running_greenlets: dict[Callable, list[Greenlet]] = {}
         self.deactivate_premium = deactivate_premium
         self.activate_premium = activate_premium
         self.query_balances = query_balances
@@ -165,7 +165,7 @@ class TaskManager:
         self.data_updater = data_updater
         self.username = username
 
-        self.potential_tasks: list[Callable[[], Optional[list[gevent.Greenlet]]]] = [
+        self.potential_tasks: list[Callable[[], Optional[list[Greenlet]]]] = [
             self._maybe_schedule_cryptocompare_query,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_evm_transactions,
@@ -198,9 +198,9 @@ class TaskManager:
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
-        self.schedule_lock = gevent.lock.Semaphore()
+        self.schedule_lock = Semaphore()
 
-    def _maybe_schedule_db_upload(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_schedule_db_upload(self) -> Optional[list[Greenlet]]:
         assert self.premium_sync_manager is not None, 'caller should make sure premium sync manager exists'  # noqa: E501
         if self.premium_sync_manager.check_if_should_sync(force_upload=False) is False:
             return None
@@ -258,7 +258,7 @@ class TaskManager:
 
         self.prepared_cryptocompare_query = True
 
-    def _maybe_schedule_cryptocompare_query(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_schedule_cryptocompare_query(self) -> Optional[list[Greenlet]]:
         """Schedules a cryptocompare query for a single asset history"""
         if self.prepared_cryptocompare_query is False:
             self._prepare_cryptocompare_queries()
@@ -292,7 +292,7 @@ class TaskManager:
             timestamp=now_ts,
         )]
 
-    def _maybe_schedule_xpub_derivation(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_schedule_xpub_derivation(self) -> Optional[list[Greenlet]]:
         """Schedules the xpub derivation task if enough time has passed and if user has xpubs"""
         now = ts_now()
         if now - self.last_xpub_derivation_ts <= XPUB_DERIVATION_FREQUENCY:
@@ -331,7 +331,7 @@ class TaskManager:
             ))
         return greenlets
 
-    def _maybe_query_evm_transactions(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_query_evm_transactions(self) -> Optional[list[Greenlet]]:
         """Schedules the evm transaction query task if enough time has passed"""
         shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
         random.shuffle(shuffled_chains)
@@ -369,7 +369,7 @@ class TaskManager:
             )]
         return None
 
-    def _maybe_schedule_evm_txreceipts(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_schedule_evm_txreceipts(self) -> Optional[list[Greenlet]]:
         """Schedules the evm transaction receipts query task
 
         The DB check happens first here to see if scheduling would even be needed.
@@ -400,7 +400,7 @@ class TaskManager:
             )]
         return None
 
-    def _maybe_schedule_exchange_history_query(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_schedule_exchange_history_query(self) -> Optional[list[Greenlet]]:
         """Schedules the exchange history query task if enough time has passed"""
         if len(self.exchange_manager.connected_exchanges) == 0:
             return None
@@ -433,7 +433,7 @@ class TaskManager:
             fail_callback=exchange_fail_cb,
         )]
 
-    def _maybe_decode_evm_transactions(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_decode_evm_transactions(self) -> Optional[list[Greenlet]]:
         """Schedules the evm transaction decoding task
 
         The DB check happens first here to see if scheduling would even be needed.
@@ -528,7 +528,7 @@ class TaskManager:
         finally:
             self.last_premium_status_check = now
 
-    def _maybe_update_snapshot_balances(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_snapshot_balances(self) -> Optional[list[Greenlet]]:
         """
         Update the balances of a user if the difference between last time they were updated
         and the current time exceeds the `balance_save_frequency`.
@@ -554,7 +554,7 @@ class TaskManager:
             ignore_cache=True,
         )]
 
-    def _maybe_query_produced_blocks(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_query_produced_blocks(self) -> Optional[list[Greenlet]]:
         """Schedules the blocks production query if enough time has passed"""
         if (
             self.chains_aggregator.get_module('eth2') is None or
@@ -574,7 +574,7 @@ class TaskManager:
             indices=indices,
         )]
 
-    def _maybe_query_withdrawals(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_query_withdrawals(self) -> Optional[list[Greenlet]]:
         """Schedules the eth withdrawal query if enough time has passed"""
         if (eth2 := self.chains_aggregator.get_module('eth2')) is None:
             return None
@@ -606,7 +606,7 @@ class TaskManager:
             to_ts=now,
         )]
 
-    def _maybe_detect_withdrawal_exits(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_detect_withdrawal_exits(self) -> Optional[list[Greenlet]]:
         """Schedules the task that detects if any of the withdrawals should be exits
 
         Not putting a lock as it should probably not be a too heavy task?
@@ -630,7 +630,7 @@ class TaskManager:
             method=eth2.detect_exited_validators,
         )]
 
-    def _maybe_run_events_processing(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_run_events_processing(self) -> Optional[list[Greenlet]]:
         """Schedules the events processing task which may combine/edit events"""
         now = ts_now()
         with self.database.conn.read_ctx() as cursor:
@@ -651,7 +651,7 @@ class TaskManager:
             database=self.database,
         )]
 
-    def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_yearn_vaults(self) -> Optional[list[Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
             if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
                 return None
@@ -668,7 +668,7 @@ class TaskManager:
 
         return None
 
-    def _maybe_update_morpho_cache(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_morpho_cache(self) -> Optional[list[Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
             account_data = self.database.get_blockchain_accounts(cursor)
             if (
@@ -704,7 +704,7 @@ class TaskManager:
 
         return greenlets if len(greenlets) > 0 else None
 
-    def _maybe_update_pendle_cache(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_pendle_cache(self) -> Optional[list[Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
             account_data = self.database.get_blockchain_accounts(cursor)
             if (
@@ -728,7 +728,7 @@ class TaskManager:
             if should_update_protocol_cache(self.database, CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
         ]
 
-    def _maybe_update_aura_pools(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_aura_pools(self) -> Optional[list[Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
             account_data = self.database.get_blockchain_accounts(cursor)
             if (
@@ -752,7 +752,7 @@ class TaskManager:
             if should_update_protocol_cache(self.database, CacheType.AURA_POOLS, (str(chain.value),)) is True  # noqa: E501
         ]
 
-    def _maybe_check_data_updates(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_check_data_updates(self) -> Optional[list[Greenlet]]:
         """
         Function that schedules the data update task if either there is no data update
         cache yet or this cache is older than `DATA_UPDATES_REFRESH`
@@ -767,7 +767,7 @@ class TaskManager:
             method=self.data_updater.check_for_updates,
         )]
 
-    def _maybe_detect_evm_accounts(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_detect_evm_accounts(self) -> Optional[list[Greenlet]]:
         """
         Function that schedules the EVM accounts detection task if there has been more than
         EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
@@ -784,7 +784,7 @@ class TaskManager:
             chains=self.database.get_chains_to_detect_evm_accounts(),
         )]
 
-    def _maybe_update_ilk_cache(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_ilk_cache(self) -> Optional[list[Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
             if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
                 return None
@@ -800,7 +800,7 @@ class TaskManager:
 
         return None
 
-    def _maybe_detect_new_spam_tokens(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_detect_new_spam_tokens(self) -> Optional[list[Greenlet]]:
         """
         This function queries the globaldb looking for assets that look like spam tokens
         and ignores them in addition to marking them as spam tokens
@@ -816,7 +816,7 @@ class TaskManager:
             user_db=self.database,
         )]
 
-    def _maybe_update_owned_assets(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_owned_assets(self) -> Optional[list[Greenlet]]:
         """
         This function runs the logic to copy the owned assets from the user db to the globaldb.
         This task is required to have a fresh status on the assets searches when the filter for
@@ -833,7 +833,7 @@ class TaskManager:
             user_db=self.database,
         )]
 
-    def _maybe_update_aave_v3_underlying_assets(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_aave_v3_underlying_assets(self) -> Optional[list[Greenlet]]:
         """
         This function runs the logic to query the aave v3 contracts to get all the
         underlying assets supported by them and save them in the globaldb.
@@ -849,7 +849,7 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
-    def _maybe_update_spark_underlying_assets(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_update_spark_underlying_assets(self) -> Optional[list[Greenlet]]:
         """This function runs the logic to query the Spark contracts to get all the
         underlying assets supported by them and save them in the globaldb.
         """
@@ -868,7 +868,7 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
-    def _maybe_query_monerium(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_query_monerium(self) -> Optional[list[Greenlet]]:
         if not has_premium_check(self.chains_aggregator.premium):
             return None  # should not run in free mode
 
@@ -885,7 +885,7 @@ class TaskManager:
             method=monerium.get_and_process_orders,
         )]
 
-    def _maybe_query_gnosispay(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_query_gnosispay(self) -> Optional[list[Greenlet]]:
         if not has_premium_check(self.chains_aggregator.premium):
             return None  # should not run in free mode
 
@@ -909,7 +909,7 @@ class TaskManager:
             after_ts=from_ts,
         )]
 
-    def _maybe_create_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_create_calendar_reminder(self) -> Optional[list[Greenlet]]:
         """Create upcoming reminders for specific history events, if not already created."""
         if (
             CachedSettings().get_entry('auto_create_calendar_reminders') is False or
@@ -929,7 +929,7 @@ class TaskManager:
             database=self.database,
         )]
 
-    def _maybe_trigger_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_trigger_calendar_reminder(self) -> Optional[list[Greenlet]]:
         """Get upcoming reminders and maybe process them"""
         if (now := ts_now()) - self.last_calendar_reminder_check < 60 * 5:
             return None
@@ -967,7 +967,7 @@ class TaskManager:
             msg_aggregator=self.msg_aggregator,
         )]
 
-    def _maybe_delete_past_calendar_events(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_delete_past_calendar_events(self) -> Optional[list[Greenlet]]:
         """
         Delete old calendar events if the setting for deleting them allows it and if they haven't
         been marked to not be deleted.
@@ -983,7 +983,7 @@ class TaskManager:
             database=self.database,
         )]
 
-    def _maybe_query_graph_delegated_tokens(self) -> Optional[list[gevent.Greenlet]]:
+    def _maybe_query_graph_delegated_tokens(self) -> Optional[list[Greenlet]]:
         """
         Periodically query Ethereum transaction logs for Graph staking-related transactions,
         particularly, search for DelegationTransferredToL2 event. If not found, it decodes

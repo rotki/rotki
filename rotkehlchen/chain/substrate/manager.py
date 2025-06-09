@@ -291,7 +291,7 @@ class SubstrateManager:
             account=account,
         )
         try:
-            with gevent.Timeout(SUBSTRATE_NODE_CONNECTION_TIMEOUT):
+            with Timeout(SUBSTRATE_NODE_CONNECTION_TIMEOUT):
                 result = node_interface.query(
                     module='System',
                     storage_function='Account',
@@ -302,12 +302,12 @@ class SubstrateManager:
                 SubstrateRequestException,
                 ValueError,
                 WebSocketException,
-                gevent.Timeout,
+                Timeout,
                 BlockNotFound,
                 AttributeError,  # happens in substrate library when timeout occurs some times
         ) as e:
             msg = str(e)
-            if isinstance(e, gevent.Timeout):
+            if isinstance(e, Timeout):
                 msg = f'a timeout of {msg}'
             message = (
                 f'{self.chain} failed to request {self.chain_properties.token.identifier} account '
@@ -644,10 +644,10 @@ def wait_until_a_node_is_available(
     this function timeouts.
     """
     try:
-        with gevent.Timeout(seconds):
+        with Timeout(seconds):
             while len(substrate_manager.available_nodes_call_order) == 0:
                 sleep(0.1)
-    except gevent.Timeout as e:
+    except Timeout as e:
         chain = substrate_manager.chain
         raise RemoteError(
             f'{chain} manager does not have nodes availables after waiting '

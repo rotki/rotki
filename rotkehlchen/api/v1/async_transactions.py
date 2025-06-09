@@ -1,6 +1,6 @@
 """Async implementation of transaction query endpoints
 
-This provides high-performance transaction querying without gevent.
+This provides high-performance async transaction querying.
 """
 import asyncio
 import logging
