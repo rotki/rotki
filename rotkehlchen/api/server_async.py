@@ -33,6 +33,9 @@ from rotkehlchen.api.v1.async_database import router as database_router
 from rotkehlchen.api.v1.async_statistics import router as statistics_router
 from rotkehlchen.api.v1.async_history import router as history_router
 from rotkehlchen.api.v1.async_accounting import router as accounting_router
+from rotkehlchen.api.v1.async_blockchain import router as blockchain_router
+from rotkehlchen.api.v1.async_nfts import router as nfts_router
+from rotkehlchen.api.v1.async_eth2 import router as eth2_router
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -107,6 +110,9 @@ class RotkiASGIServer:
         self.app.include_router(statistics_router)
         self.app.include_router(history_router)
         self.app.include_router(accounting_router)
+        self.app.include_router(blockchain_router)
+        self.app.include_router(nfts_router)
+        self.app.include_router(eth2_router)
         
         # TODO: As we migrate endpoints to FastAPI, include their routers here
         
@@ -234,14 +240,16 @@ async def get_ws_notifier() -> AsyncRotkiNotifier:
 from rotkehlchen.api.v1 import (
     async_transactions, async_base, async_balances, async_exchanges,
     async_assets_extended, async_users, async_database,
-    async_statistics, async_history, async_accounting
+    async_statistics, async_history, async_accounting,
+    async_blockchain, async_nfts, async_eth2
 )
 
 # Set up dependency injection for all routers
 for module in [
     async_transactions, async_base, async_balances, async_exchanges,
     async_assets_extended, async_users, async_database,
-    async_statistics, async_history, async_accounting
+    async_statistics, async_history, async_accounting,
+    async_blockchain, async_nfts, async_eth2
 ]:
     module.get_rest_api = get_rest_api
 
