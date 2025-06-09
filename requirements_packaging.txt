@@ -1,2 +1,0 @@
-setuptools-scm==7.1.0
-wheel==0.40.0

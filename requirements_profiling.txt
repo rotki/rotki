@@ -1,3 +1,0 @@
--r requirements_dev.txt
-
-objgraph==3.5.0

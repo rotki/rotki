@@ -48,9 +48,7 @@ jobs:
             colibri
           backend_paths: |
             rotkehlchen
-            requirements.txt
-            requirements_dev.txt
-            requirements_lint.txt
+            pyproject.toml
           frontend_paths: |
             frontend
 
@@ -278,12 +276,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv pip install --system -r requirements_lint.txt
-          uv pip install --system -e .
+          uv sync --group lint
           git rev-parse HEAD
 
       - name: Lint
-        run: make lint
+        run: uv run make lint
 
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}

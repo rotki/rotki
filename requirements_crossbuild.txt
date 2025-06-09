@@ -1,3 +1,0 @@
-# dependencies that need to be installed manually when creating arm and x86 packages for macos using
-# the x86 as base architecture for both
-ckzg==1.0.1
