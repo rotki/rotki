@@ -14,7 +14,7 @@ export enum TransactionChainType {
 }
 
 export interface TransactionRequestPayload {
-  readonly accounts: EvmChainAddress[];
+  readonly accounts: BlockchainAddress[];
 }
 
 export interface PullEvmTransactionPayload {
@@ -61,6 +61,13 @@ export const EvmChainAddress = z.object({
 });
 
 export type EvmChainAddress = z.infer<typeof EvmChainAddress>;
+
+export const BlockchainAddress = z.object({
+  address: z.string(),
+  blockchain: z.string().optional(),
+});
+
+export type BlockchainAddress = z.infer<typeof BlockchainAddress>;
 
 export interface RepullingTransactionPayload extends Partial<EvmChainAddress> {
   readonly fromTimestamp: number;

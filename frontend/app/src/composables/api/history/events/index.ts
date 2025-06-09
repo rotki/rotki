@@ -36,7 +36,7 @@ import { omit } from 'es-toolkit';
 interface QueryExchangePayload { name: string; location: string }
 
 interface UseHistoryEventsApiReturn {
-  fetchTransactionsTask: (payload: TransactionRequestPayload, type?: TransactionChainType) => Promise<PendingTask>;
+  fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
   pullAndRecodeTransactionRequest: (payload: PullTransactionPayload, type?: TransactionChainType) => Promise<PendingTask>;
   getUndecodedTransactionsBreakdown: (type?: TransactionChainType) => Promise<PendingTask>;
@@ -63,17 +63,12 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   const internalTransactions = async <T>(
     payload: TransactionRequestPayload,
     asyncQuery: boolean,
-    type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<T> => {
-    const accounts
-      = type === TransactionChainType.EVM
-        ? payload.accounts
-        : payload.accounts.map(({ address, evmChain }) => ({ address, chain: evmChain }));
     const response = await api.instance.post<ActionResult<T>>(
-      `/blockchains/${type}/transactions`,
+      '/blockchains/transactions',
       snakeCaseTransformer(
         nonEmptyProperties({
-          accounts,
+          accounts: payload.accounts,
           asyncQuery,
         }),
       ),
@@ -88,8 +83,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const fetchTransactionsTask = async (
     payload: TransactionRequestPayload,
-    type: TransactionChainType = TransactionChainType.EVM,
-  ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true, type);
+  ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true);
 
   const deleteTransactions = async (chain: string, txHash?: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/blockchains/transactions', {
