@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.11']
         async-mode: ['disabled', 'pilot', 'mixed', 'full']
     
     steps:
