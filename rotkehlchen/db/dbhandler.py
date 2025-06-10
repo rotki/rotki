@@ -32,7 +32,7 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
+from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
@@ -46,6 +46,7 @@ from rotkehlchen.db.cache import (
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
+from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
@@ -62,9 +63,6 @@ from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
-    DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
-    DEFAULT_LAST_DATA_MIGRATION,
-    DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     CachedSettings,
@@ -89,7 +87,6 @@ from rotkehlchen.db.utils import (
     is_valid_db_blockchain_account,
     protect_password_sqlcipher,
     replace_tag_mappings,
-    str_to_bool,
 )
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -194,17 +191,8 @@ class DBHandler:
         self.user_data_dir = user_data_dir
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         self.sqlcipher_version = detect_sqlcipher_version()
-        self.setting_to_default_type = {
-            'version': (int, ROTKEHLCHEN_DB_VERSION),
-            'last_write_ts': (int, Timestamp(0)),
-            'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
-            'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
-            'ongoing_upgrade_from_version': (int, None),
-            'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
-            'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
-            'beacon_rpc_endpoint': (str, None),
-            'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
-        }
+        # Initialize repositories
+        self.settings = SettingsRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -423,15 +411,7 @@ class DBHandler:
                 'ask_user_upon_size_discrepancy',
             ],
     ) -> int | Timestamp | bool | AssetWithOracles | list['ExchangeLocationID'] | str | None:
-        deserializer, default_value = self.setting_to_default_type[name]
-        cursor.execute(
-            'SELECT value FROM settings WHERE name=?;', (name,),
-        )
-        result = cursor.fetchone()
-        if result is not None:
-            return deserializer(result[0])  # type: ignore
-
-        return default_value  # type: ignore
+        return self.settings.get(cursor, name)
 
     def set_setting(
             self,
@@ -447,11 +427,7 @@ class DBHandler:
             ],
             value: int | (Timestamp | Asset) | str | bool,
     ) -> None:
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            (name, str(value)),
-        )
-        CachedSettings().update_entry(name, value)
+        self.settings.set(write_cursor, name, value)
 
     def _connect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
         """Connect to the DB using password
@@ -633,22 +609,10 @@ class DBHandler:
 
     def get_settings(self, cursor: 'DBCursor', have_premium: bool = False) -> DBSettings:
         """Aggregates settings from DB and from the given args and returns the settings object"""
-        cursor.execute('SELECT name, value FROM settings;')
-        settings_dict = {}
-        for q in cursor:
-            settings_dict[q[0]] = q[1]
-
-        # Also add the non-DB saved settings
-        settings_dict['have_premium'] = have_premium
-        return db_settings_from_dict(settings_dict, self.msg_aggregator)
+        return self.settings.get_all_settings(cursor, self.msg_aggregator, have_premium)
 
     def set_settings(self, write_cursor: 'DBCursor', settings: ModifiableDBSettings) -> None:
-        settings_dict = settings.serialize()
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            list(settings_dict.items()),
-        )
-        CachedSettings().update_entries(settings)
+        self.settings.set_all_settings(write_cursor, settings)
 
     def get_cache_for_api(self, cursor: 'DBCursor') -> dict[str, int]:
         """Returns a few key-value pairs that are used in the API
