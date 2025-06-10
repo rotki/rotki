@@ -42,6 +42,10 @@ from rotkehlchen.db.repositories.accounts import AccountsRepository
 from rotkehlchen.db.repositories.assets import AssetsRepository
 from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
+from rotkehlchen.db.repositories.connection_management import (
+    ConnectionManagementRepository,
+    KDF_ITER,
+)
 from rotkehlchen.db.repositories.data_management import DataManagementRepository
 from rotkehlchen.db.repositories.database_management import DatabaseManagementRepository
 from rotkehlchen.db.repositories.database_utils import DatabaseUtilsRepository
@@ -127,7 +131,6 @@ from rotkehlchen.utils.serialization import rlk_jsondumps
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
@@ -179,6 +182,9 @@ class DBHandler:
         self.database_management = DatabaseManagementRepository(user_data_dir, msg_aggregator)
         self.history_events = HistoryEventsRepository(msg_aggregator)
         self.database_utils = DatabaseUtilsRepository(msg_aggregator)
+        self.connection_management = ConnectionManagementRepository(
+            user_data_dir, sql_vm_instructions_cb,
+        )
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -426,43 +432,7 @@ class DBHandler:
         probably due to permission errors
         - AuthenticationError if the given password is not the right one for the DB
         """
-        if conn_attribute == 'conn':
-            fullpath = self.user_data_dir / USERDB_NAME
-            connection_type = DBConnectionType.USER
-        else:
-            fullpath = self.user_data_dir / TRANSIENT_DB_NAME
-            connection_type = DBConnectionType.TRANSIENT
-        try:
-            conn = DBConnection(
-                path=str(fullpath),
-                connection_type=connection_type,
-                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
-            )
-        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-            raise SystemPermissionError(
-                f'Could not open database file: {fullpath}. Permission errors?',
-            ) from e
-
-        password_for_sqlcipher = protect_password_sqlcipher(self.password)
-        script = f"PRAGMA key='{password_for_sqlcipher}';"
-        if self.sqlcipher_version == 3:
-            script += f'PRAGMA kdf_iter={KDF_ITER};'
-        try:
-            conn.executescript(script)
-            conn.execute('PRAGMA foreign_keys=ON')
-            # Optimizations for the combined trades view
-            # the following will fail with DatabaseError in case of wrong password.
-            # If this goes away at any point it needs to be replaced by something
-            # that checks the password is correct at this same point in the code
-            conn.execute('PRAGMA cache_size = -32768')
-            # switch to WAL mode: https://www.sqlite.org/wal.html
-            conn.execute('PRAGMA journal_mode=WAL;')
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            conn.close()
-            raise AuthenticationError(
-                'Wrong password or invalid/corrupt database for user',
-            ) from e
-
+        conn = self.connection_management.connect(self.password, conn_attribute)
         setattr(self, conn_attribute, conn)
 
     def _change_password(
@@ -471,25 +441,7 @@ class DBHandler:
             conn_attribute: Literal['conn', 'conn_transient'],
     ) -> bool:
         conn = getattr(self, conn_attribute, None)
-        if conn is None:
-            log.error(
-                f'Attempted to change password for {conn_attribute} '
-                f'database but no such DB connection exists',
-            )
-            return False
-        new_password_for_sqlcipher = protect_password_sqlcipher(new_password)
-        script = f"PRAGMA rekey='{new_password_for_sqlcipher}';"
-        if self.sqlcipher_version == 3:
-            script += f'PRAGMA kdf_iter={KDF_ITER};'
-        try:
-            conn.executescript(script)
-        except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-            log.error(
-                f'At change password could not re-key the open {conn_attribute} '
-                f'database: {e!s}',
-            )
-            return False
-        return True
+        return self.connection_management.change_password(conn, new_password, conn_attribute)
 
     def change_password(self, new_password: str) -> bool:
         """Changes the password for the currently logged in user"""
@@ -503,9 +455,8 @@ class DBHandler:
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
         conn = getattr(self, conn_attribute, None)
-        if conn:
-            conn.close()
-            setattr(self, conn_attribute, None)
+        self.connection_management.disconnect(conn)
+        setattr(self, conn_attribute, None)
 
     def export_unencrypted(self, tempdbfile: 'tempfile._TemporaryFileWrapper[bytes]') -> Path:
         """Export the unencrypted DB to the temppath as plaintext DB
