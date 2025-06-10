@@ -144,6 +144,10 @@ profiling = [
     "objgraph==3.5.0",
 ]
 
+ci = [
+    "pytest-github-actions-annotate-failures",
+]
+
 [tool.uv]
 override-dependencies = [
     "urllib3==2.4.0",  # Override vcrpy's urllib3<2 requirement

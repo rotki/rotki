@@ -22,20 +22,17 @@ WORKDIR /app
 COPY colibri/ ./colibri
 RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.toml --release
 
-FROM python:3.11-bookworm AS backend-build-stage
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS backend-build-stage
 
 ARG TARGETARCH
 ARG ROTKI_VERSION
 ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
 ARG PYINSTALLER_VERSION=v6.7.0
-RUN pip install --upgrade --no-cache-dir uv && uv pip install --system setuptools wheel
-ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 COPY pyproject.toml uv.lock* ./
-COPY rotkehlchen/__init__.py ./rotkehlchen/
 
-RUN uv sync --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project
 
 COPY . /app
 

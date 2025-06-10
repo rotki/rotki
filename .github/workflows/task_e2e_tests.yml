@@ -77,8 +77,9 @@ jobs:
           key: ${{ runner.os }}-e2e-data-${{ hashFiles('rotkehlchen/data/global.db') }}
 
       - name: Install uv
-        run: |
-          pip install --upgrade uv=="${UV_VERSION}"
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
 
       - name: Setup backend
         run: |
