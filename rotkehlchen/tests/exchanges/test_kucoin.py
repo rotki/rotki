@@ -45,6 +45,7 @@ def test_name():
     assert exchange.name == 'kucoin1'
 
 
+@pytest.mark.asset_test
 def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
     request_url = f'{mock_kucoin.base_uri}/api/v1/currencies'
     try:

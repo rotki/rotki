@@ -29,6 +29,7 @@ def test_name():
     assert exchange.name == 'binanceus1'
 
 
+@pytest.mark.asset_test
 def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api.binance.us/api/v3/exchangeInfo').json()
     binance_assets = set()

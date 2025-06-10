@@ -97,6 +97,7 @@ def test_ethereum_tokens():
         EvmToken('BTC')
 
 
+@pytest.mark.asset_test
 def test_cryptocompare_asset_support(cryptocompare):
     """Try to detect if a token that we have as not supported by cryptocompare got added"""
     cc_assets = cryptocompare.all_coins()
@@ -615,6 +616,7 @@ def test_case_does_not_matter_for_asset_constructor():
     'CI' in os.environ,
     reason='SLOW TEST -- it executes locally every time we check the assets so can be skipped',
 )
+@pytest.mark.asset_test
 def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable=unused-argument
     """
     Test that all assets have a coingecko entry and that all the identifiers exist in coingecko

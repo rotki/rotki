@@ -69,6 +69,7 @@ def test_gemini_wrong_key(sandbox_gemini):
     assert 'Invalid API Key or API secret' in msg
 
 
+@pytest.mark.asset_test
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
 def test_gemini_all_symbols_are_known(sandbox_gemini, globaldb):

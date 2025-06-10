@@ -251,6 +251,7 @@ def test_trade_from_binance(function_scope_binance):
     'CI' in os.environ,
     reason='https://twitter.com/LefterisJP/status/1598107187184037888',
 )
+@pytest.mark.asset_test
 def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     for asset in get_exchange_asset_symbols(Location.BINANCE):
         assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, asset) is False, f'Binance assets {asset} should not be unsupported'  # noqa: E501

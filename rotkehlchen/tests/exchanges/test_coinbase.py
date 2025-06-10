@@ -1704,6 +1704,7 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
     )]
 
 
+@pytest.mark.asset_test
 def test_coverage_of_products():
     """Test that we can process all assets from coinbase"""
     data = requests.get('https://api.exchange.coinbase.com/currencies')
