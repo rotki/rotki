@@ -12,7 +12,8 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import SPAM_PROTOCOL, BalanceType
+from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor

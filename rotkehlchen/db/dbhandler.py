@@ -138,16 +138,6 @@ KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
-# Tuples that contain first the name of a table and then the columns that
-# reference assets ids. This is used to query all assets that a user has ever owned.
-TABLES_WITH_ASSETS = (
-    ('manually_tracked_balances', 'asset'),
-    ('margin_positions', 'pl_currency', 'fee_currency'),
-    ('timed_balances', 'currency'),
-    ('history_events', 'asset'),
-)
-
-
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
 

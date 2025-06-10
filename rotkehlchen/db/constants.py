@@ -73,3 +73,12 @@ ETH_STAKING_EVENT_FIELDS = 'validator_index, is_exit_or_blocknumber'
 ETH_STAKING_FIELD_LENGTH = 2
 
 EXTRAINTERNALTXPREFIX: Final = 'extrainternaltx'
+
+# Tuples that contain first the name of a table and then the columns that
+# reference assets ids. This is used to query all assets that a user has ever owned.
+TABLES_WITH_ASSETS = (
+    ('manually_tracked_balances', 'asset'),
+    ('margin_positions', 'pl_currency', 'fee_currency'),
+    ('timed_balances', 'currency'),
+    ('history_events', 'asset'),
+)

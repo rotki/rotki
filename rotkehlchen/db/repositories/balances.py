@@ -17,7 +17,8 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import BalanceType, Location, Timestamp
+from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
