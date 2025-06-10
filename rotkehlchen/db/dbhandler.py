@@ -14,7 +14,6 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
-from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import (
     BlockchainAccountData,
@@ -58,6 +57,7 @@ from rotkehlchen.db.repositories.external_services import ExternalServicesReposi
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
 from rotkehlchen.db.repositories.module_data import ModuleDataRepository
+from rotkehlchen.db.repositories.nfts import NFTRepository
 from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
 from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
@@ -197,6 +197,7 @@ class DBHandler:
         self.rpc_nodes = RPCNodesRepository()
         self.user_notes = UserNotesRepository(msg_aggregator)
         self.module_data = ModuleDataRepository()
+        self.nfts = NFTRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -2252,20 +2253,7 @@ class DBHandler:
         for those identifiers.
         """
         with self.conn.read_ctx() as cursor:
-            cursor.execute(
-                f'SELECT identifier, name, collection_name, image_url FROM nfts WHERE '
-                f'identifier IN ({",".join("?" * len(identifiers))})',
-                identifiers,
-            )
-            serialized_nft_type = AssetType.NFT.serialize()
-            return {
-                entry[0]: {
-                    'name': entry[1],
-                    'asset_type': serialized_nft_type,
-                    'collection_name': entry[2],
-                    'image_url': entry[3],
-                } for entry in cursor
-            }
+            return self.nfts.get_nft_mappings(cursor, identifiers)
 
     def add_skipped_external_event(
             self,
