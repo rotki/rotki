@@ -27,7 +27,7 @@ from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
+from rotkehlchen.constants.misc import USERDB_NAME
 from rotkehlchen.db.cache import (
     AddressArgType,
     BinancePairLastTradeArgsType,
@@ -86,7 +86,6 @@ from rotkehlchen.db.utils import (
 )
 from rotkehlchen.errors.api import (
     AuthenticationError,
-    IncorrectApiKeyFormat,
     RotkehlchenPermissionError,
 )
 from rotkehlchen.errors.asset import UnknownAsset
@@ -206,7 +205,7 @@ class DBHandler:
         self.password = password
         self._connect()
         # Initialize repositories that need connection
-        self.external_services = ExternalServicesRepository(self.conn)
+        self.external_services = ExternalServicesRepository(self.conn, msg_aggregator)
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
@@ -1494,51 +1493,15 @@ class DBHandler:
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
-        cursor = self.conn.cursor()
-        # We don't care about previous value so simple insert or replace should work
-        cursor.execute(
-            'INSERT OR REPLACE INTO user_credentials'
-            '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
-            ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret(), None),
-        )
-        self.conn.commit()
-        cursor.close()
-        # Do not update the last write here. If we are starting in a new machine
-        # then this write is mandatory and to sync with data from server we need
-        # an empty last write ts in that case
+        self.external_services.set_rotkehlchen_premium(credentials)
 
     def delete_premium_credentials(self) -> bool:
         """Delete the rotki premium credentials in the DB for the logged-in user"""
         with self.user_write() as cursor:
-            try:
-                cursor.execute(
-                    'DELETE FROM user_credentials WHERE name=?', ('rotkehlchen',),
-                )
-            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                log.error(f'Could not delete rotki premium credentials: {e!s}')
-                return False
-        return True
+            return self.external_services.delete_premium_credentials(cursor)
 
     def get_rotkehlchen_premium(self, cursor: 'DBCursor') -> PremiumCredentials | None:
-        cursor.execute(
-            "SELECT api_key, api_secret FROM user_credentials where name='rotkehlchen';",
-        )
-        result = cursor.fetchone()
-        if result is None:
-            return None
-
-        try:
-            credentials = PremiumCredentials(
-                given_api_key=result[0],
-                given_api_secret=result[1],
-            )
-        except IncorrectApiKeyFormat:
-            self.msg_aggregator.add_error(
-                'Incorrect rotki API Key/Secret format found in the DB. Skipping ...',
-            )
-            return None
-
-        return credentials
+        return self.external_services.get_rotkehlchen_premium(cursor)
 
     def get_netvalue_data(
             self,
