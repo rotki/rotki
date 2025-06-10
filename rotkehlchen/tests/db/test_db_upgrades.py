@@ -3442,7 +3442,6 @@ def test_unfinished_upgrades(user_data_dir):
 
     for backup_version in (33, 31):  # try both with correct and wrong backup
         # Clean up any leftover files from previous iteration
-        from rotkehlchen.constants.misc import USERDB_NAME
         for f in os.listdir(user_data_dir):
             # Clean up database files and their associated files
             if (f.endswith('.backup') or

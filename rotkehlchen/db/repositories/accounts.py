@@ -2,7 +2,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -348,7 +348,6 @@ class AccountsRepository:
             data.append(SingleBlockchainAccountData(address=address, label=label, tags=tags))
 
         return data
-
 
     def get_single_addresses(
             self,

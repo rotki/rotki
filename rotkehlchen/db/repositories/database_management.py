@@ -123,7 +123,9 @@ class DatabaseManagementRepository:
     def check_unfinished_upgrades(
             self,
             conn: 'DBConnection',
-            get_setting_fn: typing.Callable[['DBCursor', typing.Literal['ongoing_upgrade_from_version']], int | None],
+            get_setting_fn: typing.Callable[
+                ['DBCursor', typing.Literal['ongoing_upgrade_from_version']], int | None,
+            ],
             resume_from_backup: bool,
             disconnect_fn: typing.Callable[[], None],
             connect_fn: typing.Callable[[typing.Literal['conn', 'conn_transient']], None],
