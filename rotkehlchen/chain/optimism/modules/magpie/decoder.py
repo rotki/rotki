@@ -1,24 +1,5 @@
-from typing import TYPE_CHECKING
-
-from rotkehlchen.chain.evm.decoding.magpie.decoder import MagpieDecoder as MagpieCommonDecoder
-
-if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.chain.evm.decoding.magpie.decoder import MagpieCommonDecoder
 
 
 class MagpieDecoder(MagpieCommonDecoder):
-    """Magpie decoder for Optimism"""
-
-    def __init__(
-            self,
-            optimism_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(
-            evm_inquirer=optimism_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
+    ...

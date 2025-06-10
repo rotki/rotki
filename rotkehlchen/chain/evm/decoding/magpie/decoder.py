@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class MagpieDecoder(DecoderInterface):
+class MagpieCommonDecoder(DecoderInterface):
     """Decoder for Magpie protocol swaps"""
 
     def _decode_swap(self, context: DecoderContext) -> DecodingOutput:
