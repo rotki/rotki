@@ -34,8 +34,6 @@ from rotkehlchen.db.cache import (
     LabeledLocationIdArgsType,
 )
 from rotkehlchen.db.constants import TRANSIENT_DB_NAME
-from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES  # noqa: F401  # needed for tests
-from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION  # noqa: F401  # needed for tests
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
@@ -65,7 +63,9 @@ from rotkehlchen.db.repositories.tags import TagsRepository
 from rotkehlchen.db.repositories.upgrade_management import UpgradeManagementRepository
 from rotkehlchen.db.repositories.user_notes import UserNotesRepository
 from rotkehlchen.db.repositories.xpub import XpubRepository
+from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES  # noqa: F401  # needed for tests
 from rotkehlchen.db.settings import (
+    ROTKEHLCHEN_DB_VERSION,  # noqa: F401  # needed for tests
     DBSettings,
     ModifiableDBSettings,
     serialize_db_setting,
@@ -1101,23 +1101,6 @@ class DBHandler:
         """
         self.database_utils.write_tuples(write_cursor, tuple_type, query, tuples, **kwargs)
 
-    @staticmethod
-    def write_single_tuple(
-            write_cursor: 'DBCursor',
-            tuple_type: DBTupleType,
-            query: str,
-            entry: tuple[Any, ...],
-            relevant_address: ChecksumEvmAddress | None,
-    ) -> int | None:
-        """Helper to write an entry of a tuple type and handle address mapping"""
-        return DatabaseUtilsRepository.write_single_tuple(
-            write_cursor,
-            tuple_type,
-            query,
-            entry,
-            relevant_address,
-        )
-
     def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         self.history_events.add_margin_positions(write_cursor, margin_positions)
 
@@ -1211,31 +1194,6 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             return self.history_events.get_netvalue_data(cursor, from_ts, include_nfts)
 
-    @staticmethod
-    def _infer_zero_timed_balances(
-            cursor: 'DBCursor',
-            balances: list[SingleDBAssetBalance],
-            from_ts: Timestamp | None = None,
-            to_ts: Timestamp | None = None,
-    ) -> list[SingleDBAssetBalance]:
-        """
-        Given a list of asset specific timed balances, infers the missing zero timed balances
-        for the asset. We add 0 balances on the start and end of a period of 0 balances.
-        It addresses this issue: https://github.com/rotki/rotki/issues/2822
-
-        Example
-        We have the following timed balances for ETH (value, time):
-        (1, 1), (1, 2), (2, 3), (5, 7), (5, 12)
-        The timestamps of all timed balances in the DB are:
-        (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
-        So we need to infer the following zero timed balances:
-        (0, 4), (0, 6), (0, 8), (0, 11)
-
-        Keep in mind that in a case like this (1, 1), (1, 2), (5, 4) we will infer (0, 3)
-        despite the fact that it is not strictly needed by the front end.
-        """
-        return BalancesRepository._infer_zero_timed_balances(cursor, balances, from_ts, to_ts)
-
     def query_timed_balances(
             self,
             cursor: 'DBCursor',
@@ -1251,7 +1209,9 @@ class DBHandler:
             cursor, asset, balance_type, from_ts, to_ts, settings,
         )
         if settings.infer_zero_timed_balances is True:
-            inferred_balances = self._infer_zero_timed_balances(cursor, balances, from_ts, to_ts)
+            inferred_balances = BalancesRepository._infer_zero_timed_balances(
+                cursor, balances, from_ts, to_ts,
+            )
             if len(inferred_balances) != 0:
                 balances.extend(inferred_balances)
                 balances.sort(key=lambda x: x.time)

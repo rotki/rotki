@@ -360,7 +360,7 @@ class BalancesRepository:
         if not results:
             return []
 
-        all_timestamps, _all_categories = zip(*results, strict=True)
+        all_timestamps, _ = zip(*results, strict=True)
 
         # Create a mapping of timestamp to category for the asset balances
         asset_timestamp_to_category = {b.time: b.category for b in balances if b.amount != ZERO}
