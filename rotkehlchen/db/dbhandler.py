@@ -27,7 +27,6 @@ from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.db.cache import (
     AddressArgType,
@@ -54,6 +53,7 @@ from rotkehlchen.db.repositories.cache import CacheRepository
 from rotkehlchen.db.repositories.database_management import DatabaseManagementRepository
 from rotkehlchen.db.repositories.exchanges import ExchangeRepository
 from rotkehlchen.db.repositories.external_services import ExternalServicesRepository
+from rotkehlchen.db.repositories.history_events import HistoryEventsRepository
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
 from rotkehlchen.db.repositories.module_data import ModuleDataRepository
@@ -198,6 +198,7 @@ class DBHandler:
         self.module_data = ModuleDataRepository()
         self.nfts = NFTRepository()
         self.database_management = DatabaseManagementRepository(user_data_dir, msg_aggregator)
+        self.history_events = HistoryEventsRepository(msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -1364,37 +1365,7 @@ class DBHandler:
         return None
 
     def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
-        margin_tuples: list[tuple[Any, ...]] = []
-        for margin in margin_positions:
-            open_time = 0 if margin.open_time is None else margin.open_time
-            margin_tuples.append((
-                margin.identifier,
-                margin.location.serialize_for_db(),
-                open_time,
-                margin.close_time,
-                str(margin.profit_loss),
-                margin.pl_currency.identifier,
-                str(margin.fee),
-                margin.fee_currency.identifier,
-                margin.link,
-                margin.notes,
-            ))
-
-        query = """
-            INSERT INTO margin_positions(
-              id,
-              location,
-              open_time,
-              close_time,
-              profit_loss,
-              pl_currency,
-              fee,
-              fee_currency,
-              link,
-              notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        self.write_tuples(write_cursor=write_cursor, tuple_type='margin_position', query=query, tuples=margin_tuples)  # noqa: E501
+        self.history_events.add_margin_positions(write_cursor, margin_positions)
 
     def get_margin_positions(
             self,
@@ -1576,31 +1547,7 @@ class DBHandler:
     ) -> tuple[list[str], list[str]]:
         """Get all entries of net value data from the DB"""
         with self.conn.read_ctx() as cursor:
-            cursor.execute(  # Get the total location ("H") entries in ascending time
-                "SELECT timestamp, usd_value FROM timed_location_data "
-                "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
-                (from_ts,),
-            )
-            if not include_nfts:
-                with self.conn.read_ctx() as nft_cursor:
-                    nft_cursor.execute(
-                        'SELECT timestamp, SUM(usd_value) FROM timed_balances WHERE '
-                        'timestamp >= ? AND currency LIKE ? GROUP BY timestamp',
-                        (from_ts, f'{NFT_DIRECTIVE}%'),
-                    )
-                    nft_values = dict(nft_cursor)
-
-            data, times_int = [], []
-            for entry in cursor:
-                times_int.append(entry[0])
-                if include_nfts:
-                    total = entry[1]
-                else:
-                    total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))  # pyright: ignore  # nft_values is populated when include_nfts is False
-
-                data.append(total)
-
-        return times_int, data
+            return self.history_events.get_netvalue_data(cursor, from_ts, include_nfts)
 
     @staticmethod
     def _infer_zero_timed_balances(
@@ -1859,15 +1806,7 @@ class DBHandler:
         Essentially this returns the distribution of netvalue across all locations
         """
         with self.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT timestamp, location, usd_value FROM timed_location_data WHERE '
-                'timestamp=(SELECT MAX(timestamp) FROM timed_location_data) AND usd_value!=0;',
-            )
-            return [LocationData(
-                time=x[0],
-                location=x[1],
-                usd_value=x[2],
-            ) for x in cursor]
+            return self.history_events.get_latest_location_value_distribution(cursor)
 
     def get_latest_asset_value_distribution(self) -> list[DBAssetBalance]:
         """Gets the latest asset distribution data
@@ -1882,52 +1821,11 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             ignored_asset_ids = self.get_ignored_asset_ids(cursor)
             treat_eth2_as_eth = self.get_settings(cursor).treat_eth2_as_eth
-            cursor.execute(
-                'SELECT timestamp, currency, amount, usd_value, category FROM timed_balances '
-                'WHERE timestamp=(SELECT MAX(timestamp) from timed_balances) AND category = ? '
-                'ORDER BY CAST(usd_value AS REAL) DESC;',
-                (BalanceType.ASSET.serialize_for_db(),),  # pylint: disable=no-member
+            return self.history_events.get_latest_asset_value_distribution(
+                cursor,
+                ignored_asset_ids,
+                treat_eth2_as_eth,
             )
-            asset_balances = []
-            eth_balance = DBAssetBalance(
-                time=Timestamp(0),
-                category=BalanceType.ASSET,
-                asset=A_ETH,
-                amount=ZERO,
-                usd_value=ZERO,
-            )
-            for result in cursor:
-                asset = Asset(result[1]).check_existence()
-                time = Timestamp(result[0])
-                amount = FVal(result[2])
-                usd_value = FVal(result[3])
-                if asset.identifier in ignored_asset_ids:
-                    continue
-                # show eth & eth2 as eth in value distribution by asset
-                if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):
-                    eth_balance.time = time
-                    eth_balance.amount += amount
-                    eth_balance.usd_value += usd_value
-                else:
-                    asset_balances.append(
-                        DBAssetBalance(
-                            time=time,
-                            asset=asset,
-                            amount=amount,
-                            usd_value=usd_value,
-                            category=BalanceType.deserialize_from_db(result[4]),
-                        ),
-                    )
-            # only add the eth_balance if it contains a balance > 0
-            if eth_balance.amount > ZERO:
-                # respect descending order `usd_value`
-                for index, balance in enumerate(asset_balances):
-                    if eth_balance.usd_value > balance.usd_value:
-                        asset_balances.insert(index, eth_balance)
-                        break
-                else:
-                    asset_balances.append(eth_balance)
-        return asset_balances
 
     def get_tags(self, cursor: 'DBCursor') -> dict[str, Tag]:
         return self.tags.get_all(cursor)
