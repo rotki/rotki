@@ -1,9 +1,8 @@
 """Repository for managing database settings."""
 import json
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.settings import (
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
@@ -14,11 +13,9 @@ from rotkehlchen.db.settings import (
     DBSettings,
     ModifiableDBSettings,
     db_settings_from_dict,
-    serialize_db_setting,
 )
 from rotkehlchen.db.utils import str_to_bool
 from rotkehlchen.types import ExchangeLocationID, Timestamp
-from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -88,7 +85,9 @@ class SettingsRepository:
         )
         CachedSettings().update_entry(name, value)
 
-    def get_all_settings(self, cursor: 'DBCursor', msg_aggregator: Any, have_premium: bool = False) -> DBSettings:
+    def get_all_settings(
+            self, cursor: 'DBCursor', msg_aggregator: Any, have_premium: bool = False,
+    ) -> DBSettings:
         """Get all settings from the database."""
         cursor.execute('SELECT name, value FROM settings;')
         settings_dict = {}

@@ -13,7 +13,6 @@ from rotkehlchen.chain.accounts import (
     SingleBlockchainAccountData,
 )
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress
-from rotkehlchen.types import SUPPORTED_EVM_CHAINS
 from rotkehlchen.db.constants import (
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
@@ -26,15 +25,15 @@ from rotkehlchen.db.utils import (
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import (
-    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    SUPPORTED_EVM_CHAINS,
     BlockchainAddress,
     ListOfBlockchainAddresses,
     SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor

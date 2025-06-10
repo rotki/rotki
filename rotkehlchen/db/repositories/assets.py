@@ -1,6 +1,6 @@
 """Repository for managing asset operations in the database."""
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -190,7 +190,9 @@ class AssetsRepository:
                 f'that this asset is not already used',
             ) from e
 
-    def replace_identifier(self, write_cursor: 'DBCursor', source_identifier: str, target_asset: Asset) -> None:
+    def replace_identifier(
+            self, write_cursor: 'DBCursor', source_identifier: str, target_asset: Asset,
+    ) -> None:
         """
         Replaces a given source identifier either in any of the relevant tables
 

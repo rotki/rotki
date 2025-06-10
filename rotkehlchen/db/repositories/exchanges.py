@@ -7,16 +7,19 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY, USER_CREDENTIAL_MAPPING_KEYS
+from rotkehlchen.db.constants import (
+    BINANCE_MARKETS_KEY,
+    KRAKEN_ACCOUNT_TYPE_KEY,
+    USER_CREDENTIAL_MAPPING_KEYS,
+)
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.db.settings import DBSettings
 
 
 log = logging.getLogger(__name__)
@@ -70,7 +73,7 @@ class ExchangeRepository:
             binance_selected_trade_pairs: list[str] | None,
     ) -> None:
         """Edit an existing exchange in the database.
-        
+
         May raise InputError if something is wrong with editing the DB
         """
         if location not in SUPPORTED_EXCHANGES:
@@ -177,7 +180,7 @@ class ExchangeRepository:
             name: str | None = None,
     ) -> dict[Location, list[ExchangeApiCredentials]]:
         """Gets all exchange credentials
-        
+
         If an exchange name and location are passed the credentials are filtered further
         """
         bindings = ()
@@ -216,9 +219,11 @@ class ExchangeRepository:
 
         return credentials
 
-    def get_credentials_extras(self, cursor: 'DBCursor', name: str, location: Location) -> dict[str, Any]:
+    def get_credentials_extras(
+            self, cursor: 'DBCursor', name: str, location: Location,
+    ) -> dict[str, Any]:
         """Get the non-key credential extras for the given exchange location
-        
+
         These are exchange dependent
         """
         cursor.execute(
@@ -289,7 +294,7 @@ class ExchangeRepository:
             ranges_to_query: list[str],
     ) -> None:
         """Delete used query ranges for an exchange
-        
+
         Takes a list of query range names that relate to this exchange
         e.g. ['history', 'history_events']
         """
@@ -311,7 +316,7 @@ class ExchangeRepository:
             'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
             (names_to_delete, '\\'),
         )
-        
+
         # Delete all exchange history events
         serialized_location = location.serialize_for_db()
         write_cursor.execute('DELETE FROM history_events WHERE location = ?;', (serialized_location,))  # noqa: E501

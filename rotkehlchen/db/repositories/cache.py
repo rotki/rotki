@@ -1,5 +1,6 @@
 """Repository for managing database cache operations."""
-from typing import TYPE_CHECKING, Any, Literal, Sequence, Unpack, overload
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal, Unpack, overload
 
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress
 from rotkehlchen.db.cache import (

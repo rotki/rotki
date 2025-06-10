@@ -11,7 +11,6 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
 from rotkehlchen.db.utils import (
     deserialize_derivation_path_for_db,
     deserialize_tags_from_db,
-    insert_tag_mappings,
     replace_tag_mappings,
 )
 from rotkehlchen.errors.misc import InputError
@@ -192,7 +191,9 @@ class XpubRepository:
 
         return result
 
-    def get_last_consecutive_derived_indices(self, cursor: 'DBCursor', xpub_data: XpubData) -> tuple[int, int]:
+    def get_last_consecutive_derived_indices(
+            self, cursor: 'DBCursor', xpub_data: XpubData,
+    ) -> tuple[int, int]:
         """
         Get the last known receiving and change derived indices from the given
         xpub that are consecutive since the beginning.

@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.db.utils import Tag
 from rotkehlchen.errors.misc import InputError, TagConstraintError
 from rotkehlchen.errors.serialization import DeserializationError

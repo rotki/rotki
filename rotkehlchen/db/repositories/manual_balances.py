@@ -7,7 +7,11 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.misc import ONE  # noqa: F401  # pylint: disable=unused-import
-from rotkehlchen.db.utils import deserialize_tags_from_db, insert_tag_mappings, replace_tag_mappings
+from rotkehlchen.db.utils import (
+    deserialize_tags_from_db,
+    insert_tag_mappings,
+    replace_tag_mappings,
+)
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal

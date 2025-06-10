@@ -43,14 +43,6 @@ from rotkehlchen.db.cache import (
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
-from rotkehlchen.db.repositories.accounts import AccountsRepository
-from rotkehlchen.db.repositories.assets import AssetsRepository
-from rotkehlchen.db.repositories.cache import CacheRepository
-from rotkehlchen.db.repositories.exchanges import ExchangeRepository
-from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
-from rotkehlchen.db.repositories.settings import SettingsRepository
-from rotkehlchen.db.repositories.tags import TagsRepository
-from rotkehlchen.db.repositories.xpub import XpubRepository
 from rotkehlchen.db.constants import (
     EXTRAINTERNALTXPREFIX,
 )
@@ -59,6 +51,16 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
+from rotkehlchen.db.repositories.accounts import AccountsRepository
+from rotkehlchen.db.repositories.assets import AssetsRepository
+from rotkehlchen.db.repositories.cache import CacheRepository
+from rotkehlchen.db.repositories.exchanges import ExchangeRepository
+from rotkehlchen.db.repositories.external_services import ExternalServicesRepository
+from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
+from rotkehlchen.db.repositories.settings import SettingsRepository
+from rotkehlchen.db.repositories.tags import TagsRepository
+from rotkehlchen.db.repositories.xpub import XpubRepository
+from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -77,12 +79,8 @@ from rotkehlchen.db.utils import (
     Tag,
     combine_asset_balances,
     db_tuple_to_str,
-    deserialize_tags_from_db,
     form_query_to_filter_timestamps,
-    get_query_chunks,
-    insert_tag_mappings,
     protect_password_sqlcipher,
-    replace_tag_mappings,
 )
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -191,12 +189,16 @@ class DBHandler:
         self.manual_balances = ManualBalancesRepository(msg_aggregator)
         self.assets = AssetsRepository(msg_aggregator)
         self.xpub = XpubRepository(msg_aggregator)
+        self.external_services: ExternalServicesRepository = None  # type: ignore  # initialized after connection
+        self.ignored_actions = IgnoredActionsRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
         self.password = password
         self._connect()
+        # Initialize repositories that need connection
+        self.external_services = ExternalServicesRepository(self.conn)
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
@@ -850,37 +852,16 @@ class DBHandler:
             write_cursor: 'DBCursor',
             credentials: list[ExternalServiceApiCredentials],
     ) -> None:
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) VALUES(?, ?, ?)',  # noqa: E501
-            [c.serialize_for_db() for c in credentials],
-        )
+        self.external_services.add_credentials(write_cursor, credentials)
 
     def delete_external_service_credentials(self, services: list[ExternalService]) -> None:
         with self.user_write() as cursor:
-            cursor.executemany(
-                'DELETE FROM external_service_credentials WHERE name=?;',
-                [(service.name.lower(),) for service in services],
-            )
+            self.external_services.delete_credentials(cursor, services)
 
     def get_all_external_service_credentials(self) -> list[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""
         with self.conn.read_ctx() as cursor:
-            cursor.execute('SELECT name, api_key, api_secret from external_service_credentials;')
-
-            result = []
-            for q in cursor:
-                try:
-                    service = ExternalService.deserialize(q[0])
-                except DeserializationError:
-                    log.error(f'Unknown external service name "{q[0]}" found in the DB')
-                    continue
-
-                result.append(ExternalServiceApiCredentials(
-                    service=service,
-                    api_key=q[1],
-                    api_secret=q[2],
-                ))
-        return result
+            return self.external_services.get_all_credentials(cursor)
 
     def get_external_service_credentials(
             self,
@@ -888,15 +869,7 @@ class DBHandler:
     ) -> ExternalServiceApiCredentials | None:
         """If existing it returns the external service credentials for the given service"""
         with self.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT api_key, api_secret from external_service_credentials WHERE name=?;',
-                (service_name.name.lower(),),
-            )
-            if (result := cursor.fetchone()) is None:
-                return None
-
-            # There can only be 1 result, since name is the primary key of the table
-            return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
+            return self.external_services.get_credentials(cursor, service_name)
 
     def add_to_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
@@ -931,14 +904,7 @@ class DBHandler:
 
         Raises InputError in case of adding already existing ignored action
         """
-        tuples = [(x,) for x in identifiers]
-        try:
-            write_cursor.executemany(
-                'INSERT INTO ignored_actions(identifier) VALUES(?)',
-                tuples,
-            )
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError('One of the given action ids already exists in the database') from e
+        self.ignored_actions.add(write_cursor, identifiers)
 
     def remove_from_ignored_action_ids(
             self,
@@ -949,23 +915,13 @@ class DBHandler:
 
         Raises InputError in case of removing an action that is not in the DB
         """
-        tuples = [(x,) for x in identifiers]
-        write_cursor.executemany(
-            'DELETE FROM ignored_actions WHERE identifier=?;',
-            tuples,
-        )
-        affected_rows = write_cursor.rowcount
-        if affected_rows != len(identifiers):
-            raise InputError(
-                f'Tried to remove {len(identifiers) - affected_rows} '
-                f'ignored actions that do not exist',
-            )
+        self.ignored_actions.remove(write_cursor, identifiers)
 
     def get_ignored_action_ids(
             self,
             cursor: 'DBCursor',
     ) -> set[str]:
-        return {entry[0] for entry in cursor.execute('SELECT identifier from ignored_actions;')}
+        return self.ignored_actions.get_all(cursor)
 
     def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
@@ -1243,7 +1199,9 @@ class DBHandler:
             include_entries_with_missing_assets: bool = False,
     ) -> list[ManuallyTrackedBalance]:
         """Returns the manually tracked balances from the DB"""
-        return self.manual_balances.get_all(cursor, balance_type, include_entries_with_missing_assets)
+        return self.manual_balances.get_all(
+            cursor, balance_type, include_entries_with_missing_assets,
+        )
 
     def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Adds manually tracked balances in the DB
