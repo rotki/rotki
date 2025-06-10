@@ -7,7 +7,7 @@ import tempfile
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Literal, Optional, Unpack, cast, overload
+from typing import Any, Literal, Optional, Unpack, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -32,7 +32,6 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
-from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import (
     AddressArgType,
     BinancePairLastTradeArgsType,
@@ -61,6 +60,7 @@ from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.repositories.tags import TagsRepository
 from rotkehlchen.db.repositories.xpub import XpubRepository
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
+from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -79,7 +79,6 @@ from rotkehlchen.db.utils import (
     Tag,
     combine_asset_balances,
     db_tuple_to_str,
-    form_query_to_filter_timestamps,
     protect_password_sqlcipher,
 )
 from rotkehlchen.errors.api import (
@@ -93,7 +92,6 @@ from rotkehlchen.errors.misc import (
     InputError,
     SystemPermissionError,
 )
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -191,6 +189,7 @@ class DBHandler:
         self.xpub = XpubRepository(msg_aggregator)
         self.external_services: ExternalServicesRepository = None  # type: ignore  # initialized after connection
         self.ignored_actions = IgnoredActionsRepository()
+        self.balances = BalancesRepository(msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -925,18 +924,7 @@ class DBHandler:
 
     def add_multiple_balances(self, write_cursor: 'DBCursor', balances: list[DBAssetBalance]) -> None:  # noqa: E501
         """Execute addition of multiple balances in the DB"""
-        serialized_balances = [balance.serialize_for_db() for balance in balances]
-        try:
-            write_cursor.executemany(
-                'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
-                'VALUES(?, ?, ?, ?, ?)',
-                serialized_balances,
-            )
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError(
-                'Adding timed_balance failed. Either unknown asset identifier '
-                'or an entry for the given timestamp already exists',
-            ) from e
+        self.balances.add_multiple_balances(write_cursor, balances)
 
     def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
@@ -993,12 +981,7 @@ class DBHandler:
         - {exchange_location_name}_lending_history_{exchange_name}
         - gnosisbridge_{address}
         """
-        cursor.execute('SELECT start_ts, end_ts FROM used_query_ranges WHERE name=?', (name,))
-        result = cursor.fetchone()
-        if result is None:
-            return None
-
-        return Timestamp(int(result[0])), Timestamp(int(result[1]))
+        return self.balances.get_used_query_range(cursor, name)
 
     def delete_used_query_range_for_exchange(
             self,
@@ -1023,10 +1006,7 @@ class DBHandler:
         self.exchanges.purge_exchange_data(write_cursor, location)
 
     def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES (?, ?, ?)',
-            (name, str(start_ts), str(end_ts)),
-        )
+        self.balances.update_used_query_range(write_cursor, name, start_ts, end_ts)
 
     def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
         cursor.execute(
@@ -1040,20 +1020,7 @@ class DBHandler:
 
     def add_multiple_location_data(self, write_cursor: 'DBCursor', location_data: list[LocationData]) -> None:  # noqa: E501
         """Execute addition of multiple location data in the DB"""
-        for entry in location_data:
-            try:
-                write_cursor.execute(
-                    'INSERT INTO timed_location_data('
-                    '    timestamp, location, usd_value) '
-                    ' VALUES(?, ?, ?)',
-                    (entry.time, entry.location, entry.usd_value),
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(
-                    f'Tried to add a timed_location_data for '
-                    f'{Location.deserialize_from_db(entry.location)!s} at'
-                    f' already existing timestamp {entry.time}.',
-                ) from e
+        self.balances.add_multiple_location_data(write_cursor, location_data)
 
     def add_blockchain_accounts(
             self,
@@ -1242,48 +1209,7 @@ class DBHandler:
 
         The balances are saved in the DB at the given timestamp
         """
-        balances = []
-        locations = []
-
-        for key, val in data['assets'].items():
-            msg = f'at this point the key should be of Asset type and not {type(key)} {key!s}'
-            assert isinstance(key, Asset), msg
-            balances.append(DBAssetBalance(
-                category=BalanceType.ASSET,
-                time=timestamp,
-                asset=key,
-                amount=val['amount'],
-                usd_value=val['usd_value'],
-            ))
-
-        for key, val in data['liabilities'].items():
-            msg = f'at this point the key should be of Asset type and not {type(key)} {key!s}'
-            assert isinstance(key, Asset), msg
-            balances.append(DBAssetBalance(
-                category=BalanceType.LIABILITY,
-                time=timestamp,
-                asset=key,
-                amount=val['amount'],
-                usd_value=val['usd_value'],
-            ))
-
-        for key2, val2 in data['location'].items():
-            # Here we know val2 is just a Dict since the key to data is 'location'
-            val2 = cast('dict', val2)
-            location = Location.deserialize(key2).serialize_for_db()
-            locations.append(LocationData(
-                time=timestamp, location=location, usd_value=str(val2['usd_value']),
-            ))
-        locations.append(LocationData(
-            time=timestamp,
-            location=Location.TOTAL.serialize_for_db(),  # pylint: disable=no-member
-            usd_value=str(data['net_usd']),
-        ))
-        try:
-            self.add_multiple_balances(write_cursor, balances)
-            self.add_multiple_location_data(write_cursor, locations)
-        except InputError as err:
-            self.msg_aggregator.add_warning(str(err))
+        self.balances.save_balances_data(write_cursor, data, timestamp)
 
     def add_exchange(
             self,
@@ -1517,31 +1443,7 @@ class DBHandler:
 
         The returned list is ordered from oldest to newest
         """
-        query = 'SELECT * FROM margin_positions '
-        if location is not None:
-            query += f"WHERE location='{location.serialize_for_db()}' "
-        query, bindings = form_query_to_filter_timestamps(query, 'close_time', from_ts, to_ts)
-        results = cursor.execute(query, bindings)
-
-        margin_positions = []
-        for result in results:
-            try:
-                margin = MarginPosition.deserialize_from_db(result)
-            except DeserializationError as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing margin position from the DB. '
-                    f'Skipping it. Error was: {e!s}',
-                )
-                continue
-            except UnknownAsset as e:
-                self.msg_aggregator.add_error(
-                    f'Error deserializing margin position from the DB. Skipping it. '
-                    f'Unknown asset {e.identifier} found',
-                )
-                continue
-            margin_positions.append(margin)
-
-        return margin_positions
+        return self.balances.get_margin_positions(cursor, from_ts, to_ts, location)
 
     def get_entries_count(
             self,
@@ -1841,60 +1743,10 @@ class DBHandler:
     ) -> list[SingleDBAssetBalance]:
         """Query all balance entries for an asset and balance type within a range of timestamps
         """
-        if from_ts is None:
-            from_ts = Timestamp(0)
-        if to_ts is None:
-            to_ts = ts_now()
-
         settings = self.get_settings(cursor)
-        querystr = (
-            'SELECT timestamp, amount, usd_value, category FROM timed_balances '
-            'WHERE timestamp BETWEEN ? AND ? AND currency=?'
+        balances = self.balances.query_timed_balances(
+            cursor, asset, balance_type, from_ts, to_ts, settings,
         )
-        bindings = [from_ts, to_ts, asset.identifier]
-
-        if settings.treat_eth2_as_eth and asset == A_ETH:
-            querystr = querystr.replace('currency=?', 'currency IN (?,?)')
-            bindings.append('ETH2')
-
-        querystr += ' AND category=?'
-        bindings.append(balance_type.serialize_for_db())
-        querystr += ' ORDER BY timestamp ASC;'
-
-        cursor.execute(querystr, bindings)
-        results = cursor.fetchall()
-        balances = []
-        results_length = len(results)
-        for idx, result in enumerate(results):
-            entry_time = result[0]
-            category = BalanceType.deserialize_from_db(result[3])
-            balances.append(
-                SingleDBAssetBalance(
-                    time=entry_time,
-                    amount=FVal(result[1]),
-                    usd_value=FVal(result[2]),
-                    category=category,
-                ),
-            )
-            if settings.ssf_graph_multiplier == 0 or idx == results_length - 1:
-                continue
-
-            next_result_time = results[idx + 1][0]
-            max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_graph_multiplier  # noqa: E501
-            while next_result_time - entry_time > max_diff:
-                entry_time += settings.balance_save_frequency * HOUR_IN_SECONDS
-                if entry_time >= next_result_time:
-                    break
-
-                balances.append(
-                    SingleDBAssetBalance(
-                        time=entry_time,
-                        amount=ZERO,
-                        usd_value=ZERO,
-                        category=category,
-                    ),
-                )
-
         if settings.infer_zero_timed_balances is True:
             inferred_balances = self._infer_zero_timed_balances(cursor, balances, from_ts, to_ts)
             if len(inferred_balances) != 0:
