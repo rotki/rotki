@@ -180,12 +180,15 @@ class DBHandler:
         self.get_or_create_evm_token_lock = Semaphore()
         self.password = password
         self._connect()
+        # Check for unfinished upgrades BEFORE initializing other repositories
+        # This needs to happen early because if the DB is in a semi-upgraded state,
+        # we might not be able to properly initialize everything else
+        self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         # Initialize repositories that need connection
         self.external_services = ExternalServicesRepository(self.conn, msg_aggregator)
         self.data_management = DataManagementRepository(self)
         self.upgrade_management = UpgradeManagementRepository(self)
         self.session_management = SessionManagementRepository(self)
-        self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
             if initial_settings is not None:

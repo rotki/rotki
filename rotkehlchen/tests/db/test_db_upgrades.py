@@ -114,25 +114,40 @@ def assert_tx_hash_is_bytes(
 def target_patch(target_version: int):
     """Patches the upgrades to stop at target_version and also sets
     ROTKEHLCHEN_DB_VERSION to the target_version"""
+    # Patch at the source to affect all imports
     a = patch(
+        'rotkehlchen.db.settings.ROTKEHLCHEN_DB_VERSION',
+        new=target_version,
+    )
+    # Also patch where it's already imported
+    b = patch(
         'rotkehlchen.db.upgrade_manager.ROTKEHLCHEN_DB_VERSION',
         new=target_version,
     )
-    b = patch(
+    c = patch(
         'rotkehlchen.db.dbhandler.ROTKEHLCHEN_DB_VERSION',
         new=target_version,
     )
+    d = patch(
+        'rotkehlchen.db.repositories.upgrade_management.ROTKEHLCHEN_DB_VERSION',
+        new=target_version,
+    )
+    e = patch(
+        'rotkehlchen.db.repositories.settings.ROTKEHLCHEN_DB_VERSION',
+        new=target_version,
+    )
+
     new_upgrades_list = [
         upgrade for upgrade in UPGRADES_LIST if upgrade.from_version < target_version
     ]
 
-    c = patch(
+    f = patch(
         'rotkehlchen.db.upgrade_manager.UPGRADES_LIST',
         new=new_upgrades_list,
     )
 
-    with a, b, c:
-        yield (a, b, c)
+    with a, b, c, d, e, f:
+        yield (a, b, c, d, e, f)
 
 
 def _init_db_with_target_version(
@@ -3421,7 +3436,22 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_unfinished_upgrades(user_data_dir):
     msg_aggregator = MessagesAggregator()
+    # Reset any cached settings singleton
+    from rotkehlchen.db.settings import CachedSettings
+    CachedSettings().reset()
+
     for backup_version in (33, 31):  # try both with correct and wrong backup
+        # Clean up any leftover files from previous iteration
+        from rotkehlchen.constants.misc import USERDB_NAME
+        for f in os.listdir(user_data_dir):
+            # Clean up database files and their associated files
+            if (f.endswith('.backup') or
+                f == USERDB_NAME or
+                f.startswith((USERDB_NAME, 'rotkehlchen_transient')) or
+                f == 'dbinfo.json'):  # DB info file
+                with suppress(PermissionError):
+                    (user_data_dir / f).unlink()
+
         _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
         db = _init_db_with_target_version(
             target_version=33,

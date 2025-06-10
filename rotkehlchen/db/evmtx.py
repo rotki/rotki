@@ -98,7 +98,7 @@ class DBEvmTx:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         for tx in evm_transactions:
-            if (row_id := self.db.write_single_tuple(
+            if (row_id := self.db.database_utils.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='evm_transaction',
                 query=query,
