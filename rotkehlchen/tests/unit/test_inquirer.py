@@ -18,6 +18,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
@@ -1186,6 +1187,39 @@ def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', databa
     )
     assert inquirer_defi.find_usd_price(oeth_weth_gauge) == FVal('1846.5254044791955')
     assert inquirer_defi.find_usd_price(sdcrv_gauge) == FVal('0.506007')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+    """Test that we get the correct prices for Beefy finance vaults"""
+    moo_usdc_usdf_vault = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x0014E0be19De3118b5b29842dd1696a2A98EB9Db'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='mooCurveUSDC-USDf',
+        name='Moo Curve USDC-USDf',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[
+            UnderlyingToken(
+                address=get_or_create_evm_token(
+                    userdb=database,
+                    evm_address=string_to_evm_address('0x72310DAAed61321b02B08A547150c07522c6a976'),
+                    chain_id=ChainID.ETHEREUM,
+                    token_kind=EvmTokenKind.ERC20,
+                    symbol='USDC/USDf',
+                    name='USDC/USDf',
+                    decimals=18,
+                ).evm_address,
+                token_kind=EvmTokenKind.ERC20,
+                weight=ONE,
+            ),
+        ],
+    )
+    assert inquirer_defi.find_usd_price(moo_usdc_usdf_vault) == FVal('1.0074269375538866276900513693847072')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

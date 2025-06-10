@@ -1,10 +1,13 @@
 from typing import Final
 
+from eth_typing import ABI
+
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 CPT_BEEFY_FINANCE: Final = 'beefy_finance'
 TOKEN_RETURNED_TOPIC: Final = b'\xea\xf4I1\x9c\x04,\x9b\xa3GO\xa0\xc52\x9e\xb5\x8c\xd1\xf2;\xe1\x10\xcd\xbf\x9di{\x8d0=\xac\x15'  # noqa: E501
+BEEFY_VAULT_ABI: ABI = [{'inputs': [], 'name': 'getPricePerFullShare', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 # Data is retrieved from: https://github.com/beefyfinance/beefy-v2/blob/56a9ad002f97b1dbda04cf900aaba0aa04e3b378/src/config/zap/zaps.json
 SUPPORTED_BEEFY_CHAINS: Final[dict[ChainID, ChecksumEvmAddress]] = {
