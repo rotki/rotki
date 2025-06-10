@@ -126,24 +126,6 @@ class BalancesRepository:
 
         return balances
 
-    def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
-        """Updates the used query range for a queried exchange/location"""
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO used_query_ranges(name, start_ts, end_ts) VALUES(?, ?, ?)',
-            (name, start_ts, end_ts),
-        )
-
-    def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
-        """Get the used query range for a queried exchange/location"""
-        cursor.execute(
-            'SELECT start_ts, end_ts FROM used_query_ranges WHERE name=?',
-            (name,),
-        )
-        result = cursor.fetchall()
-        if len(result) == 0:
-            return None
-
-        return Timestamp(result[0][0]), Timestamp(result[0][1])
 
     def remove_queried_address_data(self, write_cursor: 'DBCursor', address: str, chain: str) -> None:  # noqa: E501
         """Remove the data for a queried address"""

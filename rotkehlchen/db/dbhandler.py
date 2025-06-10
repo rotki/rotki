@@ -61,6 +61,7 @@ from rotkehlchen.db.repositories.tags import TagsRepository
 from rotkehlchen.db.repositories.xpub import XpubRepository
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.repositories.balances import BalancesRepository
+from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -190,6 +191,7 @@ class DBHandler:
         self.external_services: ExternalServicesRepository = None  # type: ignore  # initialized after connection
         self.ignored_actions = IgnoredActionsRepository()
         self.balances = BalancesRepository(msg_aggregator)
+        self.query_ranges = QueryRangesRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -981,7 +983,7 @@ class DBHandler:
         - {exchange_location_name}_lending_history_{exchange_name}
         - gnosisbridge_{address}
         """
-        return self.balances.get_used_query_range(cursor, name)
+        return self.query_ranges.get(cursor, name)
 
     def delete_used_query_range_for_exchange(
             self,
@@ -990,23 +992,13 @@ class DBHandler:
             exchange_name: str | None = None,
     ) -> None:
         """Delete the query ranges for the given exchange name"""
-        names_to_delete = f'{location!s}\\_%'
-        if exchange_name is not None:
-            names_to_delete += f'\\_{exchange_name}'
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (names_to_delete, '\\'),
-        )
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
-            (names_to_delete, '\\'),
-        )
+        self.query_ranges.delete_for_exchange(write_cursor, location, exchange_name)
 
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
         self.exchanges.purge_exchange_data(write_cursor, location)
 
     def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
-        self.balances.update_used_query_range(write_cursor, name, start_ts, end_ts)
+        self.query_ranges.update(write_cursor, name, start_ts, end_ts)
 
     def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
         cursor.execute(
