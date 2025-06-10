@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.
+* :bug:`-` Asset movements from Bitfinex should be queried correctly now.
 * :bug:`-` For ETH staking MEV rewards the informational event will no longer be shown as it will be superseded by the combined MEV reward events.
 * :bug:`-` Transaction decoding will no longer fail when encountering a certain rare case of problematic spam tokens.
 * :bug:`-` Swaps receiving EURe in Gnosis that were not working for selected DEXes will now be properly decoded again.

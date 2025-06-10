@@ -176,7 +176,7 @@ class Bitfinex(ExchangeInterface):
             request_url = f'{self.base_uri}/{api_path}'
         elif endpoint == 'movements':
             method = 'post'
-            api_path = 'v2/auth/r/movements/hist'
+            api_path = 'v2/auth/r/movements/info'
             request_url = f'{self.base_uri}/{api_path}?{urlencode(call_options)}'
         elif endpoint == 'trades':
             method = 'post'
