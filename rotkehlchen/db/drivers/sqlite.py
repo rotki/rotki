@@ -315,13 +315,8 @@ class DBConnection:
         )
 
         async with self.read_ctx() as cursor:
-            # Would need async version of sanity_check_impl
-            # For now, run in executor
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None,
-                sanity_check_impl,
-                cursor._cursor,  # Pass underlying sync cursor
+            await sanity_check_impl(
+                cursor,
                 self.connection_type.name.lower(),
                 self.minimized_schema,
             )

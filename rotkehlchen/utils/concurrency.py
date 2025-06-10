@@ -60,6 +60,27 @@ async def timeout(seconds: float):
         yield
 
 
+# Timeout class for backward compatibility
+class Timeout:
+    """Timeout context manager for backward compatibility"""
+    def __init__(self, seconds: float):
+        self.seconds = seconds
+        self._task = None
+        
+    def __enter__(self):
+        loop = asyncio.get_event_loop()
+        self._task = loop.call_later(self.seconds, self._timeout)
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._task:
+            self._task.cancel()
+        return False
+        
+    def _timeout(self):
+        raise asyncio.TimeoutError(f'Timeout after {self.seconds} seconds')
+
+
 # Task pool implementation
 class Pool:
     """Simple async pool implementation"""
@@ -129,6 +150,7 @@ __all__ = [
     'Queue',
     'Semaphore',
     'Task',
+    'Timeout',
     'get_hub',
     'get_task_name',
     'getcurrent',

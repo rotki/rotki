@@ -32,7 +32,7 @@ from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
-from rotkehlchen.tasks.manager import should_run_periodic_task
+from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, EvmTokenKind
 

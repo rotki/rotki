@@ -36,15 +36,15 @@ def db_script_normalizer(text: str) -> str:
     return WHITESPACE_RE.sub(replacer, text).replace(' ', '').replace('\n', '').replace('"', "'").replace('\t', '').lower()  # noqa: E501
 
 
-def sanity_check_impl(
+async def sanity_check_impl(
         cursor: 'DBCursor',
         db_name: str,
         minimized_schema: dict[str, str],
 ) -> None:
     """The implementation of the DB sanity check. Out of DBConnection to keep things cleaner"""
-    cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='table'")
+    await cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='table'")
     tables_data_from_db: dict[str, tuple[str, str]] = {}
-    for (name, raw_script) in cursor:
+    async for (name, raw_script) in cursor:
         table_properties = re.findall(
             pattern=r'createtable.*?\((.+)\)',
             string=db_script_normalizer(raw_script),
@@ -54,9 +54,10 @@ def sanity_check_impl(
         tables_data_from_db[name] = (table_properties, raw_script)
 
     # Check that there are no extra structures such as views
-    extra_db_structures = cursor.execute(
+    await cursor.execute(
         "SELECT type, name, sql FROM sqlite_master WHERE type NOT IN ('table', 'index')",
-    ).fetchall()
+    )
+    extra_db_structures = await cursor.fetchall()
     if len(extra_db_structures) > 0:
         logger.critical(
             f'Unexpected structures in {db_name} database: {extra_db_structures}',

@@ -1,16 +1,18 @@
+import asyncio
 import os
 import platform
 import time
+from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import psutil
 import requests
 
-# TODO: Update to FastAPI equivalent
-# from flask import url_for
-# TODO: Update to FastAPI equivalent
-# from rotkehlchen.api.server import APIServer, RestAPI
+from rotkehlchen.utils.concurrency import sleep
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 if platform.system() == 'Darwin':
     ASYNC_TASK_WAIT_TIMEOUT = 60
@@ -189,71 +191,74 @@ def assert_ok_async_response(response: requests.Response) -> int:
     return int(data['result']['task_id'])
 
 
-# TODO: Update to FastAPI equivalent
-# def wait_for_async_task(
-#         server: APIServer,
-#         task_id: int,
-#         timeout=ASYNC_TASK_WAIT_TIMEOUT,
-# ) -> dict[str, Any]:
-#     """Waits until an async task is ready and when it is returns the response's outcome
-#
-#     If the task's outcome is not ready within timeout seconds then the test fails"""
-#     with Timeout(timeout):
-#         while True:
-#             response = requests.get(
-#                 api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
-#             )
-#             json_data = response.json()
-#             data = json_data['result']
-#             if data is None:
-#                 error_msg = json_data.get('message')
-#                 if error_msg:
-#                     error_msg = f'Error message: {error_msg}'
-#                 raise AssertionError(
-#                     f'Tried to wait for task id {task_id} but got no result. {error_msg}',
-#                 )
-#             status = json_data['result']['status']
-#             if status == 'completed':
-#                 # Move status code to the outcome dict for easier checking
-#                 status_code = json_data['result'].get('status_code')
-#                 json_data['result']['outcome']['status_code'] = status_code
-#                 return json_data['result']['outcome']
-#             if status == 'not-found':
-#                 raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
-#             if status == 'pending':
-#                 sleep(1)
-#             else:
-#                 raise AssertionError(
-#                     f'Waiting for task id {task_id} returned unexpected status {status}',
-#                 )
-#
-#
-# def wait_for_async_tasks(
-#         server: APIServer,
-#         task_ids: Sequence[int],
-#         timeout=ASYNC_TASK_WAIT_TIMEOUT,
-# ) -> None:
-#     """Waits until a number of async tasks are ready"""
-#     searching_set = set(task_ids)
-#     with Timeout(timeout):
-#         while True:
-#             response = requests.get(
-#                 api_url_for(server, 'asynctasksresource', task_id=None),
-#             )
-#             json_data = response.json()
-#             data = json_data['result']
-#             if searching_set - set(data['completed']) == set():
-#                 break
-#             else:
-#                 sleep(1)
-#
-#
-# def wait_for_async_task_with_result(
-#         server: APIServer,
-#         task_id: int,
-#         timeout=ASYNC_TASK_WAIT_TIMEOUT,
-# ) -> dict[str, Any]:
-#     """Same as wait_for_async_task but returns the result part of the dict"""
-#     result = wait_for_async_task(server=server, task_id=task_id, timeout=timeout)
-#     assert result['message'] == ''
-#     return result['result']
+async def wait_for_async_task(
+        server: 'APIServer',
+        task_id: int,
+        timeout: float = ASYNC_TASK_WAIT_TIMEOUT,
+) -> dict[str, Any]:
+    """Waits until an async task is ready and when it is returns the response's outcome
+
+    If the task's outcome is not ready within timeout seconds then the test fails"""
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        response = requests.get(
+            api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
+        )
+        json_data = response.json()
+        data = json_data['result']
+        if data is None:
+            error_msg = json_data.get('message')
+            if error_msg:
+                error_msg = f'Error message: {error_msg}'
+            raise AssertionError(
+                f'Tried to wait for task id {task_id} but got no result. {error_msg}',
+            )
+        status = json_data['result']['status']
+        if status == 'completed':
+            # Move status code to the outcome dict for easier checking
+            status_code = json_data['result'].get('status_code')
+            json_data['result']['outcome']['status_code'] = status_code
+            return json_data['result']['outcome']
+        if status == 'not-found':
+            raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
+        if status == 'pending':
+            await sleep(1)
+        else:
+            raise AssertionError(
+                f'Waiting for task id {task_id} returned unexpected status {status}',
+            )
+    
+    raise AssertionError(f'Timeout waiting for task {task_id}')
+
+
+async def wait_for_async_tasks(
+        server: 'APIServer',
+        task_ids: Sequence[int],
+        timeout: float = ASYNC_TASK_WAIT_TIMEOUT,
+) -> None:
+    """Waits until a number of async tasks are ready"""
+    searching_set = set(task_ids)
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        response = requests.get(
+            api_url_for(server, 'asynctasksresource', task_id=None),
+        )
+        json_data = response.json()
+        data = json_data['result']
+        if searching_set - set(data['completed']) == set():
+            break
+        else:
+            await sleep(1)
+    else:
+        raise AssertionError(f'Timeout waiting for tasks {task_ids}')
+
+
+async def wait_for_async_task_with_result(
+        server: 'APIServer',
+        task_id: int,
+        timeout: float = ASYNC_TASK_WAIT_TIMEOUT,
+) -> dict[str, Any]:
+    """Same as wait_for_async_task but returns the result part of the dict"""
+    result = await wait_for_async_task(server=server, task_id=task_id, timeout=timeout)
+    assert result['message'] == ''
+    return result['result']

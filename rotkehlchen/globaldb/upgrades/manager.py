@@ -104,7 +104,7 @@ async def maybe_upgrade_globaldb(
     """
     try:
         async with connection.read_ctx() as cursor:
-            db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+            db_version = await globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
     except sqlite3.OperationalError:  # pylint: disable=no-member
         return True  # fresh DB -- nothing to upgrade
 
@@ -159,7 +159,7 @@ async def _perform_single_upgrade(
         progress_handler: DBUpgradeProgressHandler,
 ) -> None:
     async with connection.read_ctx() as cursor:
-        current_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+        current_version = await globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
 
     if current_version != upgrade.from_version:
         return

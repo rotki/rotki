@@ -25,6 +25,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.constants import ZERO
 from rotkehlchen.types import Price, Timestamp
 
 logger = logging.getLogger(__name__)
@@ -75,9 +76,6 @@ async def get_all_assets(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of all known assets"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Parse asset type if provided
         asset_type_filter = None
@@ -134,9 +132,6 @@ async def get_asset_types(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of valid asset types"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Get all asset types
         asset_types = [t.serialize() for t in AssetType]
@@ -157,9 +152,6 @@ async def search_assets(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Search for assets by name, symbol, or other attributes"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Validate column
         valid_columns = ['name', 'symbol', 'identifier']
@@ -206,9 +198,6 @@ async def get_ignored_assets(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get list of ignored assets"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Check authentication
         if not rotkehlchen.user_is_logged_in:
@@ -237,9 +226,6 @@ async def add_ignored_assets(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Add assets to ignore list"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Check authentication
         if not rotkehlchen.user_is_logged_in:
@@ -283,9 +269,6 @@ async def remove_ignored_assets(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Remove assets from ignore list"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Check authentication
         if not rotkehlchen.user_is_logged_in:
@@ -323,9 +306,6 @@ async def get_latest_asset_prices(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get latest prices for given assets"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Validate assets
         asset_objects = []
@@ -394,9 +374,6 @@ async def get_historical_asset_price(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Get historical price for assets at specific timestamp"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Validate assets
         asset_objects = []
@@ -465,9 +442,6 @@ async def check_for_asset_updates(
     rotkehlchen: "Rotkehlchen" = Depends(get_rotkehlchen),
 ) -> dict:
     """Check for asset database updates"""
-    if not async_features.is_enabled(AsyncFeature.ASSETS_ENDPOINT):
-        raise HTTPException(status_code=404, detail='Endpoint not migrated')
-
     try:
         # Check authentication
         if not rotkehlchen.user_is_logged_in:

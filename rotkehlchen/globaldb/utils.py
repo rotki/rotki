@@ -29,14 +29,14 @@ GLOBAL_DB_SCHEMA_BREAKING_CHANGES = {
 # The cases I (Lefteris) know is maybe_upgrade_globaldb() and maybe_apply_globaldb_migrations()
 
 
-def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int) -> int:
+async def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int) -> int:
     """
     Implementation of the logic of getting a setting from the global DB. Only for ints for now.
     """
-    query = cursor.execute(
+    await cursor.execute(
         'SELECT value FROM settings WHERE name=?;', (name,),
     )
-    result = query.fetchall()
+    result = await cursor.fetchall()
     # If setting is not set, it's the default
     if len(result) == 0:
         return default_value
@@ -44,7 +44,7 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
     return int(result[0][0])
 
 
-def set_token_spam_protocol(
+async def set_token_spam_protocol(
         write_cursor: 'DBCursor',
         token: 'EvmToken',
         is_spam: bool,
@@ -53,7 +53,7 @@ def set_token_spam_protocol(
     Set the protocol field of the provided token as `SPAM` depending on the `is_spam`
     argument and clean the resolver cache. It overwrites the protocol field of the provided token
     """
-    write_cursor.execute(
+    await write_cursor.execute(
         'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
         (SPAM_PROTOCOL if is_spam is True else None, token.identifier),
     )
@@ -86,7 +86,7 @@ async def initialize_globaldb(
     await connection.connect()
     try:
         async with connection.read_ctx() as cursor:
-            ongoing_upgrade_from_version = globaldb_get_setting_value(
+            ongoing_upgrade_from_version = await globaldb_get_setting_value(
                 cursor=cursor,
                 name='ongoing_upgrade_from_version',
                 default_value=-1,

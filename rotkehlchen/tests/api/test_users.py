@@ -13,7 +13,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer

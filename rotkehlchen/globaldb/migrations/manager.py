@@ -33,7 +33,7 @@ async def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
     """Maybe apply global DB data migrations"""
     try:
         async with connection.read_ctx() as cursor:
-            last_migration = globaldb_get_setting_value(cursor, 'last_data_migration', 0)
+            last_migration = await globaldb_get_setting_value(cursor, 'last_data_migration', 0)
     except sqlite3.OperationalError:  # pylint: disable=no-member
         log.error('Got an operational error at get_setting during maybe_apply_globaldb_migrations')
         return  # fresh DB? Should not happen here

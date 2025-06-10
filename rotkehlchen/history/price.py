@@ -382,11 +382,28 @@ class PriceHistorian:
         """
         evm_inquirer = Inquirer.get_evm_manager(chain_id=pool_token.chain_id).node_inquirer
         block_number = evm_inquirer.get_blocknumber_by_time(timestamp)
+        
+        # Create a sync wrapper for the async price query
+        async def _async_price_func(asset: Asset) -> Price:
+            return await PriceHistorian.query_historical_price(asset, to_asset, timestamp)
+        
+        # Run the async function in a sync context
+        import asyncio
+        def sync_price_func(asset: Asset) -> Price:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If we're already in an async context, create a new task
+                future = asyncio.ensure_future(_async_price_func(asset))
+                # This is a temporary workaround - ideally the calling functions should be async
+                return loop.run_until_complete(future)
+            else:
+                return asyncio.run(_async_price_func(asset))
+        
         if pool_token.protocol == UNISWAP_PROTOCOL:
             if (pool_price := lp_price_from_uniswaplike_pool_contract(
                 evm_inquirer=evm_inquirer,
                 token=pool_token,
-                price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
+                price_func=sync_price_func,
                 block_identifier=block_number,
             )) is not None:
                 return Price(pool_token_amount * pool_price)
@@ -397,5 +414,5 @@ class PriceHistorian:
             token=pool_token,
             evm_inquirer=evm_inquirer,
             block_identifier=block_number,
-            price_func=lambda asset: PriceHistorian.query_historical_price(asset, to_asset, timestamp),  # noqa: E501
+            price_func=sync_price_func,
         )
