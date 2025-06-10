@@ -16,7 +16,8 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import BalanceType, Location
+from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor

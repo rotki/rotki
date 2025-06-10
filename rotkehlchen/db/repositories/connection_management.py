@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Literal
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME
+from rotkehlchen.db.constants import TRANSIENT_DB_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.utils import protect_password_sqlcipher
@@ -18,7 +19,6 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 KDF_ITER = 64000
-TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
 
 class ConnectionManagementRepository:

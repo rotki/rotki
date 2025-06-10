@@ -33,6 +33,7 @@ from rotkehlchen.db.cache import (
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
+from rotkehlchen.db.constants import TRANSIENT_DB_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
@@ -118,9 +119,6 @@ from rotkehlchen.utils.hashing import file_md5
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-DBINFO_FILENAME = 'dbinfo.json'
-TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types

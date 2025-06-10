@@ -3,6 +3,9 @@ from typing import Final, Literal
 
 from rotkehlchen.errors.serialization import DeserializationError
 
+DBINFO_FILENAME = 'dbinfo.json'
+TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
+
 KRAKEN_ACCOUNT_TYPE_KEY = 'kraken_account_type'
 BINANCE_MARKETS_KEY = 'binance_selected_trade_pairs'
 USER_CREDENTIAL_MAPPING_KEYS = (KRAKEN_ACCOUNT_TYPE_KEY, BINANCE_MARKETS_KEY)

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME
-from rotkehlchen.db.dbhandler import DBINFO_FILENAME
+from rotkehlchen.db.constants import DBINFO_FILENAME
 from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import Location

@@ -7,9 +7,12 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
-from rotkehlchen.chain.bitcoin.xpub import XpubData, XpubDerivedAddressData
-from rotkehlchen.db.utils import (
+from rotkehlchen.chain.bitcoin.xpub import (
+    XpubData,
+    XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
+)
+from rotkehlchen.db.utils import (
     deserialize_tags_from_db,
     replace_tag_mappings,
 )
