@@ -48,6 +48,7 @@ from rotkehlchen.db.cache import (
 from rotkehlchen.db.repositories.accounts import AccountsRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
 from rotkehlchen.db.repositories.exchanges import ExchangeRepository
+from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.repositories.tags import TagsRepository
 from rotkehlchen.db.constants import (
@@ -188,6 +189,7 @@ class DBHandler:
         self.accounts = AccountsRepository(msg_aggregator)
         self.exchanges = ExchangeRepository()
         self.tags = TagsRepository(msg_aggregator)
+        self.manual_balances = ManualBalancesRepository(msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -1269,44 +1271,7 @@ class DBHandler:
             include_entries_with_missing_assets: bool = False,
     ) -> list[ManuallyTrackedBalance]:
         """Returns the manually tracked balances from the DB"""
-        query_balance_type = ''
-        if balance_type is not None:
-            query_balance_type = f"WHERE A.category='{balance_type.serialize_for_db()}'"
-        query = cursor.execute(
-            f"SELECT A.asset, A.label, A.amount, A.location, group_concat(B.tag_name,','), "
-            f"A.category, A.id FROM manually_tracked_balances as A "
-            f"LEFT OUTER JOIN tag_mappings as B on B.object_reference = A.id "
-            f"{query_balance_type} GROUP BY label;",
-        )
-
-        data = []
-        for entry in query:
-            tags = deserialize_tags_from_db(entry[4])
-            if (
-                (asset_is_missing := not Asset(entry[0]).exists()) is True
-                and include_entries_with_missing_assets is False
-            ):
-                continue
-
-            try:
-                balance_type = BalanceType.deserialize_from_db(entry[5])
-                data.append(ManuallyTrackedBalance(
-                    identifier=entry[6],
-                    asset=Asset(entry[0]),
-                    label=entry[1],
-                    amount=FVal(entry[2]),
-                    location=Location.deserialize_from_db(entry[3]),
-                    tags=tags,
-                    balance_type=balance_type,
-                    asset_is_missing=asset_is_missing,
-                ))
-            except (DeserializationError, ValueError) as e:
-                # ValueError would be due to FVal failing
-                self.msg_aggregator.add_warning(
-                    f'Unexpected data in a ManuallyTrackedBalance entry in the DB: {e!s}',
-                )
-
-        return data
+        return self.manual_balances.get_all(cursor, balance_type, include_entries_with_missing_assets)
 
     def add_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Adds manually tracked balances in the DB
@@ -1314,23 +1279,7 @@ class DBHandler:
         May raise:
         - InputError if one of the given balance entries already exist in the DB
         """
-        # Insert the manually tracked balances in the DB
-        try:
-            for entry in data:
-                write_cursor.execute(
-                    'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '  # noqa: E501
-                    'VALUES (?, ?, ?, ?, ?)', (entry.asset.identifier, entry.label, str(entry.amount), entry.location.serialize_for_db(), entry.balance_type.serialize_for_db()),  # noqa: E501
-                )
-                entry.identifier = write_cursor.lastrowid
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError(
-                f'One of the manually tracked balance entries already exists in the DB. {e!s}',
-            ) from e
-
-        insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
-
-        # make sure assets are included in the global db user owned assets
-        GlobalDBHandler.add_user_owned_assets([x.asset for x in data])
+        self.manual_balances.add(write_cursor, data)
 
     def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Edits manually tracked balances
@@ -1344,24 +1293,7 @@ class DBHandler:
         - InputError if any of the manually tracked balance labels to edit do not
         exist in the DB
         """
-        # Update the manually tracked balance entries in the DB
-        tuples = [(
-            entry.asset.identifier,
-            str(entry.amount),
-            entry.location.serialize_for_db(),
-            BalanceType.serialize_for_db(entry.balance_type),
-            entry.label,
-            entry.identifier,
-        ) for entry in data]
-
-        write_cursor.executemany(
-            'UPDATE manually_tracked_balances SET asset=?, amount=?, location=?, category=?, label=?'  # noqa: E501
-            'WHERE id=?;', tuples,
-        )
-        if write_cursor.rowcount != len(data):
-            msg = 'Tried to edit manually tracked balance entry that did not exist in the DB'
-            raise InputError(msg)
-        replace_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
+        self.manual_balances.edit(write_cursor, data)
 
     def remove_manually_tracked_balances(self, write_cursor: 'DBCursor', ids: list[int]) -> None:
         """
@@ -1371,19 +1303,7 @@ class DBHandler:
         - InputError if any of the given manually tracked balance labels
         to delete did not exist
         """
-        tuples = [(x,) for x in ids]
-        write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE object_reference = ?;', tuples,
-        )
-        write_cursor.executemany(
-            'DELETE FROM manually_tracked_balances WHERE id = ?;', tuples,
-        )
-        affected_rows = write_cursor.rowcount
-        if affected_rows != len(ids):
-            raise InputError(
-                f'Tried to remove {len(ids) - affected_rows} '
-                f'manually tracked balance ids that do not exist',
-            )
+        self.manual_balances.remove(write_cursor, ids)
 
     def save_balances_data(self, write_cursor: 'DBCursor', data: dict[str, Any], timestamp: Timestamp) -> None:  # noqa: E501
         """The keys of the data dictionary can be any kind of asset plus 'location'
