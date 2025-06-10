@@ -167,23 +167,27 @@ class HistoryEventsRepository:
             "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
             (from_ts,),
         )
+        
+        # Fetch all results before potentially doing another query
+        results = cursor.fetchall()
+        
+        nft_values = {}
         if not include_nfts:
-            from rotkehlchen.constants.assets import NFT_DIRECTIVE
-            nft_cursor = cursor  # use same cursor
-            nft_cursor.execute(
+            from rotkehlchen.constants.misc import NFT_DIRECTIVE
+            cursor.execute(
                 'SELECT timestamp, SUM(usd_value) FROM timed_balances WHERE '
                 'timestamp >= ? AND currency LIKE ? GROUP BY timestamp',
                 (from_ts, f'{NFT_DIRECTIVE}%'),
             )
-            nft_values = dict(nft_cursor)
+            nft_values = dict(cursor.fetchall())
 
         data, times_int = [], []
-        for entry in cursor:
+        for entry in results:
             times_int.append(entry[0])
             if include_nfts:
                 total = entry[1]
             else:
-                total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))  # pyright: ignore  # nft_values is populated when include_nfts is False
+                total = str(FVal(entry[1]) - FVal(nft_values.get(entry[0], 0)))
 
             data.append(total)
 

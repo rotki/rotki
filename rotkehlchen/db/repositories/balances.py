@@ -44,7 +44,7 @@ class BalancesRepository:
                 serialized_balances,
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            raise InputError(f'Adding timed_balance failed due to {e!s}') from e
+            raise InputError(f'Adding timed_balance failed.') from e
 
     def add_multiple_location_data(
             self, write_cursor: 'DBCursor', location_data: list['LocationData'],
@@ -63,7 +63,7 @@ class BalancesRepository:
                 serialized_data,
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            raise InputError(f'Failed to add location data snapshot to the DB due to {e!s}') from e
+            raise InputError(f'Tried to add a timed_location_data for {e!s}') from e
 
     def query_timed_balances(
             self,

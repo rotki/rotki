@@ -34,6 +34,8 @@ from rotkehlchen.db.cache import (
     LabeledLocationIdArgsType,
 )
 from rotkehlchen.db.constants import TRANSIENT_DB_NAME
+from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES  # noqa: F401  # needed for tests
+from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION  # noqa: F401  # needed for tests
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.misc import detect_sqlcipher_version
