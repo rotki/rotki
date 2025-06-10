@@ -167,57 +167,42 @@ class GlobalDBHandler:
         """
         Returns the singleton instance of GlobalDBHandler.
         
-        If instance doesn't exist and parameters are provided, initializes it.
-        Otherwise returns existing instance.
+        If instance doesn't exist, raise an error.
+        Use create_globaldb_instance() for async initialization.
         """
         if GlobalDBHandler.__instance is not None:
             return GlobalDBHandler.__instance
         
-        # For backward compatibility - if all params are provided, do initialization
-        if data_dir is not None and sql_vm_instructions_cb is not None:
-            # Check if we're in an existing event loop
-            # Create a new event loop for initialization
-            # This avoids nested event loop issues in pytest
-            loop = asyncio.new_event_loop()
-            
-            # Set default for perform_assets_updates
-            if perform_assets_updates is None:
-                perform_assets_updates = data_dir != '/opt/data'  # type: ignore
-            
-            def run_init():
-                asyncio.set_event_loop(loop)
-                try:
-                    loop.run_until_complete(cls.create_globaldb_instance(
-                        data_dir=data_dir,
-                        sql_vm_instructions_cb=sql_vm_instructions_cb,
-                        perform_assets_updates=perform_assets_updates,
-                        msg_aggregator=msg_aggregator,
-                    ))
-                finally:
-                    loop.close()
-            
-            # Run in a thread to avoid blocking the main event loop
-            import threading
-            init_thread = threading.Thread(target=run_init)
-            init_thread.start()
-            init_thread.join()
-            
-            return GlobalDBHandler.__instance
-        
-        # No instance and no params to create one
+        # No instance exists
         raise RuntimeError(
             'GlobalDBHandler has not been initialized. '
-            'Please provide initialization parameters or use create_globaldb_instance().'
+            'Please use create_globaldb_instance() for async initialization.'
         )
 
     def filepath(self) -> Path:
         """This should only be called after initialization of the global DB"""
         return self._data_directory / GLOBALDIR_NAME / GLOBALDB_NAME  # type: ignore [operator]
 
-    def cleanup(self) -> None:
-        self.conn.close()
+    async def cleanup(self) -> None:
+        await self.conn.close()
         if self._packaged_db_conn is not None:
-            self._packaged_db_conn.close()
+            await self._packaged_db_conn.close()
+    
+    def cleanup_sync(self) -> None:
+        """Synchronous cleanup for backward compatibility"""
+        # This is a temporary workaround - ideally all cleanup should be async
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Schedule async cleanup as a task
+                asyncio.create_task(self.cleanup())
+            else:
+                # Run cleanup synchronously
+                loop.run_until_complete(self.cleanup())
+        except RuntimeError:
+            # No event loop - create one
+            asyncio.run(self.cleanup())
 
     @staticmethod
     async def packaged_db_conn() -> DBConnection:

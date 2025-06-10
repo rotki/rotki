@@ -41,20 +41,25 @@ def create_api_server(
         rotki: Any,
         rest_port_number: int,
 ) -> Any:
-    """Create API server for tests - temporary mock implementation"""
+    """Create API server for tests - supports both sync and async usage"""
     from rotkehlchen.api.server import APIServer
     
     # Create API server with the rotki instance
     api_server = APIServer(rotkehlchen=rotki)
     
-    # Start the server
-    api_server.start(
-        host='127.0.0.1',
-        rest_port=rest_port_number,
-    )
+    # For test environment, we don't actually start uvicorn
+    # The test framework will handle running the ASGI app
+    api_server.rest_port = rest_port_number
     
-    # Wait for the server to start listening
-    _wait_for_listening_port(rest_port_number)
+    # For tests, we'll use the ASGI app directly with TestClient
+    # TestClient from starlette/fastapi provides sync interface to async app
+    if 'pytest' in os.sys.modules:
+        from fastapi.testclient import TestClient
+        # Create a test client for the FastAPI app
+        # This provides a requests-compatible interface
+        api_server.test_client = TestClient(api_server.app)
+        # Override the base URL for the test client
+        api_server.test_client.base_url = f'http://127.0.0.1:{rest_port_number}'
     
     return api_server
 

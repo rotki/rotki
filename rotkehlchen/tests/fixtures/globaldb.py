@@ -81,7 +81,7 @@ def fixture_load_global_caches() -> list[str]:
     return []
 
 
-def create_globaldb(
+async def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
         messages_aggregator,
@@ -91,15 +91,17 @@ def create_globaldb(
     # is called make sure its instance is always starting from scratch
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
 
-    return GlobalDBHandler(
+    # GlobalDBHandler now requires async initialization
+    globaldb = await GlobalDBHandler.create_globaldb_instance(
         data_dir=data_directory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
         msg_aggregator=messages_aggregator,
         perform_assets_updates=perform_assets_updates,
     )
+    return globaldb
 
 
-def _initialize_fixture_globaldb(
+async def _initialize_fixture_globaldb(
         custom_globaldb,
         tmpdir_factory,
         sql_vm_instructions_cb: int,
@@ -144,19 +146,19 @@ def _initialize_fixture_globaldb(
             patch_for_globaldb_upgrade_to(stack, target_globaldb_version)
 
         stack.enter_context(patch_decoder_reload_data(load_global_caches))
-        globaldb = create_globaldb(
+        globaldb = await create_globaldb(
             data_directory=new_data_dir,
             sql_vm_instructions_cb=0,
             messages_aggregator=messages_aggregator,
         )
 
     if empty_global_addressbook is True:
-        with globaldb.conn.write_ctx() as cursor:
-            cursor.execute('DELETE FROM address_book')
+        async with globaldb.conn.write_ctx() as cursor:
+            await cursor.execute('DELETE FROM address_book')
 
     if len(remove_global_assets) > 0:
-        with globaldb.conn.write_ctx() as cursor:
-            cursor.executemany(
+        async with globaldb.conn.write_ctx() as cursor:
+            await cursor.executemany(
                 'DELETE FROM assets WHERE identifier=?;',
                 [(asset,) for asset in remove_global_assets],
             )
@@ -165,7 +167,7 @@ def _initialize_fixture_globaldb(
 
 
 @pytest.fixture(name='globaldb')
-def fixture_globaldb(
+async def fixture_globaldb(
         custom_globaldb,
         tmpdir_factory,
         sql_vm_instructions_cb,
@@ -179,7 +181,7 @@ def fixture_globaldb(
         load_global_caches,
         messages_aggregator,
 ):
-    globaldb, new_data_dir = _initialize_fixture_globaldb(
+    globaldb, new_data_dir = await _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
@@ -195,7 +197,7 @@ def fixture_globaldb(
     )
     yield globaldb
 
-    globaldb.cleanup()
+    await globaldb.cleanup()
     shutil.rmtree(new_data_dir)
 
 
@@ -205,7 +207,7 @@ def fixture_custom_globaldb() -> int | None:
 
 
 @pytest.fixture(name='historical_price_test_data')
-def fixture_historical_price_test_data(globaldb):
+async def fixture_historical_price_test_data(globaldb):
     data = [HistoricalPrice(
         from_asset=A_BTC,
         to_asset=A_EUR,
@@ -279,4 +281,4 @@ def fixture_historical_price_test_data(globaldb):
         timestamp=Timestamp(1618481196),
         price=Price(FVal(2085.76)),
     )]
-    globaldb.add_historical_prices(data)
+    await globaldb.add_historical_prices(data)
