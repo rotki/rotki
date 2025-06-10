@@ -53,7 +53,8 @@ from rotkehlchen.db.constants import (
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
-from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
+# Use sync driver for backward compatibility
+from rotkehlchen.db.drivers.sync_sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.loopring import DBLoopring

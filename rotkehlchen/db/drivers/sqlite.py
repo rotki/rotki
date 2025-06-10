@@ -7,13 +7,15 @@ import asyncio
 import logging
 import sqlite3
 from collections.abc import AsyncGenerator, Generator, Sequence
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import aiosqlite
+
+from rotkehlchen.utils.misc import ts_now
 
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
@@ -320,6 +322,97 @@ class DBConnection:
                 self.connection_type.name.lower(),
                 self.minimized_schema,
             )
+    
+    # Sync compatibility methods for gradual migration
+    def execute(self, statement: str, *bindings) -> sqlite3.Cursor:
+        """Sync execute for backward compatibility"""
+        # This is a temporary workaround - ideally all DB access should be async
+        import asyncio
+        import sqlite3
+        
+        # For sync compatibility, we need to directly access the underlying connection
+        # This bypasses all the async machinery but allows tests to work
+        if hasattr(self._conn, '_conn'):
+            # aiosqlite connection
+            sync_conn = self._conn._conn
+        else:
+            sync_conn = self._conn
+            
+        return sync_conn.execute(statement, *bindings)
+    
+    def executescript(self, script: str) -> None:
+        """Sync executescript for backward compatibility"""
+        if hasattr(self._conn, '_conn'):
+            sync_conn = self._conn._conn
+        else:
+            sync_conn = self._conn
+            
+        sync_conn.executescript(script)
+    
+    def executemany(self, statement: str, *bindings) -> None:
+        """Sync executemany for backward compatibility"""
+        if hasattr(self._conn, '_conn'):
+            sync_conn = self._conn._conn
+        else:
+            sync_conn = self._conn
+            
+        sync_conn.executemany(statement, *bindings)
+    
+    def close(self) -> None:
+        """Sync close for backward compatibility"""
+        if self._conn:
+            if hasattr(self._conn, '_conn'):
+                # Close the underlying sync connection
+                self._conn._conn.close()
+            else:
+                self._conn.close()
+            self._conn = None
+    
+    @contextmanager
+    def read_ctx(self) -> Generator[sqlite3.Cursor, None, None]:
+        """Sync read context for backward compatibility"""
+        # Get the underlying sync connection
+        if hasattr(self._conn, '_conn'):
+            sync_conn = self._conn._conn
+        else:
+            sync_conn = self._conn
+            
+        cursor = sync_conn.cursor()
+        try:
+            yield cursor
+        finally:
+            cursor.close()
+    
+    @contextmanager
+    def write_ctx(self, commit_ts: bool = False) -> Generator[sqlite3.Cursor, None, None]:
+        """Sync write context for backward compatibility"""
+        # Get the underlying sync connection
+        if hasattr(self._conn, '_conn'):
+            sync_conn = self._conn._conn
+        else:
+            sync_conn = self._conn
+            
+        cursor = sync_conn.cursor()
+        cursor.execute('BEGIN TRANSACTION')
+        
+        try:
+            yield cursor
+        except Exception:
+            sync_conn.rollback()
+            raise
+        else:
+            if commit_ts:
+                cursor.execute(
+                    'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                    ('last_write_ts', str(ts_now())),
+                )
+            sync_conn.commit()
+        finally:
+            cursor.close()
+    
+    def user_write(self, commit_ts: bool = True):
+        """Sync write context - alias for write_ctx"""
+        return self.write_ctx(commit_ts=commit_ts)
 
 
 # Migration comparison example
