@@ -1,6 +1,8 @@
 """Repository for managing database operations."""
 import json
 import logging
+import os
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +21,8 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 log = logging.getLogger(__name__)
+
+DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
 
 
 class DatabaseManagementRepository:
@@ -85,3 +89,34 @@ class DatabaseManagementRepository:
             'INSERT OR IGNORE INTO skipped_external_events(data, location, extra_data) VALUES(?, ?, ?)',  # noqa: E501
             (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
         )
+
+    def get_db_info(self, version: int) -> dict[str, Any]:
+        """Get database info including path, size and version."""
+        filepath = self.user_data_dir / USERDB_NAME
+        size = Path(self.user_data_dir / USERDB_NAME).stat().st_size
+        return {
+            'filepath': str(filepath),
+            'size': int(size),
+            'version': int(version),
+        }
+
+    def get_backups(self) -> list[dict[str, Any]]:
+        """Returns a list of tuples with possible backups of the user DB"""
+        backups = []
+        for root, _, files in os.walk(self.user_data_dir):
+            for filename in files:
+                match = DB_BACKUP_RE.search(filename)
+                if match:
+                    timestamp = match.group(1)
+                    version = match.group(2)
+                    try:
+                        size: int | None = Path(Path(root) / filename).stat().st_size
+                    except OSError:
+                        size = None
+                    backups.append({
+                        'time': int(timestamp),
+                        'version': int(version),
+                        'size': size,
+                    })
+
+        return backups
