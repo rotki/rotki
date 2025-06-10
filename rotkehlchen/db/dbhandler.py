@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
@@ -969,14 +970,7 @@ class DBHandler:
         self.query_ranges.update(write_cursor, name, start_ts, end_ts)
 
     def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
-        cursor.execute(
-            'SELECT MAX(timestamp) from timed_location_data',
-        )
-        result = cursor.fetchone()
-        if result is None or result[0] is None:
-            return Timestamp(0)
-
-        return Timestamp(int(result[0]))
+        return self.balances.get_last_balance_save_time(cursor)
 
     def add_multiple_location_data(self, write_cursor: 'DBCursor', location_data: list[LocationData]) -> None:  # noqa: E501
         """Execute addition of multiple location data in the DB"""
@@ -1932,12 +1926,7 @@ class DBHandler:
 
     def get_associated_locations(self) -> set[Location]:
         with self.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT location FROM margin_positions UNION '
-                'SELECT location FROM user_credentials UNION '
-                'SELECT location FROM history_events',
-            )
-            return {Location.deserialize_from_db(loc[0]) for loc in cursor}
+            return self.balances.get_associated_locations(cursor)
 
     def should_save_balances(
             self,
@@ -1949,14 +1938,11 @@ class DBHandler:
         and last query timestamps are older than the period defined by the save frequency setting.
         """
         settings = self.get_settings(cursor)
-        # Setting is saved in hours, convert to seconds here
-        period = settings.balance_save_frequency * 60 * 60
-        now = ts_now()
-        if last_query_ts is not None and now - last_query_ts < period:
-            return False
-
-        last_save = self.get_last_balance_save_time(cursor)
-        return now - last_save > period
+        return self.balances.should_save_balances(
+            cursor,
+            settings.balance_save_frequency,
+            last_query_ts,
+        )
 
     def get_rpc_nodes(
             self,

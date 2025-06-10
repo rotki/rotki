@@ -264,3 +264,41 @@ class BalancesRepository:
             return Balance()
 
         return Balance(amount=FVal(result[0]), usd_value=FVal(result[1]))
+
+    def get_associated_locations(self, cursor: 'DBCursor') -> set[Location]:
+        """Get all locations that have associated data in the database."""
+        cursor.execute(
+            'SELECT location FROM margin_positions UNION '
+            'SELECT location FROM user_credentials UNION '
+            'SELECT location FROM history_events',
+        )
+        return {Location.deserialize_from_db(loc[0]) for loc in cursor}
+
+    def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
+        """Get the timestamp of the last balance save."""
+        cursor.execute(
+            'SELECT MAX(timestamp) FROM timed_location_data',
+        )
+        result = cursor.fetchone()
+        if result is None or result[0] is None:
+            return Timestamp(0)
+        return Timestamp(result[0])
+
+    def should_save_balances(
+            self,
+            cursor: 'DBCursor',
+            balance_save_frequency: int,
+            last_query_ts: Timestamp | None = None,
+    ) -> bool:
+        """
+        Returns whether we should save a balance snapshot depending on whether the last snapshot
+        and last query timestamps are older than the period defined by the save frequency setting.
+        """
+        # Setting is saved in hours, convert to seconds here
+        period = balance_save_frequency * 60 * 60
+        now = ts_now()
+        if last_query_ts is not None and now - last_query_ts < period:
+            return False
+
+        last_save = self.get_last_balance_save_time(cursor)
+        return now - last_save > period
