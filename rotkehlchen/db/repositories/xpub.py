@@ -126,11 +126,11 @@ class XpubRepository:
         if xpub_data.tags is not None:
             for tag in xpub_data.tags:
                 tag_exists = write_cursor.execute(
-                    'SELECT COUNT(*) FROM tags WHERE name=?', (tag,)
+                    'SELECT COUNT(*) FROM tags WHERE name=?', (tag,),
                 ).fetchone()[0]
                 if tag_exists == 0:
                     raise InputError(f'Tag {tag} does not exist')
-        
+
         try:
             write_cursor.execute(
                 'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?',  # noqa: E501
