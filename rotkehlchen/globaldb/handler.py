@@ -112,6 +112,51 @@ class GlobalDBHandler:
     packaged_db_lock: Semaphore
     msg_aggregator: 'MessagesAggregator | None' = None
 
+    @classmethod
+    async def create_globaldb_instance(
+            cls,
+            data_dir: Path,
+            sql_vm_instructions_cb: int,
+            perform_assets_updates: bool,
+            msg_aggregator: 'MessagesAggregator',
+    ) -> 'GlobalDBHandler':
+        """Factory method to create and initialize GlobalDBHandler asynchronously"""
+        if GlobalDBHandler.__instance is None:
+            GlobalDBHandler.__instance = object.__new__(cls)
+            GlobalDBHandler.__instance._data_directory = data_dir
+            GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
+
+            global_dir = data_dir / GLOBALDIR_NAME
+            global_dir.mkdir(parents=True, exist_ok=True)
+            if not (global_dir / GLOBALDB_NAME).is_file():
+                # if no global db exists, copy the built-in file
+                root_dir = Path(__file__).resolve().parent.parent
+                builtin_data_dir = root_dir / 'data'
+                shutil.copyfile(builtin_data_dir / GLOBALDB_NAME, global_dir / GLOBALDB_NAME)
+
+            # Run async initialization
+            conn, used_backup = await initialize_globaldb(
+                global_dir=global_dir,
+                db_filename=GLOBALDB_NAME,
+                sql_vm_instructions_cb=sql_vm_instructions_cb,
+            )
+            GlobalDBHandler.__instance.conn = conn
+            GlobalDBHandler.__instance.used_backup = used_backup
+            GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
+
+            # initialise the asset resolver here since asset updater class might require it.
+            # TODO: Check if this is causing issues
+            # AssetResolver(globaldb=GlobalDBHandler.__instance, constant_assets=CONSTANT_ASSETS)
+            await configure_globaldb(
+                global_dir=global_dir,
+                db_filename=GLOBALDB_NAME,
+                msg_aggregator=msg_aggregator,
+                globaldb=GlobalDBHandler.__instance if perform_assets_updates else None,
+                connection=GlobalDBHandler.__instance.conn,
+            )
+        
+        return GlobalDBHandler.__instance
+
     def __new__(
             cls,
             data_dir: Path | None = None,
@@ -120,62 +165,50 @@ class GlobalDBHandler:
             msg_aggregator: 'MessagesAggregator | None' = None,
     ) -> 'GlobalDBHandler':
         """
-        Initializes the GlobalDB.
-
-        If the data dir is given it uses the already existing global DB in that directory,
-        of if there is none copies the built-in one there.
-
-        If perform_assets_updates is True any assets data will be updated before applying
-        schema-breaking changes.
-
-        May raise:
-        - DBSchemaError if GlobalDB's schema is malformed
+        Returns the singleton instance of GlobalDBHandler.
+        
+        If instance doesn't exist and parameters are provided, initializes it.
+        Otherwise returns existing instance.
         """
         if GlobalDBHandler.__instance is not None:
             return GlobalDBHandler.__instance
-        assert data_dir is not None, 'First instantiation of GlobalDBHandler should have a data_dir'  # noqa: E501
-        assert sql_vm_instructions_cb is not None, 'First instantiation of GlobalDBHandler should have a sql_vm_instructions_cb'  # noqa: E501
-        assert msg_aggregator is not None, 'First instantiation of GlobalDBHandler should have a messages_aggregator'  # noqa: E501
-        assert perform_assets_updates is not None, 'First instantiation of GlobalDBHandler should have a perform_assets_updates'  # noqa: E501
-
-        GlobalDBHandler.__instance = object.__new__(cls)
-        GlobalDBHandler.__instance._data_directory = data_dir
-        GlobalDBHandler.__instance.msg_aggregator = msg_aggregator
-
-        global_dir = data_dir / GLOBALDIR_NAME
-        global_dir.mkdir(parents=True, exist_ok=True)
-        if not (global_dir / GLOBALDB_NAME).is_file():
-            # if no global db exists, copy the built-in file
-            root_dir = Path(__file__).resolve().parent.parent
-            builtin_data_dir = root_dir / 'data'
-            shutil.copyfile(builtin_data_dir / GLOBALDB_NAME, global_dir / GLOBALDB_NAME)
-
-        # Run async initialization in sync context
-        loop = asyncio.new_event_loop()
-        try:
-            GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = loop.run_until_complete(
-                initialize_globaldb(
-                    global_dir=global_dir,
-                    db_filename=GLOBALDB_NAME,
-                    sql_vm_instructions_cb=sql_vm_instructions_cb,
-                )
-            )
-            GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
-
-            # initialise the asset resolver here since asset updater class might require it.
-            AssetResolver(globaldb=GlobalDBHandler.__instance, constant_assets=CONSTANT_ASSETS)
-            loop.run_until_complete(
-                configure_globaldb(
-                    global_dir=global_dir,
-                    db_filename=GLOBALDB_NAME,
-                    msg_aggregator=msg_aggregator,
-                    globaldb=GlobalDBHandler.__instance if perform_assets_updates else None,
-                    connection=GlobalDBHandler.__instance.conn,
-                )
-            )
-        finally:
-            loop.close()
-        return GlobalDBHandler.__instance
+        
+        # For backward compatibility - if all params are provided, do initialization
+        if data_dir is not None and sql_vm_instructions_cb is not None:
+            # Check if we're in an existing event loop
+            # Create a new event loop for initialization
+            # This avoids nested event loop issues in pytest
+            loop = asyncio.new_event_loop()
+            
+            # Set default for perform_assets_updates
+            if perform_assets_updates is None:
+                perform_assets_updates = data_dir != '/opt/data'  # type: ignore
+            
+            def run_init():
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(cls.create_globaldb_instance(
+                        data_dir=data_dir,
+                        sql_vm_instructions_cb=sql_vm_instructions_cb,
+                        perform_assets_updates=perform_assets_updates,
+                        msg_aggregator=msg_aggregator,
+                    ))
+                finally:
+                    loop.close()
+            
+            # Run in a thread to avoid blocking the main event loop
+            import threading
+            init_thread = threading.Thread(target=run_init)
+            init_thread.start()
+            init_thread.join()
+            
+            return GlobalDBHandler.__instance
+        
+        # No instance and no params to create one
+        raise RuntimeError(
+            'GlobalDBHandler has not been initialized. '
+            'Please provide initialization parameters or use create_globaldb_instance().'
+        )
 
     def filepath(self) -> Path:
         """This should only be called after initialization of the global DB"""

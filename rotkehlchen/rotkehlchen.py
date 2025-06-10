@@ -51,8 +51,9 @@ class Rotkehlchen:
 
         # Database handler
         self.data = DataHandler(
-            data_dir=data_dir,
+            data_directory=self.data_dir,
             msg_aggregator=self.msg_aggregator,
+            sql_vm_instructions_cb=0,  # TODO: Get from args
         )
 
         # Async database

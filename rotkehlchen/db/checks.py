@@ -44,7 +44,8 @@ async def sanity_check_impl(
     """The implementation of the DB sanity check. Out of DBConnection to keep things cleaner"""
     await cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='table'")
     tables_data_from_db: dict[str, tuple[str, str]] = {}
-    async for (name, raw_script) in cursor:
+    rows = await cursor.fetchall()
+    for (name, raw_script) in rows:
         table_properties = re.findall(
             pattern=r'createtable.*?\((.+)\)',
             string=db_script_normalizer(raw_script),

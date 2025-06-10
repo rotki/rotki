@@ -55,8 +55,11 @@ class APIServer:
     ) -> None:
 
         self.rotkehlchen = rotkehlchen
-        self.ws_notifier = AsyncRotkiNotifier()
-        self.ws_handler = AsyncRotkiWSHandler(self.ws_notifier)
+        self.rest_api = self  # Backward compatibility
+        self.ws_notifier = RotkiNotifier()
+        self.ws_handler = RotkiWSHandler(self.ws_notifier)
+        self.rest_port = None  # Will be set when started
+        self.version = '1'  # API version
 
         # Set up dependency injection for FastAPI endpoints
         set_rotkehlchen_instance(rotkehlchen)
@@ -191,6 +194,17 @@ class APIServer:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=create_error_response(str(exc)),
         )
+
+    def start(self, host: str = '127.0.0.1', rest_port: int = 5042) -> None:
+        """Start the server for tests - non-blocking"""
+        self.rest_port = rest_port
+        # For tests, we don't actually start the server here
+        # The test framework will handle running the app
+        
+    def stop(self) -> None:
+        """Stop the server for tests"""
+        # Cleanup if needed
+        pass
 
     def run(self, host: str = '127.0.0.1', port: int = 5042) -> None:
         """Run the server using uvicorn

@@ -45,32 +45,32 @@ class DBCursor:
         Naturally yields control during execution
         without needing progress callbacks.
         """
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'ASYNC EXECUTE {statement}')  # type: ignore[attr-defined]
 
         await self._cursor.execute(statement, *bindings)
 
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'FINISH ASYNC EXECUTE {statement}')  # type: ignore[attr-defined]
         return self
 
     async def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> 'DBCursor':
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'ASYNC EXECUTEMANY {statement}')  # type: ignore[attr-defined]
 
         await self._cursor.executemany(statement, *bindings)
 
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'FINISH ASYNC EXECUTEMANY {statement}')  # type: ignore[attr-defined]
         return self
 
     async def executescript(self, script: str) -> 'DBCursor':
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'ASYNC EXECUTESCRIPT {script}')  # type: ignore[attr-defined]
 
         await self._cursor.executescript(script)
 
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace(f'FINISH ASYNC EXECUTESCRIPT {script}')  # type: ignore[attr-defined]
         return self
 
@@ -184,7 +184,7 @@ class DBConnection:
         if not self._conn:
             raise RuntimeError('Database not connected')
 
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace('ASYNC DB COMMIT')  # type: ignore[attr-defined]
 
         await self._conn.commit()
@@ -194,7 +194,7 @@ class DBConnection:
         if not self._conn:
             raise RuntimeError('Database not connected')
 
-        if logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
+        if hasattr(logging, 'TRACE') and logger.isEnabledFor(logging.TRACE):  # type: ignore[attr-defined]
             logger.trace('ASYNC DB ROLLBACK')  # type: ignore[attr-defined]
 
         await self._conn.rollback()
