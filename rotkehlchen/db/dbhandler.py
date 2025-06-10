@@ -46,6 +46,7 @@ from rotkehlchen.db.cache import (
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
+from rotkehlchen.db.repositories.accounts import AccountsRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.constants import (
@@ -85,7 +86,6 @@ from rotkehlchen.db.utils import (
     form_query_to_filter_timestamps,
     get_query_chunks,
     insert_tag_mappings,
-    is_valid_db_blockchain_account,
     protect_password_sqlcipher,
     replace_tag_mappings,
 )
@@ -109,13 +109,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
-from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
-    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -195,6 +193,7 @@ class DBHandler:
         # Initialize repositories
         self.settings = SettingsRepository()
         self.cache = CacheRepository()
+        self.accounts = AccountsRepository(msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -1139,28 +1138,7 @@ class DBHandler:
             write_cursor: 'DBCursor',
             account_data: list[BlockchainAccountData],
     ) -> None:
-        # Insert the blockchain account addresses and labels to the DB
-        blockchain_accounts_query, bindings_to_insert = [], []
-        for entry in account_data:
-            blockchain_accounts_query.append((entry.chain.value, entry.address))
-            if entry.label:
-                bindings_to_insert.append((entry.address, entry.chain.value, entry.label))
-        try:
-            write_cursor.executemany(
-                'INSERT INTO blockchain_accounts(blockchain, account) VALUES (?, ?)',
-                blockchain_accounts_query,
-            )
-            if len(bindings_to_insert) > 0:
-                write_cursor.executemany(
-                    'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?)',  # noqa: E501
-                    bindings_to_insert,
-                )
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            raise InputError(
-                f'Blockchain account/s {[x.address for x in account_data]} already exist',
-            ) from e
-
-        insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['address'])  # noqa: E501
+        self.accounts.add(write_cursor, account_data)
 
     def edit_blockchain_accounts(
             self,
@@ -1173,50 +1151,7 @@ class DBHandler:
         - All tags exist in the DB
         - All accounts exist in the DB
         """
-        # Update the blockchain account labels in the DB
-        bindings_to_update, bindings_to_delete = [], []
-        for entry in account_data:
-            if entry.label:
-                bindings_to_update.append((entry.address, entry.chain.value, entry.label))
-            else:
-                bindings_to_delete.append((entry.address, entry.chain.value))
-
-        modified_count, deleted_count = 0, 0
-        if len(bindings_to_update) > 0:
-            write_cursor.executemany(
-                'INSERT OR REPLACE INTO address_book(address, blockchain, name) VALUES (?, ?, ?);',
-                bindings_to_update,
-            )
-            modified_count += write_cursor.rowcount
-
-        if len(bindings_to_delete) > 0:
-            write_cursor.executemany(
-                'DELETE FROM address_book WHERE address=? AND blockchain=?;',
-                bindings_to_delete,
-            )
-            deleted_count += write_cursor.rowcount
-
-        if modified_count != len(bindings_to_update):
-            msg = (
-                f'When updating blockchain accounts expected {len(bindings_to_update)} '
-                f'modified, but instead there were {modified_count}. Should not happen.'
-            )
-            log.error(msg)
-            raise InputError(msg)
-
-        if deleted_count != len(bindings_to_delete):
-            msg = (
-                f'When updating blockchain accounts expected {len(bindings_to_delete)} '
-                f'deleted, but instead there were {deleted_count}. Should not happen.'
-            )
-            log.error(msg)
-            raise InputError(msg)
-
-        replace_tag_mappings(
-            write_cursor=write_cursor,
-            data=account_data,
-            object_reference_keys=['address'],
-        )
+        self.accounts.edit(write_cursor, account_data)
 
     def remove_single_blockchain_accounts(
             self,
@@ -1229,20 +1164,6 @@ class DBHandler:
         May raise:
         - InputError if any of the given accounts to delete did not exist
         """
-        # Assure all are there
-        accounts_number = write_cursor.execute(
-            f'SELECT COUNT(*) from blockchain_accounts WHERE blockchain = ? '
-            f'AND account IN ({",".join("?" * len(accounts))})',
-            (blockchain.value, *accounts),
-        ).fetchone()[0]
-        if accounts_number != len(accounts):
-            raise InputError(
-                f'Tried to remove {len(accounts) - accounts_number} '
-                f'{blockchain.value} accounts that do not exist',
-            )
-
-        tuples = [(blockchain.value, x) for x in accounts]
-
         # First remove all transaction related information for this address.
         # Needs to happen before the address is removed since removing the address
         # will also remove evmtx_address_mappings, thus making it impossible
@@ -1255,14 +1176,7 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
 
-        write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE object_reference = ?;',
-            [(account,) for account in accounts],
-        )
-        write_cursor.executemany(
-            'DELETE FROM blockchain_accounts WHERE '
-            'blockchain = ? and account = ?;', tuples,
-        )
+        self.accounts.remove_single_blockchain(write_cursor, blockchain, accounts)
 
     def get_tokens_for_address(
             self,
@@ -1276,42 +1190,7 @@ class DBHandler:
 
         If not, or if there is no saved entry, return None.
         """
-        last_queried_ts = None
-        querystr = (
-            "SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? "
-            "AND (key=? OR key=?) AND value NOT IN "
-            "(SELECT value FROM multisettings WHERE name='ignored_asset')"
-        )
-        bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
-        cursor.execute(querystr, bindings)  # original place https://github.com/rotki/rotki/issues/5432 was seen # noqa: E501
-
-        returned_list = []
-        for (key, value) in cursor:
-            if key == EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS:
-                # At the moment last_queried_timestamp is not used. It used to be a cache for the
-                # query but since we made token detection not run it is no longer used, but is
-                # written. This will probably change in the future again. Related issue:
-                # https://github.com/rotki/rotki/issues/5252
-                last_queried_ts = deserialize_timestamp(value)
-            else:  # should be EVM_ACCOUNTS_DETAILS_TOKENS
-                try:
-                    # This method is used directly when querying the balances and it is easier
-                    # to resolve the token here
-                    token = EvmToken(value)
-                except (DeserializationError, UnknownAsset):
-                    self.msg_aggregator.add_warning(
-                        f'Could not deserialize {value} as a token when reading latest '
-                        f'tokens list of {address}',
-                    )
-                    continue
-
-                if token.evm_address not in token_exceptions:
-                    returned_list.append(token)
-
-        if len(returned_list) == 0 and last_queried_ts is None:
-            return None, None
-
-        return returned_list, last_queried_ts
+        return self.accounts.get_tokens_for_address(cursor, address, blockchain, token_exceptions)
 
     def save_tokens_for_address(
             self,
@@ -1321,59 +1200,14 @@ class DBHandler:
             tokens: Sequence[Asset],
     ) -> None:
         """Saves detected tokens for an address"""
-        now = ts_now()
-        chain_id = blockchain.to_chain_id().serialize_for_db()
-        insert_rows: list[tuple[ChecksumEvmAddress, int, str, str | Timestamp]] = [
-            (
-                address,
-                chain_id,
-                EVM_ACCOUNTS_DETAILS_TOKENS,
-                x.identifier,
-            )
-            for x in tokens
-        ]
-        # Also add the update row for the timestamp
-        insert_rows.append(
-            (
-                address,
-                chain_id,
-                EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
-                now,
-            ),
-        )
-        # Delete previous entries for tokens
-        write_cursor.execute(
-            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=? AND KEY IN(?, ?)',
-            (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS, EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS),
-        )
-        # Insert new values
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO evm_accounts_details '
-            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
-            insert_rows,
-        )
+        self.accounts.save_tokens_for_address(write_cursor, address, blockchain, tokens)
 
     def _deserialize_account_blockchain_from_db(
             self,
             chain_str: str,
             account: str,
     ) -> SupportedBlockchain | None:
-        try:
-            blockchain = SupportedBlockchain.deserialize(chain_str)
-        except DeserializationError:
-            log.warning(f'Unsupported blockchain {chain_str} found in DB. Ignoring...')
-            return None
-
-        if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=account) is False:  # noqa: E501
-            self.msg_aggregator.add_warning(
-                f'Invalid {chain_str} account in DB: {account}. '
-                f'This should not happen unless the DB was manually modified. '
-                f'Skipping entry. This needs to be fixed manually. If you '
-                f'can not do that alone ask for help in the issue tracker',
-            )
-            return None
-
-        return blockchain
+        return self.accounts._deserialize_account_blockchain_from_db(chain_str, account)
 
     def get_blockchains_for_accounts(
             self,
@@ -1383,42 +1217,15 @@ class DBHandler:
         """Gets all blockchains for the specified accounts.
         Returns a list of tuples containing the address and blockchain entries.
         """
-        return [
-            (account, blockchain)
-            for entry in cursor.execute(
-                'SELECT blockchain, account FROM blockchain_accounts '
-                f"WHERE account IN ({','.join(['?'] * len(accounts))});",
-                accounts,
-            )
-            if (blockchain := self._deserialize_account_blockchain_from_db(
-                chain_str=entry[0],
-                account=(account := entry[1]),
-            )) is not None
-        ]
+        return self.accounts.get_blockchains_for_accounts(cursor, accounts)
 
     def get_evm_accounts(self, cursor: 'DBCursor') -> list[ChecksumEvmAddress]:
         """Returns a list of unique EVM accounts from all EVM chains."""
-        placeholders = ','.join('?' * len(SUPPORTED_EVM_CHAINS))
-        cursor.execute(
-            f'SELECT DISTINCT account FROM blockchain_accounts WHERE blockchain IN ({placeholders});',  # noqa: E501
-            [chain.value for chain in SUPPORTED_EVM_CHAINS],
-        )
-        return [entry[0] for entry in cursor]
+        return self.accounts.get_evm_accounts(cursor)
 
     def get_blockchain_accounts(self, cursor: 'DBCursor') -> BlockchainAccounts:
         """Returns a Blockchain accounts instance containing all blockchain account addresses"""
-        cursor.execute(
-            'SELECT blockchain, account FROM blockchain_accounts;',
-        )
-        accounts_lists = defaultdict(list)
-        for entry in cursor:
-            if (blockchain := self._deserialize_account_blockchain_from_db(
-                chain_str=entry[0],
-                account=(account := entry[1]),
-            )) is not None:
-                accounts_lists[blockchain.get_key()].append(account)
-
-        return BlockchainAccounts(**{x: tuple(y) for x, y in accounts_lists.items()})
+        return self.accounts.get_all(cursor)
 
     def get_blockchain_account_data(
             self,
@@ -1429,25 +1236,7 @@ class DBHandler:
 
         Each account entry contains address and potentially label and tags
         """
-        query = cursor.execute(
-            "SELECT A.account, C.name, group_concat(B.tag_name,',') "
-            "FROM blockchain_accounts AS A "
-            "LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account "
-            "LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) "  # noqa: E501
-            "WHERE A.blockchain=? GROUP BY account;",
-            (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, blockchain.value),
-        )
-
-        data = []
-        for entry in query:
-            tags = deserialize_tags_from_db(entry[2])
-            data.append(SingleBlockchainAccountData(
-                address=entry[0],
-                label=entry[1],
-                tags=tags,
-            ))
-
-        return data
+        return self.accounts.get_account_data(cursor, blockchain)
 
     @overload
     def get_single_blockchain_addresses(
@@ -1479,24 +1268,7 @@ class DBHandler:
             blockchain: SupportedBlockchain,
     ) -> list[AnyBlockchainAddress]:
         """Returns addresses for a particular blockchain"""
-        addresses = []
-        cursor.execute(
-            'SELECT account FROM blockchain_accounts WHERE blockchain=?',
-            (blockchain.value,),
-        )
-        for entry in cursor:
-            if not is_valid_db_blockchain_account(blockchain, entry[0]):
-                self.msg_aggregator.add_warning(
-                    f'Invalid {blockchain} account in DB: {entry[0]}. '
-                    f'This should not happen unless the DB was manually modified. '
-                    f'Skipping entry. This needs to be fixed manually. If you '
-                    f'can not do that alone ask for help in the issue tracker',
-                )
-                continue
-
-            addresses.append(entry[0])
-
-        return addresses
+        return self.accounts.get_single_addresses(cursor, blockchain)
 
     def get_manually_tracked_balances(
             self,
