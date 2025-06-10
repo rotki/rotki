@@ -46,6 +46,7 @@ from rotkehlchen.db.cache import (
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
+from rotkehlchen.db.repositories.cache import CacheRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
@@ -193,6 +194,7 @@ class DBHandler:
         self.sqlcipher_version = detect_sqlcipher_version()
         # Initialize repositories
         self.settings = SettingsRepository()
+        self.cache = CacheRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -617,15 +619,7 @@ class DBHandler:
     def get_cache_for_api(self, cursor: 'DBCursor') -> dict[str, int]:
         """Returns a few key-value pairs that are used in the API
         from the `key_value_cache` table of the DB. Defaults to `Timestamp(0)` if not found"""
-        cursor.execute(
-            'SELECT name, value FROM key_value_cache WHERE name IN (?,?);',
-            (DBCacheStatic.LAST_DATA_UPLOAD_TS.value, DBCacheStatic.LAST_BALANCE_SAVE.value),
-        )
-        db_cache = {name: int(value) for name, value in cursor}
-        return {  # Return with default value, if needed
-            DBCacheStatic.LAST_BALANCE_SAVE.value: db_cache.get(DBCacheStatic.LAST_BALANCE_SAVE.value, 0),  # noqa: E501
-            DBCacheStatic.LAST_DATA_UPLOAD_TS.value: db_cache.get(DBCacheStatic.LAST_DATA_UPLOAD_TS.value, 0),  # noqa: E501
-        }
+        return self.cache.get_cache_for_api(cursor)
 
     def get_static_cache(
             self,
@@ -634,10 +628,7 @@ class DBHandler:
     ) -> Timestamp | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name`. Defaults to `None` if not found"""
-        value = cursor.execute(
-            'SELECT value FROM key_value_cache WHERE name=?;', (name.value,),
-        ).fetchone()
-        return None if value is None else Timestamp(int(value[0]))
+        return self.cache.get_static(cursor, name)
 
     def set_static_cache(
             self,
@@ -647,10 +638,7 @@ class DBHandler:
     ) -> None:
         """Save the name-value pair of the cache with constant name
         to the `key_value_cache` table of the DB"""
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
-            (name.value, value),
-        )
+        self.cache.set_static(write_cursor, name, value)
 
     @overload
     def get_dynamic_cache(
@@ -741,10 +729,7 @@ class DBHandler:
     ) -> int | Timestamp | str | ChecksumEvmAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
-        value = cursor.execute(
-            'SELECT value FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
-        ).fetchone()
-        return None if value is None else name.deserialize_callback(value[0])
+        return self.cache.get_dynamic(cursor, name, **kwargs)
 
     def delete_dynamic_cache(
             self,
@@ -754,9 +739,7 @@ class DBHandler:
     ) -> None:
         """Delete the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs` if it exists"""
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name=?;', (name.get_db_key(**kwargs),),
-        ).fetchone()
+        self.cache.delete_dynamic(write_cursor, name, **kwargs)
 
     @staticmethod
     def delete_dynamic_caches(
@@ -764,11 +747,7 @@ class DBHandler:
             key_parts: Sequence[str],
     ) -> None:
         """Delete cache entries whose names start with any of the given `key_parts`"""
-        placeholders = ' OR '.join(['name LIKE ?'] * len(key_parts))
-        write_cursor.execute(
-            f'DELETE FROM key_value_cache WHERE {placeholders}',
-            [f'{key_part}%' for key_part in key_parts],
-        )
+        CacheRepository.delete_dynamic_caches(write_cursor, key_parts)
 
     @overload
     def set_dynamic_cache(
@@ -868,10 +847,7 @@ class DBHandler:
             **kwargs: Any,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
-            (name.get_db_key(**kwargs), value),
-        )
+        self.cache.set_dynamic(write_cursor, name, value, **kwargs)
 
     def add_external_service_credentials(
             self,
