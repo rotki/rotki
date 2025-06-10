@@ -22,7 +22,7 @@ class ModuleDataRepository:
         """Get module data from the database."""
         cursor.execute(
             'SELECT data FROM module_data WHERE module_name=?',
-            (module_name.value,),
+            (module_name,),
         )
         result = cursor.fetchone()
         if result is None:
@@ -44,7 +44,7 @@ class ModuleDataRepository:
 
         write_cursor.execute(
             'INSERT OR REPLACE INTO module_data(module_name, data) VALUES(?, ?)',
-            (module_name.value, serialized_data),
+            (module_name, serialized_data),
         )
 
     def delete_module_data(
@@ -55,7 +55,7 @@ class ModuleDataRepository:
         """Delete module data from the database."""
         write_cursor.execute(
             'DELETE FROM module_data WHERE module_name=?',
-            (module_name.value,),
+            (module_name,),
         )
 
     def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:

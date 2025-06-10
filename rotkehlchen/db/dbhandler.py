@@ -325,6 +325,12 @@ class DBHandler:
             conn_attribute: Literal['conn', 'conn_transient'],
     ) -> bool:
         conn = getattr(self, conn_attribute, None)
+        if conn is None:
+            log.error(
+                f'Attempted to change password for {conn_attribute} '
+                f'database but no such DB connection exists',
+            )
+            return False
         return self.connection_management.change_password(conn, new_password, conn_attribute)
 
     def change_password(self, new_password: str) -> bool:
@@ -543,7 +549,7 @@ class DBHandler:
     ) -> int | Timestamp | str | ChecksumEvmAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
-        return self.cache.get_dynamic(cursor, name, **kwargs)
+        return self.cache.get_dynamic(cursor, name, **kwargs)  # type: ignore[call-overload]
 
     def delete_dynamic_cache(
             self,
@@ -661,7 +667,7 @@ class DBHandler:
             **kwargs: Any,
     ) -> None:
         """Save the name-value pair of the cache with variable name to the `key_value_cache` table."""  # noqa: E501
-        self.cache.set_dynamic(write_cursor, name, value, **kwargs)
+        self.cache.set_dynamic(write_cursor, name, value, **kwargs)  # type: ignore[call-overload]
 
     def add_external_service_credentials(
             self,
@@ -931,7 +937,7 @@ class DBHandler:
             blockchain: SupportedBlockchain,
     ) -> list[AnyBlockchainAddress]:
         """Returns addresses for a particular blockchain"""
-        return self.accounts.get_single_addresses(cursor, blockchain)
+        return self.accounts.get_single_addresses(cursor, blockchain)  # type: ignore[return-value]
 
     def get_manually_tracked_balances(
             self,
@@ -1209,7 +1215,7 @@ class DBHandler:
         """
         settings = self.get_settings(cursor)
         balances = self.balances.query_timed_balances(
-            cursor, asset, balance_type, from_ts, to_ts, settings,
+            cursor, asset, balance_type, from_ts, to_ts, None,  # settings not used in the method
         )
         if settings.infer_zero_timed_balances is True:
             inferred_balances = BalancesRepository._infer_zero_timed_balances(

@@ -147,7 +147,18 @@ class BalancesRepository:
             'INSERT INTO margin_positions(id, location, open_time, '
             'close_time, profit_loss, pl_currency, fee, fee_currency, link, notes) '
             'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [mp.serialize_for_db() for mp in margin_positions],
+            [(
+                mp.identifier,
+                mp.location.serialize_for_db(),
+                0 if mp.open_time is None else mp.open_time,
+                mp.close_time,
+                str(mp.profit_loss),
+                mp.pl_currency.identifier,
+                str(mp.fee),
+                mp.fee_currency.identifier,
+                mp.link,
+                mp.notes,
+            ) for mp in margin_positions],
         )
 
     def get_margin_positions(

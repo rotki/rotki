@@ -60,9 +60,9 @@ class SettingsRepository:
         )
         result = cursor.fetchone()
         if result is not None:
-            return deserializer(result[0])  # type: ignore
+            return deserializer(result[0])
 
-        return default_value  # type: ignore
+        return default_value
 
     def set(
             self,

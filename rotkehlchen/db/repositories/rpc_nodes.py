@@ -1,6 +1,6 @@
 """Repository for managing RPC nodes in the database."""
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, get_args
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -8,7 +8,7 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import CHAINS_WITH_CHAIN_MANAGER, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -168,11 +168,16 @@ class RPCNodesRepository:
         if row is None:
             return None
 
+        blockchain = SupportedBlockchain(row[6])
+        # Type narrowing for CHAINS_WITH_CHAIN_MANAGER
+        if blockchain not in get_args(CHAINS_WITH_CHAIN_MANAGER):
+            raise ValueError(f'Blockchain {blockchain} not supported for RPC nodes')
+
         node_info = NodeName(
             name=row[1],
             endpoint=row[2],
             owned=bool(row[3]),
-            blockchain=SupportedBlockchain(row[6]),
+            blockchain=blockchain,  # type: ignore[arg-type]  # guaranteed to be correct by check above
         )
         return WeightedNode(
             identifier=row[0],

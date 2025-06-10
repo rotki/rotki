@@ -27,6 +27,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import (
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     SUPPORTED_EVM_CHAINS,
     BlockchainAddress,
     ListOfBlockchainAddresses,
@@ -339,7 +340,7 @@ class AccountsRepository:
             "LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account "
             "LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) "  # noqa: E501
             "WHERE A.blockchain = ? GROUP BY account;",
-            (SupportedBlockchain.ALL.value, blockchain.value),
+            (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, blockchain.value),
         )
         data = []
         for address, label, tags_string in query:
@@ -348,35 +349,12 @@ class AccountsRepository:
 
         return data
 
-    @overload
-    def get_single_addresses(
-            self,
-            cursor: 'DBCursor',
-            blockchain: Literal[SupportedBlockchain.BITCOIN],
-    ) -> list[str]:
-        ...
 
-    @overload
-    def get_single_addresses(
-            self,
-            cursor: 'DBCursor',
-            blockchain: Literal[SupportedBlockchain.BITCOIN_CASH],
-    ) -> list[str]:
-        ...
-
-    @overload
     def get_single_addresses(
             self,
             cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
     ) -> ListOfBlockchainAddresses:
-        ...
-
-    def get_single_addresses(
-            self,
-            cursor: 'DBCursor',
-            blockchain: SupportedBlockchain,
-    ) -> list[Any]:
         """Returns a list of addresses for a single blockchain
 
         May raise:

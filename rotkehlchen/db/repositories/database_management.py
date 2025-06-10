@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import typing
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -122,10 +123,10 @@ class DatabaseManagementRepository:
     def check_unfinished_upgrades(
             self,
             conn: 'DBConnection',
-            get_setting_fn,
+            get_setting_fn: typing.Callable[['DBCursor', typing.Literal['ongoing_upgrade_from_version']], int | None],
             resume_from_backup: bool,
-            disconnect_fn,
-            connect_fn,
+            disconnect_fn: typing.Callable[[], None],
+            connect_fn: typing.Callable[[typing.Literal['conn', 'conn_transient']], None],
     ) -> None:
         """
         Checks the database whether there are any not finished upgrades and automatically uses a
@@ -134,8 +135,8 @@ class DatabaseManagementRepository:
         with conn.read_ctx() as cursor:
             try:
                 ongoing_upgrade_from_version = get_setting_fn(
-                    cursor=cursor,
-                    name='ongoing_upgrade_from_version',
+                    cursor,
+                    'ongoing_upgrade_from_version',
                 )
             except sqlcipher.OperationalError:  # pylint: disable=no-member
                 return  # fresh database. Nothing to upgrade.
@@ -177,4 +178,4 @@ class DatabaseManagementRepository:
             f'Your encrypted database was in a half-upgraded state. '
             f'Trying to login with a backup {backup_to_use}',
         )
-        connect_fn()
+        connect_fn('conn')
