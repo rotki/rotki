@@ -124,14 +124,16 @@ class RPCNodesRepository:
         """Get all RPC nodes for a blockchain, optionally filtered by active status."""
         if only_active:
             cursor.execute(
-                'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes '
+                'SELECT identifier, name, endpoint, owned, weight, active, blockchain '
+                'FROM rpc_nodes '
                 'WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) '
                 'ORDER BY name;',
                 (blockchain.value,),
             )
         else:
             cursor.execute(
-                'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes '
+                'SELECT identifier, name, endpoint, owned, weight, active, blockchain '
+                'FROM rpc_nodes '
                 'WHERE blockchain=? ORDER BY name;',
                 (blockchain.value,),
             )
@@ -165,7 +167,7 @@ class RPCNodesRepository:
         row = cursor.fetchone()
         if row is None:
             return None
-        
+
         node_info = NodeName(
             name=row[1],
             endpoint=row[2],
@@ -200,7 +202,8 @@ class RPCNodesRepository:
             )
         else:
             write_cursor.execute(
-                'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',
+                'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? '
+                'AND owned=0 AND blockchain=?',
                 (exclude_identifier, blockchain.value),
             )
         new_weights = []
@@ -208,7 +211,11 @@ class RPCNodesRepository:
         weight_sum = sum(FVal(node[1]) for node in nodes_weights)
         for node_id, weight in nodes_weights:
             if exclude_identifier:
-                new_weight = FVal(weight) / weight_sum * proportion_to_share if weight_sum != ZERO else ZERO
+                new_weight = (
+                    FVal(weight) / weight_sum * proportion_to_share
+                    if weight_sum != ZERO
+                    else ZERO
+                )
             else:
                 new_weight = FVal(weight) / weight_sum if weight_sum != ZERO else ZERO
             new_weights.append((str(new_weight), node_id))

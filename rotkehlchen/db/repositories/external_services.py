@@ -6,8 +6,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import ExternalService, ExternalServiceApiCredentials
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 
 
 log = logging.getLogger(__name__)
@@ -31,7 +30,9 @@ class ExternalServicesRepository:
             [c.serialize_for_db() for c in credentials],
         )
 
-    def delete_credentials(self, write_cursor: 'DBCursor', services: list[ExternalService]) -> None:
+    def delete_credentials(
+            self, write_cursor: 'DBCursor', services: list[ExternalService],
+    ) -> None:
         """Delete external service credentials"""
         write_cursor.executemany(
             'DELETE FROM external_service_credentials WHERE name=?;',

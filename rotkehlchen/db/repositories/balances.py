@@ -1,12 +1,10 @@
 """Repository for managing balance operations in the database."""
-import json
 from typing import TYPE_CHECKING, Any, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.utils import (
@@ -125,7 +123,6 @@ class BalancesRepository:
                 )
 
         return balances
-
 
     def remove_queried_address_data(self, write_cursor: 'DBCursor', address: str, chain: str) -> None:  # noqa: E501
         """Remove the data for a queried address"""
@@ -260,13 +257,10 @@ class BalancesRepository:
         if balance_type is not None:
             querystr += ' AND category=?'
             bindings.append(balance_type.serialize_for_db())
-        
+
         cursor.execute(querystr, bindings)
         result = cursor.fetchone()
         if result is None:
             return Balance()
-        
+
         return Balance(amount=FVal(result[0]), usd_value=FVal(result[1]))
-
-
-

@@ -25,7 +25,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
     XpubDerivedAddressData,
 )
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ZERO
@@ -52,17 +52,17 @@ from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.repositories.accounts import AccountsRepository
 from rotkehlchen.db.repositories.assets import AssetsRepository
+from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
 from rotkehlchen.db.repositories.exchanges import ExchangeRepository
 from rotkehlchen.db.repositories.external_services import ExternalServicesRepository
+from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
+from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
+from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.repositories.tags import TagsRepository
 from rotkehlchen.db.repositories.xpub import XpubRepository
-from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
-from rotkehlchen.db.repositories.balances import BalancesRepository
-from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
-from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
