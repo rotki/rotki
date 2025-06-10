@@ -23,7 +23,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
 )
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import USERDB_NAME
@@ -37,19 +36,16 @@ from rotkehlchen.db.cache import (
     LabeledLocationArgsType,
     LabeledLocationIdArgsType,
 )
-from rotkehlchen.db.constants import (
-    EXTRAINTERNALTXPREFIX,
-)
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
-from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
-from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.repositories.accounts import AccountsRepository
 from rotkehlchen.db.repositories.assets import AssetsRepository
 from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
+from rotkehlchen.db.repositories.data_management import DataManagementRepository
 from rotkehlchen.db.repositories.database_management import DatabaseManagementRepository
+from rotkehlchen.db.repositories.database_utils import DatabaseUtilsRepository
 from rotkehlchen.db.repositories.exchanges import ExchangeRepository
 from rotkehlchen.db.repositories.external_services import ExternalServicesRepository
 from rotkehlchen.db.repositories.history_events import HistoryEventsRepository
@@ -80,7 +76,6 @@ from rotkehlchen.db.utils import (
     SingleDBAssetBalance,
     Tag,
     combine_asset_balances,
-    db_tuple_to_str,
     protect_password_sqlcipher,
 )
 from rotkehlchen.errors.api import (
@@ -128,7 +123,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import get_chunks, ts_now
+from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -185,6 +180,7 @@ class DBHandler:
         self.nfts = NFTRepository()
         self.database_management = DatabaseManagementRepository(user_data_dir, msg_aggregator)
         self.history_events = HistoryEventsRepository(msg_aggregator)
+        self.database_utils = DatabaseUtilsRepository(msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -193,6 +189,7 @@ class DBHandler:
         self._connect()
         # Initialize repositories that need connection
         self.external_services = ExternalServicesRepository(self.conn, msg_aggregator)
+        self.data_management = DataManagementRepository(self)
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
@@ -1272,40 +1269,7 @@ class DBHandler:
         For the other tables simple `INSERT` is used but the primary key is a unique
         identifier each time so they can't be considered duplicates.
         """
-        relevant_address = kwargs.get('relevant_address')
-        try:
-            write_cursor.executemany(query, tuples)
-            if relevant_address is not None:
-                if tuple_type == 'evm_transaction':
-                    tx_hash_idx, chain_id_idx = 0, 1
-                else:  # relevant address can only be left for internal tx
-                    tx_hash_idx, chain_id_idx = 6, 7
-                write_cursor.executemany(
-                    'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) '
-                    'SELECT TX.identifier, ? FROM evm_transactions TX WHERE '
-                    'TX.tx_hash=? AND TX.chain_id=?',
-                    [(relevant_address, x[tx_hash_idx], x[chain_id_idx]) for x in tuples],
-                )
-        except sqlcipher.IntegrityError:  # pylint: disable=no-member
-            # That means that one of the tuples hit a constraint, probably some
-            # foreign key connection is broken. Try to put them 1 by one.
-            for entry in tuples:
-                self.write_single_tuple(
-                    write_cursor=write_cursor,
-                    tuple_type=tuple_type,
-                    query=query,
-                    entry=entry,
-                    relevant_address=relevant_address,
-                )
-        except OverflowError:
-            self.msg_aggregator.add_error(
-                f'Failed to add "{tuple_type}" to the DB with overflow error. '
-                f'Check the logs for more details',
-            )
-            log.error(
-                f'Overflow error while trying to add "{tuple_type}" tuples to the'
-                f' DB. Tuples: {tuples} with query: {query}',
-            )
+        self.database_utils.write_tuples(write_cursor, tuple_type, query, tuples, **kwargs)
 
     @staticmethod
     def write_single_tuple(
@@ -1316,32 +1280,13 @@ class DBHandler:
             relevant_address: ChecksumEvmAddress | None,
     ) -> int | None:
         """Helper to write an entry of a tuple type and handle address mapping"""
-        try:
-            write_cursor.execute(query, entry)
-            if tuple_type == 'evm_transaction':
-                tx_id = write_cursor.execute(
-                    'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                    (entry[0], entry[1]),
-                ).fetchone()[0]
-
-                # add address mapping if relevant_address is provided and transaction exists
-                if relevant_address is not None and tx_id is not None:
-                    write_cursor.execute(
-                        'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) VALUES (?, ?)',  # noqa: E501
-                        (tx_id, relevant_address),
-                    )
-
-                return tx_id  # return the transaction id (new or existing)
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            string_repr = db_tuple_to_str(entry, tuple_type)
-            log.warning(
-                f'Did not add "{string_repr}" to the DB due to "{e!s}".'
-                f'Some other constraint was hit.',
-            )
-        except sqlcipher.InterfaceError:  # pylint: disable=no-member
-            log.critical(f'Interface error with tuple: {entry}')
-
-        return None
+        return DatabaseUtilsRepository.write_single_tuple(
+            write_cursor,
+            tuple_type,
+            query,
+            entry,
+            relevant_address,
+        )
 
     def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         self.history_events.add_margin_positions(write_cursor, margin_positions)
@@ -1401,35 +1346,7 @@ class DBHandler:
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
         """Deletes all evm related data from the DB for a single evm address"""
-        if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
-            write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
-            write_cursor.execute(  # queried addresses per module
-                'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ? AND value = ?',
-                ('queried\\_address\\_%', '\\', address),
-            )
-            loopring = DBLoopring(self)
-            loopring.remove_accountid_mapping(write_cursor, address)
-            # Delete withdrawals related data
-            self.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
-            self.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_IDX, address=address)  # noqa: E501
-
-        write_cursor.execute(
-            'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
-            (address, blockchain.to_chain_id().serialize_for_db()),
-        )
-
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ? AND value = ?',
-            (f'{EXTRAINTERNALTXPREFIX}\\_{blockchain.to_chain_id().value}%', '\\', address),
-        )
-
-        dbtx = DBEvmTx(self)
-        dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)
-        if blockchain == SupportedBlockchain.GNOSIS:
-            write_cursor.execute(
-                'DELETE FROM used_query_ranges WHERE name=?',
-                (f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}',),
-            )
+        self.data_management.delete_data_for_evm_address(write_cursor, address, blockchain)
 
     def delete_data_for_evmlike_address(
             self,
@@ -1441,35 +1358,7 @@ class DBHandler:
 
         For now it's always gonna be only zksync lite.
         """
-        other_addresses = self.get_single_blockchain_addresses(
-            cursor=write_cursor,
-            blockchain=SupportedBlockchain.ZKSYNC_LITE,
-        )
-        other_addresses.remove(address)  # exclude the address in question so it's only the others
-
-        # delete events by tx_hash
-        write_cursor.execute(
-            'SELECT tx_hash, from_address, to_address FROM zksynclite_transactions WHERE '
-            'from_address=? OR to_address=?',
-            (address, address),
-        )
-        hashes_to_remove = [
-            x[0] for x in write_cursor
-            if x[1] not in other_addresses and x[2] not in other_addresses  # pylint: disable=unsupported-membership-test
-        ]
-        for hashes_chunk in get_chunks(hashes_to_remove, n=1000):  # limit num of hashes in a query
-            write_cursor.execute(  # delete transactions themselves
-                f'DELETE FROM zksynclite_transactions WHERE tx_hash IN '
-                f'({",".join("?" * len(hashes_chunk))})',
-                hashes_chunk,
-            )
-            write_cursor.execute(
-                f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier '
-                f'FROM history_events H INNER JOIN evm_events_info E '
-                f'ON H.identifier=E.identifier AND E.tx_hash IN '
-                f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
-                hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
-            )
+        self.data_management.delete_data_for_evmlike_address(write_cursor, address, blockchain)
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
