@@ -39,13 +39,13 @@ class BalancesRepository:
         serialized_balances = [balance.serialize_for_db() for balance in balances]
         try:
             write_cursor.executemany(
-                'INSERT OR REPLACE INTO timed_balances('
+                'INSERT INTO timed_balances('
                 '    category, timestamp, currency, amount, usd_value) '
                 ' VALUES(?, ?, ?, ?, ?)',
                 serialized_balances,
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            raise InputError(f'Failed to add balance snapshot to the DB due to {e!s}') from e
+            raise InputError(f'Adding timed_balance failed due to {e!s}') from e
 
     def add_multiple_location_data(
             self, write_cursor: 'DBCursor', location_data: list['LocationData'],
@@ -56,7 +56,7 @@ class BalancesRepository:
 
         try:
             write_cursor.executemany(
-                'INSERT OR REPLACE INTO timed_location_data('
+                'INSERT INTO timed_location_data('
                 '    timestamp, location, usd_value) '
                 ' VALUES(?, ?, ?)',
                 serialized_data,
