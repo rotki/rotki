@@ -27,7 +27,7 @@ class ModuleDataRepository:
         result = cursor.fetchone()
         if result is None:
             return {}
-        
+
         # Module data is stored as JSON
         import json
         return json.loads(result[0])
@@ -41,7 +41,7 @@ class ModuleDataRepository:
         """Set or update module data in the database."""
         import json
         serialized_data = json.dumps(data)
-        
+
         write_cursor.execute(
             'INSERT OR REPLACE INTO module_data(module_name, data) VALUES(?, ?)',
             (module_name.value, serialized_data),

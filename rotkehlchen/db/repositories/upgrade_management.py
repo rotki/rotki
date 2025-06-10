@@ -1,6 +1,6 @@
 """Repository for database upgrade management operations."""
 from contextlib import suppress
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -14,7 +14,6 @@ from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 
 
 class UpgradeManagementRepository:

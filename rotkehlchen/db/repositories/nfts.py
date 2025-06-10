@@ -63,11 +63,11 @@ class NFTRepository:
         # Address to NFT id list mapping
         mapping: dict[str, list[dict[str, str]]] = {}
         for address, identifier in cursor:
-            address = address.lower()
+            address_lower = address.lower()
             identifier_without_chain = identifier.removeprefix(NFT_DIRECTIVE)
-            if address in mapping:
-                mapping[address].append({'id': identifier_without_chain})
+            if address_lower in mapping:
+                mapping[address_lower].append({'id': identifier_without_chain})
             else:
-                mapping[address] = [{'id': identifier_without_chain}]
+                mapping[address_lower] = [{'id': identifier_without_chain}]
 
         return mapping

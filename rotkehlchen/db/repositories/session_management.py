@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import DBINFO_FILENAME
 from rotkehlchen.errors.misc import SystemPermissionError
-from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:

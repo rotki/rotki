@@ -1,7 +1,5 @@
 """Repository for managing user notes in the database."""
-from typing import TYPE_CHECKING, Any
-
-from pysqlcipher3 import dbapi2 as sqlcipher
+from typing import TYPE_CHECKING
 
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.db.filtering import UserNotesFilterQuery

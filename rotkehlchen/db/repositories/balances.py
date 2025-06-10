@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
@@ -17,7 +17,6 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
-from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.types import Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
@@ -52,7 +51,9 @@ class BalancesRepository:
     ) -> None:
         """Execute addition of multiple location data in the DB"""
         # LocationData is a NamedTuple, so we can use it directly as a tuple
-        serialized_data = [(entry.time, entry.location, entry.usd_value) for entry in location_data]
+        serialized_data = [
+            (entry.time, entry.location, entry.usd_value) for entry in location_data
+        ]
 
         try:
             write_cursor.executemany(
@@ -329,7 +330,7 @@ class BalancesRepository:
         despite the fact that it is not strictly needed by the front end.
         """
         from rotkehlchen.constants import ZERO
-        
+
         if len(balances) == 0:
             return []
 
@@ -411,9 +412,9 @@ class BalancesRepository:
     ) -> list[SingleDBAssetBalance]:
         """Query all balance entries for all assets of a collection within a range of timestamps
         """
-        from rotkehlchen.globaldb.handler import GlobalDBHandler
         from rotkehlchen.db.utils import combine_asset_balances
-        
+        from rotkehlchen.globaldb.handler import GlobalDBHandler
+
         with GlobalDBHandler().conn.read_ctx() as global_cursor:
             global_cursor.execute(
                 'SELECT asset FROM multiasset_mappings WHERE collection_id=?',

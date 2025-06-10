@@ -2,7 +2,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX

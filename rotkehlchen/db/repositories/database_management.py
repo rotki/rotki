@@ -9,13 +9,10 @@ from typing import TYPE_CHECKING, Any
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME
-from rotkehlchen.db.constants import DBINFO_FILENAME
 from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import Location
-from rotkehlchen.utils.hashing import file_md5
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.serialization import rlk_jsondumps
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor

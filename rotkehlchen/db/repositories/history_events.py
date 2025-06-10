@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.db.utils import LocationData, DBAssetBalance
+from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -118,7 +117,7 @@ class HistoryEventsRepository:
             amount=ZERO,
             usd_value=ZERO,
         )
-        
+
         from rotkehlchen.assets.asset import Asset
         for result in cursor:
             asset = Asset(result[1]).check_existence()
@@ -169,6 +168,7 @@ class HistoryEventsRepository:
             (from_ts,),
         )
         if not include_nfts:
+            from rotkehlchen.constants.assets import NFT_DIRECTIVE
             nft_cursor = cursor  # use same cursor
             nft_cursor.execute(
                 'SELECT timestamp, SUM(usd_value) FROM timed_balances WHERE '

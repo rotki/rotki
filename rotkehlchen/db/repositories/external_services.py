@@ -6,8 +6,8 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.errors.api import IncorrectApiKeyFormat
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.types import ExternalService, ExternalServiceApiCredentials
 from rotkehlchen.premium.premium import PremiumCredentials
+from rotkehlchen.types import ExternalService, ExternalServiceApiCredentials
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor

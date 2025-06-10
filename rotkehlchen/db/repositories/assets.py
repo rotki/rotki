@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.constants import TABLES_WITH_ASSETS
@@ -12,7 +13,6 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:

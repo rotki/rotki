@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.misc import ONE  # noqa: F401  # pylint: disable=unused-import
@@ -16,7 +17,6 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.types import Location
 
 if TYPE_CHECKING:

@@ -1,6 +1,7 @@
 """Repository for database utility operations."""
 import logging
-from typing import TYPE_CHECKING, Any, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 

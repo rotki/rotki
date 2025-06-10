@@ -1,7 +1,7 @@
 """Repository for database connection management operations."""
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -12,9 +12,6 @@ from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.utils import protect_password_sqlcipher
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import SystemPermissionError
-
-if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
 
 log = logging.getLogger(__name__)
 
