@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.constants import SUPPORTED_EXCHANGES
+from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY, KRAKEN_ACCOUNT_TYPE_KEY, USER_CREDENTIAL_MAPPING_KEYS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
