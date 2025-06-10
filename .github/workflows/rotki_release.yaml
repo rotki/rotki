@@ -137,6 +137,13 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -152,9 +159,9 @@ jobs:
         run: |
           echo "::group::packaging dependencies"
           pip3 install --upgrade uv=="${UV_VERSION}"
-          uv pip install --system -r requirements_packaging.txt
+          uv sync --group packaging
           echo "::endgroup::"
-          ./package.py --build full
+          uv run ./package.py --build full
 
       - name: Upload to release
         uses: rotki/action-gh-release@v2
@@ -229,6 +236,13 @@ jobs:
       - name: Set up python
         run: packaging/setup-macos-python.sh "${PYTHON_VERSION}" "${PYTHON_MACOS}"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -243,13 +257,9 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv=="${UV_VERSION}"
-          pip3 install virtualenv
-          python3 -m virtualenv ~/venv
-          source ~/venv/bin/activate
-          uv pip install -r requirements_packaging.txt
+          uv sync --group packaging
           echo "::endgroup::"
-          ./package.py --build full
+          uv run ./package.py --build full
         env:
           CERTIFICATE_OSX_APPLICATION: ${{ secrets.CERTIFICATE_OSX_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
@@ -352,6 +362,13 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -369,10 +386,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
-          pip3 install --upgrade uv=="${env:UV_VERSION}"
-          uv pip install --system -r requirements_packaging.txt
+          uv sync --group packaging
           echo ::endgroup::
-          python .\package.py --build full
+          uv run .\package.py --build full
         shell: powershell
 
       - name: Upload to release

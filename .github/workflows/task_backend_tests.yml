@@ -89,8 +89,11 @@ jobs:
           cache: 'pip'
 
       - name: Install uv
-        run: |
-          pip install --upgrade uv=="${UV_VERSION}"
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
 
       - name: Cache rotkehlchen test directory
         uses: actions/cache@v4

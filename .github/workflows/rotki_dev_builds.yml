@@ -44,6 +44,13 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -58,7 +65,6 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv=="${UV_VERSION}"
           uv sync --group packaging
           echo "::endgroup::"
           uv run package.py --build full
@@ -124,6 +130,13 @@ jobs:
       - name: Set up python
         run: packaging/setup-macos-python.sh "${PYTHON_VERSION}" "${PYTHON_MACOS}"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -138,10 +151,6 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv=="${UV_VERSION}"
-          pip3 install virtualenv
-          python3 -m virtualenv ~/venv
-          source ~/venv/bin/activate
           uv sync --group packaging
           echo "::endgroup::"
           uv run ./package.py --build full
@@ -195,6 +204,13 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -211,8 +227,7 @@ jobs:
           CERTIFICATE_WIN_APPLICATION: ${{ secrets.CERTIFICATE_WIN_APPLICATION }}
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
-          echo ::group::"packaging dependencies"          
-          pip3 install --upgrade uv=="${env:UV_VERSION}"
+          echo ::group::"packaging dependencies"
           uv sync --group packaging
           echo ::endgroup::
           uv run package.py --build full
