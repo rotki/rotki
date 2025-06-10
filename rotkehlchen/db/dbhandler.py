@@ -28,7 +28,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
@@ -62,6 +62,7 @@ from rotkehlchen.db.repositories.xpub import XpubRepository
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
+from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -192,6 +193,7 @@ class DBHandler:
         self.ignored_actions = IgnoredActionsRepository()
         self.balances = BalancesRepository(msg_aggregator)
         self.query_ranges = QueryRangesRepository()
+        self.rpc_nodes = RPCNodesRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -2168,27 +2170,7 @@ class DBHandler:
         have the column active set to True will be returned.
         """
         with self.conn.read_ctx() as cursor:
-            if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
-            else:
-                cursor.execute(
-                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
-                )
-
-            return [
-                WeightedNode(
-                    identifier=entry[0],
-                    node_info=NodeName(
-                        name=entry[1],
-                        endpoint=entry[2],
-                        owned=bool(entry[3]),
-                        blockchain=SupportedBlockchain.deserialize(entry[6]),  # type: ignore
-                    ),
-                    weight=FVal(entry[4]),
-                    active=bool(entry[5]),
-                )
-                for entry in cursor
-            ]
+            return self.rpc_nodes.get_rpc_nodes(cursor, blockchain, only_active)
 
     def rebalance_rpc_nodes_weights(
             self,
@@ -2204,27 +2186,11 @@ class DBHandler:
         exclude_identifier is the identifier of the node whose weight we add or edit.
         In case of deletion it's omitted and `None`is passed.
         """
-        if exclude_identifier is None:
-            write_cursor.execute('SELECT identifier, weight FROM rpc_nodes WHERE owned=0 AND blockchain=?', (blockchain.value,))  # noqa: E501
-        else:
-            write_cursor.execute(
-                'SELECT identifier, weight FROM rpc_nodes WHERE identifier !=? AND owned=0 AND blockchain=?',  # noqa: E501
-                (exclude_identifier, blockchain.value),
-            )
-        new_weights = []
-        nodes_weights = write_cursor.fetchall()
-        weight_sum = sum(FVal(node[1]) for node in nodes_weights)
-        for node_id, weight in nodes_weights:
-
-            if exclude_identifier:
-                new_weight = FVal(weight) / weight_sum * proportion_to_share if weight_sum != ZERO else ZERO  # noqa: E501
-            else:
-                new_weight = FVal(weight) / weight_sum if weight_sum != ZERO else ZERO
-            new_weights.append((str(new_weight), node_id))
-
-        write_cursor.executemany(
-            'UPDATE rpc_nodes SET weight=? WHERE identifier=?',
-            new_weights,
+        self.rpc_nodes.rebalance_weights(
+            write_cursor,
+            proportion_to_share,
+            exclude_identifier,
+            blockchain,
         )
 
     def add_rpc_node(self, node: WeightedNode) -> None:
@@ -2232,22 +2198,7 @@ class DBHandler:
         Adds a new rpc node.
         """
         with self.user_write() as write_cursor:
-            try:
-                write_cursor.execute(
-                    'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) VALUES (?, ?, ?, ?, ?, ?)',   # noqa: E501
-                    node.serialize_for_db(),
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(
-                    f'Node for {node.node_info.blockchain} with endpoint '
-                    f'{node.node_info.endpoint} already exists in db',
-                ) from e
-            self.rebalance_rpc_nodes_weights(
-                write_cursor=write_cursor,
-                proportion_to_share=ONE - node.weight,
-                exclude_identifier=write_cursor.lastrowid,
-                blockchain=node.node_info.blockchain,
-            )
+            self.rpc_nodes.add_rpc_node(write_cursor, node)
 
     def update_rpc_node(self, node: WeightedNode) -> None:
         """
@@ -2257,34 +2208,7 @@ class DBHandler:
         - InputError if no entry with such
         """
         with self.user_write() as cursor:
-            try:
-                cursor.execute(
-                    'UPDATE rpc_nodes SET name=?, endpoint=?, owned=?, active=?, weight=? WHERE identifier=? AND blockchain=?',  # noqa: E501
-                    (
-                        node.node_info.name,
-                        node.node_info.endpoint,
-                        node.node_info.owned,
-                        node.active,
-                        str(node.weight),
-                        node.identifier,
-                        node.node_info.blockchain.value,
-                    ),
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(
-                    f'Node for {node.node_info.blockchain} with endpoint '
-                    f'{node.node_info.endpoint}  already exists in db',
-                ) from e
-
-            if cursor.rowcount == 0:
-                raise InputError(f"Node with identifier {node.identifier} doesn't exist")
-
-            self.rebalance_rpc_nodes_weights(
-                write_cursor=cursor,
-                proportion_to_share=ONE - node.weight,
-                exclude_identifier=node.identifier,
-                blockchain=node.node_info.blockchain,
-            )
+            self.rpc_nodes.update_rpc_node(cursor, node)
 
     def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
         """Delete a rpc node by identifier and blockchain.
@@ -2292,15 +2216,7 @@ class DBHandler:
         - InputError if no entry with such identifier is in the database.
         """
         with self.user_write() as cursor:
-            cursor.execute('DELETE FROM rpc_nodes WHERE identifier=? AND blockchain=?', (identifier, blockchain.value))   # noqa: E501
-            if cursor.rowcount == 0:
-                raise InputError(f'node with id {identifier} and blockchain {blockchain.value} was not found in the database')  # noqa: E501
-            self.rebalance_rpc_nodes_weights(
-                write_cursor=cursor,
-                proportion_to_share=ONE,
-                exclude_identifier=None,
-                blockchain=blockchain,
-            )
+            self.rpc_nodes.delete_rpc_node(cursor, identifier, blockchain)
 
     def get_user_notes(
             self,
