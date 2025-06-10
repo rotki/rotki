@@ -6,6 +6,7 @@ on:
       - master
       - develop
       - bugfixes
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches:
       - master
