@@ -2,6 +2,7 @@ import warnings as test_warnings
 from json.decoder import JSONDecodeError
 from unittest.mock import MagicMock, call, patch
 
+import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -25,6 +26,7 @@ def test_name():
     assert exchange.name == 'woo'
 
 
+@pytest.mark.asset_test
 def test_woo_assets_are_known(mock_woo):
     request_url = f'{mock_woo.base_uri}/v1/public/token'
     try:

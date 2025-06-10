@@ -26,6 +26,7 @@ def test_location():
     assert exchange.name == 'independentreserve1'
 
 
+@pytest.mark.asset_test
 def test_assets_are_known():
     exchange = Independentreserve('independentreserve1', 'a', b'a', object(), object())
     response = exchange._api_query('get', 'Public', 'GetValidPrimaryCurrencyCodes')

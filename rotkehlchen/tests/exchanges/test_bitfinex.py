@@ -133,6 +133,7 @@ def test_name():
     assert exchange.name == 'bitfinex1'
 
 
+@pytest.mark.asset_test
 def test_assets_are_known(mock_bitfinex, globaldb):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """

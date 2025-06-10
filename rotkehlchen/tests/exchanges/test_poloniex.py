@@ -292,6 +292,7 @@ def test_query_trade_history_unexpected_data(poloniex):
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
 
 
+@pytest.mark.asset_test
 def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHandler'):
     for asset in get_exchange_asset_symbols(Location.POLONIEX):
         assert is_asset_symbol_unsupported(globaldb, Location.POLONIEX, asset) is False, f'Poloniex assets {asset} should not be unsupported'  # noqa: E501

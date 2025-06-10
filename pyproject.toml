@@ -522,3 +522,12 @@ reportAssignmentType = false
 
 exclude = ["**/tests"]
 pythonVersion = "3.11"
+
+
+# -- pytest config section --
+
+[tool.pytest.ini_options]
+markers = [
+    "asset_test: tests that check for asset coverage and definitions",
+    "vcr: tests that use vcrpy cassettes",
+]

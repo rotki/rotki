@@ -1,6 +1,8 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
+import pytest
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
@@ -23,6 +25,7 @@ def test_name():
     assert exchange.name == 'okx1'
 
 
+@pytest.mark.asset_test
 def test_assets_are_known(mock_okx: Okx, globaldb):
     currencies = mock_okx._api_query(OkxEndpoint.CURRENCIES)
     okx_assets = {currency['ccy'] for currency in currencies['data']}

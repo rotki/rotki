@@ -39,6 +39,7 @@ def test_name():
     assert exchange.name == 'bitstamp1'
 
 
+@pytest.mark.asset_test
 def test_bitstamp_exchange_assets_are_known(mock_bitstamp):
     request_url = f'{mock_bitstamp.base_uri}/v2/trading-pairs-info'
     try:

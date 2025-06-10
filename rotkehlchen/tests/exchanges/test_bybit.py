@@ -292,6 +292,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
     ]
 
 
+@pytest.mark.asset_test
 @pytest.mark.skipif(
     'CI' in os.environ,
     reason='Cannot connect to server due to cloudflare blocking the github server',

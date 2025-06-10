@@ -86,6 +86,7 @@ def test_name():
     assert exchange.name == 'kraken1'
 
 
+@pytest.mark.asset_test
 def test_coverage_of_kraken_balances():
     response = requests.get('https://api.kraken.com/0/public/Assets')
     got_assets = set(response.json()['result'].keys())
