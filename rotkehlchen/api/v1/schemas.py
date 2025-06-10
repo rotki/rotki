@@ -101,7 +101,6 @@ from rotkehlchen.history.events.structures.swap import SwapEventExtraData, creat
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import (
     create_event_identifier_from_swap,
-    create_event_identifier_from_unique_id,
 )
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
@@ -1011,19 +1010,15 @@ class CreateHistoryEventSchema(Schema):
             spend = AssetAmount(asset=data['spend_asset'], amount=data['spend_amount'])
             receive = AssetAmount(asset=data['receive_asset'], amount=data['receive_amount'])
             if (event_identifier := data['event_identifier']) is None:
+                event_identifier = create_event_identifier_from_swap(
+                    location=data['location'],
+                    timestamp=data['timestamp'],
+                    spend=spend,
+                    receive=receive,
+                    unique_id=unique_id,
+                )
                 if unique_id is not None:
                     extra_data['reference'] = unique_id
-                    event_identifier = create_event_identifier_from_unique_id(
-                        location=data['location'],
-                        unique_id=unique_id,
-                    )
-                else:
-                    event_identifier = create_event_identifier_from_swap(
-                        location=data['location'],
-                        timestamp=data['timestamp'],
-                        spend=spend,
-                        receive=receive,
-                    )
 
             context_schema = CreateHistoryEventSchema.history_event_context.get()['schema']
             events = create_swap_events(
