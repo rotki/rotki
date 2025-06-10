@@ -30,7 +30,6 @@ from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
-from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import NFT_DIRECTIVE, USERDB_NAME
 from rotkehlchen.db.cache import (
     AddressArgType,
@@ -62,6 +61,7 @@ from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
 from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.repositories.tags import TagsRepository
+from rotkehlchen.db.repositories.user_notes import UserNotesRepository
 from rotkehlchen.db.repositories.xpub import XpubRepository
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
@@ -194,6 +194,7 @@ class DBHandler:
         self.balances = BalancesRepository(msg_aggregator)
         self.query_ranges = QueryRangesRepository()
         self.rpc_nodes = RPCNodesRepository()
+        self.user_notes = UserNotesRepository(msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -2225,15 +2226,7 @@ class DBHandler:
             has_premium: bool,
     ) -> list[UserNote]:
         """Returns all the notes created by a user filtered by the given filter"""
-        query, bindings = filter_query.prepare()
-        if has_premium:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
-            cursor.execute(query, bindings)
-        else:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # noqa: E501
-            cursor.execute(query, [FREE_USER_NOTES_LIMIT] + bindings)
-
-        return [UserNote.deserialize_from_db(entry) for entry in cursor]
+        return self.user_notes.get_notes(cursor, filter_query, has_premium)
 
     def get_user_notes_and_limit_info(
             self,
@@ -2245,11 +2238,7 @@ class DBHandler:
 
         Also returns how many are the total found for the filter
         """
-        user_notes = self.get_user_notes(filter_query=filter_query, cursor=cursor, has_premium=has_premium)  # noqa: E501
-        query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from user_notes ' + query
-        total_found_result = cursor.execute(query, bindings)
-        return user_notes, total_found_result.fetchone()[0]
+        return self.user_notes.get_notes_and_limit_info(cursor, filter_query, has_premium)
 
     def add_user_note(
             self,
@@ -2261,24 +2250,9 @@ class DBHandler:
     ) -> int:
         """Add a user_note entry to the DB"""
         with self.user_write() as write_cursor:
-            if has_premium is False:
-                num_user_notes = self.get_entries_count(
-                    cursor=write_cursor,
-                    entries_table='user_notes',
-                )
-                if num_user_notes >= FREE_USER_NOTES_LIMIT:
-                    msg = (
-                        f'The limit of {FREE_USER_NOTES_LIMIT} user notes has been '
-                        f'reached in the free plan. To get more notes you can upgrade to '
-                        f'premium: https://rotki.com/products'
-                    )
-                    raise InputError(msg)
-
-            write_cursor.execute(
-                'INSERT INTO user_notes(title, content, location, last_update_timestamp, is_pinned) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
-                (title, content, location, ts_now(), is_pinned),
+            return self.user_notes.add(
+                write_cursor, title, content, location, is_pinned, has_premium,
             )
-            return write_cursor.lastrowid
 
     def edit_user_note(self, user_note: UserNote) -> None:
         """Edit an already existing user_note entry's content.
@@ -2286,18 +2260,7 @@ class DBHandler:
         - InputError if editing a user note that does not exist.
         """
         with self.user_write() as write_cursor:
-            write_cursor.execute(
-                'UPDATE user_notes SET title=?, content=?, last_update_timestamp=?, is_pinned=? WHERE identifier=?',  # noqa: E501
-                (
-                    user_note.title,
-                    user_note.content,
-                    ts_now(),
-                    user_note.is_pinned,
-                    user_note.identifier,
-                ),
-            )
-            if write_cursor.rowcount == 0:
-                raise InputError(f'User note with identifier {user_note.identifier} does not exist')  # noqa: E501
+            self.user_notes.update(write_cursor, user_note)
 
     def delete_user_note(self, identifier: int) -> None:
         """Delete user note entry from the DB.
@@ -2305,9 +2268,7 @@ class DBHandler:
         - InputError if identifier not present in DB.
         """
         with self.user_write() as write_cursor:
-            write_cursor.execute('DELETE FROM user_notes WHERE identifier=?', (identifier,))
-            if write_cursor.rowcount == 0:
-                raise InputError(f'User note with identifier {identifier} not found in database')
+            self.user_notes.delete(write_cursor, identifier)
 
     def get_nft_mappings(self, identifiers: list[str]) -> dict[str, dict]:
         """
