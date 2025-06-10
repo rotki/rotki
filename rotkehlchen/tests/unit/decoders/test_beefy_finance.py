@@ -3,33 +3,50 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC
-from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import CacheType, FVal, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    FVal,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.fixture(name='beefy_cache')
-def _beefy_cache(globaldb: 'GlobalDBHandler') -> None:
-    """Fixture that preloads beefy finance's vaults into GlobalDB cache."""
-    with globaldb.conn.write_ctx() as write_cursor:
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.BEEFY_VAULTS, '1'),
-            values=[
-                '0x81F040E82aae01f3921A1c1225C86ce5C57C218b',
-                '0xD81eaAE8E6195e67695bE9aC447c9D6214CB717A',
-            ],
-        )
+def _beefy_cache(database: 'DBHandler') -> None:
+    """Fixture that preloads beefy finance's vaults."""
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x81F040E82aae01f3921A1c1225C86ce5C57C218b'),
+        chain_id=ChainID.ETHEREUM,
+        name='Moo FxConvex GHO-fxUSD',
+        symbol='mooFxConvexGHO-fxUSD',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+
+    )
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xD81eaAE8E6195e67695bE9aC447c9D6214CB717A'),
+        chain_id=ChainID.ETHEREUM,
+        name='Moo FxConvex USDC-fxUSD',
+        symbol='mooFxConvexUSDC-fxUSD',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

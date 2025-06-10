@@ -1273,6 +1273,7 @@ UniqueCacheType = Literal[
     CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
     CacheType.CURVE_CRVUSD_AMM,
     CacheType.PENDLE_YIELD_TOKENS,
+    CacheType.BEEFY_VAULTS,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1301,7 +1302,6 @@ GeneralCacheType = Literal[
     CacheType.STAKEDAO_GAUGES,
     CacheType.PENDLE_POOLS,
     CacheType.PENDLE_SY_TOKENS,
-    CacheType.BEEFY_VAULTS,
 ]
 
 

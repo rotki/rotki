@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`4467` rotki will now correctly decode Beefy Finance transactions in all supported EVM chains.
 * :feature:`9913` History events can now be filtered by description.
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.
 * :bug:`-` For ETH staking MEV rewards the informational event will no longer be shown as it will be superseded by the combined MEV reward events.

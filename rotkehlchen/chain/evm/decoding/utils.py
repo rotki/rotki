@@ -204,7 +204,7 @@ def get_vault_price(
         evm_inquirer: 'EvmNodeInquirer',
         display_name: str,
         vault_abi: ABI,
-        pps_method: Literal['pricePerShare', 'convertToAssets'],
+        pps_method: Literal['pricePerShare', 'convertToAssets', 'getPricePerFullShare'],
         pps_method_args: list | None = None,
 ) -> Price:
     """Gets vault token price by multiplying price per share by the underlying token's USD price.

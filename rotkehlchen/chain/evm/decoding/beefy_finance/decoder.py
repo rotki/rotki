@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -182,18 +182,18 @@ class BeefyFinanceCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
                 cache_key=CacheType.BEEFY_VAULTS,
                 args=(str(self.evm_inquirer.chain_id.serialize()),),
         )) is True:
-            query_beefy_vaults(self.evm_inquirer.chain_id)
+            query_beefy_vaults(self.evm_inquirer)
             is_cache_updated = True
 
         if len(self.vaults) != 0 and not is_cache_updated:  # Skip database query if we already have vault data and cache wasn't updated  # noqa: E501
             return None
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            self.vaults = set(
-                globaldb_get_general_cache_values(  # type: ignore[arg-type]  # addresses are always checksummed
-                    cursor=cursor,
-                    key_parts=(CacheType.BEEFY_VAULTS, str(self.evm_inquirer.chain_id.serialize())),  # noqa: E501
-                ))
+            cursor.execute(
+                'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?',
+                (CPT_BEEFY_FINANCE, self.evm_inquirer.chain_id.serialize_for_db()),
+            )
+            self.vaults = {string_to_evm_address(row[0]) for row in cursor}
 
         return self.addresses_to_decoders()
 
