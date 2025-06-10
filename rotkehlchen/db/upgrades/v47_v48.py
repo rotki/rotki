@@ -13,7 +13,7 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
+from rotkehlchen.history.events.utils import create_event_identifier_from_swap
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -86,7 +86,7 @@ def upgrade_trade_to_swap_events(
             location_label = kraken_ids_to_labels.get(link[:-10])
 
     return create_swap_events(
-        timestamp=ts_sec_to_ms(row[0]),
+        timestamp=(timestamp := ts_sec_to_ms(row[0])),
         location=location,
         spend=spend,
         receive=receive,
@@ -95,8 +95,11 @@ def upgrade_trade_to_swap_events(
             amount=FVal(row[7]),
         ) if row[8] is not None and row[7] is not None else None,
         location_label=location_label,
-        event_identifier=create_event_identifier_from_unique_id(
+        event_identifier=create_event_identifier_from_swap(
             location=location,
+            timestamp=timestamp,
+            spend=spend,
+            receive=receive,
             unique_id=link,
         ),
         spend_notes=row[10],
