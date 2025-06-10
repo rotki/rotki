@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -52,6 +51,7 @@ from rotkehlchen.db.repositories.accounts import AccountsRepository
 from rotkehlchen.db.repositories.assets import AssetsRepository
 from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
+from rotkehlchen.db.repositories.database_management import DatabaseManagementRepository
 from rotkehlchen.db.repositories.exchanges import ExchangeRepository
 from rotkehlchen.db.repositories.external_services import ExternalServicesRepository
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
@@ -92,7 +92,6 @@ from rotkehlchen.errors.api import (
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     DBUpgradeError,
-    InputError,
     SystemPermissionError,
 )
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
@@ -198,6 +197,7 @@ class DBHandler:
         self.user_notes = UserNotesRepository(msg_aggregator)
         self.module_data = ModuleDataRepository()
         self.nfts = NFTRepository()
+        self.database_management = DatabaseManagementRepository(user_data_dir, msg_aggregator)
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -539,15 +539,7 @@ class DBHandler:
         """
         tempdbpath = Path(tempdbfile.name)
         tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
-        with self.conn.critical_section():
-            # flush the wal file to have up to date information when exporting data
-            self.conn.execute('PRAGMA wal_checkpoint;')
-            self.conn.executescript(
-                f"ATTACH DATABASE '{tempdbpath}' AS plaintext KEY '';"
-                "SELECT sqlcipher_export('plaintext');"
-                "DETACH DATABASE plaintext;",
-            )
-        return tempdbpath
+        return self.database_management.export_unencrypted(self.conn, tempdbpath)
 
     def import_unencrypted(self, unencrypted_db_data: bytes) -> None:
         """Imports an unencrypted DB from raw data
@@ -2102,13 +2094,7 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             version = self.get_setting(cursor, 'version')
-        new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
-        new_db_path = self.user_data_dir / new_db_filename
-        shutil.copyfile(
-            self.user_data_dir / USERDB_NAME,
-            new_db_path,
-        )
-        return new_db_path
+        return self.database_management.create_db_backup(self.conn, version)
 
     def get_associated_locations(self) -> set[Location]:
         with self.conn.read_ctx() as cursor:
@@ -2263,12 +2249,11 @@ class DBHandler:
             extra_data: dict[str, Any] | None,
     ) -> None:
         """Add a skipped external event to the DB. Duplicates are ignored."""
-        serialized_extra_data = None
-        if extra_data is not None:
-            serialized_extra_data = json.dumps(extra_data, separators=(',', ':'))
-        write_cursor.execute(
-            'INSERT OR IGNORE INTO skipped_external_events(data, location, extra_data) VALUES(?, ?, ?)',  # noqa: E501
-            (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
+        self.database_management.add_skipped_external_event(
+            write_cursor,
+            location,
+            data,
+            extra_data,
         )
 
     def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]:
