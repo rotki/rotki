@@ -6566,7 +6566,7 @@ Querying periodic data
 
 Getting blockchain account data
 ===============================
-.. http:get:: /api/(version)/blockchains/(name)/accounts
+.. http:get:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -8569,7 +8569,7 @@ Adding EVM accounts to all EVM chains
 Adding blockchain accounts
 ===========================
 
-.. http:put:: /api/(version)/blockchains/(name)/accounts
+.. http:put:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -8874,7 +8874,7 @@ Deleting BTC/BCH xpubs
 Editing blockchain account data
 =================================
 
-.. http:patch:: /api/(version)/blockchains/(name)/accounts
+.. http:patch:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -9064,7 +9064,7 @@ Account operations by chain type
 Removing blockchain accounts
 ==============================
 
-.. http:delete:: /api/(version)/blockchains/(name)/accounts
+.. http:delete:: /api/(version)/blockchains/(blockchain)/accounts
 
    .. note::
       Supported blockchains: ``"BTC", "BCH", "ETH", "KSM", "DOT", "AVAX", "OPTIMISM"``
@@ -11916,7 +11916,7 @@ Add EVM Transaction By Hash
 Get Binance Savings Interests History
 =======================================
 
-.. http:post:: /api/(version)/exchange/(location)/savings
+.. http:post:: /api/(version)/exchanges/(location)/savings
 
    Doing a POST on this endpoint will return all history events relating to interest payments for the specified location.
    .. note::
@@ -11927,7 +11927,7 @@ Get Binance Savings Interests History
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/exchange/binance/savings HTTP/1.1
+      POST /api/1/exchanges/binance/savings HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -12452,7 +12452,7 @@ Refresh protocol data
   :statuscode 500: Internal rotki error
 
 
-.. http:post:: /api/(version/protocols/data/refresh
+.. http:post:: /api/(version)/protocols/data/refresh
 
    Doing a POST on this endpoint will refresh the data for the selected protocol.
 
