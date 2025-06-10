@@ -60,13 +60,22 @@ class HistoryEventsRepository:
               notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        # Execute one by one to be able to log duplicates
+        # Execute one by one to be able to log duplicates and handle overflow
         for margin_tuple in margin_tuples:
-            write_cursor.execute(query, margin_tuple)
-            if write_cursor.rowcount == 0:
-                log.warning(
-                    f'Did not add "Margin position with id {margin_tuple[0]}" to the '
-                    f'database as it already exists',
+            try:
+                write_cursor.execute(query, margin_tuple)
+                if write_cursor.rowcount == 0:
+                    log.warning(
+                        f'Did not add "Margin position with id {margin_tuple[0]}" to the '
+                        f'database as it already exists',
+                    )
+            except OverflowError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to add "margin_position" to the DB with overflow error: {e!s}'
+                )
+                log.error(
+                    f'Overflow error while trying to add "margin_position" tuples to the DB. '
+                    f'Tuples: {margin_tuple}'
                 )
 
     def get_latest_location_value_distribution(

@@ -96,6 +96,10 @@ class BalancesRepository:
 
         cursor.execute(querystr, bindings)
         results = cursor.fetchall()
+        # DEBUG
+        # print(f"Query results count: {len(results)}")
+        # for r in results:
+        #     print(f"  Timestamp: {r[0]}, Amount: {r[1]}, Currency: ETH/ETH2")
         balances = []
         results_length = len(results)
         for idx, result in enumerate(results):
@@ -113,7 +117,9 @@ class BalancesRepository:
                 continue
 
             next_result_time = results[idx + 1][0]
-            max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_graph_multiplier  # noqa: E501
+            balance_save_frequency = settings.balance_save_frequency if settings.balance_save_frequency is not None else 24  # noqa: E501
+            ssf_graph_multiplier = settings.ssf_graph_multiplier if settings.ssf_graph_multiplier is not None else 0  # noqa: E501
+            max_diff = balance_save_frequency * HOUR_IN_SECONDS * ssf_graph_multiplier
             while next_result_time - entry_time > max_diff:
                 entry_time += max_diff
                 balances.append(
@@ -354,7 +360,15 @@ class BalancesRepository:
             'ORDER BY timestamp ASC',
             (from_ts, to_ts),
         )
-        all_timestamps, all_categories = zip(*cursor, strict=True)
+        results = cursor.fetchall()
+        if not results:
+            return []
+            
+        all_timestamps, all_categories = zip(*results, strict=True)
+        
+        # Create a mapping of timestamp to category for the asset balances
+        asset_timestamp_to_category = {b.time: b.category for b in balances if b.amount != ZERO}
+        
         # dicts maintain insertion order in python 3.7+
         timestamps_have_asset_balance = dict.fromkeys(all_timestamps, False)
         timestamps_with_asset_balance = dict.fromkeys(asset_timestamps, True)
@@ -363,7 +377,13 @@ class BalancesRepository:
         prev_timestamp = all_timestamps[0]
         inferred_balances: list[SingleDBAssetBalance] = []
         is_zero_period_open = False
-        last_asset_category = all_categories[-1]  # just a placeholder value, no need to calculate the actual value here  # noqa: E501
+        # For the last category, use the category from the last balance with amount > 0
+        last_asset_category = BalanceType.ASSET  # default
+        for balance in reversed(balances):
+            if balance.amount > ZERO:
+                last_asset_category = balance.category
+                break
+        
         for idx, (timestamp, has_asset_balance) in enumerate(timestamps_have_asset_balance.items()):  # noqa: E501
             if idx == len(timestamps_have_asset_balance) - 1 and has_asset_balance is False:
                 # If there is no balance for the last timestamp add a zero balance.
@@ -377,12 +397,17 @@ class BalancesRepository:
                 )
             elif has_asset_balance is False and prev_has_asset_balance is True:
                 # add the start of a zero balance period
+                # Find the category of the previous asset balance
+                category_to_use = last_asset_category
+                if prev_timestamp in asset_timestamp_to_category:
+                    category_to_use = asset_timestamp_to_category[prev_timestamp]
+                
                 inferred_balances.append(
                     SingleDBAssetBalance(
                         time=timestamp,
                         amount=ZERO,
                         usd_value=ZERO,
-                        category=BalanceType.deserialize_from_db(all_categories[idx - 1]),  # the category of the previous timed_balance of the asset  # noqa: E501
+                        category=category_to_use,
                     ),
                 )
                 is_zero_period_open = True
@@ -397,9 +422,10 @@ class BalancesRepository:
                     ),
                 )
                 is_zero_period_open = False
-                last_asset_category = inferred_balances[-1].category
-            elif has_asset_balance is True:
-                last_asset_category = BalanceType.deserialize_from_db(all_categories[idx])
+                if timestamp in asset_timestamp_to_category:
+                    last_asset_category = asset_timestamp_to_category[timestamp]
+            elif has_asset_balance is True and timestamp in asset_timestamp_to_category:
+                last_asset_category = asset_timestamp_to_category[timestamp]
             prev_has_asset_balance, prev_timestamp = has_asset_balance, timestamp
         return inferred_balances
 
