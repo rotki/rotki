@@ -86,7 +86,7 @@ UPGRADES_LIST = [
 ]
 
 
-def maybe_upgrade_globaldb(
+async def maybe_upgrade_globaldb(
         connection: 'DBConnection',
         global_dir: Path,
         db_filename: str,
@@ -103,7 +103,7 @@ def maybe_upgrade_globaldb(
     updating assets data before the DB schema is modified.
     """
     try:
-        with connection.read_ctx() as cursor:
+        async with connection.read_ctx() as cursor:
             db_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
     except sqlite3.OperationalError:  # pylint: disable=no-member
         return True  # fresh DB -- nothing to upgrade
@@ -133,7 +133,7 @@ def maybe_upgrade_globaldb(
                     msg_aggregator=msg_aggregator,
                 ).apply_pending_compatible_updates()
 
-            _perform_single_upgrade(
+            await _perform_single_upgrade(
                 upgrade=upgrade,
                 connection=connection,
                 global_dir=global_dir,
@@ -142,8 +142,8 @@ def maybe_upgrade_globaldb(
             )
 
     # Finally make sure to always have latest version in the DB
-    with connection.write_ctx() as write_cursor:
-        write_cursor.execute(
+    async with connection.write_ctx() as write_cursor:
+        await write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('version', GLOBAL_DB_VERSION),
         )
@@ -151,14 +151,14 @@ def maybe_upgrade_globaldb(
     return False  # not fresh DB
 
 
-def _perform_single_upgrade(
+async def _perform_single_upgrade(
         upgrade: UpgradeRecord,
         connection: 'DBConnection',
         global_dir: Path,
         db_filename: str,
         progress_handler: DBUpgradeProgressHandler,
 ) -> None:
-    with connection.read_ctx() as cursor:
+    async with connection.read_ctx() as cursor:
         current_version = globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
 
     if current_version != upgrade.from_version:
@@ -167,20 +167,20 @@ def _perform_single_upgrade(
     progress_handler.new_round(version=to_version)
 
     # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
-    connection.execute('PRAGMA wal_checkpoint(FULL);')
+    await connection.execute('PRAGMA wal_checkpoint(FULL);')
     # Create a backup
     tmp_db_filename = f'{ts_now()}_global_db_v{upgrade.from_version}.backup'
     tmp_db_path = global_dir / tmp_db_filename
     shutil.copyfile(global_dir / db_filename, tmp_db_path)
 
-    with connection.write_ctx() as cursor:
-        cursor.execute(
+    async with connection.write_ctx() as cursor:
+        await cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('ongoing_upgrade_from_version', str(upgrade.from_version)),
         )
 
     try:
-        upgrade.function(connection=connection, progress_handler=progress_handler)
+        await upgrade.function(connection=connection, progress_handler=progress_handler)
     except BaseException as e:
         # Problem .. restore DB backup, log all info and bail out
         error_message = (
@@ -193,18 +193,18 @@ def _perform_single_upgrade(
         raise ValueError(error_message) from e
 
     # single upgrade successful
-    with connection.write_ctx() as write_cursor:
-        write_cursor.execute(
+    async with connection.write_ctx() as write_cursor:
+        await write_cursor.execute(
             'DELETE FROM settings WHERE name=?',
             ('ongoing_upgrade_from_version',),
         )
-        write_cursor.execute(
+        await write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
             ('version', str(to_version)),
         )
 
 
-def configure_globaldb(
+async def configure_globaldb(
         global_dir: Path,
         db_filename: str,
         connection: 'DBConnection',
@@ -222,7 +222,7 @@ def configure_globaldb(
     May raise:
         - DBSchemaError if the database schema is invalid.
     """
-    is_fresh_db = maybe_upgrade_globaldb(
+    is_fresh_db = await maybe_upgrade_globaldb(
         globaldb=globaldb,
         connection=connection,
         global_dir=global_dir,
@@ -231,15 +231,15 @@ def configure_globaldb(
     )
 
     # its not a fresh database and foreign keys are not turned on by default.
-    connection.executescript('PRAGMA foreign_keys=on;')
-    connection.execute('PRAGMA journal_mode=WAL;')
+    await connection.executescript('PRAGMA foreign_keys=on;')
+    await connection.execute('PRAGMA journal_mode=WAL;')
     if is_fresh_db is True:
-        connection.executescript(DB_SCRIPT_CREATE_TABLES)
-        with connection.write_ctx() as cursor:
-            cursor.executemany(
+        await connection.executescript(DB_SCRIPT_CREATE_TABLES)
+        async with connection.write_ctx() as cursor:
+            await cursor.executemany(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 [('version', str(GLOBAL_DB_VERSION)), ('last_data_migration', str(LAST_DATA_MIGRATION))],  # noqa: E501
             )
     else:
-        maybe_apply_globaldb_migrations(connection)
-    connection.schema_sanity_check()
+        await maybe_apply_globaldb_migrations(connection)
+    await connection.schema_sanity_check()

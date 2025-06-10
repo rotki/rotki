@@ -41,11 +41,10 @@ class Rotkehlchen:
 
     def __init__(
         self,
-        data_dir: Path,
         args: Any,
     ):
-        self.data_dir = data_dir
         self.args = args
+        self.data_dir = Path(args.data_dir) if hasattr(args, 'data_dir') else Path.home() / '.rotkehlchen'
 
         # Message aggregator for user notifications
         self.msg_aggregator = MessagesAggregator()

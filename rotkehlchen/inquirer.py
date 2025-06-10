@@ -455,9 +455,9 @@ class Inquirer:
                 instance._oracle_instances_not_onchain.append(oracle_instance)
 
     @staticmethod
-    def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
+    async def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
         """Save cached price for the key provided and all the assets in the same collection"""
-        related_assets = GlobalDBHandler.get_assets_in_same_collection(cache_key[0].identifier)
+        related_assets = await GlobalDBHandler.get_assets_in_same_collection(cache_key[0].identifier)
         for related_asset in related_assets:
             Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
 
@@ -673,7 +673,7 @@ class Inquirer:
         return price, oracle
 
     @staticmethod
-    def _maybe_replace_asset(asset: Asset) -> Asset:
+    async def _maybe_replace_asset(asset: Asset) -> Asset:
         """Get the asset to actually use when finding the price of the specified asset.
         Uses the main asset for collection assets and also handles special cases like ETH2 and POL.
         Returns either a replacement asset, or the original asset.
@@ -681,7 +681,7 @@ class Inquirer:
         if asset == A_ETH2:
             return A_ETH
         elif (
-            (collection_main_asset_id := GlobalDBHandler.get_collection_main_asset(asset.identifier)) is not None and  # noqa: E501
+            (collection_main_asset_id := await GlobalDBHandler.get_collection_main_asset(asset.identifier)) is not None and  # noqa: E501
             (collection_main_asset_id != 'eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6' or ts_now() > POLYGON_POS_POL_HARDFORK)  # only use the pol token after the hardfork.  # noqa: E501
         ):
             return Asset(collection_main_asset_id)
@@ -689,7 +689,7 @@ class Inquirer:
         return asset
 
     @staticmethod
-    def _preprocess_assets_to_query(
+    async def _preprocess_assets_to_query(
             from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
@@ -704,7 +704,7 @@ class Inquirer:
                 found_prices[from_asset] = Price(ONE), CurrentPriceOracle.MANUALCURRENT
                 continue
 
-            if (asset_to_price := Inquirer._maybe_replace_asset(asset=from_asset)) != from_asset:
+            if (asset_to_price := await Inquirer._maybe_replace_asset(asset=from_asset)) != from_asset:
                 replaced_assets[from_asset] = asset_to_price
                 if asset_to_price in found_prices or asset_to_price in unpriced_assets:
                     continue
@@ -717,7 +717,7 @@ class Inquirer:
                 continue
 
             try:  # Ensure the asset exists
-                unpriced_assets.append(asset_to_price.check_existence())
+                unpriced_assets.append(await asset_to_price.check_existence())
             except UnknownAsset:
                 log.error(f'Tried to ask for {asset_to_price.identifier} price but asset is missing from the DB')  # noqa: E501
                 found_prices[asset_to_price] = ZERO_PRICE, CurrentPriceOracle.MANUALCURRENT
@@ -725,7 +725,7 @@ class Inquirer:
         return found_prices, replaced_assets, unpriced_assets
 
     @staticmethod
-    def _find_prices(
+    async def _find_prices(
             from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
@@ -739,24 +739,34 @@ class Inquirer:
         If all options for finding a price are unsuccessful the price will be set to ZERO_PRICE,
         and any errors will be logged in the logs.
         """
-        found_prices, replaced_assets, unpriced_assets = Inquirer._preprocess_assets_to_query(
+        found_prices, replaced_assets, unpriced_assets = await Inquirer._preprocess_assets_to_query(
             from_assets=from_assets,
             to_asset=to_asset,
             ignore_cache=ignore_cache,
         )
         if len(unpriced_assets) != 0:
-            for func in (
-                Inquirer._get_manual_prices,
-                Inquirer._query_fiat_pairs,
-                Inquirer._get_special_usd_prices,
-            ):
-                unpriced_assets, new_found_prices = func(
+            # Get manual prices first (sync)
+            unpriced_assets, new_found_prices = Inquirer._get_manual_prices(
+                from_assets=unpriced_assets,
+                to_asset=to_asset,
+            )
+            found_prices.update(new_found_prices)
+            
+            # Then query fiat pairs (async)
+            if len(unpriced_assets) != 0:
+                unpriced_assets, new_found_prices = await Inquirer._query_fiat_pairs(
                     from_assets=unpriced_assets,
                     to_asset=to_asset,
                 )
                 found_prices.update(new_found_prices)
-                if len(unpriced_assets) == 0:
-                    break
+            
+            # Finally get special USD prices (sync)
+            if len(unpriced_assets) != 0:
+                unpriced_assets, new_found_prices = Inquirer._get_special_usd_prices(
+                    from_assets=unpriced_assets,
+                    to_asset=to_asset,
+                )
+                found_prices.update(new_found_prices)
             else:
                 found_prices.update(Inquirer._query_oracle_instances(
                     from_assets=unpriced_assets,
@@ -775,47 +785,48 @@ class Inquirer:
         return {asset: found_prices[asset] for asset in needed_assets}
 
     @staticmethod
-    def find_price(
+    async def find_price(
             from_asset: Asset,
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> Price:
         """Wrapper for find_prices to get the price of a single asset."""
-        return Inquirer.find_prices(
+        return (await Inquirer.find_prices(
             from_assets=[from_asset],
             to_asset=to_asset,
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
-        ).get(from_asset, ZERO_PRICE)
+        )).get(from_asset, ZERO_PRICE)
 
     @staticmethod
-    def find_prices(
+    async def find_prices(
             from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, Price]:
         """Wrapper for _find_prices to ignore the oracle queried when getting prices."""
+        result = await Inquirer._find_prices(
+            from_assets=from_assets,
+            to_asset=to_asset,
+            ignore_cache=ignore_cache,
+            skip_onchain=skip_onchain,
+        )
         return {
             asset: price_and_oracle[0]
-            for asset, price_and_oracle in Inquirer._find_prices(
-                from_assets=from_assets,
-                to_asset=to_asset,
-                ignore_cache=ignore_cache,
-                skip_onchain=skip_onchain,
-            ).items()
+            for asset, price_and_oracle in result.items()
         }
 
     @staticmethod
-    def find_prices_and_oracles(
+    async def find_prices_and_oracles(
             from_assets: Sequence[Asset],
             to_asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
         """Wrapper for _find_prices to include the oracle queried when getting prices."""
-        return Inquirer._find_prices(
+        return await Inquirer._find_prices(
             from_assets=from_assets,
             to_asset=to_asset,
             ignore_cache=ignore_cache,
@@ -823,40 +834,40 @@ class Inquirer:
         )
 
     @staticmethod
-    def find_usd_price(
+    async def find_usd_price(
             asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> Price:
         """Wrapper for find_usd_prices to get the usd price of a single asset."""
-        return Inquirer.find_usd_prices(
+        return (await Inquirer.find_usd_prices(
             assets=[asset],
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
-        ).get(asset, ZERO_PRICE)
+        )).get(asset, ZERO_PRICE)
 
     @staticmethod
-    def find_usd_price_and_oracle(
+    async def find_usd_price_and_oracle(
             asset: Asset,
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> tuple[Price, CurrentPriceOracle]:
         """Wrapper for find_usd_prices_and_oracles to
         get the usd price and oracle for a single asset."""
-        return Inquirer.find_usd_prices_and_oracles(
+        return (await Inquirer.find_usd_prices_and_oracles(
             assets=[asset],
             ignore_cache=ignore_cache,
             skip_onchain=skip_onchain,
-        ).get(asset, (ZERO_PRICE, CurrentPriceOracle.FIAT))
+        )).get(asset, (ZERO_PRICE, CurrentPriceOracle.FIAT))
 
     @staticmethod
-    def find_usd_prices(
+    async def find_usd_prices(
             assets: list[Asset],
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, Price]:
         """Wrapper for find_prices to get usd prices."""
-        return Inquirer.find_prices(
+        return await Inquirer.find_prices(
             from_assets=assets,
             to_asset=A_USD,
             ignore_cache=ignore_cache,
@@ -864,13 +875,13 @@ class Inquirer:
         )
 
     @staticmethod
-    def find_usd_prices_and_oracles(
+    async def find_usd_prices_and_oracles(
             assets: list[Asset],
             ignore_cache: bool = False,
             skip_onchain: bool = False,
     ) -> dict[Asset, tuple[Price, CurrentPriceOracle]]:
         """Wrapper for _find_prices to get usd prices and oracles."""
-        return Inquirer._find_prices(
+        return await Inquirer._find_prices(
             from_assets=assets,
             to_asset=A_USD,
             ignore_cache=ignore_cache,
@@ -890,7 +901,7 @@ class Inquirer:
             block_identifier='latest',
         )
 
-    def find_curve_pool_price(self, lp_token: EvmToken) -> Price | None:
+    async def find_curve_pool_price(self, lp_token: EvmToken) -> Price | None:
         """
         1. Obtain the pool for this token
         2. Obtain total supply of lp tokens
@@ -912,7 +923,7 @@ class Inquirer:
             transactions_decoder=evm_manager.transactions_decoder,
         )
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
             pool_address_in_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(CacheType.CURVE_POOL_ADDRESS, str(chain_id.serialize_for_db()), lp_token.evm_address),  # noqa: E501
@@ -1020,7 +1031,7 @@ class Inquirer:
 
         return (total_assets_value / total_supply) * (10 ** lp_token.get_decimals())
 
-    def find_gearbox_price(self, token: EvmToken) -> Price | None:
+    async def find_gearbox_price(self, token: EvmToken) -> Price | None:
         node_inquirer = self.get_evm_manager(chain_id=token.chain_id).node_inquirer
         underlying_token = None
         farming_tokens = {token.farming_pool_token for token in read_gearbox_data_from_cache(token.chain_id)[0].values()}  # noqa: E501
@@ -1039,8 +1050,8 @@ class Inquirer:
         else:
             lp_token = token.evm_address
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            maybe_underlying_tokens = GlobalDBHandler.fetch_underlying_tokens(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            maybe_underlying_tokens = await GlobalDBHandler.fetch_underlying_tokens(
                 cursor=cursor,
                 parent_token_identifier=token.identifier,
             )
@@ -1087,7 +1098,7 @@ class Inquirer:
 
         return None
 
-    def find_yearn_price(
+    async def find_yearn_price(
             self,
             token: EvmToken,
             vault_abi: Literal['YEARN_VAULT_V3', 'YEARN_VAULT_V2'],
@@ -1098,8 +1109,8 @@ class Inquirer:
         """
         ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
         globaldb = GlobalDBHandler()
-        with globaldb.conn.read_ctx() as cursor:
-            maybe_underlying_tokens = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
+        async with globaldb.conn.read_ctx() as cursor:
+            maybe_underlying_tokens = await globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
 
         contract = EvmContract(
             address=token.evm_address,
@@ -1202,9 +1213,9 @@ class Inquirer:
 
         return get_underlying_asset_price(vault)[0]
 
-    def find_hop_lp_price(self, lp_token: EvmToken) -> Price | None:
+    async def find_hop_lp_price(self, lp_token: EvmToken) -> Price | None:
         """Returns the price of a hop lp token fetched from the pool contract"""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
             if (amm_address := globaldb_get_unique_cache_value(
                 cursor=cursor,
                 key_parts=(
@@ -1266,19 +1277,19 @@ class Inquirer:
         return rates
 
     @staticmethod
-    def query_historical_fiat_exchange_rates(
+    async def query_historical_fiat_exchange_rates(
             from_fiat_currency: FiatAsset,
             to_fiat_currency: FiatAsset,
             timestamp: Timestamp,
     ) -> Price | None:
-        assert from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
-        assert to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
+        assert await from_fiat_currency.is_fiat(), 'fiat currency should have been provided'
+        assert await to_fiat_currency.is_fiat(), 'fiat currency should have been provided'
 
         if from_fiat_currency == to_fiat_currency:
             return Price(ONE)
 
         # Check cache
-        price_cache_entry = GlobalDBHandler.get_historical_price(
+        price_cache_entry = await GlobalDBHandler.get_historical_price(
             from_asset=from_fiat_currency,
             to_asset=to_fiat_currency,
             timestamp=timestamp,
@@ -1298,7 +1309,7 @@ class Inquirer:
         # Since xratecoms has daily rates let's save at timestamp of UTC day start
         timestamp = timestamp_to_daystart_timestamp(timestamp)
         for asset, asset_price in prices_map.items():
-            GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
+            await GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
                 from_asset=from_fiat_currency,
                 to_asset=asset,
                 source=HistoricalPriceOracle.XRATESCOM,
@@ -1318,23 +1329,23 @@ class Inquirer:
         return rate
 
     @staticmethod
-    def _query_fiat_pairs(
+    async def _query_fiat_pairs(
             from_assets: list[Asset],
             to_asset: Asset,
     ) -> tuple[list[Asset], dict[Asset, tuple[Price, CurrentPriceOracle]]]:
         """If to_asset is fiat, query the current price for any fiat assets in from_assets.
         Returns a tuple containing a list of non fiat assets and a dict of prices found.
         """
-        if not to_asset.is_fiat():
+        if not await to_asset.is_fiat():
             return from_assets, {}
 
         non_fiat_assets, found_prices = [], {}
         for from_asset in from_assets:
             if (
-                from_asset.is_fiat() and
-                (price_and_oracle := Inquirer._query_fiat_pair(
-                    base=from_asset.resolve_to_fiat_asset(),
-                    quote=to_asset.resolve_to_fiat_asset(),
+                await from_asset.is_fiat() and
+                (price_and_oracle := await Inquirer._query_fiat_pair(
+                    base=await from_asset.resolve_to_fiat_asset(),
+                    quote=await to_asset.resolve_to_fiat_asset(),
                 )) is not None
             ):
                 found_prices[from_asset] = price_and_oracle
@@ -1345,7 +1356,7 @@ class Inquirer:
         return non_fiat_assets, found_prices
 
     @staticmethod
-    def _query_fiat_pair(
+    async def _query_fiat_pair(
             base: FiatAsset,
             quote: FiatAsset,
     ) -> tuple[Price, CurrentPriceOracle] | None:
@@ -1358,7 +1369,7 @@ class Inquirer:
 
         now = ts_now()
         # Check cache for a price within the last 24 hrs
-        price_cache_entry = GlobalDBHandler.get_historical_price(
+        price_cache_entry = await GlobalDBHandler.get_historical_price(
             from_asset=base,
             to_asset=quote,
             timestamp=now,
@@ -1376,7 +1387,7 @@ class Inquirer:
                     # if the quote asset price is found return it
                     price = quote_price
 
-                GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
+                await GlobalDBHandler.add_historical_prices(entries=[HistoricalPrice(
                     from_asset=base,
                     to_asset=quote_asset,
                     source=HistoricalPriceOracle.XRATESCOM,
@@ -1388,7 +1399,7 @@ class Inquirer:
                 return price, CurrentPriceOracle.FIAT
 
         # Check cache
-        price_cache_entry = GlobalDBHandler.get_historical_price(
+        price_cache_entry = await GlobalDBHandler.get_historical_price(
             from_asset=base,
             to_asset=quote,
             timestamp=now,

@@ -56,6 +56,8 @@ from rotkehlchen.utils.serialization import (
     deserialize_generic_asset_from_db,
 )
 
+import asyncio
+
 from .upgrades.manager import configure_globaldb
 from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value, initialize_globaldb
 
@@ -148,22 +150,31 @@ class GlobalDBHandler:
             builtin_data_dir = root_dir / 'data'
             shutil.copyfile(builtin_data_dir / GLOBALDB_NAME, global_dir / GLOBALDB_NAME)
 
-        GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = initialize_globaldb(  # noqa: E501
-            global_dir=global_dir,
-            db_filename=GLOBALDB_NAME,
-            sql_vm_instructions_cb=sql_vm_instructions_cb,
-        )
-        GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
+        # Run async initialization in sync context
+        loop = asyncio.new_event_loop()
+        try:
+            GlobalDBHandler.__instance.conn, GlobalDBHandler.__instance.used_backup = loop.run_until_complete(
+                initialize_globaldb(
+                    global_dir=global_dir,
+                    db_filename=GLOBALDB_NAME,
+                    sql_vm_instructions_cb=sql_vm_instructions_cb,
+                )
+            )
+            GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
 
-        # initialise the asset resolver here since asset updater class might require it.
-        AssetResolver(globaldb=GlobalDBHandler.__instance, constant_assets=CONSTANT_ASSETS)
-        configure_globaldb(
-            global_dir=global_dir,
-            db_filename=GLOBALDB_NAME,
-            msg_aggregator=msg_aggregator,
-            globaldb=GlobalDBHandler.__instance if perform_assets_updates else None,
-            connection=GlobalDBHandler.__instance.conn,
-        )
+            # initialise the asset resolver here since asset updater class might require it.
+            AssetResolver(globaldb=GlobalDBHandler.__instance, constant_assets=CONSTANT_ASSETS)
+            loop.run_until_complete(
+                configure_globaldb(
+                    global_dir=global_dir,
+                    db_filename=GLOBALDB_NAME,
+                    msg_aggregator=msg_aggregator,
+                    globaldb=GlobalDBHandler.__instance if perform_assets_updates else None,
+                    connection=GlobalDBHandler.__instance.conn,
+                )
+            )
+        finally:
+            loop.close()
         return GlobalDBHandler.__instance
 
     def filepath(self) -> Path:
@@ -176,7 +187,7 @@ class GlobalDBHandler:
             self._packaged_db_conn.close()
 
     @staticmethod
-    def packaged_db_conn() -> DBConnection:
+    async def packaged_db_conn() -> DBConnection:
         """Return a DBConnection instance for the packaged global db."""
         if GlobalDBHandler()._packaged_db_conn is not None:
             # mypy does not recognize the initialization as that of a singleton
@@ -192,35 +203,35 @@ class GlobalDBHandler:
         return packaged_db_conn
 
     @staticmethod
-    def get_schema_version() -> int:
+    async def get_schema_version() -> int:
         """Get the version of the DB Schema"""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            return globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            return await globaldb_get_setting_value(cursor, 'version', GLOBAL_DB_VERSION)
 
     @staticmethod
-    def get_setting_value(name: str, default_value: int) -> int:
+    async def get_setting_value(name: str, default_value: int) -> int:
         """Get the value of a setting or default. Typing is always int for now"""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            return globaldb_get_setting_value(cursor, name, default_value)
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            return await globaldb_get_setting_value(cursor, name, default_value)
 
     @staticmethod
-    def add_setting_value(name: str, value: Any) -> None:
+    async def add_setting_value(name: str, value: Any) -> None:
         """Add the value of a setting"""
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            await write_cursor.execute(
                 'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
                 (name, str(value)),
             )
 
     @staticmethod
-    def add_asset(asset: AssetWithNameAndType) -> None:
+    async def add_asset(asset: AssetWithNameAndType) -> None:
         """
         Add an asset in the DB.
 
         May raise InputError in case of error, meaning asset exists or some constraint hit"""
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.execute(
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                await write_cursor.execute(
                     'INSERT INTO assets(identifier, name, type) '
                     'VALUES(?, ?, ?);',
                     (
@@ -230,7 +241,7 @@ class GlobalDBHandler:
                     ),
                 )
                 if asset.asset_type == AssetType.CUSTOM_ASSET:
-                    write_cursor.execute(
+                    await write_cursor.execute(
                         'INSERT INTO custom_assets(identifier, type, notes) VALUES(?, ?, ?)',
                         cast('CustomAsset', asset).serialize_for_db(),
                     )
@@ -242,7 +253,7 @@ class GlobalDBHandler:
                 if asset.is_crypto():
                     if asset.is_evm_token():
                         asset = cast('EvmToken', asset)
-                        GlobalDBHandler.add_evm_token_data(write_cursor, asset)
+                        await GlobalDBHandler.add_evm_token_data(write_cursor, asset)
                     else:
                         asset = cast('CryptoAsset', asset)
 
@@ -250,7 +261,7 @@ class GlobalDBHandler:
                     started = asset.started
                     swapped_for = asset.swapped_for.identifier if asset.swapped_for else None
 
-                write_cursor.execute(
+                await write_cursor.execute(
                     'INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for)'  # noqa: E501
                     'VALUES(?, ?, ?, ?, ?, ?, ?);',
                     (
@@ -269,7 +280,7 @@ class GlobalDBHandler:
             ) from e
 
     @staticmethod
-    def retrieve_assets(userdb: 'DBHandler', filter_query: 'AssetsFilterQuery') -> tuple[list[dict[str, Any]], int]:  # noqa: E501
+    async def retrieve_assets(userdb: 'DBHandler', filter_query: 'AssetsFilterQuery') -> tuple[list[dict[str, Any]], int]:  # noqa: E501
         """
         Returns a tuple that contains a list of assets details and a
         count of those assets that match the filter query.
@@ -294,12 +305,12 @@ class GlobalDBHandler:
         """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
-        with userdb.conn.read_ctx() as cursor:
-            ignored_assets = userdb.get_ignored_asset_ids(cursor)
+        async with userdb.conn.read_ctx() as cursor:
+            ignored_assets = await userdb.get_ignored_asset_ids(cursor)
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(query, bindings)
-            for entry in cursor:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(query, bindings)
+            async for entry in cursor:
                 if should_skip(entry[0], ignored_assets):
                     continue
                 if offset is not None and offset > 0:
@@ -366,7 +377,7 @@ class GlobalDBHandler:
                 f'WHERE parent_token_entry IN ({",".join(["?"] * len(assets_info))})'
             )
             # populate all underlying tokens
-            for entry in cursor.execute(underlying_tokens_query, list(assets_info.keys())):
+            async for entry in await cursor.execute(underlying_tokens_query, list(assets_info.keys())):
                 if assets_info[entry[0]]['underlying_tokens'] is None:
                     assets_info[entry[0]]['underlying_tokens'] = []
                 assets_info[entry[0]]['underlying_tokens'].append(
@@ -379,11 +390,12 @@ class GlobalDBHandler:
             query, bindings = filter_query.prepare(with_pagination=False)
             if filter_query.ignored_assets_handling == IgnoredAssetsHandling.NONE:
                 total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
-                entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
+                result = await cursor.execute(total_found_query, bindings)
+                entries_found = (await result.fetchone())[0]
             else:
                 total_found_query = f'SELECT identifier FROM ({parent_query}) ' + query
-                cursor.execute(total_found_query, bindings)
-                identifiers = {row[0] for row in cursor}
+                await cursor.execute(total_found_query, bindings)
+                identifiers = {row[0] async for row in cursor}
                 if filter_query.ignored_assets_handling == IgnoredAssetsHandling.EXCLUDE:
                     entries_found = len(identifiers.difference(ignored_assets))
                 else:  # IgnoredAssetsHandling.SHOW_ONLY
@@ -392,7 +404,7 @@ class GlobalDBHandler:
         return list(assets_info.values()), entries_found
 
     @staticmethod
-    def get_assets_mappings(identifiers: list[str]) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:  # noqa: E501
+    async def get_assets_mappings(identifiers: list[str]) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:  # noqa: E501
         """
         Given a list of asset identifiers, return a list of asset information
         (id, name, symbol, collection) for those identifiers and a dictionary that maps the
@@ -401,13 +413,13 @@ class GlobalDBHandler:
         result: dict[str, dict[str, Any]] = {}
         asset_collections = {}
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS +
                 ' WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
-            for entry in cursor:
+            async for entry in cursor:
                 result[entry[0]] = {
                     'name': entry[1],
                     'symbol': entry[2],
@@ -434,20 +446,20 @@ class GlobalDBHandler:
         return result, asset_collections
 
     @staticmethod
-    def search_assets(filter_query: 'AssetsFilterQuery', db: 'DBHandler') -> list[dict[str, Any]]:
+    async def search_assets(filter_query: 'AssetsFilterQuery', db: 'DBHandler') -> list[dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
         search_result = []
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
-        with db.conn.read_ctx() as cursor:
-            treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
-            ignored_assets = db.get_ignored_asset_ids(cursor)
+        async with db.conn.read_ctx() as cursor:
+            treat_eth2_as_eth = (await db.get_settings(cursor)).treat_eth2_as_eth
+            ignored_assets = await db.get_ignored_asset_ids(cursor)
 
         query, bindings = filter_query.prepare(without_ignored_asset_filter=True)
         query = ALL_ASSETS_TABLES_QUERY + query
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(query, bindings)
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(query, bindings)
             found_eth = False
-            for entry in cursor:
+            async for entry in cursor:
                 if should_skip(entry[0], ignored_assets):
                     continue
 
@@ -479,7 +491,7 @@ class GlobalDBHandler:
 
     @overload
     @staticmethod
-    def get_all_asset_data(
+    async def get_all_asset_data(
             mapping: Literal[True],
             serialized: bool = False,
             specific_ids: list[str] | None = None,
@@ -488,7 +500,7 @@ class GlobalDBHandler:
 
     @overload
     @staticmethod
-    def get_all_asset_data(
+    async def get_all_asset_data(
             mapping: Literal[False],
             serialized: bool = False,
             specific_ids: list[str] | None = None,
@@ -496,7 +508,7 @@ class GlobalDBHandler:
         ...
 
     @staticmethod
-    def get_all_asset_data(
+    async def get_all_asset_data(
             mapping: bool,
             serialized: bool = False,
             specific_ids: list[str] | None = None,
@@ -526,9 +538,9 @@ class GlobalDBHandler:
         else:
             bindings = ()
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, bindings)
-            for entry in cursor:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(querystr, bindings)
+            async for entry in cursor:
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 evm_address: ChecksumEvmAddress | None
                 if asset_type == AssetType.EVM_TOKEN:
@@ -561,7 +573,7 @@ class GlobalDBHandler:
         return result
 
     @staticmethod
-    def get_asset_data(
+    async def get_asset_data(
             identifier: str,
             form_with_incomplete_data: bool,
     ) -> AssetData | None:
@@ -569,14 +581,14 @@ class GlobalDBHandler:
 
         Returns None if identifier can't be matched to an asset
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 'SELECT A.identifier, A.type, A.name, B.symbol, B.started, B.swapped_for, '
                 'B.coingecko, B.cryptocompare, B.forked from assets AS A JOIN  '
                 'common_asset_details AS B ON A.identifier = B.identifier WHERE A.identifier=?;',
                 (identifier,),
             )
-            result = cursor.fetchone()
+            result = await cursor.fetchone()
             if result is None:
                 return None
 
@@ -606,11 +618,11 @@ class GlobalDBHandler:
                 return None
 
             if asset_type == AssetType.EVM_TOKEN:
-                cursor.execute(
+                await cursor.execute(
                     'SELECT decimals, protocol, address, chain, token_kind from evm_tokens '
                     'WHERE identifier=?', (saved_identifier,),
                 )
-                result = cursor.fetchone()
+                result = await cursor.fetchone()
                 if result is None:
                     log.error(
                         f'Found token {saved_identifier} in the DB assets table but not '
@@ -649,16 +661,16 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def fetch_underlying_tokens(
+    async def fetch_underlying_tokens(
             cursor: DBCursor,
             parent_token_identifier: str,
     ) -> list[UnderlyingToken] | None:
         """Fetch underlying tokens for a token address if they exist"""
-        cursor.execute(
+        await cursor.execute(
             'SELECT B.address, B.token_kind, A.weight FROM underlying_tokens_list AS A JOIN evm_tokens as B WHERE A.identifier=B.identifier AND parent_token_entry=?;',  # noqa: E501
             (parent_token_identifier,),
         )
-        results = cursor.fetchall()
+        results = await cursor.fetchall()
         underlying_tokens = None
         if len(results) != 0:
             underlying_tokens = [UnderlyingToken.deserialize_from_db(x) for x in results]
@@ -666,7 +678,7 @@ class GlobalDBHandler:
         return underlying_tokens
 
     @staticmethod
-    def _add_underlying_tokens(
+    async def _add_underlying_tokens(
             write_cursor: DBCursor,
             parent_token_identifier: str,
             underlying_tokens: list[UnderlyingToken],
@@ -685,7 +697,7 @@ class GlobalDBHandler:
                 raise InputError(f'{parent_token_identifier} cannot be its own underlying token')
 
             # make sure underlying token address is tracked if not already there
-            asset_id = GlobalDBHandler.get_evm_token_identifier(
+            asset_id = await GlobalDBHandler.get_evm_token_identifier(
                 cursor=write_cursor,
                 address=underlying_token.address,
                 chain_id=chain_id,
@@ -693,12 +705,12 @@ class GlobalDBHandler:
             if asset_id is None:
                 try:  # underlying token does not exist. Track it
                     asset_id = underlying_token.get_identifier(parent_chain=chain_id)
-                    write_cursor.execute(
+                    await write_cursor.execute(
                         'INSERT INTO assets(identifier, name, type)'
                         'VALUES(?, ?, ?);',
                         (asset_id, None, AssetType.EVM_TOKEN.serialize_for_db()),
                     )
-                    write_cursor.execute(
+                    await write_cursor.execute(
                         'INSERT INTO evm_tokens(identifier, address, chain, token_kind)'
                         'VALUES(?, ?, ?, ?)',
                         (
@@ -708,7 +720,7 @@ class GlobalDBHandler:
                             underlying_token.token_kind.serialize_for_db(),
                         ),
                     )
-                    write_cursor.execute(
+                    await write_cursor.execute(
                         'INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for)'  # noqa: E501
                         'VALUES(?, ?, ?, ?, ?, ?, ?)',
                         (asset_id, None, None, '', None, None, None),
@@ -719,7 +731,7 @@ class GlobalDBHandler:
                         f'due to {e!s}',
                     ) from e
             try:
-                write_cursor.execute(
+                await write_cursor.execute(
                     'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) '
                     'VALUES(?, ?, ?)',
                     (
@@ -735,24 +747,24 @@ class GlobalDBHandler:
                 ) from e
 
     @staticmethod
-    def get_evm_token_identifier(
+    async def get_evm_token_identifier(
             cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain_id: ChainID,
     ) -> str | None:
         """Returns the asset identifier of an EVM token by address if it can be found"""
-        query = cursor.execute(
+        query = await cursor.execute(
             'SELECT identifier from evm_tokens WHERE address=? AND chain=?;',
             (address, chain_id.serialize_for_db()),
         )
-        result = query.fetchall()
+        result = await query.fetchall()
         if len(result) == 0:
             return None
 
         return result[0][0]
 
     @staticmethod
-    def check_asset_exists(asset: AssetWithOracles) -> list[str] | None:
+    async def check_asset_exists(asset: AssetWithOracles) -> list[str] | None:
         """
         Checks if an asset of a given type, symbol and name exists in the DB already
 
@@ -761,8 +773,8 @@ class GlobalDBHandler:
 
         If it exists it returns a list of the identifiers of the assets.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            result = [x[0] for x in cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            result = [x[0] for x in await cursor.execute(
                 'SELECT A.identifier from assets AS A JOIN common_asset_details as C '
                 'ON A.identifier=C.identifier WHERE A.type=? AND A.name=? AND C.symbol=?;',
                 (asset.asset_type.serialize_for_db(), asset.name, asset.symbol),
@@ -774,13 +786,13 @@ class GlobalDBHandler:
         return result
 
     @staticmethod
-    def get_evm_token(address: ChecksumEvmAddress, chain_id: ChainID) -> EvmToken | None:
+    async def get_evm_token(address: ChecksumEvmAddress, chain_id: ChainID) -> EvmToken | None:
         """Gets all details for an evm token by its address
 
         If no token for the given address can be found None is returned.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 'SELECT A.identifier, B.address, B.chain, B.token_kind, B.decimals, C.name, '
                 'A.symbol, A.started, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
                 'FROM evm_tokens AS B JOIN '
@@ -788,12 +800,12 @@ class GlobalDBHandler:
                 'JOIN assets AS C on C.identifier=A.identifier WHERE B.address=? AND B.chain=?;',
                 (address, chain_id.serialize_for_db()),
             )
-            results = cursor.fetchall()
+            results = await cursor.fetchall()
             if len(results) == 0:
                 return None
 
             token_data = results[0]
-            underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(cursor, token_data[0])
+            underlying_tokens = await GlobalDBHandler().fetch_underlying_tokens(cursor, token_data[0])
 
         try:
             return EvmToken.deserialize_from_db(
@@ -808,7 +820,7 @@ class GlobalDBHandler:
             return None
 
     @staticmethod
-    def get_evm_tokens(
+    async def get_evm_tokens(
             chain_id: ChainID,
             exceptions: set[ChecksumEvmAddress] | None = None,
             protocol: str | None = None,
@@ -847,12 +859,12 @@ class GlobalDBHandler:
             querystr += ';'
 
         bindings = tuple(bindings_list)
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, bindings)
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(querystr, bindings)
             tokens = []
-            for entry in cursor:
-                with GlobalDBHandler().conn.read_ctx() as other_cursor:
-                    underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(other_cursor, entry[0])  # noqa: E501
+            async for entry in cursor:
+                async with GlobalDBHandler().conn.read_ctx() as other_cursor:
+                    underlying_tokens = await GlobalDBHandler().fetch_underlying_tokens(other_cursor, entry[0])  # noqa: E501
 
                 try:
                     token = EvmToken.deserialize_from_db(entry, underlying_tokens)
@@ -866,7 +878,7 @@ class GlobalDBHandler:
         return tokens
 
     @staticmethod
-    def get_token_detection_data(
+    async def get_token_detection_data(
             chain_id: ChainID,
             exceptions: set[ChecksumEvmAddress],
             protocol: str | None = None,
@@ -888,8 +900,8 @@ class GlobalDBHandler:
             bindings.append(protocol)
 
         erc721_token_kind = EvmTokenKind.ERC721.serialize_for_db()
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(query, bindings)
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(query, bindings)
             for identifier, address, token_kind, decimals in cursor:
                 if address in exceptions:
                     continue
@@ -907,34 +919,34 @@ class GlobalDBHandler:
         return erc20_tokens, erc721_tokens
 
     @staticmethod
-    def get_addresses_by_protocol(chain_id: ChainID, protocol: str) -> tuple[ChecksumEvmAddress, ...]:  # noqa: E501
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+    async def get_addresses_by_protocol(chain_id: ChainID, protocol: str) -> tuple[ChecksumEvmAddress, ...]:  # noqa: E501
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?',
                 (protocol, chain_id.serialize_for_db()),
             )
             return tuple(string_to_evm_address(entry[0]) for entry in cursor)
 
     @staticmethod
-    def get_token_name(address: ChecksumEvmAddress, chain_id: ChainID) -> str | None:
+    async def get_token_name(address: ChecksumEvmAddress, chain_id: ChainID) -> str | None:
         """Gets address -> name for the token and given chain if existing"""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 'SELECT assets.name FROM evm_tokens INNER JOIN assets ON '
                 'evm_tokens.identifier = assets.identifier WHERE address = ? and chain = ?',
                 (address, chain_id.serialize_for_db()),
             )
-            result = cursor.fetchone()
+            result = await cursor.fetchone()
             return result if result is None else result[0]
 
     @staticmethod
-    def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:
+    async def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:
         """Adds ethereum token specific information into the global DB
 
         May raise InputError if the token already exists or we fail to add the underlying tokens
         """
         try:
-            write_cursor.execute(
+            await write_cursor.execute(
                 'INSERT INTO '
                 'evm_tokens(identifier, token_kind, chain, address, decimals, protocol) '
                 'VALUES(?, ?, ?, ?, ?, ?)',
@@ -960,7 +972,7 @@ class GlobalDBHandler:
             raise InputError(msg) from e
 
         if entry.underlying_tokens is not None:
-            GlobalDBHandler._add_underlying_tokens(
+            await GlobalDBHandler._add_underlying_tokens(
                 write_cursor=write_cursor,
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
@@ -968,7 +980,7 @@ class GlobalDBHandler:
             )
 
     @staticmethod
-    def edit_evm_token(entry: EvmToken) -> str:
+    async def edit_evm_token(entry: EvmToken) -> str:
         """Edits an EVM token entry in the DB
 
         May raise InputError if there is an error during updating
@@ -976,8 +988,8 @@ class GlobalDBHandler:
         Returns the token's rotki identifier and clears the cache of the asset resolver
         """
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.execute(
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                await write_cursor.execute(
                     'UPDATE common_asset_details SET symbol=?, coingecko=?, '
                     'cryptocompare=?, forked=?, started=?, swapped_for=? WHERE identifier=?;',
                     (
@@ -990,7 +1002,7 @@ class GlobalDBHandler:
                         entry.identifier,
                     ),
                 )
-                write_cursor.execute(
+                await write_cursor.execute(
                     'UPDATE assets SET name=?, type=? WHERE identifier=?;',
                     (
                         entry.name,
@@ -998,7 +1010,7 @@ class GlobalDBHandler:
                         entry.identifier,
                     ),
                 )
-                write_cursor.execute(
+                await write_cursor.execute(
                     'UPDATE evm_tokens SET token_kind=?, chain=?, address=?, decimals=?, '
                     'protocol=? WHERE identifier=?',
                     (
@@ -1016,19 +1028,19 @@ class GlobalDBHandler:
                     )
 
                 # Since this is editing, make sure no underlying tokens exist
-                write_cursor.execute(
+                await write_cursor.execute(
                     'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
                     (entry.identifier,),
                 )
                 if entry.underlying_tokens is not None:  # and now add any if needed
-                    GlobalDBHandler()._add_underlying_tokens(
+                    await GlobalDBHandler()._add_underlying_tokens(
                         write_cursor=write_cursor,
                         parent_token_identifier=entry.identifier,
                         underlying_tokens=entry.underlying_tokens,
                         chain_id=entry.chain_id,
                     )
 
-                rotki_id = GlobalDBHandler.get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
+                rotki_id = await GlobalDBHandler.get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
                 if rotki_id is None:
                     raise InputError(
                         f'Unexpected DB state. EVM token {entry.evm_address} at chain '
@@ -1046,13 +1058,13 @@ class GlobalDBHandler:
         return rotki_id
 
     @staticmethod
-    def set_token_protocol_if_missing(token: EvmToken, new_protocol: str) -> None:
+    async def set_token_protocol_if_missing(token: EvmToken, new_protocol: str) -> None:
         """Update the protocol of the evm token and clean the resolver cache"""
         if token.protocol == new_protocol:
             return
 
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            await write_cursor.execute(
                 'UPDATE evm_tokens SET protocol = ? WHERE identifier = ?;',
                 (new_protocol, token.identifier),
             )
@@ -1060,7 +1072,7 @@ class GlobalDBHandler:
         AssetResolver.clean_memory_cache(token.identifier)
 
     @staticmethod
-    def edit_user_asset(asset: AssetWithOracles) -> None:
+    async def edit_user_asset(asset: AssetWithOracles) -> None:
         """Edits an already existing user asset in the DB. Atm only AssetWithOracles are supported.
 
         May raise InputError if the token already exists or other error
@@ -1073,7 +1085,7 @@ class GlobalDBHandler:
             ) from e
 
         if asset.is_evm_token():
-            GlobalDBHandler.edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
+            await GlobalDBHandler.edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1088,9 +1100,9 @@ class GlobalDBHandler:
             )
         details_update_query += ' WHERE identifier=?'
         details_update_bindings += (asset.identifier,)
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
-                write_cursor.execute(details_update_query, details_update_bindings)
+                await write_cursor.execute(details_update_query, details_update_bindings)
             except sqlite3.IntegrityError as e:
                 raise InputError(
                     f'Failed to update DB entry for common_asset_details with identifier '
@@ -1104,7 +1116,7 @@ class GlobalDBHandler:
                 )
 
             try:
-                write_cursor.execute(
+                await write_cursor.execute(
                     'UPDATE assets SET name=?, type=? WHERE identifier=?',
                     (
                         asset.name,
@@ -1119,15 +1131,15 @@ class GlobalDBHandler:
                 ) from e
 
     @staticmethod
-    def add_user_owned_assets(assets: list['Asset']) -> None:
+    async def add_user_owned_assets(assets: list['Asset']) -> None:
         """Make sure all assets in the list are included in the user owned assets
 
         These assets are there so that when someone tries to delete assets from the global DB
         they don't delete assets that are owned by any local user.
         """
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.executemany(
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                await write_cursor.executemany(
                     'INSERT OR IGNORE INTO user_owned_assets(asset_id) VALUES(?)',
                     [(x.identifier,) for x in assets if not x.identifier.startswith(NFT_DIRECTIVE)],  # noqa: E501
                 )
@@ -1138,12 +1150,12 @@ class GlobalDBHandler:
             )  # should not ever happen but need to handle with informative log if it does
 
     @staticmethod
-    def delete_asset_by_identifier(identifier: str) -> None:
+    async def delete_asset_by_identifier(identifier: str) -> None:
         """Delete an asset by identifier EVEN if it's in the owned assets table
          May raise:
          - InputError if no asset with the provided identifier was found"""
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute('DELETE FROM assets WHERE identifier=?;', (identifier,))
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            await write_cursor.execute('DELETE FROM assets WHERE identifier=?;', (identifier,))
             if write_cursor.rowcount != 1:
                 raise InputError(
                     f'Tried to delete asset with identifier {identifier} '
@@ -1151,7 +1163,7 @@ class GlobalDBHandler:
                 )
 
     @staticmethod
-    def get_assets_with_symbol(
+    async def get_assets_with_symbol(
             symbol: str,
             asset_type: AssetType | None = None,
             chain_id: ChainID | None = None,
@@ -1182,13 +1194,13 @@ class GlobalDBHandler:
         ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND B.symbol = ? COLLATE NOCASE{extra_check_common}
         """  # noqa: E501
         assets = []
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, evm_query_list + common_query_list)
-            for entry in cursor.fetchall():
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(querystr, evm_query_list + common_query_list)
+            for entry in await cursor.fetchall():
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 underlying_tokens: list[UnderlyingToken] | None = None
                 if asset_type == AssetType.EVM_TOKEN:
-                    underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
+                    underlying_tokens = await GlobalDBHandler().fetch_underlying_tokens(
                         cursor=cursor,
                         parent_token_identifier=entry[0],
                     )
@@ -1214,7 +1226,7 @@ class GlobalDBHandler:
         return assets
 
     @staticmethod
-    def get_historical_price(
+    async def get_historical_price(
             from_asset: 'Asset',
             to_asset: 'Asset',
             timestamp: Timestamp,
@@ -1239,14 +1251,14 @@ class GlobalDBHandler:
         querystr += order_str
         querylist += [priority_type, timestamp]
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            if (result := cursor.execute(querystr, querylist).fetchone()) is None:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            if (result := (await cursor.execute(querystr, querylist).fetchone())) is None:
                 return None
 
         return HistoricalPrice.deserialize_from_db(result)
 
     @staticmethod
-    def get_historical_prices(
+    async def get_historical_prices(
             query_data: list[tuple['Asset', 'Asset', Timestamp]],
             max_seconds_distance: int,
             source: HistoricalPriceOracle | None = None,
@@ -1272,10 +1284,10 @@ class GlobalDBHandler:
         order_str, priority_type = _prioritize_manual_balances_query()
         querystr += order_str
         prices_results: list[HistoricalPrice | None] = []
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
             for query_entry, (_, _, queried_timestamp) in zip(querylist, query_data, strict=True):
                 # to the params add the arguments to prioritize manual prices
-                result = cursor.execute(querystr, query_entry + (priority_type, queried_timestamp)).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
+                result = await cursor.execute(querystr, query_entry + (priority_type, queried_timestamp)).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
                 if result is None:
                     prices_results.append(None)
                     continue
@@ -1292,14 +1304,14 @@ class GlobalDBHandler:
         return prices_results
 
     @staticmethod
-    def add_historical_prices(entries: list['HistoricalPrice']) -> None:
+    async def add_historical_prices(entries: list['HistoricalPrice']) -> None:
         """Adds the given historical price entries in the DB
 
         If any addition causes a DB error it's skipped and an error is logged
         """
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.executemany(
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                await write_cursor.executemany(
                     """INSERT OR IGNORE INTO price_history(
                     from_asset, to_asset, source_type, timestamp, price
                     ) VALUES (?, ?, ?, ?, ?)
@@ -1312,10 +1324,10 @@ class GlobalDBHandler:
                 f'Will attempt to input them one by one',
             )
 
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 for entry in entries:
                     try:
-                        write_cursor.execute(
+                        await write_cursor.execute(
                             """INSERT OR IGNORE INTO price_history(
                             from_asset, to_asset, source_type, timestamp, price
                             ) VALUES (?, ?, ?, ?, ?)
@@ -1327,7 +1339,7 @@ class GlobalDBHandler:
                         )
 
     @staticmethod
-    def add_single_historical_price(entry: HistoricalPrice) -> bool:
+    async def add_single_historical_price(entry: HistoricalPrice) -> bool:
         """
         Adds the given historical price entries in the DB.
         Returns True if the operation succeeded and False otherwise.
@@ -1335,9 +1347,9 @@ class GlobalDBHandler:
         it is replaced.
         """
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 serialized = entry.serialize_for_db()
-                write_cursor.execute(
+                await write_cursor.execute(
                     """INSERT OR REPLACE INTO price_history(
                     from_asset, to_asset, source_type, timestamp, price
                     ) VALUES (?, ?, ?, ?, ?)
@@ -1353,7 +1365,7 @@ class GlobalDBHandler:
         return True
 
     @staticmethod
-    def add_manual_latest_price(from_asset: Asset, to_asset: Asset, price: Price) -> set[Asset]:
+    async def add_manual_latest_price(from_asset: Asset, to_asset: Asset, price: Price) -> set[Asset]:
         """
         Adds manual current price and turns previously known manual current price into a
         historical manual price.
@@ -1363,9 +1375,9 @@ class GlobalDBHandler:
         May raise:
         - InputError if some db constraint was hit. Probably means manual price duplication.
         """
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
             try:
-                write_cursor.execute(
+                await write_cursor.execute(
                     'UPDATE price_history SET source_type=? WHERE source_type=? AND from_asset=?',
                     (
                         HistoricalPriceOracle.MANUAL.serialize_for_db(),
@@ -1376,8 +1388,8 @@ class GlobalDBHandler:
             except sqlite3.IntegrityError as e:
                 # if we got an error, do an extra query to give more information to the user.
                 # In case of an error there has to be a corresponding entry in the db.
-                with GlobalDBHandler().conn.read_ctx() as cursor:
-                    timestamp = cursor.execute(
+                async with GlobalDBHandler().conn.read_ctx() as cursor:
+                    timestamp = await cursor.execute(
                         'SELECT timestamp FROM price_history WHERE source_type=? AND from_asset=?',
                         (
                             HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(),
@@ -1389,7 +1401,7 @@ class GlobalDBHandler:
                     f'at {timestamp_to_date(ts=timestamp)}',
                 ) from e
             try:
-                write_cursor.execute(
+                await write_cursor.execute(
                     'INSERT INTO '
                     'price_history(from_asset, to_asset, source_type, timestamp, price) '
                     'VALUES (?, ?, ?, ?, ?)',
@@ -1407,17 +1419,17 @@ class GlobalDBHandler:
 
             #  invalidate the cached price for the assets that are using manual current as type and
             # and that are connected to the given asset
-            write_cursor.execute(
+            await write_cursor.execute(
                 'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?)',  # noqa: E501
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), from_asset.identifier, from_asset.identifier),  # noqa: E501
             )
             return {Asset(asset) for entry in write_cursor for asset in entry}
 
     @staticmethod
-    def get_manual_current_price(asset: Asset) -> tuple[Asset, Price] | None:
+    async def get_manual_current_price(asset: Asset) -> tuple[Asset, Price] | None:
         """Reads manual current price of an asset. If no price is found returns None."""
-        with GlobalDBHandler().conn.read_ctx() as read_cursor:
-            result = read_cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as read_cursor:
+            result = await read_cursor.execute(
                 'SELECT to_asset, price FROM price_history WHERE source_type=? AND from_asset=?',
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
             ).fetchone()
@@ -1428,7 +1440,7 @@ class GlobalDBHandler:
         return Asset(result[0]), deserialize_price(result[1])
 
     @staticmethod
-    def get_all_manual_latest_prices(
+    async def get_all_manual_latest_prices(
             from_asset: Asset | None = None,
             to_asset: Asset | None = None,
     ) -> list[tuple[str, str, str]]:
@@ -1442,28 +1454,28 @@ class GlobalDBHandler:
             query += ' AND to_asset=?'
             bindings.append(to_asset.identifier)
 
-        with GlobalDBHandler().conn.read_ctx() as read_cursor:
-            read_cursor.execute(query, bindings)
-            return read_cursor.fetchall()
+        async with GlobalDBHandler().conn.read_ctx() as read_cursor:
+            await read_cursor.execute(query, bindings)
+            return await read_cursor.fetchall()
 
     @staticmethod
-    def delete_manual_latest_price(asset: Asset) -> set[Asset]:
+    async def delete_manual_latest_price(asset: Asset) -> set[Asset]:
         """
         Deletes manual current price from globaldb and returns the set of assets to invalidate
 
         May raise:
         - InputError if asset was not found in the price_history table
         """
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
             # get asset pairs to invalidate their prices from cache after deletion
-            write_cursor.execute(
+            await write_cursor.execute(
                 'SELECT from_asset, to_asset FROM price_history WHERE source_type=? AND (from_asset=? OR to_asset=?);',  # noqa: E501
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier, asset.identifier),  # noqa: E501
             )
             assets_to_invalidate = {Asset(asset) for entry in write_cursor for asset in entry}
 
             # Execute the deletion
-            write_cursor.execute(
+            await write_cursor.execute(
                 'DELETE FROM price_history WHERE source_type=? AND from_asset=?',
                 (HistoricalPriceOracle.MANUAL_CURRENT.serialize_for_db(), asset.identifier),
             )
@@ -1475,7 +1487,7 @@ class GlobalDBHandler:
             return assets_to_invalidate
 
     @staticmethod
-    def get_manual_prices(
+    async def get_manual_prices(
             from_asset: Asset | None,
             to_asset: Asset | None,
     ) -> list[dict[str, int | str]]:
@@ -1494,8 +1506,8 @@ class GlobalDBHandler:
             params.append(to_asset.identifier)
         querystr += 'ORDER BY timestamp'
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            query = cursor.execute(querystr, tuple(params))
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            query = await cursor.execute(querystr, tuple(params))
             return [
                 {
                     'from_asset': entry[0],
@@ -1507,7 +1519,7 @@ class GlobalDBHandler:
             ]
 
     @staticmethod
-    def edit_manual_price(entry: HistoricalPrice) -> bool:
+    async def edit_manual_price(entry: HistoricalPrice) -> bool:
         """Edits a manually inserted historical price. Returns false if no row
         was updated and true otherwise.
         """
@@ -1520,8 +1532,8 @@ class GlobalDBHandler:
         # positions are correct in the tuple
         params_update = entry_serialized[-1:] + entry_serialized[:-1]
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.execute(querystr, params_update)
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                await write_cursor.execute(querystr, params_update)
 
                 if write_cursor.rowcount == 0:
                     return False
@@ -1535,7 +1547,7 @@ class GlobalDBHandler:
         return True
 
     @staticmethod
-    def delete_manual_price(
+    async def delete_manual_price(
             from_asset: 'Asset',
             to_asset: 'Asset',
             timestamp: Timestamp,
@@ -1554,8 +1566,8 @@ class GlobalDBHandler:
             timestamp,
             HistoricalPriceOracle.MANUAL.serialize_for_db(),  # pylint: disable=no-member
         )
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(querystr, bindings)
+        async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            await write_cursor.execute(querystr, bindings)
             if write_cursor.rowcount != 1:
                 log.error(
                     f'Failed to delete historical price from {from_asset} to {to_asset} '
@@ -1566,7 +1578,7 @@ class GlobalDBHandler:
         return True
 
     @staticmethod
-    def delete_historical_prices(
+    async def delete_historical_prices(
             from_asset: 'Asset',
             to_asset: 'Asset',
             source: HistoricalPriceOracle | None = None,
@@ -1578,8 +1590,8 @@ class GlobalDBHandler:
             query_list.append(source.serialize_for_db())
 
         try:
-            with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                write_cursor.execute(querystr, tuple(query_list))
+            async with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                await write_cursor.execute(querystr, tuple(query_list))
         except sqlite3.IntegrityError as e:
             log.error(
                 f'Failed to delete historical prices from {from_asset} to {to_asset} '
@@ -1587,7 +1599,7 @@ class GlobalDBHandler:
             )
 
     @staticmethod
-    def get_historical_price_range(
+    async def get_historical_price_range(
             from_asset: 'Asset',
             to_asset: 'Asset',
             source: HistoricalPriceOracle | None = None,
@@ -1598,20 +1610,20 @@ class GlobalDBHandler:
             querystr += ' AND source_type=?'
             query_list.append(source.serialize_for_db())
 
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            query = cursor.execute(querystr, tuple(query_list))
-            result = query.fetchone()
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            query = await cursor.execute(querystr, tuple(query_list))
+            result = await query.fetchone()
             if result is None or None in (result[0], result[1]):
                 return None
             return result[0], result[1]
 
     @staticmethod
-    def get_historical_price_data(source: HistoricalPriceOracle) -> list[dict[str, Any]]:
+    async def get_historical_price_data(source: HistoricalPriceOracle) -> list[dict[str, Any]]:
         """Return a list of assets and first/last ts
 
         Only used by the API so just returning it as List of dicts from here"""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            query = cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            query = await cursor.execute(
                 'SELECT from_asset, to_asset, MIN(timestamp), MAX(timestamp) FROM '
                 'price_history WHERE source_type=? GROUP BY from_asset, to_asset',
                 (source.serialize_for_db(),),
@@ -1623,7 +1635,7 @@ class GlobalDBHandler:
                  'to_timestamp': entry[3],
                  } for entry in query]
 
-    def hard_reset_assets_list(
+    async def hard_reset_assets_list(
             self,
             user_db: 'DBHandler',
             force: bool = False,
@@ -1638,7 +1650,7 @@ class GlobalDBHandler:
         with user_db.conn.read_ctx() as cursor:
             user_db.update_owned_assets_in_globaldb(cursor)
 
-        with self.conn.read_ctx() as read_cursor:
+        async with self.conn.read_ctx() as read_cursor:
             # First check that the operation can be made. If the difference is not the
             # empty set the operation is dangerous and the user should be notified.
             with user_db.user_write() as user_db_cursor:
@@ -1653,30 +1665,30 @@ class GlobalDBHandler:
                     return False, msg
 
             with self.packaged_db_lock:
-                read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
+                await read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                 try:
                     # Check that versions match
-                    query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
-                    version = query.fetchone()
-                    if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                    query = await read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
+                    version = await query.fetchone()
+                    if version is None or int(version[0]) != await globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
                         msg = (
                             'Failed to restore assets. Global database is not '
                             'updated to the latest version'
                         )
                         return False, msg
 
-                    with self.conn.write_ctx() as write_cursor:
+                    async with self.conn.write_ctx() as write_cursor:
                         # If versions match drop tables
-                        write_cursor.execute('DELETE FROM assets')
-                        write_cursor.execute('DELETE FROM asset_collections')
+                        await write_cursor.execute('DELETE FROM assets')
+                        await write_cursor.execute('DELETE FROM asset_collections')
                         # Copy assets
                         write_cursor.switch_foreign_keys('OFF')
-                        write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                        write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
-                        write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                        await write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+                        await write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
+                        await write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                        await write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                        await write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                        await write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                         # Don't copy custom_assets since there are no custom assets in clean_db
                         write_cursor.switch_foreign_keys('ON')
 
@@ -1684,8 +1696,8 @@ class GlobalDBHandler:
                             user_db_cursor.switch_foreign_keys('OFF')
                             user_db_cursor.execute('DELETE FROM assets;')
                             # Get ids for assets to insert them in the user db
-                            write_cursor.execute('SELECT identifier from assets')
-                            ids = write_cursor.fetchall()
+                            await write_cursor.execute('SELECT identifier from assets')
+                            ids = await write_cursor.fetchall()
                             ids_processed = ', '.join([f"('{identifier[0]}')" for identifier in ids])  # noqa: E501
                             user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_processed};')  # noqa: E501
                             user_db_cursor.switch_foreign_keys('ON')
@@ -1698,12 +1710,12 @@ class GlobalDBHandler:
                     log.error(f'Failed to restore assets in globaldb due to {e!s}')
                     return False, 'Failed to restore assets. Read logs to get more information.'
                 finally:  # on the way out always detach the DB. Make sure no transaction is active
-                    with self.conn.critical_section_and_transaction_lock():
-                        read_cursor.execute("DETACH DATABASE 'clean_db';")
+                    async with self.conn.critical_section_and_transaction_lock():
+                        await read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
 
-    def soft_reset_assets_list(self) -> tuple[bool, str]:
+    async def soft_reset_assets_list(self) -> tuple[bool, str]:
         """
         Resets assets to the state in the packaged global db. Custom assets added by the user
         won't be affected by this reset.
@@ -1713,12 +1725,12 @@ class GlobalDBHandler:
 
         with self.packaged_db_lock:
             try:
-                with self.conn.read_ctx() as read_cursor:
-                    read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
+                async with self.conn.read_ctx() as read_cursor:
+                    await read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                     # Check that versions match
-                    query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
-                    version = query.fetchone()
-                    if version is None or int(version[0]) != globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
+                    query = await read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
+                    version = await query.fetchone()
+                    if version is None or int(version[0]) != await globaldb_get_setting_value(read_cursor, 'version', GLOBAL_DB_VERSION):  # noqa: E501
                         msg = (
                             'Failed to restore assets. Global database is not '
                             'updated to the latest version'
@@ -1726,29 +1738,29 @@ class GlobalDBHandler:
                         return False, msg
 
                     # Get the list of ids that we will restore
-                    query = read_cursor.execute('SELECT identifier from clean_db.assets;')
+                    query = await read_cursor.execute('SELECT identifier from clean_db.assets;')
                     shipped_asset_ids = set(query.fetchall())
                     asset_ids = ', '.join([f"'{identifier[0]}'" for identifier in shipped_asset_ids])  # noqa: E501
-                    query = read_cursor.execute('SELECT id FROM clean_db.asset_collections')
+                    query = await read_cursor.execute('SELECT id FROM clean_db.asset_collections')
                     shipped_collection_ids = set(query.fetchall())
                     collection_ids = ', '.join([f"'{identifier[0]}'" for identifier in shipped_collection_ids])  # noqa: E501
 
-                with self.conn.write_ctx() as write_cursor:
+                async with self.conn.write_ctx() as write_cursor:
                     # If versions match drop tables
                     write_cursor.switch_foreign_keys('OFF')
-                    write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
-                    write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
-                    write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
-                    write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
-                    write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
-                    write_cursor.execute(f'DELETE FROM multiasset_mappings WHERE collection_id IN ({collection_ids})')  # noqa: E501
+                    await write_cursor.execute(f'DELETE FROM assets WHERE identifier IN ({asset_ids});')
+                    await write_cursor.execute(f'DELETE FROM evm_tokens WHERE identifier IN ({asset_ids});')  # noqa: E501
+                    await write_cursor.execute(f'DELETE FROM underlying_tokens_list WHERE parent_token_entry IN ({asset_ids});')  # noqa: E501
+                    await write_cursor.execute(f'DELETE FROM common_asset_details WHERE identifier IN ({asset_ids});')  # noqa: E501
+                    await write_cursor.execute(f'DELETE FROM asset_collections WHERE id IN ({collection_ids})')  # noqa: E501
+                    await write_cursor.execute(f'DELETE FROM multiasset_mappings WHERE collection_id IN ({collection_ids})')  # noqa: E501
                     # Copy assets
-                    write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                    write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
-                    write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-                    write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-                    write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
-                    write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                    await write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
+                    await write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
+                    await write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                    await write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                    await write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                    await write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
                     # TODO: think about how to implement multiassets insertion
                     write_cursor.switch_foreign_keys('ON')
             except sqlite3.Error as e:
@@ -1756,12 +1768,12 @@ class GlobalDBHandler:
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
                 with self.conn.transaction_lock, self.conn.read_ctx() as read_cursor:
-                    read_cursor.execute("DETACH DATABASE 'clean_db';")
+                    await read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
 
     @staticmethod
-    def get_user_added_assets(
+    async def get_user_added_assets(
             cursor: DBCursor,
             user_db_write_cursor: DBCursor,
             user_db: 'DBHandler',
@@ -1779,20 +1791,20 @@ class GlobalDBHandler:
         # Update the list of owned assets
         user_db.update_owned_assets_in_globaldb(user_db_write_cursor)
         if only_owned:
-            query = cursor.execute('SELECT asset_id from user_owned_assets;')
+            query = await cursor.execute('SELECT asset_id from user_owned_assets;')
         else:
-            query = cursor.execute('SELECT identifier from assets;')
+            query = await cursor.execute('SELECT identifier from assets;')
         user_ids = {tup[0] for tup in query}
 
         # Get built in identifiers
-        with GlobalDBHandler().packaged_db_conn().read_ctx() as packaged_cursor:
+        with await GlobalDBHandler().packaged_db_conn().read_ctx() as packaged_cursor:
             query = packaged_cursor.execute('SELECT identifier from assets;')
             shipped_ids = {tup[0] for tup in query}
 
         return user_ids - shipped_ids
 
     @staticmethod
-    def resolve_asset(
+    async def resolve_asset(
             identifier: str,
             use_packaged_db: bool = False,
     ) -> AssetWithNameAndType:
@@ -1820,9 +1832,9 @@ class GlobalDBHandler:
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, null, null, null, null, null, null, null, null, null, B.notes, B.type FROM assets AS A JOIN custom_assets AS B on A.identifier=B.identifier WHERE A.identifier = ?
         """  # noqa: E501
-        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        connection = await GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
         with connection.read_ctx() as cursor:
-            cursor.execute(
+            await cursor.execute(
                 query,
                 (
                     AssetType.EVM_TOKEN.serialize_for_db(),
@@ -1834,14 +1846,14 @@ class GlobalDBHandler:
                 ),
             )
 
-            asset_data = cursor.fetchone()
+            asset_data = await cursor.fetchone()
             if asset_data is None:
                 raise UnknownAsset(identifier)
 
             asset_type = AssetType.deserialize_from_db(asset_data[1])
             underlying_tokens = None
             if asset_type == AssetType.EVM_TOKEN:
-                underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
+                underlying_tokens = await GlobalDBHandler().fetch_underlying_tokens(
                     cursor=cursor,
                     parent_token_identifier=identifier,
                 )
@@ -1852,7 +1864,7 @@ class GlobalDBHandler:
                 underlying_tokens=underlying_tokens,
             )
 
-    def resolve_asset_from_packaged_and_store(self, identifier: str) -> AssetWithNameAndType:
+    async def resolve_asset_from_packaged_and_store(self, identifier: str) -> AssetWithNameAndType:
         """
         Reads an asset from the packaged globaldb and adds it to the database if missing or edits
         the local version of the asset overwriting it with that of the packaged DB.
@@ -1865,8 +1877,8 @@ class GlobalDBHandler:
             use_packaged_db=True,
         )
         # make sure that the asset is saved on the user's global db. First check if it exists
-        with self.conn.read_ctx() as cursor:
-            asset_count = cursor.execute(
+        async with self.conn.read_ctx() as cursor:
+            asset_count = await cursor.execute(
                 'SELECT COUNT(*) FROM assets WHERE identifier=?',
                 (identifier,),
             ).fetchone()[0]
@@ -1883,7 +1895,7 @@ class GlobalDBHandler:
         return asset
 
     @staticmethod
-    def get_asset_type(identifier: str, use_packaged_db: bool = False) -> AssetType:
+    async def get_asset_type(identifier: str, use_packaged_db: bool = False) -> AssetType:
         """
         For a given identifier return the type of the asset associated to that identifier.
         If `use_packaged_db` is True, it checks the packaged global db.
@@ -1894,9 +1906,9 @@ class GlobalDBHandler:
         if identifier.startswith(NFT_DIRECTIVE):
             return AssetType.NFT
 
-        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        connection = await GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
         with connection.read_ctx() as cursor:
-            type_in_db = cursor.execute(
+            type_in_db = await cursor.execute(
                 'SELECT type FROM assets WHERE identifier=?',
                 (identifier,),
             ).fetchone()
@@ -1907,7 +1919,7 @@ class GlobalDBHandler:
         return AssetType.deserialize_from_db(type_in_db[0])
 
     @staticmethod
-    def asset_id_exists(identifier: str, use_packaged_db: bool = False) -> str:
+    async def asset_id_exists(identifier: str, use_packaged_db: bool = False) -> str:
         """
         For a given identifier return the normalized identifier if it exists.
         If `use_packaged_db` is True, it checks the packaged global db.
@@ -1918,9 +1930,9 @@ class GlobalDBHandler:
         if identifier.startswith(NFT_DIRECTIVE):
             return identifier
 
-        connection = GlobalDBHandler.packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        connection = await GlobalDBHandler.packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
         with connection.read_ctx() as cursor:
-            normalized_id = cursor.execute(
+            normalized_id = await cursor.execute(
                 'SELECT identifier FROM assets WHERE identifier=?',
                 (identifier,),
             ).fetchone()
@@ -1931,41 +1943,41 @@ class GlobalDBHandler:
         return normalized_id[0]
 
     @staticmethod
-    def get_collection_main_asset(identifier: str) -> str | None:
+    async def get_collection_main_asset(identifier: str) -> str | None:
         """Return the main asset in a collection for a given asset identifier.
 
         TODO: There's still a need for hierarchical collections
         https://github.com/rotki/rotki/issues/8639
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                'SELECT ac.main_asset FROM asset_collections AS ac '
                'INNER JOIN multiasset_mappings AS mm ON mm.collection_id = ac.id '
                'WHERE mm.asset = ?',
                (identifier,),
             )
-            result = cursor.fetchone()
+            result = await cursor.fetchone()
 
         return result[0] if result is not None else None
 
     @staticmethod
-    def asset_in_collection(collection_id: int, asset_id: str) -> bool:
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+    async def asset_in_collection(collection_id: int, asset_id: str) -> bool:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 'SELECT COUNT(*) FROM multiasset_mappings WHERE collection_id=? AND asset=?',
                 (collection_id, asset_id),
             )
-            return cursor.fetchone()[0] == 1
+            return await cursor.fetchone()[0] == 1
 
     @staticmethod
-    def get_or_write_abi(serialized_abi: str, abi_name: str | None = None) -> int:
+    async def get_or_write_abi(serialized_abi: str, abi_name: str | None = None) -> int:
         """
         Finds and returns the id of the given abi.
         If the abi doesn't exist in the db, inserts it there.
         """
         # check if the abi is already present in the database
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            existing_abi_id = cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            existing_abi_id = await cursor.execute(
                 'SELECT id FROM contract_abi WHERE value=?',
                 (serialized_abi,),
             ).fetchone()
@@ -1973,21 +1985,21 @@ class GlobalDBHandler:
         if existing_abi_id is not None:
             return existing_abi_id[0]
         else:
-            with GlobalDBHandler().conn.write_ctx() as cursor:
-                cursor.execute(
+            async with GlobalDBHandler().conn.write_ctx() as cursor:
+                await cursor.execute(
                     'INSERT INTO contract_abi(name, value) VALUES(?, ?)',
                     (abi_name, serialized_abi),
                 )
                 return cursor.lastrowid
 
     @staticmethod
-    def get_assets_in_same_collection(identifier: str) -> tuple[Asset, ...]:
+    async def get_assets_in_same_collection(identifier: str) -> tuple[Asset, ...]:
         """
         Query the assets that belong to the collection of the queried asset. If the
         asset isn't in any collection we return a list with the asset queried.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            await cursor.execute(
                 'SELECT MM.asset FROM multiasset_mappings AS MM JOIN asset_collections AS AC '
                 'ON MM.collection_id = AC.id WHERE MM.collection_id = (SELECT collection_id '
                 'FROM multiasset_mappings WHERE asset=?)',
@@ -2001,12 +2013,12 @@ class GlobalDBHandler:
         return collection_assets
 
     @staticmethod
-    def get_assetid_from_exchange_name(exchange: Location | None, symbol: str, default: str) -> str:  # noqa: E501
+    async def get_assetid_from_exchange_name(exchange: Location | None, symbol: str, default: str) -> str:  # noqa: E501
         """Returns the asset's identifier from the ticker symbol of the given exchange according to
         location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
         If the mapping is not present returns default."""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            if exchange is not None and cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            if exchange is not None and await cursor.execute(
                 'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
                 (exchange.serialize_for_db(), symbol),
             ).fetchone()[0] > 0:
@@ -2016,7 +2028,7 @@ class GlobalDBHandler:
             if exchange is not None:
                 location_filter = 'location IS ? OR'
                 bindings.append(exchange.serialize_for_db())
-            identifier = cursor.execute(
+            identifier = await cursor.execute(
                 f'SELECT local_id FROM location_asset_mappings WHERE exchange_symbol=? AND ({location_filter} location IS NULL)',  # noqa: E501
                 bindings,
             ).fetchone()
@@ -2024,7 +2036,7 @@ class GlobalDBHandler:
         return default if identifier is None else identifier[0]
 
     @staticmethod
-    def query_asset_mappings_by_type(
+    async def query_asset_mappings_by_type(
             dict_keys: tuple[str, str, str],
             mapping_type: Literal['location', 'counterparty'],
             query_columns: Literal['local_id, location, exchange_symbol', 'local_id, counterparty, symbol'],  # noqa: E501
@@ -2041,18 +2053,18 @@ class GlobalDBHandler:
         For location mappings, keys are: 'asset', 'location', 'location_symbol'.
         For counterparty mappings, keys are: 'asset', 'counterparty', 'counterparty_symbol'.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            mappings_total = cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            mappings_total = await cursor.execute(
                 f'SELECT COUNT(*) FROM {mapping_type}_asset_mappings',
             ).fetchone()[0]
 
             query, bindings = filter_query.prepare(with_pagination=False)
-            mappings_count = cursor.execute(
+            mappings_count = await cursor.execute(
                 f'SELECT COUNT(*) FROM {mapping_type}_asset_mappings {query}', bindings,
             ).fetchone()[0]
 
             query, bindings = filter_query.prepare()
-            cursor.execute(
+            await cursor.execute(
                 f'SELECT {query_columns} FROM {mapping_type}_asset_mappings {query}', bindings,
             )
             return [
@@ -2061,7 +2073,7 @@ class GlobalDBHandler:
             ], mappings_count, mappings_total
 
     @staticmethod
-    def _execute_mapping_operation(
+    async def _execute_mapping_operation(
             entries: list[LocationAssetMappingUpdateEntry] | list[LocationAssetMappingDeleteEntry] | list[CounterpartyAssetMappingDeleteEntry] | list[CounterpartyAssetMappingUpdateEntry],  # noqa: E501
             sql_query: str,
             error_msg: str,
@@ -2090,7 +2102,7 @@ class GlobalDBHandler:
                         with globaldb.conn.read_ctx() as cursor:
                             pre_check_fn(cursor, entry)
 
-                    write_cursor.execute(sql_query, sql_bindings_fn(entry))
+                    await write_cursor.execute(sql_query, sql_bindings_fn(entry))
                     if sql_query.startswith(('UPDATE', 'DELETE')) and write_cursor.rowcount != 1:
                         if skip_errors:
                             log.error(msg)
@@ -2104,7 +2116,7 @@ class GlobalDBHandler:
                         raise InputError(msg) from e
 
     @staticmethod
-    def add_location_asset_mappings(
+    async def add_location_asset_mappings(
             entries: list[LocationAssetMappingUpdateEntry],
             skip_errors: bool = False,
     ) -> None:
@@ -2113,7 +2125,7 @@ class GlobalDBHandler:
 
         May Raise (if skip_errors is False):
         - InputError if any of the pairs of location and exchange_symbol already exist"""
-        GlobalDBHandler._execute_mapping_operation(
+        await GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             pre_check_fn=GlobalDBHandler._location_asset_mapping_null_precheck,
@@ -2123,10 +2135,10 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def _location_asset_mapping_null_precheck(cursor: 'DBCursor', entry: LocationAssetMappingUpdateEntry) -> None:  # noqa: E501
+    async def _location_asset_mapping_null_precheck(cursor: 'DBCursor', entry: LocationAssetMappingUpdateEntry) -> None:  # noqa: E501
         if (
                 entry.location is None and
-                cursor.execute(
+                await cursor.execute(
                     'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS NULL AND local_id=? AND exchange_symbol=?',  # noqa: E501
                     entry.serialize_for_db()[:2],  # the asset and the exchange symbol.
                 ).fetchone()[0] > 0
@@ -2134,7 +2146,7 @@ class GlobalDBHandler:
             raise sqlite3.IntegrityError('Entry already exists in the DB')
 
     @staticmethod
-    def update_location_asset_mappings(
+    async def update_location_asset_mappings(
             entries: list[LocationAssetMappingUpdateEntry],
             skip_errors: bool = False,
     ) -> None:
@@ -2143,7 +2155,7 @@ class GlobalDBHandler:
 
         May Raise (if skip_errors is False):
         - InputError if any of the pairs of location and exchange_symbol does not exist"""
-        GlobalDBHandler._execute_mapping_operation(
+        await GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
@@ -2152,7 +2164,7 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def delete_location_asset_mappings(
+    async def delete_location_asset_mappings(
             entries: list[LocationAssetMappingDeleteEntry],
             skip_errors: bool = False,
     ) -> None:
@@ -2161,7 +2173,7 @@ class GlobalDBHandler:
 
         May Raise (if skip_errors is False):
         - InputError if any of the pairs of location and exchange_symbol does not exist"""
-        GlobalDBHandler._execute_mapping_operation(
+        await GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
@@ -2170,7 +2182,7 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def add_counterparty_asset_mappings(
+    async def add_counterparty_asset_mappings(
             entries: list[CounterpartyAssetMappingUpdateEntry],
             skip_errors: bool = False,
     ) -> None:
@@ -2180,7 +2192,7 @@ class GlobalDBHandler:
         May raise (if skip_errors is False):
             - InputError if any of the pairs of counterparty and symbol already exist
         """
-        GlobalDBHandler._execute_mapping_operation(
+        await GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
@@ -2189,7 +2201,7 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def update_counterparty_asset_mappings(
+    async def update_counterparty_asset_mappings(
             entries: list[CounterpartyAssetMappingUpdateEntry],
             skip_errors: bool = False,
     ) -> None:
@@ -2199,7 +2211,7 @@ class GlobalDBHandler:
         May raise(if skip_errors is False):
             - InputError if any of the pairs of counterparty and symbol does not exist
         """
-        GlobalDBHandler._execute_mapping_operation(
+        await GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
@@ -2208,7 +2220,7 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def delete_counterparty_asset_mappings(
+    async def delete_counterparty_asset_mappings(
             entries: list[CounterpartyAssetMappingDeleteEntry],
             skip_errors: bool = False,
     ) -> None:
@@ -2218,7 +2230,7 @@ class GlobalDBHandler:
         May raise (if skip_errors is False):
             - InputError if any of the pairs of counterparty and symbol does not exist
         """
-        GlobalDBHandler._execute_mapping_operation(
+        await GlobalDBHandler._execute_mapping_operation(
             entries=entries,
             skip_errors=skip_errors,
             sql_bindings_fn=lambda entry: entry.serialize_for_db(),
@@ -2227,15 +2239,15 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def get_protocol_for_asset(asset_identifier: str) -> str | None:
+    async def get_protocol_for_asset(asset_identifier: str) -> str | None:
         """Get the protocol of the asset with the given identifier."""
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            return protocol[0] if (protocol := cursor.execute(
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
+            return protocol[0] if (protocol := await cursor.execute(
                 'SELECT protocol FROM evm_tokens WHERE identifier=?;',
                 (asset_identifier,),
             ).fetchone()) is not None else None
 
-    def clear_locks(self) -> None:
+    async def clear_locks(self) -> None:
         """release the locks in the globaldb.
 
         We saw that when killing a greenlet the locks are not released and has to

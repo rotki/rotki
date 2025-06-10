@@ -61,7 +61,7 @@ def set_token_spam_protocol(
     AssetResolver.clean_memory_cache(identifier=token.identifier)
 
 
-def initialize_globaldb(
+async def initialize_globaldb(
         global_dir: Path,
         db_filename: str,
         sql_vm_instructions_cb: int,
@@ -83,8 +83,9 @@ def initialize_globaldb(
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
+    await connection.connect()
     try:
-        with connection.read_ctx() as cursor:
+        async with connection.read_ctx() as cursor:
             ongoing_upgrade_from_version = globaldb_get_setting_value(
                 cursor=cursor,
                 name='ongoing_upgrade_from_version',
@@ -97,7 +98,7 @@ def initialize_globaldb(
         return connection, False  # We are all good
 
     # Otherwise replace the db with a backup and relogin
-    connection.close()
+    await connection.close()
     backup_postfix = f'global_db_v{ongoing_upgrade_from_version}.backup'
     found_backups = list(filter(
         lambda x: x[-len(backup_postfix):] == backup_postfix,
@@ -119,4 +120,5 @@ def initialize_globaldb(
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
     )
+    await connection.connect()
     return connection, True

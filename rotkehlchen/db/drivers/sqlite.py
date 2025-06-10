@@ -1,15 +1,15 @@
-"""AsyncIO-based SQLite driver
+"""SQLite driver with both sync and async support
 
-This implementation doesn't need progress handlers because asyncio naturally
-yields control at await points. Long-running queries are handled by running
-them in a thread pool executor.
+This implementation supports both sync (for GlobalDB) and async operations.
+The sync operations are used for GlobalDB which is accessed in many sync contexts.
 """
 import asyncio
 import logging
-from collections.abc import AsyncGenerator, Sequence
+import sqlite3
+from collections.abc import AsyncGenerator, Generator, Sequence
 from contextlib import asynccontextmanager
+from enum import Enum, auto
 from pathlib import Path
-from sqlite3 import Connection as DBConnectionType
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -24,6 +24,12 @@ if TYPE_CHECKING:
     from rotkehlchen.logging import RotkehlchenLogger
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
+
+
+class DBConnectionType(Enum):
+    USER = auto()
+    TRANSIENT = auto()
+    GLOBAL = auto()
 
 
 class DBCursor:
@@ -87,6 +93,8 @@ class DBCursor:
 
     async def close(self) -> None:
         await self._cursor.close()
+
+
 
 
 class DBConnection:

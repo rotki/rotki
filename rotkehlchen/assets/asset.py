@@ -77,26 +77,26 @@ class Asset:
     def serialize(self) -> str:
         return self.identifier
 
-    def get_asset_type(self) -> AssetType:
+    async def get_asset_type(self) -> AssetType:
         """Returns type of the asset. Prefers to use the asset_type field if it exists"""
         if isinstance(self, AssetWithNameAndType):
             return self.asset_type
 
-        return AssetResolver.get_asset_type(self.identifier)
+        return await AssetResolver.get_asset_type(self.identifier)
 
-    def exists(self, query_packaged_db: bool = True) -> bool:
+    async def exists(self, query_packaged_db: bool = True) -> bool:
         """Returns True if this asset exists. False otherwise
 
         If True, the asset's identifier also gets normalized if needed.
         """
         try:
-            self.check_existence(query_packaged_db=query_packaged_db)
+            await self.check_existence(query_packaged_db=query_packaged_db)
         except UnknownAsset:
             return False
 
         return True
 
-    def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
+    async def check_existence(self, query_packaged_db: bool = True) -> 'Asset':
         """
         If this asset exists, returns the instance with normalized identifier set.
         If it doesn't, throws an UnknownAsset error.
@@ -106,26 +106,26 @@ class Asset:
         May raise:
         - UnknownAsset
         """
-        normalized_id = AssetResolver.check_existence(self.identifier, query_packaged_db=query_packaged_db)  # noqa: E501
+        normalized_id = await AssetResolver.check_existence(self.identifier, query_packaged_db=query_packaged_db)  # noqa: E501
         object.__setattr__(self, 'identifier', normalized_id)
         return self
 
     def is_nft(self) -> bool:
         return self.identifier.startswith(NFT_DIRECTIVE)
 
-    def is_fiat(self) -> bool:
-        return self.get_asset_type() == AssetType.FIAT
+    async def is_fiat(self) -> bool:
+        return await self.get_asset_type() == AssetType.FIAT
 
-    def is_asset_with_oracles(self) -> bool:
-        return self.get_asset_type() not in ASSETS_WITH_NO_CRYPTO_ORACLES
+    async def is_asset_with_oracles(self) -> bool:
+        return await self.get_asset_type() not in ASSETS_WITH_NO_CRYPTO_ORACLES
 
-    def is_evm_token(self) -> bool:
-        return self.get_asset_type() == AssetType.EVM_TOKEN
+    async def is_evm_token(self) -> bool:
+        return await self.get_asset_type() == AssetType.EVM_TOKEN
 
-    def is_crypto(self) -> bool:
-        return self.get_asset_type() not in NON_CRYPTO_ASSETS
+    async def is_crypto(self) -> bool:
+        return await self.get_asset_type() not in NON_CRYPTO_ASSETS
 
-    def resolve(self) -> 'AssetWithNameAndType':
+    async def resolve(self) -> 'AssetWithNameAndType':
         """
         Returns the final representation for the current asset identifier. For example if we do
         dai = Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F').resolve()
@@ -141,40 +141,40 @@ class Asset:
                 chain_id=ChainID.ETHEREUM,
             )
 
-        return AssetResolver.resolve_asset(identifier=self.identifier)
+        return await AssetResolver.resolve_asset(identifier=self.identifier)
 
-    def resolve_to_asset_with_name_and_type(self) -> 'AssetWithNameAndType':
-        return AssetResolver.resolve_asset_to_class(
+    async def resolve_to_asset_with_name_and_type(self) -> 'AssetWithNameAndType':
+        return await AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithNameAndType,
         )
 
-    def resolve_to_asset_with_symbol(self) -> 'AssetWithSymbol':
-        return AssetResolver.resolve_asset_to_class(
+    async def resolve_to_asset_with_symbol(self) -> 'AssetWithSymbol':
+        return await AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithSymbol,
         )
 
-    def resolve_to_crypto_asset(self) -> 'CryptoAsset':
-        return AssetResolver.resolve_asset_to_class(
+    async def resolve_to_crypto_asset(self) -> 'CryptoAsset':
+        return await AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=CryptoAsset,
         )
 
-    def resolve_to_evm_token(self) -> 'EvmToken':
-        return AssetResolver.resolve_asset_to_class(
+    async def resolve_to_evm_token(self) -> 'EvmToken':
+        return await AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=EvmToken,
         )
 
-    def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
-        return AssetResolver.resolve_asset_to_class(
+    async def resolve_to_asset_with_oracles(self) -> 'AssetWithOracles':
+        return await AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=AssetWithOracles,
         )
 
-    def resolve_to_fiat_asset(self) -> 'FiatAsset':
-        return AssetResolver.resolve_asset_to_class(
+    async def resolve_to_fiat_asset(self) -> 'FiatAsset':
+        return await AssetResolver.resolve_asset_to_class(
             identifier=self.identifier,
             expected_type=FiatAsset,
         )

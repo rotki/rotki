@@ -119,7 +119,7 @@ class PriceHistorian:
         instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
 
     @staticmethod
-    def get_price_for_special_asset(
+    async def get_price_for_special_asset(
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
@@ -142,7 +142,7 @@ class PriceHistorian:
         timestamp from the external service.
         """
         if from_asset == A_ETH2:
-            return PriceHistorian.query_historical_price(
+            return await PriceHistorian.query_historical_price(
                 from_asset=A_ETH,
                 to_asset=to_asset,
                 timestamp=timestamp,
@@ -154,7 +154,7 @@ class PriceHistorian:
             if to_asset == A_USD:
                 return usd_price
 
-            price_mapping = PriceHistorian().query_historical_price(
+            price_mapping = await PriceHistorian().query_historical_price(
                 from_asset=A_USD,
                 to_asset=to_asset,
                 timestamp=timestamp,
@@ -162,22 +162,22 @@ class PriceHistorian:
             return Price(usd_price * price_mapping)
 
         if from_asset == A_POLYGON_POS_MATIC and timestamp > POLYGON_POS_POL_HARDFORK:
-            return PriceHistorian.query_historical_price(
+            return await PriceHistorian.query_historical_price(
                 from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),  # POL token  # noqa: E501,
                 to_asset=to_asset,
                 timestamp=timestamp,
             )
 
-        if GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # part of the EURe collection # noqa: E501  # todo: Super hacky. Figure out a way to generalize
-            return PriceHistorian.query_historical_price(
+        if await GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # part of the EURe collection # noqa: E501  # todo: Super hacky. Figure out a way to generalize
+            return await PriceHistorian.query_historical_price(
                 from_asset=A_EUR,
                 to_asset=to_asset,
                 timestamp=timestamp,
             )
 
-        if from_asset.is_evm_token() and (pool_token := from_asset.resolve_to_evm_token()).protocol in {UNISWAP_PROTOCOL, UNISWAPV3_PROTOCOL}:  # noqa: E501
+        if await from_asset.is_evm_token() and (pool_token := await from_asset.resolve_to_evm_token()).protocol in {UNISWAP_PROTOCOL, UNISWAPV3_PROTOCOL}:  # noqa: E501
             try:
-                return PriceHistorian.query_uniswap_position_price(
+                return await PriceHistorian.query_uniswap_position_price(
                     pool_token=pool_token,
                     pool_token_amount=ONE,
                     to_asset=to_asset,
@@ -190,7 +190,7 @@ class PriceHistorian:
         return None
 
     @staticmethod
-    def query_historical_price(
+    async def query_historical_price(
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
@@ -219,7 +219,7 @@ class PriceHistorian:
         if from_asset == to_asset:
             return Price(ONE)
 
-        special_asset_price = PriceHistorian().get_price_for_special_asset(
+        special_asset_price = await PriceHistorian().get_price_for_special_asset(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
@@ -230,9 +230,9 @@ class PriceHistorian:
         # Querying historical forex data is attempted first via the external apis
         # and then via any price oracle that has fiat to fiat.
         with suppress(UnknownAsset, WrongAssetType):
-            from_asset = from_asset.resolve_to_fiat_asset()
-            to_asset = to_asset.resolve_to_fiat_asset()
-            price = Inquirer().query_historical_fiat_exchange_rates(
+            from_asset = await from_asset.resolve_to_fiat_asset()
+            to_asset = await to_asset.resolve_to_fiat_asset()
+            price = await Inquirer().query_historical_fiat_exchange_rates(
                 from_fiat_currency=from_asset,
                 to_fiat_currency=to_asset,
                 timestamp=timestamp,
@@ -241,7 +241,7 @@ class PriceHistorian:
                 return price
 
         # try to get the price from the cache
-        if (cached_price_entry := GlobalDBHandler.get_historical_price(
+        if (cached_price_entry := await GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
@@ -294,7 +294,7 @@ class PriceHistorian:
                 to_asset=to_asset,
                 timestamp=timestamp,
             )
-            GlobalDBHandler.add_historical_prices([HistoricalPrice(
+            await GlobalDBHandler.add_historical_prices([HistoricalPrice(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 source=oracle,
@@ -366,7 +366,7 @@ class PriceHistorian:
         return assets_price
 
     @staticmethod
-    def query_uniswap_position_price(
+    async def query_uniswap_position_price(
             pool_token: EvmToken,
             pool_token_amount: FVal,
             to_asset: Asset,

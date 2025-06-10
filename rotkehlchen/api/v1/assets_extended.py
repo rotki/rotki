@@ -91,9 +91,9 @@ async def get_all_assets(
                 )
 
         # Get assets from global DB
-        with GlobalDBHandler().conn.read_ctx() as cursor:
+        async with GlobalDBHandler().conn.read_ctx() as cursor:
             if asset_type_filter:
-                assets = GlobalDBHandler().get_all_asset_data(
+                assets = await GlobalDBHandler().get_all_asset_data(
                     cursor=cursor,
                     mapping=False,
                     serialized=True,
@@ -101,7 +101,7 @@ async def get_all_assets(
                     asset_type=asset_type_filter,
                 )
             else:
-                assets = GlobalDBHandler().get_all_asset_data(
+                assets = await GlobalDBHandler().get_all_asset_data(
                     cursor=cursor,
                     mapping=False,
                     serialized=True,
