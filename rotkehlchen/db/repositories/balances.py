@@ -40,7 +40,7 @@ class BalancesRepository:
         try:
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO timed_balances('
-                '    time, currency, amount, usd_value, category) '
+                '    category, timestamp, currency, amount, usd_value) '
                 ' VALUES(?, ?, ?, ?, ?)',
                 serialized_balances,
             )
@@ -51,12 +51,13 @@ class BalancesRepository:
             self, write_cursor: 'DBCursor', location_data: list['LocationData'],
     ) -> None:
         """Execute addition of multiple location data in the DB"""
-        serialized_data = [entry.serialize() for entry in location_data]
+        # LocationData is a NamedTuple, so we can use it directly as a tuple
+        serialized_data = [(entry.time, entry.location, entry.usd_value) for entry in location_data]
 
         try:
             write_cursor.executemany(
                 'INSERT OR REPLACE INTO timed_location_data('
-                '    time, location, usd_value) '
+                '    timestamp, location, usd_value) '
                 ' VALUES(?, ?, ?)',
                 serialized_data,
             )

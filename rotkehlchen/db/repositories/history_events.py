@@ -48,7 +48,7 @@ class HistoryEventsRepository:
             ))
 
         query = """
-            INSERT INTO margin_positions(
+            INSERT OR IGNORE INTO margin_positions(
               id,
               location,
               open_time,
@@ -61,7 +61,14 @@ class HistoryEventsRepository:
               notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        write_cursor.executemany(query, margin_tuples)
+        # Execute one by one to be able to log duplicates
+        for margin_tuple in margin_tuples:
+            write_cursor.execute(query, margin_tuple)
+            if write_cursor.rowcount == 0:
+                log.warning(
+                    f'Did not add "Margin position with id {margin_tuple[0]}" to the '
+                    f'database as it already exists',
+                )
 
     def get_latest_location_value_distribution(
             self,
