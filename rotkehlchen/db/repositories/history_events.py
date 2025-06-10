@@ -71,11 +71,11 @@ class HistoryEventsRepository:
                     )
             except OverflowError as e:
                 self.msg_aggregator.add_error(
-                    f'Failed to add "margin_position" to the DB with overflow error: {e!s}'
+                    f'Failed to add "margin_position" to the DB with overflow error: {e!s}',
                 )
                 log.error(
                     f'Overflow error while trying to add "margin_position" tuples to the DB. '
-                    f'Tuples: {margin_tuple}'
+                    f'Tuples: {margin_tuple}',
                 )
 
     def get_latest_location_value_distribution(
@@ -176,10 +176,10 @@ class HistoryEventsRepository:
             "WHERE location='H' AND timestamp >= ? ORDER BY timestamp ASC;",
             (from_ts,),
         )
-        
+
         # Fetch all results before potentially doing another query
         results = cursor.fetchall()
-        
+
         nft_values = {}
         if not include_nfts:
             from rotkehlchen.constants.misc import NFT_DIRECTIVE

@@ -44,7 +44,7 @@ class BalancesRepository:
                 serialized_balances,
             )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            raise InputError(f'Adding timed_balance failed.') from e
+            raise InputError('Adding timed_balance failed.') from e
 
     def add_multiple_location_data(
             self, write_cursor: 'DBCursor', location_data: list['LocationData'],
@@ -96,10 +96,6 @@ class BalancesRepository:
 
         cursor.execute(querystr, bindings)
         results = cursor.fetchall()
-        # DEBUG
-        # print(f"Query results count: {len(results)}")
-        # for r in results:
-        #     print(f"  Timestamp: {r[0]}, Amount: {r[1]}, Currency: ETH/ETH2")
         balances = []
         results_length = len(results)
         for idx, result in enumerate(results):
@@ -363,12 +359,12 @@ class BalancesRepository:
         results = cursor.fetchall()
         if not results:
             return []
-            
-        all_timestamps, all_categories = zip(*results, strict=True)
-        
+
+        all_timestamps, _all_categories = zip(*results, strict=True)
+
         # Create a mapping of timestamp to category for the asset balances
         asset_timestamp_to_category = {b.time: b.category for b in balances if b.amount != ZERO}
-        
+
         # dicts maintain insertion order in python 3.7+
         timestamps_have_asset_balance = dict.fromkeys(all_timestamps, False)
         timestamps_with_asset_balance = dict.fromkeys(asset_timestamps, True)
@@ -383,7 +379,7 @@ class BalancesRepository:
             if balance.amount > ZERO:
                 last_asset_category = balance.category
                 break
-        
+
         for idx, (timestamp, has_asset_balance) in enumerate(timestamps_have_asset_balance.items()):  # noqa: E501
             if idx == len(timestamps_have_asset_balance) - 1 and has_asset_balance is False:
                 # If there is no balance for the last timestamp add a zero balance.
@@ -401,7 +397,7 @@ class BalancesRepository:
                 category_to_use = last_asset_category
                 if prev_timestamp in asset_timestamp_to_category:
                     category_to_use = asset_timestamp_to_category[prev_timestamp]
-                
+
                 inferred_balances.append(
                     SingleDBAssetBalance(
                         time=timestamp,
