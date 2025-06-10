@@ -42,7 +42,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
   const queue = new LimitedParallelizationQueue(1);
-
   const {
     addTransactionHash: addTransactionHashCaller,
     fetchTransactionsTask,
@@ -55,7 +54,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { updateSetting } = useFrontendSettingsStore();
-  const { getChainName, isEvmLikeChains } = useSupportedChains();
+  const { getChain, isEvmLikeChains } = useSupportedChains();
   const { getEvmAccounts, getEvmLikeAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const {
@@ -80,9 +79,10 @@ export const useHistoryTransactions = createSharedComposable(() => {
   ): Promise<void> => {
     const taskType = TaskType.TX;
     const isEvm = type === TransactionChainType.EVM;
+    const blockchain = getChain(account.evmChain);
     const blockchainAccount: BlockchainAddress = {
       address: account.address,
-      blockchain: account.evmChain,
+      blockchain,
     };
     const defaults: TransactionRequestPayload = {
       accounts: [blockchainAccount],
@@ -92,10 +92,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const taskMeta = {
       address: account.address,
       chain: account.evmChain,
-      description: t('actions.transactions.task.description', {
-        address: account.address,
-        chain: get(getChainName(account.evmChain)),
-      }),
+      description: t('actions.transactions.task.description', blockchainAccount),
       isEvm,
       title: t('actions.transactions.task.title'),
     };
