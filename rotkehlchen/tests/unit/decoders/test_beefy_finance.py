@@ -35,7 +35,6 @@ def _beefy_cache(database: 'DBHandler') -> None:
         symbol='mooFxConvexGHO-fxUSD',
         decimals=18,
         protocol=CPT_BEEFY_FINANCE,
-
     )
     get_or_create_evm_token(
         userdb=database,
@@ -45,7 +44,6 @@ def _beefy_cache(database: 'DBHandler') -> None:
         symbol='mooFxConvexUSDC-fxUSD',
         decimals=18,
         protocol=CPT_BEEFY_FINANCE,
-
     )
 
 
