@@ -1,14 +1,12 @@
 import logging
-import os
 import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Literal, Optional, Unpack, overload
 
 from gevent.lock import Semaphore
-from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
@@ -43,8 +41,8 @@ from rotkehlchen.db.repositories.assets import AssetsRepository
 from rotkehlchen.db.repositories.balances import BalancesRepository
 from rotkehlchen.db.repositories.cache import CacheRepository
 from rotkehlchen.db.repositories.connection_management import (
-    ConnectionManagementRepository,
     KDF_ITER,
+    ConnectionManagementRepository,
 )
 from rotkehlchen.db.repositories.data_management import DataManagementRepository
 from rotkehlchen.db.repositories.database_management import DatabaseManagementRepository
@@ -60,18 +58,14 @@ from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
 from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.repositories.tags import TagsRepository
+from rotkehlchen.db.repositories.upgrade_management import UpgradeManagementRepository
 from rotkehlchen.db.repositories.user_notes import UserNotesRepository
 from rotkehlchen.db.repositories.xpub import XpubRepository
-from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
-from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
-    ROTKEHLCHEN_DB_VERSION,
-    ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
     serialize_db_setting,
 )
-from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DBAssetBalance,
     DBTupleType,
@@ -81,16 +75,10 @@ from rotkehlchen.db.utils import (
     combine_asset_balances,
     protect_password_sqlcipher,
 )
-from rotkehlchen.errors.api import (
-    AuthenticationError,
-    RotkehlchenPermissionError,
-)
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
-    DBUpgradeError,
     SystemPermissionError,
 )
-from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.fval import FVal
@@ -187,6 +175,7 @@ class DBHandler:
         )
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
+        self.upgrade_management: UpgradeManagementRepository = None  # type: ignore  # initialized after connection
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_evm_token_lock = Semaphore()
         self.password = password
@@ -194,6 +183,7 @@ class DBHandler:
         # Initialize repositories that need connection
         self.external_services = ExternalServicesRepository(self.conn, msg_aggregator)
         self.data_management = DataManagementRepository(self)
+        self.upgrade_management = UpgradeManagementRepository(self)
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
@@ -207,52 +197,13 @@ class DBHandler:
         Checks the database whether there are any not finished upgrades and automatically uses a
         backup if there are any. If no backup found, throws an error to the user
         """
-        with self.conn.read_ctx() as cursor:
-            try:
-                ongoing_upgrade_from_version = self.get_setting(
-                    cursor=cursor,
-                    name='ongoing_upgrade_from_version',
-                )
-            except sqlcipher.OperationalError:  # pylint: disable=no-member
-                return  # fresh database. Nothing to upgrade.
-        if ongoing_upgrade_from_version is None:
-            return  # We are all good
-
-        # if there is an unfinished upgrade, check user approval to resume from backup
-        if resume_from_backup is False:
-            raise RotkehlchenPermissionError(
-                error_message=(
-                    'The encrypted database is in a semi upgraded state. '
-                    'Either resume from a backup or solve the issue manually.'
-                ),
-                payload=None,
-            )
-
-        # If resume_from_backup is True, the user gave approval.
-        # Replace the db with a backup and reconnect
-        self.disconnect()
-        backup_postfix = f'rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'
-        found_backups = list(filter(
-            lambda x: x[-len(backup_postfix):] == backup_postfix,
-            os.listdir(self.user_data_dir),
-        ))
-        if len(found_backups) == 0:
-            raise DBUpgradeError(
-                f'Your encrypted database is in a half-upgraded state at '
-                f'v{ongoing_upgrade_from_version} and there was no backup '
-                'found. Please open an issue on our github or contact us in our discord server.',
-            )
-
-        backup_to_use = max(found_backups)  # Use latest backup
-        shutil.copyfile(
-            self.user_data_dir / backup_to_use,
-            self.user_data_dir / USERDB_NAME,
+        self.database_management.check_unfinished_upgrades(
+            conn=self.conn,
+            get_setting_fn=self.get_setting,
+            resume_from_backup=resume_from_backup,
+            disconnect_fn=self.disconnect,
+            connect_fn=self._connect,
         )
-        self.msg_aggregator.add_warning(
-            f'Your encrypted database was in a half-upgraded state. '
-            f'Trying to login with a backup {backup_to_use}',
-        )
-        self._connect()
 
     def logout(self) -> None:
         self.password = ''
@@ -269,31 +220,6 @@ class DBHandler:
 
         Path(self.user_data_dir / DBINFO_FILENAME).write_text(rlk_jsondumps(dbinfo), encoding='utf8')  # noqa: E501
 
-    def _check_settings(self) -> None:
-        """Check that the non_syncing_exchanges setting only has active locations."""
-        with self.conn.read_ctx() as cursor:
-            non_syncing_exchanges = self.get_setting(
-                cursor=cursor,
-                name='non_syncing_exchanges',
-            )
-
-        valid_locations = [
-            exchange_location_id
-            for exchange_location_id in non_syncing_exchanges
-            if exchange_location_id.location in SUPPORTED_EXCHANGES
-        ]
-        if len(valid_locations) != len(non_syncing_exchanges):
-            with self.user_write() as write_cursor:
-                self.set_setting(
-                    write_cursor=write_cursor,
-                    name='non_syncing_exchanges',
-                    value=serialize_db_setting(
-                        value=valid_locations,
-                        setting='non_syncing_exchanges',
-                        is_modifiable=True,
-                    ),
-                )
-
     def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
 
@@ -308,41 +234,7 @@ class DBHandler:
         is older than the one supported.
         - DBSchemaError if database schema is malformed.
         """
-        # Run upgrades if needed -- only for user DB
-        fresh_db = DBUpgradeManager(self).run_upgrades()
-        if fresh_db:  # create tables during the first run and add the DB version
-            self.conn.executescript(DB_SCRIPT_CREATE_TABLES)
-            cursor = self.conn.cursor()
-            cursor.execute(
-                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-                ('version', str(ROTKEHLCHEN_DB_VERSION)),
-            )
-
-        # run checks on the database
-        self.conn.schema_sanity_check()
-        self._check_settings()
-
-        # This logic executes only for the transient db
-        self._connect(conn_attribute='conn_transient')
-        transient_version = 0
-        cursor = self.conn_transient.cursor()
-        with suppress(sqlcipher.DatabaseError):  # pylint: disable=no-member  # not created yet
-            result = cursor.execute('SELECT value FROM settings WHERE name=?', ('version',)).fetchone()  # noqa: E501
-            if result is not None:
-                transient_version = int(result[0])
-
-        if transient_version != ROTKEHLCHEN_TRANSIENT_DB_VERSION:
-            # "upgrade" transient DB
-            tables = list(cursor.execute("SELECT name FROM sqlite_master WHERE type IS 'table'"))
-            cursor.executescript('PRAGMA foreign_keys = OFF;')
-            cursor.executescript(';'.join([f'DROP TABLE IF EXISTS {name[0]}' for name in tables]))
-            cursor.executescript('PRAGMA foreign_keys = ON;')
-        self.conn_transient.executescript(DB_SCRIPT_CREATE_TRANSIENT_TABLES)
-        cursor.execute(
-            'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
-            ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
-        )
-        self.conn_transient.commit()
+        self.upgrade_management.run_actions_after_first_connection()
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB

@@ -10,6 +10,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME
 from rotkehlchen.db.dbhandler import DBINFO_FILENAME
+from rotkehlchen.errors.api import RotkehlchenPermissionError
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import Location
 from rotkehlchen.utils.hashing import file_md5
@@ -120,3 +121,63 @@ class DatabaseManagementRepository:
                     })
 
         return backups
+
+    def check_unfinished_upgrades(
+            self,
+            conn: 'DBConnection',
+            get_setting_fn,
+            resume_from_backup: bool,
+            disconnect_fn,
+            connect_fn,
+    ) -> None:
+        """
+        Checks the database whether there are any not finished upgrades and automatically uses a
+        backup if there are any. If no backup found, throws an error to the user
+        """
+        with conn.read_ctx() as cursor:
+            try:
+                ongoing_upgrade_from_version = get_setting_fn(
+                    cursor=cursor,
+                    name='ongoing_upgrade_from_version',
+                )
+            except sqlcipher.OperationalError:  # pylint: disable=no-member
+                return  # fresh database. Nothing to upgrade.
+        if ongoing_upgrade_from_version is None:
+            return  # We are all good
+
+        # if there is an unfinished upgrade, check user approval to resume from backup
+        if resume_from_backup is False:
+            raise RotkehlchenPermissionError(
+                error_message=(
+                    'The encrypted database is in a semi upgraded state. '
+                    'Either resume from a backup or solve the issue manually.'
+                ),
+                payload=None,
+            )
+
+        # If resume_from_backup is True, the user gave approval.
+        # Replace the db with a backup and reconnect
+        disconnect_fn()
+        backup_postfix = f'rotkehlchen_db_v{ongoing_upgrade_from_version}.backup'
+        found_backups = list(filter(
+            lambda x: x[-len(backup_postfix):] == backup_postfix,
+            os.listdir(self.user_data_dir),
+        ))
+        if len(found_backups) == 0:
+            raise DBUpgradeError(
+                f'Your encrypted database is in a half-upgraded state at '
+                f'v{ongoing_upgrade_from_version} and there was no backup '
+                'found. Please open an issue on our github or contact us in our discord server.',
+            )
+
+        backup_to_use = max(found_backups)  # Use latest backup
+        import shutil
+        shutil.copyfile(
+            self.user_data_dir / backup_to_use,
+            self.user_data_dir / USERDB_NAME,
+        )
+        self.msg_aggregator.add_warning(
+            f'Your encrypted database was in a half-upgraded state. '
+            f'Trying to login with a backup {backup_to_use}',
+        )
+        connect_fn()
