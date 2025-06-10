@@ -56,6 +56,7 @@ from rotkehlchen.db.repositories.module_data import ModuleDataRepository
 from rotkehlchen.db.repositories.nfts import NFTRepository
 from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
 from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
+from rotkehlchen.db.repositories.session_management import SessionManagementRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
 from rotkehlchen.db.repositories.tags import TagsRepository
 from rotkehlchen.db.repositories.upgrade_management import UpgradeManagementRepository
@@ -114,7 +115,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.serialization import rlk_jsondumps
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -184,6 +184,7 @@ class DBHandler:
         self.external_services = ExternalServicesRepository(self.conn, msg_aggregator)
         self.data_management = DataManagementRepository(self)
         self.upgrade_management = UpgradeManagementRepository(self)
+        self.session_management = SessionManagementRepository(self)
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
         self._run_actions_after_first_connection()
         with self.user_write() as cursor:
@@ -206,19 +207,7 @@ class DBHandler:
         )
 
     def logout(self) -> None:
-        self.password = ''
-        if self.conn is not None:
-            self.disconnect(conn_attribute='conn')
-        if self.conn_transient is not None:
-            self.disconnect(conn_attribute='conn_transient')
-        try:
-            dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
-        except (SystemPermissionError, FileNotFoundError) as e:
-            # If there is problems opening the DB at destruction just log and exit
-            log.error(f'At DB teardown could not open the DB: {e!s}')
-            return
-
-        Path(self.user_data_dir / DBINFO_FILENAME).write_text(rlk_jsondumps(dbinfo), encoding='utf8')  # noqa: E501
+        self.session_management.logout()
 
     def _run_actions_after_first_connection(self) -> None:
         """Perform the actions that are needed after the first DB connection
