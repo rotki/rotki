@@ -57,6 +57,7 @@ from rotkehlchen.db.repositories.exchanges import ExchangeRepository
 from rotkehlchen.db.repositories.external_services import ExternalServicesRepository
 from rotkehlchen.db.repositories.ignored_actions import IgnoredActionsRepository
 from rotkehlchen.db.repositories.manual_balances import ManualBalancesRepository
+from rotkehlchen.db.repositories.module_data import ModuleDataRepository
 from rotkehlchen.db.repositories.query_ranges import QueryRangesRepository
 from rotkehlchen.db.repositories.rpc_nodes import RPCNodesRepository
 from rotkehlchen.db.repositories.settings import SettingsRepository
@@ -195,6 +196,7 @@ class DBHandler:
         self.query_ranges = QueryRangesRepository()
         self.rpc_nodes = RPCNodesRepository()
         self.user_notes = UserNotesRepository(msg_aggregator)
+        self.module_data = ModuleDataRepository()
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
@@ -933,49 +935,23 @@ class DBHandler:
 
     def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
-        write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
+        self.module_data.delete_eth2_daily_stats(write_cursor)
 
     def delete_cowswap_trade_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all cowswap trade/orders data from the DB"""
-        write_cursor.execute('DELETE FROM cowswap_orders;')
+        self.module_data.delete_cowswap_trade_data(write_cursor)
 
     def delete_gnosispay_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all saved gnosispay merchant data from the DB"""
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name=?;',
-            (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value,),
-        )
-        write_cursor.execute('DELETE FROM gnosispay_data;')
+        self.module_data.delete_gnosispay_data(write_cursor)
 
     def purge_module_data(self, module_name: PurgeableModuleName | None) -> None:
         with self.user_write() as cursor:
-            if module_name is None:
-                self.delete_loopring_data(cursor)
-                self.delete_eth2_daily_stats(cursor)
-                self.delete_cowswap_trade_data(cursor)
-                self.delete_gnosispay_data(cursor)
-                log.debug('Purged all module data from the DB')
-                return
-            elif module_name == 'loopring':
-                self.delete_loopring_data(cursor)
-            elif module_name == 'eth2':
-                self.delete_eth2_daily_stats(cursor)
-            elif module_name == 'cowswap':
-                self.delete_cowswap_trade_data(cursor)
-            elif module_name == 'gnosis_pay':
-                self.delete_gnosispay_data(cursor)
-            else:
-                log.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
-                return
-
-            log.debug(f'Purged {module_name} data from the DB')
+            self.module_data.purge_module_data(cursor, module_name)
 
     def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all loopring related data"""
-        write_cursor.execute(
-            'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
-            ('loopring\\_%', '\\'),
-        )
+        self.module_data.delete_loopring_data(write_cursor)
 
     def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
