@@ -303,3 +303,130 @@ class BalancesRepository:
 
         last_save = self.get_last_balance_save_time(cursor)
         return now - last_save > period
+
+    @staticmethod
+    def _infer_zero_timed_balances(
+            cursor: 'DBCursor',
+            balances: list[SingleDBAssetBalance],
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+    ) -> list[SingleDBAssetBalance]:
+        """
+        Given a list of asset specific timed balances, infers the missing zero timed balances
+        for the asset. We add 0 balances on the start and end of a period of 0 balances.
+        It addresses this issue: https://github.com/rotki/rotki/issues/2822
+
+        Example
+        We have the following timed balances for ETH (value, time):
+        (1, 1), (1, 2), (2, 3), (5, 7), (5, 12)
+        The timestamps of all timed balances in the DB are:
+        (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
+        So we need to infer the following zero timed balances:
+        (0, 4), (0, 6), (0, 8), (0, 11)
+
+        Keep in mind that in a case like this (1, 1), (1, 2), (5, 4) we will infer (0, 3)
+        despite the fact that it is not strictly needed by the front end.
+        """
+        from rotkehlchen.constants import ZERO
+        
+        if len(balances) == 0:
+            return []
+
+        if from_ts is None:
+            from_ts = Timestamp(0)
+        if to_ts is None:
+            to_ts = ts_now()
+
+        cursor.execute(
+            'SELECT COUNT(DISTINCT timestamp) FROM timed_balances WHERE timestamp BETWEEN ? AND ?',
+            (from_ts, to_ts),
+        )
+        num_distinct_timestamps = cursor.fetchone()[0]
+
+        asset_timestamps = [b.time for b in balances if b.amount != ZERO]  # ignore timestamps from 0 balances added by the ssf_graph_multiplier setting  # noqa: E501
+        if len(asset_timestamps) == num_distinct_timestamps:
+            return []
+
+        cursor.execute(
+            'SELECT timestamp, category FROM timed_balances WHERE timestamp BETWEEN ? AND ? '
+            'ORDER BY timestamp ASC',
+            (from_ts, to_ts),
+        )
+        all_timestamps, all_categories = zip(*cursor, strict=True)
+        # dicts maintain insertion order in python 3.7+
+        timestamps_have_asset_balance = dict.fromkeys(all_timestamps, False)
+        timestamps_with_asset_balance = dict.fromkeys(asset_timestamps, True)
+        timestamps_have_asset_balance.update(timestamps_with_asset_balance)
+        prev_has_asset_balance = timestamps_have_asset_balance[all_timestamps[0]]  # the value of the first timestamp  # noqa: E501
+        prev_timestamp = all_timestamps[0]
+        inferred_balances: list[SingleDBAssetBalance] = []
+        is_zero_period_open = False
+        last_asset_category = all_categories[-1]  # just a placeholder value, no need to calculate the actual value here  # noqa: E501
+        for idx, (timestamp, has_asset_balance) in enumerate(timestamps_have_asset_balance.items()):  # noqa: E501
+            if idx == len(timestamps_have_asset_balance) - 1 and has_asset_balance is False:
+                # If there is no balance for the last timestamp add a zero balance.
+                inferred_balances.append(
+                    SingleDBAssetBalance(
+                        time=timestamp,
+                        amount=ZERO,
+                        usd_value=ZERO,
+                        category=last_asset_category,
+                    ),
+                )
+            elif has_asset_balance is False and prev_has_asset_balance is True:
+                # add the start of a zero balance period
+                inferred_balances.append(
+                    SingleDBAssetBalance(
+                        time=timestamp,
+                        amount=ZERO,
+                        usd_value=ZERO,
+                        category=BalanceType.deserialize_from_db(all_categories[idx - 1]),  # the category of the previous timed_balance of the asset  # noqa: E501
+                    ),
+                )
+                is_zero_period_open = True
+            elif has_asset_balance is True and prev_has_asset_balance is False and is_zero_period_open is True:  # noqa: E501
+                # add the end of a zero balance period
+                inferred_balances.append(
+                    SingleDBAssetBalance(
+                        time=prev_timestamp,
+                        amount=ZERO,
+                        usd_value=ZERO,
+                        category=inferred_balances[-1].category,  # the category of the asset at the start of the zero balance period  # noqa: E501
+                    ),
+                )
+                is_zero_period_open = False
+                last_asset_category = inferred_balances[-1].category
+            elif has_asset_balance is True:
+                last_asset_category = BalanceType.deserialize_from_db(all_categories[idx])
+            prev_has_asset_balance, prev_timestamp = has_asset_balance, timestamp
+        return inferred_balances
+
+    def query_collection_timed_balances(
+            self,
+            cursor: 'DBCursor',
+            collection_id: int,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+    ) -> list[SingleDBAssetBalance]:
+        """Query all balance entries for all assets of a collection within a range of timestamps
+        """
+        from rotkehlchen.globaldb.handler import GlobalDBHandler
+        from rotkehlchen.db.utils import combine_asset_balances
+        
+        with GlobalDBHandler().conn.read_ctx() as global_cursor:
+            global_cursor.execute(
+                'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
+                (collection_id,),
+            )
+            asset_balances: list[SingleDBAssetBalance] = []
+            for x in global_cursor:
+                asset_balances.extend(self.query_timed_balances(
+                    cursor=cursor,
+                    asset=Asset(x[0]),
+                    balance_type=BalanceType.ASSET,
+                    from_ts=from_ts,
+                    to_ts=to_ts,
+                ))
+
+        asset_balances.sort(key=lambda x: x.time)
+        return combine_asset_balances(asset_balances)
