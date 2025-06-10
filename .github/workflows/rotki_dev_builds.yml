@@ -61,7 +61,7 @@ jobs:
           pip3 install --upgrade uv=="${UV_VERSION}"
           uv sync --group packaging
           echo "::endgroup::"
-          uv run ./package.py --build full
+          uv run package.py --build full
 
       - name: Upload files
         uses: actions/upload-artifact@v4
@@ -215,7 +215,7 @@ jobs:
           pip3 install --upgrade uv=="${env:UV_VERSION}"
           uv sync --group packaging
           echo ::endgroup::
-          uv run python .\package.py --build full
+          uv run package.py --build full
         shell: powershell
 
       - name: Upload files
