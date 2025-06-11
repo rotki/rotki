@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9853` magpie protocol swaps in all supported evm chains will now be properly understood by rotki.
 * :feature:`4467` rotki will now correctly decode Beefy Finance transactions in all supported EVM chains.
 * :feature:`9913` History events can now be filtered by description.
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.

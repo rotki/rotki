@@ -17,5 +17,6 @@ class MagpieDecoder(MagpieCommonDecoder):
             msg_aggregator=msg_aggregator,
             router_addresses=[
                 string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),  # v3.0
+                string_to_evm_address('0xfB1B08BA6BA284934D817Ea3C9D18f592cc59a50'),  # v3.1
             ],
         )
