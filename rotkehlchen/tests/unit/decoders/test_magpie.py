@@ -30,6 +30,7 @@ ETHEREUM_MAGPIE_V3_1_ROUTER = string_to_evm_address('0xA6E941eaB67569ca4522f70d3
 POLYGON_MAGPIE_V3_1_ROUTER = string_to_evm_address('0xA6E941eaB67569ca4522f70d343714fF51d571c4')
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x3a20BA3678C5c40F7CD48EB373fF8a501d170534']])
 def test_magpie_eth_to_token_swap(
         base_inquirer: 'BaseInquirer',
@@ -87,6 +88,7 @@ def test_magpie_eth_to_token_swap(
     assert expected_events == events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xF9c6Fc43a385362C9C8364bF9C5236314607c0A5']])
 def test_magpie_token_to_token_swap(
         base_inquirer: 'BaseInquirer',
@@ -191,6 +193,7 @@ def test_magpie_token_to_token_swap(
     assert expected_events == events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xa304816C9c78505714f24FC13222fE07Ce0cc711']])
 def test_magpie_arbitrum_token_to_token_swap(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
@@ -295,16 +298,13 @@ def test_magpie_arbitrum_token_to_token_swap(
     assert expected_events == events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe4B13d4de7E85E2a763BD440Bc9bf921C69Bc905']])
 def test_magpie_ethereum_usds_to_usdc_swap(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    """Test decoding a Magpie USDS to USDC swap on Ethereum with Rabby fee
-
-    Data from:
-    https://etherscan.io/tx/0x8a764813d69a773b1883eb5b64e33a7fd168f65865027fe20e0774943a10f764
-    """
+    """Test decoding a Magpie USDS to USDC swap on Ethereum with Rabby fee"""
     tx_hash = deserialize_evm_tx_hash(
         '0x8a764813d69a773b1883eb5b64e33a7fd168f65865027fe20e0774943a10f764',
     )
@@ -374,16 +374,13 @@ def test_magpie_ethereum_usds_to_usdc_swap(
     assert expected_events == events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x6361f989EFf9fE22E8a8C08aCe34f0d30b760a4E']])
 def test_magpie_polygon_pol_to_usdc_swap(
         polygon_pos_inquirer: 'PolygonPOSInquirer',
         polygon_pos_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    """Test decoding a Magpie POL to USDC swap on Polygon with Rabby fee
-
-    Data from:
-    https://polygonscan.com/tx/0x68ee836e5e78f30d084f88e47450217af0d199a8b24784ec799b837aa458888a
-    """
+    """Test decoding a Magpie POL to USDC swap on Polygon"""
     tx_hash = deserialize_evm_tx_hash(
         '0x68ee836e5e78f30d084f88e47450217af0d199a8b24784ec799b837aa458888a',
     )
