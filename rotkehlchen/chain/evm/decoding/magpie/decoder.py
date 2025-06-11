@@ -31,10 +31,10 @@ class MagpieCommonDecoder(DecoderInterface):
             evm_inquirer: Any,
             base_tools: Any,
             msg_aggregator: Any,
-            router_address: ChecksumEvmAddress,
+            router_addresses: list[ChecksumEvmAddress],
     ) -> None:
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.router_address = router_address
+        self.router_addresses = router_addresses
 
     def _decode_swap(self, context: DecoderContext) -> DecodingOutput:
         """Decode a swap event from Magpie protocol"""
@@ -127,7 +127,7 @@ class MagpieCommonDecoder(DecoderInterface):
             if total_spent == spent_amount:
 
                 for event in spending_events:
-                    # Always treat Rabby address as fee
+                    # Always treat Rabby address as fee. Sometimes fee is sent by the router itself so we don't see it  # noqa: E501
                     if event.address == RABBY_WALLET_FEE_ADDRESS:
                         event.event_type = HistoryEventType.TRADE
                         event.event_subtype = HistoryEventSubType.FEE
@@ -171,14 +171,12 @@ class MagpieCommonDecoder(DecoderInterface):
 
     def decode_action(self, context: DecoderContext) -> DecodingOutput:
         """Main decoding function for Magpie protocol"""
-        if context.transaction.to_address != self.router_address:
+        if context.transaction.to_address not in self.router_addresses:
             return DEFAULT_DECODING_OUTPUT
         return self._decode_swap(context)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            self.router_address: (self._decode_swap,),
-        }
+        return dict.fromkeys(self.router_addresses, (self._decode_swap,))
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
