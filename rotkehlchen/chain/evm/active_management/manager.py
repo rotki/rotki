@@ -33,13 +33,20 @@ class ActiveManager:
             address=token.evm_address,
             abi=self.node_inquirer.contracts.erc20_abi,
         )
-        return dict(contract.functions.transfer(
+        payload = dict(contract.functions.transfer(
             to_address,
             asset_raw_value(amount=amount, asset=token),
         ).build_transaction({
             'from': from_address,
             'nonce': web3_instance.eth.get_transaction_count(from_address),
         }))
+
+        # ensure that information about gas is not sent in the payload
+        # since the consumer adjusts it
+        payload.pop('gas', None)
+        payload.pop('maxFeePerGas', None)
+        payload.pop('maxPriorityFeePerGas', None)
+        return payload
 
     def create_token_transfer(
             self,
