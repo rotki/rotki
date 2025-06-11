@@ -3500,3 +3500,64 @@ def test_unfinished_upgrades(user_data_dir):
                         (Path(user_data_dir) / f).unlink()
 
             db.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 48 to version 49"""
+    _use_prepared_db(user_data_dir, 'v48_rotkehlchen.db')
+    db_v48 = _init_db_with_target_version(
+        target_version=48,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    
+    # Check the buggy schema before upgrade
+    with db_v48.conn.read_ctx() as cursor:
+        # Get the schema and verify it has the bug
+        schema_info = cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'"
+        ).fetchone()
+        assert schema_info is not None
+        assert 'TEXT_NOT NULL' in schema_info[0], 'Expected TEXT_NOT NULL bug in schema'
+        
+        # Check that data exists - just verify we have some data
+        swaps_count = cursor.execute(
+            'SELECT COUNT(*) FROM zksynclite_swaps'
+        ).fetchone()[0]
+        assert swaps_count > 0, 'Expected some swap data'
+        
+        # Store the data to verify it's preserved
+        swaps_data = cursor.execute(
+            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id'
+        ).fetchall()
+    
+    # Logout and upgrade
+    db_v48.logout()
+    
+    # Now open with target version 49 to trigger upgrade
+    db = _init_db_with_target_version(
+        target_version=49,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    
+    # Check the schema after upgrade
+    with db.conn.read_ctx() as cursor:
+        # Get the fixed schema
+        schema_info = cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'"
+        ).fetchone()
+        assert schema_info is not None
+        assert 'TEXT_NOT NULL' not in schema_info[0], 'TEXT_NOT NULL bug should be fixed'
+        assert 'to_amount TEXT NOT NULL' in schema_info[0], 'Should have correct TEXT NOT NULL syntax'
+        
+        # Check that data was preserved
+        new_swaps_data = cursor.execute(
+            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id'
+        ).fetchall()
+        assert new_swaps_data == swaps_data, 'Swap data should be preserved after upgrade'
+    
+    db.logout()
