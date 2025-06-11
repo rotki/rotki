@@ -10,7 +10,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
-from rotkehlchen.db.constants import SQL_VARIABLE_CHUNK_SIZE
+from rotkehlchen.db.constants import KDF_ITER, SQL_VARIABLE_CHUNK_SIZE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     HexColorCode,
@@ -24,7 +24,7 @@ from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
 
 TAG_REFERENCE_ENTRY_TYPE = Union[
     'ManuallyTrackedBalance',
@@ -405,3 +405,39 @@ def get_query_chunks(data: Sequence[int | str]) -> list[tuple[Sequence[int | str
         ((chunk := data[i:i + SQL_VARIABLE_CHUNK_SIZE]), ','.join(['?'] * len(chunk)))
         for i in range(0, len(data), SQL_VARIABLE_CHUNK_SIZE)
     ]
+
+
+def unlock_database(
+        db_connection: 'DBConnection',
+        password: str,
+        sqlcipher_version: int,
+        apply_optimizations: bool = True,
+) -> None:
+    """Unlock an SQLCipher encrypted database connection.
+
+    Applies the decryption key and sets up standard pragmas for rotkehlchen databases.
+    This includes foreign keys, cache optimization, and WAL mode.
+
+    If `apply_optimizations` is True, also sets cache size
+    and enables WAL mode for better performance.
+
+    Note: Remember to close the connection in case of failures/exceptions.
+
+    May raise:
+    - sqlcipher.DatabaseError if the password is incorrect or database is corrupted
+    """
+    script = f"PRAGMA key='{protect_password_sqlcipher(password)}';"
+    if sqlcipher_version == 3:
+        script += f'PRAGMA kdf_iter={KDF_ITER};'
+
+    db_connection.executescript(script)
+    # the following will fail with DatabaseError in case of wrong password.
+    # If this goes away at any point it needs to be replaced by something
+    # that checks the password is correct at this same point in the code
+    db_connection.execute('PRAGMA schema_version')
+    db_connection.execute('PRAGMA foreign_keys=ON')
+    if apply_optimizations:
+        # Optimizations for the combined trades view
+        db_connection.execute('PRAGMA cache_size = -32768')
+        # switch to WAL mode: https://www.sqlite.org/wal.html
+        db_connection.execute('PRAGMA journal_mode=WAL;')
