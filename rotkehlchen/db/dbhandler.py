@@ -1214,8 +1214,14 @@ class DBHandler:
         """Query all balance entries for an asset and balance type within a range of timestamps
         """
         settings = self.get_settings(cursor)
+        # Convert DBSettings to ModifiableDBSettings for the repository method
+        modifiable_settings = ModifiableDBSettings(
+            treat_eth2_as_eth=settings.treat_eth2_as_eth,
+            ssf_graph_multiplier=settings.ssf_graph_multiplier,
+            balance_save_frequency=settings.balance_save_frequency,
+        )
         balances = self.balances.query_timed_balances(
-            cursor, asset, balance_type, from_ts, to_ts, None,  # settings not used in the method
+            cursor, asset, balance_type, from_ts, to_ts, modifiable_settings,
         )
         if settings.infer_zero_timed_balances is True:
             inferred_balances = BalancesRepository._infer_zero_timed_balances(
