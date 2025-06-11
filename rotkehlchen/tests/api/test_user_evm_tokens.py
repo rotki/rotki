@@ -657,7 +657,7 @@ def test_adding_evm_token_with_underlying_token(
         'symbol': 'BPT',
         'decimals': 18,
         'coingecko': 'blackpool-token',
-        'cryptocompare': '',
+        'cryptocompare': None,
         'underlying_tokens': [
             {
                 'address': '0xB2FdD60AD80ca7bA89B9BAb3b5336c2601C020b4',
@@ -747,7 +747,7 @@ def test_adding_evm_token_with_underlying_token(
             'started': 10,
             'swapped_for': swapped_for,
             'forked': None,
-            'cryptocompare': '',
+            'cryptocompare': None,
             'coingecko': 'blackpool-token',
         },
     ]

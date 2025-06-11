@@ -161,6 +161,7 @@ from .fields import (
     DelimitedOrNormalList,
     DerivationPathField,
     DirectoryField,
+    EmptyAsNoneStringField,
     EvmAddressField,
     EvmChainLikeNameField,
     EvmChainNameField,
@@ -173,6 +174,7 @@ from .fields import (
     LocationField,
     MaybeAssetField,
     NonEmptyList,
+    NonEmptyStringField,
     PositiveAmountField,
     PriceField,
     SerializableEnumField,
@@ -240,7 +242,7 @@ class DBPaginationSchema(Schema):
 
 
 class DBOrderBySchema(Schema):
-    order_by_attributes = DelimitedOrNormalList(fields.String(), load_default=None)
+    order_by_attributes = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     ascending = DelimitedOrNormalList(fields.Boolean(), load_default=None)  # most recent first by default  # noqa: E501
 
     @validates_schema
@@ -576,7 +578,10 @@ class TypesAndCounterpatiesFiltersSchema(Schema):
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
-    counterparties = DelimitedOrNormalList(fields.String(load_default=None), load_default=None)
+    counterparties = DelimitedOrNormalList(
+        EmptyAsNoneStringField(load_default=None),
+        load_default=None,
+    )
 
 
 class HistoryEventSchema(
@@ -588,9 +593,9 @@ class HistoryEventSchema(
     """Schema for querying history events"""
     exclude_ignored_assets = fields.Boolean(load_default=True)
     group_by_event_ids = fields.Boolean(load_default=False)
-    event_identifiers = DelimitedOrNormalList(fields.String(), load_default=None)
+    event_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
-    location_labels = DelimitedOrNormalList(fields.String(), load_default=None)
+    location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
     entry_types = IncludeExcludeListField(
         SerializableEnumField(enum_class=HistoryBaseEntryType),
@@ -750,15 +755,15 @@ class CreateHistoryEventSchema(Schema):
             required=True,
         )
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-        user_notes = fields.String(load_default=None)
+        user_notes = EmptyAsNoneStringField(load_default=None)
         sequence_index = fields.Integer(required=True)
-        location_label = fields.String(load_default=None)
+        location_label = EmptyAsNoneStringField(load_default=None)
 
     class BaseEvmEventSchema(Schema):
         """Base schema for EVM events. Used for EvmEvents and EvmSwapEvents."""
         tx_hash = EVMTransactionHashField(required=True)
-        event_identifier = fields.String(required=False, load_default=None)
-        counterparty = fields.String(load_default=None)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
+        counterparty = EmptyAsNoneStringField(load_default=None)
         product = SerializableEnumField(enum_class=EvmProduct, load_default=None)
         address = EvmAddressField(load_default=None)
         extra_data = fields.Dict(load_default=None)
@@ -780,7 +785,7 @@ class CreateHistoryEventSchema(Schema):
                     )
 
     class CreateBaseHistoryEventSchema(BaseEventSchema):
-        event_identifier = fields.String(required=True)
+        event_identifier = NonEmptyStringField(required=True)
         location = LocationField(required=True)
 
         @post_load
@@ -806,7 +811,7 @@ class CreateHistoryEventSchema(Schema):
 
     class CreateEthBlockEventEventSchema(BaseSchema):
         is_mev_reward = fields.Boolean(required=True)
-        event_identifier = fields.String(required=False, load_default=None)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         fee_recipient = EvmAddressField(required=True)
         block_number = fields.Integer(
             required=True,
@@ -838,7 +843,7 @@ class CreateHistoryEventSchema(Schema):
     class CreateEthDepositEventEventSchema(BaseSchema):
         tx_hash = EVMTransactionHashField(required=True)
         depositor = EvmAddressField(required=True)
-        event_identifier = fields.String(required=False, load_default=None)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         sequence_index = fields.Integer(required=True)
         validator_index = fields.Integer(
             required=True,
@@ -859,7 +864,7 @@ class CreateHistoryEventSchema(Schema):
 
     class CreateEthWithdrawalEventEventSchema(BaseSchema):
         is_exit = fields.Boolean(required=True)
-        event_identifier = fields.String(required=False, load_default=None)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         withdrawal_address = EvmAddressField(required=True)
         validator_index = fields.Integer(
             required=True,
@@ -885,15 +890,15 @@ class CreateHistoryEventSchema(Schema):
         )
         fee = AmountField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         location = LocationField(required=True)
-        location_label = fields.String(load_default=None)
-        blockchain = fields.String(load_default=None)
-        unique_id = fields.String(required=False, load_default=None)
-        address = fields.String(required=False, load_default=None)  # It can be an address for any chain not only the supported ones so we validate it as string.  # noqa: E501
-        transaction_id = fields.String(required=False, load_default=None)  # It can be a transaction from any chain. We don't do any special validation on it.  # noqa: E501
-        event_identifier = fields.String(required=False, load_default=None)
+        location_label = EmptyAsNoneStringField(load_default=None)
+        blockchain = EmptyAsNoneStringField(load_default=None)
+        unique_id = EmptyAsNoneStringField(required=False, load_default=None)
+        address = EmptyAsNoneStringField(required=False, load_default=None)  # It can be an address for any chain not only the supported ones so we validate it as string.  # noqa: E501
+        transaction_id = EmptyAsNoneStringField(required=False, load_default=None)  # It can be a transaction from any chain. We don't do any special validation on it.  # noqa: E501
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
         fee_asset = AssetField(load_default=None, required=False, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        user_notes = fields.List(fields.String(), required=False, validate=validate.Length(min=1, max=2))  # noqa: E501
+        user_notes = fields.List(EmptyAsNoneStringField(), required=False, validate=validate.Length(min=1, max=2))  # noqa: E501
 
         @post_load
         def make_history_base_entry(
@@ -978,10 +983,10 @@ class CreateHistoryEventSchema(Schema):
         receive_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
         fee_amount = AmountField(required=False, load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         fee_asset = AssetField(required=False, load_default=None, expected_type=Asset, form_with_incomplete_data=True)  # noqa: E501
-        location_label = fields.String(required=False, load_default=None)
-        unique_id = fields.String(required=False, load_default=None)
-        user_notes = fields.List(fields.String(), required=False, load_default=[], validate=validate.Length(min=2, max=3))  # noqa: E501
-        event_identifier = fields.String(required=False, load_default=None)
+        location_label = EmptyAsNoneStringField(required=False, load_default=None)
+        unique_id = EmptyAsNoneStringField(required=False, load_default=None)
+        user_notes = fields.List(EmptyAsNoneStringField(), required=False, load_default=[], validate=validate.Length(min=2, max=3))  # noqa: E501
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
 
         @post_load
         def make_history_base_entry(self, data: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
@@ -1053,14 +1058,14 @@ class CreateHistoryEventSchema(Schema):
             identifier = fields.Integer(required=False, load_default=None)
             amount = AmountField(required=True, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
             asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-            user_notes = fields.String(required=False, load_default=None)
-            location_label = fields.String(required=False, load_default=None)
+            user_notes = EmptyAsNoneStringField(required=False, load_default=None)
+            location_label = EmptyAsNoneStringField(required=False, load_default=None)
 
         identifiers = fields.List(fields.Integer(), required=True)
         sequence_index = fields.Integer(required=True)
         timestamp = TimestampMSField(required=True)
         location = LocationField(required=True)
-        event_identifier = fields.String(required=False, load_default=None)
+        event_identifier = EmptyAsNoneStringField(required=False, load_default=None)
         spend = fields.List(fields.Nested(EvmSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
         receive = fields.List(fields.Nested(EvmSwapSubEventSchema), required=True, validate=validate.Length(min=1))  # noqa: E501
         fee = fields.List(fields.Nested(EvmSwapSubEventSchema), required=False, load_default=[])
@@ -1194,11 +1199,11 @@ class IntegerIdentifierSchema(Schema):
 
 
 class StringIdentifierSchema(Schema):
-    identifier = fields.String(required=True)
+    identifier = NonEmptyStringField(required=True)
 
 
 class TagsSettingSchema(Schema):
-    tags = fields.List(fields.String(), load_default=None)
+    tags = fields.List(NonEmptyStringField(), load_default=None)
 
     @validates_schema
     def validate_tags(
@@ -1215,7 +1220,7 @@ class TagsSettingSchema(Schema):
 
 class ManuallyTrackedBalanceAddSchema(TagsSettingSchema):
     asset = AssetField(expected_type=Asset, required=True)
-    label = fields.String(required=True)
+    label = NonEmptyStringField(required=True)
     amount = PositiveAmountField(required=True)
     location = LocationField(required=True)
     balance_type = SerializableEnumField(enum_class=BalanceType, load_default=BalanceType.ASSET)
@@ -1255,8 +1260,8 @@ class ManuallyTrackedBalancesDeleteSchema(AsyncQueryArgumentSchema):
 
 
 class TagSchema(Schema):
-    name = fields.String(required=True)
-    description = fields.String(load_default=None)
+    name = NonEmptyStringField(required=True)
+    description = EmptyAsNoneStringField(load_default=None)
     background_color = ColorField(required=False, load_default=None)
     foreground_color = ColorField(required=False, load_default=None)
 
@@ -1278,7 +1283,7 @@ class TagSchema(Schema):
 
 
 class NameDeleteSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
 
 
 def _validate_current_price_oracles(
@@ -1317,7 +1322,7 @@ def _validate_historical_price_oracles(
 
 
 class ExchangeLocationIDSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
     location = LocationField(required=True)
 
     @post_load()
@@ -1356,14 +1361,16 @@ class ModifiableSettingsSchema(Schema):
     include_gas_costs = fields.Bool(load_default=None)
     # TODO: Add some validation to this field
     # even though it gets validated since we try to connect to it
+    # empty string in the endpoint fields means to unset them.
+    # Should go away with https://github.com/orgs/rotki/projects/11?pane=issue&itemId=52425560
     ksm_rpc_endpoint = fields.String(load_default=None)
     dot_rpc_endpoint = fields.String(load_default=None)
     beacon_rpc_endpoint = fields.String(load_default=None)
     main_currency = AssetField(expected_type=AssetWithOracles, load_default=None)
     # TODO: Add some validation to this field
-    date_display_format = fields.String(load_default=None)
-    active_modules = fields.List(fields.String(), load_default=None)
-    frontend_settings = fields.String(load_default=None)
+    date_display_format = EmptyAsNoneStringField(load_default=None)
+    active_modules = fields.List(NonEmptyStringField(), load_default=None)
+    frontend_settings = EmptyAsNoneStringField(load_default=None)
     btc_derivation_gap_limit = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(
@@ -1452,7 +1459,7 @@ class ModifiableSettingsSchema(Schema):
     auto_create_calendar_reminders = fields.Boolean(load_default=None)
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
-    csv_export_delimiter = fields.String(load_default=None)
+    csv_export_delimiter = EmptyAsNoneStringField(load_default=None)
 
     @validates_schema
     def validate_settings_schema(
@@ -1523,12 +1530,12 @@ class EditSettingsSchema(Schema):
 
 
 class BaseUserSchema(Schema):
-    name = fields.String(required=True)
-    password = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
+    password = NonEmptyStringField(required=True)
 
 
 class UserActionSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
     action = fields.String(
         validate=webargs.validate.Equal('logout'),
         load_default=None,
@@ -1549,8 +1556,8 @@ class UserActionSchema(Schema):
 
 
 class UserActionLoginSchema(AsyncQueryArgumentSchema):
-    name = fields.String(required=True)
-    password = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
+    password = NonEmptyStringField(required=True)
     sync_approval = fields.String(
         load_default='unknown',
         validate=webargs.validate.OneOf(choices=('unknown', 'yes', 'no')),
@@ -1559,9 +1566,9 @@ class UserActionLoginSchema(AsyncQueryArgumentSchema):
 
 
 class UserPasswordChangeSchema(Schema):
-    name = fields.String(required=True)
-    current_password = fields.String(required=True)
-    new_password = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
+    current_password = NonEmptyStringField(required=True)
+    new_password = NonEmptyStringField(required=True)
 
 
 class UserPremiumSyncSchema(AsyncQueryArgumentSchema):
@@ -1590,9 +1597,9 @@ class ManualBalanceQuerySchema(AsyncQueryArgumentSchema, AssetValueThresholdSche
 
 class ExternalServiceSchema(Schema):
     name = SerializableEnumField(enum_class=ExternalService, required=True)
-    api_key = fields.String(required=False)
-    username = fields.String(required=False)
-    password = fields.String(required=False)
+    api_key = EmptyAsNoneStringField(required=False)
+    username = EmptyAsNoneStringField(required=False)
+    password = EmptyAsNoneStringField(required=False)
 
     @validates_schema
     def validate_external_service(
@@ -1643,24 +1650,24 @@ class ExternalServicesResourceDeleteSchema(Schema):
 
 
 class ExchangesResourceEditSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
-    new_name = fields.String(load_default=None)
+    new_name = EmptyAsNoneStringField(load_default=None)
     api_key = ApiKeyField(load_default=None)
     api_secret = ApiSecretField(load_default=None)
-    passphrase = fields.String(load_default=None)
+    passphrase = EmptyAsNoneStringField(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
-    binance_markets = fields.List(fields.String(), load_default=None)
+    binance_markets = fields.List(NonEmptyStringField(), load_default=None)
 
 
 class ExchangesResourceAddSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(load_default=None)
-    passphrase = fields.String(load_default=None)
+    passphrase = EmptyAsNoneStringField(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
-    binance_markets = fields.List(fields.String(), load_default=None)
+    binance_markets = fields.List(NonEmptyStringField, load_default=None)
 
     @validates_schema
     def validate_schema(
@@ -1687,12 +1694,12 @@ class ExchangesDataResourceSchema(Schema):
 
 
 class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
-    name = fields.String(required=False)
+    name = EmptyAsNoneStringField(required=False)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
 class ExchangesResourceRemoveSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
     location = LocationField(limit_to=SUPPORTED_EXCHANGES, required=True)
 
 
@@ -1858,8 +1865,8 @@ class HistoryExportingSchema(Schema):
 
 
 class BlockchainAccountDataSchema(TagsSettingSchema):
-    address = fields.String(required=True)
-    label = fields.String(load_default=None)
+    address = NonEmptyStringField(required=True)
+    label = EmptyAsNoneStringField(load_default=None)
 
 
 class BaseXpubSchema(AsyncQueryArgumentSchema):
@@ -1872,9 +1879,9 @@ class BaseXpubSchema(AsyncQueryArgumentSchema):
 
 
 class XpubAddSchema(AsyncQueryArgumentSchema, TagsSettingSchema):
-    xpub = fields.String(required=True)
+    xpub = NonEmptyStringField(required=True)
     derivation_path = DerivationPathField(load_default=None)
-    label = fields.String(load_default=None)
+    label = EmptyAsNoneStringField(load_default=None)
     blockchain = BlockchainField(
         required=True,
         exclude_types=NON_BITCOIN_CHAINS,
@@ -1904,7 +1911,7 @@ class XpubAddSchema(AsyncQueryArgumentSchema, TagsSettingSchema):
 class XpubPatchSchema(TagsSettingSchema):
     xpub = XpubField(required=True)
     derivation_path = DerivationPathField(load_default=None)
-    label = fields.String(load_default=None)
+    label = EmptyAsNoneStringField(load_default=None)
     blockchain = BlockchainField(
         required=True,
         exclude_types=NON_BITCOIN_CHAINS,
@@ -2230,7 +2237,7 @@ class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
 
 
 class StringAccountSchema(Schema):
-    accounts = fields.List(fields.String(), required=True)
+    accounts = fields.List(NonEmptyStringField(), required=True)
 
 
 class BlockchainTypeAccountsDeleteSchema(ChainTypeSchema, StringAccountSchema):
@@ -2281,19 +2288,22 @@ class IgnoredAssetsSchema(Schema):
 
 
 class IgnoredActionsModifySchema(Schema):
-    data = DelimitedOrNormalList(fields.String(required=True), required=True)
+    data = DelimitedOrNormalList(NonEmptyStringField(required=True), required=True)
 
 
 class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
-    name = fields.String(load_default=None)
-    symbol = fields.String(load_default=None)
+    name = EmptyAsNoneStringField(load_default=None)
+    symbol = EmptyAsNoneStringField(load_default=None)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
     address = EvmAddressField(load_default=None)
     evm_chain = EvmChainNameField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
     show_user_owned_assets_only = fields.Boolean(load_default=False)
     show_whitelisted_assets_only = fields.Boolean(load_default=False)
-    identifiers = DelimitedOrNormalList(fields.String(required=True), load_default=None)
+    identifiers = DelimitedOrNormalList(
+        NonEmptyStringField(required=True),
+        load_default=None,
+    )
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
@@ -2349,7 +2359,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
 
 
 class AssetsSearchLevenshteinSchema(Schema):
-    value = fields.String(load_default=None)
+    value = EmptyAsNoneStringField(load_default=None)
     evm_chain = EvmChainNameField(load_default=None)
     address = EvmAddressField(load_default=None)
     limit = fields.Integer(required=True)
@@ -2393,7 +2403,7 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
         required=True,
         validate=webargs.validate.OneOf(choices=('name', 'symbol')),
     )
-    value = fields.String(required=True)
+    value = NonEmptyStringField(required=True)
     evm_chain = EvmChainNameField(load_default=None)
     return_exact_matches = fields.Boolean(load_default=False)
 
@@ -2423,11 +2433,11 @@ class AssetsSearchByColumnSchema(DBOrderBySchema, DBPaginationSchema):
 
 
 class AssetsMappingSchema(Schema):
-    identifiers = DelimitedOrNormalList(fields.String(required=True), required=True)
+    identifiers = DelimitedOrNormalList(NonEmptyStringField(required=True), required=True)
 
 
 class AssetsReplaceSchema(Schema):
-    source_identifier = fields.String(required=True)
+    source_identifier = NonEmptyStringField(required=True)
     target_asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
 
     @validates_schema
@@ -2460,7 +2470,7 @@ class QueriedAddressesSchema(Schema):
 class DataImportSchema(AsyncQueryArgumentSchema):
     source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))
-    timestamp_format = fields.String(load_default=None)
+    timestamp_format = EmptyAsNoneStringField(load_default=None)
 
     @post_load
     def transform_data(
@@ -2484,7 +2494,7 @@ class LocationAssetMappingsBaseSchema(Schema):
 
 
 class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsBaseSchema):
-    location_symbol = fields.String(load_default=None)
+    location_symbol = EmptyAsNoneStringField(load_default=None)
 
     @post_load
     def make_location_asset_mappings_post_query(
@@ -2507,7 +2517,7 @@ class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsB
 
 class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
     asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-    location_symbol = fields.String(required=True)
+    location_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
@@ -2522,7 +2532,7 @@ class LocationAssetMappingUpdateEntrySchema(LocationAssetMappingsBaseSchema):
 
 
 class LocationAssetMappingDeleteEntrySchema(LocationAssetMappingsBaseSchema):
-    location_symbol = fields.String(required=True)
+    location_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
@@ -2556,7 +2566,7 @@ class CounterpartyAssetMappingsBaseSchema(Schema):
 
 class CounterpartyAssetMappingUpdateEntrySchema(CounterpartyAssetMappingsBaseSchema):
     asset = AssetField(required=True, expected_type=Asset, form_with_incomplete_data=True)
-    counterparty_symbol = fields.String(required=True)
+    counterparty_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
@@ -2572,7 +2582,7 @@ class CounterpartyAssetMappingUpdateEntrySchema(CounterpartyAssetMappingsBaseSch
 
 class CounterpartyAssetMappingsPostSchema(DBPaginationSchema, CounterpartyAssetMappingsBaseSchema):
     counterparty = EvmCounterpartyField(load_default=None)
-    counterparty_symbol = fields.String(load_default=None)
+    counterparty_symbol = EmptyAsNoneStringField(load_default=None)
 
     @post_load
     def make_counterparty_asset_mappings_post_query(
@@ -2590,7 +2600,7 @@ class CounterpartyAssetMappingsPostSchema(DBPaginationSchema, CounterpartyAssetM
 
 
 class CounterpartyAssetMappingDeleteEntrySchema(CounterpartyAssetMappingsBaseSchema):
-    counterparty_symbol = fields.String(required=True)
+    counterparty_symbol = NonEmptyStringField(required=True)
 
     @post_load()
     def transform_data(
@@ -2688,7 +2698,7 @@ class ExchangeRatesSchema(AsyncQueryArgumentSchema):
 
 
 class WatcherSchema(Schema):
-    type = fields.String(required=True)
+    type = NonEmptyStringField(required=True)
     args = fields.Dict(required=True)
 
 
@@ -2703,7 +2713,7 @@ class WatchersAddSchema(Schema):
 
 
 class WatcherForEditingSchema(WatcherSchema):
-    identifier = fields.String(required=True)
+    identifier = NonEmptyStringField(required=True)
 
 
 class WatchersEditSchema(WatchersAddSchema):
@@ -2723,7 +2733,7 @@ class WatchersDeleteSchema(Schema):
     TODO: When we have common libraries perhaps do validation here too to
     avoid potential server roundtrip for nothing
     """
-    watchers = fields.List(fields.String(required=True), required=True)
+    watchers = fields.List(NonEmptyStringField(required=True), required=True)
 
 
 class SingleAssetIdentifierSchema(Schema):
@@ -2777,7 +2787,7 @@ class AssetUpdatesRequestSchema(AsyncQueryArgumentSchema):
 
 
 class AssetResetRequestSchema(AsyncQueryArgumentSchema):
-    reset = fields.String(required=True)
+    reset = NonEmptyStringField(required=True)
     ignore_warnings = fields.Boolean(load_default=False)
 
 
@@ -2807,7 +2817,7 @@ class ERC20InfoSchema(AsyncQueryArgumentSchema):
 
 
 class BinanceMarketsUserSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
     location = LocationField(limit_to=(Location.BINANCEUS, Location.BINANCE), required=True)
 
 
@@ -2864,7 +2874,7 @@ class Eth2ValidatorSchema(Schema):
             error='Validator index must be an integer >= 0',
         ),
     )
-    public_key = fields.String(load_default=None)
+    public_key = EmptyAsNoneStringField(load_default=None)
     ownership_percentage = FloatingPercentageField(load_default=ONE)
 
     @validates_schema
@@ -3099,7 +3109,7 @@ class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
 
 
 class ResolveEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
 
 
 class OptionalAddressesListSchema(Schema):
@@ -3107,7 +3117,7 @@ class OptionalAddressesListSchema(Schema):
 
 
 class AddressWithOptionalBlockchainSchema(Schema):
-    address = fields.String(required=True)
+    address = NonEmptyStringField(required=True)
     blockchain = BlockchainField(load_default=None)
 
     @post_load()
@@ -3193,7 +3203,7 @@ class QueryAddressbookSchema(
     DBOrderBySchema,
 ):
     """Schema for querying addressbook entries"""
-    name_substring = fields.String(load_default=None)
+    name_substring = EmptyAsNoneStringField(load_default=None)
     blockchain = BlockchainField(load_default=None)
 
     @post_load
@@ -3217,7 +3227,7 @@ class QueryAddressbookSchema(
 
 
 class AddressbookEntrySchema(AddressWithOptionalBlockchainSchema):
-    name = fields.String(required=True)
+    name = fields.String(required=True)  # empty string triggers the logic to delete the entry
 
     @post_load()
     def transform_data(
@@ -3351,7 +3361,7 @@ class RpcAddNodeSchema(Schema):
             error="Name can't be empty",
         ),
     )
-    endpoint = fields.String(required=True)
+    endpoint = NonEmptyStringField(required=True)
     owned = fields.Boolean(load_default=False)
     weight = FloatingPercentageField(required=True)
     active = fields.Boolean(load_default=False)
@@ -3390,9 +3400,9 @@ class DetectTokensSchema(
 
 
 class UserNotesPutSchema(Schema):
-    title = fields.String(required=True)
-    content = fields.String(required=True)
-    location = fields.String(required=True)
+    title = NonEmptyStringField(required=True)
+    content = EmptyAsNoneStringField(required=True)
+    location = NonEmptyStringField(required=True)
     is_pinned = fields.Boolean(required=True)
 
 
@@ -3405,8 +3415,8 @@ class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):
 
 
 class UserNotesGetSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySchema):
-    title_substring = fields.String(load_default=None)
-    location = fields.String(load_default=None)
+    title_substring = NonEmptyStringField(load_default=None)
+    location = NonEmptyStringField(load_default=None)
 
     @post_load
     def make_user_notes_query(
@@ -3433,9 +3443,9 @@ class UserNotesGetSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySche
 
 
 class CustomAssetsQuerySchema(DBPaginationSchema, DBOrderBySchema):
-    name = fields.String(load_default=None)
-    identifier = fields.String(load_default=None)
-    custom_asset_type = fields.String(load_default=None)
+    name = EmptyAsNoneStringField(load_default=None)
+    identifier = EmptyAsNoneStringField(load_default=None)
+    custom_asset_type = EmptyAsNoneStringField(load_default=None)
 
     @post_load
     def make_custom_assets_query(
@@ -3472,8 +3482,8 @@ class NFTFilterQuerySchema(
         DBOrderBySchema,
 ):
     owner_addresses = fields.List(EvmAddressField(required=True), load_default=None)
-    name = fields.String(load_default=None)
-    collection_name = fields.String(load_default=None)
+    name = EmptyAsNoneStringField(load_default=None)
+    collection_name = EmptyAsNoneStringField(load_default=None)
     ignored_assets_handling = SerializableEnumField(enum_class=IgnoredAssetsHandling, load_default=IgnoredAssetsHandling.NONE)  # noqa: E501
 
     def __init__(self, chains_aggregator: 'ChainsAggregator') -> None:
@@ -3579,7 +3589,7 @@ class BinanceSavingsSchema(BaseStakingQuerySchema):
 
 
 class EnsAvatarsSchema(Schema):
-    ens_name = fields.String(required=True, validate=is_potential_ens_name)
+    ens_name = NonEmptyStringField(required=True, validate=is_potential_ens_name)
 
 
 class ClearCacheSchema(Schema):
@@ -3606,7 +3616,7 @@ class ClearIconsCacheSchema(Schema):
 
 class ClearAvatarsCacheSchema(Schema):
     entries = fields.List(
-        fields.String(required=True, validate=is_potential_ens_name),
+        NonEmptyStringField(required=True, validate=is_potential_ens_name),
         load_default=None,
     )
 
@@ -3663,13 +3673,13 @@ class ExportHistoryEventSchema(HistoryEventSchema, AsyncQueryArgumentSchema):
 
 class ExportHistoryDownloadSchema(Schema):
     """Schema for downloading history events CSVs."""
-    file_path = fields.String(required=True)
+    file_path = NonEmptyStringField(required=True)
 
 
 class AccountingRuleIdSchema(Schema):
     event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     event_subtype = SerializableEnumField(enum_class=HistoryEventSubType, required=True)
-    counterparty = fields.String(required=False, load_default=None)
+    counterparty = EmptyAsNoneStringField(required=False, load_default=None)
 
 
 class LinkedAccountingSetting(Schema):
@@ -3870,7 +3880,7 @@ class AnyBlockchainAddress(Schema):
     blockchain where it belongs. The address can belong to any of the chains that we currently
     support and it will check if the format is correct for the blockchain.
     """
-    address = fields.String(load_default=None)
+    address = EmptyAsNoneStringField(load_default=None)
     blockchain = BlockchainField(load_default=None)
 
     def __init__(
@@ -3909,8 +3919,8 @@ class AnyBlockchainAddress(Schema):
 
 
 class CalendarCommonEntrySchema(AnyBlockchainAddress):
-    name = fields.String(required=True)
-    description = fields.String(load_default=None)
+    name = NonEmptyStringField(required=True)
+    description = EmptyAsNoneStringField(load_default=None)
     counterparty = EvmCounterpartyField(load_default=None)
     color = ColorField(load_default=None)
     auto_delete = fields.Boolean(required=True)
@@ -3951,8 +3961,8 @@ class QueryCalendarSchema(
         TimestampRangeSchema,
         DBOrderBySchema,
 ):
-    name = fields.String(load_default=None)
-    description = fields.String(load_default=None)
+    name = EmptyAsNoneStringField(load_default=None)
+    description = EmptyAsNoneStringField(load_default=None)
     counterparty = EvmCounterpartyField(load_default=None)
     accounts = fields.List(
         fields.Nested(AnyBlockchainAddress(allow_nullable_blockchain=True)),
