@@ -308,7 +308,10 @@ export const useWalletStore = defineStore('wallet', () => {
           fromAddress,
           toAddress: params.to,
         };
-        backendPayload = await prepareNativeTransfer(payload);
+        backendPayload = {
+          ...await prepareNativeTransfer(payload),
+          data: '0x',
+        };
       }
 
       set(preparing, false);
@@ -317,7 +320,10 @@ export const useWalletStore = defineStore('wallet', () => {
         set(waitingForWalletConfirmation, true);
         const provider = getBrowserProvider();
         const signer = await provider.getSigner();
-        tx = await signer.sendTransaction(backendPayload);
+        tx = await signer.sendTransaction({
+          ...backendPayload,
+          type: 0,
+        });
         set(waitingForWalletConfirmation, false);
         startPromise(addRecentTransaction(tx.hash, getChainFromChainId(chainId), params));
         await tx.wait();
