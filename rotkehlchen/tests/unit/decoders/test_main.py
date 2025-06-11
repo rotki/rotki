@@ -81,6 +81,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Liquity',
         'Lockedgno',
         'Makerdao',
+        'Magpie',
         'Makerdaosai',
         'Metamask',
         'Monerium',
@@ -236,6 +237,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'rainbow_swaps',
         'poloniex',
         'uphold',
+        'magpie',
     }
 
 
