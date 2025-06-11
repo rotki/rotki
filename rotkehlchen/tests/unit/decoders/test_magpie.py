@@ -4,7 +4,8 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.decoding.magpie.constants import CPT_MAGPIE, MAGPIE_ROUTER
+from rotkehlchen.chain.evm.decoding.magpie.constants import CPT_MAGPIE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -15,8 +16,13 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.types import ChecksumEvmAddress
+
+# Router addresses for each chain
+BASE_MAGPIE_ROUTER = string_to_evm_address('0xEF42f78d25f4c681dcaD2597fA04877ff802eF4B')
+ARBITRUM_MAGPIE_ROUTER = string_to_evm_address('0x34CdCE58CBDc6C54F2aC808A24561D0Ab18cA8be')
 
 
 @pytest.mark.parametrize('base_accounts', [['0x3a20BA3678C5c40F7CD48EB373fF8a501d170534']])
@@ -62,7 +68,7 @@ def test_magpie_eth_to_token_swap(
             location_label=user_address,
             notes=f'Swap {spend_amount} ETH in Magpie',
             counterparty=CPT_MAGPIE,
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=2,
@@ -74,7 +80,7 @@ def test_magpie_eth_to_token_swap(
             location_label=user_address,
             notes=f'Receive {receive_amount} WELL from Magpie swap',
             counterparty=CPT_MAGPIE,
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ),
     ]
     assert expected_events == events
@@ -131,7 +137,7 @@ def test_magpie_token_to_token_swap(
                 'Set VIRTUAL spending approval of 0xF9c6Fc43a385362C9C8364bF9C5236314607c0A5 '
                 'by 0xEF42f78d25f4c681dcaD2597fA04877ff802eF4B to 3.890381991070206089'
             ),
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=120,
@@ -146,7 +152,7 @@ def test_magpie_token_to_token_swap(
                 'Revoke VIRTUAL spending approval of 0xF9c6Fc43a385362C9C8364bF9C5236314607c0A5 '
                 'by 0xEF42f78d25f4c681dcaD2597fA04877ff802eF4B'
             ),
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=121,
@@ -158,7 +164,7 @@ def test_magpie_token_to_token_swap(
             location_label=user_address,
             notes=f'Swap {spend_amount} VIRTUAL in Magpie',
             counterparty=CPT_MAGPIE,
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=122,
@@ -170,7 +176,7 @@ def test_magpie_token_to_token_swap(
             location_label=user_address,
             notes=f'Receive {receive_amount} USDC from Magpie swap',
             counterparty=CPT_MAGPIE,
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ), EvmSwapEvent(
             tx_hash=tx_hash,
             sequence_index=123,
@@ -182,7 +188,115 @@ def test_magpie_token_to_token_swap(
             location_label=user_address,
             notes=f'Pay {rabby_fee_amount} VIRTUAL as Rabby interface fee',
             counterparty=CPT_MAGPIE,
-            address=MAGPIE_ROUTER,
+            address=BASE_MAGPIE_ROUTER,
         ),
     ]
+    assert expected_events == events
+
+
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xa304816C9c78505714f24FC13222fE07Ce0cc711']])
+def test_magpie_arbitrum_token_to_token_swap(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test decoding a Magpie token to token swap on Arbitrum
+
+    Data from:
+    https://arbiscan.io/tx/0xfb27923fce50ff6769e364c48b8fd32d1bf83e4c2b67bdc49d12627873c5908a
+    """
+    tx_hash = deserialize_evm_tx_hash(
+        '0xfb27923fce50ff6769e364c48b8fd32d1bf83e4c2b67bdc49d12627873c5908a',
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
+
+    timestamp = TimestampMS(1747117715000)
+    gas_amount = '0.0000023453'  # actual gas from transaction
+    rabby_fee_amount = '2.240491123389503579'  # TROVE Fee to Rabby
+    spend_amount = '893.955958232411928011'  # TROVE swapped (router amount)
+    receive_amount = '0.000813622663851767'  # ETH received
+    trove_asset = Asset('eip155:42161/erc20:0x982239D38Af50B0168dA33346d85Fb12929c4c07')
+
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=trove_asset,
+            amount=FVal(spend_amount),
+            location_label=user_address,
+            notes=(
+                'Set TROVE spending approval of 0xa304816C9c78505714f24FC13222fE07Ce0cc711 '
+                'by 0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be to 893.955958232411928011'
+            ),
+            address=string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=trove_asset,
+            amount=ZERO,
+            location_label=user_address,
+            notes=(
+                'Revoke TROVE spending approval of 0xa304816C9c78505714f24FC13222fE07Ce0cc711 '
+                'by 0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'
+            ),
+            address=string_to_evm_address('0x34CdCe58CBdC6C54f2AC808A24561D0AB18Ca8Be'),
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=10,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=trove_asset,
+            amount=FVal(spend_amount),
+            location_label=user_address,
+            notes=f'Swap {spend_amount} TROVE in Magpie',
+            counterparty=CPT_MAGPIE,
+            address=string_to_evm_address('0x9164424A33a89202040F02170431073c59eFa1A9'),
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal(receive_amount),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} ETH from Magpie swap',
+            counterparty=CPT_MAGPIE,
+            address=string_to_evm_address('0x9164424A33a89202040F02170431073c59eFa1A9'),
+        ), EvmSwapEvent(
+            tx_hash=tx_hash,
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=trove_asset,
+            amount=FVal(rabby_fee_amount),
+            location_label=user_address,
+            notes=f'Pay {rabby_fee_amount} TROVE as Rabby interface fee',
+            counterparty=CPT_MAGPIE,
+            address=string_to_evm_address('0x9164424A33a89202040F02170431073c59eFa1A9'),
+        ),
+    ]
+
     assert expected_events == events

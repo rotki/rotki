@@ -3,6 +3,7 @@ from typing import Any
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import RABBY_WALLET_FEE_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -11,13 +12,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CPT_MAGPIE, MAGPIE_ICON, MAGPIE_LABEL, MAGPIE_ROUTER, SWAPPED
+from .constants import CPT_MAGPIE, MAGPIE_ICON, MAGPIE_LABEL, SWAPPED
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -25,6 +25,16 @@ log = RotkehlchenLogsAdapter(logger)
 
 class MagpieCommonDecoder(DecoderInterface):
     """Decoder for Magpie protocol swaps"""
+
+    def __init__(
+            self,
+            evm_inquirer: Any,
+            base_tools: Any,
+            msg_aggregator: Any,
+            router_address: ChecksumEvmAddress,
+    ) -> None:
+        super().__init__(evm_inquirer, base_tools, msg_aggregator)
+        self.router_address = router_address
 
     def _decode_swap(self, context: DecoderContext) -> DecodingOutput:
         """Decode a swap event from Magpie protocol"""
@@ -106,7 +116,6 @@ class MagpieCommonDecoder(DecoderInterface):
                     f'Receive {received_amount} {destination_token.symbol} '
                     f'from {MAGPIE_LABEL} swap'
                 )
-                event.address = MAGPIE_ROUTER
                 in_event = event
 
         fee_events = []
@@ -118,8 +127,17 @@ class MagpieCommonDecoder(DecoderInterface):
             if total_spent == spent_amount:
 
                 for event in spending_events:
-                    if event.address == MAGPIE_ROUTER:
-                        # Main swap event
+                    # Always treat Rabby address as fee
+                    if event.address == RABBY_WALLET_FEE_ADDRESS:
+                        event.event_type = HistoryEventType.TRADE
+                        event.event_subtype = HistoryEventSubType.FEE
+                        event.counterparty = CPT_MAGPIE
+                        event.notes = (
+                            f'Pay {event.amount} {source_token.symbol} as Rabby interface fee'
+                        )
+                        fee_events.append(event)
+                    else:
+                        # Main swap event (largest non-Rabby transfer)
                         event.event_type = HistoryEventType.TRADE
                         event.event_subtype = HistoryEventSubType.SPEND
                         event.counterparty = CPT_MAGPIE
@@ -127,25 +145,6 @@ class MagpieCommonDecoder(DecoderInterface):
                             f'Swap {event.amount} {source_token.symbol} in {MAGPIE_LABEL}'
                         )
                         out_event = event
-                    else:
-                        # Fee event
-                        event.event_type = HistoryEventType.TRADE
-                        event.event_subtype = HistoryEventSubType.FEE
-                        event.counterparty = CPT_MAGPIE
-
-                        # Special note for Rabby fee
-                        if event.address == string_to_evm_address(
-                            '0x39041F1B366fE33F9A5a79dE5120F2Aee2577ebc',
-                        ):
-                            event.notes = (
-                                f'Pay {event.amount} {source_token.symbol} as Rabby interface fee'
-                            )
-                        else:
-                            event.notes = (
-                                f'Pay {event.amount} {source_token.symbol} as {MAGPIE_LABEL} fee'
-                            )
-
-                        fee_events.append(event)
             else:
                 # Single event case - check if it's the exact swap amount
                 for event in spending_events:
@@ -156,7 +155,6 @@ class MagpieCommonDecoder(DecoderInterface):
                         event.notes = (
                             f'Swap {spent_amount} {source_token.symbol} in {MAGPIE_LABEL}'
                         )
-                        event.address = MAGPIE_ROUTER
                         out_event = event
                         break
 
@@ -173,13 +171,13 @@ class MagpieCommonDecoder(DecoderInterface):
 
     def decode_action(self, context: DecoderContext) -> DecodingOutput:
         """Main decoding function for Magpie protocol"""
-        if context.transaction.to_address != MAGPIE_ROUTER:
+        if context.transaction.to_address != self.router_address:
             return DEFAULT_DECODING_OUTPUT
         return self._decode_swap(context)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            MAGPIE_ROUTER: (self._decode_swap,),
+            self.router_address: (self._decode_swap,),
         }
 
     @staticmethod

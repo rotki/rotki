@@ -1,14 +1,8 @@
 from typing import Final
 
-from rotkehlchen.chain.evm.types import string_to_evm_address
-
 CPT_MAGPIE: Final = 'magpie'
 MAGPIE_LABEL: Final = 'Magpie'
 MAGPIE_ICON: Final = 'magpie.png'
-
-# Router addresses across different chains
-# All chains use the same router address
-MAGPIE_ROUTER: Final = string_to_evm_address('0xEF42f78d25f4c681dcaD2597fA04877ff802eF4B')
 
 # Method signatures for Magpie swaps
 # These are the first 4 bytes of the function selector
