@@ -49,7 +49,6 @@ export const PrepareERC20TransferResponse = z.object({
   chainId: z.number(),
   data: z.string(),
   from: z.string(),
-  gas: z.number(),
   nonce: z.number(),
   to: z.string(),
   value: z.number().transform(arg => BigInt(arg)),
