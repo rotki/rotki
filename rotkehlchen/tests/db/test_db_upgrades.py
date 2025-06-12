@@ -3317,7 +3317,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert cursor.execute(
         "SELECT value FROM settings WHERE name='version'",
     ).fetchone()[0] == str(ROTKEHLCHEN_DB_VERSION)
-    removed_tables = {'action_type', 'trade_type', 'trades'}
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -3326,7 +3326,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'evm_transactions_authorizations', 'eth_validators_data_cache'}
+    assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -3512,30 +3512,30 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    
+
     # Check the buggy schema before upgrade
     with db_v48.conn.read_ctx() as cursor:
         # Get the schema and verify it has the bug
         schema_info = cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'"
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'",
         ).fetchone()
         assert schema_info is not None
         assert 'TEXT_NOT NULL' in schema_info[0], 'Expected TEXT_NOT NULL bug in schema'
-        
+
         # Check that data exists - just verify we have some data
         swaps_count = cursor.execute(
-            'SELECT COUNT(*) FROM zksynclite_swaps'
+            'SELECT COUNT(*) FROM zksynclite_swaps',
         ).fetchone()[0]
         assert swaps_count > 0, 'Expected some swap data'
-        
+
         # Store the data to verify it's preserved
         swaps_data = cursor.execute(
-            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id'
+            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id',  # noqa: E501
         ).fetchall()
-    
+
     # Logout and upgrade
     db_v48.logout()
-    
+
     # Now open with target version 49 to trigger upgrade
     db = _init_db_with_target_version(
         target_version=49,
@@ -3543,21 +3543,21 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    
+
     # Check the schema after upgrade
     with db.conn.read_ctx() as cursor:
         # Get the fixed schema
         schema_info = cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'"
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'",
         ).fetchone()
         assert schema_info is not None
         assert 'TEXT_NOT NULL' not in schema_info[0], 'TEXT_NOT NULL bug should be fixed'
-        assert 'to_amount TEXT NOT NULL' in schema_info[0], 'Should have correct TEXT NOT NULL syntax'
-        
+        assert 'to_amount TEXT NOT NULL' in schema_info[0], 'Should have correct TEXT NOT NULL syntax'  # noqa: E501
+
         # Check that data was preserved
         new_swaps_data = cursor.execute(
-            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id'
+            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id',  # noqa: E501
         ).fetchall()
         assert new_swaps_data == swaps_data, 'Swap data should be preserved after upgrade'
-    
+
     db.logout()
