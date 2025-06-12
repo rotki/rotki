@@ -136,7 +136,7 @@ watchImmediate(mappedIdentifier, async (identifier) => {
   }
 });
 
-const { copy } = useCopy(identifier);
+const { copied, copy } = useCopy(identifier);
 </script>
 
 <template>
@@ -212,26 +212,37 @@ const { copy } = useCopy(identifier);
     <div>
       {{ t('asset_icon.tooltip', tooltip) }}
     </div>
-    <div
-      v-if="isEvmIdentifier(identifier)"
-      class="font-mono flex items-center gap-2 -my-1"
-    >
-      {{ getAddressFromEvmIdentifier(identifier) }}
-      <RuiButton
-        size="sm"
-        variant="text"
-        icon
-        @click="copy()"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-copy"
-            size="16"
-            class="!text-rui-grey-400"
-          />
-        </template>
-      </RuiButton>
-    </div>
+    <template v-if="isEvmIdentifier(identifier)">
+      <div class="overflow-hidden h-5">
+        <div
+          class="transition-all duration-100"
+          :class="{
+            '-mt-5': copied,
+          }"
+        >
+          <div class="h-5 font-mono flex items-center gap-2">
+            {{ getAddressFromEvmIdentifier(identifier) }}
+            <RuiButton
+              size="sm"
+              variant="text"
+              icon
+              @click="copy()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-copy"
+                  size="12"
+                  class="!text-rui-grey-400"
+                />
+              </template>
+            </RuiButton>
+          </div>
+        </div>
+        <div class="font-bold text-caption uppercase text-rui-success-lighter">
+          {{ t('amount_display.copied') }}
+        </div>
+      </div>
+    </template>
   </RuiTooltip>
 </template>
 
