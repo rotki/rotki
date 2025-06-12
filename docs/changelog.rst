@@ -12,6 +12,7 @@ Changelog
 * :bug:`10087` Users will now be able to use the electron app wallet bridge when using Windows.
 * :bug:`-` Token detection will no longer fail when encountering certain NFTs with improper implementations.
 * :bug:`10096` CSV imports for trades from rotki custom trades, uphold, cointracking, shapeshift, kucoin and blockpit should now work properly and not show only a single event per trade/swap.
+* :bug:`-` Users will now be able to see the events in PnL reports without getting an error when the events don't have notes.
 
 * :release:`1.39.0 <2025-06-04>`
 * :feature:`-` DigixDAO DGD refunds will now be properly decoded.

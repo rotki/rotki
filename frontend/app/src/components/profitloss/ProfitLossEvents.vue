@@ -303,7 +303,10 @@ onMounted(async () => {
         />
       </template>
       <template #item.notes="{ row }">
-        <div class="py-1">
+        <div
+          v-if="row.notes"
+          class="py-1"
+        >
           <HistoryEventNote
             v-if="isTransactionEvent(row)"
             :notes="row.notes"
@@ -316,6 +319,12 @@ onMounted(async () => {
             :notes="row.notes"
             :asset="row.assetIdentifier"
           />
+        </div>
+        <div
+          v-else
+          class="py-1"
+        >
+          -
         </div>
       </template>
       <template #item.actions="{ row }">
