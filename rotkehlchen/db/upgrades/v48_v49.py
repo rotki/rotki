@@ -44,7 +44,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 to_amount TEXT NOT NULL,
                 FOREIGN KEY(tx_id) REFERENCES zksynclite_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
                 FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-                FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",
+                FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",  # noqa: E501
             insert_columns='tx_id, from_asset, from_amount, to_asset, COALESCE(to_amount, "0")',
         )
 
