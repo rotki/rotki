@@ -8,9 +8,11 @@ from rotkehlchen.api.v1.fields import (
     AssetField,
     AssetTypeField,
     DelimitedOrNormalList,
+    EmptyAsNoneStringField,
     EvmAddressField,
     EvmChainNameField,
     FloatingPercentageField,
+    NonEmptyStringField,
     SerializableEnumField,
     TimestampField,
 )
@@ -65,14 +67,14 @@ class UnderlyingTokenInfoSchema(Schema):
 
 
 class BaseAssetSchema(Schema):
-    name = fields.String(required=True)
+    name = NonEmptyStringField(required=True)
 
 
 class AssetWithOraclesSchema(BaseAssetSchema):
-    identifier = fields.String(required=False, load_default=None)
-    symbol = fields.String(required=True)
-    coingecko = fields.String(load_default=None)
-    cryptocompare = fields.String(load_default=None)
+    identifier = EmptyAsNoneStringField(required=False, load_default=None)
+    symbol = NonEmptyStringField(required=True)
+    coingecko = EmptyAsNoneStringField(load_default=None)
+    cryptocompare = EmptyAsNoneStringField(load_default=None)
 
     def __init__(
             self,
@@ -189,7 +191,7 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
         ),
         required=True,
     )
-    protocol = fields.String(load_default=None)
+    protocol = EmptyAsNoneStringField(load_default=None)
     underlying_tokens = DelimitedOrNormalList(
         fields.Nested(UnderlyingTokenInfoSchema),
         load_default=None,
@@ -269,8 +271,8 @@ class EvmTokenSchema(CryptoAssetFieldsSchema):
 
 
 class BaseCustomAssetSchema(BaseAssetSchema):
-    notes = fields.String(load_default=None)
-    custom_asset_type = fields.String(required=True)
+    notes = EmptyAsNoneStringField(load_default=None)
+    custom_asset_type = NonEmptyStringField(required=True)
 
     @post_load
     def make_custom_asset(
@@ -376,5 +378,5 @@ class AssetSchema(Schema):
 
 
 class ExportedAssetsSchema(Schema):
-    version = fields.String(required=True)
+    version = NonEmptyStringField(required=True)
     assets = fields.List(fields.Nested(AssetSchema(identifier_required=True)), load_default=None)
