@@ -5,6 +5,7 @@ import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumReminder } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useLogin } from '@/modules/account/use-login';
+import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useWebsocketStore } from '@/store/websocket';
@@ -34,6 +35,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
+  const { resetWalletConnection } = useWalletStore();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
     set(loading, true);
@@ -87,6 +89,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
       setLastLogin(username);
       showGetPremiumButton();
       set(checkForAssetUpdate, true);
+      await resetWalletConnection();
     }
   };
 

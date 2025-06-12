@@ -5,6 +5,7 @@ import type {
   RecentTransaction,
   TransactionParams,
 } from '@/modules/onchain/types';
+import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
@@ -149,6 +150,14 @@ export const useWalletStore = defineStore('wallet', () => {
     await appKit.disconnect();
 
     resetState();
+  };
+
+  const { isPackaged } = useInterop();
+
+  const resetWalletConnection = async (): Promise<void> => {
+    if (isPackaged) {
+      await disconnect();
+    }
   };
 
   const switchNetwork = async (chainId: bigint): Promise<void> => {
@@ -364,6 +373,7 @@ export const useWalletStore = defineStore('wallet', () => {
     open,
     preparing,
     recentTransactions,
+    resetWalletConnection,
     sendTransaction,
     supportedChainIds,
     supportedChainsForConnectedAccount,
