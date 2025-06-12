@@ -683,6 +683,14 @@
         "title": "Querying events"
       }
     },
+    "report_events": {
+      "fetch": {
+        "error": {
+          "description": "An unexpected error occurred while loading the report events: {error}",
+          "title": "Loading generated report events"
+        }
+      }
+    },
     "reports": {
       "csv_export": {
         "message": {
