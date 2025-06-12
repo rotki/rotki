@@ -23,6 +23,16 @@ const description = useRefPropVModel(modelValue, 'description');
 const backgroundColor = useRefPropVModel(modelValue, 'backgroundColor');
 const foregroundColor = useRefPropVModel(modelValue, 'foregroundColor');
 
+const descriptionModel = computed<string>({
+  get() {
+    return get(description) || '';
+  },
+  set(value: string) {
+    const trimmedValue = value.trim();
+    set(description, trimmedValue.length > 0 ? trimmedValue : null);
+  },
+});
+
 useFormStateWatcher({
   backgroundColor,
   description,
@@ -102,7 +112,7 @@ defineExpose({
       :disabled="editMode"
     />
     <RuiTextField
-      v-model="description"
+      v-model="descriptionModel"
       variant="outlined"
       color="primary"
       class="tag_creator__description"
