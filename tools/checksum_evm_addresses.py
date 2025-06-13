@@ -53,6 +53,51 @@ def find_addresses_in_string(content: str) -> list[tuple[str, int]]:
     return matches
 
 
+def fix_addresses_in_file(file_path: Path, violations: list[AddressViolation]) -> bool:
+    """Fix non-checksummed addresses in a file."""
+    if not violations:
+        return True
+
+    try:
+        content = file_path.read_text()
+
+        # Sort violations by position in reverse order to avoid offset issues
+        sorted_violations = sorted(violations, key=lambda v: (v.line, v.column), reverse=True)
+
+        lines = content.splitlines(keepends=True)
+
+        for violation in sorted_violations:
+            # Find the line (0-indexed)
+            line_idx = violation.line - 1
+            if line_idx >= len(lines):
+                continue
+
+            line = lines[line_idx]
+            # Replace the address in the line
+            # We need to be careful to only replace the exact occurrence
+            col_idx = violation.column - 1
+
+            # Verify the address is at the expected position
+            if line[col_idx:col_idx + len(violation.address)] == violation.address:
+                lines[line_idx] = (
+                    line[:col_idx] +
+                    violation.checksummed +
+                    line[col_idx + len(violation.address):]
+                )
+            else:
+                # Fallback: replace the address anywhere in the line
+                lines[line_idx] = line.replace(violation.address, violation.checksummed)
+
+        # Write back the fixed content
+        file_path.write_text(''.join(lines))
+
+    except Exception as e:
+        print(f'Error fixing {file_path}: {e}')
+        return False
+    else:
+        return True
+
+
 def check_python_file(file_path: Path) -> list[AddressViolation]:
     """Check a Python file for non-checksummed addresses."""
     violations = []
@@ -172,7 +217,7 @@ def main() -> int:
     parser.add_argument(
         '--fix',
         action='store_true',
-        help='Automatically fix non-checksummed addresses (use with caution)',
+        help='Automatically fix non-checksummed addresses',
     )
     parser.add_argument(
         '--exclude',
@@ -183,7 +228,7 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    violations: list[AddressViolation] = []
+    violations_by_file: dict[Path, list[AddressViolation]] = {}
     files_checked = 0
 
     for path_str in args.paths:
@@ -212,25 +257,51 @@ def main() -> int:
             else:
                 continue
 
-            violations.extend(file_violations)
+            if file_violations:
+                violations_by_file[file_path] = file_violations
+
+    # Get total violations count
+    total_violations = sum(len(v) for v in violations_by_file.values())
 
     # Report results
-    if len(violations) == 0:
+    if total_violations == 0:
         print(f'✅ Checked {files_checked} files - all EVM addresses are properly checksummed!')
         return 0
 
-    print(f'❌ Found {len(violations)} non-checksummed addresses in {files_checked} files:\n')
-
-    for violation in violations:
-        print(f'{violation.file}:{violation.line}:{violation.column}')
-        print(f'  Found:     {violation.address}')
-        print(f'  Should be: {violation.checksummed}')
-        print(f'  Context:   {violation.context}')
-        print()
-
     if args.fix:
-        print('--fix option not implemented yet. Please fix addresses manually.')
-        print('Consider using string_to_evm_address() for address constants.')
+        # Fix the violations
+        print(
+            f'🔧 Fixing {total_violations} non-checksummed addresses '
+            f'in {len(violations_by_file)} files...\n',
+        )
+
+        fixed_count = 0
+        for file_path, violations in violations_by_file.items():
+            if fix_addresses_in_file(file_path, violations):
+                fixed_count += len(violations)
+                print(f'✅ Fixed {len(violations)} addresses in {file_path}')
+            else:
+                print(f'❌ Failed to fix addresses in {file_path}')
+
+        if fixed_count == total_violations:
+            print(f'\n✅ Successfully fixed all {fixed_count} addresses!')
+            return 0
+        else:
+            print(f'\n⚠️  Fixed {fixed_count}/{total_violations} addresses')
+            return 1
+    else:
+        # Just report the violations
+        print(f'❌ Found {total_violations} non-checksummed addresses in {files_checked} files:\n')
+
+        for violations in violations_by_file.values():
+            for violation in violations:
+                print(f'{violation.file}:{violation.line}:{violation.column}')
+                print(f'  Found:     {violation.address}')
+                print(f'  Should be: {violation.checksummed}')
+                print(f'  Context:   {violation.context}')
+                print()
+
+        print('💡 Run with --fix to automatically fix these addresses')
 
     return 1
 

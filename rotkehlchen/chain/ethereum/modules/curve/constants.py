@@ -54,7 +54,7 @@ CURVE_DEPOSIT_CONTRACTS: Final = {
     string_to_evm_address('0xaa82ca713D94bBA7A89CEAB55314F9EfFEdDc78c'),  # curve tbtc
     string_to_evm_address('0xA79828DF1850E8a3A3064576f380D90aECDD3359'),  # curve 3pool
     string_to_evm_address('0x08780fb7E580e492c1935bEe4fA5920b94AA95Da'),  # curve fraxusdc
-    string_to_evm_address('0x7abdbaf29929e7f8621b757d2a7c04d78d633834'),  # curve sbtc
+    string_to_evm_address('0x7AbDBAf29929e7F8621B757D2a7c04d78d633834'),  # curve sbtc
     string_to_evm_address('0xA2d40Edbf76C6C0701BA8899e2d059798eBa628e'),  # curve sbtc2
 }
 DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x56C526b0159a258887e0d79ec3a80dfb940d0cD7')
