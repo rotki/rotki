@@ -1,6 +1,6 @@
 {
   "name": "rotki",
-  "version": "1.39.0",
+  "version": "1.39.1",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "type": "module",
   "license": "AGPL-3.0",
