@@ -29,15 +29,15 @@ export class SubprocessHandler {
     ------------------
     | Starting rotki |
     ------------------`;
-    this.logger.log(startupMessage);
+    this.logger.info(startupMessage);
 
     this.colibriManager = new ProcessManager(
       'colibri',
-      msg => this.logger.log(msg),
+      msg => this.logger.info(msg),
     );
     this.coreManager = new ProcessManager(
       'rotki-core',
-      msg => this.logger.log(msg),
+      msg => this.logger.info(msg),
       { useWindowsTermination: true },
     );
   }
@@ -51,13 +51,13 @@ export class SubprocessHandler {
 
   async checkForBackendProcess(): Promise<number[]> {
     try {
-      this.logger.log('Checking for running rotki-core processes');
+      this.logger.info('Checking for running rotki-core processes');
       const runningProcesses = await psList({ all: true });
       const matches = runningProcesses.filter(process => this.matchProcess(process.cmd));
       return matches.map(p => p.pid);
     }
     catch (error: any) {
-      this.logger.log(error.toString());
+      this.logger.error(error);
       return [];
     }
   }
@@ -90,11 +90,11 @@ export class SubprocessHandler {
   }
 
   async startProcesses(options: Partial<BackendOptions>, listener: SubprocessHandlerErrorListener): Promise<void> {
-    this.logger.log('Preparing to start processes');
+    this.logger.info('Preparing to start processes');
     this.logger.updateLogDirectory(options.logDirectory);
 
     if (process.env.SKIP_PYTHON_BACKEND) {
-      this.logger.log('Skipped starting rotki-core');
+      this.logger.warn('Skipped starting rotki-core');
       return;
     }
 
@@ -111,7 +111,7 @@ export class SubprocessHandler {
     await this.startCore(options, listener);
     const isCoreAvailable = await this.checkCoreApiAvailability(this.config.urls.coreApiUrl);
     if (!isCoreAvailable) {
-      this.logger.log('Failed to connect to core. Exiting');
+      this.logger.error('Failed to connect to core. Exiting');
       await this.terminateProcesses();
       return;
     }
@@ -119,14 +119,14 @@ export class SubprocessHandler {
   }
 
   private async startColibri(options: Partial<BackendOptions>): Promise<void> {
-    this.logger.log('Preparing to start colibri');
+    this.logger.info('Preparing to start colibri');
     const [port, url, isNonDefault] = await getPortAndUrl(
       this.config.ports.colibriPort,
       this.config.urls.colibriApiUrl,
     );
 
     if (isNonDefault) {
-      this.logger.log(`Using non-default port ${port} for colibri at ${url}`);
+      this.logger.warn(`Using non-default port ${port} for colibri at ${url}`);
       this.config.urls.colibriApiUrl = url;
     }
 
@@ -137,23 +137,23 @@ export class SubprocessHandler {
       .build();
 
     this.colibriManager.onExit((code) => {
-      this.logger.log(`colibri exited with code: ${code}`);
+      this.logger.error(`colibri exited with code: ${code}`);
     });
     this.colibriManager.onError((error) => {
-      this.logger.log(`colibri exited with error: ${error}`);
+      this.logger.error(`colibri exited with error: ${error}`);
     });
     this.colibriManager.start(command, args, workDir);
   }
 
   private async startCore(options: Partial<BackendOptions>, listener: SubprocessHandlerErrorListener) {
-    this.logger.log('Preparing to start rotki-core');
+    this.logger.info('Preparing to start rotki-core');
     const [port, url, isNonDefault] = await getPortAndUrl(
       this.config.ports.corePort,
       this.config.urls.coreApiUrl,
     );
 
     if (isNonDefault) {
-      this.logger.log(`Using non-default port ${port} for rotki-core at ${url}`);
+      this.logger.warn(`Using non-default port ${port} for rotki-core at ${url}`);
       this.config.urls.coreApiUrl = url;
     }
 
@@ -163,7 +163,7 @@ export class SubprocessHandler {
       .build();
 
     this.coreManager.onExit((code, signal, lastError) => {
-      this.logger.log(`rotki-core exited with signal: ${signal} (Code: ${code})`);
+      this.logger.error(`rotki-core exited with signal: ${signal} (Code: ${code})`);
       /**
        * On win32 we can also get a null code on SIGTERM
        */
@@ -174,7 +174,7 @@ export class SubprocessHandler {
     });
 
     this.coreManager.onError((error) => {
-      this.logger.log(`Encountered an error while trying to start rotki-core\n\n${error.toString()}`);
+      this.logger.error('Encountered an error while trying to start rotki-core', error);
       listener.onProcessError(error, BackendCode.TERMINATED);
     });
 
@@ -206,33 +206,33 @@ export class SubprocessHandler {
 
       const retryOrFail = (): void => {
         if (attempt <= retries) {
-          this.logger.log(`Retrying ping in ${waitSeconds} seconds`);
+          this.logger.info(`Retrying ping in ${waitSeconds} seconds`);
           setTimeout(ping, waitSeconds * 1000);
         }
         else {
-          this.logger.log(`Ping failed after ${retries} attempts`);
+          this.logger.error(`Ping failed after ${retries} attempts`);
           resolve(false);
         }
       };
 
       ping = (): void => {
         attempt++;
-        this.logger.log(`Pinging ${pingUrl.href} attempt ${attempt}`);
+        this.logger.info(`Pinging ${pingUrl.href} attempt ${attempt}`);
 
         const request = http.get(pingUrl.href, (res) => {
           if (res.statusCode === 200) {
-            this.logger.log(`Ping successful on attempt ${attempt}`);
+            this.logger.info(`Ping successful on attempt ${attempt}`);
             resolve(true);
           }
           else {
-            this.logger.log(`Ping failed with status code: ${res.statusCode}`);
+            this.logger.warn(`Ping failed with status code: ${res.statusCode}`);
             retryOrFail();
           }
           res.destroy();
         });
 
         request.on('error', (err) => {
-          this.logger.log(`Ping failed with error: ${err.message}`);
+          this.logger.error('Ping failed with error', err);
           retryOrFail();
         });
 

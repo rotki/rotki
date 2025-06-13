@@ -8,6 +8,7 @@ import { SettingsManager } from '@electron/main/settings-manager';
 import { SubprocessHandler } from '@electron/main/subprocess-handler';
 import { TrayManager } from '@electron/main/tray-manager';
 import { WindowManager } from '@electron/main/window-manager';
+import { LogLevel } from '@shared/log-level';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { app, protocol } from 'electron';
 
@@ -82,6 +83,7 @@ export class Application {
       updateTray: params => this.tray.update(params),
       updatePremiumMenu: isPremium => this.menu.updatePremiumStatus(isPremium),
       restartSubprocesses: async (options) => {
+        this.logger.setLogLevel(options.loglevel ?? this.appConfig.isDev ? LogLevel.DEBUG : LogLevel.INFO);
         await this.processHandler.terminateProcesses(true);
         await this.processHandler.startProcesses(options, {
           onProcessError: (message, code) => this.window.notify(message, code),

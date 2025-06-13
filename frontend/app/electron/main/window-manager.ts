@@ -166,12 +166,12 @@ export class WindowManager {
   }
 
   listenForAckMessages() {
-    // Listen for ack messages from renderer process
+    // Listen for ack messages from the renderer process
     ipcMain.on('ack', (event, ...args) => {
       if (args[0] === 1)
         this.clearPending();
       else
-        this.logger.log(`Warning: unknown ack code ${args[0]}`);
+        this.logger.warn(`Warning: unknown ack code ${args[0]}`);
     });
   }
 
