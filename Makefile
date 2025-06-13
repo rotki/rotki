@@ -14,6 +14,7 @@ lint:
 format:
 	ruff check $(ALL_LINT_PATHS) --fix
 	double-indent $(ALL_LINT_PATHS)
+	python tools/lint_checksum_addresses.py --fix
 
 
 clean:
