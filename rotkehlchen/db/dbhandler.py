@@ -889,6 +889,16 @@ class DBHandler:
     ) -> None:
         ...
 
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_ID],
+            value: str,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',

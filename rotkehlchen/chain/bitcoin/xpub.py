@@ -5,9 +5,9 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin import have_bitcoin_transactions
 from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
+from rotkehlchen.chain.bitcoin.utils import have_bitcoin_transactions
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.utils import replace_tag_mappings
 from rotkehlchen.errors.misc import RemoteError

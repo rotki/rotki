@@ -18,6 +18,7 @@ from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
 from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+from rotkehlchen.chain.bitcoin.manager import BitcoinManager
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -812,6 +813,11 @@ def fixture_zksync_lite_manager(ethereum_inquirer, database):
         ethereum_inquirer=ethereum_inquirer,
         database=database,
     )
+
+
+@pytest.fixture(name='bitcoin_manager')
+def fixture_bitcoin_manager(database):
+    return BitcoinManager(database=database)
 
 
 @pytest.fixture(name='ethereum_modules')
