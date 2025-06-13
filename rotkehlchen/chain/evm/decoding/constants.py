@@ -1,6 +1,7 @@
 from typing import Final
 
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.history.events.structures.types import HistoryEventType
 
@@ -9,6 +10,9 @@ CPT_GITCOIN: Final = 'gitcoin'
 CPT_BASE: Final = 'base'
 CPT_SDAI: Final = 'sDAI'
 CPT_ACCOUNT_DELEGATION: Final = 'account delegation'
+
+# Common addresses across EVM chains
+RABBY_WALLET_FEE_ADDRESS: Final = string_to_evm_address('0x39041F1B366fE33F9A5a79dE5120F2Aee2577ebc')  # noqa: E501
 
 OUTGOING_EVENT_TYPES: Final = {
     HistoryEventType.SPEND,
