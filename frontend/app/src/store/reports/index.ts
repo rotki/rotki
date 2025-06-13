@@ -27,17 +27,6 @@ import { isTransactionEvent } from '@/utils/report';
 import { Blockchain, type Message } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 
-function notify(info: { title: string; message: (value: { message: string }) => string; error?: any }): void {
-  logger.error(info.error);
-  const message = info.error?.message ?? info.error ?? '';
-  const { notify } = useNotificationsStore();
-  notify({
-    display: true,
-    message: info.message({ message }),
-    title: info.title,
-  });
-}
-
 function emptyError(): ReportError {
   return {
     error: '',
@@ -85,6 +74,7 @@ export const useReportsStore = defineStore('reports', () => {
   });
 
   const { setMessage } = useMessageStore();
+  const { notify } = useNotificationsStore();
   const { t } = useI18n({ useScope: 'global' });
 
   const { fetchEnsNames } = useAddressesNamesStore();
@@ -142,9 +132,9 @@ export const useReportsStore = defineStore('reports', () => {
       set(reports, await fetchReportsCaller());
     }
     catch (error: any) {
+      logger.error(error);
       notify({
-        error,
-        message: value => t('actions.reports.fetch.error.description', value),
+        message: t('actions.reports.fetch.error.description'),
         title: t('actions.reports.fetch.error.title'),
       });
     }
@@ -156,49 +146,48 @@ export const useReportsStore = defineStore('reports', () => {
       await fetchReports();
     }
     catch (error: any) {
+      logger.error(error);
       notify({
-        error,
-        message: values => t('actions.reports.delete.error.description', values),
+        message: t('actions.reports.delete.error.description'),
         title: t('actions.reports.delete.error.title'),
       });
     }
   };
 
+  function fetchEnsNamesFromTransactions(events: Collection<ProfitLossEvent>): void {
+    const addressesNamesPayload: AddressBookSimplePayload[] = [];
+    events.data
+      .filter(event => isTransactionEvent(event))
+      .forEach((event) => {
+        const blockchain = event.location || Blockchain.ETH;
+        if (!event.notes || !isBlockchain(blockchain))
+          return;
+
+        const addresses = getEthAddressesFromText(event.notes);
+        addressesNamesPayload.push(
+          ...addresses.map(address => ({
+            address,
+            blockchain,
+          })),
+        );
+      });
+
+    if (addressesNamesPayload.length > 0)
+      startPromise(fetchEnsNames(addressesNamesPayload));
+  }
+
   const fetchReportEvents = async (payload: MaybeRef<ProfitLossEventsPayload>): Promise<Collection<ProfitLossEvent>> => {
     try {
       const response = await fetchReportEventsCaller(get(payload));
-
-      const mapped = mapCollectionResponse<ProfitLossEvent, CollectionResponse<ProfitLossEvent>>(response);
-
-      const addressesNamesPayload: AddressBookSimplePayload[] = [];
-
-      mapped.data
-        .filter(event => isTransactionEvent(event))
-        .forEach((event) => {
-          const blockchain = event.location || Blockchain.ETH;
-          if (!event.notes || !isBlockchain(blockchain))
-            return;
-
-          const addresses = getEthAddressesFromText(event.notes);
-          addressesNamesPayload.push(
-            ...addresses.map(address => ({
-              address,
-              blockchain,
-            })),
-          );
-        });
-
-      if (addressesNamesPayload.length > 0)
-        startPromise(fetchEnsNames(addressesNamesPayload));
-
-      return mapped;
+      const events = mapCollectionResponse<ProfitLossEvent, CollectionResponse<ProfitLossEvent>>(response);
+      fetchEnsNamesFromTransactions(events);
+      return events;
     }
     catch (error: any) {
       logger.error(error);
       notify({
-        error,
-        message: value => t('actions.reports.fetch.error.description', value),
-        title: t('actions.reports.fetch.error.title'),
+        message: t('actions.report_events.fetch.error.description', { error }),
+        title: t('actions.report_events.fetch.error.title'),
       });
       return defaultReportEvents();
     }

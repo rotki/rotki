@@ -51,6 +51,7 @@ from rotkehlchen.db.constants import (
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
     EXTRAINTERNALTXPREFIX,
+    KDF_ITER,
     KRAKEN_ACCOUNT_TYPE_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
@@ -90,6 +91,7 @@ from rotkehlchen.db.utils import (
     protect_password_sqlcipher,
     replace_tag_mappings,
     str_to_bool,
+    unlock_database,
 )
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -150,7 +152,6 @@ from rotkehlchen.utils.serialization import rlk_jsondumps
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-KDF_ITER = 64000
 DBINFO_FILENAME = 'dbinfo.json'
 TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 
@@ -478,20 +479,12 @@ class DBHandler:
                 f'Could not open database file: {fullpath}. Permission errors?',
             ) from e
 
-        password_for_sqlcipher = protect_password_sqlcipher(self.password)
-        script = f"PRAGMA key='{password_for_sqlcipher}';"
-        if self.sqlcipher_version == 3:
-            script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            conn.executescript(script)
-            conn.execute('PRAGMA foreign_keys=ON')
-            # Optimizations for the combined trades view
-            # the following will fail with DatabaseError in case of wrong password.
-            # If this goes away at any point it needs to be replaced by something
-            # that checks the password is correct at this same point in the code
-            conn.execute('PRAGMA cache_size = -32768')
-            # switch to WAL mode: https://www.sqlite.org/wal.html
-            conn.execute('PRAGMA journal_mode=WAL;')
+            unlock_database(
+                db_connection=conn,
+                password=self.password,
+                sqlcipher_version=self.sqlcipher_version,
+            )
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             conn.close()
             raise AuthenticationError(

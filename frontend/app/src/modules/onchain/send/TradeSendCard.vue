@@ -175,8 +175,8 @@ async function send() {
   }
   catch (error: any) {
     const errorString = error.toString();
-    if (errorString.includes('ACTION_REJECTED')) {
-      set(errorMessage, 'Request is rejected');
+    if (errorString.includes('ACTION_REJECTED') || errorString.includes('User canceled')) {
+      set(errorMessage, 'Request is rejected by user');
     }
     else {
       set(errorMessage, errorString);

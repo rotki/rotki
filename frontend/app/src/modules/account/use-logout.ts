@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
+import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { logger } from '@/utils/logging';
@@ -18,8 +19,10 @@ export function useLogout(): UseLogoutReturn {
   const { setMessage } = useMessageStore();
   const { resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
+  const { resetWalletConnection } = useWalletStore();
 
   const logout = async (navigate: boolean = true): Promise<void> => {
+    await resetWalletConnection();
     set(logged, false);
     const user = get(username); // save the username, after the await below, it is reset
     // allow some time for the components to leave the dom completely and show loading overlay
@@ -42,6 +45,7 @@ export function useLogout(): UseLogoutReturn {
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
     try {
+      await resetWalletConnection();
       const loggedUsers = await getLoggedUsers();
       for (const user of loggedUsers)
         await callLogout(user);

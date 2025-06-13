@@ -16,7 +16,7 @@ import { useItemCache } from '@/composables/item-cache';
 import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
-import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
+import { isBlockchain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
@@ -136,7 +136,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
 
     const chain = get(blockchain);
 
-    if (!isBlockchain(chain) || isBtcChain(chain))
+    if (!isBlockchain(chain) || chain === Blockchain.ETH2)
       return null;
 
     const key = createKey(addressVal, chain);

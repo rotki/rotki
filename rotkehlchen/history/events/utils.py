@@ -55,7 +55,7 @@ def create_event_identifier(
     location makes a unique event identifier. If this is not available, the location,
     timestamp, asset, and balance must all be combined to ensure a unique identifier.
     """
-    if unique_id is not None:
+    if unique_id:
         return create_event_identifier_from_unique_id(location, unique_id)
 
     return hash_id(
@@ -71,7 +71,11 @@ def create_event_identifier_from_swap(
         timestamp: 'TimestampMS',
         spend: AssetAmount,
         receive: AssetAmount,
+        unique_id: str | None = None,
 ) -> str:
+    if unique_id:
+        return create_event_identifier_from_unique_id(location, unique_id)
+
     return hash_id(
         str(location)
         + str(timestamp)

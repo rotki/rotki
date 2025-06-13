@@ -4,16 +4,15 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
+from rotkehlchen.db.migration_utils import (
+    create_swap_events_v47_v48,
+    get_swap_spend_receive_v47_48,
+)
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.swap import (
-    SwapEvent,
-    create_swap_events,
-    get_swap_spend_receive,
-)
+from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventType
-from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, Location, Price
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -46,7 +45,7 @@ def upgrade_trade_to_swap_events(
     - DeserializationError
     - ValueError
     """
-    spend, receive = get_swap_spend_receive(
+    spend, receive = get_swap_spend_receive_v47_48(
         is_buy=row[4] in {'A', 'C'},  # A,C = buy, settlement buy; B,D = sell, settlement sell
         base_asset=Asset(row[2]),
         quote_asset=Asset(row[3]),
@@ -85,7 +84,7 @@ def upgrade_trade_to_swap_events(
             # Remove timestamp from link to get trade ID for label lookup.
             location_label = kraken_ids_to_labels.get(link[:-10])
 
-    return create_swap_events(
+    return create_swap_events_v47_v48(
         timestamp=ts_sec_to_ms(row[0]),
         location=location,
         spend=spend,
@@ -95,10 +94,7 @@ def upgrade_trade_to_swap_events(
             amount=FVal(row[7]),
         ) if row[8] is not None and row[7] is not None else None,
         location_label=location_label,
-        event_identifier=create_event_identifier_from_unique_id(
-            location=location,
-            unique_id=link,
-        ),
+        unique_id=link,
         spend_notes=row[10],
     )
 

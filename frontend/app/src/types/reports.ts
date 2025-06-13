@@ -61,7 +61,7 @@ export const ProfitLossEvent = z.object({
   freeAmount: NumericString,
   groupId: z.string().nullish(),
   location: z.string(),
-  notes: z.string(),
+  notes: z.string().nullable(),
   pnlFree: NumericString,
   pnlTaxable: NumericString,
   price: NumericString,

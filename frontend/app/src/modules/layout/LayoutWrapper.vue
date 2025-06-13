@@ -12,7 +12,7 @@ const layouts = {
 const route = useRoute();
 
 const layout = computed(() => {
-  const defaultLayout: keyof typeof layouts = route.path === '/' ? 'auth' : 'default';
+  const defaultLayout: keyof typeof layouts = route.path === '/' ? 'plain' : 'default';
   const layoutName = route.meta.layout || defaultLayout;
   return layouts[layoutName as keyof typeof layouts] || layouts[defaultLayout];
 });

@@ -1025,6 +1025,29 @@ class NonEmptyList(fields.List):
         return result
 
 
+class EmptyAsNoneStringField(fields.String):
+    """A string field that converts empty strings to None"""
+    def _deserialize(self, value: Any, attr: str | None, data: Mapping[str, Any] | None, **kwargs: Any) -> str | None:  # type: ignore[override]  # noqa: E501
+        # First call parent's deserialize to handle type conversion and validation
+        result = super()._deserialize(value=value, attr=attr, data=data, **kwargs)
+        if result == '':  # Convert empty strings to None
+            return None
+
+        return result
+
+
+class NonEmptyStringField(fields.String):
+    """String that raises a validation error for empty strings"""
+
+    def _deserialize(self, value: Any, attr: str | None, data: Mapping[str, Any] | None, **kwargs: Any) -> str:  # noqa: E501
+        # First call parent's deserialize to handle type conversion and validation
+        result = super()._deserialize(value=value, attr=attr, data=data, **kwargs)
+        if result == '':  # Raise error if empty string
+            raise ValidationError('Field cannot be an empty string')
+
+        return result
+
+
 class EvmCounterpartyField(fields.Field):
     """
     Checks if the value provided is among a set of valid counterparties provided.

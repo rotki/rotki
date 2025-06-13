@@ -3107,6 +3107,12 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             (1739820693, 'S', 'ETH', 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', 'B', '0.00800000', '2709.53000000', '0.00004800', 'ETH', '17572768', None),  # noqa: E501
             (1703082904, 'G', 'XRP', 'USD', 'A', '43.764904', '0.685480767877384124960036471232748505514829873727130762128485418361708276567909', None, None, '8ad05838-6b0e-50a8-8665-c784fd4d85fd', None),  # noqa: E501
             (1575784819, 'B', 'BTC', 'BSV', 'A', '0.0000000831', '0.012256637168141592', None, None, 'adjustmentNZ5OB33-MW63Z-EN3SV1NZ4HZV6-EN3S2-DFZ1X4', None),  # noqa: E501
+            (1749566127, 'A', 'ETH', 'USD', 'A', '10', '2732.36750009618', '12', 'USD', '', None),
+            (1749566127, 'A', 'ETH', 'USD', 'A', '5', '2732.36750009618', None, None, '', ''),
+            (1749566154, 'A', 'BTC', 'USD', 'A', '1', '108659.316521703', None, None, '', ''),
+            (1749566193, 'A', 'eip155:1/erc20:0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', 'USD', 'A', '30', '308.847203959014', None, None, 'testig', ''),  # noqa: E501
+            (1749566160, 'A', 'BTC', 'USD', 'A', '2', '108659.316521703', None, None, '', ''),
+            (1749566220, 'C', 'ETH', 'USD', 'B', '5', '3820.451237', None, None, None, 'Test entry with NULL link'),  # noqa: E501
         ]
         assert table_exists(cursor, 'trades')
         assert table_exists(cursor, 'trade_type')
@@ -3203,6 +3209,26 @@ def test_upgrade_db_47_to_48(user_data_dir, messages_aggregator):
             # Two SwapEvents from the adjustment trade. Amounts should be the same as the original adjustment history events.  # noqa: E501
             (7, '577f4275b57a9c02b166c10f3ffa3e6c616a3d9d1b68cc1d5b5781cbe8cd8992', 0, 1575784819000, 'B', kraken_adjustment_label, 'BSV', adjustment_spend, None, 'trade', 'spend', None),  # noqa: E501
             (7, '577f4275b57a9c02b166c10f3ffa3e6c616a3d9d1b68cc1d5b5781cbe8cd8992', 1, 1575784819000, 'B', kraken_adjustment_label, 'BTC', adjustment_receive, None, 'trade', 'receive', None),  # noqa: E501
+            # regression test: trades at same timestamp with different amounts should generate unique event identifiers even without link field  # noqa: E501
+            # identical swap #1
+            (7, '52ffa18967da0d9a29c0cb4c90999f00b578b4f509b674093e881bfd228ae043', 0, 1749566127000, 'A', None, 'USD', '27323.67500096180', None, 'trade', 'spend', None),  # noqa: E501
+            (7, '52ffa18967da0d9a29c0cb4c90999f00b578b4f509b674093e881bfd228ae043', 1, 1749566127000, 'A', None, 'ETH', '10', None, 'trade', 'receive', None),  # noqa: E501
+            (7, '52ffa18967da0d9a29c0cb4c90999f00b578b4f509b674093e881bfd228ae043', 2, 1749566127000, 'A', None, 'USD', '12', None, 'trade', 'fee', None),  # noqa: E501
+            # identical swap #2
+            (7, '58848cc2b8c6f3085a228f4f85777826e81879f43c3e8a6838ed67c5b54a5c45', 0, 1749566127000, 'A', None, 'USD', '13661.83750048090', '', 'trade', 'spend', None),  # noqa: E501
+            (7, '58848cc2b8c6f3085a228f4f85777826e81879f43c3e8a6838ed67c5b54a5c45', 1, 1749566127000, 'A', None, 'ETH', '5', None, 'trade', 'receive', None),  # noqa: E501
+            # regular swap.
+            (7, 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac', 0, 1749566154000, 'A', None, 'USD', '108659.316521703', '', 'trade', 'spend', None),  # noqa: E501
+            (7, 'effef56a55330e3f4bf893757ea7c71d06078303ae09bcb93950a33a09f4aaac', 1, 1749566154000, 'A', None, 'BTC', '1', None, 'trade', 'receive', None),  # noqa: E501
+            # regular swap.
+            (7, 'c43d6b367aa214ac327ccafff42b88717167b78ff8a989af8433f6ac96b2235b', 0, 1749566193000, 'A', None, 'USD', '9265.416118770420', '', 'trade', 'spend', None),  # noqa: E501
+            (7, 'c43d6b367aa214ac327ccafff42b88717167b78ff8a989af8433f6ac96b2235b', 1, 1749566193000, 'A', None, 'eip155:1/erc20:0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', '30', None, 'trade', 'receive', None),  # noqa: E501
+            # regular swap.
+            (7, '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95', 0, 1749566160000, 'A', None, 'USD', '217318.633043406', '', 'trade', 'spend', None),  # noqa: E501
+            (7, '858c767c41df3e1a8d4a29bb9e9a8303f0e06efde643bb677f493ea4f1aa4f95', 1, 1749566160000, 'A', None, 'BTC', '2', None, 'trade', 'receive', None),  # noqa: E501
+            # regular swap.
+            (7, '864f2ec06d31754c3e6dd9b6203284fe57723fa90dfcf71f8b5150c82bbdf9e2', 0, 1749566220000, 'C', None, 'ETH', '5', 'Test entry with NULL link', 'trade', 'spend', None),  # noqa: E501
+            (7, '864f2ec06d31754c3e6dd9b6203284fe57723fa90dfcf71f8b5150c82bbdf9e2', 1, 1749566220000, 'C', None, 'USD', '19102.256185', None, 'trade', 'receive', None),  # noqa: E501
         ]
         assert not table_exists(cursor, 'trades')
         assert not table_exists(cursor, 'trade_type')

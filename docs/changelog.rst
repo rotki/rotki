@@ -4,6 +4,9 @@ Changelog
 
 * :feature:`4467` rotki will now correctly decode Beefy Finance transactions in all supported EVM chains.
 * :feature:`9913` History events can now be filtered by description.
+
+* :release:`1.39.1 <2025-06-13>`
+* :bug:`-` Users will now be able to perform on-chain send transactions using older wallets such as Trust Wallet.
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.
 * :bug:`-` For ETH staking MEV rewards the informational event will no longer be shown as it will be superseded by the combined MEV reward events.
 * :bug:`-` Transaction decoding will no longer fail when encountering a certain rare case of problematic spam tokens.
@@ -13,6 +16,7 @@ Changelog
 * :bug:`10087` Users will now be able to use the electron app wallet bridge when using Windows.
 * :bug:`-` Token detection will no longer fail when encountering certain NFTs with improper implementations.
 * :bug:`10096` CSV imports for trades from rotki custom trades, uphold, cointracking, shapeshift, kucoin and blockpit should now work properly and not show only a single event per trade/swap.
+* :bug:`-` Users will now be able to see the events in PnL reports without getting an error when the events don't have notes.
 
 * :release:`1.39.0 <2025-06-04>`
 * :feature:`-` DigixDAO DGD refunds will now be properly decoded.
