@@ -3401,8 +3401,8 @@ class DetectTokensSchema(
 
 class UserNotesPutSchema(Schema):
     title = NonEmptyStringField(required=True)
-    content = EmptyAsNoneStringField(required=True)
-    location = NonEmptyStringField(required=True)
+    content = NonEmptyStringField(required=True)  # frontend requires a non empty description
+    location = fields.String(required=True)  # empty string here means that it's a global location. TODO: Change  # noqa: E501
     is_pinned = fields.Boolean(required=True)
 
 
@@ -3415,8 +3415,8 @@ class UserNotesPatchSchema(UserNotesPutSchema, IntegerIdentifierSchema):
 
 
 class UserNotesGetSchema(TimestampRangeSchema, DBPaginationSchema, DBOrderBySchema):
-    title_substring = NonEmptyStringField(load_default=None)
-    location = NonEmptyStringField(load_default=None)
+    title_substring = EmptyAsNoneStringField(load_default=None)
+    location = EmptyAsNoneStringField(load_default=None)
 
     @post_load
     def make_user_notes_query(
