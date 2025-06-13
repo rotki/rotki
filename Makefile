@@ -8,11 +8,13 @@ lint:
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
+	python tools/lint_checksum_addresses.py
 
 
 format:
 	ruff check $(ALL_LINT_PATHS) --fix
 	double-indent $(ALL_LINT_PATHS)
+	python tools/lint_checksum_addresses.py --fix
 
 
 clean:

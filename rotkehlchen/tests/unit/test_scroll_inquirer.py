@@ -5,9 +5,9 @@ import pytest
 from rotkehlchen.tests.utils.ethereum import wait_until_all_nodes_connected
 from rotkehlchen.tests.utils.scroll import (
     ANKR_SCROLL_NODE,
-    BLOCKPI_SCROLL_NODE,
     ONE_RPC_SCROLL_NODE,
     SCROLL_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
+    SCROLLIO_NODE,
 )
 
 if TYPE_CHECKING:
@@ -31,9 +31,9 @@ def test_scroll_nodes_prune_and_archive_status(
         evm_inquirer=scroll_inquirer,
     )
     for node_name, web3_node in scroll_inquirer.web3_mapping.items():
-        if node_name in {BLOCKPI_SCROLL_NODE, ANKR_SCROLL_NODE, ONE_RPC_SCROLL_NODE}:
+        if node_name in {SCROLLIO_NODE, ANKR_SCROLL_NODE, ONE_RPC_SCROLL_NODE}:
             assert not web3_node.is_pruned
-            assert not web3_node.is_archive
+            assert web3_node.is_archive
         else:
             raise AssertionError(f'Unknown node {node_name} encountered.')
 
