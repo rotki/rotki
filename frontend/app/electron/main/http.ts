@@ -164,7 +164,7 @@ export class HttpServer {
 
   public start(cb: Callback, port = 43432): number {
     if (!(this.server?.listening)) {
-      this.logger.log(`Address Import Server: Listening at: http://localhost:${port}`);
+      this.logger.info(`Address Import Server: Listening at: http://localhost:${port}`);
       this.server = http.createServer((req, resp) => this.handleRequests(req, resp, cb));
       this.server.listen(port);
     }
@@ -175,7 +175,7 @@ export class HttpServer {
   }
 
   public stop() {
-    this.logger.log('Address Import Server: Stopped');
+    this.logger.info('Address Import Server: Stopped');
     if (this.server?.listening)
       this.server.close();
   }
@@ -198,14 +198,14 @@ export class HttpServer {
 
         // Proxy request to Vite server
         proxy.web(req, res, {}, (err: any) => {
-          this.logger.log(`Proxy error: ${err}`);
+          this.logger.error(`Proxy error`, err);
           res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
           res.end('Proxy error');
         });
       });
 
       server.listen(port, () => {
-        this.logger.log(`Dev Proxy Server started at http://localhost:${port}`);
+        this.logger.info(`Dev Proxy Server started at http://localhost:${port}`);
       });
     }
     else {
@@ -250,7 +250,7 @@ export class HttpServer {
       });
 
       server.listen(port, () => {
-        this.logger.log(`Wallet bridge server started at http://localhost:${port}`);
+        this.logger.info(`Wallet bridge server started at http://localhost:${port}`);
       });
     }
   }

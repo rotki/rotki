@@ -90,7 +90,7 @@ export interface Interop {
   isMac: () => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   updateTray: (trayUpdate: TrayUpdate) => void;
-  logToFile: (message: string) => void;
+  logToFile: (level: LogLevel, message: string) => void;
   storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;
