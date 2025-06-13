@@ -1,5 +1,6 @@
 import type { WebVersion } from '@/types';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
+import type { LogLevel } from '@shared/log-level';
 import { getBackendUrl } from '@/utils/account-management';
 import { assert, type Theme } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
@@ -7,7 +8,7 @@ import { externalLinks } from '@shared/external-links';
 interface UseInteropReturn {
   readonly isPackaged: boolean;
   readonly appSession: boolean;
-  logToFile: (message: string) => void;
+  logToFile: (level: LogLevel, message?: any, ...optionalParams: any[]) => void;
   navigate: (url: string) => Promise<void>;
   navigateToPremium: () => Promise<void>;
   setupListeners: (listeners: Listeners) => void;
@@ -101,8 +102,8 @@ const interop: UseInteropReturn = {
     return electronApp;
   },
 
-  logToFile: (message: string): void => {
-    window.interop?.logToFile(message);
+  logToFile: (level: LogLevel, message: string): void => {
+    window.interop?.logToFile(level, message);
   },
 
   metamaskImport: async (): Promise<string[]> => {
