@@ -760,11 +760,11 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
 @pytest.mark.parametrize('arbitrum_one_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='merkle', endpoint='https://eth.merkle.io', owned=True, blockchain=SupportedBlockchain.ETHEREUM), active=True, weight=ONE),)])  # noqa: E501
-@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='gnosis', endpoint='https://rpc.gnosischain.com', owned=True, blockchain=SupportedBlockchain.GNOSIS), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('gnosis_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='gnosis', endpoint='https://1rpc.io/gnosis', owned=True, blockchain=SupportedBlockchain.GNOSIS), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='polygon', endpoint='https://polygon.drpc.org', owned=True, blockchain=SupportedBlockchain.POLYGON_POS), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('base_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://base.llamarpc.com', owned=True, blockchain=SupportedBlockchain.BASE), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='meow', endpoint='https://arbitrum.meowrpc.com', owned=True, blockchain=SupportedBlockchain.ARBITRUM_ONE), active=True, weight=ONE),)])  # noqa: E501
-@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='llama', endpoint='https://optimism.llamarpc.com', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='mainnet-optimism', endpoint='https://mainnet.optimism.io', owned=True, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=ONE),)])  # noqa: E501
 @pytest.mark.parametrize('scroll_manager_connect_at_start', [(WeightedNode(node_info=NodeName(name='scroll', endpoint='https://rpc.scroll.io', owned=True, blockchain=SupportedBlockchain.SCROLL), active=True, weight=ONE),)])  # noqa: E501
 def test_update_lending_protocol_underlying_assets_task(
         task_manager: TaskManager,
