@@ -1,6 +1,6 @@
 from decimal import Decimal, DefaultContext, InvalidOperation, setcontext
 from math import ceil, log10
-from typing import Any, Union
+from typing import Any, Final, Union
 
 from rotkehlchen.errors.serialization import ConversionError
 
@@ -8,7 +8,8 @@ from rotkehlchen.errors.serialization import ConversionError
 AcceptableFValInitInput = Union[float, bytes, Decimal, int, str, 'FVal']
 AcceptableFValOtherInput = Union[int, 'FVal']
 
-DefaultContext.prec = ceil(log10(2 ** 256))  # support up to uint256 max value
+INT_MAX_PRECISION: Final = ceil(log10(2 ** 256))
+DefaultContext.prec = INT_MAX_PRECISION  # support up to uint256 max value
 setcontext(DefaultContext)
 
 

@@ -377,7 +377,8 @@ def test_migration_10(
             'VALUES (?, ?, ?, ?, ?, ?)',
             ('polygon etherscan', '', 0, 1, '0.25', 'POLYGON_POS'),
         )
-        assert write_cursor.execute("SELECT COUNT(*) FROM default_rpc_nodes WHERE name='polygon etherscan'").fetchone()[0] == 1  # noqa: E501
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert cursor.execute("SELECT COUNT(*) FROM default_rpc_nodes WHERE name='polygon etherscan'").fetchone()[0] == 1  # noqa: E501
 
     avalanche_addresses = [ethereum_accounts[1], ethereum_accounts[3]]
     optimism_addresses = [ethereum_accounts[2], ethereum_accounts[3]]
@@ -411,6 +412,7 @@ def test_migration_10(
         assert cursor.execute("SELECT COUNT(*) FROM default_rpc_nodes WHERE name='polygon pos etherscan'").fetchone()[0] == 1  # noqa: E501
     with rotki.data.db.conn.read_ctx() as cursor:  # check the user db for the polygon etherscan node  # noqa: E501
         assert cursor.execute("SELECT COUNT(*) FROM rpc_nodes WHERE name='polygon etherscan'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM rpc_nodes WHERE name='polygon pos etherscan'").fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['github_branch_matcher'])

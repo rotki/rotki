@@ -6,7 +6,6 @@ from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
@@ -14,6 +13,7 @@ from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import CacheType, ChainID, EvmTokenKind, Timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import Location
 
@@ -117,7 +117,7 @@ def patch_for_globaldb_migrations(stack: ExitStack, new_list: list) -> ExitStack
 
 
 def globaldb_get_general_cache_last_queried_ts(
-        cursor: DBCursor,
+        cursor: 'DBCursor',
         key_parts: Iterable[str | CacheType],
         value: str,
 ) -> Timestamp | None:

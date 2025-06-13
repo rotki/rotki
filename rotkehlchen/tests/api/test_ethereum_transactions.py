@@ -926,16 +926,17 @@ def test_query_transactions_check_decoded_events(
             tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             receiver=random_receiver_in_cache,
         )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
         assert rotki.data.db.get_dynamic_cache(  # ensure it's properly set
-            cursor=write_cursor,
+            cursor=cursor,
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
             chain_id=1,
             tx_hash='0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41f',
             receiver=random_receiver_in_cache,
         ) == random_user_address
 
-    # Now let's check DB tables to see they will get modified at purging
-    with rotki.data.db.conn.read_ctx() as cursor:
+        # Now let's check DB tables to see they will get modified at purging
         for name, count in (
                 ('evm_transactions', 4), ('evm_internal_transactions', 0),
                 ('evmtx_receipts', 4), ('evmtx_receipt_log_topics', 6),
@@ -1416,8 +1417,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
             ],
         )
 
-        with rotki.data.db.user_write() as cursor:
-            dbevmtx.add_or_ignore_receipt_data(cursor, chain, txreceipt_to_data(expected_receipt))
+        dbevmtx.add_or_ignore_receipt_data(chain, txreceipt_to_data(expected_receipt))
 
     get_decoded_events_of_transaction(
         evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
@@ -1534,8 +1534,9 @@ def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') ->
             write_cursor=write_cursor,
             history=make_eth_withdrawal_and_block_events(),
         )
+    with rotki.data.db.conn.read_ctx() as cursor:
         assert dbevents.get_history_events_count(
-            cursor=write_cursor,
+            cursor=cursor,
             query_filter=HistoryEventFilterQuery.make(),
         )[0] == 5
 

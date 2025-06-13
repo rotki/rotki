@@ -11,7 +11,7 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     maybe_set_transaction_extra_data,
 )
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -122,7 +122,7 @@ class BitMEXImporter(BaseExchangeImporter):
             ) if csv_row['fee'] != 'null' else None,
         )
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Import deposits, withdrawals and realised pnl events from BitMEX.
         May raise:

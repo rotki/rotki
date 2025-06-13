@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.data_import.utils import BaseExchangeImporter, maybe_set_transaction_extra_data
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
@@ -184,7 +184,7 @@ class BittrexImporter(BaseExchangeImporter):
             ),
         )]
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Import deposits, withdrawals and trades from Bittrex. Find out which file
         we are parsing depending on its format.

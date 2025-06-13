@@ -11,7 +11,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash
 
 logger = logging.getLogger(__name__)

@@ -13,7 +13,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.assets import A_PAX, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
@@ -1065,7 +1065,7 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
-def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
+def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator, db_writer_port):
     assert globaldb.used_backup is False
     globaldb.add_setting_value(  # Pretend that an upgrade was started
         name='ongoing_upgrade_from_version',
@@ -1073,9 +1073,9 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
     )
     # There are no backups, so it is supposed to raise an error
     with pytest.raises(DBUpgradeError):
-        create_globaldb(globaldb._data_directory, 0, messages_aggregator)
+        create_globaldb(globaldb._data_directory, 0, messages_aggregator, db_writer_port)
 
-    globaldb.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
+    globaldb.conn._conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
 
     # Add a backup
     backup_path = globaldb._data_directory / GLOBALDIR_NAME / f'{ts_now()}_global_db_v2.backup'  # type: ignore  # _data_directory is definitely not null here
@@ -1084,12 +1084,13 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
         path=str(backup_path),
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
+        db_writer_port=db_writer_port,
     )
     with backup_connection.write_ctx() as write_cursor:
         write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")  # mark as a backup  # noqa: E501
     backup_connection.close()
 
-    globaldb = create_globaldb(globaldb._data_directory, 0, messages_aggregator)  # Now the backup should be used  # noqa: E501
+    globaldb = create_globaldb(globaldb._data_directory, 0, messages_aggregator, db_writer_port)  # Now the backup should be used  # noqa: E501
     assert globaldb.used_backup is True
     # Check that there is no setting left
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1

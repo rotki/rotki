@@ -475,17 +475,22 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
 
     # check the db state of the user's rpc_nodes
     custom_node_tuple = ('custom node', 'https://node.rotki.com/', 1, 1, '0.50', 'ETH')
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM rpc_nodes',
+        ).fetchone()[0] == default_rpc_nodes_count
+
     with data_updater.user_db.user_write() as write_cursor:
-        write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == default_rpc_nodes_count
         # add a custom node.
         write_cursor.execute(
             'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
             'VALUES(?, ?, ?, ?, ?, ?)',
             custom_node_tuple,
         )
-        write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == default_rpc_nodes_count + 1
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM rpc_nodes',
+        ).fetchone()[0] == default_rpc_nodes_count + 1
 
     with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.RPC_NODES)):
         data_updater.check_for_updates()

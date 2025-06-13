@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.converters import asset_from_uphold
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -37,7 +37,7 @@ class UpholdTransactionsImporter(BaseExchangeImporter):
 
     def _consume_uphold_transaction(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             timestamp_format: str = '%a %b %d %Y %H:%M:%S %Z%z',
     ) -> None:
@@ -183,7 +183,7 @@ Activity from uphold with uphold transaction id:
             else:
                 raise SkippedCSVEntry(f'Trade destination amount is {destination_amount}.')
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from sample CSVs
         """

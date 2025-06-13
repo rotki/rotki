@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -35,7 +35,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
 
     def _consume_blockfi_trade(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
@@ -73,7 +73,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
             ),
         )
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from
         the issue in github #1674

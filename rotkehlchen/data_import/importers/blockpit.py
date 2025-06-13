@@ -10,7 +10,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import BLOCKPIT_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -56,7 +56,7 @@ class BlockpitImporter(BaseExchangeImporter):
 
     def _consume_blockpit_transaction(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             fee_currency: AssetWithOracles,
             timestamp_format: str = '%d.%m.%Y %H:%M',
@@ -205,7 +205,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 f'data import. Ignoring entry',
             )
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """Import transactions from blockpit."""
         usd = A_USD.resolve_to_asset_with_oracles()
         with open(filepath, encoding='utf-8-sig') as csvfile:

@@ -1810,6 +1810,29 @@ wheels = [
 ]
 
 [[package]]
+name = "pyzmq"
+version = "26.0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cffi", marker = "implementation_name == 'pypy'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c4/9a/0e2ab500fd5a5a41e7d003e4a49faa7a0333db13e54498a3cf749b9eedd0/pyzmq-26.0.3.tar.gz", hash = "sha256:dba7d9f2e047dfa2bca3b01f4f84aa5246725203d6284e3790f2ca15fba6b40a", size = 267708 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4b/60/4e5170ffdf1720791752f09261a813efd5e59ec8ccf3e909d50d62a13b7d/pyzmq-26.0.3-cp311-cp311-macosx_10_15_universal2.whl", hash = "sha256:a72a84570f84c374b4c287183debc776dc319d3e8ce6b6a0041ce2e400de3f32", size = 1393498 },
+    { url = "https://files.pythonhosted.org/packages/33/fa/e35e8c9e677604bbaa15e0f5887a5c0b031361ae25c6a3577c4720e106c2/pyzmq-26.0.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:7ca684ee649b55fd8f378127ac8462fb6c85f251c2fb027eb3c887e8ee347bcd", size = 1060015 },
+    { url = "https://files.pythonhosted.org/packages/e5/b5/625e45790a1b091f54d5d47fd267d051cabdec4f01144f6b2fcb7306515b/pyzmq-26.0.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e222562dc0f38571c8b1ffdae9d7adb866363134299264a1958d077800b193b7", size = 723307 },
+    { url = "https://files.pythonhosted.org/packages/84/a5/8c81ad76e34e3b62a8c9e23dd14da01084284dbf0d4db20081859e3f7c77/pyzmq-26.0.3-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:f17cde1db0754c35a91ac00b22b25c11da6eec5746431d6e5092f0cd31a3fea9", size = 960756 },
+    { url = "https://files.pythonhosted.org/packages/c7/41/02504160c5cc9d8dfe9afa5b7128ebbbc3e47933a4692197d23e601a171c/pyzmq-26.0.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4b7c0c0b3244bb2275abe255d4a30c050d541c6cb18b870975553f1fb6f37527", size = 918684 },
+    { url = "https://files.pythonhosted.org/packages/9b/20/92275f936eaa612f0192f8a02b2f66564e41498216f37a760501d2591149/pyzmq-26.0.3-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:ac97a21de3712afe6a6c071abfad40a6224fd14fa6ff0ff8d0c6e6cd4e2f807a", size = 919892 },
+    { url = "https://files.pythonhosted.org/packages/e2/86/827e3902f20e10b910587eaa8606e3ec3625fea112f5f2358be6ae624963/pyzmq-26.0.3-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:88b88282e55fa39dd556d7fc04160bcf39dea015f78e0cecec8ff4f06c1fc2b5", size = 1254254 },
+    { url = "https://files.pythonhosted.org/packages/c5/c8/b94e4596547a4b136e62f9cc5acc7bed761b1facfa75cf643e5e162dccbc/pyzmq-26.0.3-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:72b67f966b57dbd18dcc7efbc1c7fc9f5f983e572db1877081f075004614fcdd", size = 1565479 },
+    { url = "https://files.pythonhosted.org/packages/b7/9d/b1fc9b8f75f8747c41fea246dac11690c470d7204849b6072abbd0339c4f/pyzmq-26.0.3-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:f4b6cecbbf3b7380f3b61de3a7b93cb721125dc125c854c14ddc91225ba52f83", size = 1464884 },
+    { url = "https://files.pythonhosted.org/packages/4a/5b/59e06c10e4fd96cd1ff3f27a51638dd67b68ebd8f3e11995046392917272/pyzmq-26.0.3-cp311-cp311-win32.whl", hash = "sha256:eed56b6a39216d31ff8cd2f1d048b5bf1700e4b32a01b14379c3b6dde9ce3aa3", size = 679950 },
+    { url = "https://files.pythonhosted.org/packages/3f/11/20e8b114c197ead632bff8730593b5f249dd143ad71dfac9f639b354f309/pyzmq-26.0.3-cp311-cp311-win_amd64.whl", hash = "sha256:3191d312c73e3cfd0f0afdf51df8405aafeb0bad71e7ed8f68b24b63c4f36500", size = 774765 },
+    { url = "https://files.pythonhosted.org/packages/5f/91/21de23e07510a0d4d5e4704e6e59edb8a69d1acfa4deac9bda18a53795d6/pyzmq-26.0.3-cp311-cp311-win_arm64.whl", hash = "sha256:b6907da3017ef55139cf0e417c5123a84c7332520e73a6902ff1f79046cd3b94", size = 862842 },
+]
+
+[[package]]
 name = "referencing"
 version = "0.36.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1921,6 +1944,7 @@ dependencies = [
     { name = "pycparser" },
     { name = "pyjwt" },
     { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "pyzmq" },
     { name = "regex" },
     { name = "requests" },
     { name = "rotki-pysqlcipher3" },
@@ -2028,6 +2052,7 @@ requires-dist = [
     { name = "pycparser", specifier = "<=2.17" },
     { name = "pyjwt", specifier = "==2.10.1" },
     { name = "pywin32", marker = "sys_platform == 'win32'", specifier = "==306" },
+    { name = "pyzmq", specifier = "==26.0.3" },
     { name = "regex", specifier = "==2024.11.6" },
     { name = "requests", specifier = "==2.32.3" },
     { name = "rotki-pysqlcipher3", specifier = "==2024.10.1" },

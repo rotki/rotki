@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
     from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
@@ -87,25 +87,34 @@ class BaseExchangeImporter(ABC):
             return True, ''
 
     @abstractmethod
-    def _import_csv(self, write_cursor: 'DBCursor', filepath: 'Path', **kwargs: Any) -> None:
+    def _import_csv(
+            self,
+            write_cursor: 'DBWriterClient',
+            filepath: 'Path',
+            **kwargs: Any,
+    ) -> None:
         """The method that processes csv. Should be implemented by subclasses.
         May raise:
         - InputError if one of the rows is malformed
         """
 
-    def add_margin_trade(self, write_cursor: 'DBCursor', margin_trade: 'MarginPosition') -> None:
+    def add_margin_trade(
+            self,
+            write_cursor: 'DBWriterClient',
+            margin_trade: 'MarginPosition',
+    ) -> None:
         self._margin_trades.append(margin_trade)
         self.maybe_flush_all(write_cursor)
 
-    def add_history_events(self, write_cursor: 'DBCursor', history_events: Sequence['HistoryBaseEntry']) -> None:  # noqa: E501
+    def add_history_events(self, write_cursor: 'DBWriterClient', history_events: Sequence['HistoryBaseEntry']) -> None:  # noqa: E501
         self._history_events.extend(history_events)
         self.maybe_flush_all(write_cursor)
 
-    def maybe_flush_all(self, cursor: 'DBCursor') -> None:
+    def maybe_flush_all(self, cursor: 'DBWriterClient') -> None:
         if len(self._margin_trades) + len(self._history_events) >= ITEMS_PER_DB_WRITE:
             self.flush_all(cursor)
 
-    def flush_all(self, write_cursor: 'DBCursor') -> None:
+    def flush_all(self, write_cursor: 'DBWriterClient') -> None:
         self.db.add_margin_positions(write_cursor, margin_positions=self._margin_trades)
         self.history_db.add_history_events(write_cursor, history=self._history_events)
         self._margin_trades = []
@@ -198,7 +207,7 @@ def detect_duplicate_event(
         location: Location,
         event_prefix: str,
         importer: BaseExchangeImporter,
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
 ) -> bool:
     """Detect if an event with these attributes is already in the database.
     Returns True if the event is found, and False if not found.

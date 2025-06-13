@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

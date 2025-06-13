@@ -16,7 +16,6 @@ from rotkehlchen.data_import.utils import (
     detect_duplicate_event,
     hash_csv_row,
 )
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -37,6 +36,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 
 def remap_header(fieldnames: list[str]) -> list[str]:
@@ -95,7 +95,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _consume_cointracking_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: 'DBWriterClient',
             csv_row: dict[str, Any],
             timestamp_format: str = '%d.%m.%Y %H:%M:%S',
     ) -> None:
@@ -214,7 +214,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _import_csv(
             self,
-            write_cursor: DBCursor,
+            write_cursor: 'DBWriterClient',
             filepath: Path,
             **kwargs: Any,
     ) -> None:

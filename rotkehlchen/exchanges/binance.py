@@ -79,7 +79,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

@@ -9,7 +9,7 @@ from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_st
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 

@@ -258,9 +258,10 @@ def setup_ethereum_transactions_test(
     )
     transactions = [transaction1, transaction2]
     if transaction_already_queried is True:
-        with database.user_write() as cursor:
-            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction1], relevant_address=TEST_ADDR1)  # noqa: E501
-            dbevmtx.add_evm_transactions(cursor, evm_transactions=[transaction2], relevant_address=TEST_ADDR2)  # noqa: E501
+        with database.user_write() as write_cursor:
+            dbevmtx.add_evm_transactions(write_cursor, evm_transactions=[transaction1], relevant_address=TEST_ADDR1)  # noqa: E501
+            dbevmtx.add_evm_transactions(write_cursor, evm_transactions=[transaction2], relevant_address=TEST_ADDR2)  # noqa: E501
+        with database.conn.read_ctx() as cursor:
             result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM), True)  # noqa: E501
         assert result == transactions
 
@@ -335,10 +336,9 @@ def setup_ethereum_transactions_test(
     )
 
     if one_receipt_in_db is True:
-        with database.user_write() as cursor:
-            dbevmtx.add_or_ignore_receipt_data(cursor, ChainID.ETHEREUM, txreceipt_to_data(expected_receipt1))  # noqa: E501
-            if second_receipt_in_db is True:
-                dbevmtx.add_or_ignore_receipt_data(cursor, ChainID.ETHEREUM, txreceipt_to_data(expected_receipt2))  # noqa: E501
+        dbevmtx.add_or_ignore_receipt_data(ChainID.ETHEREUM, txreceipt_to_data(expected_receipt1))
+        if second_receipt_in_db is True:
+            dbevmtx.add_or_ignore_receipt_data(ChainID.ETHEREUM, txreceipt_to_data(expected_receipt2))  # noqa: E501
 
     return transactions, [expected_receipt1, expected_receipt2]
 

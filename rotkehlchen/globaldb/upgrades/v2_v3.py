@@ -14,7 +14,7 @@ from rotkehlchen.constants.resolver import (
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 log = logging.getLogger(__name__)
@@ -391,7 +391,7 @@ def migrate_to_v3(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         log.debug('Upgrade binance pairs')
         updated_binance_pairs = translate_binance_pairs(cursor)
 
-    with connection.write_ctx() as cursor:
+    with connection.read_write_ctx() as cursor:
         log.debug('Purge/delete tables with outdated information')
         # Some of these tables like user_owned_assets are recreated in an identical state but are
         # dropped and recreated since they have references to a table that is dropped and modified

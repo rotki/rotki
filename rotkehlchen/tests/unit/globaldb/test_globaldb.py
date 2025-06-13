@@ -161,7 +161,7 @@ def test_get_ethereum_token_identifier(globaldb):
     assert token_0_id == user_tokens[0].identifier
 
 
-def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, messages_aggregator):  # noqa: E501
+def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, messages_aggregator, db_writer_port):  # noqa: E501
     """Test for https://github.com/rotki/rotki/issues/2781"""
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -174,7 +174,12 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with pytest.raises(ValueError) as excinfo:
-        create_globaldb(new_data_dir, sql_vm_instructions_cb, messages_aggregator)
+        create_globaldb(
+            data_directory=new_data_dir,
+            sql_vm_instructions_cb=sql_vm_instructions_cb,
+            messages_aggregator=messages_aggregator,
+            db_writer_port=db_writer_port,
+        )
 
     msg = (
         f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
@@ -731,17 +736,26 @@ def test_global_db_reset(globaldb, database):
         notes='It is so fast and so furious!',
     )
     db_custom_assets.add_custom_asset(custom_asset)
-    with GlobalDBHandler().conn.write_ctx() as cursor:
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        # Read original information from underlying tokens before the reset
+        # get yDAI's underlying tokens
+        ydai_underlying_tokens = cursor.execute(
+            'SELECT * FROM underlying_tokens_list WHERE parent_token_entry=?',
+            (A_yDAI.identifier,),
+        ).fetchall()
+        assert len(ydai_underlying_tokens) > 0
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # TODO: when we fill data about collections into our packaged db, also add a check
         # that collections are properly reset.
 
         # Create a new collection
-        cursor.execute(
+        write_cursor.execute(
             'INSERT INTO asset_collections (name, symbol, main_asset) VALUES (?, ?, ?)',
             ('New collection', 'NEWCOLLECTION', A_REP.identifier),
         )
-        new_collection_id = cursor.lastrowid
-        cursor.executemany(
+        new_collection_id = write_cursor.lastrowid
+        write_cursor.executemany(
             'INSERT INTO multiasset_mappings(collection_id, asset) VALUES (?, ?)',
             (
                 (new_collection_id, A_CRV.identifier),  # put some assets into the new collection
@@ -750,15 +764,8 @@ def test_global_db_reset(globaldb, database):
             ),
         )
 
-        # Read original information from underlying tokens before the reset
-        # get yDAI's underlying tokens
-        ydai_underlying_tokens = cursor.execute(
-            'SELECT * FROM underlying_tokens_list WHERE parent_token_entry=?',
-            (A_yDAI.identifier,),
-        ).fetchall()
-        assert len(ydai_underlying_tokens) > 0
         # And put something extra in there which should be deleted by the reset
-        cursor.execute(
+        write_cursor.execute(
             'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES (?, ?, ?)',  # noqa: E501
             (A_CRV.identifier, '1.0', A_yDAI.identifier),
         )
@@ -1009,7 +1016,7 @@ def test_general_cache(globaldb):
 
 
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
-def test_unique_cache(globaldb):
+def test_unique_cache(globaldb: 'GlobalDBHandler') -> None:
     """
     Test that the added unique cache table in the globaldb works properly.
     Tests insertion, deletion and reading.
@@ -1068,11 +1075,11 @@ def test_unique_cache(globaldb):
             key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
             value='def',
         )
-        values_3 = globaldb_get_unique_cache_value(
-            cursor=write_cursor,
+    with globaldb.conn.read_ctx() as cursor:
+        assert globaldb_get_unique_cache_value(
+            cursor=cursor,
             key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
-        )
-        assert values_3 == 'def'
+        ) == 'def'
 
 
 def test_edit_token_with_missing_information(database):

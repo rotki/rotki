@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 # Whenever you upgrade the global DB make sure to:
@@ -33,9 +33,7 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
     """
     Implementation of the logic of getting a setting from the global DB. Only for ints for now.
     """
-    query = cursor.execute(
-        'SELECT value FROM settings WHERE name=?;', (name,),
-    )
+    query = cursor.execute('SELECT value FROM settings WHERE name=?;', (name,))
     result = query.fetchall()
     # If setting is not set, it's the default
     if len(result) == 0:
@@ -45,7 +43,7 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
 
 
 def set_token_spam_protocol(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         token: 'EvmToken',
         is_spam: bool,
 ) -> None:
@@ -65,6 +63,7 @@ def initialize_globaldb(
         global_dir: Path,
         db_filename: str,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ) -> tuple[DBConnection, bool]:
     """
     Checks the database whether there are any not finished upgrades and automatically uses a
@@ -82,6 +81,7 @@ def initialize_globaldb(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
     try:
         with connection.read_ctx() as cursor:
@@ -118,5 +118,6 @@ def initialize_globaldb(
         path=global_dir / db_filename,
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
     return connection, True

@@ -356,51 +356,49 @@ def test_get_db_transactions(zksync_lite_manager: 'ZksyncLiteManager'):
     Regression test for https://github.com/rotki/rotki/issues/8777
     """
     address = string_to_evm_address('0xc10fcf82f3b870cbb2b0136a0c891f6b410497c8')
-    with zksync_lite_manager.database.conn.write_ctx() as write_cursor:
-        zksync_lite_manager._add_zksynctxs_db(
-            write_cursor=write_cursor,
-            transactions=[
-                ZKSyncLiteTransaction(
-                    tx_hash=deserialize_evm_tx_hash('0x9922304b069ed8405edcc3c7c4a8c8cc9c8f1edb6a67809f57543e8fe0fa9875'),
-                    tx_type=ZKSyncLiteTXType.TRANSFER,
-                    timestamp=Timestamp(1663539042),
-                    block_number=105088,
-                    from_address=address,
-                    to_address=string_to_evm_address('0x10E87b05fe0EDE0BbB0a52aFa96c08618A3E02F0'),
-                    asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-                    amount=ONE,
-                    fee=None,
+    zksync_lite_manager._add_zksynctxs_db(
+        transactions=[
+            ZKSyncLiteTransaction(
+                tx_hash=deserialize_evm_tx_hash('0x9922304b069ed8405edcc3c7c4a8c8cc9c8f1edb6a67809f57543e8fe0fa9875'),
+                tx_type=ZKSyncLiteTXType.TRANSFER,
+                timestamp=Timestamp(1663539042),
+                block_number=105088,
+                from_address=address,
+                to_address=string_to_evm_address('0x10E87b05fe0EDE0BbB0a52aFa96c08618A3E02F0'),
+                asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                amount=ONE,
+                fee=None,
+            ),
+            ZKSyncLiteTransaction(
+                tx_hash=deserialize_evm_tx_hash('0xca2192731809a75b76680d708eb992fe3f176bef8134414ff8bd5cf0a106bfcd'),
+                tx_type=ZKSyncLiteTXType.SWAP,
+                timestamp=Timestamp(1647648071),
+                block_number=58134,
+                from_address=address,
+                to_address=address,
+                asset=A_ETH,
+                amount=FVal(0.0000982),
+                fee=None,
+                swap_data=ZKSyncLiteSwapData(
+                    from_asset=A_ETH,
+                    from_amount=FVal(10.177475971),
+                    to_asset=Asset('eip155:1/erc20:0xdCD90C7f6324cfa40d7169ef80b12031770B4325'),
+                    to_amount=FVal(9.091938315),
                 ),
-                ZKSyncLiteTransaction(
-                    tx_hash=deserialize_evm_tx_hash('0xca2192731809a75b76680d708eb992fe3f176bef8134414ff8bd5cf0a106bfcd'),
-                    tx_type=ZKSyncLiteTXType.SWAP,
-                    timestamp=Timestamp(1647648071),
-                    block_number=58134,
-                    from_address=address,
-                    to_address=address,
-                    asset=A_ETH,
-                    amount=FVal(0.0000982),
-                    fee=None,
-                    swap_data=ZKSyncLiteSwapData(
-                        from_asset=A_ETH,
-                        from_amount=FVal(10.177475971),
-                        to_asset=Asset('eip155:1/erc20:0xdCD90C7f6324cfa40d7169ef80b12031770B4325'),
-                        to_amount=FVal(9.091938315),
-                    ),
-                ),
-                ZKSyncLiteTransaction(
-                    tx_hash=deserialize_evm_tx_hash('0x34f4c91b42657bddd4698a7c61152f2a35613c4096f48f554945c4301e08464e'),
-                    tx_type=ZKSyncLiteTXType.TRANSFER,
-                    timestamp=Timestamp(1673340336),
-                    block_number=147251,
-                    from_address=address,
-                    to_address=address,
-                    asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-                    amount=ZERO,
-                    fee=None,
-                ),
-            ],
-        )
+            ),
+            ZKSyncLiteTransaction(
+                tx_hash=deserialize_evm_tx_hash('0x34f4c91b42657bddd4698a7c61152f2a35613c4096f48f554945c4301e08464e'),
+                tx_type=ZKSyncLiteTXType.TRANSFER,
+                timestamp=Timestamp(1673340336),
+                block_number=147251,
+                from_address=address,
+                to_address=address,
+                asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                amount=ZERO,
+                fee=None,
+            ),
+        ],
+    )
 
     transactions = zksync_lite_manager.get_db_transactions(
         queryfilter=' WHERE is_decoded=?',

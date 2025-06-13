@@ -11,7 +11,7 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     hash_csv_row,
 )
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -66,7 +66,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
 
     def _consume_trade_event(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             event_identifier: str,
             timestamp: TimestampMS,
@@ -113,7 +113,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
 
     def _consume_income_spending_event(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             event_identifier: str,
             timestamp: TimestampMS,
@@ -163,7 +163,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
 
     def _consume_event(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             csv_type: CSVType,
             timestamp_format: str = '%Y-%m-%d %H:%M:%S %z',
@@ -242,7 +242,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             memo=memo,
         )
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         May raise:
         - InputError if one of the rows is malformed

@@ -57,7 +57,7 @@ from .utils import create_profit_filter_queries
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 

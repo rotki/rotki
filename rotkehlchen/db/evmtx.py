@@ -53,7 +53,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
@@ -76,7 +76,7 @@ class DBEvmTx:
 
     def add_evm_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             evm_transactions: list[EvmTransaction],
             relevant_address: ChecksumEvmAddress | None,
     ) -> None:
@@ -130,7 +130,7 @@ class DBEvmTx:
 
     def add_evm_internal_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             transactions: list[EvmInternalTransaction],
             relevant_address: ChecksumEvmAddress | None,
     ) -> None:
@@ -347,7 +347,6 @@ class DBEvmTx:
 
     def add_or_ignore_receipt_data(
             self,
-            write_cursor: 'DBCursor',
             chain_id: ChainID,
             data: dict[str, Any],
     ) -> None:
@@ -372,48 +371,50 @@ class DBEvmTx:
             status = 1
 
         contract_address = deserialize_evm_address(data['contractAddress']) if data['contractAddress'] else None  # noqa: E501
-        tx_id = write_cursor.execute(
-            'SELECT identifier from evm_transactions WHERE tx_hash=? AND chain_id=?',
-            (tx_hash_b, serialized_chain_id),
-        ).fetchone()[0]
+        with self.db.conn.read_ctx() as cursor:
+            tx_id = cursor.execute(
+                'SELECT identifier from evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_hash_b, serialized_chain_id),
+            ).fetchone()[0]
 
-        try:
-            write_cursor.execute(
-                'INSERT INTO evmtx_receipts (tx_id, contract_address, status, type) '
-                'VALUES(?, ?, ?, ?) ',
-                (tx_id, contract_address, status, tx_type),
-            )
-        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-            if 'UNIQUE constraint failed: evmtx_receipts.tx_id' not in str(e):
-                log.error(f'Failed to insert transaction {tx_id} receipt to the DB due to {e!s}')
-                raise
-            return  # otherwise something else added the receipt so we continue
-
-        for log_entry in data['logs']:
-            write_cursor.execute(
-                'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address) '
-                'VALUES(? ,? ,? ,?)',
-                (
-                    tx_id,
-                    log_entry['logIndex'],
-                    hexstring_to_bytes(log_entry['data']),
-                    deserialize_evm_address(log_entry['address']),
-                ),
-            )
-            log_id = write_cursor.lastrowid
-            topic_tuples = []
-            for idx, topic in enumerate(log_entry['topics']):
-                topic_tuples.append((
-                    log_id,
-                    hexstring_to_bytes(topic),
-                    idx,
-                ))
-            if len(topic_tuples) != 0:
-                write_cursor.executemany(
-                    'INSERT INTO evmtx_receipt_log_topics (log, topic, topic_index) '
-                    'VALUES(? ,? ,?)',
-                    topic_tuples,
+        with self.db.user_write() as write_cursor:
+            try:
+                write_cursor.execute(
+                    'INSERT INTO evmtx_receipts (tx_id, contract_address, status, type) '
+                    'VALUES(?, ?, ?, ?) ',
+                    (tx_id, contract_address, status, tx_type),
                 )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                if 'UNIQUE constraint failed: evmtx_receipts.tx_id' not in str(e):
+                    log.error(f'Failed to insert transaction {tx_id} receipt to the DB due to {e!s}')  # noqa: E501
+                    raise
+                return  # otherwise something else added the receipt so we continue
+
+            for log_entry in data['logs']:
+                write_cursor.execute(
+                    'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address) '
+                    'VALUES(? ,? ,? ,?)',
+                    (
+                        tx_id,
+                        log_entry['logIndex'],
+                        hexstring_to_bytes(log_entry['data']),
+                        deserialize_evm_address(log_entry['address']),
+                    ),
+                )
+                log_id = write_cursor.lastrowid
+                topic_tuples = []
+                for idx, topic in enumerate(log_entry['topics']):
+                    topic_tuples.append((
+                        log_id,
+                        hexstring_to_bytes(topic),
+                        idx,
+                    ))
+                if len(topic_tuples) != 0:
+                    write_cursor.executemany(
+                        'INSERT INTO evmtx_receipt_log_topics (log, topic, topic_index) '
+                        'VALUES(? ,? ,?)',
+                        topic_tuples,
+                    )
 
     def get_receipt(
             self,
@@ -477,7 +478,7 @@ class DBEvmTx:
 
     def delete_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             address: ChecksumEvmAddress,
             chain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
@@ -499,31 +500,32 @@ class DBEvmTx:
             ],
         )
         # Get all tx_hashes that are touched by this address and no other address for the chain
-        result = write_cursor.execute(
-            'SELECT A.tx_hash, A.identifier from evmtx_address_mappings AS B INNER JOIN '
-            'evm_transactions AS A ON A.identifier=B.tx_id WHERE B.address=? AND A.chain_id=? '
-            'AND B.tx_id NOT IN (SELECT tx_id from evmtx_address_mappings WHERE address!=? '
-            'AND chain_id=?)',
-            (address, chain_id_serialized, address, chain_id_serialized),
-        )
-        tx_hashes = []
-        tx_ids = []
-        for tx_hash, tx_id in result:
-            tx_hashes.append(deserialize_evm_tx_hash(tx_hash))
-            tx_ids.append(tx_id)
+        with self.db.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT A.tx_hash, A.identifier from evmtx_address_mappings AS B INNER JOIN '
+                'evm_transactions AS A ON A.identifier=B.tx_id WHERE B.address=? AND A.chain_id=? '
+                'AND B.tx_id NOT IN (SELECT tx_id from evmtx_address_mappings WHERE address!=? '
+                'AND chain_id=?)',
+                (address, chain_id_serialized, address, chain_id_serialized),
+            )
+            tx_hashes = []
+            tx_ids = []
+            for tx_hash, tx_id in result:
+                tx_hashes.append(deserialize_evm_tx_hash(tx_hash))
+                tx_ids.append(tx_id)
 
-        genesis_tx_id = None
-        if len(tx_hashes) == 0:
-            # Need to handle the genesis tx separately since our single genesis tx contains
-            # multiple genesis transactions from multiple addresses.
-            genesis_tx_id = write_cursor.execute(
-                'SELECT tx_id FROM evmtx_address_mappings AS M LEFT JOIN evm_transactions AS T '
-                'ON T.identifier=M.tx_id WHERE T.tx_hash=? AND T.chain_id=?',
-                (GENESIS_HASH, chain_id_serialized),
-            ).fetchone()
-            if genesis_tx_id is None:
-                return
-            genesis_tx_id = genesis_tx_id[0]
+            genesis_tx_id = None
+            if len(tx_hashes) == 0:
+                # Need to handle the genesis tx separately since our single genesis tx contains
+                # multiple genesis transactions from multiple addresses.
+                genesis_tx_id = cursor.execute(
+                    'SELECT tx_id FROM evmtx_address_mappings AS M LEFT JOIN evm_transactions AS T '  # noqa: E501
+                    'ON T.identifier=M.tx_id WHERE T.tx_hash=? AND T.chain_id=?',
+                    (GENESIS_HASH, chain_id_serialized),
+                ).fetchone()
+                if genesis_tx_id is None:
+                    return
+                genesis_tx_id = genesis_tx_id[0]
 
         dbevents.delete_events_by_tx_hash(
             write_cursor=write_cursor,
@@ -536,11 +538,14 @@ class DBEvmTx:
             'ON H.identifier=E.identifier WHERE E.tx_hash=? AND H.location_label=?)',
             (GENESIS_HASH, address),
         )
-        genesis_events_count = write_cursor.execute(
-            'SELECT COUNT (*) FROM history_events H INNER JOIN evm_events_info E'
-            ' WHERE H.identifier=E.identifier and E.tx_hash=?',
-            (GENESIS_HASH,),
-        ).fetchone()[0]
+
+        with self.db.conn.read_ctx() as cursor:
+            genesis_events_count = cursor.execute(
+                'SELECT COUNT (*) FROM history_events H INNER JOIN evm_events_info E'
+                ' WHERE H.identifier=E.identifier and E.tx_hash=?',
+                (GENESIS_HASH,),
+            ).fetchone()[0]
+
         if genesis_events_count == 0:
             # If there are no more events in the genesis tx, delete it
             tx_hashes.append(GENESIS_HASH)

@@ -29,7 +29,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import (
@@ -70,7 +70,7 @@ from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 
 def make_serialized_event_identifier(location: Location, raw_event_identifier: bytes) -> str:
@@ -159,6 +159,7 @@ def _init_db_with_target_version(
             initial_settings=None,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
             resume_from_backup=resume_from_backup,
+            db_writer_port=5555,
         )
 
 
@@ -2081,10 +2082,10 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         'yearn_vaults_v2_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '890',
         'gnosisbridge_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '901',
     }
-    with db_v40.conn.write_ctx() as cursor:
+
+    with db_v40.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'key_value_cache') is False
-        cursor.execute('SELECT name FROM settings;')
-        for names in cursor:
+        for names in cursor.execute('SELECT name FROM settings;'):
             assert names[0] in should_move_settings | should_not_move_settings
         cursor.execute('SELECT name FROM used_query_ranges;')
         for names in cursor:
@@ -2104,10 +2105,11 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_address_book'),
         ]  # eth1 and btc1 already exists in address_book
         if address_name_priority is not None:
-            cursor.execute(
-                'INSERT INTO settings(name, value) VALUES(?, ?)',
-                ('address_name_priority', json.dumps(address_name_priority)),
-            )
+            with db_v40.user_write() as write_cursor:
+                write_cursor.execute(
+                    'INSERT INTO settings(name, value) VALUES(?, ?)',
+                    ('address_name_priority', json.dumps(address_name_priority)),
+                )
         # check that we have bittrex information that needs to be removed
         assert cursor.execute(
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
@@ -2287,7 +2289,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
+def test_upgrade_db_41_to_42(user_data_dir: Path, messages_aggregator: MessagesAggregator):
     """Test upgrading the DB from version 41 to version 42"""
     _use_prepared_db(user_data_dir, 'v41_rotkehlchen.db')
     db_v41 = _init_db_with_target_version(
@@ -2296,7 +2298,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    with db_v41.conn.write_ctx() as cursor:
+    with db_v41.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is False
         assert table_exists(cursor, 'zksynclite_transactions') is False
         assert table_exists(cursor, 'calendar') is False
@@ -2347,6 +2349,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         oracles = json.loads(cursor.fetchone()[0])
         assert 'manualcurrent' in oracles
 
+    db_v41.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=42,
@@ -2443,6 +2446,7 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
     zk_parquet_path.touch()
     assert uniswap_path.exists() is True
     assert zk_path.exists() is True
+    db_v42.logout()
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2536,6 +2540,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             start_ts=Timestamp(0),
             end_ts=ts_now(),
         )
+    db_v43.logout()
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2603,6 +2608,7 @@ def test_upgrade_db_44_to_45(user_data_dir, messages_aggregator):
     with db_v43.conn.read_ctx() as cursor:
         cursor.execute("SELECT COUNT(*) FROM location WHERE location='u'")
         assert cursor.fetchone()[0] == 0
+    db_v43.logout()
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2668,6 +2674,7 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
             "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES ('35', ?, ?)",  # noqa: E501
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         )
+    db_v45.logout()
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2892,10 +2899,10 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
                 ('bybit_history_events_cb1', 1641386301, 1641386400),
             ],
         )
-        # ensure that manual historical price oracle is present.
-        assert 'manual' in json.loads(write_cursor.execute("SELECT value FROM settings WHERE name='historical_price_oracles'").fetchone()[0])  # noqa: E501
 
     with db_v46.conn.read_ctx() as cursor:  # assert block events state before upgrade
+        # ensure that manual historical price oracle is present.
+        assert 'manual' in json.loads(cursor.execute("SELECT value FROM settings WHERE name='historical_price_oracles'").fetchone()[0])  # noqa: E501
         result = cursor.execute("SELECT identifier, entry_type, event_identifier, sequence_index, timestamp, location, location_label, asset, amount, usd_value, notes, type, subtype FROM history_events WHERE event_identifier IN ('BP1_17153311', 'BP1_17153312')").fetchall()  # noqa: E501
         assert result == [
             (1, 4, 'BP1_17153311', 0, 1682911787000, 'f', '0x8ff1E3bD9b935208521D33F74430Bd5fA4387120', 'ETH', '0.1', '100', 'Validator 4242 produced block 17153311 with 0.1 ETH going to 0x8ff1E3bD9b935208521D33F74430Bd5fA4387120 as the block reward', 'staking', 'block production'),  # noqa: E501
@@ -2970,6 +2977,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
 
         _check_tokens_existence(user_db_cursor=cursor)
 
+    db_v46.logout()
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=47,
@@ -3298,6 +3306,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         resume_from_backup=False,
     )
     cursor = db.conn.cursor()
+    assert db.conn.minimized_schema is not None
     sanity_check_impl(  # do sanity check on the db schema
         cursor=cursor,
         db_name=db.conn.connection_type.name.lower(),
@@ -3364,13 +3373,23 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
     last_db.logout()
 
 
-def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):
+def test_db_newer_than_software_raises_error(
+        data_dir: Path,
+        username: str,
+        messages_aggregator: MessagesAggregator,
+        sql_vm_instructions_cb: int,
+        db_writer_port: int,
+):
     """
     If the DB version is greater than the current known version in the
     software warn the user to use the latest version of the software
     """
-    msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=messages_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
+    )
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     # Manually set a bigger version than the current known one
     cursor = data.db.conn.cursor()
@@ -3383,13 +3402,19 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     # now relogin and check that an error is thrown
     data.logout()
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(
+        data_directory=data_dir,
+        msg_aggregator=messages_aggregator,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
+    )
     with pytest.raises(DBUpgradeError):
         data.unlock(username, '123', create_new=False, resume_from_backup=False)
     DBConnection(  # close the db connection
         path=data_dir / USERDB_NAME,
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+        db_writer_port=db_writer_port,
     ).close()
 
 
@@ -3419,14 +3444,19 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_unfinished_upgrades(user_data_dir):
-    msg_aggregator = MessagesAggregator()
+def test_unfinished_upgrades(
+        user_data_dir: Path,
+        username: str,
+        messages_aggregator: MessagesAggregator,
+        sql_vm_instructions_cb: int,
+        db_writer_port: int,
+):
     for backup_version in (33, 31):  # try both with correct and wrong backup
         _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
         db = _init_db_with_target_version(
             target_version=33,
             user_data_dir=user_data_dir,
-            msg_aggregator=msg_aggregator,
+            msg_aggregator=messages_aggregator,
             resume_from_backup=False,
         )
         with db.user_write() as write_cursor:
@@ -3441,20 +3471,20 @@ def test_unfinished_upgrades(user_data_dir):
             _init_db_with_target_version(
                 target_version=34,
                 user_data_dir=user_data_dir,
-                msg_aggregator=msg_aggregator,
+                msg_aggregator=messages_aggregator,
                 resume_from_backup=False,
             )
         assert 'The encrypted database is in a semi upgraded state' in str(exc_info.value)
 
         # There are no backups, so it is supposed to raise an error
-        with pytest.raises(DBUpgradeError) as exc_info:
+        with pytest.raises(DBUpgradeError) as exc_info_2:
             _init_db_with_target_version(
                 target_version=34,
                 user_data_dir=user_data_dir,
-                msg_aggregator=msg_aggregator,
+                msg_aggregator=messages_aggregator,
                 resume_from_backup=True,
             )
-        assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info.value)  # noqa: E501
+        assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info_2.value)  # noqa: E501
 
         # Add multiple backups
         for write_version in (backup_version, backup_version - 1):
@@ -3464,6 +3494,7 @@ def test_unfinished_upgrades(user_data_dir):
                 path=str(backup_path),
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=0,
+                db_writer_port=db_writer_port,
             )
             backup_connection.executescript("PRAGMA key='123'")  # unlock
             with backup_connection.write_ctx() as write_cursor:
@@ -3474,18 +3505,18 @@ def test_unfinished_upgrades(user_data_dir):
                 db = _init_db_with_target_version(  # Now the backup should be used
                     target_version=34,
                     user_data_dir=user_data_dir,
-                    msg_aggregator=msg_aggregator,
+                    msg_aggregator=messages_aggregator,
                     resume_from_backup=True,
                 )
             else:  # backups exist, but not matching the DB
-                with pytest.raises(DBUpgradeError) as exc_info:
+                with pytest.raises(DBUpgradeError) as exc_info3:
                     _init_db_with_target_version(
                         target_version=34,
                         user_data_dir=user_data_dir,
-                        msg_aggregator=msg_aggregator,
+                        msg_aggregator=messages_aggregator,
                         resume_from_backup=True,
                     )
-                assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info.value)  # noqa: E501
+                assert 'Your encrypted database is in a half-upgraded state at v33 and' in str(exc_info3.value)  # noqa: E501
                 break  # and end the test
 
         else:  # Check that there is no setting left

@@ -85,7 +85,6 @@ def mocked_find_ens_mappings(
 def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that we can reverse resolve ENS names"""
     db = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    db_conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
     addrs_1 = [
         string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
         string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
@@ -127,9 +126,6 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
         timestamps_after_request = _get_timestamps(db, addrs_1)
         assert timestamps_before_request == timestamps_after_request
 
-        # Going to check that after request with ignore_cache ens_mappings will be updated
-        db_changes_before = db_conn.total_changes
-
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
@@ -143,17 +139,20 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
             status_code=HTTPStatus.BAD_REQUEST,
         )
 
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'reverseensresource',
-            ),
-            json={'ethereum_addresses': addrs_1 + addrs_2[1:], 'ignore_cache': True},
-        )
-        assert_proper_sync_response_with_result(response)
-    db_changes_after = db_conn.total_changes
-    # Check that we have 5 updates because we have 5 rows in ens_mappings table
-    assert db_changes_after == 5 + db_changes_before
+        with patch(
+            target='rotkehlchen.db.ens.DBEns.add_ens_mapping',
+            side_effect=db.add_ens_mapping,
+        ) as patched_add_ens_mapping:
+            response = requests.post(
+                api_url_for(
+                    rotkehlchen_api_server,
+                    'reverseensresource',
+                ),
+                json={'ethereum_addresses': addrs_1 + addrs_2[1:], 'ignore_cache': True},
+            )
+            assert_proper_sync_response_with_result(response)
+            # Check that we update mappings for all 4 addresses
+            assert patched_add_ens_mapping.call_count == 4
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -14,7 +14,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -28,7 +27,7 @@ from .parsers import AssetCollectionParser, AssetParser, MultiAssetMappingsParse
 from .types import UpdateFileType
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection, DBWriterClient
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -43,7 +42,7 @@ FIRST_VERSION_WITH_COLLECTIONS = 16
 FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS = 4
 
 
-def executeall(cursor: DBCursor, statements: str) -> None:
+def executeall(write_cursor: 'DBWriterClient', statements: str) -> None:
     """Splits all statements and execute()s one by one to avoid the
     commit that executescript would do.
 
@@ -52,7 +51,7 @@ def executeall(cursor: DBCursor, statements: str) -> None:
     for statement in statements.split(';'):
         if statement == '':
             continue
-        cursor.execute(statement)
+        write_cursor.execute(statement)
 
 
 def _replace_assets_from_db(
@@ -78,7 +77,7 @@ def _replace_assets_from_db(
     ]
 
     script_parts = ['PRAGMA foreign_keys = OFF;']
-    with connection.write_ctx() as cursor:
+    with connection.read_ctx() as cursor:
         cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
         cursor.execute(
             """SELECT COUNT(*) FROM sqlite_master
@@ -112,60 +111,71 @@ def _replace_assets_from_db(
             'PRAGMA foreign_keys = ON;',
             "DETACH DATABASE 'other_db';",
         ])
-        cursor.executescript('\n'.join(script_parts))
+
+    with connection.write_ctx() as write_cursor:
+        write_cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
+        write_cursor.executescript('\n'.join(script_parts))
 
 
-def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
+def _force_remote_asset(
+        connection: 'DBConnection',
+        local_asset: Asset,
+        full_insert: str,
+) -> None:
     """Force the remote entry into the database by deleting old one and doing the full insert.
 
     May raise an sqlite3 error if something fails.
     """
     # we get the multiasset and underlying asset mappings before removing the asset because
     # these mappings get deleted when the asset is removed because of foreign key relation
-    multiasset_mappings = cursor.execute(  # get its multiasset mappings
-        'SELECT collection_id, asset FROM multiasset_mappings WHERE asset=?;',
-        (local_asset.identifier,),
-    ).fetchall()
-    underlying_assets = cursor.execute(  # get its underlying_assets mappings
-        'SELECT parent_token_entry, weight, identifier FROM underlying_tokens_list '
-        'WHERE identifier=? OR parent_token_entry=?;',
-        (local_asset.identifier, local_asset.identifier),
-    ).fetchall()
 
-    try:
-        collection = cursor.execute(
-            'SELECT * FROM asset_collections WHERE main_asset=?;',
+    with connection.read_ctx() as cursor:
+        multiasset_mappings = cursor.execute(  # get its multiasset mappings
+            'SELECT collection_id, asset FROM multiasset_mappings WHERE asset=?;',
             (local_asset.identifier,),
-        ).fetchone()
-    except sqlite3.Error:
-        # If query fails due to missing main_asset
-        # column (pre-v10 schema), set collection to None
-        collection = None
+        ).fetchall()
+        underlying_assets = cursor.execute(  # get its underlying_assets mappings
+            'SELECT parent_token_entry, weight, identifier FROM underlying_tokens_list '
+            'WHERE identifier=? OR parent_token_entry=?;',
+            (local_asset.identifier, local_asset.identifier),
+        ).fetchall()
 
-    cursor.execute(
-        'DELETE FROM assets WHERE identifier=?;',
-        (local_asset.identifier,),
-    )
+        try:
+            collection = cursor.execute(
+                'SELECT * FROM asset_collections WHERE main_asset=?;',
+                (local_asset.identifier,),
+            ).fetchone()
+        except sqlite3.Error:
+            # If query fails due to missing main_asset
+            # column (pre-v10 schema), set collection to None
+            collection = None
 
-    # Insert new entry. Since identifiers are the same, no foreign key constraints should break
-    executeall(cursor, full_insert)
-    if collection:
-        cursor.execute(  # reinsert the collection since it was cascade-deleted
-            'INSERT OR IGNORE INTO asset_collections VALUES (?, ?, ?, ?)',
-            collection,
+    with connection.savepoint_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM assets WHERE identifier=?;',
+            (local_asset.identifier,),
         )
-    # now add the old mappings back into the db
-    if len(multiasset_mappings) > 0:
-        cursor.executemany(  # add the old multiasset mappings
-            'INSERT INTO multiasset_mappings (collection_id, asset) VALUES (?, ?);',
-            multiasset_mappings,
-        )
-    if len(underlying_assets) > 0:
-        cursor.executemany(  # add the old underlying assets
-            'INSERT INTO underlying_tokens_list (parent_token_entry, weight, identifier) '
-            'VALUES (?, ?, ?);',
-            underlying_assets,
-        )
+
+        # Insert new entry. Since identifiers are the same, no foreign key constraints should break
+        executeall(write_cursor, full_insert)
+        if collection:
+            cursor.execute(  # reinsert the collection since it was cascade-deleted
+                'INSERT OR IGNORE INTO asset_collections VALUES (?, ?, ?, ?)',
+                collection,
+            )
+        # now add the old mappings back into the db
+        if len(multiasset_mappings) > 0:
+            cursor.executemany(  # add the old multiasset mappings
+                'INSERT INTO multiasset_mappings (collection_id, asset) VALUES (?, ?);',
+                multiasset_mappings,
+            )
+        if len(underlying_assets) > 0:
+            cursor.executemany(  # add the old underlying assets
+                'INSERT INTO underlying_tokens_list (parent_token_entry, weight, identifier) '
+                'VALUES (?, ?, ?);',
+                underlying_assets,
+            )
+
     AssetResolver.clean_memory_cache(local_asset.identifier.lower())
 
 
@@ -306,15 +316,18 @@ class AssetsUpdater:
             local_asset = Asset(remote_asset_data.identifier).check_existence(query_packaged_db=False)  # noqa: E501
 
         try:
-            with connection.savepoint_ctx() as cursor:
+            with (
+                connection.savepoint_ctx() as write_cursor,
+                connection.read_ctx() as cursor,
+            ):
                 # if the action is to update an asset, but it doesn't exist in the DB
                 if action.strip().startswith('UPDATE') and cursor.execute(
                     'SELECT COUNT(*) FROM assets WHERE identifier=?',
                     (remote_asset_data.identifier,),
                 ).fetchone()[0] == 0:
-                    executeall(cursor, full_insert)  # we apply the full insert query
+                    executeall(write_cursor, full_insert)  # we apply the full insert query
                 else:
-                    executeall(cursor, action)
+                    executeall(write_cursor, action)
 
                 if local_asset is not None:
                     AssetResolver().clean_memory_cache(identifier=local_asset.identifier)
@@ -345,8 +358,11 @@ class AssetsUpdater:
                 return
             if resolution == 'remote':
                 try:
-                    with connection.savepoint_ctx() as cursor:
-                        _force_remote_asset(cursor, local_asset, full_insert)
+                    _force_remote_asset(
+                        connection=connection,
+                        local_asset=local_asset,
+                        full_insert=full_insert,
+                    )
                 except sqlite3.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to resolve conflict for {remote_asset_data.identifier} in '
@@ -475,10 +491,11 @@ class AssetsUpdater:
             )
 
         # at the very end update the current version in the DB
-        connection.execute(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            (ASSETS_VERSION_KEY, str(version)),
-        )
+        with connection.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                (ASSETS_VERSION_KEY, str(version)),
+            )
 
     def perform_update(
             self,
@@ -522,6 +539,7 @@ class AssetsUpdater:
                 global_dir=tmpdir,
                 db_filename=temp_db_name,
                 sql_vm_instructions_cb=self.globaldb.conn.sql_vm_instructions_cb,
+                db_writer_port=self.globaldb._db_writer_port,
             )
 
             # use a critical section to avoid modifications in the globaldb during the update

@@ -52,7 +52,6 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.filtering import EVM_EVENT_JOIN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
@@ -82,6 +81,7 @@ from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.db.drivers.client import DBWriterClient
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -110,7 +110,7 @@ def _add_spam_asset(
         detected_spam_assets: list[str],
         globaldb: GlobalDBHandler,
         user_db: DBHandler,
-        user_db_write_cursor: DBCursor,
+        user_db_write_cursor: 'DBWriterClient',
 ) -> None:
     """Updates the protocol to SPAM_PROTOCOL for the list of assets
     provided and also ignores it
