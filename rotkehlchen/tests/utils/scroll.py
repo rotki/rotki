@@ -11,9 +11,9 @@ ONE_RPC_SCROLL_NODE: Final = NodeName(
     blockchain=SupportedBlockchain.SCROLL,
 )
 
-BLOCKPI_SCROLL_NODE: Final = NodeName(
-    name='blockpi',
-    endpoint='https://scroll.blockpi.network/v1/rpc/public',
+SCROLLIO_NODE: Final = NodeName(
+    name='scrollio',
+    endpoint='https://rpc.scroll.io',
     owned=False,
     blockchain=SupportedBlockchain.SCROLL,
 )
@@ -32,7 +32,7 @@ SCROLL_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED: tuple[str, list[tuple]] = 
         active=True,
         weight=FVal('0.25'),
     ),), (WeightedNode(
-        node_info=BLOCKPI_SCROLL_NODE,
+        node_info=SCROLLIO_NODE,
         active=True,
         weight=FVal('0.25'),
     ),), (WeightedNode(

@@ -7,7 +7,7 @@ from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
 SCROLL_GENESIS: Final = Timestamp(1696917600)
 
-ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x0a47cec6657570831ae93db36367656e5597c310')  # noqa: E501
+ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x0A47CeC6657570831AE93db36367656e5597C310')  # noqa: E501
 ARCHIVE_NODE_CHECK_BLOCK: Final = 485
 ARCHIVE_NODE_CHECK_EXPECTED_BALANCE: Final = FVal('1.000000000000000000')
 
