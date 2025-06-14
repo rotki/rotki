@@ -5189,6 +5189,84 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         ))
 
+    def get_google_calendar_status(self) -> Response:
+        """Get Google Calendar authentication status."""
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+        try:
+            google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
+            is_authenticated = google_calendar.is_authenticated()
+            return api_response(_wrap_in_ok_result({'authenticated': is_authenticated}))
+        except Exception as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+    def start_google_calendar_auth(self, client_id: str, client_secret: str) -> Response:
+        """Start Google Calendar OAuth2 flow and return authorization URL."""
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+        try:
+            google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
+            auth_url = google_calendar.start_oauth_flow(client_id, client_secret)
+            return api_response(_wrap_in_ok_result({'auth_url': auth_url}))
+        except Exception as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+    def complete_google_calendar_auth(self, auth_response_url: str) -> Response:
+        """Complete Google Calendar OAuth2 flow with authorization response URL."""
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+        try:
+            google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
+            success = google_calendar.complete_oauth_flow(auth_response_url)
+
+            if success:
+                return api_response(_wrap_in_ok_result({'success': True}))
+            else:
+                return api_response(
+                    wrap_in_fail_result('Failed to complete Google Calendar authentication'),
+                    status_code=HTTPStatus.BAD_REQUEST,
+                )
+        except Exception as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+    def sync_google_calendar(self) -> Response:
+        """Manually sync rotki calendar events to Google Calendar."""
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+        try:
+            google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
+
+            # Get all calendar entries from rotki
+            db_calendar = DBCalendar(self.rotkehlchen.data.db)
+            calendar_result = db_calendar.query_calendar_entry(
+                CalendarFilterQuery.make(),
+            )
+            calendar_entries = calendar_result['entries']
+
+            # Sync to Google Calendar
+            result = google_calendar.sync_events(calendar_entries)
+            return api_response(_wrap_in_ok_result(result))
+        except Exception as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+    def disconnect_google_calendar(self) -> Response:
+        """Disconnect Google Calendar integration."""
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+        try:
+            google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
+            success = google_calendar.disconnect()
+
+            if success:
+                return api_response(_wrap_in_ok_result({'success': True}))
+            else:
+                return api_response(
+                    wrap_in_fail_result('Failed to disconnect Google Calendar'),
+                    status_code=HTTPStatus.BAD_REQUEST,
+                )
+        except Exception as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
     def query_wrap_stats(self, from_ts: Timestamp, to_ts: Timestamp) -> Response:
         """Query starts in the time range selected.
         This endpoint is temporary and will be removed.

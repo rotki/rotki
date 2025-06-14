@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
-from marshmallow import Schema, ValidationError
+from marshmallow import Schema, ValidationError, fields
 from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
@@ -3282,6 +3282,49 @@ class CalendarRemindersResource(BaseMethodView):
     @use_kwargs(query_schema, location='json_and_query')
     def post(self, identifier: int) -> Response:
         return self.rest_api.query_reminders(event_id=identifier)
+
+
+class GoogleCalendarResource(BaseMethodView):
+    """Endpoint for Google Calendar integration."""
+
+    start_auth_schema = Schema.from_dict({
+        'client_id': fields.Str(required=True),
+        'client_secret': fields.Str(required=True),
+    })
+
+    complete_auth_schema = Schema.from_dict({
+        'auth_response_url': fields.Str(required=True),
+    })
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        """Get Google Calendar authentication status."""
+        return self.rest_api.get_google_calendar_status()
+
+    @require_loggedin_user()
+    @use_kwargs(start_auth_schema, location='json')
+    def put(self, client_id: str, client_secret: str) -> Response:
+        """Start OAuth2 flow and return authorization URL."""
+        return self.rest_api.start_google_calendar_auth(
+            client_id=client_id,
+            client_secret=client_secret,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(complete_auth_schema, location='json')
+    def patch(self, auth_response_url: str) -> Response:
+        """Complete OAuth2 flow with authorization response URL."""
+        return self.rest_api.complete_google_calendar_auth(auth_response_url=auth_response_url)
+
+    @require_loggedin_user()
+    def post(self) -> Response:
+        """Manually sync rotki calendar events to Google Calendar."""
+        return self.rest_api.sync_google_calendar()
+
+    @require_loggedin_user()
+    def delete(self) -> Response:
+        """Disconnect Google Calendar integration."""
+        return self.rest_api.disconnect_google_calendar()
 
 
 class StatsWrapResource(BaseMethodView):
