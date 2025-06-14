@@ -514,10 +514,10 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
 
 <style module lang="scss">
 .xl {
-  @apply text-[2.4rem] leading-[3rem];
+  @apply text-[2rem] leading-[3rem];
 
   @screen sm {
-    @apply text-[3.5rem] leading-[4rem];
+    @apply text-[3rem] leading-[4rem];
   }
 }
 

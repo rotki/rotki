@@ -3604,7 +3604,8 @@
   },
   "overall_balances": {
     "loading": "LOADING",
-    "premium_hint": "Get the full experience by upgrading to rotki premium"
+    "premium_hint": "Get the full experience by upgrading to rotki premium",
+    "total_balance": "Total Balance"
   },
   "page_not_found": {
     "back": "Back to dashboard",
