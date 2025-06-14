@@ -159,6 +159,7 @@ class TaskManager:
         self.query_aura_pools = query_aura_pools
         self.last_premium_status_check = ts_now()
         self.last_calendar_reminder_check = Timestamp(0)
+        self.last_google_calendar_sync = Timestamp(0)
         self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
@@ -192,6 +193,7 @@ class TaskManager:
             self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
+            self._maybe_sync_google_calendar,
             self._maybe_query_graph_delegated_tokens,
             self._maybe_query_gnosispay,
             self._maybe_update_pendle_cache,
@@ -982,6 +984,54 @@ class TaskManager:
             method=delete_past_calendar_entries,
             database=self.database,
         )]
+
+    def _maybe_sync_google_calendar(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        Periodically sync rotki calendar events to Google Calendar if authenticated.
+        Runs every 2 hours by default.
+        """
+        sync_interval = 2 * HOUR_IN_SECONDS  # Default 2 hours
+        if sync_interval <= 0:  # Disabled if 0 or negative
+            return None
+
+        if (now := ts_now()) - self.last_google_calendar_sync < sync_interval:
+            return None
+
+        # Check if Google Calendar integration is enabled and authenticated
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+        google_calendar = GoogleCalendarAPI(self.database)
+        if not google_calendar.is_authenticated():
+            return None
+
+        self.last_google_calendar_sync = now
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Sync Google Calendar',
+            exception_is_error=False,  # Don't error out if sync fails
+            method=self._sync_google_calendar_task,
+        )]
+
+    def _sync_google_calendar_task(self) -> None:
+        """Background task to sync calendar events to Google Calendar."""
+        try:
+            from rotkehlchen.db.calendar import CalendarFilterQuery, DBCalendar
+            from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+            google_calendar = GoogleCalendarAPI(self.database)
+            db_calendar = DBCalendar(self.database)
+
+            # Get all calendar entries from rotki
+            calendar_result = db_calendar.query_calendar_entry(
+                CalendarFilterQuery.make(),
+            )
+            calendar_entries = calendar_result['entries']
+
+            # Sync to Google Calendar
+            result = google_calendar.sync_events(calendar_entries)
+            log.debug(f'Google Calendar sync completed: {result}')
+
+        except Exception as e:
+            log.error(f'Failed to sync Google Calendar: {e}')
 
     def _maybe_query_graph_delegated_tokens(self) -> Optional[list[gevent.Greenlet]]:
         """
