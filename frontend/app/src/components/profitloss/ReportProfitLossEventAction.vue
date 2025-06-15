@@ -5,10 +5,10 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { convertFromTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
@@ -41,7 +41,7 @@ async function openEditHistoricPriceDialog() {
   set(fetchingPrice, false);
 }
 
-const datetime = computed<string>(() => convertFromTimestamp(get(event).timestamp));
+const timestamp = useRefMap(event, item => item.timestamp);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -142,7 +142,7 @@ async function updatePrice() {
             outlined
           />
           <DateTimePicker
-            :model-value="datetime"
+            :model-value="timestamp"
             disabled
             hide-details
             :label="t('common.datetime')"
