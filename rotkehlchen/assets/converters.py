@@ -414,7 +414,7 @@ def asset_from_woo(woo_name: str) -> AssetWithOracles:
     woo_name = GlobalDBHandler.get_assetid_from_exchange_name(
         exchange=Location.WOO,
         symbol=woo_name,
-        default=woo_name.split('_')[-1],  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
+        default=woo_name.split('_', maxsplit=1)[-1],  # some woo assets are prefixed with the network for deposits/withdrawals  # noqa: E501
     )
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
         exchange=Location.WOO,

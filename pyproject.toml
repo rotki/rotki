@@ -102,9 +102,9 @@ lint = [
     "mypy-extensions==1.1.0",
     "pylint==3.3.7",
     "astroid==3.3.10",  # engine of pylint, upgrade them together
-    "ruff==0.11.10",
+    "ruff==0.11.13",
     "double-indent-rotki==0.1.7",  # our fork of double indent
-    "pyright==1.1.401",
+    "pyright==1.1.402",
     # type packages used by mypy
     # pinned here so that we can have reproducible mypy runs
     "types-chardet==5.0.4.6",
