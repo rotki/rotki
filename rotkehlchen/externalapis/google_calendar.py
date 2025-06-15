@@ -96,8 +96,7 @@ class GoogleCalendarAPI:
             redirect_uri='http://localhost:8080',
         )
 
-        # Store flow state for later use
-        self._flow_state = flow.state
+        # Store flow for later use
         self._flow = flow
 
         auth_url, _ = flow.authorization_url(
@@ -108,11 +107,15 @@ class GoogleCalendarAPI:
         return auth_url
 
     def complete_oauth_flow(self, auth_response_url: str) -> bool:
-        """Complete OAuth2 flow with the redirect URL from browser."""
+        """Complete OAuth2 flow with the authorization code."""
         try:
             if not hasattr(self, '_flow') or self._flow is None:
                 log.error('OAuth flow not started. Call start_oauth_flow() first.')
                 return False
+
+            # If it's just the authorization code, construct the full URL
+            if not auth_response_url.startswith('http'):
+                auth_response_url = f'http://localhost:8080?code={auth_response_url}'
 
             # Extract authorization code from the response URL
             self._flow.fetch_token(authorization_response=auth_response_url)
@@ -125,9 +128,8 @@ class GoogleCalendarAPI:
                     ('google_calendar_credentials', self._credentials.to_json()),
                 )
 
-            # Clean up flow state
+            # Clean up flow
             self._flow = None
-            self._flow_state = None
 
         except Exception as e:
             log.error(f'Failed to complete Google Calendar authentication: {e}')

@@ -95,6 +95,7 @@ dev = [
     "google-auth-httplib2==0.2.0",
     "google-api-core==2.24.2",
     "google-auth==2.38.0",
+    "google-auth-oauthlib==1.2.1",
 ]
 
 lint = [
