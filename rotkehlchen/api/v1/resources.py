@@ -3292,8 +3292,8 @@ class GoogleCalendarResource(BaseMethodView):
         'client_secret': fields.Str(required=True),
     })
 
-    complete_auth_schema = Schema.from_dict({
-        'auth_response_url': fields.Str(required=True),
+    poll_auth_schema = Schema.from_dict({
+        # No parameters needed for polling
     })
 
     @require_loggedin_user()
@@ -3311,10 +3311,10 @@ class GoogleCalendarResource(BaseMethodView):
         )
 
     @require_loggedin_user()
-    @use_kwargs(complete_auth_schema, location='json')
-    def patch(self, auth_response_url: str) -> Response:
-        """Complete OAuth2 flow with authorization response URL."""
-        return self.rest_api.complete_google_calendar_auth(auth_response_url=auth_response_url)
+    @use_kwargs(poll_auth_schema, location='json')
+    def patch(self) -> Response:
+        """Poll for OAuth2 device flow completion."""
+        return self.rest_api.poll_google_calendar_auth()
 
     @require_loggedin_user()
     def post(self) -> Response:

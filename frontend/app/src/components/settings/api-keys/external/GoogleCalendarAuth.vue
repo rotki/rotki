@@ -4,7 +4,7 @@ import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar
 import { useInterop } from '@/composables/electron-interop';
 import { useNotificationsStore } from '@/store/notifications';
 import { Severity } from '@rotki/common';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -15,15 +15,20 @@ const { openUrl } = useInterop();
 
 const clientId = ref('');
 const clientSecret = ref('');
-const authCode = ref('');
 const showAuthDialog = ref(false);
 const showSetupDialog = ref(false);
-const authUrl = ref('');
+const showApiErrorDialog = ref(false);
+const apiErrorDetails = ref({ projectId: '', setupUrl: '' });
+const verificationUrl = ref('');
+const userCode = ref('');
 const isConnected = ref(false);
 const isSyncing = ref(false);
 const isLoading = ref(false);
+const isPolling = ref(false);
+let pollInterval: NodeJS.Timeout | null = null;
 
 const hasCredentials = computed(() => clientId.value && clientSecret.value);
+
 
 // Check connection status on mount
 onMounted(async () => {
@@ -40,6 +45,11 @@ onMounted(async () => {
   }
 });
 
+// Cleanup polling on unmount
+onUnmounted(() => {
+  stopPolling();
+});
+
 async function startAuth() {
   if (!hasCredentials.value) {
     notify({
@@ -52,26 +62,29 @@ async function startAuth() {
   }
 
   try {
-    const response = await googleCalendarApi.startAuth(clientId.value, clientSecret.value);
+    const deviceInfo = await googleCalendarApi.startAuth(clientId.value, clientSecret.value);
 
-    // Handle the nested response structure: {result: {authUrl: "..."}}
-    const authUrlFromResponse = response?.result?.authUrl || response?.auth_url;
+    verificationUrl.value = deviceInfo.verificationUrl;
+    userCode.value = deviceInfo.userCode;
+    showAuthDialog.value = true;
 
-    if (authUrlFromResponse && typeof authUrlFromResponse === 'string') {
-      authUrl.value = authUrlFromResponse;
-      showAuthDialog.value = true;
-
-      // Open auth URL in external browser
-      // Use setTimeout to ensure the dialog is shown first and URL is properly set
-      setTimeout(async () => {
-        if (authUrl.value) {
-          await openUrl(authUrl.value);
-        }
-      }, 200);
+    // Open verification URL in external browser immediately (before any timeout)
+    // This prevents popup blockers from blocking the window.open call
+    try {
+      if (verificationUrl.value && typeof verificationUrl.value === 'string' && verificationUrl.value.startsWith('https://')) {
+        await openUrl(verificationUrl.value);
+        console.log('Browser opened successfully');
+      } else {
+        console.error('Invalid URL - not opening:', verificationUrl.value);
+      }
     }
-    else {
-      throw new Error(`Invalid response from server: missing authorization URL`);
+    catch (error) {
+      console.error('Failed to open browser:', error);
+      // If opening URL fails, user can still manually copy the URL
     }
+
+    // Start polling for completion
+    startPolling();
   }
   catch (error: any) {
     notify({
@@ -83,65 +96,106 @@ async function startAuth() {
   }
 }
 
-async function completeAuth() {
-  if (!authCode.value) {
-    notify({
-      display: true,
-      message: t('external_services.google_calendar.auth_code_required'),
-      severity: Severity.ERROR,
-      title: t('external_services.google_calendar.error'),
-    });
+function startPolling() {
+  if (isPolling.value) {
+    console.log('startPolling: Already polling, ignoring request');
     return;
   }
 
-  try {
-    // Build the full redirect URL with the auth code
-    const redirectUrl = `http://localhost:8080?code=${authCode.value}`;
-    await googleCalendarApi.completeAuth(redirectUrl);
+  console.log('startPolling: Starting authentication polling...');
+  isPolling.value = true;
+  
+  pollInterval = setInterval(async () => {
+    try {
+      console.log('startPolling: Polling for authorization status...');
+      const result = await googleCalendarApi.pollAuth();
+      console.log('startPolling: Poll result:', result);
 
-    isConnected.value = true;
-    showAuthDialog.value = false;
-    authCode.value = '';
+      if (result.success) {
+        console.log('startPolling: Authentication successful!');
+        // Authentication completed successfully
+        stopPolling();
+        isConnected.value = true;
+        showAuthDialog.value = false;
 
-    notify({
-      display: true,
-      message: t('external_services.google_calendar.connected'),
-      severity: Severity.INFO,
-      title: t('external_services.google_calendar.success'),
-    });
+        notify({
+          display: true,
+          message: t('external_services.google_calendar.connected'),
+          severity: Severity.INFO,
+          title: t('external_services.google_calendar.success'),
+        });
+      }
+      else if (result.pending) {
+        console.log('startPolling: Authentication still pending, continuing to poll...');
+      }
+      else {
+        console.log('startPolling: Unexpected result state:', result);
+      }
+      // If result.pending is true, continue polling
+    }
+    catch (error: any) {
+      console.error('startPolling: Error during polling:', error);
+      stopPolling();
+      showAuthDialog.value = false;
+
+      notify({
+        display: true,
+        message: error.message || t('external_services.google_calendar.auth_failed'),
+        severity: Severity.ERROR,
+        title: t('external_services.google_calendar.error'),
+      });
+    }
+  }, 5000); // Poll every 5 seconds
+}
+
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
   }
-  catch (error: any) {
-    notify({
-      display: true,
-      message: error.message || t('external_services.google_calendar.auth_complete_failed'),
-      severity: Severity.ERROR,
-      title: t('external_services.google_calendar.error'),
-    });
-  }
+  isPolling.value = false;
 }
 
 async function syncCalendar() {
   isSyncing.value = true;
   try {
     const result = await googleCalendarApi.syncCalendar();
+    console.log('Sync result:', result);
+    
     notify({
       display: true,
       message: t('external_services.google_calendar.sync_complete', {
-        created: result.events_created,
-        total: result.events_processed,
-        updated: result.events_updated,
+        created: result.events_created || 0,
+        total: result.events_processed || 0,
+        updated: result.events_updated || 0,
       }),
       severity: Severity.INFO,
       title: t('external_services.google_calendar.success'),
     });
   }
   catch (error: any) {
-    notify({
-      display: true,
-      message: error.message || t('external_services.google_calendar.sync_failed'),
-      severity: Severity.ERROR,
-      title: t('external_services.google_calendar.error'),
-    });
+    // Check if this is the "API not enabled" error
+    if (error.message && (error.message.includes('Google Calendar API has not been used') || error.message.includes('accessNotConfigured'))) {
+      // Extract project ID from the error message
+      const projectMatch = error.message.match(/project (\d+)/);
+      const projectId = projectMatch ? projectMatch[1] : 'YOUR_PROJECT_ID';
+      
+      // Set up the API error dialog
+      apiErrorDetails.value = {
+        projectId,
+        setupUrl: `https://console.developers.google.com/apis/api/calendar-json.googleapis.com/overview?project=${projectId}`,
+      };
+      showApiErrorDialog.value = true;
+    }
+    else {
+      // Show generic error notification for other errors
+      notify({
+        display: true,
+        message: error.message || t('external_services.google_calendar.sync_failed'),
+        severity: Severity.ERROR,
+        title: t('external_services.google_calendar.error'),
+      });
+    }
   }
   finally {
     isSyncing.value = false;
@@ -174,6 +228,36 @@ async function disconnect() {
 
 function openSetupGuide() {
   showSetupDialog.value = true;
+}
+
+async function openApiSetupUrl() {
+  try {
+    if (apiErrorDetails.value.setupUrl) {
+      await openUrl(apiErrorDetails.value.setupUrl);
+    }
+  } catch (error) {
+    console.error('Failed to open API setup URL:', error);
+  }
+}
+
+function cancelAuth() {
+  stopPolling();
+  showAuthDialog.value = false;
+  verificationUrl.value = '';
+  userCode.value = '';
+}
+
+async function openUrlSafely(url: string) {
+  try {
+    if (url && typeof url === 'string' && url.startsWith('https://')) {
+      await openUrl(url);
+      console.log('Browser opened via button');
+    } else {
+      console.error('Invalid URL passed to button:', url);
+    }
+  } catch (error) {
+    console.error('Failed to open URL via button:', error);
+  }
 }
 </script>
 
@@ -241,6 +325,7 @@ function openSetupGuide() {
 
       <div class="flex gap-2">
         <RuiButton
+          data-test="connect-button"
           color="primary"
           :disabled="!hasCredentials"
           @click="startAuth()"
@@ -256,7 +341,7 @@ function openSetupGuide() {
     >
       <div class="flex items-center gap-2 text-rui-success">
         <RuiIcon
-          name="checkbox-circle-line"
+          name="lu-circle-check"
           size="20"
         />
         <span class="text-body-1">{{ t('external_services.google_calendar.connected_status') }}</span>
@@ -268,6 +353,23 @@ function openSetupGuide() {
 
       <div class="flex gap-2">
         <RuiButton
+          data-test="sync-button-main"
+          color="primary"
+          variant="outlined"
+          :loading="isSyncing"
+          :disabled="isSyncing"
+          @click="syncCalendar()"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="refresh-line"
+              size="20"
+            />
+          </template>
+          {{ t('external_services.google_calendar.sync_now') }}
+        </RuiButton>
+        
+        <RuiButton
           color="error"
           variant="outlined"
           @click="disconnect()"
@@ -277,46 +379,75 @@ function openSetupGuide() {
       </div>
     </div>
 
-    <!-- Auth Code Dialog -->
+    <!-- Device Flow Auth Dialog -->
     <RuiDialog
       v-model="showAuthDialog"
+      data-test="auth-dialog"
       max-width="600"
       persistent
       :z-index="9999"
     >
       <RuiCard>
         <template #header>
-          {{ t('external_services.google_calendar.auth_dialog_title') }}
+          {{ t('external_services.google_calendar.device_auth_title') }}
         </template>
 
         <div class="space-y-4">
           <p class="text-body-2">
-            {{ t('external_services.google_calendar.auth_dialog_instructions') }}
+            {{ t('external_services.google_calendar.device_auth_instructions') }}
           </p>
 
-          <RuiTextField
-            v-model="authCode"
-            variant="outlined"
-            color="primary"
-            :label="t('external_services.google_calendar.auth_code_label')"
-            :hint="t('external_services.google_calendar.auth_code_hint')"
-          />
+          <div class="p-4 bg-rui-grey-100 dark:bg-rui-grey-800 rounded">
+            <div class="text-body-2 font-medium mb-2">
+              {{ t('external_services.google_calendar.verification_url') }}:
+            </div>
+            <div class="text-body-1 break-all mb-2">
+              <a 
+                :href="verificationUrl" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="text-primary hover:underline"
+              >
+                {{ verificationUrl }}
+              </a>
+            </div>
+            <RuiButton
+              size="sm"
+              variant="outlined"
+              color="primary"
+              @click="() => openUrlSafely(verificationUrl)"
+            >
+              Open in Browser
+            </RuiButton>
+
+            <div class="text-body-2 font-medium mb-2 mt-4">
+              {{ t('external_services.google_calendar.user_code') }}:
+            </div>
+            <div class="text-h6 font-mono tracking-wider text-primary">
+              {{ userCode }}
+            </div>
+          </div>
+
+          <div
+            v-if="isPolling"
+            class="flex items-center gap-2 text-rui-text-secondary"
+          >
+            <RuiIcon
+              name="lu-refresh-ccw"
+              class="animate-spin"
+              size="16"
+            />
+            <span class="text-body-2">{{ t('external_services.google_calendar.waiting_for_auth') }}</span>
+          </div>
         </div>
 
         <template #footer>
           <div class="flex justify-end gap-2">
             <RuiButton
               variant="text"
-              @click="showAuthDialog = false; authCode = ''"
+              @click="cancelAuth()"
             >
               {{ t('common.actions.cancel') }}
-            </RuiButton>
-            <RuiButton
-              color="primary"
-              :disabled="!authCode"
-              @click="completeAuth()"
-            >
-              {{ t('external_services.google_calendar.complete_auth') }}
             </RuiButton>
           </div>
         </template>
@@ -344,14 +475,6 @@ function openSetupGuide() {
             <li>{{ t('external_services.google_calendar.setup_step_5') }}</li>
             <li>{{ t('external_services.google_calendar.setup_step_6') }}</li>
           </ol>
-
-          <div class="bg-rui-warning-lighter p-4 rounded">
-            <p class="text-body-2">
-              <strong>{{ t('external_services.google_calendar.important') }}:</strong>
-              {{ t('external_services.google_calendar.redirect_uri_note') }}
-            </p>
-            <code class="block mt-2 p-2 bg-rui-grey-100 rounded text-black">{{ t('external_services.google_calendar.redirect_uri') }}</code>
-          </div>
         </div>
 
         <template #footer>
@@ -359,6 +482,72 @@ function openSetupGuide() {
             <RuiButton
               color="primary"
               @click="showSetupDialog = false"
+            >
+              {{ t('common.actions.close') }}
+            </RuiButton>
+          </div>
+        </template>
+      </RuiCard>
+    </RuiDialog>
+
+    <!-- API Setup Error Dialog -->
+    <RuiDialog
+      v-model="showApiErrorDialog"
+      max-width="600"
+      data-test="api-error-dialog"
+    >
+      <RuiCard>
+        <template #header>
+          <div class="flex items-center gap-2">
+            <RuiIcon
+              name="lu-alert-circle"
+              size="24"
+              class="text-rui-error"
+            />
+            {{ t('external_services.google_calendar.setup_required') }}
+          </div>
+        </template>
+
+        <div class="space-y-4">
+          <div class="text-body-1">
+            {{ t('external_services.google_calendar.api_error_explanation') }}
+          </div>
+
+          <div class="bg-rui-grey-100 dark:bg-rui-grey-800 p-4 rounded border-l-4 border-rui-warning">
+            <div class="text-body-2 font-medium mb-2">
+              {{ t('external_services.google_calendar.steps_to_fix') }}
+            </div>
+            <ol class="list-decimal list-inside space-y-1 text-body-2">
+              <li>{{ t('external_services.google_calendar.step_1_click_link') }}</li>
+              <li>{{ t('external_services.google_calendar.step_2_enable_api') }}</li>
+              <li>{{ t('external_services.google_calendar.step_3_wait') }}</li>
+              <li>{{ t('external_services.google_calendar.step_4_try_again') }}</li>
+            </ol>
+          </div>
+
+          <div class="text-body-2 text-rui-text-secondary">
+            <strong>{{ t('external_services.google_calendar.project_id') }}:</strong> {{ apiErrorDetails.projectId }}
+          </div>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-between items-center w-full">
+            <RuiButton
+              color="primary"
+              @click="openApiSetupUrl()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-external-link"
+                  size="16"
+                />
+              </template>
+              {{ t('external_services.google_calendar.open_google_console') }}
+            </RuiButton>
+            
+            <RuiButton
+              variant="text"
+              @click="showApiErrorDialog = false"
             >
               {{ t('common.actions.close') }}
             </RuiButton>
