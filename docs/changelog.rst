@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10146` Users will now be able to filter assets in the history events filter if a non-EVM location is selected.
 * :bug:`-` Users will now be able to perform on-chain send transactions using older wallets such as Trust Wallet.
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.
 * :bug:`-` For ETH staking MEV rewards the informational event will no longer be shown as it will be superseded by the combined MEV reward events.
