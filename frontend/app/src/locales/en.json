@@ -1217,7 +1217,7 @@
       "ignore": "Ignore Asset",
       "info": {
         "ignore": "Asset is ignored",
-        "mark_as_spam": "Asset is marked as spam"
+        "mark_as_spam": "Marked as spam"
       },
       "mark_as_spam": "Mark as spam"
     },
