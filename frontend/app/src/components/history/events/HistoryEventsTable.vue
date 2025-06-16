@@ -388,6 +388,7 @@ function addMissingRule($event: any, row: HistoryEventEntry): void {
             @edit-event="editEvent($event, row);"
             @delete-event="confirmDelete($event)"
             @show:missing-rule-action="addMissingRule($event, row);"
+            @refresh="emit('refresh')"
           />
         </template>
         <template #body.prepend="{ colspan }">

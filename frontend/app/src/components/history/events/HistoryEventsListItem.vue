@@ -26,6 +26,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'refresh': [];
 }>();
 
 const { getChain } = useSupportedChains();
@@ -108,6 +109,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
           'col-span-10 md:col-span-6 @5xl:!col-span-4': !compact,
           'w-full !py-0': compact,
         }"
+        @refresh="emit('refresh')"
       />
 
       <HistoryEventNote

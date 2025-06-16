@@ -41,6 +41,10 @@ const props = withDefaults(
   },
 );
 
+const emit = defineEmits<{
+  refresh: [];
+}>();
+
 const { asset, hideMenu, isCollectionParent } = toRefs(props);
 
 const symbol = useRefMap(asset, asset => asset.symbol ?? '');
@@ -132,6 +136,7 @@ function useContextMenu(attrs: Record<string, any>) {
       :icon-only="iconOnly"
       :hide-actions="hideActions"
       :is-collection-parent="isCollectionParent"
+      @refresh="emit('refresh')"
     />
   </RuiMenu>
 </template>
