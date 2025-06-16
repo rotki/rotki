@@ -45,11 +45,11 @@ export class MenuManager {
   }
 
   private openLink(url: string): void {
-    shell.openExternal(url).catch(error => this.logger.log(error));
+    shell.openExternal(url).catch(error => this.logger.error(error));
   }
 
   private openPath(path: string): void {
-    shell.openPath(path).catch(error => this.logger.log(error));
+    shell.openPath(path).catch(error => this.logger.error(error));
   }
 
   private getMenuTemplate(): MenuItemConstructorOptions[] {
@@ -113,10 +113,10 @@ export class MenuManager {
               return;
             }
 
-            this.logger.log('clearing cache');
+            this.logger.debug('clearing cache');
             window.webContents.session.clearCache()
               .then(() => window.webContents.reloadIgnoringCache())
-              .catch(error => this.logger.log(error));
+              .catch(error => this.logger.error(error));
           },
         },
         {
@@ -129,7 +129,7 @@ export class MenuManager {
 
             window.webContents.session.clearStorageData().then(() => {
               window.webContents.send(IpcCommands.REQUEST_RESTART);
-            }).catch(error => this.logger.log(error));
+            }).catch(error => this.logger.error(error));
           },
         },
         this.separator,

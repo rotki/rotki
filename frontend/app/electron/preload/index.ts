@@ -1,4 +1,5 @@
 import type { ApiUrls, Credentials, Interop, Listeners, TrayUpdate } from '@shared/ipc';
+import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
 import { contextBridge, ipcRenderer } from 'electron';
@@ -59,8 +60,8 @@ contextBridge.exposeInMainWorld('interop', {
   openPath: async (path: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_PATH, path),
   config: async (defaults: boolean) => ipcRenderer.invoke(IpcCommands.INVOKE_CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) => ipcRenderer.send(IpcCommands.TRAY_UPDATE, trayUpdate),
-  logToFile: (message: string) => {
-    ipcRenderer.send(IpcCommands.LOG_TO_FILE, message);
+  logToFile: (level: LogLevel, message: string) => {
+    ipcRenderer.send(IpcCommands.LOG_TO_FILE, level, message);
   },
   storePassword: async (credentials: Credentials) => ipcRenderer.invoke(IpcCommands.INVOKE_STORE_PASSWORD, credentials),
   getPassword: async (username: string) => ipcRenderer.invoke(IpcCommands.INVOKE_GET_PASSWORD, username),
