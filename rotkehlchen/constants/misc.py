@@ -37,3 +37,5 @@ MISCDIR_NAME: Final = 'misc'
 APPDIR_NAME: Final = 'app'
 AIRDROPSDIR_NAME: Final = 'airdrops'
 AIRDROPSPOAPDIR_NAME: Final = 'airdrops_poap'
+
+DEFAULT_BALANCE_LABEL: Final = 'address'

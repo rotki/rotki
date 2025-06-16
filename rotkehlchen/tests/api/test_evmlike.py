@@ -10,7 +10,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -98,7 +98,7 @@ def test_evmlike_blockchain_balances(
     }
 
     def serialize_balances(value: dict[Asset, Balance]) -> dict[str, dict]:
-        return {asset.identifier: balance.serialize() for asset, balance in value.items()}
+        return {asset.identifier: {DEFAULT_BALANCE_LABEL: balance.serialize()} for asset, balance in value.items()}  # noqa: E501
 
     def mocked_get_balances(
             addresses: Sequence[ChecksumEvmAddress],
@@ -136,9 +136,9 @@ def test_evmlike_blockchain_balances(
             },
             'totals': {
                 'assets': {
-                    A_ETH.identifier: (addy_0_balances[A_ETH] + addy_1_balances[A_ETH]).serialize(),  # noqa: E501
-                    A_GNO.identifier: addy_1_balances[A_GNO].serialize(),
-                    A_DAI.identifier: addy_0_balances[A_DAI].serialize(),
+                    A_ETH.identifier: {DEFAULT_BALANCE_LABEL: (addy_0_balances[A_ETH] + addy_1_balances[A_ETH]).serialize()},  # noqa: E501
+                    A_GNO.identifier: {DEFAULT_BALANCE_LABEL: addy_1_balances[A_GNO].serialize()},
+                    A_DAI.identifier: {DEFAULT_BALANCE_LABEL: addy_0_balances[A_DAI].serialize()},
                 },
                 'liabilities': {},
             },

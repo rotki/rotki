@@ -80,7 +80,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 lending_reserves = self.query_lending_reserves(address, list(unique_reserves))
                 for reserve_token, balance_amount in lending_reserves.items():
                     price = Inquirer.find_usd_price(asset=reserve_token)
-                    balances[address].assets[reserve_token] += Balance(
+                    balances[address].assets[reserve_token][self.counterparty] += Balance(
                         amount=balance_amount,
                         usd_value=balance_amount * price,
                     )
@@ -142,7 +142,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
 
             lp_amount = token_normalized_value(lp_amount_raw, lp_token)
             lp_price = Inquirer.find_usd_price(lp_token)
-            balances[address].assets[lp_token] += Balance(
+            balances[address].assets[lp_token][self.counterparty] += Balance(
                 amount=lp_amount,
                 usd_value=lp_amount * lp_price,
             )
@@ -153,7 +153,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
 
                 amount = token_normalized_value(debt_amount, debt_token)
                 price = Inquirer.find_usd_price(debt_token)
-                balances[address].liabilities[debt_token] += Balance(
+                balances[address].liabilities[debt_token][self.counterparty] += Balance(
                     amount=amount,
                     usd_value=amount * price,
                 )
@@ -199,7 +199,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 token_amount=staked_amount_raw,
                 token_decimals=DEFAULT_TOKEN_DECIMALS,
             )
-            balances[user_address].assets[self.extrafi_token] += Balance(
+            balances[user_address].assets[self.extrafi_token][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * extrafi_price,
             )

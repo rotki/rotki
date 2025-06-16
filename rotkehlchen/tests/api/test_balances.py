@@ -15,7 +15,7 @@ from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
     A_BTC,
@@ -775,11 +775,11 @@ def test_balances_caching_mixup(
             task_id=task_id_eth,
             timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
         )
-        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_ETH.identifier]['amount'] == '1'  # noqa: E501
-        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
-        assert result_eth['totals']['assets'][A_ETH.identifier]['amount'] == '1'
-        assert result_eth['totals']['assets'][A_RDN.identifier]['amount'] == '2'
-        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier]['amount'] == '2'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '2'  # noqa: E501
+        assert result_eth['totals']['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '1'  # noqa: E501
+        assert result_eth['totals']['assets'][A_RDN.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '2'  # noqa: E501
+        assert result_eth['per_account'][eth_chain_key][ethereum_accounts[0]]['assets'][A_RDN.identifier][DEFAULT_BALANCE_LABEL]['amount'] == '2'  # noqa: E501
         assert result_btc['per_account'] == {}
         assert result_btc['totals']['assets'] == {}
         assert result_btc['totals']['liabilities'] == {}
@@ -808,19 +808,19 @@ def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts: l
     # Check per account
     account_1_balances = result['per_account'][ksm_chain_key][ksm_accounts[0]]
     assert 'liabilities' in account_1_balances
-    asset_ksm = account_1_balances['assets'][A_KSM.identifier]
+    asset_ksm = account_1_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     account_2_balances = result['per_account'][ksm_chain_key][ksm_accounts[1]]
     assert 'liabilities' in account_2_balances
-    asset_ksm = account_2_balances['assets'][A_KSM.identifier]
+    asset_ksm = account_2_balances['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_ksm['amount']) >= ZERO
     assert FVal(asset_ksm['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_ksm = result['totals']['assets'][A_KSM.identifier]
+    total_ksm = result['totals']['assets'][A_KSM.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_ksm['amount']) >= ZERO
     assert FVal(total_ksm['usd_value']) >= ZERO
 
@@ -860,19 +860,19 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     # Check per account
     account_1_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_1_balances
-    asset_avax = account_1_balances['assets'][A_AVAX.identifier]
+    asset_avax = account_1_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     account_2_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC2_AVAX_ADDR]
     assert 'liabilities' in account_2_balances
-    asset_avax = account_2_balances['assets'][A_AVAX.identifier]
+    asset_avax = account_2_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets'][A_AVAX.identifier]
+    total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
 
@@ -982,9 +982,9 @@ def test_blockchain_balances_refresh(
     a_usdc = A_USDC.resolve_to_evm_token()
     a_dai = A_DAI.resolve_to_evm_token()
     account_balance = {ethereum_accounts[0]: BalanceSheet(
-        assets=defaultdict(Balance, {
-            a_usdc: Balance(ONE, FVal(24)),
-            a_dai: Balance(FVal(2), FVal(42)),
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            a_usdc: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(ONE, FVal(24))}),
+            a_dai: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(FVal(2), FVal(42))}),
         }),
     )}
     account_balance_patch = patch.object(chains_aggregator.balances, 'eth', account_balance)
@@ -1016,9 +1016,9 @@ def test_blockchain_balances_refresh(
 
         one_time_query_result = query_blockchain_balance(1)
         assert one_time_query_result['per_account']['eth'][ethereum_accounts[0]]['assets'] == {
-            A_USDC.identifier: {'amount': '23', 'usd_value': '230'},
-            A_DAI.identifier: {'amount': '3', 'usd_value': '33'},
-            A_USDT.identifier: {'amount': '3', 'usd_value': '54'},
+            A_USDC.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '23', 'usd_value': '230'}},
+            A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'usd_value': '33'}},
+            A_USDT.identifier: {'makerdao vault': {'amount': '3', 'usd_value': '54'}},
         }
         assert one_time_query_result == query_blockchain_balance(4)
 

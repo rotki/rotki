@@ -77,7 +77,7 @@ class AaveBalances(ProtocolWithBalance):
                 token_amount=balance,
                 token_decimals=DEFAULT_TOKEN_DECIMALS,
             )) > ZERO:
-                balances[user].assets[A_AAVE] += Balance(
+                balances[user].assets[A_AAVE][self.counterparty] += Balance(
                     amount=balance_norm,
                     usd_value=token_price * balance_norm,
                 )

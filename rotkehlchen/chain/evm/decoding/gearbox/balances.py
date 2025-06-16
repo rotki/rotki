@@ -80,7 +80,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
                 token_amount=staked_amount_raw[0],
                 token_decimals=DEFAULT_TOKEN_DECIMALS,
             )
-            balances[user_address].assets[self.gear_token] += Balance(
+            balances[user_address].assets[self.gear_token][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * gear_price,
             )

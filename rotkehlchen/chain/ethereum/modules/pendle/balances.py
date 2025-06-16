@@ -85,7 +85,7 @@ class PendleBalances(ProtocolWithBalance):
                 token_amount=balance,
                 token_decimals=DEFAULT_TOKEN_DECIMALS,
             )
-            balances[user_address].assets[PENDLE_TOKEN] += Balance(
+            balances[user_address].assets[PENDLE_TOKEN][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * price,
             )

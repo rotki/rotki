@@ -1,6 +1,9 @@
+from collections import defaultdict
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_USD
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.misc import InputError
@@ -50,73 +53,73 @@ def test_balance_raddition():
 
 def test_balance_sheet_addition():
     a = BalanceSheet(
-        assets={
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1.5'), usd_value=FVal('450'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5.1'))}),  # noqa: E501
+            A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
     b = BalanceSheet(
-        assets={
-            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
-            A_ETH: Balance(amount=FVal('3'), usd_value=FVal('900')),
-            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('10'), usd_value=FVal('10.2')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_EUR:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('3.5'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('900'))}),  # noqa: E501
+            A_BTC:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1'), usd_value=FVal('10000'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('10'), usd_value=FVal('10.2'))}),  # noqa: E501
+        }),
     )
     assert a != b
     c = BalanceSheet(
-        assets={
-            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('4.5'), usd_value=FVal('1350')),
-            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('15'), usd_value=FVal('15.3')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_EUR:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('3.5'))}),  # noqa: E501
+            A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('4.5'), usd_value=FVal('1350'))}),  # noqa: E501
+            A_BTC:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1'), usd_value=FVal('10000'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('15'), usd_value=FVal('15.3'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
     assert a + b == c
 
 
 def test_balance_sheet_raddition():
     a = BalanceSheet(
-        assets={
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1.5'), usd_value=FVal('450'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5.1'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
     b = BalanceSheet(
-        assets={
-            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
-            A_ETH: Balance(amount=FVal('3'), usd_value=FVal('900')),
-            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('10'), usd_value=FVal('10.2')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_EUR:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('3.5'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('900'))}),  # noqa: E501
+            A_BTC:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1'), usd_value=FVal('10000'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('10'), usd_value=FVal('10.2'))}),  # noqa: E501
+        }),
     )
     c = BalanceSheet(
-        assets={
-            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('4.5'), usd_value=FVal('1350')),
-            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('15'), usd_value=FVal('15.3')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_EUR:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('3.5'))}),  # noqa: E501
+            A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('4.5'), usd_value=FVal('1350'))}),  # noqa: E501
+            A_BTC:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1'), usd_value=FVal('10000'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('15'), usd_value=FVal('15.3'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
 
     result = sum([a, b])
@@ -127,14 +130,14 @@ def test_balance_sheet_raddition():
 
 def test_default_balance_sheet():
     a = BalanceSheet(
-        assets={
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_USD:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1.5'), usd_value=FVal('450'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5.1'))}),  # noqa: E501
+            A_ETH:  defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
     b = BalanceSheet()  # test no args init gives empty default dicts properly
     assert isinstance(b.assets, dict)
@@ -148,37 +151,37 @@ def test_default_balance_sheet():
 
 def test_balance_sheet_subtraction():
     a = BalanceSheet(
-        assets={
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('3'), usd_value=FVal('900')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_USD: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('900'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5.1'))}),  # noqa: E501
+            A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
     b = BalanceSheet(
-        assets={
-            A_EUR: Balance(amount=FVal('3'), usd_value=FVal('3.5')),
-            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
-            A_BTC: Balance(amount=FVal('1'), usd_value=FVal('10000')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('10'), usd_value=FVal('10.2')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_EUR: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('3.5'))}),  # noqa: E501
+            A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1.5'), usd_value=FVal('450'))}),  # noqa: E501
+            A_BTC: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1'), usd_value=FVal('10000'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('10'), usd_value=FVal('10.2'))}),  # noqa: E501
+        }),
     )
     assert a != b
     c = BalanceSheet(
-        assets={
-            A_EUR: Balance(amount=FVal('-3'), usd_value=FVal('-3.5')),
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('1.5'), usd_value=FVal('450')),
-            A_BTC: Balance(amount=FVal('-1'), usd_value=FVal('-10000')),
-        },
-        liabilities={
-            A_DAI: Balance(amount=FVal('-5'), usd_value=FVal('-5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
-        },
+        assets=defaultdict(lambda: defaultdict(Balance), {
+            A_EUR: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('-3'), usd_value=FVal('-3.5'))}),  # noqa: E501
+            A_USD: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))}),  # noqa: E501
+            A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('1.5'), usd_value=FVal('450'))}),  # noqa: E501
+            A_BTC: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('-1'), usd_value=FVal('-10000'))}),  # noqa: E501
+        }),
+        liabilities=defaultdict(lambda: defaultdict(Balance), {
+            A_DAI: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('-5'), usd_value=FVal('-5.1'))}),  # noqa: E501
+            A_ETH: defaultdict(Balance, {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))}),  # noqa: E501
+        }),
     )
     assert a - b == c
 
@@ -186,22 +189,22 @@ def test_balance_sheet_subtraction():
 def test_balance_sheet_serialize():
     a = BalanceSheet(
         assets={
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('3'), usd_value=FVal('900')),
+            A_USD: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))},
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('900'))},
         },
         liabilities={
-            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
+            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5.1'))},
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))},
         },
     )
     assert a.serialize() == {
         'assets': {
-            'USD': {'amount': '2', 'usd_value': '2'},
-            'ETH': {'amount': '3', 'usd_value': '900'},
+            'USD': {DEFAULT_BALANCE_LABEL: {'amount': '2', 'usd_value': '2'}},
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '3', 'usd_value': '900'}},
         },
         'liabilities': {
-            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {'amount': '5', 'usd_value': '5.1'},  # noqa: E501
-            'ETH': {'amount': '0.5', 'usd_value': '150'},
+            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': '5', 'usd_value': '5.1'}},  # noqa: E501
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': '0.5', 'usd_value': '150'}},
         },
     }
 
@@ -209,21 +212,21 @@ def test_balance_sheet_serialize():
 def test_balance_sheet_to_dict():
     a = BalanceSheet(
         assets={
-            A_USD: Balance(amount=FVal('2'), usd_value=FVal('2')),
-            A_ETH: Balance(amount=FVal('3'), usd_value=FVal('900')),
+            A_USD: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('2'), usd_value=FVal('2'))},
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('3'), usd_value=FVal('900'))},
         },
         liabilities={
-            A_DAI: Balance(amount=FVal('5'), usd_value=FVal('5.1')),
-            A_ETH: Balance(amount=FVal('0.5'), usd_value=FVal('150')),
+            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('5'), usd_value=FVal('5.1'))},
+            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.5'), usd_value=FVal('150'))},
         },
     )
     assert a.to_dict() == {
         'assets': {
-            'USD': {'amount': FVal('2'), 'usd_value': FVal('2')},
-            'ETH': {'amount': FVal('3'), 'usd_value': FVal('900')},
+            'USD': {DEFAULT_BALANCE_LABEL: {'amount': FVal('2'), 'usd_value': FVal('2')}},
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('3'), 'usd_value': FVal('900')}},
         },
         'liabilities': {
-            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {'amount': FVal('5'), 'usd_value': FVal('5.1')},  # noqa: E501
-            'ETH': {'amount': FVal('0.5'), 'usd_value': FVal('150')},
+            ethaddress_to_identifier('0x6B175474E89094C44Da98b954EedeAC495271d0F'): {DEFAULT_BALANCE_LABEL: {'amount': FVal('5'), 'usd_value': FVal('5.1')}},  # noqa: E501
+            'ETH': {DEFAULT_BALANCE_LABEL: {'amount': FVal('0.5'), 'usd_value': FVal('150')}},
         },
     }

@@ -55,6 +55,6 @@ class WalletconnectBalances(ProtocolWithBalance):
                 continue
 
             balance = Balance(amount=amount, usd_value=wct_price * amount)
-            balances[address].assets[wct_token] += balance
+            balances[address].assets[wct_token][self.counterparty] += balance
 
         return balances

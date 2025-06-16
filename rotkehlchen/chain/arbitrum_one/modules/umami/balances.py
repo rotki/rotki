@@ -149,7 +149,7 @@ class UmamiBalances(ProtocolWithBalance):
             token_amount=balance,
             token_decimals=vault_token.decimals,
         )
-        balances[user_address].assets[vault_token] += Balance(
+        balances[user_address].assets[vault_token][self.counterparty] += Balance(
             amount=amount,
             usd_value=amount * price,
         )

@@ -171,7 +171,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             balance = FVal(shares_amount * pool_total_tokens / pool_total_shares)
             balance_norm = asset_normalized_value(balance.to_int(exact=False), self.token)
             if balance_norm > ZERO:
-                balances[user_address].assets[self.token] += Balance(
+                balances[user_address].assets[self.token][self.counterparty] += Balance(
                     amount=balance_norm,
                     usd_value=grt_price * balance_norm,
                 )

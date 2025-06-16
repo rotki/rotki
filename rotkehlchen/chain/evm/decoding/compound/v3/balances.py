@@ -200,7 +200,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                 )
                 continue
 
-            balances[calls_arguments[idx].user_address].assets[collateral_asset] += Balance(
+            balances[calls_arguments[idx].user_address].assets[collateral_asset][self.counterparty] += Balance(  # noqa: E501
                 amount=collateral_balance,
                 usd_value=collateral_balance * asset_price,
             )
@@ -269,7 +269,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                 )
                 continue
 
-            balances[calls_arguments[idx].user_address].liabilities[underlying_token[calls[idx][0]]] += Balance(  # noqa: E501
+            balances[calls_arguments[idx].user_address].liabilities[underlying_token[calls[idx][0]]][self.counterparty] += Balance(  # noqa: E501
                 amount=borrow_balance,
                 usd_value=borrow_balance * asset_price,
             )

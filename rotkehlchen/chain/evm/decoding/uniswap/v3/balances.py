@@ -162,7 +162,7 @@ class UniswapV3Balances(ProtocolWithBalance):
                 if (usd_value := Inquirer.find_usd_price(token)) == ZERO_PRICE:
                     continue
 
-                balances[user_address].assets[token] += Balance(
+                balances[user_address].assets[token][self.counterparty] += Balance(
                     amount=ONE,
                     usd_value=usd_value,
                 )

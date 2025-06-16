@@ -159,7 +159,7 @@ class GmxBalances(ProtocolWithBalance):
                     number=position_collateral_value / asset_price,
                     ndigits=collateral_asset.decimals or 18,
                 )
-                balances[user_address].assets[collateral_asset] += Balance(
+                balances[user_address].assets[collateral_asset][self.counterparty] += Balance(
                     amount=asset_amount,
                     usd_value=position_collateral_value,  # it is already given in USD
                 )
@@ -194,7 +194,7 @@ class GmxBalances(ProtocolWithBalance):
                 token_amount=staked_amount_raw,
                 token_decimals=18,  # GMX has 18 decimals
             )
-            balances[user_address].assets[self.gmx] += Balance(
+            balances[user_address].assets[self.gmx][self.counterparty] += Balance(
                 amount=amount,
                 usd_value=amount * gmx_price,
             )

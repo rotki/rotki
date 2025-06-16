@@ -175,6 +175,31 @@ def combine_dicts(
     return new_dict
 
 
+def combine_nested_dicts_inplace(
+        a: defaultdict[K, defaultdict[Any, V]],
+        b: defaultdict[K, defaultdict[Any, V]],
+        op: Callable = operator.add,
+) -> defaultdict[K, defaultdict[Any, V]]:
+    """Combines nested defaultdicts by modifying `a` in place.
+
+    For each key in `b`, combines the inner dicts using the given operation.
+    Returns the modified `a` for method chaining.
+    """
+    for outer_key, inner_dict_b in b.items():
+        if outer_key not in a:  # create new inner dict with same default factory as b's inner dict  # noqa: E501
+            a[outer_key] = defaultdict(inner_dict_b.default_factory)
+
+        inner_dict_a = a[outer_key]
+        for inner_key, value_b in inner_dict_b.items():  # combine inner dictionaries
+            if inner_key in inner_dict_a:
+                inner_dict_a[inner_key] = op(inner_dict_a[inner_key], value_b)
+            elif op is operator.sub:
+                inner_dict_a[inner_key] = op(inner_dict_a.default_factory(), value_b)  # type: ignore[misc]
+            else:
+                inner_dict_a[inner_key] = value_b
+    return a
+
+
 def convert_to_int(
         val: FVal | (bytes | (str | float)),
         accept_only_exact: bool = True,

@@ -179,7 +179,7 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                     amount=amount,
                     token_prices=token_prices,
             )):
-                balances[user_address].assets[token] += balance
+                balances[user_address].assets[token][self.counterparty] += balance
 
         for user_address, token, amount in liabilities:
             if (balance := self._get_token_balance(
@@ -187,7 +187,7 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                     amount=amount,
                     token_prices=token_prices,
             )):
-                balances[user_address].liabilities[token] += balance
+                balances[user_address].liabilities[token][self.counterparty] += balance
 
         return balances
 

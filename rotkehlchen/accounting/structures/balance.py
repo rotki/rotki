@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
-from rotkehlchen.utils.misc import combine_dicts
+from rotkehlchen.utils.misc import combine_nested_dicts_inplace
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
@@ -141,29 +141,50 @@ class AssetBalance:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class BalanceSheet:
-    assets: defaultdict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))
-    liabilities: defaultdict['Asset', Balance] = field(default_factory=lambda: defaultdict(Balance))  # noqa: E501
+    assets: defaultdict['Asset', defaultdict[str, Balance]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
+    liabilities: defaultdict['Asset', defaultdict[str, Balance]] = field(default_factory=lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
 
     def copy(self) -> 'BalanceSheet':
-        return BalanceSheet(assets=self.assets.copy(), liabilities=self.liabilities.copy())
+        return BalanceSheet(
+            assets=defaultdict(lambda: defaultdict(Balance), {
+                asset: defaultdict(Balance, balances.copy())
+                for asset, balances in self.assets.items()
+            }),
+            liabilities=defaultdict(lambda: defaultdict(Balance), {
+                asset: defaultdict(Balance, balances.copy())
+                for asset, balances in self.liabilities.items()
+            }),
+        )
 
     def serialize(self) -> dict[str, dict]:
         return {
-            'assets': {k.serialize(): v.serialize() for k, v in self.assets.items()},
-            'liabilities': {k: v.serialize() for k, v in self.liabilities.items()},
+            'assets': {
+                k.serialize(): {label: balance.serialize() for label, balance in v.items()}
+                for k, v in self.assets.items()
+            },
+            'liabilities': {
+                k.serialize(): {label: balance.serialize() for label, balance in v.items()}
+                for k, v in self.liabilities.items()
+            },
         }
 
     def to_dict(self) -> dict[str, dict]:
         return {
-            'assets': {k: v.to_dict() for k, v in self.assets.items()},
-            'liabilities': {k: v.to_dict() for k, v in self.liabilities.items()},
+            'assets': {
+                k: {label: balance.to_dict() for label, balance in v.items()}
+                for k, v in self.assets.items()
+            },
+            'liabilities': {
+                k: {label: balance.to_dict() for label, balance in v.items()}
+                for k, v in self.liabilities.items()
+            },
         }
 
     def __add__(self, other: Any) -> 'BalanceSheet':
         other = _evaluate_balance_sheet_input(other, 'addition')
         return BalanceSheet(
-            assets=combine_dicts(self.assets, other.assets, op=operator.add),
-            liabilities=combine_dicts(self.liabilities, other.liabilities, op=operator.add),
+            assets=combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=operator.add),
+            liabilities=combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=operator.add),  # noqa: E501
         )
 
     def __radd__(self, other: Any) -> 'BalanceSheet':
@@ -172,15 +193,15 @@ class BalanceSheet:
 
         other = _evaluate_balance_sheet_input(other, 'addition')
         return BalanceSheet(
-            assets=self.assets + other.assets,
-            liabilities=self.liabilities + other.liabilities,
+            assets=combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=operator.add),
+            liabilities=combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=operator.add),  # noqa: E501
         )
 
     def __sub__(self, other: Any) -> 'BalanceSheet':
         other = _evaluate_balance_sheet_input(other, 'subtraction')
         return BalanceSheet(
-            assets=combine_dicts(self.assets, other.assets, op=operator.sub),
-            liabilities=combine_dicts(self.liabilities, other.liabilities, op=operator.sub),
+            assets=combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=operator.sub),
+            liabilities=combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=operator.sub),  # noqa: E501
         )
 
 
@@ -189,12 +210,14 @@ def _evaluate_balance_sheet_input(other: Any, operation: str) -> BalanceSheet:
     if isinstance(other, dict):
         if len(other) == 2 and 'assets' in other and 'liabilities' in other:
             try:
-                assets = defaultdict(Balance)
-                liabilities = defaultdict(Balance)
-                for asset, entry in other['assets'].items():
-                    assets[asset] = _evaluate_balance_input(entry, operation)
-                for asset, entry in other['liabilities'].items():
-                    liabilities[asset] = _evaluate_balance_input(entry, operation)
+                assets: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+                liabilities: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+                for asset, balance_entries in other['assets'].items():
+                    for label, entry in balance_entries.items():
+                        assets[asset][label] = _evaluate_balance_input(entry, operation)
+                for asset, balance_entries in other['liabilities'].items():
+                    for label, entry in balance_entries.items():
+                        liabilities[asset][label] = _evaluate_balance_input(entry, operation)
             except InputError as e:
                 raise InputError(
                     f'Found valid dict object but with invalid values '

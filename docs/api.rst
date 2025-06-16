@@ -2985,11 +2985,20 @@ Querying onchain balances
                    },
                    "eth": { "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B": {
                        "assets": {
-                           "ETH": {"amount": "10", "usd_value": "1650.53"},
-                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "15", "usd_value": "15.21"}
+                           "ETH": {
+                               "address": {"amount": "10", "usd_value": "1650.53"}
+                           },
+                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                               "address": {"amount": "15", "usd_value": "15.21"}
+                           },
+                           "eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7": {
+                               "makerdao vault": {"amount": "3", "usd_value": "54"}
+                           }
                        },
                        "liabilities": {
-                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {"amount": "20", "usd_value": "20.35"}
+                           "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+                               "makerdao vault": {"amount": "20", "usd_value": "20.35"}
+                           }
                        }
                   }},
                    "eth2": { "0x9675faa8d15665e30d31dc10a332828fa15e2c7490f7d1894d9092901b139801ce476810f8e1e0c7658a9abdb9c4412e": {
@@ -3017,7 +3026,7 @@ Querying onchain balances
           "message": ""
       }
 
-   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent $ value as of the request. Ethereum accounts have a mapping of tokens owned by each account. ETH accounts may have an optional liabilities key. This would be the same as assets. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
+   :resjson object per_account: The blockchain balances per account per asset. Each element of this object has a blockchain asset as its key. Then each asset has an address for that blockchain as its key and each address an object with the following keys: ``"amount"`` for the amount stored in the asset in the address and ``"usd_value"`` for the equivalent USD value as of the request. For EVM accounts, balances are organized by category: ``"address"`` represents tokens held directly in the address and available for use, while protocol-specific labels (like ``"makerdao vault"``, ``"aave"``, ``"morpho"``) show tokens locked in DeFi protocols. ETH accounts may have an optional liabilities key with the same structure. BTC accounts are separated in standalone accounts and in accounts that have been derived from an xpub. The xpub ones are listed in a list under the ``"xpubs"`` key. Each entry has the xpub, the derivation path and the list of addresses and their balances.
    :resjson object total: The blockchain balances in total per asset. Has 2 keys. One for assets and one for liabilities. The liabilities key may be missing if no liabilities exist.
 
    :statuscode 200: Balances successfully queried.

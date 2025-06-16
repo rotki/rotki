@@ -1035,9 +1035,26 @@ class Rotkehlchen:
                 blockchain=None,
                 ignore_cache=ignore_cache,
             )  # copies below since if cache is used we end up modifying the balance sheet object
-            if len(blockchain_result.totals.assets) != 0:
-                balances[str(Location.BLOCKCHAIN)] = blockchain_result.totals.assets.copy()
-            liabilities = blockchain_result.totals.liabilities.copy()
+
+            blockchain_assets: dict[Asset, Balance] = {}
+            for asset, asset_balances in blockchain_result.totals.assets.items():
+                total_balance = Balance()
+                for balance in asset_balances.values():
+                    total_balance += balance
+                if total_balance.amount != ZERO:
+                    blockchain_assets[asset] = total_balance
+
+            if len(blockchain_assets) != 0:
+                balances[str(Location.BLOCKCHAIN)] = blockchain_assets
+
+            liabilities = {}
+            for asset, asset_balances in blockchain_result.totals.liabilities.items():
+                total_balance = Balance()
+                for balance in asset_balances.values():
+                    total_balance += balance
+                if total_balance.amount != ZERO:
+                    liabilities[asset] = total_balance
+
         except (RemoteError, EthSyncError) as e:
             problem_free = False
             liabilities = {}
