@@ -1,17 +1,17 @@
-import { flushPromises, mount } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import GoogleCalendarAuth from '@/components/settings/api-keys/external/GoogleCalendarAuth.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
 import { useInterop } from '@/composables/electron-interop';
 import { useNotificationsStore } from '@/store/notifications';
 import { Severity } from '@rotki/common';
+import { flushPromises, mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('@/composables/api/settings/google-calendar');
 vi.mock('@/composables/electron-interop');
 vi.mock('@/store/notifications');
 
-describe('GoogleCalendarAuth.vue', () => {
+describe('googleCalendarAuth.vue', () => {
   let mockGoogleCalendarApi: any;
   let mockInterop: any;
   let mockNotificationsStore: any;
@@ -25,7 +25,7 @@ describe('GoogleCalendarAuth.vue', () => {
       getStatus: vi.fn().mockResolvedValue({ authenticated: false }),
       startAuth: vi.fn().mockResolvedValue({ auth_url: 'https://accounts.google.com/auth' }),
       completeAuth: vi.fn().mockResolvedValue({ success: true }),
-      syncCalendar: vi.fn().mockResolvedValue({ 
+      syncCalendar: vi.fn().mockResolvedValue({
         total_events: 5,
         events_created: 3,
         events_updated: 2,
@@ -115,13 +115,14 @@ describe('GoogleCalendarAuth.vue', () => {
 
     // Check that API was called correctly
     expect(mockGoogleCalendarApi.startAuth).toHaveBeenCalledWith('test-client-id', 'test-client-secret');
-    
+
     // Check that browser was opened with delay
     await vi.advanceTimersByTime(100);
     expect(mockInterop.openUrl).toHaveBeenCalledWith('https://accounts.google.com/auth');
 
     // Check that auth dialog is shown
-    expect(wrapper.vm.showAuthDialog).toBe(true);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-test="auth-dialog"]').exists()).toBe(true);
   });
 
   it('completes OAuth flow correctly', async () => {
@@ -137,13 +138,13 @@ describe('GoogleCalendarAuth.vue', () => {
       },
     });
 
-    // Set auth dialog visible
-    wrapper.vm.showAuthDialog = true;
+    // Simulate starting OAuth flow
+    await wrapper.find('[data-test="connect-button"]').trigger('click');
     await wrapper.vm.$nextTick();
 
     // Enter auth code
     await wrapper.find('[data-test="auth-code-input"]').setValue('test-auth-code');
-    
+
     // Complete authentication
     await wrapper.find('[data-test="complete-auth-button"]').trigger('click');
     await flushPromises();
@@ -160,7 +161,8 @@ describe('GoogleCalendarAuth.vue', () => {
     });
 
     // Check dialog closed
-    expect(wrapper.vm.showAuthDialog).toBe(false);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.find('[data-test="auth-dialog"]').exists()).toBe(false);
   });
 
   it('handles sync correctly', async () => {
@@ -190,9 +192,7 @@ describe('GoogleCalendarAuth.vue', () => {
     // Check success notification with sync results
     expect(mockNotificationsStore.notify).toHaveBeenCalledWith({
       display: true,
-      message: expect.stringContaining('3'),
-      message: expect.stringContaining('2'),
-      message: expect.stringContaining('5'),
+      message: expect.stringMatching(/3.*2.*5|5.*2.*3/),
       severity: Severity.INFO,
       title: expect.any(String),
     });

@@ -134,7 +134,7 @@ export class IpcManager {
   };
 
   private readonly openUrl = async (_event: Electron.IpcMainInvokeEvent, url: string): Promise<void> => {
-    if (!url.startsWith('https://')) {
+    if (!url || typeof url !== 'string' || !url.startsWith('https://')) {
       console.error(`Error: Requested to open untrusted URL: ${url} `);
       return;
     }

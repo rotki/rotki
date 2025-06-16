@@ -5,13 +5,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.tests.utils.factories import make_google_calendar_entry
 
 
-@pytest.fixture
-def google_calendar_api(database: DBHandler) -> GoogleCalendarAPI:
+@pytest.fixture(name='google_api')
+def _google_api(database: DBHandler) -> GoogleCalendarAPI:
     """Create a GoogleCalendarAPI instance for testing."""
     return GoogleCalendarAPI(database)
 
@@ -19,99 +19,118 @@ def google_calendar_api(database: DBHandler) -> GoogleCalendarAPI:
 class TestGoogleCalendarAPI:
     """Tests for Google Calendar API integration."""
 
-    def test_initialization(self, google_calendar_api: GoogleCalendarAPI):
+    def test_initialization(self, google_api: GoogleCalendarAPI):
         """Test GoogleCalendarAPI initialization."""
-        assert google_calendar_api.db is not None
-        assert google_calendar_api._credentials is None
+        assert google_api.db is not None
+        assert google_api._credentials is None
 
-    @patch('rotkehlchen.externalapis.google_calendar.Flow')
-    def test_start_oauth_flow(self, mock_flow_class, google_calendar_api: GoogleCalendarAPI):
-        """Test starting OAuth2 flow."""
-        # Setup mock
-        mock_flow = MagicMock()
-        mock_flow.authorization_url.return_value = ('https://accounts.google.com/auth', 'state123')
-        mock_flow_class.from_client_config.return_value = mock_flow
+    @patch('rotkehlchen.externalapis.google_calendar.requests.post')
+    def test_start_oauth_flow(self, mock_post, google_api: GoogleCalendarAPI):
+        """Test starting OAuth2 device flow."""
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {
+            'device_code': 'test_device_code',
+            'user_code': 'TEST-CODE',
+            'verification_url': 'https://www.google.com/device',
+            'expires_in': 1800,
+            'interval': 5,
+        }
+        mock_post.return_value = mock_response
 
         # Test
-        auth_url = google_calendar_api.start_oauth_flow('test_client_id', 'test_client_secret')
+        result = google_api.start_oauth_flow('test_client_id', 'test_client_secret')
 
         # Assertions
-        assert auth_url == 'https://accounts.google.com/auth'
-        assert google_calendar_api._flow == mock_flow
-        mock_flow_class.from_client_config.assert_called_once()
-        mock_flow.authorization_url.assert_called_once_with(
-            prompt='consent',
-            access_type='offline',
-            include_granted_scopes='true',
-        )
+        assert result['user_code'] == 'TEST-CODE'
+        assert result['verification_url'] == 'https://www.google.com/device'
+        assert result['expires_in'] == 1800
+        assert hasattr(google_api, '_device_code')
+        assert google_api._device_code == 'test_device_code'
+        mock_post.assert_called_once()
 
-    @patch('rotkehlchen.externalapis.google_calendar.Flow')
-    def test_complete_oauth_flow_with_code(
-        self,
-        mock_flow_class,
-        google_calendar_api: GoogleCalendarAPI,
-    ):
-        """Test completing OAuth2 flow with just authorization code."""
-        # Setup mock flow
-        mock_flow = MagicMock()
-        mock_credentials = MagicMock()
-        mock_credentials.to_json.return_value = '{"token": "test_token"}'
-        mock_flow.credentials = mock_credentials
+    @patch('rotkehlchen.externalapis.google_calendar.requests.post')
+    def test_poll_for_authorization_success(self, mock_post, google_api: GoogleCalendarAPI):
+        """Test polling for authorization success."""
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+        }
+        mock_post.return_value = mock_response
 
-        # Set the flow
-        google_calendar_api._flow = mock_flow
+        # Set device code
+        google_api._device_code = 'test_device_code'
+        google_api._client_id = 'test_client_id'
+        google_api._client_secret = 'test_client_secret'
 
-        # Test with just code
-        result = google_calendar_api.complete_oauth_flow('test_auth_code')
-
-        # Assertions
-        assert result is True
-        mock_flow.fetch_token.assert_called_once_with(
-            authorization_response='http://localhost:8080?code=test_auth_code',
-        )
-        assert google_calendar_api._credentials == mock_credentials
-
-    @patch('rotkehlchen.externalapis.google_calendar.Flow')
-    def test_complete_oauth_flow_with_url(
-        self,
-        mock_flow_class,
-        google_calendar_api: GoogleCalendarAPI,
-    ):
-        """Test completing OAuth2 flow with full URL."""
-        # Setup mock flow
-        mock_flow = MagicMock()
-        mock_credentials = MagicMock()
-        mock_credentials.to_json.return_value = '{"token": "test_token"}'
-        mock_flow.credentials = mock_credentials
-
-        # Set the flow
-        google_calendar_api._flow = mock_flow
-
-        # Test with full URL
-        result = google_calendar_api.complete_oauth_flow('http://localhost:8080?code=test_auth_code')
+        # Test
+        result = google_api.poll_for_authorization()
 
         # Assertions
         assert result is True
-        mock_flow.fetch_token.assert_called_once_with(
-            authorization_response='http://localhost:8080?code=test_auth_code',
-        )
+        assert google_api._credentials is not None
+        mock_post.assert_called_once()
 
-    def test_complete_oauth_flow_without_start(self, google_calendar_api: GoogleCalendarAPI):
-        """Test completing OAuth2 flow without starting it first."""
-        result = google_calendar_api.complete_oauth_flow('test_auth_code')
+    @patch('rotkehlchen.externalapis.google_calendar.requests.post')
+    def test_poll_for_authorization_pending(self, mock_post, google_api: GoogleCalendarAPI):
+        """Test polling when authorization is still pending."""
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_response.json.return_value = {'error': 'authorization_pending'}
+        mock_post.return_value = mock_response
+
+        # Set device code
+        google_api._device_code = 'test_device_code'
+        google_api._client_id = 'test_client_id'
+        google_api._client_secret = 'test_client_secret'
+
+        # Test
+        result = google_api.poll_for_authorization()
+
+        # Assertions
+        assert result is False
+        mock_post.assert_called_once()
+
+    @patch('rotkehlchen.externalapis.google_calendar.requests.post')
+    def test_poll_for_authorization_denied(self, mock_post, google_api: GoogleCalendarAPI):
+        """Test polling when user denies access."""
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_response.json.return_value = {'error': 'access_denied'}
+        mock_post.return_value = mock_response
+
+        # Set device code
+        google_api._device_code = 'test_device_code'
+        google_api._client_id = 'test_client_id'
+        google_api._client_secret = 'test_client_secret'
+
+        # Test
+        with pytest.raises(AuthenticationError, match='User denied access'):
+            google_api.poll_for_authorization()
+
+    def test_poll_for_authorization_without_start(self, google_api: GoogleCalendarAPI):
+        """Test polling without starting device flow first."""
+        result = google_api.poll_for_authorization()
         assert result is False
 
     @patch('rotkehlchen.externalapis.google_calendar.build')
     @patch('rotkehlchen.externalapis.google_calendar.Credentials')
     def test_sync_events(
-        self,
-        mock_credentials_class,
-        mock_build,
-        google_calendar_api: GoogleCalendarAPI,
+            self,
+            mock_credentials_class,
+            mock_build,
+            google_api: GoogleCalendarAPI,
     ):
         """Test syncing calendar events."""
         # Setup mocks
         mock_credentials = MagicMock()
+        mock_credentials.valid = True
         mock_credentials_class.from_authorized_user_info.return_value = mock_credentials
 
         mock_service = MagicMock()
@@ -135,7 +154,7 @@ class TestGoogleCalendarAPI:
         mock_service.events.return_value.insert.return_value = mock_event_insert
 
         # Store credentials
-        with google_calendar_api.db.conn.write_ctx() as cursor:
+        with google_api.db.conn.write_ctx() as cursor:
             cursor.execute(
                 'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
                 ('google_calendar_credentials', '{"token": "test"}'),
@@ -145,40 +164,40 @@ class TestGoogleCalendarAPI:
         calendar_entries = [make_google_calendar_entry()]
 
         # Test
-        result = google_calendar_api.sync_events(calendar_entries)
+        result = google_api.sync_events(calendar_entries)
 
         # Assertions
-        assert result['total_events'] == 1
+        assert result['events_processed'] == 1
         assert result['events_created'] == 1
         assert result['events_updated'] == 0
         mock_service.events.return_value.insert.assert_called_once()
 
     @patch('rotkehlchen.externalapis.google_calendar.Credentials')
-    def test_disconnect(self, mock_credentials_class, google_calendar_api: GoogleCalendarAPI):
+    def test_disconnect(self, mock_credentials_class, google_api: GoogleCalendarAPI):
         """Test disconnecting from Google Calendar."""
         # Store credentials
-        with google_calendar_api.db.conn.write_ctx() as cursor:
+        with google_api.db.conn.write_ctx() as cursor:
             cursor.execute(
                 'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
                 ('google_calendar_credentials', '{"token": "test"}'),
             )
 
         # Test
-        result = google_calendar_api.disconnect()
+        result = google_api.disconnect()
 
         # Assertions
         assert result is True
-        assert google_calendar_api._credentials is None
+        assert google_api._credentials is None
 
         # Check credentials removed from DB
-        with google_calendar_api.db.conn.read_ctx() as cursor:
+        with google_api.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT value FROM key_value_cache WHERE name = ?',
                 ('google_calendar_credentials',),
             )
             assert cursor.fetchone() is None
 
-    def test_sync_events_not_connected(self, google_calendar_api: GoogleCalendarAPI):
+    def test_sync_events_not_connected(self, google_api: GoogleCalendarAPI):
         """Test syncing events when not connected."""
-        with pytest.raises(RemoteError, match='Google Calendar is not connected'):
-            google_calendar_api.sync_events([])
+        with pytest.raises(AuthenticationError, match='Google Calendar not authenticated'):
+            google_api.sync_events([])

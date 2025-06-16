@@ -5201,31 +5201,28 @@ class RestAPI:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
     def start_google_calendar_auth(self, client_id: str, client_secret: str) -> Response:
-        """Start Google Calendar OAuth2 flow and return authorization URL."""
+        """Start Google Calendar OAuth2 device flow and return device info."""
         from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
-            auth_url = google_calendar.start_oauth_flow(client_id, client_secret)
-            return api_response(_wrap_in_ok_result({'auth_url': auth_url}))
+            device_info = google_calendar.start_oauth_flow(client_id, client_secret)
+            return api_response(_wrap_in_ok_result(device_info))
         except Exception as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
-    def complete_google_calendar_auth(self, auth_response_url: str) -> Response:
-        """Complete Google Calendar OAuth2 flow with authorization response URL."""
+    def poll_google_calendar_auth(self) -> Response:
+        """Poll for Google Calendar OAuth2 device flow completion."""
         from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
-            success = google_calendar.complete_oauth_flow(auth_response_url)
+            success = google_calendar.poll_for_authorization()
 
             if success:
                 return api_response(_wrap_in_ok_result({'success': True}))
             else:
-                return api_response(
-                    wrap_in_fail_result('Failed to complete Google Calendar authentication'),
-                    status_code=HTTPStatus.BAD_REQUEST,
-                )
+                return api_response(_wrap_in_ok_result({'success': False, 'pending': True}))
         except Exception as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 

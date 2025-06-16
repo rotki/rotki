@@ -19,12 +19,14 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
+    BlockchainAddress,
     BTCAddress,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
+    HexColorCode,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -275,9 +277,10 @@ def make_google_calendar_entry(
         name: str = 'Test Event',
         description: str = 'Test Description',
         timestamp: Timestamp | None = None,
-        address: str | None = None,
-        blockchain: str | None = None,
-        color: str = 'blue',
+        counterparty: str | None = None,
+        address: BlockchainAddress | None = None,
+        blockchain: SupportedBlockchain | None = None,
+        color: HexColorCode | None = None,
         auto_delete: bool = False,
 ) -> CalendarEntry:
     """Create a test CalendarEntry for Google Calendar sync tests."""
@@ -285,12 +288,13 @@ def make_google_calendar_entry(
         timestamp = Timestamp(ts_now() + 86400)  # Tomorrow
 
     return CalendarEntry(
-        identifier=identifier,
         name=name,
-        description=description,
         timestamp=timestamp,
+        description=description,
+        counterparty=counterparty,
         address=address,
         blockchain=blockchain,
         color=color,
         auto_delete=auto_delete,
+        identifier=identifier,
     )
