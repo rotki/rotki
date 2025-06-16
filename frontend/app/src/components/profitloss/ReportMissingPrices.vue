@@ -112,31 +112,37 @@ async function updatePrice(item: EditableMissingPrice) {
   await getHistoricalPrices();
 }
 
-const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
-  {
-    key: 'fromAsset',
-    label: t('profit_loss_report.actionable.missing_prices.headers.from_asset'),
-    sortable: true,
-  },
-  {
-    cellClass: get(isPinned) ? 'px-2' : '',
-    key: 'toAsset',
-    label: t('profit_loss_report.actionable.missing_prices.headers.to_asset'),
-    sortable: true,
-  },
-  {
-    cellClass: get(isPinned) ? 'px-2' : '',
-    key: 'time',
-    label: t('common.datetime'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    cellClass: `pb-1 ${get(isPinned) ? '' : ''}`,
-    key: 'price',
-    label: t('common.price'),
-  },
-]);
+const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => {
+  const pinned = get(isPinned);
+  return [
+    {
+      key: 'fromAsset',
+      label: t('profit_loss_report.actionable.missing_prices.headers.from_asset'),
+      sortable: true,
+    },
+    {
+      cellClass: pinned ? 'px-2' : '',
+      key: 'toAsset',
+      label: t('profit_loss_report.actionable.missing_prices.headers.to_asset'),
+      sortable: true,
+    },
+    ...(!pinned
+      ? [
+          {
+            key: 'time',
+            label: t('common.datetime'),
+            sortable: true,
+          },
+        ]
+      : []),
+    {
+      align: 'end',
+      cellClass: `pb-1 ${pinned ? '' : ''}`,
+      key: 'price',
+      label: t('common.price'),
+    },
+  ];
+});
 
 useRememberTableSorting<EditableMissingPrice>(TableId.REPORTS_MISSING_PRICES, sort, headers);
 
@@ -193,6 +199,18 @@ onMounted(async () => {
         <DateDisplay :timestamp="row.time" />
       </template>
       <template #item.price="{ row }">
+        <div
+          v-if="isPinned"
+          class="flex items-center gap-1.5 text-rui-text-secondary my-1 mb-2 text-xs"
+        >
+          <RuiIcon
+            name="lu-clock"
+            size="14"
+          />
+          <DateDisplay
+            :timestamp="row.time"
+          />
+        </div>
         <AmountInput
           v-model="row.price"
           :class="$style.input"
