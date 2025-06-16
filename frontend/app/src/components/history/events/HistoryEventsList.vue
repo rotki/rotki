@@ -23,6 +23,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'refresh': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -131,6 +132,7 @@ watch(() => get(eventGroup), () => {
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
       @edit-event="emit('edit-event', $event)"
+      @refresh="emit('refresh')"
     />
 
     <RuiButton

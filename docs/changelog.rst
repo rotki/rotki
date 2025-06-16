@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`10150` The history events page will be refreshed automatically when an asset is ignored or marked as spam.
+
 * :release:`1.39.0 <2025-06-13>`
 * :bug:`-` Users will now be able to perform on-chain send transactions using older wallets such as Trust Wallet.
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.
