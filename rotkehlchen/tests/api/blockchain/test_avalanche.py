@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -78,13 +78,13 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
     # Check per account
     account_balances = result['per_account'][avalanche_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_balances
-    asset_avax = account_balances['assets'][A_AVAX.identifier]
+    asset_avax = account_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets'][A_AVAX.identifier]
+    total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
 
@@ -122,13 +122,13 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> 
     assert AVALANCHE_ACC2_AVAX_ADDR not in result['per_account'][avax_chain_key]
     account_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
     assert 'liabilities' in account_balances
-    asset_avax = account_balances['assets'][A_AVAX.identifier]
+    asset_avax = account_balances['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_avax['amount']) >= ZERO
     assert FVal(asset_avax['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_avax = result['totals']['assets'][A_AVAX.identifier]
+    total_avax = result['totals']['assets'][A_AVAX.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_avax['amount']) >= ZERO
     assert FVal(total_avax['usd_value']) >= ZERO
     # Also make sure it's removed from the DB

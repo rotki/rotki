@@ -26,9 +26,10 @@ from rotkehlchen.utils.misc import (
 )
 
 from .cache import collateral_type_to_underlying_asset
-from .constants import MAKERDAO_REQUERY_PERIOD, WAD
+from .constants import CPT_VAULT, MAKERDAO_REQUERY_PERIOD, WAD
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
@@ -114,11 +115,17 @@ class MakerdaoVault(NamedTuple):
         return self.collateral_type.encode('utf-8').ljust(32, b'\x00')
 
     def get_balance(self) -> BalanceSheet:
-        starting_assets = {self.collateral_asset: self.collateral} if self.collateral.amount != ZERO else {}  # noqa: E501
-        starting_liabilities = {A_DAI: self.debt} if self.debt.amount != ZERO else {}
+        starting_assets: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+        starting_liabilities: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+        if self.collateral.amount != ZERO:
+            starting_assets[self.collateral_asset][CPT_VAULT] = self.collateral
+
+        if self.debt.amount != ZERO:
+            starting_liabilities[A_DAI][CPT_VAULT] = self.debt
+
         return BalanceSheet(
-            assets=defaultdict(Balance, starting_assets),  # type: ignore # Doesn't recognize that the defaultdict CryptoAsset is an Asset
-            liabilities=defaultdict(Balance, starting_liabilities),
+            assets=starting_assets,
+            liabilities=starting_liabilities,
         )
 
 

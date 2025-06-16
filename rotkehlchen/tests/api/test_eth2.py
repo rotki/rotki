@@ -18,7 +18,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -992,12 +992,12 @@ def test_query_eth2_balances(
     assert len(per_acc) == 2
     # hope they don't get slashed ;(
     amount_proportion = base_amount * ownership_proportion
-    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
-    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount  # noqa: E501
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= amount_proportion  # noqa: E501
     totals = outcome['totals']
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
-    assert FVal(totals['assets']['ETH2']['amount']) >= base_amount + amount_proportion
+    assert FVal(totals['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount + amount_proportion  # noqa: E501
 
     # now add 1 more validator and query ETH2 balances again to see it's included
     # the reason for this is to see the cache is properly invalidated at addition
@@ -1020,13 +1020,13 @@ def test_query_eth2_balances(
     per_acc = outcome['per_account']['eth2']
     assert len(per_acc) == 3
     amount_proportion = base_amount * ownership_proportion
-    assert FVal(per_acc[v0_pubkey]['assets']['ETH2']['amount']) >= base_amount
-    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2']['amount']) >= base_amount
-    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2']['amount']) >= amount_proportion
+    assert FVal(per_acc[v0_pubkey]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount  # noqa: E501
+    assert FVal(per_acc[validators[0].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount  # noqa: E501
+    assert FVal(per_acc[validators[1].public_key]['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= amount_proportion  # noqa: E501
     totals = outcome['totals']
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
-    assert FVal(totals['assets']['ETH2']['amount']) >= 2 * base_amount + amount_proportion
+    assert FVal(totals['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= 2 * base_amount + amount_proportion  # noqa: E501
 
 
 @pytest.mark.vcr(match_on=['beaconchain_matcher'])
@@ -1330,7 +1330,7 @@ def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'A
         blockchain='ETH2',
     ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
-    assert FVal(result['totals']['assets']['ETH2']['amount']) >= FVal(32)
+    assert FVal(result['totals']['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= FVal(32)
 
     response = requests.delete(  # delete validator
         api_url_for(

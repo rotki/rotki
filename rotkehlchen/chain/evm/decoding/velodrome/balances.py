@@ -103,7 +103,7 @@ class VelodromeLikeBalances(ProtocolWithGauges):
                 if balance == 0:
                     continue
 
-                balances[user_address].assets[self.protocol_token] += Balance(
+                balances[user_address].assets[self.protocol_token][self.counterparty] += Balance(
                     amount=(amount := token_normalized_value_decimals(
                         token_amount=balance,
                         token_decimals=DEFAULT_TOKEN_DECIMALS,  # both AERO and VELO have 18 decimals  # noqa: E501

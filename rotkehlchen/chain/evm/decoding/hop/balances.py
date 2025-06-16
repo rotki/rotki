@@ -136,7 +136,7 @@ class HopBalances(ProtocolWithBalance):
                         token_amount=balance,
                         token=staking_token,
                     )) > ZERO:
-                        balances[user].assets[staking_token] += Balance(
+                        balances[user].assets[staking_token][self.counterparty] += Balance(
                             amount=balance_norm,
                             usd_value=token_price * balance_norm,
                         )
@@ -153,7 +153,7 @@ class HopBalances(ProtocolWithBalance):
                         token_amount=rewards,
                         token=rewards_token,
                     )) > ZERO:
-                        balances[user].assets[rewards_token] += Balance(
+                        balances[user].assets[rewards_token][self.counterparty] += Balance(
                             amount=reward_norm,
                             usd_value=rewards_price * reward_norm,
                         )

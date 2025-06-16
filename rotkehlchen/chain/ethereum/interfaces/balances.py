@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
@@ -155,12 +155,12 @@ class ProtocolWithGauges(ProtocolWithBalance):
             call_order: list[WeightedNode],
             chunk_size: int,
             balances_contract: Callable,
-    ) -> defaultdict[Asset, Balance]:
+    ) -> BalanceSheet:
         """
         Query the set of gauges in gauges_to_token and return the balances for each
         lp token deposited in all gauges.
         """
-        balances: defaultdict[Asset, Balance] = defaultdict(Balance)
+        balances = BalanceSheet()
         gauge_chunks = get_chunks(list(gauges_to_token.keys()), n=chunk_size)
         for gauge_chunk in gauge_chunks:
             tokens = [gauges_to_token[staking_addr] for staking_addr in gauge_chunk]
@@ -174,7 +174,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
             # Now map the gauge to the underlying token
             for lp_token, balance in gauges_balances.items():
                 lp_token_price = Inquirer.find_usd_price(lp_token)
-                balances[lp_token] += Balance(
+                balances.assets[lp_token][self.counterparty] += Balance(
                     amount=balance,
                     usd_value=lp_token_price * balance,
                 )
@@ -242,7 +242,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
                     continue
                 gauges_to_token[gauge_address] = event.asset.resolve_to_evm_token()
 
-            balances[address].assets = self._query_gauges_balances(
+            balances[address] = self._query_gauges_balances(
                 user_address=address,
                 gauges_to_token=gauges_to_token,
                 call_order=call_order,

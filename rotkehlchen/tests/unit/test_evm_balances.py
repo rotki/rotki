@@ -2,7 +2,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -48,4 +50,7 @@ def test_optimism_balances(
         ignore_cache=True,
     )
     account_balance = blockchain_result.per_account.optimism[optimism_accounts[0]].assets[velodrome_v2_weth_op_lp_token]  # noqa: E501
-    assert account_balance.amount == FVal('0.086313645974870917')  # 0.043225873904215354 in wallet + 0.043087772070655563 staked  # noqa: E501
+    assert account_balance == {
+        DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.043225873904215354'), usd_value=FVal('0.0648388108563230310')),  # noqa: E501
+        CPT_VELODROME: Balance(amount=FVal('0.043087772070655563'), usd_value=FVal('0.0646316581059833445')),  # noqa: E501
+    }

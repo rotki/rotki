@@ -14,7 +14,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1163,7 +1163,7 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         )
 
     eth_address = make_evm_address()
-    rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI] = Balance(amount=FVal(30))
+    rotki.chains_aggregator.balances.eth[eth_address].assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal(30))  # noqa: E501
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,

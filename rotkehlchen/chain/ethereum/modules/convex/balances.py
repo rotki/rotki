@@ -79,7 +79,7 @@ class ConvexBalances(ProtocolWithGauges):
                 continue
 
             balance = Balance(amount=amount, usd_value=cvx_price * amount)
-            balances[address].assets[self.cvx] += balance
+            balances[address].assets[self.cvx][self.counterparty] += balance
 
         return None
 

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, get_args, overload
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.substrate.types import SubstrateAddress
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
@@ -125,9 +126,9 @@ class BlockchainBalances:
                 new_totals += chain_balances
 
         for btc_balance in self.btc.values():
-            new_totals.assets[A_BTC] += btc_balance
+            new_totals.assets[A_BTC][DEFAULT_BALANCE_LABEL] += btc_balance
         for bch_balance in self.bch.values():
-            new_totals.assets[A_BCH] += bch_balance
+            new_totals.assets[A_BCH][DEFAULT_BALANCE_LABEL] += bch_balance
 
         return new_totals
 
@@ -229,7 +230,7 @@ class BlockchainBalancesUpdate:
                 asset = A_BTC if self.given_chain == SupportedBlockchain.BITCOIN else A_BCH
                 for balance in per_account.values():
                     # we rely on value being same as symbol of chain coin
-                    totals.assets[asset] += balance
+                    totals.assets[asset][DEFAULT_BALANCE_LABEL] += balance
             else:
                 for balances in per_account.values():
                     totals += balances

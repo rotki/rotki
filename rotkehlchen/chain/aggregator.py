@@ -47,11 +47,15 @@ from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.hedgey.balances import HedgeyBalances
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
+from rotkehlchen.chain.ethereum.modules.makerdao.constants import CPT_DSR, CPT_VAULT
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
+from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
@@ -72,7 +76,7 @@ from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalan
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
@@ -119,7 +123,6 @@ from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_ti
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 from .balances import BlockchainBalances, BlockchainBalancesUpdate
-from .ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
@@ -668,9 +671,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 amount=amount,
                 usd_value=amount * ksm_usd_price,
             )
-            self.balances.ksm[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_KSM: balance}),
-            )
+            self.balances.ksm[account] = BalanceSheet()
+            self.balances.ksm[account].assets[A_KSM][DEFAULT_BALANCE_LABEL] = balance
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -691,9 +693,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         account_amount = self.avalanche.get_multiavax_balance(self.accounts.avax)
         for account, amount in account_amount.items():
             usd_value = amount * avax_usd_price
-            self.balances.avax[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_AVAX: Balance(amount, usd_value)}),
-            )
+            self.balances.avax[account] = BalanceSheet()
+            self.balances.avax[account].assets[A_AVAX][DEFAULT_BALANCE_LABEL] = Balance(amount, usd_value)  # noqa: E501
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -724,9 +725,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 amount=amount,
                 usd_value=amount * dot_usd_price,
             )
-            self.balances.dot[account] = BalanceSheet(
-                assets=defaultdict(Balance, {A_DOT: balance}),
-            )
+            self.balances.dot[account] = BalanceSheet()
+            self.balances.dot[account].assets[A_DOT][DEFAULT_BALANCE_LABEL] = balance
 
     @protect_with_lock()
     @cache_response_timewise()
@@ -745,7 +745,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         balances = self.zksync_lite.get_balances(self.accounts.zksync_lite)
         for address, asset_balances in balances.items():
-            self.balances.zksync_lite[address].assets = defaultdict(Balance, asset_balances)
+            for asset, balance in asset_balances.items():
+                self.balances.zksync_lite[address].assets[asset][DEFAULT_BALANCE_LABEL] = balance
 
     def sync_bitcoin_accounts_with_db(
             self,
@@ -913,16 +914,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             fetch_validators_for_eth1=ignore_cache,
         )
         for pubkey, balance in balance_mapping.items():
-            self.balances.eth2[pubkey] = BalanceSheet(
-                assets=defaultdict(Balance, {A_ETH2: balance}),
-            )
+            self.balances.eth2[pubkey] = BalanceSheet()
+            self.balances.eth2[pubkey].assets[A_ETH2][DEFAULT_BALANCE_LABEL] = balance
 
+    @staticmethod
     def _update_balances_after_token_query(
-            self,
             dsr_proxy_append: bool,
             balance_result: dict[ChecksumEvmAddress, dict[EvmToken, FVal]],
             token_usd_price: dict[EvmToken, Price],
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
+            balance_label: Literal['address', 'makerdao vault'] = DEFAULT_BALANCE_LABEL,
     ) -> None:
         # Update the per account token balance and usd value
         for account, token_balances in balance_result.items():
@@ -932,11 +933,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     usd_value=token_balance * token_usd_price[token],
                 )
                 if dsr_proxy_append is True:
-                    balances[account].assets[token] += balance
+                    balances[account].assets[token][balance_label] += balance
                 elif token.is_liability():
-                    balances[account].liabilities[token] = balance
+                    balances[account].liabilities[token][balance_label] = balance
                 else:
-                    balances[account].assets[token] = balance
+                    balances[account].assets[token][balance_label] = balance
 
     def query_evm_tokens(
             self,
@@ -988,16 +989,21 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if len(accounts) == 0:
             return
 
+        # Clear existing balances for this chain to avoid accumulation
+        chain_balances = self.balances.get(chain)
+        for account in accounts:
+            chain_balances[account] = BalanceSheet()
+
         # Query native token balances
         manager = cast('EvmManager', self.get_chain_manager(chain))
         native_token_usd_price = Inquirer.find_usd_price(manager.node_inquirer.native_token)
         chain_balances = self.balances.get(chain)
         for account, balance in manager.node_inquirer.get_multi_balance(accounts).items():
-            chain_balances[account] = BalanceSheet(
-                assets=defaultdict(Balance, {
-                    manager.node_inquirer.native_token: Balance(balance, balance * native_token_usd_price),  # noqa: E501
-                } if balance != ZERO else {}),  # accounts (e.g. multisigs) can have zero balances
-            )
+            if balance != ZERO:  # accounts (e.g. multisigs) can have zero balances
+                chain_balances[account].assets[manager.node_inquirer.native_token][DEFAULT_BALANCE_LABEL] = Balance(  # noqa: E501
+                    amount=balance,
+                    usd_value=balance * native_token_usd_price,
+                )
         self.query_evm_tokens(manager=manager, balances=chain_balances)
 
     @protect_with_lock()
@@ -1151,7 +1157,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 if balance_entry.amount == ZERO:
                     continue
 
-                eth_balances[dsr_account].assets[A_DAI] += balance_entry
+                eth_balances[dsr_account].assets[A_DAI][CPT_DSR] += balance_entry
 
         # Also count the vault balances
         if (vaults_module := self.get_module('makerdao_vaults')) is not None:
@@ -1194,6 +1200,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 dsr_proxy_append=True,
                 balance_result=new_result,
                 token_usd_price=token_usd_price,
+                balance_label=CPT_VAULT,
                 balances=eth_balances,
             )
 
@@ -1203,7 +1210,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
             for address, pickle_balances in pickle_balances_per_address.items():
                 for asset_balance in pickle_balances:
-                    eth_balances[address].assets[asset_balance.asset] += asset_balance.balance
+                    eth_balances[address].assets[asset_balance.asset][CPT_PICKLE] += asset_balance.balance  # noqa: E501
 
         if (liquity_module := self.get_module('liquity')) is not None:
             liquity_addresses = self.queried_addresses_for_module('liquity')
@@ -1212,7 +1219,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             for address, deposits in liquity_balances['balances'].items():
                 collateral = deposits.collateral.balance
                 if collateral.amount > ZERO:
-                    eth_balances[address].assets[A_ETH] += collateral
+                    eth_balances[address].assets[A_ETH][CPT_LIQUITY] += collateral
 
             # Get staked amounts
             liquity_module.enrich_staking_balances(

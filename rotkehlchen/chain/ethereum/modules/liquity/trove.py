@@ -19,6 +19,8 @@ from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import from_wei
 
+from .constants import CPT_LIQUITY
+
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -322,13 +324,13 @@ class Liquity(HasDSProxy):
             if staked_info['balances'] is not None:
                 pool_balance = staked_info['balances'][key].balance
                 if pool_balance.amount > ZERO:
-                    balances[address].assets[token] += pool_balance
+                    balances[address].assets[token][CPT_LIQUITY] += pool_balance
 
             if staked_info['proxies'] is not None:
                 for proxy_balance in staked_info['proxies'].values():
                     pool_balance = proxy_balance[key].balance
                     if pool_balance.amount > ZERO:
-                        balances[address].assets[token] += pool_balance
+                        balances[address].assets[token][CPT_LIQUITY] += pool_balance
 
     def enrich_staking_balances(
             self,

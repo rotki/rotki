@@ -64,6 +64,6 @@ class OctantBalances(ProtocolWithBalance):
                 continue
 
             balance = Balance(amount=amount, usd_value=glm_price * amount)
-            balances[address].assets[self.glm] += balance
+            balances[address].assets[self.glm][self.counterparty] += balance
 
         return balances

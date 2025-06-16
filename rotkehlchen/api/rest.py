@@ -891,20 +891,24 @@ class RestAPI:
                     filtered_balances: dict[BlockchainAddress, BalanceSheet | Balance] = {}
                     for account, account_data in chain_balances.items():
                         if isinstance(account_data, BalanceSheet):
-                            filtered_assets = {
-                                asset: balance for asset, balance in account_data.assets.items()
-                                if balance.usd_value > usd_value_threshold
-                            }
-                            filtered_liabilities = {
-                                asset: balance for asset, balance in account_data.liabilities.items()  # noqa: E501
-                                if balance.usd_value > usd_value_threshold
-                            }
+                            filtered_assets: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+                            filtered_liabilities: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+
+                            for asset, asset_balances in account_data.assets.items():
+                                for key, balance in asset_balances.items():
+                                    if balance.usd_value > usd_value_threshold:
+                                        filtered_assets[asset][key] = balance
+
+                            for asset, asset_balances in account_data.liabilities.items():
+                                for key, balance in asset_balances.items():
+                                    if balance.usd_value > usd_value_threshold:
+                                        filtered_liabilities[asset][key] = balance
+
                             if len(filtered_assets) != 0 or len(filtered_liabilities) != 0:
                                 new_balance_sheet = BalanceSheet(
-                                    assets=defaultdict(Balance, filtered_assets),
-                                    liabilities=defaultdict(Balance, filtered_liabilities),
+                                    assets=filtered_assets,
+                                    liabilities=filtered_liabilities,
                                 )
-
                                 filtered_balances[account] = new_balance_sheet
                         elif isinstance(account_data, Balance):
                             # For BTC and BCH, account_data is a single Balance object

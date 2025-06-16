@@ -6,6 +6,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -86,8 +87,8 @@ def _check_xpub_addition_outcome(outcome: dict[str, Any], xpub: str) -> None:
         assert xpub_data['addresses'][address]['usd_value'] is not None
 
     totals = outcome['totals']['assets']
-    assert totals['BTC']['amount'] is not None
-    assert totals['BTC']['usd_value'] is not None
+    assert totals['BTC'][DEFAULT_BALANCE_LABEL]['amount'] is not None
+    assert totals['BTC'][DEFAULT_BALANCE_LABEL]['usd_value'] is not None
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

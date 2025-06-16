@@ -1,5 +1,7 @@
 import json
+import operator
 import sys
+from collections import defaultdict
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from unittest.mock import patch
@@ -19,6 +21,7 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.utils.misc import (
     combine_dicts,
+    combine_nested_dicts_inplace,
     convert_to_int,
     is_production,
     iso8601ts_to_timestamp,
@@ -395,3 +398,77 @@ def test_pairwise():
     a = [1, 2, 3, 4, 5]
     assert [x + y for x, y in pairwise(a)] == [3, 7]
     assert list(pairwise_longest(a)) == [(1, 2), (3, 4), (5, None)]
+
+
+def test_combine_nested_dicts_inplace():
+    # basic addition
+    result_1 = combine_nested_dicts_inplace(
+        a=defaultdict(lambda: defaultdict(int), {
+            'A': defaultdict(int, {'X': 10, 'Y': 20}),
+            'B': defaultdict(int, {'X': 100}),
+        }),
+        b=defaultdict(lambda: defaultdict(int), {
+            'A': defaultdict(int, {'X': 5, 'Z': 50}),
+            'C': defaultdict(int, {'Z': 200}),
+        }),
+        op=operator.add,
+    )
+    assert result_1 == {
+        'A': {'X': 15, 'Y': 20, 'Z': 50},
+        'B': {'X': 100},
+        'C': {'Z': 200},
+    }
+
+    # basic subtraction
+    result_2 = combine_nested_dicts_inplace(
+        a=defaultdict(lambda: defaultdict(int), {
+            'A': defaultdict(int, {'X': 10, 'Y': 20}),
+            'B': defaultdict(int, {'X': 100}),
+        }),
+        b=defaultdict(lambda: defaultdict(int), {
+            'A': defaultdict(int, {'X': 5, 'Z': 50}),
+            'C': defaultdict(int, {'Z': 200}),
+        }),
+        op=operator.sub,
+    )
+    assert result_2 == {
+        'A': {'X': 5, 'Y': 20, 'Z': -50},
+        'B': {'X': 100},
+        'C': {'Z': -200},
+    }
+
+    # edge case - `b` is empty
+    result_3 = combine_nested_dicts_inplace(
+        a=defaultdict(lambda: defaultdict(int), {'A': defaultdict(int, {'X': 10})}),
+        b=defaultdict(lambda: defaultdict(int)),
+        op=operator.add,
+    )
+    assert result_3 == {'A': {'X': 10}}
+
+    # edge case - `a` is empty
+    result_4 = combine_nested_dicts_inplace(
+        a=defaultdict(lambda: defaultdict(float)),
+        b=defaultdict(lambda: defaultdict(float), {
+            'A': defaultdict(float, {'X': 5.5, 'Z': 50.1}),
+            'C': defaultdict(float, {'Z': 200.2}),
+        }),
+        op=operator.add,
+    )
+    assert result_4 == {'A': {'X': 5.5, 'Z': 50.1}, 'C': {'Z': 200.2}}
+
+    # edge case - `a` is empty, with subtraction
+    result_5 = combine_nested_dicts_inplace(
+        a=defaultdict(lambda: defaultdict(int)),
+        b=defaultdict(lambda: defaultdict(int), {'A': defaultdict(int, {'X': 5, 'Z': 50})}),
+        op=operator.sub,
+    )
+    assert result_5 == {'A': {'X': -5, 'Z': -50}}
+
+    # edge case - default factory is used for new inner keys
+    # `b` has an inner dict for 'A', but 'A' in `a` is missing the 'Z' key
+    result_6 = combine_nested_dicts_inplace(
+        a=defaultdict(lambda: defaultdict(int), {'A': defaultdict(int, {'X': 10})}),
+        b=defaultdict(lambda: defaultdict(int), {'A': defaultdict(int, {'Z': 50})}),
+        op=operator.add,
+    )
+    assert result_6 == {'A': {'X': 10, 'Z': 50}}

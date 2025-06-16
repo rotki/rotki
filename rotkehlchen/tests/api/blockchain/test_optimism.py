@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -53,13 +53,13 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     # Check per account
     account_balances = result['per_account'][optimism_chain_key][TEST_ADDY]
     assert 'liabilities' in account_balances
-    asset_eth = account_balances['assets'][A_ETH.identifier]
+    asset_eth = account_balances['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(asset_eth['amount']) >= ZERO
     assert FVal(asset_eth['usd_value']) >= ZERO
 
     # Check totals
     assert 'liabilities' in result['totals']
-    total_eth = result['totals']['assets'][A_ETH.identifier]
+    total_eth = result['totals']['assets'][A_ETH.identifier][DEFAULT_BALANCE_LABEL]
     assert FVal(total_eth['amount']) >= ZERO
     assert FVal(total_eth['usd_value']) >= ZERO
 
@@ -123,7 +123,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     assert 'liabilities' in account_balances
     assert len(account_balances['assets']) == len(optimism_tokens) + 1
     for asset_id in (A_ETH.identifier, *optimism_tokens):
-        asset = account_balances['assets'][asset_id]
+        asset = account_balances['assets'][asset_id][DEFAULT_BALANCE_LABEL]
         assert FVal(asset['amount']) >= ZERO
         assert FVal(asset['usd_value']) >= ZERO
 
@@ -131,6 +131,6 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     assert 'liabilities' in result['totals']
     assert len(result['totals']['assets']) == len(optimism_tokens) + 1
     for asset_id in ('ETH', *optimism_tokens):
-        asset = result['totals']['assets'][asset_id]
+        asset = result['totals']['assets'][asset_id][DEFAULT_BALANCE_LABEL]
         assert FVal(asset['amount']) >= ZERO
         assert FVal(asset['usd_value']) >= ZERO
