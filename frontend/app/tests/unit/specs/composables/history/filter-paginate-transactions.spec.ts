@@ -200,7 +200,7 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('add protocols to filters and expect the value to be set', async () => {
-      set(protocols, ['ga s', 'ens']);
+      set(protocols, ['gas', 'ens']);
 
       const query = {
         sortBy: ['timestamp'],
