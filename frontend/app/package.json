@@ -55,6 +55,8 @@
     "@walletconnect/core": "2.21.3",
     "axios": "1.10.0",
     "bignumber.js": "9.1.2",
+    "chart.js": "4.5.0",
+    "chartjs-plugin-zoom": "2.2.0",
     "consola": "3.4.2",
     "dayjs": "1.11.13",
     "dexie": "4.0.11",

@@ -179,7 +179,7 @@ export default defineConfig({
           'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
           'common': ['@rotki/common', 'bignumber.js'],
           'ui-vendor': ['@rotki/ui-library'],
-          'chart': ['echarts', 'vue-echarts'],
+          'chart': ['echarts', 'vue-echarts', 'chart.js', 'chartjs-plugin-zoom'],
           'editor': ['vanilla-jsoneditor'],
           'utils': [
             '@vueuse/math',

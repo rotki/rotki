@@ -125,17 +125,30 @@ interface GradientArea {
   };
 }
 
-export interface GraphApi {
+export interface NewGraphApi {
   baseColor: ComputedRef<string>;
   gradient: ComputedRef<GradientArea>;
   secondaryColor: ComputedRef<string>;
 }
 
-type GetGraphApi = () => GraphApi;
+export interface GraphApi {
+  getCanvasCtx: () => CanvasRenderingContext2D;
+  baseColor: ComputedRef<string>;
+  gradient: ComputedRef<CanvasGradient>;
+  secondaryColor: ComputedRef<string>;
+  backgroundColor: ComputedRef<string>;
+  fontColor: ComputedRef<string>;
+  gridColor: ComputedRef<string>;
+}
+
+type GetGraphApi = (canvasId: string) => GraphApi;
+
+type GetNewGraphApi = () => NewGraphApi;
 
 export interface PremiumApi {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;
   readonly graphs: GetGraphApi;
+  readonly newGraphs: GetNewGraphApi;
 }
