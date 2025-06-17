@@ -1,5 +1,6 @@
 import path from 'node:path';
 import rotki from '@rotki/eslint-config';
+import { translationKeys } from '@rotki/ui-library';
 
 export default rotki({
   vue: true,
@@ -33,6 +34,7 @@ export default rotki({
       '/transactions.query_status.*/',
       '/transactions.query_status_events.*/',
       '/transactions.events.headers.*/',
+      ...translationKeys(),
     ],
     overrides: {
       '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
