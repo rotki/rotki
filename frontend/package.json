@@ -79,6 +79,6 @@
   },
   "lint-staged": {
     "*": "eslint",
-    "app/src/**/*.{vue,scss}": "cd app && stylelint"
+    "app/src/**/*.{vue,scss}": "stylelint"
   }
 }

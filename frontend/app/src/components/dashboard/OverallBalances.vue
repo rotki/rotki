@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import NetWorthChart from '@/components/dashboard/NetWorthChart.vue';
 import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { usePremium } from '@/composables/premium';
+import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';

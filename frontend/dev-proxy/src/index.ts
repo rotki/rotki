@@ -308,7 +308,7 @@ function onProxyRes(_proxyRes: http.IncomingMessage, req: Request, res: Response
 
 server.use(bodyParser.urlencoded({ extended: true }));
 server.use(bodyParser.json());
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+
 server.use(createProxyMiddleware({
   logger: consola,
   on: {

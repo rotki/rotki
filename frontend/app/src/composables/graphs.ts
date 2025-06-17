@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
 import { useDarkMode } from '@/composables/dark-mode';
-import { assert, type BigNumber, type GraphApi, type NewGraphApi, Zero } from '@rotki/common';
+import { assert, type BigNumber, type GradientArea, type GraphApi, type NewGraphApi, Zero } from '@rotki/common';
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { LineChart, PieChart } from 'echarts/charts';
@@ -28,26 +28,25 @@ export function initGraph(): void {
 
 export function useNewGraph(): NewGraphApi {
   const { isDark } = useRotkiTheme();
-
   const { store } = useRotkiTheme();
+  const { usedTheme } = useDarkMode();
 
   provide(THEME_KEY, store);
-
-  const { usedTheme } = useDarkMode();
 
   const white = '#ffffff';
   const secondaryBlack = '#3f1300';
 
-  const baseColor = computed(() => get(usedTheme).graph);
+  const baseColor = computed<string>(() => get(usedTheme).graph);
 
-  const gradient = computed(() => {
+  const gradient = computed<GradientArea>(() => {
     const color = get(baseColor);
+    const colorStops = [
+      { color: `${color}80`, offset: 0 },
+      { color: `${color}00`, offset: 1 },
+    ];
     return {
       color: {
-        colorStops: [
-          { color: `${color}80`, offset: 0 },
-          { color: `${color}00`, offset: 1 },
-        ],
+        colorStops,
         type: 'linear',
         x: 0,
         x2: 0,
@@ -57,7 +56,7 @@ export function useNewGraph(): NewGraphApi {
     };
   });
 
-  const secondaryColor = computed(() => (get(isDark) ? white : secondaryBlack));
+  const secondaryColor = computed<string>(() => (get(isDark) ? white : secondaryBlack));
 
   return {
     baseColor,

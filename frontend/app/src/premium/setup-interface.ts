@@ -3,6 +3,8 @@ import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings
 import type {
   DataUtilities,
   DateUtilities,
+  GraphApi,
+  NewGraphApi,
   PremiumApi,
   PremiumInterface,
   SettingsApi,
@@ -93,15 +95,21 @@ function settings(): SettingsApi {
 }
 
 export function usePremiumApi(): PremiumInterface {
+  function graphs(canvasId: string): GraphApi;
+  function graphs(): NewGraphApi;
+
+  function graphs(canvasId?: string): GraphApi | NewGraphApi {
+    return canvasId ? useGraph(canvasId) : useNewGraph();
+  }
+
   return {
     api: (): PremiumApi => ({
       data: data(),
       date,
-      graphs: useGraph,
-      newGraphs: useNewGraph,
+      graphs,
       settings: settings(),
     }),
     useHostComponents: true,
-    version: 25,
+    version: 26,
   };
 }
