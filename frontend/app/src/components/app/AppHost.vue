@@ -5,6 +5,7 @@ import { useLocale } from '@/composables/session/use-locale';
 import { useThemeChecker } from '@/modules/theme/use-theme-checker';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
+import '@/utils/chartjs-adapter-dayjs';
 
 useThemeChecker();
 

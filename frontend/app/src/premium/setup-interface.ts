@@ -9,7 +9,7 @@ import type {
   Themes,
   TimeUnit,
 } from '@rotki/common';
-import { useGraph } from '@/composables/graphs';
+import { useGraph, useNewGraph } from '@/composables/graphs';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -98,6 +98,7 @@ export function usePremiumApi(): PremiumInterface {
       data: data(),
       date,
       graphs: useGraph,
+      newGraphs: useNewGraph,
       settings: settings(),
     }),
     useHostComponents: true,

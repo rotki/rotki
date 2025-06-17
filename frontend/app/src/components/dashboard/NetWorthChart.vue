@@ -2,8 +2,8 @@
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
-import { useGraph, useGraphTooltip } from '@/composables/graphs';
+import NewGraphTooltipWrapper from '@/components/graphs/NewGraphTooltipWrapper.vue';
+import { useGraphTooltip, useNewGraph } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type BigNumber, type NetValue, Zero } from '@rotki/common';
@@ -29,7 +29,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
 
 const { resetTooltipData, tooltipData } = useGraphTooltip();
-const { baseColor, gradient } = useGraph();
+const { baseColor, gradient } = useNewGraph();
 
 function resetTooltip() {
   resetTooltipData();
@@ -234,7 +234,7 @@ watchImmediate(isDark, () => {
     />
   </div>
 
-  <GraphTooltipWrapper :tooltip-option="tooltipData">
+  <NewGraphTooltipWrapper :tooltip-option="tooltipData">
     <div class="text-rui-text-secondary text-xs mb-1">
       <DateDisplay
         v-if="!tooltipData.currentBalance"
@@ -252,7 +252,7 @@ watchImmediate(isDark, () => {
       :value="tooltipData.value"
       :fiat-currency="currencySymbol"
     />
-  </GraphTooltipWrapper>
+  </NewGraphTooltipWrapper>
 
   <ExportSnapshotDialog
     v-if="selectedTimestamp && selectedBalance"

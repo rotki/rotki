@@ -1,3 +1,4 @@
+import type * as Chart from 'chart.js';
 import type { Component } from 'vue';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { app } from '@/main';
@@ -127,12 +128,14 @@ export const ThemeManager = createFactory('ThemeManager');
 
 declare global {
   interface Window {
-    Vue: any;
-    VueEcharts: any;
-    VueUse: any;
-    VueUseShared: any;
-    zod: any;
-    bn: any;
-    VueRouter: any;
+    'Vue': any;
+    'VueEcharts': any;
+    'Chart': typeof Chart;
+    'chartjs-plugin-zoom': any;
+    'VueUse': any;
+    'VueUseShared': any;
+    'zod': any;
+    'bn': any;
+    'VueRouter': any;
   }
 }
