@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize(
     'added_exchanges',
