@@ -1,22 +1,23 @@
-"""Google Calendar integration for syncing rotki calendar events."""
+"""Google Calendar integration for syncing rotki calendar events using OAuth 2.0 desktop flow."""
 
 from __future__ import annotations
 
 import datetime
 import json
 import logging
+import os
+import threading
 from typing import TYPE_CHECKING, Any
 
-import requests
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -27,20 +28,22 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-# Note: Device flow requires broader scopes than web flow
-# calendar.events scope is not supported in device flow, so we use calendar scope
-# This gives broader permissions (can manage calendars) but is required for device flow
+# Google Calendar API scope - need full calendar access to read calendar list and create calendars
 GOOGLE_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar']
 ROTKI_CALENDAR_NAME = 'Rotki Events'
 
 
 class GoogleCalendarAPI:
-    """Interface for Google Calendar API operations."""
+    """Interface for Google Calendar API operations using OAuth 2.0 desktop flow."""
 
     def __init__(self, database: DBHandler) -> None:
         self.db = database
         self._credentials: Credentials | None = None
         self._service: Any = None
+        self._flow: InstalledAppFlow | None = None
+        self._auth_code: str | None = None
+        self._auth_error: str | None = None
+        self._auth_complete = threading.Event()
 
     def _get_credentials(self) -> Credentials | None:
         """Get stored OAuth2 credentials."""
@@ -49,258 +52,212 @@ class GoogleCalendarAPI:
 
         # Try to get credentials from database
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute(
+            result = cursor.execute(
                 'SELECT value FROM key_value_cache WHERE name=?',
                 ('google_calendar_credentials',),
-            )
-            result = cursor.fetchone()
-            credentials_data = result[0] if result else None
-        if credentials_data:
+            ).fetchone()
+
+            if result is None:
+                return None
+
             try:
-                self._credentials = Credentials.from_authorized_user_info(  # type: ignore[no-untyped-call]
-                    json.loads(credentials_data),
+                creds_data = json.loads(result[0])
+                self._credentials = Credentials.from_authorized_user_info(  # type: ignore
+                    creds_data,
+                    GOOGLE_CALENDAR_SCOPES,
                 )
-                if self._credentials.expired and self._credentials.refresh_token:
-                    self._credentials.refresh(Request())  # type: ignore[no-untyped-call]
+
+                # Refresh if expired
+                if (
+                    self._credentials and self._credentials.expired and
+                    self._credentials.refresh_token
+                ):
+                    log.debug('Refreshing expired Google Calendar credentials')
+                    self._credentials.refresh(Request())  # type: ignore
+
                     # Save refreshed credentials
                     with self.db.conn.write_ctx() as write_cursor:
                         write_cursor.execute(
                             'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                            ('google_calendar_credentials', self._credentials.to_json()),
+                            ('google_calendar_credentials', json.dumps({
+                                'token': self._credentials.token,
+                                'refresh_token': self._credentials.refresh_token,
+                                'token_uri': self._credentials.token_uri,
+                                'client_id': self._credentials.client_id,
+                                'client_secret': self._credentials.client_secret,
+                                'scopes': self._credentials.scopes,
+                            })),
                         )
+
             except Exception as e:
-                log.warning(f'Failed to load Google Calendar credentials: {e}')
-                # Clear invalid credentials
-                with self.db.conn.write_ctx() as write_cursor:
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_credentials',),
-                    )
+                log.error(f'Failed to load credentials: {e}')
+                return None
             else:
                 return self._credentials
 
-        return None
+    def start_oauth_flow(self) -> dict[str, Any]:
+        """Start OAuth2 Authorization Code Flow for desktop apps.
 
-    def start_oauth_flow(self, client_id: str, client_secret: str) -> dict[str, Any]:
-        """Start OAuth2 device flow and return device code response."""
-        # Basic validation for Client ID format
-        if not client_id.endswith('.apps.googleusercontent.com'):
+        Returns information needed to complete the authorization in the frontend.
+        The actual authorization will happen via run_authorization_flow().
+        """
+        # Default rotki OAuth credentials (for desktop app)
+        # These are not secret - Google acknowledges that desktop app secrets
+        # cannot be kept confidential. Users can optionally override these.
+        client_id = os.environ.get(
+            'ROTKI_GOOGLE_CLIENT_ID',
+            # This would be rotki's actual client ID
+            'XXX',
+        )
+        client_secret = os.environ.get(
+            'ROTKI_GOOGLE_CLIENT_SECRET',
+            # This would be rotki's actual client secret
+            'XXX',
+        )
+
+        if client_id in (None, '', 'YOUR-ACTUAL-CLIENT-ID.apps.googleusercontent.com'):
+            # Fall back to user-provided credentials if rotki's aren't configured
+            # This allows both approaches: built-in or user-provided
             raise RemoteError(
-                'Invalid Client ID format. Make sure you are using a Client ID from a '
-                '"TV and Limited Input devices" OAuth application type, not "Web application".',
+                'Google Calendar integration requires OAuth credentials. '
+                'Either use the built-in credentials or provide your own.',
             )
 
-        self._client_id = client_id
-        self._client_secret = client_secret
-
-        device_code_url = 'https://oauth2.googleapis.com/device/code'
-
-        data = {
-            'client_id': client_id,
-            'scope': ' '.join(GOOGLE_CALENDAR_SCOPES),
+        # Create OAuth flow configuration
+        client_config = {
+            'installed': {
+                'client_id': client_id,
+                'client_secret': client_secret,
+                'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
+                'token_uri': 'https://oauth2.googleapis.com/token',
+                'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
+                'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
+            },
         }
 
-        try:
-            log.debug(
-                f'Starting device flow with client_id: {client_id[:8]}..., '
-                f'scope: {" ".join(GOOGLE_CALENDAR_SCOPES)}',
+        # Create the flow instance with PKCE enabled
+        # For installed (desktop) apps, google-auth-oauthlib automatically uses PKCE
+        self._flow = InstalledAppFlow.from_client_config(
+            client_config,
+            scopes=GOOGLE_CALENDAR_SCOPES,
+        )
+
+        # The Flow class automatically generates code_verifier and code_challenge for PKCE
+        # when using the 'installed' application type. This is handled internally by
+        # run_local_server() method which implements the full PKCE flow.
+
+        # Store client credentials for later use
+        with self.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                ('google_calendar_client_config', json.dumps(client_config)),
             )
-            response = requests.post(device_code_url, data=data, timeout=30)
 
-            if response.status_code != 200:
-                log.error(
-                    f'Device flow request failed with status {response.status_code}: '
-                    f'{response.text}',
-                )
-                response.raise_for_status()
+        return {
+            'status': 'ready',
+            'message': 'Ready to connect to Google Calendar.',
+        }
 
-            device_response = response.json()
+    def run_authorization_flow(self) -> dict[str, Any]:
+        """Run the authorization flow by opening browser and starting local server.
 
-            # Store device code for polling (both in memory and database)
-            self._device_code = device_response['device_code']
-            self._poll_interval = device_response.get('interval', 5)
-
-            # Store device code and client credentials in database for persistence
-            with self.db.conn.write_ctx() as write_cursor:
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                    ('google_calendar_device_code', self._device_code),
-                )
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                    ('google_calendar_client_id', self._client_id),
-                )
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                    ('google_calendar_client_secret', self._client_secret),
-                )
-
-            return {
-                'verification_url': device_response['verification_url'],
-                'user_code': device_response['user_code'],
-                'expires_in': device_response.get('expires_in', 1800),  # 30 minutes default
-            }
-
-        except requests.RequestException as e:
-            error_msg = f'Failed to start OAuth device flow: {e}'
-            if hasattr(e, 'response') and e.response is not None:
-                try:
-                    error_details = e.response.json()
-                    if 'error_description' in error_details:
-                        error_msg += f' - {error_details["error_description"]}'
-                    elif 'error' in error_details:
-                        error_msg += f' - {error_details["error"]}'
-                except Exception:
-                    error_msg += f' - Response: {e.response.text}'
-            log.error(error_msg)
-            raise RemoteError(error_msg) from e
-
-    def poll_for_authorization(self) -> bool:
-        """Poll for authorization completion in device flow."""
-        log.debug('poll_for_authorization: Starting poll request')
-
-        # Try to get device code from memory first, then from database
-        if not hasattr(self, '_device_code') or not self._device_code:
-            log.debug('poll_for_authorization: Device code not in memory, loading from database')
+        This should be called after start_oauth_flow() to actually perform the authorization.
+        """
+        if self._flow is None:
+            # Try to restore flow from stored config
             with self.db.conn.read_ctx() as cursor:
                 result = cursor.execute(
                     'SELECT value FROM key_value_cache WHERE name=?',
-                    ('google_calendar_device_code',),
+                    ('google_calendar_client_config',),
                 ).fetchone()
 
                 if result is None:
-                    log.error('Device flow not started. Call start_oauth_flow() first.')
-                    return False
+                    raise RemoteError('OAuth flow not initialized. Call start_oauth_flow first.')
 
-                self._device_code = result[0]
-                log.debug('poll_for_authorization: Loaded device code from database')
-
-        # Also load client credentials from database if not in memory
-        if not hasattr(self, '_client_id') or not self._client_id:
-            log.debug('poll_for_authorization: Loading client credentials from database')
-            with self.db.conn.read_ctx() as cursor:
-                client_id_result = cursor.execute(
-                    'SELECT value FROM key_value_cache WHERE name=?',
-                    ('google_calendar_client_id',),
-                ).fetchone()
-                client_secret_result = cursor.execute(
-                    'SELECT value FROM key_value_cache WHERE name=?',
-                    ('google_calendar_client_secret',),
-                ).fetchone()
-
-                if client_id_result is None or client_secret_result is None:
-                    log.error(
-                        'Client credentials not found. Device flow was not properly started.',
-                    )
-                    return False
-
-                self._client_id = client_id_result[0]
-                self._client_secret = client_secret_result[0]
-                log.debug('poll_for_authorization: Loaded client credentials from database')
-
-        log.debug(f'poll_for_authorization: Using device_code: {self._device_code[:10]}...')
-        token_url = 'https://oauth2.googleapis.com/token'
-
-        data = {
-            'client_id': self._client_id,
-            'client_secret': self._client_secret,
-            'device_code': self._device_code,
-            'grant_type': 'urn:ietf:params:oauth:grant-type:device_code',
-        }
-
-        try:
-            log.debug('poll_for_authorization: Making request to Google token endpoint')
-            log.debug(f'poll_for_authorization: Request data: client_id={self._client_id[:8]}..., grant_type={data["grant_type"]}')
-            response = requests.post(token_url, data=data, timeout=30)
-            log.debug(f'poll_for_authorization: Response status: {response.status_code}')
-            log.debug(f'poll_for_authorization: Response text: {response.text}')
-
-            if response.status_code == 200:
-                log.debug('poll_for_authorization: Success! Got access token')
-                token_response = response.json()
-
-                # Create credentials object
-                self._credentials = Credentials(  # type: ignore[no-untyped-call]
-                    token=token_response['access_token'],
-                    refresh_token=token_response.get('refresh_token'),
-                    token_uri=token_url,
-                    client_id=self._client_id,
-                    client_secret=self._client_secret,
+                client_config = json.loads(result[0])
+                self._flow = InstalledAppFlow.from_client_config(
+                    client_config,
                     scopes=GOOGLE_CALENDAR_SCOPES,
                 )
 
-                # Store credentials in database and clean up device code
+        try:
+            # Run local server and get credentials using OAuth 2.0 with PKCE
+            # port=0 means "use any available port"
+            # This implements the full PKCE flow as described in the document:
+            # 1. Generates code_verifier and code_challenge (handled by Flow internally)
+            # 2. Starts a local web server on random port
+            # 3. Opens browser to Google's auth page with code_challenge
+            # 4. Waits for the callback with auth code
+            # 5. Exchanges the code + code_verifier for tokens
+            self._credentials = self._flow.run_local_server(  # pylint: disable=no-member
+                port=0,
+                authorization_prompt_message='',
+                success_message=(
+                    'Authorization complete! You can close this window and return to rotki.'
+                ),
+                open_browser=True,
+            )
+
+            # Save credentials to database
+            if self._credentials:
                 with self.db.conn.write_ctx() as write_cursor:
                     write_cursor.execute(
                         'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                        ('google_calendar_credentials', self._credentials.to_json()),  # type: ignore[no-untyped-call]
+                        ('google_calendar_credentials', json.dumps({
+                            'token': self._credentials.token,
+                            'refresh_token': self._credentials.refresh_token,
+                            'token_uri': self._credentials.token_uri,
+                            'client_id': self._credentials.client_id,
+                            'client_secret': self._credentials.client_secret,
+                            'scopes': self._credentials.scopes,
+                        })),
                     )
-                    # Clean up temporary OAuth flow data since we're done with it
+                    # Clean up the client config as it's no longer needed
                     write_cursor.execute(
                         'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_device_code',),
-                    )
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_client_id',),
-                    )
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_client_secret',),
+                        ('google_calendar_client_config',),
                     )
 
-                log.info('Google Calendar OAuth2 device flow completed successfully')
-                return True
-
-            # Handle error responses
-            try:
-                error_data = response.json()
-                error = error_data.get('error')
-                log.debug(f'poll_for_authorization: Error response: {error}')
-            except Exception:
-                log.error(
-                    f'poll_for_authorization: Failed to parse error response: {response.text}',
-                )
-                return False
-
-            if error == 'authorization_pending':
-                # User hasn't authorized yet
-                log.info('poll_for_authorization: Still waiting for user authorization - user needs to complete OAuth in browser')
-                return False
-            elif error == 'slow_down':
-                # Increase polling interval
-                log.debug('poll_for_authorization: Rate limited, slowing down')
-                self._poll_interval += 5
-                return False
-            elif error == 'access_denied':
-                log.error('User denied access to Google Calendar')
-                raise AuthenticationError('User denied access to Google Calendar')
-            elif error == 'expired_token':
-                log.error('Device code expired')
-                # Clean up expired OAuth flow data
-                with self.db.conn.write_ctx() as write_cursor:
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_device_code',),
-                    )
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_client_id',),
-                    )
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_client_secret',),
-                    )
-                raise AuthenticationError(
-                    'Device code expired. Please start the authorization process again.',
-                )
+                log.info('Google Calendar OAuth2 authorization completed successfully')
+                return {'success': True, 'message': 'Authorization successful'}
             else:
-                log.error(f'Unknown OAuth error: {error}')
-                raise RemoteError(f'OAuth error: {error}')
+                raise RemoteError('Authorization failed: no credentials received')
 
-        except requests.RequestException as e:
-            log.error(f'Failed to poll for authorization: {e}')
-            raise RemoteError(f'Failed to poll for authorization: {e}') from e
+        except Exception as e:
+            log.error(f'OAuth authorization failed: {e}')
+            raise RemoteError(f'Authorization failed: {e!s}') from e
+
+    def is_authenticated(self) -> bool:
+        """Check if user has valid Google Calendar credentials."""
+        credentials = self._get_credentials()
+        if credentials is None:
+            return False
+
+        # Check if credentials are valid and have the correct scope
+        if not credentials.valid:
+            return False
+
+        # Verify we have the correct scope
+        if not credentials.scopes or GOOGLE_CALENDAR_SCOPES[0] not in credentials.scopes:
+            log.debug('Google Calendar credentials have wrong scope, need to re-authorize')
+            return False
+
+        return True
+
+    def disconnect(self) -> dict[str, Any]:
+        """Disconnect Google Calendar by removing stored credentials."""
+        with self.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name IN (?, ?)',
+                ('google_calendar_credentials', 'google_calendar_client_config'),
+            )
+
+        self._credentials = None
+        self._service = None
+        self._flow = None
+
+        log.info('Google Calendar disconnected')
+        return {'success': True}
 
     def _get_service(self) -> Any:
         """Get Google Calendar service instance."""
@@ -318,157 +275,164 @@ class GoogleCalendarAPI:
         else:
             return self._service
 
-    def is_authenticated(self) -> bool:
-        """Check if user has valid Google Calendar credentials."""
-        credentials = self._get_credentials()
-        return credentials is not None and credentials.valid
-
-    def _get_or_create_rotki_calendar(self) -> str:
+    def _get_or_create_calendar(self) -> str:
         """Get or create the Rotki calendar and return its ID."""
         service = self._get_service()
 
         try:
-            # List existing calendars to find Rotki calendar
-            calendars_result = service.calendarList().list().execute()  # pylint: disable=no-member
-            calendars = calendars_result.get('items', [])
-
-            for calendar in calendars:
+            # First, try to find existing Rotki calendar
+            calendars = service.calendarList().list().execute()  # pylint: disable=no-member
+            for calendar in calendars.get('items', []):
                 if calendar.get('summary') == ROTKI_CALENDAR_NAME:
+                    log.debug(f'Found existing Rotki calendar with ID: {calendar["id"]}')
                     return calendar['id']
 
-            # Create new Rotki calendar if not found
-            calendar = {
+            # Calendar doesn't exist, create it
+            calendar_body = {
                 'summary': ROTKI_CALENDAR_NAME,
-                'description': 'Calendar events automatically synced from Rotki portfolio tracker',
+                'description': (
+                    'Automated calendar for rotki events like ENS expirations, CRV locks, '
+                    'and airdrops'
+                ),
                 'timeZone': 'UTC',
             }
 
-            created_calendar = service.calendars().insert(body=calendar).execute()  # pylint: disable=no-member
-            return created_calendar['id']
+            created_calendar = service.calendars().insert(body=calendar_body).execute()  # pylint: disable=no-member
+            calendar_id = created_calendar['id']
+            log.info(f'Created new Rotki calendar with ID: {calendar_id}')
 
         except HttpError as e:
+            if e.resp.status == 403 and 'insufficient authentication scopes' in str(e).lower():
+                raise RemoteError(
+                    'Insufficient permissions for Google Calendar. Please disconnect and '
+                    'reconnect to grant the necessary permissions.',
+                ) from e
             raise RemoteError(f'Failed to get or create Rotki calendar: {e}') from e
+        else:
+            return calendar_id
 
-    def sync_events(self, calendar_entries: Sequence[CalendarEntry]) -> dict[str, Any]:
+    def sync_events(self, events: Sequence[CalendarEntry]) -> dict[str, Any]:
         """Sync rotki calendar events to Google Calendar."""
-        if not self.is_authenticated():
-            raise AuthenticationError('Google Calendar not authenticated')
+        log.debug(f'Syncing {len(events)} calendar entries to Google Calendar')
 
-        calendar_id = self._get_or_create_rotki_calendar()
+        if len(events) == 0:
+            log.info('No calendar events found in rotki to sync')
+            return {
+                'success': True,
+                'calendar_id': '',
+                'events_processed': 0,
+                'events_created': 0,
+                'events_updated': 0,
+                'message': 'No calendar events found to sync',
+            }
+        calendar_id = self._get_or_create_calendar()
         service = self._get_service()
 
-        # Get current time to filter future events
-        now = ts_now()
-        future_entries = [entry for entry in calendar_entries if entry.timestamp >= now]
+        events_processed = 0
+        events_created = 0
+        events_updated = 0
+        errors = []
 
+        # Get existing events from Google Calendar
         try:
-            # Get existing events from Google Calendar
-            now_iso = datetime.datetime.fromtimestamp(now, tz=datetime.UTC).isoformat()
-            events_result = service.events().list(  # pylint: disable=no-member
-                calendarId=calendar_id,
-                timeMin=now_iso,
-                singleEvents=True,
-                orderBy='startTime',
-            ).execute()
-            existing_events = events_result.get('items', [])
+            existing_events = {}
+            page_token = None
 
-            # Create mapping of existing events by rotki event ID (stored in description)
-            existing_by_rotki_id = {}
-            for event in existing_events:
-                description = event.get('description', '')
-                if description.startswith('rotki_id:'):
-                    try:
-                        rotki_id = description.split('rotki_id:')[1].split('\n')[0].strip()
-                        existing_by_rotki_id[rotki_id] = event
-                    except IndexError:
-                        continue  # Skip malformed descriptions
+            while True:
+                events_result = service.events().list(  # pylint: disable=no-member
+                    calendarId=calendar_id,
+                    pageToken=page_token,
+                    maxResults=2500,  # Max allowed by Google
+                    fields='items(id,summary,description,start,end),nextPageToken',
+                ).execute()
 
-            created_count = 0
-            updated_count = 0
+                for event in events_result.get('items', []):
+                    # Store by summary (title) for matching
+                    existing_events[event.get('summary', '')] = event
 
-            # Process each rotki calendar entry
-            for entry in future_entries:
-                entry_iso = datetime.datetime.fromtimestamp(
-                    entry.timestamp, tz=datetime.UTC,
-                ).isoformat()
-                event_data = {
-                    'summary': entry.name,
-                    'description': f'rotki_id:{entry.identifier}\n\n{entry.description or ""}',
-                    'start': {
-                        'dateTime': entry_iso,
-                        'timeZone': 'UTC',
-                    },
-                    'end': {
-                        'dateTime': entry_iso,
-                        'timeZone': 'UTC',
-                    },
-                    'reminders': {
-                        'useDefault': False,
-                        'overrides': [
-                            {'method': 'email', 'minutes': 24 * 60},  # 1 day before
-                            {'method': 'popup', 'minutes': 60},       # 1 hour before
-                        ],
-                    },
-                }
+                page_token = events_result.get('nextPageToken')
+                if not page_token:
+                    break
 
-                if entry.color:
-                    # Map rotki colors to Google Calendar color IDs (1-11)
-                    color_mapping = {
-                        '#5298FF': '9',  # Blue
-                        '#5bf054': '11',  # Green
-                        '#36cfc9': '7',  # Cyan
-                        '#ffd966': '5',  # Yellow
-                        '#fcceee': '4',  # Pink
-                    }
-                    if entry.color in color_mapping:
-                        event_data['colorId'] = color_mapping[entry.color]
+        except HttpError as e:
+            raise RemoteError(f'Failed to list existing calendar events: {e}') from e
 
-                existing_event = existing_by_rotki_id.get(entry.identifier)
+        # Sync each rotki event
+        for entry in events:
+            events_processed += 1
+
+            # Convert timestamp to datetime
+            event_date = datetime.datetime.fromtimestamp(
+                entry.timestamp,
+                tz=datetime.UTC,
+            )
+
+            # Create event data
+            description = entry.description or ''
+            if entry.counterparty:
+                description += f'\n\nCounterparty: {entry.counterparty}'
+            if entry.blockchain:
+                description += f'\nBlockchain: {entry.blockchain.value}'
+            event_data = {
+                'summary': entry.name,
+                'description': description.strip(),
+                'start': {
+                    'dateTime': event_date.isoformat(),
+                    'timeZone': 'UTC',
+                },
+                'end': {
+                    'dateTime': (event_date + datetime.timedelta(hours=1)).isoformat(),
+                    'timeZone': 'UTC',
+                },
+                'reminders': {
+                    'useDefault': False,
+                    'overrides': [
+                        {'method': 'popup', 'minutes': 24 * 60},  # 1 day before
+                        {'method': 'popup', 'minutes': 60},       # 1 hour before
+                    ],
+                },
+            }
+
+            try:
+                # Check if event already exists
+                existing_event = existing_events.get(entry.name)
 
                 if existing_event:
-                    # Update existing event if needed
-                    if (existing_event.get('summary') != event_data['summary'] or
-                        existing_event.get('description') != event_data['description'] or
-                        existing_event.get('start', {}).get('dateTime') !=
-                        event_data['start']['dateTime']):  # type: ignore[index]
-
-                        service.events().update(  # pylint: disable=no-member
-                            calendarId=calendar_id,
-                            eventId=existing_event['id'],
-                            body=event_data,
-                        ).execute()
-                        updated_count += 1
+                    # Update existing event
+                    service.events().update(  # pylint: disable=no-member
+                        calendarId=calendar_id,
+                        eventId=existing_event['id'],
+                        body=event_data,
+                    ).execute()
+                    events_updated += 1
+                    log.debug(f'Updated event: {entry.name}')
                 else:
                     # Create new event
                     service.events().insert(  # pylint: disable=no-member
                         calendarId=calendar_id,
                         body=event_data,
                     ).execute()
-                    created_count += 1
+                    events_created += 1
+                    log.debug(f'Created event: {entry.name}')
 
-            return {
-                'success': True,
-                'calendar_id': calendar_id,
-                'events_processed': len(future_entries),
-                'events_created': created_count,
-                'events_updated': updated_count,
-            }
+            except HttpError as e:
+                error_msg = f'Failed to sync event "{entry.name}": {e}'
+                log.error(error_msg)
+                errors.append(error_msg)
 
-        except HttpError as e:
-            raise RemoteError(f'Failed to sync events to Google Calendar: {e}') from e
+        result = {
+            'events_processed': events_processed,
+            'events_created': events_created,
+            'events_updated': events_updated,
+            'calendar_id': calendar_id,
+        }
 
-    def disconnect(self) -> bool:
-        """Disconnect Google Calendar integration by clearing stored credentials."""
-        try:
-            with self.db.conn.write_ctx() as write_cursor:
-                write_cursor.execute(
-                    'DELETE FROM key_value_cache WHERE name=?',
-                    ('google_calendar_credentials',),
-                )
-            self._credentials = None
-            self._service = None
-        except Exception as e:
-            log.error(f'Failed to disconnect Google Calendar: {e}')
-            return False
-        else:
-            return True
+        if errors:
+            result['errors'] = errors
+
+        log.info(
+            f'Calendar sync completed: {events_created} created, '
+            f'{events_updated} updated out of {events_processed} total events',
+        )
+
+        return result

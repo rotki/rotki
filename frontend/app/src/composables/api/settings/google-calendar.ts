@@ -1,34 +1,33 @@
 import type { ActionResult } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
-import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
+import { handleResponse, validWithSessionStatus } from '@/services/utils';
 
 interface GoogleCalendarStatus {
   authenticated: boolean;
 }
 
-interface GoogleCalendarDeviceInfo {
-  verificationUrl: string;
-  userCode: string;
-  expiresIn: number;
+interface GoogleCalendarFlowStatus {
+  status: string;
+  message: string;
+}
+
+interface GoogleCalendarAuthResult {
+  success: boolean;
+  message: string;
 }
 
 interface GoogleCalendarSyncResult {
   success: boolean;
-  calendar_id: string;
-  events_processed: number;
-  events_created: number;
-  events_updated: number;
-}
-
-interface GoogleCalendarPollResult {
-  success: boolean;
-  pending?: boolean;
+  calendarId: string;
+  eventsProcessed: number;
+  eventsCreated: number;
+  eventsUpdated: number;
 }
 
 export function useGoogleCalendarApi(): {
   getStatus: () => Promise<GoogleCalendarStatus>;
-  startAuth: (clientId: string, clientSecret: string) => Promise<GoogleCalendarDeviceInfo>;
-  pollAuth: () => Promise<GoogleCalendarPollResult>;
+  startAuth: () => Promise<GoogleCalendarFlowStatus>;
+  runAuth: () => Promise<GoogleCalendarAuthResult>;
   syncCalendar: () => Promise<GoogleCalendarSyncResult>;
   disconnect: () => Promise<{ success: boolean }>;
 } {
@@ -40,28 +39,22 @@ export function useGoogleCalendarApi(): {
     return handleResponse(response);
   };
 
-  const startAuth = async (clientId: string, clientSecret: string): Promise<GoogleCalendarDeviceInfo> => {
-    const response = await api.instance.put<ActionResult<GoogleCalendarDeviceInfo>>(
+  const startAuth = async (): Promise<GoogleCalendarFlowStatus> => {
+    const response = await api.instance.put<ActionResult<GoogleCalendarFlowStatus>>(
       '/calendar/google',
-      {
-        client_id: clientId,
-        client_secret: clientSecret,
-      },
+      {},
       { validateStatus: validWithSessionStatus },
     );
     return handleResponse(response);
   };
 
-  const pollAuth = async (): Promise<GoogleCalendarPollResult> => {
-    console.log('pollAuth: Making PATCH request to /calendar/google');
-    const response = await api.instance.patch<ActionResult<GoogleCalendarPollResult>>(
+  const runAuth = async (): Promise<GoogleCalendarAuthResult> => {
+    const response = await api.instance.patch<ActionResult<GoogleCalendarAuthResult>>(
       '/calendar/google',
+      {},
       { validateStatus: validWithSessionStatus },
     );
-    console.log('pollAuth: Raw response:', response.data);
-    const result = handleResponse(response);
-    console.log('pollAuth: Processed result:', result);
-    return result;
+    return handleResponse(response);
   };
 
   const syncCalendar = async (): Promise<GoogleCalendarSyncResult> => {
@@ -83,7 +76,7 @@ export function useGoogleCalendarApi(): {
   return {
     disconnect,
     getStatus,
-    pollAuth,
+    runAuth,
     startAuth,
     syncCalendar,
   };

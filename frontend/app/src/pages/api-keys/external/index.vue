@@ -57,10 +57,6 @@ const services = [
     component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/AlchemyApiKey.vue')),
     name: 'alchemy',
   },
-  {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/GoogleCalendarAuth.vue')),
-    name: 'google_calendar',
-  },
 ];
 
 // Update the filteredServices computed property
