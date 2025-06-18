@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Swaps that only differ in their timestamps will now be properly imported from Binance CSVs.
 * :bug:`10158` PnL reports will now properly handle events with the same timestamp.
 * :bug:`10146` Users will now be able to filter assets in the history events filter if a non-EVM location is selected.
 * :bug:`10150` The history events page will be refreshed automatically when an asset is ignored or marked as spam.
