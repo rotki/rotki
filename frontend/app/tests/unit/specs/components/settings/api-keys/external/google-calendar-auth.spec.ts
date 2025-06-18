@@ -117,7 +117,7 @@ describe('googleCalendarAuth.vue', () => {
     expect(mockGoogleCalendarApi.startAuth).toHaveBeenCalledWith('test-client-id', 'test-client-secret');
 
     // Check that browser was opened with delay
-    await vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
     expect(mockInterop.openUrl).toHaveBeenCalledWith('https://accounts.google.com/auth');
 
     // Check that auth dialog is shown
