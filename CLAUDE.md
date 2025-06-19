@@ -99,6 +99,12 @@ cargo run -- --database ../data/global.db --port 4343
 4. **Event System**: History events are the core abstraction for all blockchain/exchange activities
 5. **Plugin Architecture**: Modular design for adding new blockchains and exchanges
 
+## Developing
+
+### Contribution guide
+
+The contribution guide can be seen here: https://docs.rotki.com/contribution-guides/contribute-as-developer.html
+
 ### Exchange Addition
 
 - To add an exchange you will need to add the new exchange under the `exchanges/` directory. A nice example is bitfinxex.py
@@ -107,6 +113,57 @@ cargo run -- --database ../data/global.db --port 4343
   - Fetch balances from the exchange
   - Fetch deposits/withdrawals (also called asset movements) and trades.
 - You will need to create some tests with mocked data
+
+### Adding EVM protocol decoders
+
+As an example decoder, we can look at [MakerDAO](https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/decoder.py).
+
+It needs to contain a class that inherits from the `DecoderInterface` and is named `ModulenameDecoder`.
+
+Note: If your new decoder decodes an airdrop's claiming event and this airdrop is present in the [data repo airdrop index](https://github.com/rotki/data/blob/develop/airdrops/index_v2.json) with `has_decoder` as `false`, please update that also.
+
+#### Counterparties
+
+It needs to implement a method called `counterparties()` which returns a list of counterparties that can be associated with the transactions of this module. Most of the time these are protocol names like `uniswap-v1`, `makerdao_dsr`, etc.
+
+These are defined in the `constants.py` file.
+
+#### Mappings and rules
+
+The `addresses_to_decoders()` method maps any contract addresses that are identified in the transaction with the specific decoding function that can decode it. This is optional.
+
+The `decoding_rules()` define any functions that should simply be used for all decoding so long as this module is active. This is optional.
+
+The `enricher_rules()` define any functions that would be used as long as this module is active to analyze already existing decoded events and enrich them with extra information we can decode thanks to this module. This is optional.
+
+#### Decoding explained
+
+In very simple terms, the way the decoding works is that we go through all the transactions of the user and we apply all decoders to each transaction event that touches a tracked address. The first decoder that matches creates a decoded event.
+
+The event creation consists of creating a `HistoryBaseEntry`. These are the most basic form of events in rotki and are used everywhere. The fields as far as decoded transactions are concerned are explained below:
+
+- `event_identifier` is always the transaction hash. This identifies history events in the same transaction.
+- `sequence_index` is the order of the event in the transaction. Many times this is the log index, but decoders tend to play with this to make events appear in a specific way.
+- `asset` is the asset involved in the event.
+- `balance` is the balance of the involved asset.
+- `timestamp` is the Unix timestamp **in milliseconds**.
+- `location` is the location. Almost always `Location.BLOCKCHAIN` unless we got a specific location for the protocol of the transaction.
+- `location_label` is the initiator of the transaction.
+- `notes` is the human-readable description to be seen by the user for the transaction.
+- `event_type` is the main type of the event. (see next section)
+- `event_subtype` is the subtype of the event. (see next section)
+- `counterparty` is the counterparty/target of the transaction. For transactions that interact with protocols, we tend to use the `CPT_XXX` constants here.
+
+#### Event type/subtype and counterparty
+
+Each combination of event type and subtype and counterparty creates a new unique event type. This is important as they are all treated differently in many parts of rotki, including the accounting. But most importantly this is what determines how they appear in the UI!
+
+The mapping of these HistoryEvents types, subtypes, and categories is done in [rotkehlchen/accounting/constants.py](https://github.com/rotki/rotki/blob/17b4368bc15043307fa6acf536b5237b3840c40e/rotkehlchen/accounting/constants.py).
+
+#### Things to keep in mind
+
+- All byte signatures should be a constant byte literal. Like ```SPARK_STAKE_SIGNATURE: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
+- Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
 ## Testing Strategy
 
@@ -145,6 +202,7 @@ python package.py
 3. Follow existing code patterns - the codebase has established conventions
 4. Use the existing test infrastructure - comprehensive fixtures are available
 5. WebSocket messages follow specific format - check `api/websockets/typedefs.py`
+6. For all python backend constants make sure to use the `Final` type specifier.
 
 
 ## Committing
