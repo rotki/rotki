@@ -5196,12 +5196,24 @@ class RestAPI:
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             is_authenticated = google_calendar.is_authenticated()
-            return api_response(_wrap_in_ok_result({'authenticated': is_authenticated}))
+
+            # Get user email if authenticated
+            user_email = None
+            if is_authenticated:
+                user_email = google_calendar.get_connected_user_email()
+
+            return api_response(_wrap_in_ok_result({
+                'authenticated': is_authenticated,
+                'user_email': user_email,
+            }))
         except Exception as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 
     def start_google_calendar_auth(self) -> Response:
         """Start Google Calendar OAuth2 desktop flow.
+
+        DEPRECATED: This method is deprecated in favor of external OAuth flow.
+        Use complete_google_calendar_oauth() instead with rotki:// protocol handler.
 
         This initializes the OAuth flow configuration. The actual authorization
         happens via run_google_calendar_auth().
@@ -5217,6 +5229,9 @@ class RestAPI:
 
     def run_google_calendar_auth(self) -> Response:
         """Run the Google Calendar OAuth2 authorization flow.
+
+        DEPRECATED: This method is deprecated in favor of external OAuth flow.
+        Use complete_google_calendar_oauth() instead with rotki:// protocol handler.
 
         This opens the browser and starts a local server to complete OAuth.
         """
@@ -5264,6 +5279,17 @@ class RestAPI:
                     wrap_in_fail_result('Failed to disconnect Google Calendar'),
                     status_code=HTTPStatus.BAD_REQUEST,
                 )
+        except Exception as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+    def complete_google_calendar_oauth(self, access_token: str) -> Response:
+        """Complete Google Calendar OAuth2 flow with an access token from external OAuth flow."""
+        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+
+        try:
+            google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
+            result = google_calendar.complete_oauth_with_token(access_token)
+            return api_response(_wrap_in_ok_result(result))
         except Exception as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
 

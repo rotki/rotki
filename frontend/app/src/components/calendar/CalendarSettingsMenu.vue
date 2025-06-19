@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
+import { useInterop } from '@/composables/electron-interop';
+import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { logger } from '@/utils/logging';
 import { Severity } from '@rotki/common';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n({ useScope: 'global' });
+
+const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL;
 
 const showMenu = ref(false);
 const autoDelete = ref(true);
@@ -14,9 +23,14 @@ const autoCreateReminders = ref(true);
 // Google Calendar integration
 const googleCalendarApi = useGoogleCalendarApi();
 const { notify } = useNotificationsStore();
+const { isPackaged, openUrl } = useInterop();
+const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessagesStore();
 const isConnected = ref(false);
 const isSyncing = ref(false);
 const isAuthorizing = ref(false);
+const connectedUserEmail = ref<string>('');
+const manualToken = ref<string>('');
+const showTokenInput = ref(false);
 
 const { autoCreateCalendarReminders, autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
@@ -32,17 +46,37 @@ function setAutoCreate() {
 async function checkGoogleCalendarStatus() {
   try {
     const response = await googleCalendarApi.getStatus();
-    isConnected.value = response.authenticated;
+    set(isConnected, response.authenticated);
+
+    // Update the connected user email
+    if (response.authenticated && response.userEmail) {
+      set(connectedUserEmail, response.userEmail);
+    }
+    else {
+      set(connectedUserEmail, '');
+    }
   }
   catch (error: any) {
-    console.error('Failed to check Google Calendar status:', error);
+    logger.error('Failed to check Google Calendar status:', error);
   }
 }
 
 async function connectToGoogle() {
-  isAuthorizing.value = true;
+  set(isAuthorizing, true);
   try {
-    await googleCalendarApi.startAuth();
+    // Determine mode based on environment
+    const mode = isPackaged ? 'app' : 'docker';
+    const oauthUrl = `${websiteUrl}/oauth/google?mode=${mode}`;
+
+    if (isPackaged) {
+      await openUrl(oauthUrl);
+    }
+    else {
+      // Docker mode - open OAuth page in new tab for manual token copy
+      window.open(oauthUrl, '_blank');
+      set(isAuthorizing, false); // Reset loading state immediately
+      set(showTokenInput, true); // Show manual token input
+    }
 
     notify({
       display: true,
@@ -50,18 +84,6 @@ async function connectToGoogle() {
       severity: Severity.INFO,
       title: t('external_services.google_calendar.authorizing'),
     });
-
-    const authResult = await googleCalendarApi.runAuth();
-
-    if (authResult.success) {
-      isConnected.value = true;
-      notify({
-        display: true,
-        message: t('external_services.google_calendar.connected'),
-        severity: Severity.INFO,
-        title: t('external_services.google_calendar.success'),
-      });
-    }
   }
   catch (error: any) {
     notify({
@@ -70,14 +92,54 @@ async function connectToGoogle() {
       severity: Severity.ERROR,
       title: t('external_services.google_calendar.error'),
     });
+    set(isAuthorizing, false);
+  }
+}
+
+async function handleOAuthCallback(accessToken: string) {
+  try {
+    const result = await googleCalendarApi.completeOAuth(accessToken);
+
+    // Debug logging to see what we get back
+    logger.info('OAuth complete result:', JSON.stringify(result, null, 2));
+
+    if (result.success) {
+      set(isConnected, true);
+
+      // Store the connected user email
+      const userEmail = result.userEmail || '';
+      set(connectedUserEmail, userEmail);
+
+      // Refresh the connection status to make sure it's up to date
+      await checkGoogleCalendarStatus();
+    }
+    else {
+      logger.error('OAuth failed:', result);
+      notify({
+        display: true,
+        message: result.message || t('external_services.google_calendar.auth_failed'),
+        severity: Severity.ERROR,
+        title: t('external_services.google_calendar.error'),
+      });
+    }
+  }
+  catch (error: any) {
+    logger.error('OAuth callback error:', error);
+    notify({
+      display: true,
+      message: error.message || t('external_services.google_calendar.auth_failed'),
+      severity: Severity.ERROR,
+      title: t('external_services.google_calendar.error'),
+    });
   }
   finally {
-    isAuthorizing.value = false;
+    logger.error('Setting isAuthorizing to false');
+    set(isAuthorizing, false);
   }
 }
 
 async function syncCalendar() {
-  isSyncing.value = true;
+  set(isSyncing, true);
   try {
     const result = await googleCalendarApi.syncCalendar();
 
@@ -112,21 +174,45 @@ async function syncCalendar() {
     });
   }
   finally {
-    isSyncing.value = false;
+    set(isSyncing, false);
   }
+}
+
+async function submitManualToken() {
+  if (!get(manualToken).trim()) {
+    notify({
+      display: true,
+      message: t('external_services.google_calendar.token_required'),
+      severity: Severity.ERROR,
+      title: t('external_services.google_calendar.error'),
+    });
+    return;
+  }
+
+  set(isAuthorizing, true);
+  try {
+    await handleOAuthCallback(get(manualToken).trim());
+    set(manualToken, '');
+    set(showTokenInput, false);
+  }
+  catch {
+    // Error handling is done in handleOAuthCallback
+  }
+  finally {
+    set(isAuthorizing, false);
+  }
+}
+
+function cancelTokenInput() {
+  set(manualToken, '');
+  set(showTokenInput, false);
 }
 
 async function disconnect() {
   try {
     await googleCalendarApi.disconnect();
-    isConnected.value = false;
-
-    notify({
-      display: true,
-      message: t('external_services.google_calendar.disconnected'),
-      severity: Severity.INFO,
-      title: t('external_services.google_calendar.success'),
-    });
+    set(isConnected, false);
+    set(connectedUserEmail, '');
   }
   catch (error: any) {
     notify({
@@ -142,6 +228,12 @@ onMounted(() => {
   setAutoDelete();
   setAutoCreate();
   checkGoogleCalendarStatus();
+
+  registerOAuthCallbackHandler(handleOAuthCallback);
+});
+
+onUnmounted(() => {
+  unregisterOAuthCallbackHandler(handleOAuthCallback);
 });
 </script>
 
@@ -206,7 +298,7 @@ onMounted(() => {
 
         <!-- Google Calendar Integration -->
         <div class="border-t pt-4 mt-4">
-          <div class="text-subtitle-2 font-medium mb-3 text-rui-text-secondary">
+          <div class="text-subtitle-1 font-medium mb-1 ">
             {{ t('external_services.google_calendar.title') }}
           </div>
 
@@ -215,7 +307,7 @@ onMounted(() => {
             class="space-y-3"
           >
             <div class="text-body-2 text-rui-text-secondary">
-              {{ t('external_services.google_calendar.connect_description') }}
+              {{ t('external_services.google_calendar.description') }}
             </div>
             <RuiButton
               color="primary"
@@ -232,6 +324,50 @@ onMounted(() => {
               </template>
               {{ t('external_services.google_calendar.connect_to_google') }}
             </RuiButton>
+
+            <!-- Manual Token Input for Docker Mode -->
+            <div
+              v-if="showTokenInput && !isPackaged"
+              class="space-y-3 border-t pt-3 mt-3"
+            >
+              <div class="text-body-2 text-rui-text-secondary">
+                {{ t('external_services.google_calendar.paste_token_instruction') }}
+              </div>
+              <RuiTextArea
+                v-model="manualToken"
+                :label="t('external_services.google_calendar.access_token')"
+                placeholder="ya29.a0AfH6..."
+                variant="outlined"
+                color="primary"
+                rows="4"
+                dense
+              />
+              <div class="flex gap-2">
+                <RuiButton
+                  color="primary"
+                  size="sm"
+                  :disabled="isAuthorizing || !manualToken.trim()"
+                  :loading="isAuthorizing"
+                  @click="submitManualToken()"
+                >
+                  <template #prepend>
+                    <RuiIcon
+                      name="lu-check"
+                      size="16"
+                    />
+                  </template>
+                  {{ t('external_services.google_calendar.submit_token') }}
+                </RuiButton>
+                <RuiButton
+                  variant="outlined"
+                  size="sm"
+                  :disabled="isAuthorizing"
+                  @click="cancelTokenInput()"
+                >
+                  {{ t('common.actions.cancel') }}
+                </RuiButton>
+              </div>
+            </div>
           </div>
 
           <div
@@ -243,7 +379,9 @@ onMounted(() => {
                 name="lu-circle-check"
                 size="16"
               />
-              <span class="text-body-2">{{ t('external_services.google_calendar.connected_status') }}</span>
+              <span class="text-body-2">
+                {{ connectedUserEmail ? `Connected as ${connectedUserEmail}` : t('external_services.google_calendar.connected_status') }}
+              </span>
             </div>
 
             <div class="flex gap-2">
@@ -257,7 +395,7 @@ onMounted(() => {
               >
                 <template #prepend>
                   <RuiIcon
-                    name="refresh-line"
+                    name="lu-refresh-ccw"
                     size="16"
                   />
                 </template>

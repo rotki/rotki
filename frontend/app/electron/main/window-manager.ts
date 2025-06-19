@@ -6,6 +6,7 @@ import { createProtocol } from '@electron/main/create-protocol';
 import { NavigationHandler } from '@electron/main/navigation-handler';
 import { WindowConfig } from '@electron/main/window-config';
 import { assert } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { BrowserWindow, ipcMain } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 
@@ -198,5 +199,98 @@ export class WindowManager {
         clearInterval(this.notificationInterval);
       }
     }, 2000) as unknown as number;
+  }
+
+  sendOAuthCallback(accessTokenOrError: string | Error): void {
+    try {
+      if (this.window?.webContents) {
+        this.window.webContents.send('oauth-callback', accessTokenOrError);
+      }
+    }
+    catch (error) {
+      this.logger.error('Failed to send OAuth callback:', error);
+    }
+  }
+
+  async openOAuthWindow(url: string): Promise<void> {
+    try {
+      const oauthWindow = new BrowserWindow({
+        width: 800,
+        height: 800,
+        show: false,
+        autoHideMenuBar: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+        },
+      });
+
+      // Function to inject URL display
+      const injectUrlDisplay = async () => {
+        try {
+          await oauthWindow.webContents.executeJavaScript(`
+            const urlDisplay = document.createElement('input');
+            urlDisplay.value = window.location.href;
+            urlDisplay.readOnly = true;
+            urlDisplay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:30px;z-index:10000;border:none;background:#f5f5f5;padding:5px;font-family:monospace;font-size:12px;box-sizing:border-box;';
+            document.body.style.paddingTop = '30px';
+            document.body.insertBefore(urlDisplay, document.body.firstChild);
+          `);
+        }
+        catch (error) {
+          this.logger.debug('Failed to inject URL display:', error);
+        }
+      };
+
+      await oauthWindow.loadURL(url);
+      await injectUrlDisplay();
+
+      // Re-inject URL display after each navigation
+      oauthWindow.webContents.on('did-finish-load', () => {
+        startPromise(injectUrlDisplay());
+      });
+
+      oauthWindow.show();
+
+      // Listen for navigation to detect OAuth callback
+      oauthWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+        if (navigationUrl.startsWith('rotki://oauth/')) {
+          event.preventDefault();
+
+          // Parse the OAuth callback URL
+          try {
+            const callbackUrl = new URL(navigationUrl);
+
+            if (callbackUrl.pathname === '/success') {
+              const accessToken = callbackUrl.searchParams.get('access_token');
+              if (accessToken) {
+                this.sendOAuthCallback(accessToken);
+              }
+            }
+            else if (callbackUrl.pathname === '/failure') {
+              const errorMessage = callbackUrl.searchParams.get('error');
+              if (errorMessage) {
+                this.sendOAuthCallback(new Error(errorMessage));
+              }
+            }
+          }
+          catch (parseError) {
+            this.logger.error('Failed to parse OAuth callback URL:', parseError);
+            this.sendOAuthCallback(new Error('Failed to parse OAuth callback'));
+          }
+
+          oauthWindow.close();
+        }
+      });
+
+      // Handle window close
+      oauthWindow.on('closed', () => {
+        this.logger.debug('OAuth window closed');
+      });
+    }
+    catch (error) {
+      this.logger.error('Failed to open OAuth window:', error);
+    }
   }
 }

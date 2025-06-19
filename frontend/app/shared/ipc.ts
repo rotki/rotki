@@ -68,6 +68,7 @@ export interface Listeners {
   onAbout: () => void;
   onRestart: () => void;
   onProcessDetected: (pids: string[]) => void;
+  onOAuthCallback?: (accessToken: string | Error) => void;
 }
 
 export interface Interop {

@@ -25,6 +25,8 @@ interface Callbacks {
   terminateSubprocesses: (update?: boolean) => Promise<void>;
   getRunningCorePIDs: () => Promise<number[]>;
   updateDownloadProgress: (progress: number) => void;
+  getProtocolRegistrationFailed: () => boolean;
+  openOAuthInWindow: (url: string) => Promise<void>;
 }
 
 export class IpcManager {
@@ -134,10 +136,21 @@ export class IpcManager {
   };
 
   private readonly openUrl = async (_event: Electron.IpcMainInvokeEvent, url: string): Promise<void> => {
-    if (!url || typeof url !== 'string' || !url.startsWith('https://')) {
+    if (!url || typeof url !== 'string' || (!this.config.isDev && !url.startsWith('https://'))) {
       console.error(`Error: Requested to open untrusted URL: ${url} `);
       return;
     }
+
+    // Check if this is a Google OAuth URL and protocol registration failed
+    const isGoogleOAuthUrl = url.includes('rotki.com/oauth/google') || (url.includes('localhost') && url.includes('/oauth/google'));
+    const protocolRegistrationFailed = this.requireCallbacks.getProtocolRegistrationFailed();
+
+    if (isGoogleOAuthUrl && protocolRegistrationFailed) {
+      this.logger.info('Protocol registration failed, opening Google OAuth URL in second window instead of external browser');
+      await this.requireCallbacks.openOAuthInWindow(url);
+      return;
+    }
+
     await shell.openExternal(url);
   };
 

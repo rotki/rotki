@@ -62,10 +62,20 @@ class GoogleCalendarAPI:
 
             try:
                 creds_data = json.loads(result[0])
-                self._credentials = Credentials.from_authorized_user_info(  # type: ignore
-                    creds_data,
-                    GOOGLE_CALENDAR_SCOPES,
-                )
+
+                # Check if this is from external OAuth (our custom format)
+                if creds_data.get('external_oauth'):
+                    log.info('Loading external OAuth credentials')
+                    self._credentials = Credentials(  # type: ignore[no-untyped-call]
+                        token=creds_data['token'],
+                        scopes=creds_data['scopes'],
+                    )
+                else:
+                    # Use the original method for standard OAuth credentials
+                    self._credentials = Credentials.from_authorized_user_info(  # type: ignore
+                        creds_data,
+                        GOOGLE_CALENDAR_SCOPES,
+                    )
 
                 # Refresh if expired
                 if (
@@ -244,6 +254,43 @@ class GoogleCalendarAPI:
 
         return True
 
+    def get_connected_user_email(self) -> str | None:
+        """Get the email of the connected Google account."""
+        try:
+            # Try to get email from stored credentials first
+            with self.db.conn.read_ctx() as cursor:
+                result = cursor.execute(
+                    'SELECT value FROM key_value_cache WHERE name=?',
+                    ('google_calendar_credentials',),
+                ).fetchone()
+
+                if result:
+                    creds_data = json.loads(result[0])
+                    if 'user_email' in creds_data:
+                        return creds_data['user_email']
+
+            # If no email in stored credentials, try to get it from Google API
+            credentials = self._get_credentials()
+            if credentials and credentials.valid:
+                import requests
+                headers = {'Authorization': f'Bearer {credentials.token}'}
+                response = requests.get(
+                    'https://www.googleapis.com/oauth2/v2/userinfo',
+                    headers=headers,
+                    timeout=30,
+                )
+
+                if response.status_code == 200:
+                    user_info = response.json()
+                    return user_info.get('email')
+                else:
+                    return None
+            else:
+                return None
+        except Exception as e:
+            log.error(f'Failed to get connected user email: {e}')
+            return None
+
     def disconnect(self) -> dict[str, Any]:
         """Disconnect Google Calendar by removing stored credentials."""
         with self.db.conn.write_ctx() as write_cursor:
@@ -361,18 +408,54 @@ class GoogleCalendarAPI:
         for entry in events:
             events_processed += 1
 
-            # Convert timestamp to datetime
-            event_date = datetime.datetime.fromtimestamp(
-                entry.timestamp,
-                tz=datetime.UTC,
+            log.debug(
+                f'Processing event: {entry.name}, timestamp: {entry.timestamp}, '
+                f'type: {type(entry.timestamp)}',
             )
+
+            # Convert timestamp to datetime
+            try:
+                # Check if timestamp is in milliseconds (common issue)
+                if isinstance(entry.timestamp, int | float) and entry.timestamp > 1e10:
+                    # Timestamp is likely in milliseconds, convert to seconds
+                    timestamp_seconds = entry.timestamp / 1000
+                    log.debug(
+                        f'Converting milliseconds timestamp {entry.timestamp} to seconds '
+                        f'{timestamp_seconds}',
+                    )
+                else:
+                    timestamp_seconds = entry.timestamp
+
+                event_date = datetime.datetime.fromtimestamp(
+                    timestamp_seconds,
+                    tz=datetime.UTC,
+                )
+                log.debug(f'Event date: {event_date}')
+            except (ValueError, OSError) as e:
+                log.error(
+                    f'Failed to convert timestamp {entry.timestamp} for event {entry.name}: {e}',
+                )
+                errors.append(f'Failed to convert timestamp for event "{entry.name}": {e}')
+                continue
 
             # Create event data
             description = entry.description or ''
+
+            # Add additional details to description
+            details = []
             if entry.counterparty:
-                description += f'\n\nCounterparty: {entry.counterparty}'
+                details.append(f'Counterparty: {entry.counterparty}')
             if entry.blockchain:
-                description += f'\nBlockchain: {entry.blockchain.value}'
+                details.append(f'Blockchain: {entry.blockchain.value}')
+            if hasattr(entry, 'address') and entry.address:
+                details.append(f'Address: {entry.address}')
+
+            # Combine description with details
+            if details:
+                if description:
+                    description += '\n\n' + '\n'.join(details)
+                else:
+                    description = '\n'.join(details)
             event_data = {
                 'summary': entry.name,
                 'description': description.strip(),
@@ -436,3 +519,105 @@ class GoogleCalendarAPI:
         )
 
         return result
+
+    def complete_oauth_with_token(self, access_token: str) -> dict[str, Any]:
+        """Complete OAuth flow using an access token from external OAuth flow.
+
+        Args:
+            access_token: The access token received from the external OAuth flow
+
+        Returns:
+            dict with success status and message
+        """
+        try:
+            # Use the access token to get user info and validate the token
+            import requests
+
+            # Validate the access token by making a request to Google's userinfo endpoint
+            headers = {'Authorization': f'Bearer {access_token}'}
+            response = requests.get(
+                'https://www.googleapis.com/oauth2/v2/userinfo',
+                headers=headers,
+                timeout=30,
+            )
+
+            if response.status_code != 200:
+                msg = f'Invalid access token: {response.status_code} {response.text}'
+                raise RemoteError(msg)
+
+            user_info = response.json()
+            log.info(f'Access token validated for user: {user_info.get("email", "unknown")}')
+
+            # Check what scopes the token actually has
+            token_info_response = requests.get(
+                f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}',
+                timeout=30,
+            )
+            if token_info_response.status_code == 200:
+                token_info = token_info_response.json()
+                actual_scopes = token_info.get('scope', '').split(' ')
+                log.info(f'Token has scopes: {actual_scopes}')
+
+                required_scope = 'https://www.googleapis.com/auth/calendar'
+                if required_scope not in actual_scopes:
+                    msg = (
+                        f'Access token is missing required scope: {required_scope}. '
+                        f'Token has scopes: {actual_scopes}'
+                    )
+                    raise RemoteError(msg)
+            else:
+                log.warning(f'Could not verify token scopes: {token_info_response.status_code}')
+
+            # Create a simple credentials object for immediate use
+            # Note: This won't have refresh capabilities, but will work for current session
+            credentials = Credentials(  # type: ignore[no-untyped-call]
+                token=access_token,
+                scopes=GOOGLE_CALENDAR_SCOPES,
+            )
+
+            # Test the credentials with a Calendar API call
+            service = build('calendar', 'v3', credentials=credentials)
+
+            # Add more detailed logging for debugging
+            log.debug(f'Testing calendar API access with token: {access_token[:20]}...')
+            log.debug(f'Credentials scopes: {credentials.scopes}')
+            log.debug(f'Credentials valid: {credentials.valid}')
+
+            calendar_list = service.calendarList().list().execute()  # pylint: disable=no-member
+            calendar_count = len(calendar_list.get('items', []))
+            log.debug(f'Calendar API test successful, found {calendar_count} calendars')
+
+            # Store the access token and user info for this session
+            # Note: This is a simplified storage for external OAuth tokens
+            credentials_data = {
+                'token': access_token,
+                'scopes': GOOGLE_CALENDAR_SCOPES,
+                'user_email': user_info.get('email'),
+                'external_oauth': True,  # Flag to indicate this came from external OAuth
+            }
+
+            # Store credentials in database using the same method as existing code
+            with self.db.conn.write_ctx() as write_cursor:
+                write_cursor.execute(
+                    'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                    ('google_calendar_credentials', json.dumps(credentials_data)),
+                )
+
+            self._credentials = credentials
+            self._service = service
+
+            log.info('Google Calendar OAuth completed successfully with external access token')
+
+            return {
+                'success': True,
+                'message': 'Successfully authenticated with Google Calendar',
+                'user_email': user_info.get('email', 'Unknown'),
+            }
+
+        except Exception as e:
+            error_msg = f'Failed to complete OAuth with access token: {e}'
+            log.error(error_msg)
+            return {
+                'success': False,
+                'message': error_msg,
+            }

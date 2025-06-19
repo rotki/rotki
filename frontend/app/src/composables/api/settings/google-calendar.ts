@@ -4,6 +4,7 @@ import { handleResponse, validWithSessionStatus } from '@/services/utils';
 
 interface GoogleCalendarStatus {
   authenticated: boolean;
+  userEmail?: string;
 }
 
 interface GoogleCalendarFlowStatus {
@@ -14,6 +15,7 @@ interface GoogleCalendarFlowStatus {
 interface GoogleCalendarAuthResult {
   success: boolean;
   message: string;
+  userEmail?: string;
 }
 
 interface GoogleCalendarSyncResult {
@@ -28,6 +30,7 @@ export function useGoogleCalendarApi(): {
   getStatus: () => Promise<GoogleCalendarStatus>;
   startAuth: () => Promise<GoogleCalendarFlowStatus>;
   runAuth: () => Promise<GoogleCalendarAuthResult>;
+  completeOAuth: (accessToken: string) => Promise<GoogleCalendarAuthResult>;
   syncCalendar: () => Promise<GoogleCalendarSyncResult>;
   disconnect: () => Promise<{ success: boolean }>;
 } {
@@ -65,6 +68,15 @@ export function useGoogleCalendarApi(): {
     return handleResponse(response);
   };
 
+  const completeOAuth = async (accessToken: string): Promise<GoogleCalendarAuthResult> => {
+    const response = await api.instance.post<ActionResult<GoogleCalendarAuthResult>>(
+      '/calendar/google/complete-oauth',
+      { access_token: accessToken },
+      { validateStatus: validWithSessionStatus },
+    );
+    return handleResponse(response);
+  };
+
   const disconnect = async (): Promise<{ success: boolean }> => {
     const response = await api.instance.delete<ActionResult<{ success: boolean }>>(
       '/calendar/google',
@@ -74,6 +86,7 @@ export function useGoogleCalendarApi(): {
   };
 
   return {
+    completeOAuth,
     disconnect,
     getStatus,
     runAuth,
