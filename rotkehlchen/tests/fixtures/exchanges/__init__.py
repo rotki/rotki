@@ -10,6 +10,7 @@ from .bitpanda import *  # noqa: F403
 from .bitstamp import *  # noqa: F403
 from .bybit import *  # noqa: F403
 from .coinbase import *  # noqa: F403
+from .cryptocom import *  # noqa: F403
 from .gemini import *  # noqa: F403
 from .htx import *  # noqa: F403
 from .iconomi import *  # noqa: F403

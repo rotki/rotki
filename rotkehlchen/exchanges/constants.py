@@ -12,6 +12,7 @@ SUPPORTED_EXCHANGES = EXCHANGES_WITH_PASSPHRASE + EXCHANGES_WITHOUT_API_SECRET +
     Location.BITMEX,
     Location.BITSTAMP,
     Location.COINBASE,
+    Location.CRYPTOCOM,
     Location.GEMINI,
     Location.ICONOMI,
     Location.KRAKEN,
