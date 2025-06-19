@@ -100,20 +100,28 @@ describe('store::balances/aggregated', () => {
         '0x123': {
           assets: {
             DAI: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
             BTC: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
             ETH: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
             SAI: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
           },
           liabilities: {},
@@ -194,8 +202,10 @@ describe('store::balances/aggregated', () => {
     const totals: BlockchainTotals = {
       assets: {
         [Blockchain.BTC.toUpperCase()]: {
-          usdValue: bigNumberify(20),
-          amount: bigNumberify(20),
+          address: {
+            usdValue: bigNumberify(20),
+            amount: bigNumberify(20),
+          },
         },
       },
       liabilities: {},
@@ -378,20 +388,28 @@ describe('store::balances/aggregated', () => {
         '0x123': {
           assets: {
             DAI: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
             BTC: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
             ETH: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
             SAI: {
-              amount: bigNumberify(100),
-              usdValue: bigNumberify(100),
+              address: {
+                amount: bigNumberify(100),
+                usdValue: bigNumberify(100),
+              },
             },
           },
           liabilities: {},

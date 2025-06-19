@@ -38,9 +38,9 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
         const addressBalance = chainBalances[addressVal];
         if (addressBalance?.assets) {
           Object.entries(addressBalance.assets).forEach(([asset, balance]) => {
-            if (balance.amount) {
+            if (balance.address.amount) {
               result.push({
-                amount: balance.amount,
+                amount: balance.address.amount,
                 asset,
                 chain,
               });

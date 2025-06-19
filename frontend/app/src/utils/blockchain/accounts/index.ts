@@ -10,6 +10,7 @@ import type {
   ValidatorData,
 } from '@/types/blockchain/accounts';
 import type {
+  AssetProtocolBalances,
   BlockchainAssetBalances,
   BlockchainBalances,
   BlockchainTotals,
@@ -254,7 +255,7 @@ export function convertBtcBalances(
       ...currentValue,
     }), {}),
   }).map(([address, value]) => [address, {
-    assets: { [chain.toUpperCase()]: value },
+    assets: { [chain.toUpperCase()]: { address: value } },
     liabilities: {},
   } satisfies EthBalance]));
   return {
@@ -289,11 +290,18 @@ export function* iterateAssets(
       if (!account[key])
         continue;
 
-      for (const [identifier, balance] of Object.entries(account[key])) {
+      for (const [identifier, protocolBalances] of Object.entries(account[key])) {
         if (skipIdentifier(identifier))
           continue;
 
         const assetIdentifier = assetAssociationMap[identifier] ?? identifier;
+        const balance = Object.values(protocolBalances).reduce((previousValue, currentValue) => ({
+          amount: previousValue.amount.plus(currentValue.amount),
+          usdValue: previousValue.usdValue.plus(currentValue.usdValue),
+        }), {
+          amount: Zero,
+          usdValue: Zero,
+        });
         yield [assetIdentifier, balance] as const;
       }
     }
@@ -316,7 +324,7 @@ export function aggregateTotals(
   return aggregated;
 }
 
-export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): boolean {
+export function hasTokens(nativeAsset: string, assetBalances?: AssetProtocolBalances): boolean {
   if (!assetBalances || isEmpty(assetBalances))
     return false;
 
@@ -330,7 +338,9 @@ export function getAccountBalance(account: BlockchainAccount, chainBalances: Blo
   const nativeAsset = account.nativeAsset;
   const balance = assets
     ? {
-        amount: assets[nativeAsset]?.amount ?? Zero,
+        amount: assets[nativeAsset] && !isEmpty(assets[nativeAsset])
+          ? Object.values(assets[nativeAsset]).reduce((previousValue, currentValue) => previousValue.plus(currentValue.amount), Zero)
+          : Zero,
         usdValue: assetSum(accountBalances.assets),
       }
     : {

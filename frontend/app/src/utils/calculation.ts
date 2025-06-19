@@ -1,7 +1,19 @@
+import type { ProtocolBalances } from '@/types/blockchain/balances';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
 
-export function assetSum(balances: Record<string, Balance>): BigNumber {
+export function assetSum(balances: Record<string, ProtocolBalances>): BigNumber {
+  const { useIsAssetIgnored } = useIgnoredAssetsStore();
+
+  return Object.entries(balances).reduce((sum, [asset, protocols]) => {
+    if (get(useIsAssetIgnored(asset)))
+      return sum;
+
+    return sum.plus(Object.entries(protocols).reduce((previousValue, [_protocol, balance]) => previousValue.plus(balance.usdValue), Zero));
+  }, Zero);
+}
+
+export function exchangeAssetSum(balances: Record<string, Balance>): BigNumber {
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
   return Object.entries(balances).reduce((sum, [asset, balance]) => {
@@ -17,6 +29,11 @@ export function balanceSum(sum: Balance, { amount, usdValue }: Balance): Balance
     amount: sum.amount.plus(amount),
     usdValue: sum.usdValue.plus(usdValue),
   };
+}
+
+export function perProtocolBalanceSum(sum: Balance, balances: ProtocolBalances): Balance {
+  return Object.values(balances)
+    .reduce((previousValue, currentValue) => balanceSum(previousValue, currentValue), sum);
 }
 
 export function calculatePercentage(value: BigNumber, divider: BigNumber): string {

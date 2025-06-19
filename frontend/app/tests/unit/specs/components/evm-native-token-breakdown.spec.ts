@@ -137,8 +137,10 @@ const testEthereumBalances: BlockchainBalances = {
       '0xaddress1': {
         assets: {
           ETH: {
-            amount: bigNumberify(400),
-            usdValue: bigNumberify(400),
+            address: {
+              amount: bigNumberify(400),
+              usdValue: bigNumberify(400),
+            },
           },
         },
         liabilities: {},
@@ -146,8 +148,11 @@ const testEthereumBalances: BlockchainBalances = {
       '0xaddress2': {
         assets: {
           ETH: {
-            amount: bigNumberify(800),
-            usdValue: bigNumberify(800),
+            address: {
+              amount: bigNumberify(800),
+              usdValue: bigNumberify(800),
+            },
+
           },
         },
         liabilities: {},
@@ -175,8 +180,10 @@ const testOptimismBalances: BlockchainBalances = {
       '0xaddress1': {
         assets: {
           ETH: {
-            amount: bigNumberify(123),
-            usdValue: bigNumberify(123),
+            address: {
+              amount: bigNumberify(123),
+              usdValue: bigNumberify(123),
+            },
           },
         },
         liabilities: {},

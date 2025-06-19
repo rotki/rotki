@@ -6,6 +6,7 @@ import type {
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
+import type { ProtocolBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
@@ -41,7 +42,7 @@ interface UseBlockchainAccountDataReturn {
 }
 
 function toAssetBalances(
-  balances: Record<string, Balance>,
+  balances: Record<string, ProtocolBalances>,
   isIgnored: (asset: string) => boolean,
   assetAssociationMap: Record<string, string>,
 ): AssetBalance[] {
@@ -51,11 +52,16 @@ function toAssetBalances(
     if (isIgnored(identifier))
       continue;
 
-    if (!intermediate[identifier]) {
-      intermediate[identifier] = balance;
-    }
-    else {
-      intermediate[identifier] = balanceSum(intermediate[identifier], balance);
+    for (const protocol in balance) {
+      if (balance[protocol].amount.isZero())
+        continue;
+
+      if (!intermediate[identifier]) {
+        intermediate[identifier] = balance[protocol];
+      }
+      else {
+        intermediate[identifier] = balanceSum(intermediate[identifier], balance[protocol]);
+      }
     }
   }
   return Object.entries(intermediate).map(([asset, balance]) => ({ asset, ...balance } satisfies AssetBalance));

@@ -28,8 +28,10 @@ describe('useAccountDelete', () => {
       '0x123': {
         assets: {
           ETH: {
-            amount: bigNumberify(1),
-            usdValue: bigNumberify(2501),
+            address: {
+              amount: bigNumberify(1),
+              usdValue: bigNumberify(2501),
+            },
           },
         },
         liabilities: {},
@@ -45,8 +47,10 @@ describe('useAccountDelete', () => {
       totals: {
         assets: {
           ETH: {
-            amount: bigNumberify(1),
-            usdValue: bigNumberify(2501),
+            address: {
+              amount: bigNumberify(1),
+              usdValue: bigNumberify(2501),
+            },
           },
         },
         liabilities: {},

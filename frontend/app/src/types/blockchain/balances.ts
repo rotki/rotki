@@ -1,13 +1,21 @@
 import { Balance } from '@rotki/common';
 import { z } from 'zod';
 
-export const Balances = z.record(Balance);
+const ProtocolBalances = z.record(Balance);
 
-export type Balances = z.infer<typeof Balances>;
+export type ProtocolBalances = z.infer<typeof ProtocolBalances>;
+
+const AssetBalancesSchema = z.record(Balance);
+
+export type AssetBalances = z.infer<typeof AssetBalancesSchema>;
+
+export const AssetProtocolBalancesSchema = z.record(ProtocolBalances);
+
+export type AssetProtocolBalances = z.infer<typeof AssetProtocolBalancesSchema>;
 
 const BlockchainTotals = z.object({
-  assets: Balances,
-  liabilities: Balances,
+  assets: AssetProtocolBalancesSchema,
+  liabilities: AssetProtocolBalancesSchema,
 });
 
 export type BlockchainTotals = z.infer<typeof BlockchainTotals>;
@@ -19,15 +27,15 @@ const XpubBalance = z.object({
 });
 
 const BtcBalances = z.object({
-  standalone: Balances.optional(),
+  standalone: AssetBalancesSchema.optional(),
   xpubs: z.array(XpubBalance).optional(),
 });
 
 export type BtcBalances = z.infer<typeof BtcBalances>;
 
 const EthBalance = z.object({
-  assets: Balances,
-  liabilities: Balances,
+  assets: AssetProtocolBalancesSchema,
+  liabilities: AssetProtocolBalancesSchema,
 });
 
 export type EthBalance = z.infer<typeof EthBalance>;

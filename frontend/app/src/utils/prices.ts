@@ -1,9 +1,30 @@
-import type { Balances, BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { AssetBalances } from '@/types/balances';
+import type {
+  AssetProtocolBalances,
+  BlockchainAssetBalances,
+} from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
 import { cloneDeep } from 'es-toolkit';
 
-export function updateBalancesPrices(balances: Balances, prices: MaybeRef<AssetPrices>): Balances {
+export function updateBalancesPrices(balances: AssetProtocolBalances, prices: MaybeRef<AssetPrices>): AssetProtocolBalances {
+  for (const asset in balances) {
+    const assetPrice = get(prices)[asset];
+    if (!assetPrice)
+      continue;
+
+    const protocols = balances[asset];
+    for (const protocol in protocols) {
+      balances[asset][protocol] = {
+        amount: protocols[protocol].amount,
+        usdValue: protocols[protocol].amount.times(assetPrice.usdPrice ?? assetPrice.value),
+      };
+    }
+  }
+  return balances;
+}
+
+export function updateExchangeBalancesPrices(balances: AssetBalances, prices: MaybeRef<AssetPrices>): AssetBalances {
   for (const asset in balances) {
     const assetPrice = get(prices)[asset];
     if (!assetPrice)
