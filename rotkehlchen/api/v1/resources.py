@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from flask import Blueprint, Request, Response, request as flask_request
-from marshmallow import Schema, ValidationError
+from marshmallow import Schema, ValidationError, fields
 from marshmallow.utils import missing
 from webargs.flaskparser import parser, use_kwargs
 from webargs.multidictproxy import MultiDictProxy
@@ -3314,6 +3314,20 @@ class GoogleCalendarResource(BaseMethodView):
     def delete(self) -> Response:
         """Disconnect Google Calendar integration."""
         return self.rest_api.disconnect_google_calendar()
+
+
+class GoogleCalendarOAuthResource(BaseMethodView):
+    """Endpoint for completing Google Calendar OAuth from external flow."""
+
+    post_schema = Schema.from_dict({
+        'access_token': fields.String(required=True),
+    })
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, access_token: str) -> Response:
+        """Complete OAuth2 flow with access token from external flow."""
+        return self.rest_api.complete_google_calendar_oauth(access_token)
 
 
 class StatsWrapResource(BaseMethodView):

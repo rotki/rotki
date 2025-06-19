@@ -20,6 +20,7 @@ export class Application {
   private readonly processHandler: SubprocessHandler;
   private readonly menu: MenuManager;
   private readonly settings: SettingsManager;
+  private protocolRegistrationFailed: boolean = false;
   private readonly appConfig: AppConfig = {
     isDev: checkIfDevelopment(),
     isMac: process.platform === 'darwin',
@@ -52,22 +53,87 @@ export class Application {
     }
 
     this.setupAppEvents();
-    this.registerAppProtocol();
+    this.registerAppProtocols();
     await app.whenReady();
     await this.initialize();
   }
 
-  private registerAppProtocol() {
+  private registerAppProtocols() {
     // Standard scheme must be registered before the app is ready
     protocol.registerSchemesAsPrivileged([
       {
         scheme: 'app',
         privileges: { standard: true, secure: true, supportFetchAPI: true },
       },
+      {
+        scheme: 'rotki',
+        privileges: { standard: true, secure: true },
+      },
     ]);
   }
 
+  private handleProtocolUrl(commandLine: string[]): void {
+    const rotkiUrl = commandLine.find(arg => arg.startsWith('rotki://'));
+
+    if (rotkiUrl) {
+      try {
+        const url = new URL(rotkiUrl);
+
+        if (url.host === 'oauth') {
+          if (url.pathname === '/success') {
+            // Handle success case
+            const accessToken = url.searchParams.get('access_token');
+            if (accessToken) {
+              this.window.sendOAuthCallback(accessToken);
+            }
+          }
+          else if (url.pathname === '/failure') {
+            // Handle failure case
+            const errorMessage = url.searchParams.get('error');
+            if (errorMessage) {
+              this.window.sendOAuthCallback(new Error(errorMessage));
+            }
+          }
+        }
+      }
+      catch (error) {
+        console.error('Error parsing protocol URL:', error);
+      }
+    }
+  }
+
+  private registerAsDefaultProtocolHandler() {
+    // Register the app as the default handler for rotki:// protocol
+    if (process.defaultApp) {
+      // In development
+      if (process.argv.length >= 2) {
+        this.logger.info(`Registering ${process.execPath} ${process.argv[1]} as the default handler for rotki:// protocol`);
+        const registrationSuccess = app.setAsDefaultProtocolClient('rotki', process.execPath, [process.argv[1]]);
+        if (!registrationSuccess) {
+          this.protocolRegistrationFailed = true;
+          this.logger.warn(`Failed to register ${process.execPath} ${process.argv[1]} as the default handler for rotki:// protocol`);
+        }
+      }
+    }
+    else {
+      // In production
+      this.logger.info(`Registering the app as the default handler for rotki:// protocol`);
+      const registrationSuccess = app.setAsDefaultProtocolClient('rotki');
+      if (!registrationSuccess) {
+        this.protocolRegistrationFailed = true;
+        this.logger.warn(`Failed to register the app as the default handler for rotki:// protocol`);
+      }
+    }
+  }
+
   private async initialize() {
+    this.registerAsDefaultProtocolHandler();
+
+    // Handle protocol URL if app was opened with one
+    if (process.argv.length >= 2) {
+      this.handleProtocolUrl(process.argv);
+    }
+
     this.menu.initialize({
       onDisplayTrayChanged: (displayTray) => {
         if (displayTray)
@@ -98,6 +164,8 @@ export class Application {
       },
       updateDownloadProgress: progress => this.window.updateProgress(progress),
       getRunningCorePIDs: async () => this.processHandler.checkForBackendProcess(),
+      getProtocolRegistrationFailed: () => this.protocolRegistrationFailed,
+      openOAuthInWindow: async (url: string) => this.window.openOAuthWindow(url),
     });
     await this.window.create();
     this.window.setListener({
@@ -111,7 +179,18 @@ export class Application {
   }
 
   private setupAppEvents() {
-    app.on('second-instance', this.window.focus);
+    app.on('second-instance', (_event, commandLine, _workingDirectory) => {
+      // Handle protocol URL when app is already running
+      this.handleProtocolUrl(commandLine);
+      this.window.focus();
+    });
+
+    app.on('open-url', (event, url) => {
+      // Handle protocol URL on macOS
+      event.preventDefault();
+      this.handleProtocolUrl([url]);
+    });
+
     app.on('window-all-closed', (): void => {
       if (!this.appConfig.isMac)
         app.quit();
@@ -126,6 +205,7 @@ export class Application {
 
   private cleanup() {
     app.removeAllListeners('second-instance');
+    app.removeAllListeners('open-url');
     app.removeAllListeners('window-all-closed');
     app.removeAllListeners('activate');
     app.removeAllListeners('will-quit');

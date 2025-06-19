@@ -40,6 +40,12 @@ contextBridge.exposeInMainWorld('interop', {
     ipcRenderer.on(IpcCommands.BACKEND_PROCESS_DETECTED, (_event, pids) => {
       listeners.onProcessDetected(pids);
     });
+
+    if (listeners.onOAuthCallback) {
+      ipcRenderer.on('oauth-callback', (_event, accessTokenOrError) => {
+        listeners.onOAuthCallback!(accessTokenOrError);
+      });
+    }
   },
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
   apiUrls: (): ApiUrls => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),

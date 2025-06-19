@@ -20,6 +20,23 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
 
+  const oauthCallbackHandlers = ref<Array<(accessToken: string) => void>>([]);
+
+  function registerOAuthCallbackHandler(handler: (accessToken: string) => void): void {
+    const handlers = get(oauthCallbackHandlers);
+    set(oauthCallbackHandlers, [...handlers, handler]);
+  }
+
+  function unregisterOAuthCallbackHandler(handler: (accessToken: string) => void): void {
+    const handlers = get(oauthCallbackHandlers);
+    const index = handlers.indexOf(handler);
+    if (index !== -1) {
+      const newHandlers = [...handlers];
+      newHandlers.splice(index, 1);
+      set(oauthCallbackHandlers, newHandlers);
+    }
+  }
+
   onBeforeMount(() => {
     setupListeners({
       onAbout: () => set(showAbout, true),
@@ -34,6 +51,17 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
         }
         else if (code === BackendCode.WIN_VERSION) {
           set(isWinVersionUnsupported, true);
+        }
+      },
+      onOAuthCallback: (accessTokenOrError: string | Error) => {
+        const handlers = get(oauthCallbackHandlers);
+        if (accessTokenOrError instanceof Error) {
+          logger.error('OAuth authentication failed:', accessTokenOrError);
+        }
+        else {
+          handlers.forEach((handler) => {
+            handler(accessTokenOrError);
+          });
         }
       },
       onProcessDetected: (pids) => {
@@ -57,7 +85,9 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   return {
     isMacOsVersionUnsupported,
     isWinVersionUnsupported,
+    registerOAuthCallbackHandler,
     startupErrorMessage,
+    unregisterOAuthCallbackHandler,
   };
 });
 
