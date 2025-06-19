@@ -12415,12 +12415,18 @@ Get all valid locations
                 "is_exchange_with_key": true,
                 "is_exchange_without_api_secret": true
               }
+            "cryptocom": {
+              "image": "crypto_com.svg",
+              "exchange_detail": {
+                "is_exchange_with_key": true,
+                "experimental": true
+              }
             },
             "external": {"icon": "mdi-book"}
         }
       }
 
-  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object.
+  :resjson list[string] locations: A mapping of locations to their details. Can contain `image` or `icon` depending on whether a known image should be used or an icon from the icon set. Additionally, it can contain a `display_name` if a special name needs to be used. If the location is an exchange, it may also include an `is_exchange` key, or an `exchange_details` object if the location has more details for the exchange data. The `exchange_details` object can contain `is_exchange_with_key` for exchanges requiring an API key, `is_exchange_with_passphrase` for exchanges needing an API key and passphrase, and `is_exchange_without_api_secret` for exchanges that do not require an API secret key, all within the exchange_detail object. If the exchange implementation is experimenta then the experimental key will exist and be set to true.
 
   :statuscode 200: Information was correctly returned
   :statuscode 500: Internal rotki error

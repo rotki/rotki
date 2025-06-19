@@ -2,6 +2,7 @@ from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
     EXCHANGES_WITH_PASSPHRASE,
     EXCHANGES_WITHOUT_API_SECRET,
+    EXPERIMENTAL_EXCHANGES,
     SUPPORTED_EXCHANGES,
 )
 from rotkehlchen.types import Location
@@ -96,6 +97,8 @@ for key, value in LOCATION_DETAILS.items():
                 value['exchange_details']['is_exchange_with_passphrase'] = True
             if key in EXCHANGES_WITHOUT_API_SECRET:
                 value['exchange_details']['is_exchange_without_api_secret'] = True
+            if key in EXPERIMENTAL_EXCHANGES:
+                value['exchange_details']['experimental'] = True
             continue
         value['is_exchange'] = True
 
