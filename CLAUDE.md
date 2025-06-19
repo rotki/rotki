@@ -99,6 +99,15 @@ cargo run -- --database ../data/global.db --port 4343
 4. **Event System**: History events are the core abstraction for all blockchain/exchange activities
 5. **Plugin Architecture**: Modular design for adding new blockchains and exchanges
 
+### Exchange Addition
+
+- To add an exchange you will need to add the new exchange under the `exchanges/` directory. A nice example is bitfinxex.py
+- For each exchange you need to implement the basic method of the `ExchangeInterface` superclass:
+  - Authentication for the api key/secret whatever the exchange API uses.
+  - Fetch balances from the exchange
+  - Fetch deposits/withdrawals (also called asset movements) and trades.
+- You will need to create some tests with mocked data
+
 ## Testing Strategy
 
 ### Backend Testing

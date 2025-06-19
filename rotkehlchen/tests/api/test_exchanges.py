@@ -886,11 +886,11 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX):
-                continue  # except for iconomi AND huobi
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+                continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
-            assert any(new_key in value for _, value in exchange.session.headers.items())
+            assert any(new_key in value for value in exchange.session.headers.values())
 
     # Test that api key validation failure is handled correctly
     for location in SUPPORTED_EXCHANGES:
@@ -914,11 +914,11 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             assert exchange.api_key == new_key
             if location not in EXCHANGES_WITHOUT_API_SECRET:
                 assert exchange.secret == new_secret.encode()
-            if location in (Location.ICONOMI, Location.HTX):
-                continue  # except for iconomi AND huobi
+            if location in (Location.ICONOMI, Location.HTX, Location.CRYPTOCOM):
+                continue  # except for these specific exchanges
             # all of the api keys end up in session headers. Check they are properly
             # updated there
-            assert any(new_key in value for _, value in exchange.session.headers.items())
+            assert any(new_key in value for value in exchange.session.headers.values())
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])

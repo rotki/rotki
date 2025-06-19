@@ -17,6 +17,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
+from rotkehlchen.exchanges.cryptocom import Cryptocom
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
@@ -672,6 +673,22 @@ def create_test_coinbaseprime(
         api_key=make_api_key(),
         secret=make_api_secret(),
         passphrase=passphrase,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_cryptocom(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
+        name: str = 'cryptocom',
+) -> Cryptocom:
+    return Cryptocom(
+        name=name,
+        api_key=make_api_key() if api_key is None else api_key,
+        secret=make_api_secret() if secret is None else secret,
         database=database,
         msg_aggregator=msg_aggregator,
     )
