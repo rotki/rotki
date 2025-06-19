@@ -4,7 +4,7 @@ import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
-import { updateBalancesPrices, updateBlockchainAssetBalances } from '@/utils/prices';
+import { updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/utils/prices';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 
@@ -34,7 +34,7 @@ export const useBalancesStore = defineStore('balances', () => {
     set(blockchainBalances, updateBlockchainAssetBalances(blockchainBalances, prices));
 
     const exchanges = { ...get(exchangeBalances) };
-    for (const exchange in exchanges) exchanges[exchange] = updateBalancesPrices(exchanges[exchange], prices);
+    for (const exchange in exchanges) exchanges[exchange] = updateExchangeBalancesPrices(exchanges[exchange], prices);
 
     set(exchangeBalances, exchanges);
 

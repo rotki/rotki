@@ -1,5 +1,4 @@
 import type { Balances } from '@/types/blockchain/accounts';
-import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalanceSorting } from '@/composables/balances/sorting';
@@ -8,7 +7,8 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { sortDesc } from '@/utils/bignumbers';
-import { balanceSum } from '@/utils/calculation';
+import { perProtocolBalanceSum } from '@/utils/calculation';
+import { type AssetBalance, type AssetBalanceWithPrice, Zero } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
 
 interface UseAccountAssetsSummaryReturn {
@@ -62,13 +62,16 @@ export function useAccountAssetsSummary(): UseAccountAssetsSummaryReturn {
           const { asset, ...oldBalance } = assets[key];
           assets[key] = {
             asset,
-            ...balanceSum(oldBalance, balance),
+            ...perProtocolBalanceSum(oldBalance, balance),
           };
         }
         else {
           assets[key] = {
             asset: identifier,
-            ...balance,
+            ...perProtocolBalanceSum({
+              amount: Zero,
+              usdValue: Zero,
+            }, balance),
           };
         }
       }

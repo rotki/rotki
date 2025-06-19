@@ -123,16 +123,22 @@ const testEthereumBalances: BlockchainBalances = {
       '0xaddress1': {
         assets: {
           aUSDC: {
-            amount: bigNumberify(400),
-            usdValue: bigNumberify(400),
+            address: {
+              amount: bigNumberify(400),
+              usdValue: bigNumberify(400),
+            },
           },
           cUSDC: {
-            amount: bigNumberify(300),
-            usdValue: bigNumberify(300),
+            address: {
+              amount: bigNumberify(300),
+              usdValue: bigNumberify(300),
+            },
           },
           GNO: {
-            amount: bigNumberify(300),
-            usdValue: bigNumberify(300),
+            address: {
+              amount: bigNumberify(300),
+              usdValue: bigNumberify(300),
+            },
           },
 
         },
@@ -141,16 +147,22 @@ const testEthereumBalances: BlockchainBalances = {
       '0xaddress2': {
         assets: {
           aUSDC: {
-            amount: bigNumberify(800),
-            usdValue: bigNumberify(800),
+            address: {
+              amount: bigNumberify(800),
+              usdValue: bigNumberify(800),
+            },
           },
           cUSDC: {
-            amount: bigNumberify(800),
-            usdValue: bigNumberify(800),
+            address: {
+              amount: bigNumberify(800),
+              usdValue: bigNumberify(800),
+            },
           },
           GNO: {
-            amount: bigNumberify(400),
-            usdValue: bigNumberify(400),
+            address: {
+              amount: bigNumberify(400),
+              usdValue: bigNumberify(400),
+            },
           },
         },
         liabilities: {},

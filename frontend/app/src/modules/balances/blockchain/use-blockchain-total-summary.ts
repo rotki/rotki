@@ -23,12 +23,14 @@ export function useBlockchainTotalSummary(): UseBlockchainTotalsSummaryReturn {
         if (!assets || isEmpty(assets))
           continue;
 
-        for (const { usdValue } of Object.values(assets)) {
-          if (!sums[chain]) {
-            sums[chain] = usdValue;
-          }
-          else {
-            sums[chain] = sums[chain].plus(usdValue);
+        for (const protocol of Object.values(assets)) {
+          for (const { usdValue } of Object.values(protocol)) {
+            if (!sums[chain]) {
+              sums[chain] = usdValue;
+            }
+            else {
+              sums[chain] = sums[chain].plus(usdValue);
+            }
           }
         }
       }

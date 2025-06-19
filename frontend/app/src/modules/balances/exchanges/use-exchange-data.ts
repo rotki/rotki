@@ -9,7 +9,7 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { mergeAssociatedAssets, sumAssetBalances } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
-import { assetSum } from '@/utils/calculation';
+import { exchangeAssetSum } from '@/utils/calculation';
 
 interface UseExchangeDataReturn {
   balances: ComputedRef<AssetBalances>;
@@ -30,7 +30,7 @@ export function useExchangeData(): UseExchangeDataReturn {
       .map(value => ({
         balances: balances[value],
         location: value,
-        total: assetSum(balances[value]),
+        total: exchangeAssetSum(balances[value]),
       }))
       .sort((a, b) => sortDesc(a.total, b.total));
   });

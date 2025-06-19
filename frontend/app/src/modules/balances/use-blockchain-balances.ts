@@ -12,7 +12,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { AccountAssetBalances, type AssetBalances } from '@/types/balances';
-import { BlockchainBalances, type BtcBalances } from '@/types/blockchain/balances';
+import {
+  type AssetProtocolBalances,
+  BlockchainBalances,
+  type BtcBalances,
+} from '@/types/blockchain/balances';
 import { Module } from '@/types/modules';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
@@ -176,19 +180,16 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
       });
 
       const loopringBalances = AccountAssetBalances.parse(result);
-      const accounts = Object.keys(loopringBalances).map(
-        address =>
-          ({
-            chain: 'loopring',
-            data: {
-              address,
-              type: 'address',
-            },
-            nativeAsset: Blockchain.ETH.toUpperCase(),
-            tags: [],
-            virtual: true,
-          }) satisfies BlockchainAccount,
-      );
+      const accounts = Object.keys(loopringBalances).map(address => ({
+        chain: 'loopring',
+        data: {
+          address,
+          type: 'address',
+        },
+        nativeAsset: Blockchain.ETH.toUpperCase(),
+        tags: [],
+        virtual: true,
+      }) satisfies BlockchainAccount);
 
       const loopring = Object.fromEntries(
         Object.entries(loopringBalances).map(([address, assets]) => [
@@ -200,7 +201,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
         ]),
       );
 
-      const assets: AssetBalances = {};
+      const assets: AssetProtocolBalances = {};
       for (const loopringAssets of Object.values(loopringBalances)) {
         for (const [asset, value] of Object.entries(loopringAssets)) {
           const identifier = getAssociatedAssetIdentifier(asset);
@@ -208,8 +209,9 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
           const ownedAsset = assets[associatedAsset];
 
           if (!ownedAsset)
-            assets[associatedAsset] = { ...value };
-          else assets[associatedAsset] = { ...balanceSum(ownedAsset, value) };
+            assets[associatedAsset] = { address: { ...value } };
+          else
+            assets[associatedAsset] = { address: { ...balanceSum(ownedAsset.address, value) } };
         }
       }
 
