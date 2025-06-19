@@ -252,7 +252,6 @@ defineExpose({
         max-date="now"
         color="primary"
         variant="outlined"
-        type="epoch-ms"
         accuracy="millisecond"
         data-cy="datetime"
         :hint="t('transactions.events.form.datetime.hint')"

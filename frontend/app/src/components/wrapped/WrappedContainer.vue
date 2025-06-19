@@ -257,12 +257,13 @@ defineExpose({
     </RuiAlert>
 
     <div class="flex flex-col md:flex-row md:grid-cols-4 gap-2 -mb-4 md:items-start">
-      <div class="my-2 mr-4 font-semibold">
+      <div class="mr-4 font-semibold">
         {{ t('wrapped.filter_by_date') }}
       </div>
       <RuiDateTimePicker
         v-model="start"
         dense
+        type="epoch"
         :disabled="loading"
         class="flex-1"
         color="primary"
@@ -276,6 +277,7 @@ defineExpose({
         :min-date="start"
         dense
         :disabled="loading"
+        type="epoch"
         class="flex-1"
         allow-empty
         color="primary"

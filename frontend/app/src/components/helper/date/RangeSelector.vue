@@ -107,6 +107,7 @@ watchImmediate(v$, ({ $invalid }) => {
           allow-empty
           color="primary"
           variant="outlined"
+          type="epoch"
           :max-date="end"
           :error-messages="toMessages(v$.start)"
         />
@@ -117,6 +118,7 @@ watchImmediate(v$, ({ $invalid }) => {
           :min-date="start"
           :label="t('generate.labels.end_date')"
           max-date="now"
+          type="epoch"
           color="primary"
           variant="outlined"
           :error-messages="toMessages(v$.end)"

@@ -92,6 +92,7 @@ watch(usedAnyFocused, (curr, prev) => {
           color="primary"
           variant="outlined"
           class="w-[16rem] [&_fieldset]:!rounded-r-none"
+          type="epoch"
           dense
           :label="t('calendar.go_to_date')"
           @keydown.enter="goToSelectedDate()"

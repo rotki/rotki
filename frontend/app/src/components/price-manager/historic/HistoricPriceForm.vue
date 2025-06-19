@@ -97,6 +97,7 @@ defineExpose({
       :label="t('common.datetime')"
       :disabled="editMode"
       color="primary"
+      type="epoch"
       variant="outlined"
       :error-messages="toMessages(v$.timestamp)"
     />

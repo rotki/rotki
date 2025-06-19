@@ -119,6 +119,7 @@ defineExpose({
         color="primary"
         variant="outlined"
         data-cy="datetime"
+        type="epoch"
         :error-messages="toMessages(v$.timestamp)"
         @blur="v$.timestamp.$touch()"
       />

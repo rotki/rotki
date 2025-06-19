@@ -457,6 +457,7 @@ defineExpose({
                 variant="outlined"
                 :label="t('asset_form.labels.started')"
                 :error-messages="toMessages(v$.started)"
+                type="epoch"
                 :disabled="loading"
               />
               <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
