@@ -144,6 +144,7 @@ async function updatePrice() {
             :model-value="timestamp"
             disabled
             color="primary"
+            type="epoch"
             variant="outlined"
             hide-details
             :label="t('common.datetime')"

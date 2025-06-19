@@ -150,6 +150,7 @@ defineExpose({
           v-model="fromTimestamp"
           :label="t('generate.labels.start_date')"
           :max-date="toTimestamp"
+          type="epoch"
           allow-empty
           color="primary"
           variant="outlined"
@@ -161,6 +162,7 @@ defineExpose({
           v-model="toTimestamp"
           :label="t('generate.labels.end_date')"
           :min-date="fromTimestamp"
+          type="epoch"
           max-date="now"
           color="primary"
           variant="outlined"

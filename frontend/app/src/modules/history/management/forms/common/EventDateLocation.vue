@@ -32,7 +32,6 @@ const { t } = useI18n({ useScope: 'global' });
       max-date="now"
       color="primary"
       variant="outlined"
-      type="epoch-ms"
       accuracy="millisecond"
       :disabled="dateDisabled"
       data-cy="datetime"
