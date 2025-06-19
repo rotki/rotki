@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`9853` magpie protocol swaps in all supported evm chains will now be properly understood by rotki.
 * :feature:`4467` rotki will now correctly decode Beefy Finance transactions in all supported EVM chains.
+* :feature:`10169` rotki will now properly decode spark airdrop claim and staking.
 * :feature:`9913` History events can now be filtered by description.
 * :feature:`7768` Experimental version of crypto.com exchange integration. Test it and give us feedback.
 
