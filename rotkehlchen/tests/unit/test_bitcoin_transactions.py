@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.chain.bitcoin.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.types import string_to_btc_address
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -142,3 +143,33 @@ def test_1input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
             notes=f'Send {amount2} BTC to {address3}',
             location_label=address1,
         )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('btc_accounts', [['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']])
+def test_op_return(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+    assert get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=(tx_id := 'eb4d2def800c4993928a6f8cc3dd350933a1fb71e6706902025f29a061e5547f'),
+    ) == [HistoryEvent(
+        event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1729677861000)),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount := FVal('0.00001000')),
+        location_label=btc_accounts[0],
+        notes=f'Spend {fee_amount} BTC for fees',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=ZERO,
+        notes='Store text on the blockchain: #FreeSamourai',
+    )]

@@ -400,6 +400,8 @@ class BitcoinManager:
 
         remaining_fee = tx.fee  # Track remaining fee to ensure entire fee amount is accounted for.
         for idx, (address, amount) in enumerate(totals_per_address.items()):
+            # Calculate the fee share and subtract it from the totals even for untracked accounts,
+            # since all the totals may need to be referenced in subsequent decoding logic.
             if idx == len(totals_per_address) - 1:
                 fee_share = remaining_fee  # Last address absorbs residual from any rounding errors in the share calculation.  # noqa: E501
             else:
@@ -420,6 +422,34 @@ class BitcoinManager:
             ))
 
         return events, totals_per_address
+
+    def decode_op_return(self, tx: BitcoinTx, raw_script: str) -> HistoryEvent | None:
+        """Decode an OP_RETURN script into an informational history event.
+        If data is valid utf-8 encoded text, show the decoded text in the event notes.
+        Returns the history event or None on error.
+        """
+        parts = raw_script.split()
+        if not (
+            len(parts) == 3 and
+            parts[0] == 'OP_RETURN' and
+            parts[1].startswith('OP_PUSHBYTES_')
+        ):
+            log.error(f'Failed to decode OP_RETURN bitcoin script "{raw_script}" in {tx.tx_id}')
+            return None   # malformed OP_RETURN script
+
+        hex_data = parts[2]
+        try:  # maybe decode data as utf-8 text
+            notes = f"Store text on the blockchain: {bytes.fromhex(hex_data).decode('utf-8')}"
+        except (ValueError, UnicodeDecodeError):
+            notes = f'Store data on the blockchain: {hex_data}'
+
+        return self.create_event(
+            tx=tx,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            amount=ZERO,
+            notes=notes,
+        )
 
     def _decode_single_input_transfers(
             self,
@@ -467,6 +497,7 @@ class BitcoinManager:
         Creates fee events proportional to the total amount spent by each address.
         Returns a list of HistoryEvents.
         """
+        op_return_events = []
         io_totals_per_address: dict[BtcTxIODirection, dict[BTCAddress, FVal]] = {
             BtcTxIODirection.INPUT: defaultdict(lambda: ZERO),
             BtcTxIODirection.OUTPUT: defaultdict(lambda: ZERO),
@@ -476,7 +507,11 @@ class BitcoinManager:
             (tx.outputs, BtcTxIODirection.OUTPUT),
         ):
             for tx_io in tx_io_list:
-                # TODO: add decoding of op_return (store data onchain) as informational event
+                if tx_io.type == BtcScriptType.OP_RETURN:
+                    if (event := self.decode_op_return(tx=tx, raw_script=tx_io.raw_script)) is not None:  # noqa: E501
+                        op_return_events.append(event)
+                    continue  # skip the rest of the checks for op_return even if no event was decoded.  # noqa: E501
+
                 if (address := tx_io.address) is None and tx_io.type == BtcScriptType.P2PK:
                     try:  # derive the normal btc address from the raw public key used by p2pk
                         address = derive_p2pkh_from_p2pk(tx_io.pubkey)
@@ -515,7 +550,7 @@ class BitcoinManager:
                 outputs=output_totals,
             ) if in_len == 1 else []  # TODO: add support for multi-input txs
 
-        for idx, event in enumerate(all_events := fee_events + transfer_events):
+        for idx, event in enumerate(all_events := fee_events + op_return_events + transfer_events):
             event.sequence_index = idx  # assign sequence indexes in the proper order
 
         return all_events
