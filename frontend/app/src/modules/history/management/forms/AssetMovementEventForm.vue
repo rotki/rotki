@@ -7,6 +7,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
@@ -81,6 +82,8 @@ const rules = {
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
+
 const states = {
   amount,
   asset,
@@ -88,6 +91,7 @@ const states = {
   eventType,
   fee,
   feeAsset,
+  hasFee,
   location,
   locationLabel,
   notes,
@@ -159,6 +163,9 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   if (entry.extraData?.reference) {
     set(uniqueId, entry.extraData.reference);
   }
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 async function save(): Promise<boolean> {
@@ -199,6 +206,7 @@ async function save(): Promise<boolean> {
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 

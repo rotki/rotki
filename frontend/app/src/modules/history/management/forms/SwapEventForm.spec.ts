@@ -292,11 +292,16 @@ describe('forms/SwapEventForm', () => {
       success: false,
     });
 
+    await wrapper.find('[data-cy=spend-amount] input').setValue('4.5');
+
+    await vi.advanceTimersToNextTimerAsync();
+
     const saveMethod = wrapper.vm.save;
 
     const saveResult = await saveMethod();
     await nextTick();
 
+    expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
     expect(wrapper.find('[data-cy=location] .details').text()).toBe('Location is required');
   });

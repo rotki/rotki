@@ -1,6 +1,7 @@
 import type { AssetMap } from '@/types/asset';
 import type { EthDepositEvent } from '@/types/history/events';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
 import { setupDayjs } from '@/utils/date';
@@ -19,10 +20,17 @@ vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),
 }));
 
+vi.mock('@/composables/api/assets/prices', () => ({
+  useAssetPricesApi: vi.fn().mockReturnValue({
+    addHistoricalPrice: vi.fn(),
+  }),
+}));
+
 describe('form/EthDepositEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthDepositEventForm>>;
   let addHistoryEventMock: ReturnType<typeof vi.fn>;
   let editHistoryEventMock: ReturnType<typeof vi.fn>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
   let pinia: Pinia;
 
   const asset = {
@@ -67,10 +75,15 @@ describe('form/EthDepositEventForm.vue', () => {
     vi.useFakeTimers();
     addHistoryEventMock = vi.fn();
     editHistoryEventMock = vi.fn();
+    addHistoricalPriceMock = vi.fn();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     (useHistoryEvents as Mock).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
       editHistoryEvent: editHistoryEventMock,
+    });
+
+    (useAssetPricesApi as Mock).mockReturnValue({
+      addHistoricalPrice: addHistoricalPriceMock,
     });
   });
 
@@ -194,6 +207,36 @@ describe('form/EthDepositEventForm.vue', () => {
     });
   });
 
+  it('should not call editHistoryEvent when only updating the historic price', async () => {
+    wrapper = createWrapper({
+      props: {
+        data: {
+          event,
+          nextSequenceId: '1',
+          type: 'edit',
+        },
+      },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+    const saveMethod = wrapper.vm.save;
+
+    // click save without changing anything
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+
+    // click save after changing the historic price
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    await wrapper.find('[data-cy=primary] input').setValue('1000');
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
+
   it('should edit an existing deposit event when form is submitted', async () => {
     wrapper = createWrapper({
       props: {
@@ -248,11 +291,16 @@ describe('form/EthDepositEventForm.vue', () => {
       success: false,
     });
 
+    await wrapper.find('[data-cy=validatorIndex] input').setValue('123123');
+
+    await vi.advanceTimersToNextTimerAsync();
+
     const saveMethod = wrapper.vm.save;
 
     const saveResult = await saveMethod();
     await nextTick();
 
+    expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
     expect(wrapper.find('[data-cy=tx-hash] .details').text()).toBe('transaction hash is required');
   });

@@ -2,6 +2,7 @@ import type { AssetMap } from '@/types/asset';
 import type { AssetMovementEvent } from '@/types/history/events';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
@@ -13,6 +14,7 @@ import dayjs from 'dayjs';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 vi.mock('@/modules/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({
@@ -28,9 +30,16 @@ vi.mock('@/composables/locations', () => ({
   useLocations: vi.fn(),
 }));
 
+vi.mock('@/composables/api/assets/prices', () => ({
+  useAssetPricesApi: vi.fn().mockReturnValue({
+    addHistoricalPrice: vi.fn(),
+  }),
+}));
+
 describe('forms/AssetMovementEventForm.vue', () => {
   let addHistoryEventMock: ReturnType<typeof vi.fn>;
   let editHistoryEventMock: ReturnType<typeof vi.fn>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
   let wrapper: VueWrapper<InstanceType<typeof AssetMovementEventForm>>;
   let pinia: Pinia;
 
@@ -92,6 +101,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     vi.useFakeTimers();
     addHistoryEventMock = vi.fn();
     editHistoryEventMock = vi.fn();
+    addHistoricalPriceMock = vi.fn();
 
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(usePriceTaskManager().getHistoricPrice).mockResolvedValue(One);
@@ -106,6 +116,10 @@ describe('forms/AssetMovementEventForm.vue', () => {
     (useHistoryEvents as Mock).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
       editHistoryEvent: editHistoryEventMock,
+    });
+
+    (useAssetPricesApi as Mock).mockReturnValue({
+      addHistoricalPrice: addHistoricalPriceMock,
     });
   });
 
@@ -212,6 +226,30 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(notesTextArea.element.value).toBe(event.userNotes);
   });
 
+  it('should not call editHistoryEvent when only updating the historic price', async () => {
+    wrapper = createWrapper({
+      props: { data: { eventsInGroup: [event], type: 'edit-group' } },
+    });
+    await vi.advanceTimersToNextTimerAsync();
+    const saveMethod = wrapper.vm.save;
+
+    // click save without changing anything
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+
+    // click save after changing the historic price
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    await wrapper.find('[data-cy=primary] input').setValue('1000');
+
+    await saveMethod();
+    await nextTick();
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+  });
+
   it('should call editHistoryEvent when editing an event', async () => {
     wrapper = createWrapper({
       props: { data: { eventsInGroup: [event], type: 'edit-group' } },
@@ -223,8 +261,8 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
 
     const saveMethod = wrapper.vm.save;
-
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
+
     const saveResult = await saveMethod();
     expect(saveResult).toBe(true);
     expect(editHistoryEventMock).toHaveBeenCalledWith(

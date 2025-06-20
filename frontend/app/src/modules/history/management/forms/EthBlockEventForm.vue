@@ -5,6 +5,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
@@ -56,12 +57,14 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   amount,
   blockNumber,
   eventIdentifier,
   feeRecipient,
+  isMevReward,
   timestamp: datetime,
   validatorIndex,
 };
@@ -97,6 +100,9 @@ function applyEditableData(entry: EthBlockEvent) {
   set(validatorIndex, entry.validatorIndex.toString());
   set(feeRecipient, entry.locationLabel);
   set(isMevReward, entry.eventSubtype === 'mev reward');
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 function applyGroupHeaderData(entry: EthBlockEvent) {
@@ -117,6 +123,9 @@ async function save(): Promise<boolean> {
     return false;
   }
 
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond, true);
 
   const payload: NewEthBlockEventPayload = {
@@ -130,14 +139,12 @@ async function save(): Promise<boolean> {
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
-  const eventData = get(data);
-  const edit = eventData.type === 'edit' ? eventData.event : undefined;
-
   return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
+    editable ? { ...payload, identifier: editable.identifier } : payload,
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 
