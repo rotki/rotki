@@ -13,6 +13,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     assetPriceForm: Readonly<ShallowRef<InstanceType<typeof HistoryEventAssetPriceForm> | null>>,
     errorMessages: Ref<Record<string, string[]>>,
     reset: () => any,
+    shouldSkipEdit: boolean,
   ): Promise<boolean> => {
     const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
 
@@ -22,6 +23,11 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     }
 
     const edit = 'identifier' in payload;
+
+    if (edit && shouldSkipEdit) {
+      reset();
+      return true;
+    }
 
     const result = !edit ? await addHistoryEvent(payload) : await editHistoryEvent(payload);
 

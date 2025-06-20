@@ -4,6 +4,7 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import SwapEventAssetAmount from '@/modules/history/management/forms/swap/SwapEventAssetAmount.vue';
 import SwapEventFee from '@/modules/history/management/forms/swap/SwapEventFee.vue';
@@ -77,6 +78,7 @@ const v$ = useVuelidate(
 useFormStateWatcher(states, stateUpdated);
 const { setMessage } = useMessageStore();
 const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
+const { captureEditModeState, shouldSkipSave } = useEditModeStateTracker();
 
 function handleValidationErrors(message: ValidationErrors | string) {
   if (typeof message === 'string') {
@@ -94,6 +96,12 @@ async function save(): Promise<boolean> {
     return false;
   }
 
+  const isEditMode = isDefined(identifiers);
+
+  if (shouldSkipSave(isEditMode, get(states))) {
+    return true;
+  }
+
   const model = get(states);
   let payload: AddSwapEventPayload;
   if (get(hasFee)) {
@@ -104,7 +112,7 @@ async function save(): Promise<boolean> {
     payload.userNotes = [model.userNotes[0], model.userNotes[1]];
   }
 
-  const result = isDefined(identifiers)
+  const result = isEditMode
     ? await editHistoryEvent({
       ...omit(payload, ['uniqueId']),
       ...get(identifiers),
@@ -170,6 +178,8 @@ watchImmediate(() => props.data, (data) => {
     uniqueId: '',
     userNotes,
   });
+
+  captureEditModeState(get(states));
 });
 
 watch(hasFee, (hasFee) => {
