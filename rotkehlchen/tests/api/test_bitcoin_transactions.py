@@ -32,8 +32,8 @@ def test_query_transactions(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
     for json, expected_len in (
-        ({'async_query': async_query, 'to_timestamp': 1740000000}, 59),  # query partial range first  # noqa: E501
-        ({'async_query': async_query}, 67),  # then query the rest
+        ({'async_query': async_query, 'to_timestamp': 1740000000}, 61),  # query partial range first  # noqa: E501
+        ({'async_query': async_query}, 69),  # then query the rest
     ):
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
@@ -50,8 +50,8 @@ def test_query_transactions(
             )
         assert len(events) == expected_len
 
-    assert events[66:] == [HistoryEvent(
-        identifier=60,
+    assert events[68:] == [HistoryEvent(
+        identifier=62,
         event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf',
         sequence_index=0,
         timestamp=TimestampMS(1747980089000),
@@ -64,7 +64,7 @@ def test_query_transactions(
         notes=f'Spend {fee_amount} BTC for fees',
     )]  # TODO: this is a multi-input tx. Adjust this test after adding multi-input decoding.
     assert events[0] == HistoryEvent(
-        identifier=59,
+        identifier=61,
         event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}0d39207fd965314941546a698e5f76277818e8b95f41b2e02dfe1901db86acf1',
         sequence_index=0,
         timestamp=TimestampMS(1519764871000),
