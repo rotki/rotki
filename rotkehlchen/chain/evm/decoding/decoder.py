@@ -75,7 +75,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
+from .base import BaseDecoderTools, BaseDecoderToolsWithProxy
 from .constants import (
     CPT_ACCOUNT_DELEGATION,
     CPT_GAS,
@@ -96,7 +96,7 @@ from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -1515,12 +1515,12 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirerWithDSProxy',
+            evm_inquirer: 'EvmNodeInquirerWithProxies',
             transactions: 'EvmTransactions',
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
-            base_tools: BaseDecoderToolsWithDSProxy,
+            base_tools: BaseDecoderToolsWithProxy,
             beacon_chain: 'BeaconChain | None' = None,
     ):
         super().__init__(
@@ -1533,5 +1533,5 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             base_tools=base_tools,
             beacon_chain=beacon_chain,
         )
-        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # Set explicit type
-        self.base: BaseDecoderToolsWithDSProxy  # Set explicit type
+        self.evm_inquirer: EvmNodeInquirerWithProxies  # Set explicit type
+        self.base: BaseDecoderToolsWithProxy  # Set explicit type

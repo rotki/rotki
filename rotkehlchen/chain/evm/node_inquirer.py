@@ -1544,7 +1544,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         )
 
 
-class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
+class EvmNodeInquirerWithProxies(EvmNodeInquirer):
     def __init__(
             self,
             greenlet_manager: GreenletManager,
@@ -1577,7 +1577,7 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
         )
 
 
-class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy):
+class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
     """This is the inquirer that needs to be used by chains with modules (protocols)
     that store data in the cache tables of the globaldb. For example velodrome in
     optimism and curve in ethereum store data in cache tables."""

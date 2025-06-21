@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
@@ -28,7 +29,7 @@ from .constants import ZERO_ADDRESS
 from .contracts import EvmContract
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithDSProxy
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithProxies
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EvmNodeInquirer
@@ -516,7 +517,7 @@ class EvmTokens(ABC):  # noqa: B024
         return self.token_exceptions
 
 
-class EvmTokensWithDSProxy(EvmTokens, ABC):
+class EvmTokensWithProxies(EvmTokens, ABC):
     def __init__(
             self,
             database: 'DBHandler',
@@ -524,7 +525,7 @@ class EvmTokensWithDSProxy(EvmTokens, ABC):
             token_exceptions: set[ChecksumEvmAddress] | None = None,
     ):
         super().__init__(database=database, evm_inquirer=evm_inquirer, token_exceptions=token_exceptions)  # noqa: E501
-        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # set explicit type
+        self.evm_inquirer: EvmNodeInquirerWithProxies  # set explicit type
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         super()._query_new_tokens(addresses)
@@ -546,6 +547,7 @@ class EvmTokensWithDSProxy(EvmTokens, ABC):
         """
         addresses_info_without_proxies = super()._compute_detected_tokens_info(addresses)
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
+
         addresses_info = {}
         with self.db.conn.read_ctx() as cursor:
             for (
@@ -555,20 +557,24 @@ class EvmTokensWithDSProxy(EvmTokens, ABC):
                 # Creating new variables because modifying loop variables is not good
                 detected_tokens = detected_tokens_without_proxies
                 last_queried_timestamp = last_queried_ts_without_proxies
-                if address in proxies_mapping:
-                    proxy_address = proxies_mapping[address]
-                    proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
-                        cursor=cursor,
-                        address=proxy_address,
-                        blockchain=self.evm_inquirer.blockchain,
-                        token_exceptions=self._per_chain_token_exceptions(),
-                    )
+                proxy_last_queried_timestamp = None
+                for proxy_type in ProxyType:
+                    proxy_detected_tokens: set[EvmToken] = set()
+                    if (proxy_address := proxies_mapping.get(proxy_type, {}).get(address, None)):
+                        single_proxy_detected_tokens, proxy_last_queried_timestamp = self.db.get_tokens_for_address(  # noqa: E501
+                            cursor=cursor,
+                            address=proxy_address,
+                            blockchain=self.evm_inquirer.blockchain,
+                            token_exceptions=self._per_chain_token_exceptions(),
+                        )
+                        if single_proxy_detected_tokens:
+                            proxy_detected_tokens |= set(single_proxy_detected_tokens)
 
-                    if proxy_detected_tokens is not None:
+                    if len(proxy_detected_tokens) != 0:
                         if detected_tokens_without_proxies is None:
-                            detected_tokens = proxy_detected_tokens
+                            detected_tokens = list(proxy_detected_tokens)
                         else:
-                            detected_tokens = list(set(detected_tokens_without_proxies + proxy_detected_tokens))  # noqa: E501
+                            detected_tokens = list(set(detected_tokens_without_proxies) | proxy_detected_tokens)  # noqa: E501
 
                     if proxy_last_queried_timestamp is not None:
                         if last_queried_ts_without_proxies is None:

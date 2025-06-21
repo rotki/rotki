@@ -255,7 +255,7 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 - Mock external APIs for deterministic tests
 - Database fixtures for integration testing
 - Make sure that all EVM addresses constant literals you add in the code are properly checksummed. The output of to_checksum_address() is what they should be. Do not use string_to_evm_address(). This does not checksum the address.
-- Do not VCR tests. Let the human developers do it.
+- Do not VCR tests. Let the human developers do it. That means do not put `@pytest.mark.vcr` on any decoder tests you write.
 - For Etherscan use the api key from ETHERSCAN_API_KEY env variable and use etherscan v2. It's as v1 but using https://api.etherscan.io/v2/api?chainid=${chainid} . As described here: https://docs.etherscan.io/etherscan-v2. If there is no API key in the env variable then prompt the user for it when you need to query etherscan.
 
 ### Frontend Testing

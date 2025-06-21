@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
         DSProxyL2WithL1FeesInquirerWithCacheData,
     )
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
@@ -374,13 +374,13 @@ class BaseDecoderTools:
         )
 
 
-class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
-    """Like BaseDecoderTools but with DSProxy evm inquirers"""
+class BaseDecoderToolsWithProxy(BaseDecoderTools):
+    """Like BaseDecoderTools but with Proxy evm inquirers"""
 
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyL2WithL1FeesInquirerWithCacheData'],  # noqa: E501
+            evm_inquirer: Union['EvmNodeInquirerWithProxies', 'DSProxyL2WithL1FeesInquirerWithCacheData'],  # noqa: E501
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
             exceptions_mappings: dict[str, 'Asset'] | None = None,
@@ -392,12 +392,11 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
             address_is_exchange_fn=address_is_exchange_fn,
             exceptions_mappings=exceptions_mappings,
         )
-        self.evm_inquirer: EvmNodeInquirerWithDSProxy  # to specify the type
+        self.evm_inquirer: EvmNodeInquirerWithProxies  # to specify the type
 
     def maybe_get_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         """
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.
         """
-        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()  # calling to make sure that proxies are queried  # noqa: E501
-        return self.evm_inquirer.proxies_inquirer.proxy_to_address.get(address)
+        return self.evm_inquirer.proxies_inquirer.maybe_get_proxy_owner(address)
