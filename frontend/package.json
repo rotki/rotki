@@ -31,6 +31,7 @@
     "test:contract": "pnpm run --filter rotki test:contract",
     "test:integration": " pnpm run --filter rotki test:integration",
     "test:integration-ci": " pnpm run --filter rotki test:integration-ci",
+    "typecheck": "pnpm run --filter rotki typecheck",
     "dev:web": "tsx scripts/start-dev.ts --web",
     "setup:hooks": "cd .. && husky frontend/.husky",
     "lint-staged": "lint-staged",

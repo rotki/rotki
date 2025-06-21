@@ -45,8 +45,13 @@ uv run make format
 ```
 
 ### Frontend Development
+**IMPORTANT: All frontend commands should be run from the `frontend/` directory, NOT `frontend/app/`**
+
 ```bash
-# install stuff
+# Navigate to frontend directory first
+cd frontend
+
+# Install dependencies
 pnpm install --frozen-lockfile
 
 # Lint and fix
@@ -60,6 +65,12 @@ pnpm run clean:modules
 
 # Build frontend
 pnpm run build
+
+# Run tests
+pnpm run test:unit
+
+# Type check
+pnpm run typecheck
 ```
 
 ### Colibri (Rust) Service
@@ -100,6 +111,77 @@ cargo run -- --database ../data/global.db --port 4343
 5. **Plugin Architecture**: Modular design for adding new blockchains and exchanges
 
 ## Developing
+
+### Frontend Development Guidelines
+
+#### Directory Structure
+- All frontend commands should be run from `frontend/` directory, NOT `frontend/app/`
+- The main application code is in `frontend/app/src/`
+
+#### Vue.js and TypeScript Conventions
+- Use VueUse utilities for reactive state management
+- **IMPORTANT: Use `get()` and `set()` from VueUse instead of `.value` when working with refs**
+  ```typescript
+  // ❌ WRONG - Don't use .value
+  const count = ref(0)
+  count.value = 5
+  
+  // ✅ CORRECT - Use get() and set() from VueUse (auto-imported)
+  const count = ref(0)
+  set(count, 5)
+  const currentCount = get(count)
+  ```
+- VueUse utilities like `get()`, `set()`, `toRefs()`, `computed()` etc. are auto-imported
+- Use Pinia for state management - stores are in `frontend/app/src/store/`
+- TypeScript is strict - ensure proper typing
+
+#### Setup Script Organization (Preferred Order)
+1. Imports
+2. Definitions (`defineProps`, `defineEmits`, etc.)
+3. I18n & vue-router
+4. Reactive state variables
+5. Pinia stores
+6. Composables
+7. Computed properties
+8. Methods
+9. Watchers
+10. Lifecycle hooks
+11. Exposed methods
+
+#### Component Conventions
+- Use `defineProps<{}>()` instead of `defineProps({})`
+- Simplified emit definitions:
+  ```typescript
+  const emit = defineEmits<{
+    'update:msg': [msg: string];
+  }>();
+  ```
+- Use `$style` in templates instead of `useCssModules`
+- Use `$attrs` in templates instead of `useAttrs`
+
+#### Pinia Store Structure
+1. State definitions
+2. Computed getters  
+3. Actions
+4. Optional watchers
+
+#### Styling
+- Transitioning from scoped SCSS with BEM to tailwind
+- Follow existing patterns for consistency
+
+#### Testing
+- Run tests with `pnpm run test:unit` from `frontend/` directory
+- Use Vitest for unit tests with Vue Test Utils
+- **Unit test file naming**: `.spec.ts` files should follow the naming of the tested file and be located in the same folder
+  ```
+  // Example structure:
+  src/modules/balances/use-balances-store.ts
+  src/modules/balances/use-balances-store.spec.ts
+  
+  src/composables/accounts/use-account-import-export.ts
+  src/composables/accounts/use-account-import-export.spec.ts
+  ```
+- Component tests should follow existing patterns in `frontend/app/tests/` and `*.spec.ts`
 
 ### Contribution guide
 
