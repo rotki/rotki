@@ -6,7 +6,8 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
 from rotkehlchen.chain.ethereum.modules.monerium.constants import (
     ETHEREUM_MONERIUM_LEGACY_ADDRESSES,
 )
-from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
+from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
@@ -39,7 +40,7 @@ ETH_TOKEN_EXCEPTIONS = {
 }
 
 
-class EthereumTokens(EvmTokensWithDSProxy):
+class EthereumTokens(EvmTokensWithProxies):
 
     def __init__(
             self,
@@ -104,9 +105,15 @@ class EthereumTokens(EvmTokensWithDSProxy):
         """Detect tokens for proxies that are owned by the given addresses"""
         # We ignore A_ETH so all other ones should be tokens
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
-        proxies_to_use = {k: v for k, v in proxies_mapping.items() if k in addresses}
+        proxy_addresses = set()
+        for proxy_type in ProxyType:
+            proxy_addresses |= {v for k, v in proxies_mapping[proxy_type].items() if k in addresses}  # noqa: E501
+
+        if len(proxy_addresses) == 0:
+            return
+
         detected_tokens = self._detect_tokens(
-            addresses=list(proxies_to_use.values()),
+            addresses=list(proxy_addresses),
             tokens_to_check=self.tokens_for_proxies,
         )
         with self.db.user_write() as write_cursor:

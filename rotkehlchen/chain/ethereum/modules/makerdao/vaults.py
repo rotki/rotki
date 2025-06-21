@@ -8,7 +8,7 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
@@ -21,6 +21,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
+from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import (
     ts_now,
 )
@@ -129,7 +130,7 @@ class MakerdaoVault(NamedTuple):
         )
 
 
-class MakerdaoVaults(HasDSProxy):
+class MakerdaoVaults(EthereumModule):
 
     def __init__(
             self,
@@ -138,13 +139,8 @@ class MakerdaoVaults(HasDSProxy):
             premium: Premium | None,
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-
-        super().__init__(
-            ethereum_inquirer=ethereum_inquirer,
-            database=database,
-            premium=premium,
-            msg_aggregator=msg_aggregator,
-        )
+        self.ethereum = ethereum_inquirer
+        self.msg_aggregator = msg_aggregator
         self.reset_last_query_ts()
         self.lock = Semaphore()
         self.usd_price: dict[str, FVal] = defaultdict(FVal)
@@ -292,7 +288,7 @@ class MakerdaoVaults(HasDSProxy):
 
         with self.lock:
             self.vault_mappings = defaultdict(list)
-            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # noqa: E501
             vaults = []
             for user_address, proxy in proxy_mappings.items():
                 vaults.extend(
@@ -315,13 +311,11 @@ class MakerdaoVaults(HasDSProxy):
 
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return
-        super().on_account_addition(address)
         # Check if it has been added to the mapping
-        proxy_address = self.ethereum.proxies_inquirer.address_to_proxy.get(address)
+        proxy_address = self.ethereum.proxies_inquirer.address_to_proxy[ProxyType.DS].get(address)
         if proxy_address:
             # get any vaults the proxy owns
             self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        super().on_account_removal(address)
         self.vault_mappings.pop(address, None)

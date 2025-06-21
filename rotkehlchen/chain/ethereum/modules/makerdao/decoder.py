@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.modules.sky.constants import (
     CPT_SKY,
     MIGRATION_ACTIONS_CONTRACT,
@@ -30,6 +29,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -95,7 +95,7 @@ CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 BURN_MKR = b'\xcc\x16\xf5\xdb\xb4\x872\x80\x81\\\x1e\xe0\x9d\xbd\x06sl\xff\xcc\x18D\x12\xcfzq\xa0\xfd\xb7]9|\xa5'  # noqa: E501
 
 
-class MakerdaoDecoder(DecoderInterface, HasDSProxy):
+class MakerdaoDecoder(DecoderInterface):
     def __init__(  # pylint: disable=super-init-not-called
             self,
             ethereum_inquirer: 'EthereumInquirer',
@@ -108,27 +108,21 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.evm_inquirer: 'EthereumInquirer'
         self.base = base_tools
-        HasDSProxy.__init__(
-            self,
-            ethereum_inquirer=ethereum_inquirer,
-            database=self.base.database,
-            premium=None,  # not used here
-            msg_aggregator=msg_aggregator,
-        )
         self.dai = A_DAI.resolve_to_evm_token()
         self.sai = A_SAI.resolve_to_evm_token()
         self.sdai = A_SDAI.resolve_to_evm_token()
-        self.makerdao_cdp_manager = self.ethereum.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
-        self.makerdao_dai_join = self.ethereum.contracts.contract(DAI_JOIN_ADDRESS)
+        self.makerdao_cdp_manager = self.evm_inquirer.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
+        self.makerdao_dai_join = self.evm_inquirer.contracts.contract(DAI_JOIN_ADDRESS)
 
     def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         if self.base.is_tracked(address):
             return address
 
         # not directly from our account. Proxy?
-        self.ethereum.proxies_inquirer.get_accounts_having_proxy()
-        proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address.get(address)
+        self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)
+        proxy_owner = self.evm_inquirer.proxies_inquirer.proxy_to_address[ProxyType.DS].get(address)
         if proxy_owner is not None and self.base.is_tracked(proxy_owner):
             return proxy_owner
 
@@ -147,7 +141,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         - RemoteError if query to the node failed
         - DeserializationError if the query returns unexpected output
         """
-        output = self.ethereum.multicall(
+        output = self.evm_inquirer.multicall(
             calls=[(
                 self.makerdao_cdp_manager.address,
                 self.makerdao_cdp_manager.encode(method_name='urns', arguments=[cdp_id]),

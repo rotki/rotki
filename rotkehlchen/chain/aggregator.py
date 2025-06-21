@@ -62,6 +62,7 @@ from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balanc
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.uniswap.v3.balances import UniswapV3Balances
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
@@ -827,9 +828,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             address: ChecksumEvmAddress,
     ) -> None:
         """Extra code to run when eth account addition happens"""
-        # If this is the first account added, connect to all relevant nodes
+        if blockchain == SupportedBlockchain.ETHEREUM:  # add it first so that it's there for module's on account addition  # noqa: E501
+            self.ethereum.node_inquirer.proxies_inquirer.query_address_for_proxies(address)
         for _, module in self.iterate_modules():
             module.on_account_addition(address)
+
 
     def _remove_eth_account_modification(
             self,
@@ -837,6 +840,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             address: ChecksumEvmAddress,
     ) -> None:
         """Extra code to run when eth account removal happens"""
+        if blockchain == SupportedBlockchain.ETHEREUM:
+            self.ethereum.node_inquirer.proxies_inquirer.reset_last_query_ts()
+
         for _, module in self.iterate_modules():
             module.on_account_removal(address)
 
@@ -1171,38 +1177,39 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 else:
                     eth_balances[address] += entry
 
-        # If either DSR or vaults is open, count DSproxy balances
-        if vaults_module is not None or dsr_module is not None:
+        # If any of the related modules is on (TODO: switch to counting events activity)
+        if (liquity_module := self.get_module('liquity')) is not None or vaults_module is not None or dsr_module is not None:  # noqa: E501
             proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
-            proxy_to_address = {}
-            proxy_addresses = []
-            for user_address, proxy_address in proxy_mappings.items():
-                proxy_to_address[proxy_address] = user_address
-                proxy_addresses.append(proxy_address)
+            for proxy_type in ProxyType:
+                proxy_to_address = {}
+                proxy_addresses = []
+                for user_address, proxy_address in proxy_mappings[proxy_type].items():
+                    proxy_to_address[proxy_address] = user_address
+                    proxy_addresses.append(proxy_address)
 
-            evmtokens = self.get_chain_manager(SupportedBlockchain.ETHEREUM).tokens
-            try:
-                balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
-                    addresses=proxy_addresses,
-                )
-            except BadFunctionCallOutput as e:
-                log.error(
-                    f'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
-                    f'exception: {e!s}',
-                )
-                raise EthSyncError(
-                    'Tried to use the ethereum chain of the provided client to query '
-                    'token balances but the chain is not synced.',
-                ) from e
+                evmtokens = self.get_chain_manager(SupportedBlockchain.ETHEREUM).tokens
+                try:
+                    balance_result, token_usd_price = evmtokens.query_tokens_for_addresses(
+                        addresses=proxy_addresses,
+                    )
+                except BadFunctionCallOutput as e:
+                    log.error(
+                        f'Assuming unsynced chain. Got web3 BadFunctionCallOutput '
+                        f'exception: {e!s}',
+                    )
+                    raise EthSyncError(
+                        'Tried to use the ethereum chain of the provided client to query '
+                        'token balances but the chain is not synced.',
+                    ) from e
 
-            new_result = {proxy_to_address[x]: v for x, v in balance_result.items()}
-            self._update_balances_after_token_query(
-                dsr_proxy_append=True,
-                balance_result=new_result,
-                token_usd_price=token_usd_price,
-                balance_label=CPT_VAULT,
-                balances=eth_balances,
-            )
+                new_result = {proxy_to_address[x]: v for x, v in balance_result.items()}
+                self._update_balances_after_token_query(
+                    dsr_proxy_append=True,
+                    balance_result=new_result,
+                    token_usd_price=token_usd_price,
+                    balance_label=CPT_VAULT,
+                    balances=eth_balances,
+                )
 
         if (pickle_module := self.get_module('pickle_finance')) is not None:
             pickle_balances_per_address = pickle_module.balances_in_protocol(
@@ -1212,7 +1219,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 for asset_balance in pickle_balances:
                     eth_balances[address].assets[asset_balance.asset][CPT_PICKLE] += asset_balance.balance  # noqa: E501
 
-        if (liquity_module := self.get_module('liquity')) is not None:
+        if liquity_module is not None:
             liquity_addresses = self.queried_addresses_for_module('liquity')
             # Get trove information
             liquity_balances = liquity_module.get_positions(given_addresses=liquity_addresses)

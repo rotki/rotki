@@ -4,7 +4,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.constants import RAY
-from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
+from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI
@@ -16,6 +16,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Price,
 )
+from rotkehlchen.utils.interfaces import EthereumModule
 
 from .constants import RAD
 
@@ -36,7 +37,7 @@ def _dsrdai_to_dai(value: int | FVal) -> FVal:
     return FVal(value / FVal(RAD))
 
 
-class MakerdaoDsr(HasDSProxy):
+class MakerdaoDsr(EthereumModule):
 
     def __init__(
             self,
@@ -45,21 +46,11 @@ class MakerdaoDsr(HasDSProxy):
             premium: Premium | None,
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-
-        super().__init__(
-            ethereum_inquirer=ethereum_inquirer,
-            database=database,
-            premium=premium,
-            msg_aggregator=msg_aggregator,
-        )
-        self.reset_last_query_ts()
+        self.ethereum = ethereum_inquirer
+        self.ethereum.proxies_inquirer.reset_last_query_ts()  # clean proxies cache at activation
         self.lock = Semaphore()
         self.dai = A_DAI.resolve_to_evm_token()
         self.makerdao_pot = self.ethereum.contracts.contract(string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'))  # noqa: E501
-
-    def reset_last_query_ts(self) -> None:
-        """Reset the last query timestamps, effectively cleaning the caches"""
-        self.ethereum.proxies_inquirer.reset_last_query_ts()
 
     def get_current_dsr(self) -> DSRCurrentBalances:
         """Gets the current DSR balance for all accounts that have DAI in DSR
@@ -72,7 +63,7 @@ class MakerdaoDsr(HasDSProxy):
         queries fail for some reason
         """
         with self.lock:
-            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
+            proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # noqa: E501
             balances = {}
             try:
                 current_dai_price = Inquirer.find_usd_price(A_DAI)

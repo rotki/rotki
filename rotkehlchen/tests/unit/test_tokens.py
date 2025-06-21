@@ -60,7 +60,9 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     '0xc32cac63823B556E6Ebf61bB74149f08Bf1AAb34',
 ]])
 @pytest.mark.parametrize('mocked_proxies', [{
-    '0xc32cac63823B556E6Ebf61bB74149f08Bf1AAb34': '0x394C1D68498DEB24AC9F5502DD5450a0353e17dc',
+    'dsr': {
+        '0xc32cac63823B556E6Ebf61bB74149f08Bf1AAb34': '0x394C1D68498DEB24AC9F5502DD5450a0353e17dc',
+    },
 }])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
