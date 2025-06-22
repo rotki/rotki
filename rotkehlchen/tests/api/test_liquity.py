@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Location, TimestampMS
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.etherscan import Etherscan
@@ -229,6 +229,33 @@ def test_account_with_proxy(rotkehlchen_api_server: APIServer, inquirer: Inquire
     # test that the list of addresses was not mutated
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert len(rotki.chains_aggregator.accounts.eth) == 3
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x4E61768814dFD25C2310db372FBA377c1848cd52']])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+def test_staking_v2_with_liquity_proxy(rotkehlchen_api_server: APIServer, ethereum_accounts: list[ChecksumEvmAddress], inquirer: Inquirer) -> None:  # pylint: disable=unused-argument  # noqa: E501
+    """Test that we get staking balance, staked using the new liquity proxy in v2 staking"""
+    async_query = random.choice([False, True])
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'liquitystakingresource',
+    ), json={'async_query': async_query})
+    result = assert_proper_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
+    user, proxy = ethereum_accounts[0], '0x1CA64c0DC9194c6635e1c14C14B795be04833AEC'
+    assert result[user]['balances']['staked']['amount'] == '0'
+    assert result[user]['balances']['eth_rewards']['amount'] == '0'
+    assert result[user]['balances']['lusd_rewards']['amount'] == '0'
+    assert result[user]['proxies'][proxy]['staked']['amount'] == '104.48'
+    assert result[user]['proxies'][proxy]['staked']['asset'] == A_LQTY.identifier  # liquity # noqa: E501
+    assert result[user]['proxies'][proxy]['eth_rewards']['amount'] == '0.000006209393760577'
+    assert result[user]['proxies'][proxy]['lusd_rewards']['amount'] == '0.002367116256741337'
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[JUSTIN, LIQUITY_POOL_DEPOSITOR]])

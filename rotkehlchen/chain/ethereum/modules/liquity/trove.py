@@ -202,8 +202,8 @@ class Liquity(EthereumModule):
         - assets: the asset associated with each method called
         """
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
-        proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # At least v1 had only DS proxy # noqa: E501
-        addresses += proxied_addresses.values()
+        for proxy_mappings in self.ethereum.proxies_inquirer.get_accounts_having_proxy().values():
+            addresses += proxy_mappings.values()
 
         # Build the calls that need to be made in order to get the status in the SP
         calls = [
