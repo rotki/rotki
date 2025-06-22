@@ -185,7 +185,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 counterparty=CPT_GITCOIN,
                 address=recipient_address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -234,7 +234,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             counterparty=CPT_GITCOIN,
             extra_data={'recipient_id': recipient_id},
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_allocated(self, context: DecoderContext) -> DecodingOutput:
         """Decode the allocated events
@@ -394,7 +394,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 counterparty=CPT_GITCOIN,
                 address=context.tx_log.address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
         elif context.tx_log.topics[0] == METADATA_UPDATED:
             project_id = int.from_bytes(context.tx_log.topics[1])
             event = self.base.make_event_from_transaction(
@@ -409,7 +409,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 counterparty=CPT_GITCOIN,
                 address=context.tx_log.address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -444,7 +444,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 'anchor': decoded_data[4],
             },
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_profile_metadata_updated(self, context: DecoderContext) -> DecodingOutput:
         profile_id = bytes_to_hexstr(context.tx_log.topics[1])
@@ -460,7 +460,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             counterparty=CPT_GITCOIN,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_profile_registry(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == PROFILE_CREATED:
@@ -487,7 +487,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             counterparty=CPT_GITCOIN,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_funds_distributed(self, context: DecoderContext) -> DecodingOutput:
         grantee = bytes_to_address(context.tx_log.data[32:64])

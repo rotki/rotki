@@ -365,7 +365,10 @@ class Commonv2v3LikeDecoder(DecoderInterface):
 
         if context.tx_log.topics[0] in (ENABLE_COLLATERAL, DISABLE_COLLATERAL):
             event = self._decode_collateral_events(token, context.transaction, context.tx_log)
-            return DecodingOutput(event=event, matched_counterparty=self.counterparty)
+            return DecodingOutput(
+                events=[event] if event is not None else None,
+                matched_counterparty=self.counterparty,
+            )
 
         if context.tx_log.topics[0] == self.deposit_signature:
             paired_events = self._decode_deposit(token, context.tx_log, context.decoded_events)

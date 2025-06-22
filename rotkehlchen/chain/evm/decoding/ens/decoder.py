@@ -116,7 +116,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
 
         transfer_event.counterparty = self.counterparty
         transfer_event.notes = f'{verb} {self.display_name} name {name_to_show}{from_text}{to_text}'  # noqa: E501
-        return DecodingOutput(event=transfer_event, refresh_balances=False)
+        return DecodingOutput(events=[transfer_event], refresh_balances=False)
 
     def _decode_new_resolver(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
@@ -170,7 +170,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             address=context.tx_log.address,
             counterparty=self.counterparty,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
@@ -250,7 +250,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             address=context.tx_log.address,
             counterparty=self.counterparty,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_ens_public_resolver_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events that modify the ENS resolver.

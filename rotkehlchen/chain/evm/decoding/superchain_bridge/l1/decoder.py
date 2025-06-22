@@ -139,7 +139,7 @@ class SuperchainL1SideCommonBridgeDecoder(DecoderInterface, ABC):
             counterparty=self.counterparty.identifier,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(self.bride_addresses, (self._decode_bridge,))

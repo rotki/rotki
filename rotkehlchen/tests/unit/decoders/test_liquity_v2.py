@@ -10,6 +10,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD77Eb80F38fEC10D87A192d07329415173307E93']])
 def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accounts):
     """Test Liquity V2 staking deposit transaction that also claims previous rewards"""
@@ -32,7 +33,20 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=278,
+            sequence_index=279,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_LQTY,
+            amount=FVal('0'),
+            location_label=ethereum_accounts[0],
+            notes='Revoke LQTY spending approval of 0xD77Eb80F38fEC10D87A192d07329415173307E93 by 0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',  # noqa: E501
+            counterparty=None,
+            address='0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=280,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.STAKING,
@@ -51,17 +65,30 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             },
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=279,
+            sequence_index=281,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.APPROVE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
             asset=A_LQTY,
-            amount=FVal('0'),
+            amount=FVal('1.125295810448450699'),
             location_label=ethereum_accounts[0],
-            notes='Revoke LQTY spending approval of 0xD77Eb80F38fEC10D87A192d07329415173307E93 by 0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',  # noqa: E501
-            counterparty=None,
-            address='0x3Dd5BbB839f8AE9B64c73780e89Fdd1181Bf5205',
+            notes="Collect 1.125295810448450699 LQTY from Liquity's stability pool into the user's Liquity proxy",  # noqa: E501
+            counterparty=CPT_LIQUITY,
+            address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=282,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ETH,
+            amount=FVal('0.000086401749307711'),
+            location_label=ethereum_accounts[0],
+            notes="Collect 0.000086401749307711 ETH from Liquity's stability pool into the user's Liquity proxy",  # noqa: E501
+            counterparty=CPT_LIQUITY,
+            address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
         ),
     ]
     assert events == expected_events

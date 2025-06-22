@@ -176,7 +176,7 @@ class LiquityDecoder(DecoderInterface):
                     counterparty=CPT_LIQUITY,
                     address=context.tx_log.address,
                 )
-                return DecodingOutput(event=event)
+                return DecodingOutput(events=[event])
 
         for event in context.decoded_events:  # modify the send/receive events
             if event.event_type == HistoryEventType.SPEND and event.asset == A_LUSD:
@@ -260,7 +260,7 @@ class LiquityDecoder(DecoderInterface):
         for decoded_event in context.decoded_events:
             max_seq_index = max(max_seq_index, decoded_event.sequence_index)
         event.sequence_index = max_seq_index + 1
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_lqty_staking_deposits(
             self,
@@ -331,8 +331,10 @@ class LiquityDecoder(DecoderInterface):
 
     def _decode_deposit_v2_staking(self, context: DecoderContext) -> DecodingOutput:
         user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
-        recipient = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.data[0:32]))
-        if not self.base.any_tracked([user, recipient]):
+        recipient = self.base.get_address_or_proxy_owner(
+            bytes_to_address(context.tx_log.data[0:32]),
+        )
+        if user is None or recipient is None or not self.base.any_tracked([user, recipient]):
             return DEFAULT_DECODING_OUTPUT
 
         lqty_deposit_amount = asset_normalized_value(
@@ -340,29 +342,44 @@ class LiquityDecoder(DecoderInterface):
             asset=self.lqty,
         )
         lusd_received = asset_normalized_value(
-            amount=(lusd_raw_amount := int.from_bytes(context.tx_log.data[64:96])),
+            amount=int.from_bytes(context.tx_log.data[64:96]),
             asset=self.lusd,
         )
         eth_received = asset_normalized_value(
-            amount=(eth_raw_amount := int.from_bytes(context.tx_log.data[128:160])),
-            asset=A_ETH,
+            amount=int.from_bytes(context.tx_log.data[128:160]),
+            asset=A_ETH.resolve_to_crypto_asset(),
         )
         deposit_event, lusd_reward_event, eth_reward_event, reward_events = None, None, None, []
         for event in context.decoded_events:
-            if event.asset == self.lqty and event.amount == lqty_deposit_amount and event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.address == LIQUITY_STAKING:
+            if (
+                event.asset == self.lqty and
+                event.amount == lqty_deposit_amount and
+                event.event_type in (HistoryEventType.SPEND, HistoryEventType.STAKING) and
+                event.event_subtype in (HistoryEventSubType.NONE, HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
+            ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Stake {event.amount} LQTY in the Liquity V2 protocol'
                 deposit_event = event
-            elif event.asset == self.lusd and event.amount == lusd_received and event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:
+            elif (
+                event.asset == self.lusd and
+                event.amount == lusd_received and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_LIQUITY
                 event.notes = f"Collect {event.amount} LUSD from Liquity's stability pool"
                 lusd_reward_event = event
                 reward_events.append(event)
-            elif event.asset == A_ETH and event.amount == eth_received and event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE:
+            elif (
+                event.asset == A_ETH and
+                event.amount == eth_received and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_LIQUITY
@@ -371,11 +388,11 @@ class LiquityDecoder(DecoderInterface):
                 reward_events.append(event)
 
         new_events = []
-        for amount_received, asset, reward_event in (
+        for amount_received, asset, existing_reward_event in (
                 (lusd_received, self.lqty, lusd_reward_event),
                 (eth_received, A_ETH, eth_reward_event),
         ):  # Means proxy received it, so create the event manually
-            if amount_received != ZERO and reward_event is None:
+            if amount_received != ZERO and existing_reward_event is None:
                 reward_event = self.base.make_event_next_index(
                     tx_hash=context.transaction.tx_hash,
                     timestamp=context.transaction.timestamp,
@@ -385,7 +402,10 @@ class LiquityDecoder(DecoderInterface):
                     amount=amount_received,
                     location_label=user,
                     counterparty=CPT_LIQUITY,
-                    notes=f"Collect {amount_received} {asset.resolve_to_crypto_asset().symbol} from Liquity's stability pool into the user's Liquity proxy",
+                    notes=(
+                        f"Collect {amount_received} {asset.resolve_to_crypto_asset().symbol} "
+                        f"from Liquity's stability pool into the user's Liquity proxy"
+                    ),
                     address=context.tx_log.address,
                 )
                 new_events.append(reward_event)
@@ -396,7 +416,6 @@ class LiquityDecoder(DecoderInterface):
             events_list=context.decoded_events,
         )
         return DecodingOutput(events=new_events)
-                            
 
     def _decode_liquity_v2_wrapper(self, context: DecoderContext) -> DecodingOutput:
         """Decode Liquity V2 wrapper transactions"""
@@ -458,24 +477,25 @@ class LiquityDecoder(DecoderInterface):
                 ),
                 post_decoding=True,
             )
-            if decoding_output.event is not None:
+            if decoding_output.events is not None:
                 # If this is a V2 transaction, update the notes to reflect V2
-                if is_v2_transaction and decoding_output.event.counterparty == CPT_LIQUITY:
-                    if (
-                        decoding_output.event.notes and
-                        'Liquity protocol' in decoding_output.event.notes
-                    ):
-                        decoding_output.event.notes = decoding_output.event.notes.replace(
-                            'Liquity protocol', 'Liquity V2 protocol',
-                        )
-                    elif (
-                        decoding_output.event.notes and
-                        "Liquity's staking" in decoding_output.event.notes
-                    ):
-                        decoding_output.event.notes = decoding_output.event.notes.replace(
-                            "Liquity's staking", 'Liquity V2 staking',
-                        )
-                decoded_events.append(decoding_output.event)
+                for event in decoding_output.events:
+                    if is_v2_transaction and event.counterparty == CPT_LIQUITY:
+                        if (
+                            event.notes and
+                            'Liquity protocol' in event.notes
+                        ):
+                            event.notes = event.notes.replace(
+                                'Liquity protocol', 'Liquity V2 protocol',
+                            )
+                        elif (
+                            event.notes and
+                            "Liquity's staking" in event.notes
+                        ):
+                            event.notes = event.notes.replace(
+                                "Liquity's staking", 'Liquity V2 staking',
+                            )
+                    decoded_events.append(event)
 
         return decoded_events
 

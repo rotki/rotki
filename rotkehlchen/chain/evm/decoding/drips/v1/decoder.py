@@ -74,7 +74,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             counterparty=CPT_DRIPS,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_collected(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
@@ -187,7 +187,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             if existing_action_item.to_event_subtype == HistoryEventSubType.DONATE and existing_action_item.asset == A_DAI and existing_action_item.paired_events_data is not None:  # noqa: E501
                 existing_events = existing_action_item.paired_events_data[0]
                 existing_action_item.paired_events_data = (existing_events + [new_event], False)  # type: ignore  # can add the sequences
-                return DecodingOutput(event=new_event, action_items=[existing_action_item])
+                return DecodingOutput(events=[new_event], action_items=[existing_action_item])
 
         # else loop found no action item. Create one to match first DAI transfer to
         # the drips hub from the user. Count as in events pairing to guarantee
@@ -207,7 +207,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             to_counterparty=CPT_DRIPS,
             paired_events_data=paired_events_data,
         )
-        return DecodingOutput(action_items=[action_item], event=new_event)
+        return DecodingOutput(action_items=[action_item], events=[new_event])
 
     def _decode_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == SPLIT:

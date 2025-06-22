@@ -83,7 +83,7 @@ class DecodingOutput:
     - reload_decoders can be None in which case nothing happens. Or a set of decoders names for which to reload data. The decoder's name is the class name without the Decoder suffix. For example Eigenlayer for EigenlayerDecoder
     - process_swaps indicates whether there are swaps that need to be converted into EvmSwapEvents.
     """  # noqa: E501
-    event: Optional[list['EvmEvent']] = None
+    events: list['EvmEvent'] | None = None
     action_items: list[ActionItem] = field(default_factory=list)
     matched_counterparty: str | None = None
     refresh_balances: bool = False

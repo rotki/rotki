@@ -142,7 +142,7 @@ class MetamaskCommonDecoder(DecoderInterface):
             notes=f'Spend {fee_amount} {fee_asset.symbol} as metamask fees',
         )
 
-        return DecodingOutput(event=fee_event, process_swaps=True)
+        return DecodingOutput(events=[fee_event], process_swaps=True)
 
     # -- DecoderInterface methods
 

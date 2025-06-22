@@ -248,7 +248,9 @@ class Liquity(EthereumModule):
             amount = deserialize_fval(
                 token_normalized_value_decimals(gain_info, 18),
             )
-            proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address[ProxyType.DS].get(current_address)
+            proxy_owner = self.ethereum.proxies_inquirer.proxy_to_address[
+                ProxyType.DS
+            ].get(current_address)
             if proxy_owner is not None:
                 if data[proxy_owner]['proxies'] is None:
                     data[proxy_owner]['proxies'] = defaultdict(dict)

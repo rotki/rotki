@@ -143,7 +143,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         )
         # ensure that the cdp creation event comes before any deposit event
         maybe_reshuffle_events(ordered_events=[event, deposit_event], events_list=context.decoded_events)  # noqa: E501
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_close_cdp(self, context: DecoderContext) -> DecodingOutput:
         """
@@ -179,7 +179,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             notes=f'Close CDP {cdp_id}',
             address=context.transaction.to_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_borrow_sai_event(self, context: DecoderContext) -> DecodingOutput:
         """
@@ -218,7 +218,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 notes=f'Borrow {amount_withdrawn} {self.sai.symbol} from CDP {cdp_id}',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         # sai was actually borrowed, but it was handled by a proxy so create an action item
         # to transform the "receive" event later
@@ -283,7 +283,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 notes=f'Repay {amount_paid} {self.sai.symbol} to CDP {cdp_id}',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -330,7 +330,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                     counterparty=CPT_SAI,
                     address=context.transaction.to_address,
                 )
-                return DecodingOutput(event=event)
+                return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -447,7 +447,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 notes=f'Receive {amount} {self.peth.symbol} from Sai Vault',
                 address=context.transaction.to_address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -480,7 +480,7 @@ class MakerdaosaiDecoder(DecoderInterface):
             counterparty=CPT_SAI,
             address=transaction.to_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def decoding_rules(self) -> list[Callable]:
         return [

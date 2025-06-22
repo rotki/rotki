@@ -84,7 +84,7 @@ class EASCommonDecoder(DecoderInterface, ABC):
             counterparty=CPT_EAS,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

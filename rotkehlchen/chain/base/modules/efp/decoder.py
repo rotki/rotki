@@ -60,7 +60,7 @@ class EfpDecoder(EfpCommonDecoder):
         if (context.tx_log.data[96:128].rstrip(b'\x00').decode()) != 'primary-list':
             return DEFAULT_DECODING_OUTPUT
 
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -70,7 +70,7 @@ class EfpDecoder(EfpCommonDecoder):
             location_label=(user_address := bytes_to_address(context.tx_log.topics[1])),
             notes=f'Create EFP primary list for {user_address}',
             counterparty=CPT_EFP,
-        ))
+        )])
 
     def _decode_list_registry_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events from the EFPListRegistry contract, currently only deployed on Base.

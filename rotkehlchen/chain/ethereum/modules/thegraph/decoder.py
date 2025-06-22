@@ -82,7 +82,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             extra_data={'delegator_l2': delegator_l2, 'indexer_l2': indexer_l2, 'beneficiary': user_address},  # noqa: E501
             product=EvmProduct.STAKING,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_token_destination_approved(self, context: DecoderContext) -> DecodingOutput:
         """Decode a TokenDestinationsApproved event from the L1 bridge. This event is emitted
@@ -103,7 +103,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             counterparty=CPT_THEGRAPH,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_contract_deposit(self, context: DecoderContext) -> DecodingOutput:
         """Decode a deposit of ETH to cover the arbitrum fees of delegating GRT"""

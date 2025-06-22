@@ -99,7 +99,7 @@ class FluenceDecoder(DecoderInterface):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(event=out_event)
+        return DecodingOutput(events=[out_event])
 
     def _decode_events(self, context: DecoderContext) -> DecodingOutput:
         if (
