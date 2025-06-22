@@ -72,7 +72,7 @@ class DecodingOutput:
     """
     Output of decoding functions
 
-    - event can be returned if the decoding method has generated a new event and it needs to be
+    - events can be returned if the decoding method has generated new events and they needs to be
     added to the list of other decoded events.
     - action_items is a list of actions to be performed later automatically or to be passed
     in further decoding methods.
@@ -83,7 +83,7 @@ class DecodingOutput:
     - reload_decoders can be None in which case nothing happens. Or a set of decoders names for which to reload data. The decoder's name is the class name without the Decoder suffix. For example Eigenlayer for EigenlayerDecoder
     - process_swaps indicates whether there are swaps that need to be converted into EvmSwapEvents.
     """  # noqa: E501
-    event: Optional['EvmEvent'] = None
+    event: Optional[list['EvmEvent']] = None
     action_items: list[ActionItem] = field(default_factory=list)
     matched_counterparty: str | None = None
     refresh_balances: bool = False
