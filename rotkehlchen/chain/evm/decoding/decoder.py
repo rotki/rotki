@@ -486,7 +486,7 @@ class EVMTransactionDecoder(ABC):
                 continue
 
             if (
-                decoding_output.event is not None or
+                decoding_output.events or
                 len(decoding_output.action_items) > 0 or
                 decoding_output.process_swaps
             ):
@@ -734,8 +734,8 @@ class EVMTransactionDecoder(ABC):
             action_items.extend(decoding_output.action_items)
             if decoding_output.matched_counterparty is not None:
                 counterparties.add(decoding_output.matched_counterparty)
-            if decoding_output.event:
-                events.append(decoding_output.event)
+            if decoding_output.events:
+                events.extend(decoding_output.events)
                 continue
 
             rules_decoding_output = self.try_all_rules(
@@ -752,8 +752,8 @@ class EVMTransactionDecoder(ABC):
                 action_items.extend(rules_decoding_output.action_items)
                 if rules_decoding_output.matched_counterparty is not None:
                     counterparties.add(rules_decoding_output.matched_counterparty)
-                if rules_decoding_output.event is not None:
-                    events.append(rules_decoding_output.event)
+                if rules_decoding_output.events is not None:
+                    events.extend(rules_decoding_output.events)
                 if rules_decoding_output.process_swaps:
                     process_swaps = True
 
