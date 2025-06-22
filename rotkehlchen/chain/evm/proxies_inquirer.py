@@ -199,7 +199,9 @@ class EvmProxiesInquirer:
             self.proxy_to_address[ProxyType.DS] = {v: k for k, v in ds_mapping.items()}
 
         if proxy_type is None or proxy_type == ProxyType.LIQUITY:
-            liquity_mapping = self.get_or_query_liquity_proxy(accounts.get(self.node_inquirer.blockchain))
+            liquity_mapping = self.get_or_query_liquity_proxy(
+                accounts.get(self.node_inquirer.blockchain),
+            )
             self.address_to_proxy[ProxyType.LIQUITY] = liquity_mapping
             self.proxy_to_address[ProxyType.DS] = {v: k for k, v in liquity_mapping.items()}
 

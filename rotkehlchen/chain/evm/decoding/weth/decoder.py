@@ -99,7 +99,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events + [in_event],
         )
-        return DecodingOutput(event=in_event)
+        return DecodingOutput(events=[in_event])
 
     def _decode_withdrawal_event(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.is_tracked(withdrawer := bytes_to_address(context.tx_log.topics[1])):
@@ -141,7 +141,7 @@ class WethDecoderBase(DecoderInterface, ABC):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events + [out_event],
         )
-        return DecodingOutput(event=out_event)
+        return DecodingOutput(events=[out_event])
 
     # -- DecoderInterface methods
 

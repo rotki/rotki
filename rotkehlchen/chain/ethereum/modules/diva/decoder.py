@@ -74,7 +74,7 @@ class DivaDecoder(GovernableDecoderInterface, MerkleClaimDecoderInterface):
             notes=f'Change DIVA Delegate from {delegator} to {delegate}',
             counterparty=CPT_DIVA,
         )
-        return DecodingOutput(event=event, refresh_balances=False)
+        return DecodingOutput(events=[event], refresh_balances=False)
 
     # -- DecoderInterface methods
 

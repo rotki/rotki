@@ -97,7 +97,10 @@ class MoneriumCommonDecoder(DecoderInterface):
                 counterparty=CPT_MONERIUM,
             )
 
-        return DecodingOutput(event=event, refresh_balances=False)
+        return DecodingOutput(
+            events=[event] if event is not None else None,
+            refresh_balances=False,
+        )
 
     # -- DecoderInterface methods
 

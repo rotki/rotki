@@ -833,7 +833,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         for _, module in self.iterate_modules():
             module.on_account_addition(address)
 
-
     def _remove_eth_account_modification(
             self,
             blockchain: Literal[SupportedBlockchain.ETHEREUM],  # pylint: disable=unused-argument

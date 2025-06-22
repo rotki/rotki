@@ -241,7 +241,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                     address=context.transaction.to_address,
                     extra_data={AIRDROP_IDENTIFIER_KEY: 'elfi'},
                 )
-                return DecodingOutput(event=event)
+                return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 

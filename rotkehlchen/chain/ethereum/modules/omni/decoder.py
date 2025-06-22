@@ -88,7 +88,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
             else:
                 log.error(f'Could not find stake event for an OMNI stake and claim action {context.transaction.tx_hash.hex()}')  # noqa: E501
 
-            return DecodingOutput(event=claim_event)
+            return DecodingOutput(events=[claim_event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -120,7 +120,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 transfer_found = True
 
         if not transfer_found:  # it's claim and stake so transfer is direct from airdrop contract
-            return DecodingOutput(event=self.base.make_event_from_transaction(
+            return DecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.STAKING,
@@ -131,7 +131,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 notes=notes,
                 counterparty=CPT_OMNI,
                 address=OMNI_STAKING_CONTRACT,
-            ))
+            )])
 
         return DEFAULT_DECODING_OUTPUT
 

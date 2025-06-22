@@ -74,7 +74,7 @@ class ShutterDecoder(DecoderInterface):
             log.error(f'Could not find the SHU transfer in {context.transaction.tx_hash.hex()}')
             return DEFAULT_DECODING_OUTPUT
 
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -86,7 +86,7 @@ class ShutterDecoder(DecoderInterface):
             counterparty=CPT_SHUTTER,
             address=context.transaction.to_address,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'shutter'},
-        ))
+        )])
 
     def _decode_delegation_change(self, context: DecoderContext) -> DecodingOutput:
         """This contract function (delegateTokens), can only be called by the owner,
@@ -98,7 +98,7 @@ class ShutterDecoder(DecoderInterface):
         delegator_note = ''
         if delegator != context.transaction.from_address:
             delegator_note = f' for {delegator}'
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -108,7 +108,7 @@ class ShutterDecoder(DecoderInterface):
             location_label=context.transaction.from_address,
             notes=f'Change SHU Delegate{delegator_note} from {bytes_to_address(context.tx_log.topics[2])} to {bytes_to_address(context.tx_log.topics[3])}',  # noqa: E501
             counterparty=CPT_SHUTTER,
-        ))
+        )])
 
     # -- DecoderInterface methods
 

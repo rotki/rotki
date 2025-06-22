@@ -106,7 +106,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                 new_event_type=new_event_type,
                 counterparty=GNOSIS_CPT_DETAILS,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         for event in context.decoded_events:
             if (

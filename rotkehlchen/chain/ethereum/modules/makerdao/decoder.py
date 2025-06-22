@@ -108,7 +108,7 @@ class MakerdaoDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.evm_inquirer: 'EthereumInquirer'
+        self.evm_inquirer: EthereumInquirer
         self.base = base_tools
         self.dai = A_DAI.resolve_to_evm_token()
         self.sai = A_SAI.resolve_to_evm_token()
@@ -122,7 +122,9 @@ class MakerdaoDecoder(DecoderInterface):
 
         # not directly from our account. Proxy?
         self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)
-        proxy_owner = self.evm_inquirer.proxies_inquirer.proxy_to_address[ProxyType.DS].get(address)
+        proxy_owner = self.evm_inquirer.proxies_inquirer.proxy_to_address[
+            ProxyType.DS
+        ].get(address)
         if proxy_owner is not None and self.base.is_tracked(proxy_owner):
             return proxy_owner
 
@@ -396,7 +398,7 @@ class MakerdaoDecoder(DecoderInterface):
                 notes=notes,
                 address=proxy_address,
             )
-            return DecodingOutput(event=event)
+            return DecodingOutput(events=[event])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -585,7 +587,7 @@ class MakerdaoDecoder(DecoderInterface):
                     ordered_events=[deposit_event, receive_event],
                     events_list=context.decoded_events,
                 )
-        return DecodingOutput(event=transfer, action_items=[])
+        return DecodingOutput(events=[transfer], action_items=[])
 
     def decode_saidai_migration(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
@@ -621,7 +623,7 @@ class MakerdaoDecoder(DecoderInterface):
                 to_address=MAKERDAO_MIGRATION_ADDRESS,
             )
             return DecodingOutput(
-                event=transfer,
+                events=[transfer],
                 action_items=[action_item],
             )
 
@@ -647,7 +649,7 @@ class MakerdaoDecoder(DecoderInterface):
             address=MKR_ADDRESS,
             counterparty=CPT_MAKERDAO_MIGRATION,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

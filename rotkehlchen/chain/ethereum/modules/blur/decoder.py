@@ -80,7 +80,7 @@ class BlurDecoder(DecoderInterface):
             product=EvmProduct.STAKING,
             address=BLUR_STAKING_CONTRACT,
         )
-        return DecodingOutput(action_items=[action_item], event=event)
+        return DecodingOutput(action_items=[action_item], events=[event])
 
     def _decode_unstake(self, context: DecoderContext) -> DecodingOutput:
         """Decode unstaking event in the Blur protocol"""
@@ -132,7 +132,7 @@ class BlurDecoder(DecoderInterface):
             counterparty=CPT_BLUR,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

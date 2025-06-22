@@ -23,4 +23,6 @@ LUSD_BORROWING_FEE_PAID: Final = b'\xa5\\_H\xfd)H*\xd5_KY\xbf\x07\x0c\xd1\xac\x1
 STAKING_REWARDS_ASSETS: Final = {A_ETH, A_LUSD}
 
 LIQUITY_V2_WRAPPER: Final = string_to_evm_address('0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1')
-DEPOSIT_LQTY_V2: Final = b'\\\xd3x\x95\xbb\x92\x87\xe5B\xa4&\xd6\xab\xbc\x93\xd7\xda\xca\ty\xbdC&M2\rO\xd2$\xa5\xfc^'
+DEPOSIT_LQTY_V2: Final = (
+    b'\\\xd3x\x95\xbb\x92\x87\xe5B\xa4&\xd6\xab\xbc\x93\xd7\xda\xca\ty\xbdC&M2\rO\xd2$\xa5\xfc^'
+)

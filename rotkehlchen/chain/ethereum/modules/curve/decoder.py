@@ -129,7 +129,7 @@ class CurveDecoder(CurveCommonDecoder):
             counterparty=CPT_CURVE,
             product=EvmProduct.GAUGE,
         )
-        return DecodingOutput(event=event, refresh_balances=False)
+        return DecodingOutput(events=[event], refresh_balances=False)
 
     def _decode_fee_distribution(self, context: DecoderContext, asset: Asset, symbol: str) -> DecodingOutput:  # noqa: E501
         if context.tx_log.topics[0] != CLAIMED:

@@ -128,7 +128,7 @@ class DxdaomesaDecoder(DecoderInterface):
             counterparty=CPT_DXDAO_MESA,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_order_placement(self, context: DecoderContext) -> DecodingOutput:
         """Some docs: https://docs.gnosis.io/protocol/docs/tutorial-limit-orders/"""
@@ -162,7 +162,7 @@ class DxdaomesaDecoder(DecoderInterface):
             counterparty=CPT_DXDAO_MESA,
             address=context.transaction.to_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {

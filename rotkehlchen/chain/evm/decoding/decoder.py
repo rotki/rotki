@@ -719,9 +719,9 @@ class EVMTransactionDecoder(ABC):
                     func=input_rule,
                     context=context,
                 )
-                if not is_err and result.event:
-                    events.append(result.event)
-                    continue  # since the input data rule found an event for this log
+                if not is_err and result.events:
+                    events.extend(result.events)
+                    continue  # since the input data rule found events for this log
 
             decoding_output = self.decode_by_address_rules(context)
             if decoding_output.refresh_balances is True:
@@ -1220,7 +1220,7 @@ class EVMTransactionDecoder(ABC):
             notes=notes,
             address=spender_address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _maybe_decode_simple_transactions(
             self,
@@ -1423,7 +1423,7 @@ class EVMTransactionDecoder(ABC):
             ),
         )
         return DecodingOutput(
-            event=transfer,
+            events=[transfer],
             matched_counterparty=enrichment_output.matched_counterparty,
             refresh_balances=enrichment_output.refresh_balances,
             process_swaps=enrichment_output.process_swaps,

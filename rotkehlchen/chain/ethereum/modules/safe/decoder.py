@@ -128,7 +128,7 @@ class SafeDecoder(DecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_SAFE,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_safe_withdrawn(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
@@ -181,7 +181,7 @@ class SafeDecoder(DecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_SAFE,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     # -- DecoderInterface methods
 

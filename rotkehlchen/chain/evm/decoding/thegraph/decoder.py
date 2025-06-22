@@ -140,7 +140,7 @@ class ThegraphCommonDecoder(DecoderInterface):
                         ordered_events=[deposit_event, burn_event],
                         events_list=context.decoded_events,
                     )
-                    return DecodingOutput(event=burn_event)
+                    return DecodingOutput(events=[burn_event])
                 break
 
         # Reset the LAST_GRAPH_DELEGATIONS_CHECK_TS to Timestamp(0) to ensure the task runs more
@@ -183,7 +183,7 @@ class ThegraphCommonDecoder(DecoderInterface):
             counterparty=CPT_THEGRAPH,
             address=context.tx_log.address,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_stake_withdrawn(self, context: DecoderContext) -> DecodingOutput:
         delegator = bytes_to_address(context.tx_log.topics[2])

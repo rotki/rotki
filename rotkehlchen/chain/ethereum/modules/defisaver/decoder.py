@@ -38,7 +38,7 @@ class DefisaverDecoder(DecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_DEFISAVER,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_deactivate_sub(self, context: DecoderContext) -> DecodingOutput:
         sub_id = int.from_bytes(context.tx_log.topics[1])
@@ -54,7 +54,7 @@ class DefisaverDecoder(DecoderInterface):
             address=context.tx_log.address,
             counterparty=CPT_DEFISAVER,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_substorage_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == DEACTIVATE_SUB:

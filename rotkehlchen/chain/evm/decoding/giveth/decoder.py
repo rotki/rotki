@@ -94,7 +94,7 @@ class GivethDecoderBase(DecoderInterface, ABC):
             ordered_events=[lock_event, receive_event],
             events_list=context.decoded_events,
         )
-        return DecodingOutput(event=lock_event)
+        return DecodingOutput(events=[lock_event])
 
     def decode_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != SIMPLE_CLAIM or not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501

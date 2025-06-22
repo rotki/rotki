@@ -383,7 +383,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             if int.from_bytes(tx_log.topics[3]) != 3:
                 continue
 
-            return DecodingOutput(event=self.base.make_event_from_transaction(
+            return DecodingOutput(events=[self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
                 event_type=HistoryEventType.INFORMATIONAL,
@@ -396,15 +396,15 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 counterparty=self.counterparty,
                 address=self.voting_escrow_address,
                 location_label=bytes_to_address(tx_log.topics[1]),
-                notes=f'Increase unlock time to {timestamp_to_date(new_unlock_time, "%d/%m/%Y")} for {self.token_symbol} veNFT-{token_id}',  # type: ignore[has-type]  # mypy cannot infer it is a timestamp  # noqa: E501
+                notes=f'Increase unlock time to {timestamp_to_date(new_unlock_time, "%d/%m/%Y")} for {self.token_symbol} veNFT-{token_id}',  # noqa: E501
                 asset=get_or_create_evm_token(
                     userdb=self.base.database,
                     evm_address=self.voting_escrow_address,
                     chain_id=self.evm_inquirer.chain_id,
                     token_kind=EvmTokenKind.ERC721,
                     collectible_id=str(token_id),
-                )),
-            )
+                ),
+            )])
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -442,7 +442,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
-        return DecodingOutput(event=self.base.make_event_from_transaction(
+        return DecodingOutput(events=[self.base.make_event_from_transaction(
             tx_log=context.tx_log,
             transaction=context.transaction,
             event_type=HistoryEventType.INFORMATIONAL,
@@ -459,7 +459,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             address=self.voter_address,
             location_label=bytes_to_address(context.tx_log.topics[1]),
             notes=f'Cast {weight} votes for pool {bytes_to_address(context.tx_log.topics[2])}',
-        ))
+        )])
 
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         parent_mappings = super().reload_data()

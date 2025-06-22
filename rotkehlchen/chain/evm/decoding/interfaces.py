@@ -307,7 +307,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             address=context.tx_log.address,
             counterparty=self.protocol,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     @staticmethod
     def _decode_raw_vote(vote_raw: int) -> VoteChoice:
@@ -378,7 +378,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             address=context.tx_log.address,
             counterparty=self.protocol,
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(events=[event])
 
     def _decode_governance(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTE_CAST:

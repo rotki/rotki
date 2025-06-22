@@ -107,7 +107,7 @@ class Oneinchv1Decoder(DecoderInterface):
             amount=fee_amount,
             notes=f'Deduct {fee_amount} {to_asset.symbol} from {sender_address} as {CPT_ONEINCH_V1} fees',  # noqa: E501
         )
-        return DecodingOutput(event=fee_event, process_swaps=True)
+        return DecodingOutput(events=[fee_event], process_swaps=True)
 
     def decode_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == HISTORY:
