@@ -86,7 +86,15 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
     },
     yAxis: {
       axisLabel: { show: false },
-      min: get(graphZeroBased) ? 0 : undefined,
+      max: (value: { min: number; max: number }) =>
+        value.max,
+      min: (value: { min: number; max: number }): number => {
+        if (get(graphZeroBased) || value.min === 0) {
+          return 0;
+        }
+
+        return value.min - (value.max - value.min) * 0.1;
+      },
       splitLine: { show: false },
       type: 'value',
     },

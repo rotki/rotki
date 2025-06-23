@@ -53,7 +53,7 @@ watchImmediate(isDark, () => {
   >
     <VChart
       ref="chartInstance"
-      class="flex-grow w-full h-[16rem] [&>div:last-child]:!hidden"
+      class="flex-grow w-full h-[18rem] [&>div:last-child]:!hidden"
       :option="chartOption"
       autoresize
     />
