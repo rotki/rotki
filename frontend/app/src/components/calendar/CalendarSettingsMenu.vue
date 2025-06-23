@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { OAuthResult } from '@shared/ipc';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
 import { useInterop } from '@/composables/electron-interop';
@@ -30,6 +31,7 @@ const isSyncing = ref(false);
 const isAuthorizing = ref(false);
 const connectedUserEmail = ref<string>('');
 const manualToken = ref<string>('');
+const manualRefreshToken = ref<string>('');
 const showTokenInput = ref(false);
 
 const { autoCreateCalendarReminders, autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
@@ -96,44 +98,43 @@ async function connectToGoogle() {
   }
 }
 
-async function handleOAuthCallback(accessToken: string) {
-  try {
-    const result = await googleCalendarApi.completeOAuth(accessToken);
+function notifyOAuthError(error: any): void {
+  logger.error('OAuth failed:', error);
+  notify({
+    display: true,
+    message: error.message || t('external_services.google_calendar.auth_failed'),
+    severity: Severity.ERROR,
+    title: t('external_services.google_calendar.error'),
+  });
+}
 
-    // Debug logging to see what we get back
-    logger.info('OAuth complete result:', JSON.stringify(result, null, 2));
+async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
+  try {
+    if (!oAuthResult.success) {
+      notifyOAuthError(oAuthResult.error);
+      return;
+    }
+
+    const { accessToken, refreshToken } = oAuthResult;
+    const result = await googleCalendarApi.completeOAuth(accessToken, refreshToken);
+    logger.debug('received oauth result', result);
 
     if (result.success) {
       set(isConnected, true);
 
-      // Store the connected user email
       const userEmail = result.userEmail || '';
       set(connectedUserEmail, userEmail);
 
-      // Refresh the connection status to make sure it's up to date
       await checkGoogleCalendarStatus();
     }
     else {
-      logger.error('OAuth failed:', result);
-      notify({
-        display: true,
-        message: result.message || t('external_services.google_calendar.auth_failed'),
-        severity: Severity.ERROR,
-        title: t('external_services.google_calendar.error'),
-      });
+      notifyOAuthError(result);
     }
   }
   catch (error: any) {
-    logger.error('OAuth callback error:', error);
-    notify({
-      display: true,
-      message: error.message || t('external_services.google_calendar.auth_failed'),
-      severity: Severity.ERROR,
-      title: t('external_services.google_calendar.error'),
-    });
+    notifyOAuthError(error);
   }
   finally {
-    logger.error('Setting isAuthorizing to false');
     set(isAuthorizing, false);
   }
 }
@@ -191,12 +192,13 @@ async function submitManualToken() {
 
   set(isAuthorizing, true);
   try {
-    await handleOAuthCallback(get(manualToken).trim());
+    await handleOAuthCallback({
+      accessToken: get(manualToken).trim(),
+      refreshToken: get(manualRefreshToken).trim(),
+      success: true,
+    });
     set(manualToken, '');
     set(showTokenInput, false);
-  }
-  catch {
-    // Error handling is done in handleOAuthCallback
   }
   finally {
     set(isAuthorizing, false);
@@ -342,11 +344,20 @@ onUnmounted(() => {
                 rows="4"
                 dense
               />
+              <RuiTextArea
+                v-model="manualRefreshToken"
+                :label="t('external_services.google_calendar.refresh_token')"
+                placeholder="1//04abc..."
+                variant="outlined"
+                color="primary"
+                rows="4"
+                dense
+              />
               <div class="flex gap-2">
                 <RuiButton
                   color="primary"
                   size="sm"
-                  :disabled="isAuthorizing || !manualToken.trim()"
+                  :disabled="isAuthorizing || !manualToken.trim() || !manualRefreshToken.trim()"
                   :loading="isAuthorizing"
                   @click="submitManualToken()"
                 >

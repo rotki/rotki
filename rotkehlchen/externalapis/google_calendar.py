@@ -5,13 +5,11 @@ from __future__ import annotations
 import datetime
 import json
 import logging
-import os
 import threading
 from typing import TYPE_CHECKING, Any
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
@@ -40,7 +38,6 @@ class GoogleCalendarAPI:
         self.db = database
         self._credentials: Credentials | None = None
         self._service: Any = None
-        self._flow: InstalledAppFlow | None = None
         self._auth_code: str | None = None
         self._auth_error: str | None = None
         self._auth_complete = threading.Event()
@@ -63,19 +60,12 @@ class GoogleCalendarAPI:
             try:
                 creds_data = json.loads(result[0])
 
-                # Check if this is from external OAuth (our custom format)
-                if creds_data.get('external_oauth'):
-                    log.info('Loading external OAuth credentials')
-                    self._credentials = Credentials(  # type: ignore[no-untyped-call]
-                        token=creds_data['token'],
-                        scopes=creds_data['scopes'],
-                    )
-                else:
-                    # Use the original method for standard OAuth credentials
-                    self._credentials = Credentials.from_authorized_user_info(  # type: ignore
-                        creds_data,
-                        GOOGLE_CALENDAR_SCOPES,
-                    )
+                log.info('Loading OAuth credentials')
+                self._credentials = Credentials(  # type: ignore[no-untyped-call]
+                    token=creds_data['token'],
+                    refresh_token=creds_data['refresh_token'],
+                    scopes=GOOGLE_CALENDAR_SCOPES,
+                )
 
                 # Refresh if expired
                 if (
@@ -92,10 +82,7 @@ class GoogleCalendarAPI:
                             ('google_calendar_credentials', json.dumps({
                                 'token': self._credentials.token,
                                 'refresh_token': self._credentials.refresh_token,
-                                'token_uri': self._credentials.token_uri,
-                                'client_id': self._credentials.client_id,
-                                'client_secret': self._credentials.client_secret,
-                                'scopes': self._credentials.scopes,
+                                'user_email': creds_data.get('user_email'),
                             })),
                         )
 
@@ -104,138 +91,6 @@ class GoogleCalendarAPI:
                 return None
             else:
                 return self._credentials
-
-    def start_oauth_flow(self) -> dict[str, Any]:
-        """Start OAuth2 Authorization Code Flow for desktop apps.
-
-        Returns information needed to complete the authorization in the frontend.
-        The actual authorization will happen via run_authorization_flow().
-        """
-        # Default rotki OAuth credentials (for desktop app)
-        # These are not secret - Google acknowledges that desktop app secrets
-        # cannot be kept confidential. Users can optionally override these.
-        client_id = os.environ.get(
-            'ROTKI_GOOGLE_CLIENT_ID',
-            # This would be rotki's actual client ID
-            'XXX',
-        )
-        client_secret = os.environ.get(
-            'ROTKI_GOOGLE_CLIENT_SECRET',
-            # This would be rotki's actual client secret
-            'XXX',
-        )
-
-        if client_id in (None, '', 'YOUR-ACTUAL-CLIENT-ID.apps.googleusercontent.com'):
-            # Fall back to user-provided credentials if rotki's aren't configured
-            # This allows both approaches: built-in or user-provided
-            raise RemoteError(
-                'Google Calendar integration requires OAuth credentials. '
-                'Either use the built-in credentials or provide your own.',
-            )
-
-        # Create OAuth flow configuration
-        client_config = {
-            'installed': {
-                'client_id': client_id,
-                'client_secret': client_secret,
-                'auth_uri': 'https://accounts.google.com/o/oauth2/auth',
-                'token_uri': 'https://oauth2.googleapis.com/token',
-                'auth_provider_x509_cert_url': 'https://www.googleapis.com/oauth2/v1/certs',
-                'redirect_uris': ['http://localhost', 'urn:ietf:wg:oauth:2.0:oob'],
-            },
-        }
-
-        # Create the flow instance with PKCE enabled
-        # For installed (desktop) apps, google-auth-oauthlib automatically uses PKCE
-        self._flow = InstalledAppFlow.from_client_config(
-            client_config,
-            scopes=GOOGLE_CALENDAR_SCOPES,
-        )
-
-        # The Flow class automatically generates code_verifier and code_challenge for PKCE
-        # when using the 'installed' application type. This is handled internally by
-        # run_local_server() method which implements the full PKCE flow.
-
-        # Store client credentials for later use
-        with self.db.conn.write_ctx() as write_cursor:
-            write_cursor.execute(
-                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                ('google_calendar_client_config', json.dumps(client_config)),
-            )
-
-        return {
-            'status': 'ready',
-            'message': 'Ready to connect to Google Calendar.',
-        }
-
-    def run_authorization_flow(self) -> dict[str, Any]:
-        """Run the authorization flow by opening browser and starting local server.
-
-        This should be called after start_oauth_flow() to actually perform the authorization.
-        """
-        if self._flow is None:
-            # Try to restore flow from stored config
-            with self.db.conn.read_ctx() as cursor:
-                result = cursor.execute(
-                    'SELECT value FROM key_value_cache WHERE name=?',
-                    ('google_calendar_client_config',),
-                ).fetchone()
-
-                if result is None:
-                    raise RemoteError('OAuth flow not initialized. Call start_oauth_flow first.')
-
-                client_config = json.loads(result[0])
-                self._flow = InstalledAppFlow.from_client_config(
-                    client_config,
-                    scopes=GOOGLE_CALENDAR_SCOPES,
-                )
-
-        try:
-            # Run local server and get credentials using OAuth 2.0 with PKCE
-            # port=0 means "use any available port"
-            # This implements the full PKCE flow as described in the document:
-            # 1. Generates code_verifier and code_challenge (handled by Flow internally)
-            # 2. Starts a local web server on random port
-            # 3. Opens browser to Google's auth page with code_challenge
-            # 4. Waits for the callback with auth code
-            # 5. Exchanges the code + code_verifier for tokens
-            self._credentials = self._flow.run_local_server(  # pylint: disable=no-member
-                port=0,
-                authorization_prompt_message='',
-                success_message=(
-                    'Authorization complete! You can close this window and return to rotki.'
-                ),
-                open_browser=True,
-            )
-
-            # Save credentials to database
-            if self._credentials:
-                with self.db.conn.write_ctx() as write_cursor:
-                    write_cursor.execute(
-                        'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                        ('google_calendar_credentials', json.dumps({
-                            'token': self._credentials.token,
-                            'refresh_token': self._credentials.refresh_token,
-                            'token_uri': self._credentials.token_uri,
-                            'client_id': self._credentials.client_id,
-                            'client_secret': self._credentials.client_secret,
-                            'scopes': self._credentials.scopes,
-                        })),
-                    )
-                    # Clean up the client config as it's no longer needed
-                    write_cursor.execute(
-                        'DELETE FROM key_value_cache WHERE name=?',
-                        ('google_calendar_client_config',),
-                    )
-
-                log.info('Google Calendar OAuth2 authorization completed successfully')
-                return {'success': True, 'message': 'Authorization successful'}
-            else:
-                raise RemoteError('Authorization failed: no credentials received')
-
-        except Exception as e:
-            log.error(f'OAuth authorization failed: {e}')
-            raise RemoteError(f'Authorization failed: {e!s}') from e
 
     def is_authenticated(self) -> bool:
         """Check if user has valid Google Calendar credentials."""
@@ -520,104 +375,123 @@ class GoogleCalendarAPI:
 
         return result
 
-    def complete_oauth_with_token(self, access_token: str) -> dict[str, Any]:
-        """Complete OAuth flow using an access token from external OAuth flow.
+    def complete_oauth_with_token(self, access_token: str, refresh_token: str) -> dict[str, Any]:
+        """Complete OAuth flow using tokens from external OAuth flow.
 
         Args:
             access_token: The access token received from the external OAuth flow
+            refresh_token: The refresh token received from the external OAuth flow
 
         Returns:
             dict with success status and message
         """
         try:
-            # Use the access token to get user info and validate the token
-            import requests
 
-            # Validate the access token by making a request to Google's userinfo endpoint
-            headers = {'Authorization': f'Bearer {access_token}'}
-            response = requests.get(
-                'https://www.googleapis.com/oauth2/v2/userinfo',
-                headers=headers,
-                timeout=30,
-            )
+            # Validate token and get user info
+            user_info = self._validate_access_token(access_token)
+            self._verify_token_scopes(access_token)
 
-            if response.status_code != 200:
-                msg = f'Invalid access token: {response.status_code} {response.text}'
-                raise RemoteError(msg)
+            # Create and test credentials
+            credentials = self._create_credentials(access_token, refresh_token)
+            self._test_calendar_access(credentials)
 
-            user_info = response.json()
-            log.info(f'Access token validated for user: {user_info.get("email", "unknown")}')
-
-            # Check what scopes the token actually has
-            token_info_response = requests.get(
-                f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}',
-                timeout=30,
-            )
-            if token_info_response.status_code == 200:
-                token_info = token_info_response.json()
-                actual_scopes = token_info.get('scope', '').split(' ')
-                log.info(f'Token has scopes: {actual_scopes}')
-
-                required_scope = 'https://www.googleapis.com/auth/calendar'
-                if required_scope not in actual_scopes:
-                    msg = (
-                        f'Access token is missing required scope: {required_scope}. '
-                        f'Token has scopes: {actual_scopes}'
-                    )
-                    raise RemoteError(msg)
-            else:
-                log.warning(f'Could not verify token scopes: {token_info_response.status_code}')
-
-            # Create a simple credentials object for immediate use
-            # Note: This won't have refresh capabilities, but will work for current session
-            credentials = Credentials(  # type: ignore[no-untyped-call]
-                token=access_token,
-                scopes=GOOGLE_CALENDAR_SCOPES,
-            )
-
-            # Test the credentials with a Calendar API call
-            service = build('calendar', 'v3', credentials=credentials)
-
-            # Add more detailed logging for debugging
-            log.debug(f'Testing calendar API access with token: {access_token[:20]}...')
-            log.debug(f'Credentials scopes: {credentials.scopes}')
-            log.debug(f'Credentials valid: {credentials.valid}')
-
-            calendar_list = service.calendarList().list().execute()  # pylint: disable=no-member
-            calendar_count = len(calendar_list.get('items', []))
-            log.debug(f'Calendar API test successful, found {calendar_count} calendars')
-
-            # Store the access token and user info for this session
-            # Note: This is a simplified storage for external OAuth tokens
-            credentials_data = {
-                'token': access_token,
-                'scopes': GOOGLE_CALENDAR_SCOPES,
-                'user_email': user_info.get('email'),
-                'external_oauth': True,  # Flag to indicate this came from external OAuth
-            }
-
-            # Store credentials in database using the same method as existing code
-            with self.db.conn.write_ctx() as write_cursor:
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                    ('google_calendar_credentials', json.dumps(credentials_data)),
-                )
-
+            # Store credentials and update instance state
+            email_address = user_info.get('email', 'Unknown')
+            self._store_external_credentials(access_token, refresh_token, email_address)
             self._credentials = credentials
-            self._service = service
-
-            log.info('Google Calendar OAuth completed successfully with external access token')
-
-            return {
-                'success': True,
-                'message': 'Successfully authenticated with Google Calendar',
-                'user_email': user_info.get('email', 'Unknown'),
-            }
+            self._service = build('calendar', 'v3', credentials=credentials)
 
         except Exception as e:
-            error_msg = f'Failed to complete OAuth with access token: {e}'
+            error_msg = f'Failed to complete OAuth with tokens: {e}'
             log.error(error_msg)
             return {
                 'success': False,
                 'message': error_msg,
             }
+
+        else:
+            log.info('Google Calendar OAuth completed successfully with external tokens')
+            return {
+                'success': True,
+                'message': 'Successfully authenticated with Google Calendar',
+                'user_email': email_address,
+            }
+
+    def _validate_access_token(self, access_token: str) -> dict[str, Any]:
+        """Validate access token and return user info."""
+        import requests
+
+        headers = {'Authorization': f'Bearer {access_token}'}
+        response = requests.get(
+            'https://www.googleapis.com/oauth2/v2/userinfo',
+            headers=headers,
+            timeout=30,
+        )
+
+        if response.status_code != 200:
+            raise RemoteError(f'Invalid access token: {response.status_code} {response.text}')
+
+        user_info = response.json()
+        log.info(f'Access token validated for user: {user_info.get("email", "unknown")}')
+        return user_info
+
+    def _verify_token_scopes(self, access_token: str) -> None:
+        """Verify that the token has required scopes."""
+        import requests
+
+        response = requests.get(
+            f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}',
+            timeout=30,
+        )
+
+        if response.status_code != 200:
+            log.warning(f'Could not verify token scopes: {response.status_code}')
+            return
+
+        token_info = response.json()
+        actual_scopes = token_info.get('scope', '').split(' ')
+        log.debug(f'Token has scopes: {actual_scopes}')
+
+        required_scope = 'https://www.googleapis.com/auth/calendar'
+        if required_scope not in actual_scopes:
+            raise RemoteError(
+                f'Access token is missing required scope: {required_scope}. '
+                f'Token has scopes: {actual_scopes}',
+            )
+
+    def _create_credentials(self, access_token: str, refresh_token: str) -> Credentials:
+        """Create Google credentials object with refresh capability."""
+        return Credentials(  # type: ignore[no-untyped-call]
+            token=access_token,
+            refresh_token=refresh_token,
+            token_uri='https://oauth2.googleapis.com/token',
+            scopes=GOOGLE_CALENDAR_SCOPES,
+        )
+
+    def _test_calendar_access(self, credentials: Credentials) -> None:
+        """Test credentials by making a Calendar API call."""
+        service = build('calendar', 'v3', credentials=credentials)
+
+        log.debug('Testing calendar API access...')
+        calendar_list = service.calendarList().list().execute()  # pylint: disable=no-member
+        calendar_count = len(calendar_list.get('items', []))
+        log.debug(f'Calendar API test successful, found {calendar_count} calendars')
+
+    def _store_external_credentials(
+            self,
+            access_token: str,
+            refresh_token: str,
+            user_email: str,
+    ) -> None:
+        """Store external OAuth credentials in database."""
+        credentials_data = {
+            'token': access_token,
+            'refresh_token': refresh_token,
+            'user_email': user_email,
+        }
+
+        with self.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                ('google_calendar_credentials', json.dumps(credentials_data)),
+           )

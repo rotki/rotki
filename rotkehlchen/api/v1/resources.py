@@ -3287,23 +3287,21 @@ class CalendarRemindersResource(BaseMethodView):
 class GoogleCalendarResource(BaseMethodView):
     """Endpoint for Google Calendar integration."""
 
+    put_schema = Schema.from_dict({
+        'access_token': fields.String(required=True),
+        'refresh_token': fields.String(required=True),
+    })
+
     @require_loggedin_user()
     def get(self) -> Response:
         """Get Google Calendar authentication status."""
         return self.rest_api.get_google_calendar_status()
 
     @require_loggedin_user()
-    def put(self) -> Response:
-        """Start OAuth2 flow - no parameters needed."""
-        return self.rest_api.start_google_calendar_auth()
-
-    @require_loggedin_user()
-    def patch(self) -> Response:
-        """Run the OAuth2 authorization flow.
-
-        This opens the browser and completes the OAuth flow.
-        """
-        return self.rest_api.run_google_calendar_auth()
+    @use_kwargs(put_schema, location='json')
+    def put(self, access_token: str, refresh_token: str) -> Response:
+        """Complete OAuth2 flow with access token from external flow."""
+        return self.rest_api.complete_google_calendar_oauth(access_token, refresh_token)
 
     @require_loggedin_user()
     def post(self) -> Response:
@@ -3314,20 +3312,6 @@ class GoogleCalendarResource(BaseMethodView):
     def delete(self) -> Response:
         """Disconnect Google Calendar integration."""
         return self.rest_api.disconnect_google_calendar()
-
-
-class GoogleCalendarOAuthResource(BaseMethodView):
-    """Endpoint for completing Google Calendar OAuth from external flow."""
-
-    post_schema = Schema.from_dict({
-        'access_token': fields.String(required=True),
-    })
-
-    @require_loggedin_user()
-    @use_kwargs(post_schema, location='json')
-    def post(self, access_token: str) -> Response:
-        """Complete OAuth2 flow with access token from external flow."""
-        return self.rest_api.complete_google_calendar_oauth(access_token)
 
 
 class StatsWrapResource(BaseMethodView):
