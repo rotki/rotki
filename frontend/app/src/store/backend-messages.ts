@@ -4,8 +4,10 @@ import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { logger } from '@/utils/logging';
-import { BackendCode } from '@shared/ipc';
+import { BackendCode, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
+
+type OAuthCallback = (oAuthResult: OAuthResult) => void;
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');
@@ -20,14 +22,14 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  const oauthCallbackHandlers = ref<Array<(accessToken: string) => void>>([]);
+  const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
 
-  function registerOAuthCallbackHandler(handler: (accessToken: string) => void): void {
+  function registerOAuthCallbackHandler(handler: OAuthCallback): void {
     const handlers = get(oauthCallbackHandlers);
     set(oauthCallbackHandlers, [...handlers, handler]);
   }
 
-  function unregisterOAuthCallbackHandler(handler: (accessToken: string) => void): void {
+  function unregisterOAuthCallbackHandler(handler: OAuthCallback): void {
     const handlers = get(oauthCallbackHandlers);
     const index = handlers.indexOf(handler);
     if (index !== -1) {
@@ -53,16 +55,11 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
           set(isWinVersionUnsupported, true);
         }
       },
-      onOAuthCallback: (accessTokenOrError: string | Error) => {
+      onOAuthCallback: (oAuthResult: OAuthResult) => {
         const handlers = get(oauthCallbackHandlers);
-        if (accessTokenOrError instanceof Error) {
-          logger.error('OAuth authentication failed:', accessTokenOrError);
-        }
-        else {
-          handlers.forEach((handler) => {
-            handler(accessTokenOrError);
-          });
-        }
+        handlers.forEach((handler) => {
+          handler(oAuthResult);
+        });
       },
       onProcessDetected: (pids) => {
         set(

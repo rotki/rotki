@@ -2366,6 +2366,7 @@
       "no_events_to_sync": "No calendar events found in rotki to sync to Google Calendar.",
       "opening_browser": "Opening your browser to complete authorization...",
       "paste_token_instruction": "Copy the access token from the Google OAuth page and paste it below:",
+      "refresh_token": "Refresh Token",
       "submit_token": "Submit Token",
       "success": "Google Calendar Success",
       "sync_complete": "Calendar sync completed: {created} events created, {updated} events updated out of {total} total events",

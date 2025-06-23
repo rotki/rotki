@@ -63,12 +63,25 @@ export interface TrayUpdate {
   readonly period?: string;
 }
 
+export interface OAuthSuccess {
+  readonly success: true;
+  readonly accessToken: string;
+  readonly refreshToken: string;
+}
+
+export interface OAuthFailure {
+  readonly success: false;
+  readonly error: Error;
+}
+
+export type OAuthResult = OAuthFailure | OAuthSuccess;
+
 export interface Listeners {
   onError: (backendOutput: string, code: BackendCode) => void;
   onAbout: () => void;
   onRestart: () => void;
   onProcessDetected: (pids: string[]) => void;
-  onOAuthCallback?: (accessToken: string | Error) => void;
+  onOAuthCallback?: (oAuthResult: OAuthResult) => void;
 }
 
 export interface Interop {

@@ -3,6 +3,7 @@ import process from 'node:process';
 import { IpcManager } from '@electron/main/ipc-setup';
 import { LogService } from '@electron/main/log-service';
 import { MenuManager } from '@electron/main/menu';
+import { parseToken } from '@electron/main/oauth-utils';
 import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
 import { SettingsManager } from '@electron/main/settings-manager';
 import { SubprocessHandler } from '@electron/main/subprocess-handler';
@@ -76,29 +77,7 @@ export class Application {
     const rotkiUrl = commandLine.find(arg => arg.startsWith('rotki://'));
 
     if (rotkiUrl) {
-      try {
-        const url = new URL(rotkiUrl);
-
-        if (url.host === 'oauth') {
-          if (url.pathname === '/success') {
-            // Handle success case
-            const accessToken = url.searchParams.get('access_token');
-            if (accessToken) {
-              this.window.sendOAuthCallback(accessToken);
-            }
-          }
-          else if (url.pathname === '/failure') {
-            // Handle failure case
-            const errorMessage = url.searchParams.get('error');
-            if (errorMessage) {
-              this.window.sendOAuthCallback(new Error(errorMessage));
-            }
-          }
-        }
-      }
-      catch (error) {
-        console.error('Error parsing protocol URL:', error);
-      }
+      this.window.sendOAuthCallback(parseToken(rotkiUrl));
     }
   }
 

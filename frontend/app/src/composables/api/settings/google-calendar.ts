@@ -1,15 +1,11 @@
 import type { ActionResult } from '@rotki/common';
+import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionStatus } from '@/services/utils';
 
 interface GoogleCalendarStatus {
   authenticated: boolean;
   userEmail?: string;
-}
-
-interface GoogleCalendarFlowStatus {
-  status: string;
-  message: string;
 }
 
 interface GoogleCalendarAuthResult {
@@ -28,33 +24,13 @@ interface GoogleCalendarSyncResult {
 
 export function useGoogleCalendarApi(): {
   getStatus: () => Promise<GoogleCalendarStatus>;
-  startAuth: () => Promise<GoogleCalendarFlowStatus>;
-  runAuth: () => Promise<GoogleCalendarAuthResult>;
-  completeOAuth: (accessToken: string) => Promise<GoogleCalendarAuthResult>;
+  completeOAuth: (accessToken: string, refreshToken: string) => Promise<GoogleCalendarAuthResult>;
   syncCalendar: () => Promise<GoogleCalendarSyncResult>;
   disconnect: () => Promise<{ success: boolean }>;
 } {
   const getStatus = async (): Promise<GoogleCalendarStatus> => {
     const response = await api.instance.get<ActionResult<GoogleCalendarStatus>>(
       '/calendar/google',
-      { validateStatus: validWithSessionStatus },
-    );
-    return handleResponse(response);
-  };
-
-  const startAuth = async (): Promise<GoogleCalendarFlowStatus> => {
-    const response = await api.instance.put<ActionResult<GoogleCalendarFlowStatus>>(
-      '/calendar/google',
-      {},
-      { validateStatus: validWithSessionStatus },
-    );
-    return handleResponse(response);
-  };
-
-  const runAuth = async (): Promise<GoogleCalendarAuthResult> => {
-    const response = await api.instance.patch<ActionResult<GoogleCalendarAuthResult>>(
-      '/calendar/google',
-      {},
       { validateStatus: validWithSessionStatus },
     );
     return handleResponse(response);
@@ -68,10 +44,10 @@ export function useGoogleCalendarApi(): {
     return handleResponse(response);
   };
 
-  const completeOAuth = async (accessToken: string): Promise<GoogleCalendarAuthResult> => {
-    const response = await api.instance.post<ActionResult<GoogleCalendarAuthResult>>(
-      '/calendar/google/complete-oauth',
-      { access_token: accessToken },
+  const completeOAuth = async (accessToken: string, refreshToken: string): Promise<GoogleCalendarAuthResult> => {
+    const response = await api.instance.put<ActionResult<GoogleCalendarAuthResult>>(
+      '/calendar/google',
+      snakeCaseTransformer({ accessToken, refreshToken }),
       { validateStatus: validWithSessionStatus },
     );
     return handleResponse(response);
@@ -89,8 +65,6 @@ export function useGoogleCalendarApi(): {
     completeOAuth,
     disconnect,
     getStatus,
-    runAuth,
-    startAuth,
     syncCalendar,
   };
 }
