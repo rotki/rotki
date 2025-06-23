@@ -267,7 +267,7 @@ def mock_proxies(stack, mocked_proxies):
         lambda _, address: dsr_proxies.get(address),
     ))
     stack.enter_context(patch(
-        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_dsr_proxy',
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_or_query_ds_proxy',
         lambda _, addresses: {
             address: dsr_proxies.get(address)
             for address in addresses
@@ -275,7 +275,7 @@ def mock_proxies(stack, mocked_proxies):
         },
     ))
     stack.enter_context(patch(
-        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_liquity_proxy',
+        'rotkehlchen.chain.evm.proxies_inquirer.EvmProxiesInquirer.get_or_query_liquity_proxy',
         lambda _, addresses: {
             address: liquity_proxies.get(address)
             for address in addresses

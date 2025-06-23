@@ -98,7 +98,8 @@ class EvmProxiesInquirer:
             addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, ChecksumEvmAddress]:
         """
-        Returns DSProxy if it exists for a list of addresses using only one call
+        Returns DSProxy (Now called Sky proxies) if it exists for a list
+        of addresses using only one call
         to the chain.
 
         May raise:
@@ -161,7 +162,7 @@ class EvmProxiesInquirer:
         Ignores the cache.
         """
         for proxy_type in ProxyType:
-            if len(mapping := getattr(self, f'get_{proxy_type}_proxy')(address)) != 0:
+            if len(mapping := getattr(self, f'get_or_query_{proxy_type}_proxy')([address])) != 0:
                 self.address_to_proxy[proxy_type][address] = (proxy_address := mapping[address])
                 self.proxy_to_address[proxy_type][proxy_address] = address
 
@@ -187,7 +188,7 @@ class EvmProxiesInquirer:
         """
         now = ts_now()
         if now - self.last_proxy_mapping_query_ts < DAY_IN_SECONDS:  # refresh daily
-            return self.address_to_proxy
+            return self.address_to_proxy if proxy_type is None else self.address_to_proxy[proxy_type]  # noqa: E501
 
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             accounts = self.node_inquirer.database.get_blockchain_accounts(cursor)
@@ -203,7 +204,7 @@ class EvmProxiesInquirer:
                 accounts.get(self.node_inquirer.blockchain),
             )
             self.address_to_proxy[ProxyType.LIQUITY] = liquity_mapping
-            self.proxy_to_address[ProxyType.DS] = {v: k for k, v in liquity_mapping.items()}
+            self.proxy_to_address[ProxyType.LIQUITY] = {v: k for k, v in liquity_mapping.items()}
 
         self.last_proxy_mapping_query_ts = ts_now()
         if proxy_type is not None:  # return a copy to avoid "dictionary modified during iteration errors"  # noqa: E501

@@ -62,7 +62,6 @@ from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balanc
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.uniswap.v3.balances import UniswapV3Balances
-from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
@@ -1179,10 +1178,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # If any of the related modules is on (TODO: switch to counting events activity)
         if (liquity_module := self.get_module('liquity')) is not None or vaults_module is not None or dsr_module is not None:  # noqa: E501
             proxy_mappings = self.ethereum.node_inquirer.proxies_inquirer.get_accounts_having_proxy()  # noqa: E501
-            for proxy_type in ProxyType:
+            for single_proxy_mappings in proxy_mappings.values():
                 proxy_to_address = {}
                 proxy_addresses = []
-                for user_address, proxy_address in proxy_mappings[proxy_type].items():
+                for user_address, proxy_address in single_proxy_mappings.items():
                     proxy_to_address[proxy_address] = user_address
                     proxy_addresses.append(proxy_address)
 

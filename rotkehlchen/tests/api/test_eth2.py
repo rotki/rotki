@@ -258,7 +258,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server: 'APIServer') -> None:
 ]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-@pytest.mark.freeze_time('2025-02-07 13:00:00 GMT')
+@pytest.mark.freeze_time('2025-06-23 08:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 def test_staking_performance(
         rotkehlchen_api_server: 'APIServer',
@@ -330,10 +330,10 @@ def test_staking_performance(
             ]},
     )
     result = assert_proper_sync_response_with_result(response)
-    expected_withdrawals_str, expected_outstanding_consensus_str = '0.931083313', '0.004313006'
+    expected_withdrawals_str, expected_outstanding_consensus_str = '1.189032694', '0.006663847'
     # we don't compare directly the dict values because they come from the database and sqlite
     # handles REAL SUM in a non-accurate way to the decimal point, plus it differs between OSes.
-    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.035473696762025140316173838831466687839186696867031144007246316068503435499705')  # noqa: E501
+    expected_execution_blocks, expected_withdrawals, expected_outstanding_consensus, expected_apr = FVal('0.050711686670683926'), FVal(expected_withdrawals_str), FVal(expected_outstanding_consensus_str), FVal('0.0317901546184659628556739358605425843229450299631762824021434188231567579763669')  # noqa: E501
     expected_sum = expected_execution_blocks + expected_withdrawals + expected_execution_mev + expected_outstanding_consensus  # noqa: E501
     assert FVal(result['sums'].pop('execution_blocks')).is_close(expected_execution_blocks)
     assert FVal(result['sums'].pop('execution_mev')).is_close(expected_execution_mev)
