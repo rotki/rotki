@@ -192,6 +192,7 @@ from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
 from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_TX_TIMESTAMP_RANGE, init_gnosis_pay
+from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
@@ -5191,8 +5192,6 @@ class RestAPI:
 
     def get_google_calendar_status(self) -> Response:
         """Get Google Calendar authentication status."""
-        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             is_authenticated = google_calendar.is_authenticated()
@@ -5211,8 +5210,6 @@ class RestAPI:
 
     def sync_google_calendar(self) -> Response:
         """Manually sync rotki calendar events to Google Calendar."""
-        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
 
@@ -5231,8 +5228,6 @@ class RestAPI:
 
     def disconnect_google_calendar(self) -> Response:
         """Disconnect Google Calendar integration."""
-        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             success = google_calendar.disconnect()
@@ -5249,8 +5244,6 @@ class RestAPI:
 
     def complete_google_calendar_oauth(self, access_token: str, refresh_token: str) -> Response:
         """Complete Google Calendar OAuth2 flow with an access token from external OAuth flow."""
-        from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-
         try:
             google_calendar = GoogleCalendarAPI(self.rotkehlchen.data.db)
             result = google_calendar.complete_oauth_with_token(access_token, refresh_token)
