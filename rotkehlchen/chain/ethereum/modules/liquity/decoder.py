@@ -38,6 +38,7 @@ from .constants import (
     STAKING_LQTY_CHANGE,
     STAKING_LQTY_EVENTS,
     STAKING_REWARDS_ASSETS,
+    WITHDRAW_LQTY_V2,
 )
 
 if TYPE_CHECKING:
@@ -329,7 +330,11 @@ class LiquityDecoder(DecoderInterface):
         )
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_deposit_v2_staking(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_deposit_v2_staking(
+            self,
+            context: DecoderContext,
+            is_deposit: bool,
+    ) -> DecodingOutput:
         user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
         recipient = self.base.get_address_or_proxy_owner(
             bytes_to_address(context.tx_log.data[0:32]),
@@ -337,31 +342,44 @@ class LiquityDecoder(DecoderInterface):
         if user is None or recipient is None or not self.base.any_tracked([user, recipient]):
             return DEFAULT_DECODING_OUTPUT
 
-        lqty_deposit_amount = asset_normalized_value(
+        if is_deposit:
+            offset = 0
+            verb = 'Stake'
+            preposition = 'in'
+            event_type = HistoryEventType.SPEND
+            event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+        else:
+            offset = 32
+            verb = 'Unstake'
+            preposition = 'from'
+            event_type = HistoryEventType.RECEIVE
+            event_subtype = HistoryEventSubType.REMOVE_ASSET
+
+        lqty_deposit_withdraw_amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[32:64]),
             asset=self.lqty,
         )
         lusd_received = asset_normalized_value(
-            amount=int.from_bytes(context.tx_log.data[64:96]),
+            amount=int.from_bytes(context.tx_log.data[64 + offset:96 + offset]),
             asset=self.lusd,
         )
         eth_received = asset_normalized_value(
-            amount=int.from_bytes(context.tx_log.data[128:160]),
+            amount=int.from_bytes(context.tx_log.data[128 + offset:160 + offset]),
             asset=A_ETH.resolve_to_crypto_asset(),
         )
-        deposit_event, lusd_reward_event, eth_reward_event, reward_events = None, None, None, []
+        deposit_withdraw_event, lusd_reward_event, eth_reward_event, reward_events = None, None, None, []  # noqa: E501
         for event in context.decoded_events:
             if (
                 event.asset == self.lqty and
-                event.amount == lqty_deposit_amount and
-                event.event_type in (HistoryEventType.SPEND, HistoryEventType.STAKING) and
-                event.event_subtype in (HistoryEventSubType.NONE, HistoryEventSubType.DEPOSIT_ASSET)  # noqa: E501
+                event.amount == lqty_deposit_withdraw_amount and
+                event.event_type in (event_type, HistoryEventType.STAKING) and
+                event.event_subtype in (HistoryEventSubType.NONE, event_subtype)
             ):
                 event.event_type = HistoryEventType.STAKING
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = event_subtype
                 event.counterparty = CPT_LIQUITY
-                event.notes = f'Stake {event.amount} LQTY in the Liquity V2 protocol'
-                deposit_event = event
+                event.notes = f'{verb} {event.amount} LQTY {preposition} the Liquity V2 protocol'
+                deposit_withdraw_event = event
             elif (
                 event.asset == self.lusd and
                 event.amount == lusd_received and
@@ -412,7 +430,7 @@ class LiquityDecoder(DecoderInterface):
                 reward_events.append(reward_event)
 
         maybe_reshuffle_events(
-            ordered_events=[deposit_event, *reward_events],
+            ordered_events=[deposit_withdraw_event, *reward_events],
             events_list=context.decoded_events,
         )
         return DecodingOutput(events=new_events)
@@ -420,7 +438,9 @@ class LiquityDecoder(DecoderInterface):
     def _decode_liquity_v2_wrapper(self, context: DecoderContext) -> DecodingOutput:
         """Decode Liquity V2 wrapper transactions"""
         if context.tx_log.topics[0] == DEPOSIT_LQTY_V2:
-            return self._decode_deposit_v2_staking(context)
+            return self._decode_deposit_v2_staking(context, is_deposit=True)
+        elif context.tx_log.topics[0] == WITHDRAW_LQTY_V2:
+            return self._decode_deposit_v2_staking(context, is_deposit=False)
 
         return DEFAULT_DECODING_OUTPUT
 
