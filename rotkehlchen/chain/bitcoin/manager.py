@@ -423,6 +423,29 @@ class BitcoinManager:
 
         return events, totals_per_address
 
+    def _handle_self_transfers(
+            self,
+            input_totals: dict[BTCAddress, FVal],
+            output_totals: dict[BTCAddress, FVal],
+    ) -> tuple[dict[BTCAddress, FVal], dict[BTCAddress, FVal]]:
+        """Handles any transfers that go back to the same address.
+        Subtracts any self transfer amounts from the input and output totals.
+        Returns a tuple containing the adjusted inputs and the adjusted outputs.
+        """
+        # Loop over addresses that appear in both inputs and outputs
+        for address in set(input_totals.keys()) & set(output_totals.keys()):
+            if (input_amount := input_totals[address]) > (output_amount := output_totals[address]):
+                input_totals[address] -= output_amount
+                output_totals.pop(address)
+            elif output_amount > input_amount:
+                input_totals.pop(address)
+                output_totals[address] -= input_amount
+            else:  # output_amount == input_amount
+                input_totals.pop(address)
+                output_totals.pop(address)
+
+        return input_totals, output_totals
+
     def decode_op_return(self, tx: BitcoinTx, raw_script: str) -> HistoryEvent | None:
         """Decode an OP_RETURN script into an informational history event.
         If data is valid utf-8 encoded text, show the decoded text in the event notes.
@@ -451,18 +474,26 @@ class BitcoinManager:
             notes=notes,
         )
 
-    def _decode_single_input_transfers(
+    def _decode_single_side_transfers(
             self,
             tx: BitcoinTx,
-            sender: BTCAddress,
-            outputs: dict[BTCAddress, FVal],
+            single_address: BTCAddress,
+            single_address_side: BtcTxIODirection,
+            other_side_totals: dict[BTCAddress, FVal],
     ) -> list[HistoryEvent]:
-        """Decode transfers in a transaction with only one input and one or more outputs.
+        """Decode transfers in a transaction with one side only having a single address and
+        the other side having one or more addresses.
         Returns a list of HistoryEvents.
         """
         spend_events: list[HistoryEvent] = []
         receive_events: list[HistoryEvent] = []
-        for receiver, amount in outputs.items():
+        get_sender_receiver = (
+            (lambda addr: (single_address, addr))
+            if single_address_side == BtcTxIODirection.INPUT else
+            (lambda addr: (addr, single_address))
+        )
+        for other_side_address, amount in other_side_totals.items():
+            sender, receiver = get_sender_receiver(other_side_address)
             direction_result = decode_transfer_direction(
                 from_address=sender,
                 to_address=receiver,
@@ -524,17 +555,20 @@ class BitcoinManager:
 
                 io_totals_per_address[direction][address] += tx_io.value
 
-        # TODO: Handle when an output goes back to an input address
-        #  (self transfer / btc left over from the other outputs and fee)
-
-        fee_events, adjusted_input_totals = self._maybe_create_fee_events(
+        # Handle self transfers before fees to avoid including self transfer amounts
+        # when calculating the proportional fee shares.
+        adjusted_inputs, adjusted_outputs = self._handle_self_transfers(
+            input_totals=io_totals_per_address[BtcTxIODirection.INPUT],
+            output_totals=io_totals_per_address[BtcTxIODirection.OUTPUT],
+        )
+        fee_events, adjusted_inputs = self._maybe_create_fee_events(
             tx=tx,
-            totals_per_address=io_totals_per_address[BtcTxIODirection.INPUT],
+            totals_per_address=adjusted_inputs,
         )
 
         # Get only non-zero in/out totals
-        input_totals = {k: v for k, v in adjusted_input_totals.items() if v != ZERO}
-        output_totals = {k: v for k, v in io_totals_per_address[BtcTxIODirection.OUTPUT].items() if v != ZERO}  # noqa: E501
+        input_totals = {k: v for k, v in adjusted_inputs.items() if v != ZERO}
+        output_totals = {k: v for k, v in adjusted_outputs.items() if v != ZERO}
         if 0 in ((in_len := len(input_totals)), (out_len := len(output_totals))):
             # Inputs have all been spent on the fee or outputs have no value (likely op_return)
             transfer_events = []  # there are no transfers
@@ -543,12 +577,22 @@ class BitcoinManager:
                     'Encountered Bitcoin transaction with mismatched '
                     'input/output amounts. Should not happen.',
                 )
-        else:
-            transfer_events = self._decode_single_input_transfers(
+        elif in_len == 1:
+            transfer_events = self._decode_single_side_transfers(
                 tx=tx,
-                sender=next(iter(input_totals)),
-                outputs=output_totals,
-            ) if in_len == 1 else []  # TODO: add support for multi-input txs
+                single_address=next(iter(input_totals)),
+                single_address_side=BtcTxIODirection.INPUT,
+                other_side_totals=output_totals,
+            )
+        elif out_len == 1:
+            transfer_events = self._decode_single_side_transfers(
+                tx=tx,
+                single_address=next(iter(output_totals)),
+                single_address_side=BtcTxIODirection.OUTPUT,
+                other_side_totals=input_totals,
+            )
+        else:
+            transfer_events = []  # TODO: add support for multi-in multi-out txs
 
         for idx, event in enumerate(all_events := fee_events + op_return_events + transfer_events):
             event.sequence_index = idx  # assign sequence indexes in the proper order
