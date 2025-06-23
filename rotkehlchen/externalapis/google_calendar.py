@@ -1,13 +1,13 @@
 """Google Calendar integration for syncing rotki calendar events using OAuth 2.0 desktop flow."""
 
-from __future__ import annotations
-
 import datetime
 import json
 import logging
 import threading
 from typing import TYPE_CHECKING, Any
 
+import requests
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -34,7 +34,7 @@ ROTKI_CALENDAR_NAME = 'Rotki Events'
 class GoogleCalendarAPI:
     """Interface for Google Calendar API operations using OAuth 2.0 desktop flow."""
 
-    def __init__(self, database: DBHandler) -> None:
+    def __init__(self, database: 'DBHandler') -> None:
         self.db = database
         self._credentials: Credentials | None = None
         self._service: Any = None
@@ -86,8 +86,11 @@ class GoogleCalendarAPI:
                             })),
                         )
 
-            except Exception as e:
-                log.error(f'Failed to load credentials: {e}')
+            except (json.JSONDecodeError, KeyError) as e:
+                log.error(f'Failed to parse stored credentials: {e}')
+                return None
+            except RefreshError as e:
+                log.error(f'Failed to refresh expired credentials: {e}')
                 return None
             else:
                 return self._credentials
@@ -127,7 +130,6 @@ class GoogleCalendarAPI:
             # If no email in stored credentials, try to get it from Google API
             credentials = self._get_credentials()
             if credentials and credentials.valid:
-                import requests
                 headers = {'Authorization': f'Bearer {credentials.token}'}
                 response = requests.get(
                     'https://www.googleapis.com/oauth2/v2/userinfo',
@@ -142,8 +144,17 @@ class GoogleCalendarAPI:
                     return None
             else:
                 return None
-        except Exception as e:
-            log.error(f'Failed to get connected user email: {e}')
+        except (json.JSONDecodeError, KeyError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key {e}'
+            log.error(f'Failed to parse stored credentials: {msg}')
+            return None
+        except (requests.RequestException, requests.Timeout) as e:
+            log.error(f'Failed to connect to Google API: {e}')
+            return None
+        except RefreshError as e:
+            log.error(f'Failed to refresh credentials: {e}')
             return None
 
     def disconnect(self) -> dict[str, Any]:
@@ -162,7 +173,11 @@ class GoogleCalendarAPI:
         return {'success': True}
 
     def _get_service(self) -> Any:
-        """Get Google Calendar service instance."""
+        """Get Google Calendar service instance.
+
+        May raise:
+        - AuthenticationError if Google Calendar is not authenticated
+        """
         if self._service is not None:
             return self._service
 
@@ -170,15 +185,16 @@ class GoogleCalendarAPI:
         if credentials is None:
             raise AuthenticationError('Google Calendar not authenticated')
 
-        try:
-            self._service = build('calendar', 'v3', credentials=credentials)
-        except Exception as e:
-            raise RemoteError(f'Failed to create Google Calendar service: {e}') from e
-        else:
-            return self._service
+        self._service = build('calendar', 'v3', credentials=credentials)
+        return self._service
 
     def _get_or_create_calendar(self) -> str:
-        """Get or create the Rotki calendar and return its ID."""
+        """Get or create the Rotki calendar and return its ID.
+
+        May raise:
+        - AuthenticationError if Google Calendar is not authenticated
+        - RemoteError if insufficient permissions or API errors occur
+        """
         service = self._get_service()
 
         try:
@@ -213,7 +229,7 @@ class GoogleCalendarAPI:
         else:
             return calendar_id
 
-    def sync_events(self, events: Sequence[CalendarEntry]) -> dict[str, Any]:
+    def sync_events(self, events: 'Sequence[CalendarEntry]') -> dict[str, Any]:
         """Sync rotki calendar events to Google Calendar."""
         log.debug(f'Syncing {len(events)} calendar entries to Google Calendar')
 
@@ -401,8 +417,22 @@ class GoogleCalendarAPI:
             self._credentials = credentials
             self._service = build('calendar', 'v3', credentials=credentials)
 
-        except Exception as e:
-            error_msg = f'Failed to complete OAuth with tokens: {e}'
+        except RemoteError as e:
+            error_msg = f'Failed to validate tokens or access calendar: {e}'
+            log.error(error_msg)
+            return {
+                'success': False,
+                'message': error_msg,
+            }
+        except (requests.RequestException, requests.Timeout) as e:
+            error_msg = f'Network error during OAuth completion: {e}'
+            log.error(error_msg)
+            return {
+                'success': False,
+                'message': error_msg,
+            }
+        except HttpError as e:
+            error_msg = f'Google API error during OAuth completion: {e}'
             log.error(error_msg)
             return {
                 'success': False,
@@ -418,9 +448,11 @@ class GoogleCalendarAPI:
             }
 
     def _validate_access_token(self, access_token: str) -> dict[str, Any]:
-        """Validate access token and return user info."""
-        import requests
+        """Validate access token and return user info.
 
+        May raise:
+        - RemoteError if the access token is invalid
+        """
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.get(
             'https://www.googleapis.com/oauth2/v2/userinfo',
@@ -436,9 +468,11 @@ class GoogleCalendarAPI:
         return user_info
 
     def _verify_token_scopes(self, access_token: str) -> None:
-        """Verify that the token has required scopes."""
-        import requests
+        """Verify that the token has required scopes.
 
+        May raise:
+        - RemoteError if the token is missing required scopes
+        """
         response = requests.get(
             f'https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={access_token}',
             timeout=30,
