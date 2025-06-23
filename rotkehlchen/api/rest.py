@@ -5811,3 +5811,21 @@ class RestAPI:
                     write_cursor.execute('DROP TABLE user_added_solana_tokens')
 
         return OK_RESULT
+
+    def get_premium_registered_devices(self) -> Response:
+        """Get list of devices registered to the premium account."""
+        try:
+            result = self.rotkehlchen.premium.get_remote_devices_information()  # type: ignore[union-attr]  #  we know that premium exists here due to require_premium_user
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+
+        return api_response(result=result)
+
+    def delete_premium_registered_device(self, device_identifier: str) -> Response:
+        """Delete a device from the premium account by identifier."""
+        try:
+            self.rotkehlchen.premium.delete_device(device_identifier)  # type: ignore[union-attr]  #  we know that premium exists here due to require_premium_user
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT)

@@ -707,7 +707,7 @@ def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -
 
     def mock_devices_list(url, data, **kwargs):  # pylint: disable=unused-argument
         nonlocal devices
-        if 'webapi/1/manage/premium/devices' in url:
+        if 'nest/1/devices' in url:
             return MockResponse(HTTPStatus.OK, json.dumps(devices))
         raise NotImplementedError('unexpected url')
 

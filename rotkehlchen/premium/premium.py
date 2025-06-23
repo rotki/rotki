@@ -49,6 +49,7 @@ class RemoteMetadata(NamedTuple):
 COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
 DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+NEST_API_ENDPOINTS: Final = ('backup', 'devices')
 
 
 def check_response_status_code(
@@ -208,16 +209,10 @@ class Premium:
 
     def get_remote_devices_information(self) -> dict:
         """Get the list of devices for the current user"""
-        method = 'manage/premium/devices'
-        data = self.sign(
-            method=method,
-            api_endpoint='webapi',
-        )
-
         try:
             response = self.session.get(
-                f'{self.rotki_web}{method}',
-                data=data,
+                f'{self.rotki_nest}{(method := "devices")}',
+                data=self.sign(method=method),
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
@@ -268,23 +263,36 @@ class Premium:
         - PremiumAuthenticationError: if the queried API returns a 401 error
         """
         log.debug(f'Registering new device {device_id}')
-        method = 'devices'
-        device_name = platform.system()
-        data = self.sign(
-            method=method,
-            device_identifier=device_id,
-            device_name=device_name,
-        )
-
         try:
             response = self.session.put(
-                url=f'{self.rotki_api}{method}',
-                data=data,
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                data=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                    device_name=platform.system(),
+                ),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
         return _process_dict_response(response)
+
+    def delete_device(self, device_id: str) -> None:
+        """Deletes a device for the user from the rotki server
+        May raise:
+        - RemoteError
+        """
+        log.debug(f'Deleting premium registered {device_id}')
+        try:
+            self.session.delete(
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                data=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                ),
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to delete device due to: {e}') from e
 
     def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -305,14 +313,13 @@ class Premium:
     def sign(
             self,
             method: str,
-            api_endpoint: str = '/api/',
             **kwargs: Any,
     ) -> dict:
         """
         Create payload for signed requests. It sets the signature headers
         for the current session
         """
-        urlpath = f'{api_endpoint}{self.apiversion}/{method}'
+        urlpath = f'/api/{self.apiversion}/{method}'
 
         req = kwargs
         if method != 'watchers':
@@ -321,7 +328,7 @@ class Premium:
             req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
         hashable = post_data.encode()
-        if method == 'backup':
+        if method in NEST_API_ENDPOINTS:
             # nest uses hex for generating the signature since digest returns a string with the \x
             # format in python.
             message = urlpath.encode() + hashlib.sha256(hashable).hexdigest().encode()
@@ -514,7 +521,7 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     - RemoteError if there are problems reaching the server
     """
     premium = Premium(credentials=credentials, username=username)
-    premium.query_last_data_metadata()
+    premium.authenticate_device()
     return premium
 
 

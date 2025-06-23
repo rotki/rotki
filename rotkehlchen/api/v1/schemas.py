@@ -4194,3 +4194,7 @@ class SolanaTokenMigrationSchema(AsyncQueryArgumentSchema):
         required=True,
         allow_only=[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT],
     )
+
+
+class DeletePremiumDeviceSchema(Schema):
+    device_identifier = NonEmptyStringField(required=True)

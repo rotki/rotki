@@ -70,6 +70,7 @@ from rotkehlchen.api.v1.schemas import (
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
     DataImportSchema,
+    DeletePremiumDeviceSchema,
     DetectTokensSchema,
     EditAccountingRuleSchema,
     EditHistoryEventSchema,
@@ -3474,3 +3475,17 @@ class SolanaTokenMigrationResource(BaseMethodView):
             decimals=decimals,
             token_kind=token_kind,
         )
+
+
+class PremiumDevicesResource(BaseMethodView):
+
+    delete_schema = DeletePremiumDeviceSchema()
+
+    @require_premium_user(active_check=False)
+    def get(self) -> Response:
+        return self.rest_api.get_premium_registered_devices()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, device_identifier: str) -> Response:
+        return self.rest_api.delete_premium_registered_device(device_identifier=device_identifier)
