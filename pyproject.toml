@@ -63,6 +63,9 @@ dependencies = [
     # We used to only use this for packaging, but now use it for the version comparison functionality
     "packaging==24.0",
     "bip-utils==2.9.3",
+    # For Google Calendar integration
+    "google-api-python-client==2.166.0",
+    "google-auth==2.38.0",
     #constraints
     "pycparser<=2.17", # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
     # To build JWT for coinbase exchange key validation
@@ -91,10 +94,8 @@ dev = [
     "vcrpy==7.0.0",
     "freezegun==1.5.1",
     # To test google spreadsheet uploading
-    "google-api-python-client==2.166.0",
     "google-auth-httplib2==0.2.0",
     "google-api-core==2.24.2",
-    "google-auth==2.38.0",
     "google-auth-oauthlib==1.2.1",
 ]
 
