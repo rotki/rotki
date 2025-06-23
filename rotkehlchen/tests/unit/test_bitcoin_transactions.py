@@ -173,3 +173,137 @@ def test_op_return(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddr
         amount=ZERO,
         notes='Store text on the blockchain: #FreeSamourai',
     )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('btc_accounts', [
+    ['bc1qyy30guv6m5ez7ntj0ayr08u23w3k5s8vg3elmxdzlh8a3xskupyqn2lp5w'],
+    ['3G2W5fwfsXfgVJrBc9gxTYfHi6C9zUdtVd'],
+    ['bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej'],
+    [
+        'bc1qyy30guv6m5ez7ntj0ayr08u23w3k5s8vg3elmxdzlh8a3xskupyqn2lp5w',
+        'bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej',
+        '3G2W5fwfsXfgVJrBc9gxTYfHi6C9zUdtVd',
+    ],
+])
+def test_2input_1output(
+        bitcoin_manager: 'BitcoinManager',
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """This tx actually has 4 inputs and 2 outputs, but 3 inputs are from the same address,
+    so it only has 2 distinct inputs, and 1 output is simply returning extra btc to one of the
+    input addresses, which results in only 1 actual output when decoding normal transfers.
+
+    So this is testing both the self-transfer and multi-input single output cases.
+    """
+    tx_id, address1, address2, address3, transfer_amount1, transfer_amount2 = (
+        '4a367acdeeaaf4bca2d9ae81d4cf4c42ac0f8131f52dc53222ff17189e2099b1',
+        'bc1qyy30guv6m5ez7ntj0ayr08u23w3k5s8vg3elmxdzlh8a3xskupyqn2lp5w',
+        '3G2W5fwfsXfgVJrBc9gxTYfHi6C9zUdtVd',
+        'bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej',
+        FVal('1.29845349708138288872596018273081044498336247250578083582426259094241723535052'),
+        FVal('0.119546502918617111274039817269189555016637527494219164175737409057582764649484'),
+    )
+    events = get_decoded_events_of_bitcoin_tx(bitcoin_manager=bitcoin_manager, tx_id=tx_id)
+    fee_event1 = HistoryEvent(
+        event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1749114454000)),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount1 := FVal('0.000439532918617111274039817269189555016637527494219164175737409057582764649483955')),  # noqa: E501
+        location_label=address1,
+        notes=f'Spend {fee_amount1} BTC for fees',
+    )
+    fee_event2 = HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount2 := FVal('0.000040467081382888725960182730810444983362472505780835824262590942417235350516045')),  # noqa: E501
+        location_label=address2,
+        notes=f'Spend {fee_amount2} BTC for fees',
+    )
+    if btc_accounts == [address1]:  # self-transfer input address tracked
+        assert events == [fee_event1, HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=transfer_amount1,
+            location_label=address1,
+            notes=f'Send {transfer_amount1} BTC to {address3}',
+        )]
+    elif btc_accounts == [address2]:  # other input address tracked
+        assert events == [fee_event2, HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=transfer_amount2,
+            location_label=address2,
+            notes=f'Send {transfer_amount2} BTC to {address3}',
+        )]
+    elif btc_accounts == [address3]:  # output address tracked
+        assert events == [HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=transfer_amount1,
+            location_label=address3,
+            notes=f'Receive {transfer_amount1} BTC from {address1}',
+        ), HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=transfer_amount2,
+            location_label=address3,
+            notes=f'Receive {transfer_amount2} BTC from {address2}',
+        )]
+    else:  # all addresses tracked
+        fee_event2.sequence_index = 1
+        assert events == [fee_event1, fee_event2, HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.TRANSFER,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=transfer_amount1,
+            location_label=address1,
+            notes=f'Transfer {transfer_amount1} BTC to {address3}',
+        ), HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.TRANSFER,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=transfer_amount2,
+            location_label=address2,
+            notes=f'Transfer {transfer_amount2} BTC to {address3}',
+        )]
+        # Confirm totals match the original values in the tx.
+        assert fee_amount1 + fee_amount2 == FVal('0.000480000000000000000000000000000000000000000000000000000000000000000000000000000')  # noqa: E501
+        assert transfer_amount1 + transfer_amount2 == FVal('1.41800000000000000000000000000000000000000000000000000000000000000000000000000')  # noqa: E501
