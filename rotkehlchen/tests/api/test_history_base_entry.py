@@ -27,6 +27,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -275,6 +276,20 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
         status_code=HTTPStatus.BAD_REQUEST,
     )
     entry.tx_hash = original_tx_hash
+    # test setting asset to something other than BTC fails for bitcoin history events
+    assert isinstance((history_event_entry := entries[5]), HistoryEvent)
+    json_data = entries_to_input_dict(entries=[history_event_entry], include_identifier=True)
+    json_data['location'] = Location.BITCOIN.serialize()
+    json_data['asset'] = A_ETH.identifier
+    assert_error_response(
+        response=requests.patch(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json=json_data,
+        ),
+        contained_in_msg='Bitcoin events must use BTC as the asset',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    # Test that editing works for the various event types
     assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=True)  # evm event
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
     assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
