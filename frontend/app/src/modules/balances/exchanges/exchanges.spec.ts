@@ -62,12 +62,24 @@ describe('store::balances/exchanges', () => {
 
       const expectedResult = {
         ETH: {
-          amount: bigNumberify(3000),
-          usdValue: bigNumberify(3000),
+          coinbase: {
+            amount: bigNumberify(2000),
+            usdValue: bigNumberify(2000),
+          },
+          kraken: {
+            amount: bigNumberify(1000),
+            usdValue: bigNumberify(1000),
+          },
         },
         ETH2: {
-          amount: bigNumberify(3000),
-          usdValue: bigNumberify(3000),
+          coinbase: {
+            amount: bigNumberify(2000),
+            usdValue: bigNumberify(2000),
+          },
+          kraken: {
+            amount: bigNumberify(1000),
+            usdValue: bigNumberify(1000),
+          },
         },
       };
       expect(get(balances)).toMatchObject(expectedResult);

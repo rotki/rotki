@@ -30,6 +30,10 @@ interface UsePriceUtilsReturn {
   isManualAssetPrice: (asset: MaybeRef<string>) => ComputedRef<boolean>;
   toSelectedCurrency: (value: MaybeRef<BigNumber>) => ComputedRef<BigNumber>;
   hasCachedPrice: (asset: string) => boolean;
+  getAssetPrice: <T extends BigNumber | undefined = undefined>(
+    asset: string,
+    defaultValue?: T
+  ) => T extends undefined ? BigNumber | undefined : BigNumber;
 }
 
 export function usePriceUtils(): UsePriceUtilsReturn {
@@ -126,9 +130,30 @@ export function usePriceUtils(): UsePriceUtilsReturn {
     return (get(assetPricesWithCurrentCurrency)[asset]?.value ?? get(prices)[asset]?.value) !== undefined;
   }
 
+  function getAssetPrice<T extends BigNumber | undefined = undefined>(
+    asset: string,
+    defaultValue?: T,
+  ): T extends undefined ? BigNumber | undefined : BigNumber {
+    const currency = get(currencySymbol);
+    const isEqualToCurrentCurrency = asset === currency || (currency === 'EUR' && get(euroCollectionAssets).includes(asset));
+
+    if (isEqualToCurrentCurrency) {
+      return One as (T extends undefined ? BigNumber | undefined : BigNumber);
+    }
+
+    const price = get(assetPricesWithCurrentCurrency)[asset]?.value ?? get(prices)[asset]?.value;
+
+    if (price === undefined) {
+      return defaultValue as (T extends undefined ? BigNumber | undefined : BigNumber);
+    }
+
+    return price as (T extends undefined ? BigNumber | undefined : BigNumber);
+  }
+
   return {
     assetPrice,
     assetPriceInCurrentCurrency,
+    getAssetPrice,
     getAssetPriceOracle,
     hasCachedPrice,
     isAssetPriceInCurrentCurrency,

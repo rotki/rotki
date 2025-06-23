@@ -23,11 +23,22 @@ export const Percentage = z.string().refine((arg) => {
   message: 'Percentage must be between 0 and 100',
 });
 
-const WithPrice = z.object({ usdPrice: NumericString });
+const ProtocolBalanceSchema = Balance.extend({
+  containsManual: z.boolean().optional(),
+  protocol: z.string(),
+});
 
-const AssetBalanceWithPriceBeforeBreakdown = AssetBalance.merge(WithPrice);
-const AssetBalanceWithPrice = AssetBalanceWithPriceBeforeBreakdown.extend({
-  breakdown: z.array(AssetBalanceWithPriceBeforeBreakdown).optional(),
+const BaseAssetBalanceSchema = AssetBalance.merge(z.object({ usdPrice: NumericString }));
+
+const BreakdownSchema = BaseAssetBalanceSchema.extend({
+  perProtocol: z.array(ProtocolBalanceSchema).optional(),
+});
+
+export type ProtocolBalance = z.infer<typeof ProtocolBalanceSchema>;
+
+const AssetBalanceWithPrice = BaseAssetBalanceSchema.extend({
+  breakdown: z.array(BreakdownSchema).optional(),
+  perProtocol: z.array(ProtocolBalanceSchema).optional(),
 });
 
 export type AssetBalanceWithPrice = z.infer<typeof AssetBalanceWithPrice>;

@@ -1,4 +1,4 @@
-import type { AssetBalances } from '@/types/balances';
+import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import type { ExchangeInfo } from '@/types/exchanges';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { ComputedRef } from 'vue';
@@ -7,12 +7,12 @@ import { useBalanceSorting } from '@/composables/balances/sorting';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { mergeAssociatedAssets, sumAssetBalances } from '@/utils/balances';
+import { mergeAssociatedAssets } from '@/utils/balances';
 import { sortDesc } from '@/utils/bignumbers';
-import { exchangeAssetSum } from '@/utils/calculation';
+import { balanceSum, exchangeAssetSum } from '@/utils/calculation';
 
 interface UseExchangeDataReturn {
-  balances: ComputedRef<AssetBalances>;
+  balances: ComputedRef<AssetProtocolBalances>;
   getBalances: (exchange: string, hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   exchanges: ComputedRef<ExchangeInfo[]>;
 }
@@ -21,7 +21,7 @@ export function useExchangeData(): UseExchangeDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
   const { assetPrice } = usePriceUtils();
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const { assetAssociationMap, getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
   const exchanges = computed<ExchangeInfo[]>(() => {
@@ -35,9 +35,28 @@ export function useExchangeData(): UseExchangeDataReturn {
       .sort((a, b) => sortDesc(a.total, b.total));
   });
 
-  const balances = computed<AssetBalances>(() =>
-    sumAssetBalances(Object.values(get(exchangeBalances)), getAssociatedAssetIdentifier),
-  );
+  const balances = computed<AssetProtocolBalances>(() => {
+    const balances = get(exchangeBalances);
+    const association = get(assetAssociationMap);
+    const protocolBalances: AssetProtocolBalances = {};
+
+    for (const [exchange, assets] of Object.entries(balances)) {
+      for (const [asset, balance] of Object.entries(assets)) {
+        const identifier = association[asset] ?? asset;
+        if (!protocolBalances[identifier]) {
+          protocolBalances[identifier] = {};
+        }
+        if (!protocolBalances[identifier][exchange]) {
+          protocolBalances[identifier][exchange] = balance;
+        }
+        else {
+          protocolBalances[identifier][exchange] = balanceSum(protocolBalances[asset][exchange], balance);
+        }
+      }
+    }
+
+    return protocolBalances;
+  });
 
   const getBalances = (
     exchange: string,

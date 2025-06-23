@@ -12,6 +12,8 @@ export const AssetPrice = z.object({
   value: NumericString,
 });
 
+export type AssetPrice = z.infer<typeof AssetPrice>;
+
 export const AssetPrices = z.record(AssetPrice);
 
 export type AssetPrices = z.infer<typeof AssetPrices>;
