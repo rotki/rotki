@@ -86,3 +86,13 @@ class MakerdaoDsr(EthereumModule):
             # https://docs.makerdao.com/smart-contract-modules/rates-module#a-note-on-setting-rates
             current_dsr_percentage = ((FVal(current_dsr / RAY) ** 31622400) % 1) * 100
             return DSRCurrentBalances(balances=balances, current_dsr=current_dsr_percentage)
+
+    # -- Methods following the EthereumModule interface -- #
+    def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return
+        ...
+
+    def on_account_removal(self, address: ChecksumEvmAddress) -> None:
+        ...
+
+    def deactivate(self) -> None:
+        ...

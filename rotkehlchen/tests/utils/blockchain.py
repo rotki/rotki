@@ -340,8 +340,12 @@ def mock_etherscan_query(
             web3 = Web3()
             contract = web3.eth.contract(address=eth_multicall.address, abi=eth_multicall.abi)
             data = params.get('data') or ''
-            if 'c2cb1040220768554cf699b0d863a3cd4324ce3' in data:
-                multicall_purpose = 'ds_proxy'
+            if (
+                    'c2cb1040220768554cf699b0d863a3cd4324ce3' in data or  # DSProxy
+                    '4678f0a6958e4d2bc4f1baf7bc52e8f3564f3fe4' in data or  # Sky Proxy
+                    '807def5e7d057df05c796f4bc75c3fe82bd6eee1' in data  # liquity router (for proxies)  # noqa: E501
+            ):
+                multicall_purpose = 'proxy'
             elif '2bdded18e2ca464355091266b7616956944ee7e' in data:
                 multicall_purpose = 'compound_balances'
             elif '5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2' in data:

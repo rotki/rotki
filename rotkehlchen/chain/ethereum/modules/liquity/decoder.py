@@ -472,9 +472,6 @@ class LiquityDecoder(DecoderInterface):
         Can't use action items here because action items require to know all properties of an
         event that we expect to appear in the future, and we unfortunately can't know them.
         """
-        # Check if this is a V2 transaction (goes to V2 wrapper contract)
-        is_v2_transaction = transaction.to_address == LIQUITY_V2_WRAPPER
-
         for tx_log in all_logs:
             if tx_log.address == ACTIVE_POOL:
                 decoding_rule = self._decode_trove_operations
@@ -498,24 +495,7 @@ class LiquityDecoder(DecoderInterface):
                 post_decoding=True,
             )
             if decoding_output.events is not None:
-                # If this is a V2 transaction, update the notes to reflect V2
-                for event in decoding_output.events:
-                    if is_v2_transaction and event.counterparty == CPT_LIQUITY:
-                        if (
-                            event.notes and
-                            'Liquity protocol' in event.notes
-                        ):
-                            event.notes = event.notes.replace(
-                                'Liquity protocol', 'Liquity V2 protocol',
-                            )
-                        elif (
-                            event.notes and
-                            "Liquity's staking" in event.notes
-                        ):
-                            event.notes = event.notes.replace(
-                                "Liquity's staking", 'Liquity V2 staking',
-                            )
-                    decoded_events.append(event)
+                decoded_events.extend(decoding_output.events)
 
         return decoded_events
 

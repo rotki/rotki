@@ -2,7 +2,6 @@
 This file is executed from `rotkehlchen/tests/unit/test_search.py::test_db_persistence_after_search
 as a logic in a subprocess. This is done to simulate the behavior of crashing the application.
 """
-import os
 from uuid import uuid4
 
 from rotkehlchen.assets.asset import Asset, CustomAsset
@@ -29,7 +28,7 @@ def subprocess_sequence_for_test_db_persistence_after_search() -> None:
     rotki.unlock_user(
         user='testuser',
         password='123',
-        create_new='CI' in os.environ,
+        create_new=True,
         sync_approval='no',
         premium_credentials=None,
         resume_from_backup=False,

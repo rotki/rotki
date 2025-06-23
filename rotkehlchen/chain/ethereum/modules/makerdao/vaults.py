@@ -319,3 +319,6 @@ class MakerdaoVaults(EthereumModule):
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
         self.vault_mappings.pop(address, None)
+
+    def deactivate(self) -> None:
+        ...
