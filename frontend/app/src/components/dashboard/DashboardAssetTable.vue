@@ -12,6 +12,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
@@ -117,42 +118,44 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[get(tableType)];
 
-  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
-    {
-      cellClass: 'py-0',
-      class: 'text-no-wrap w-full',
-      key: 'asset',
-      label: t('common.asset'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      class: 'text-no-wrap',
-      key: 'usdPrice',
-      label: t('common.price_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      key: 'amount',
-      label: t('common.amount'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      class: 'text-no-wrap',
-      key: 'usdValue',
-      label: t('common.value_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
-      sortable: true,
-    },
-  ];
+  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [{
+    cellClass: 'py-0',
+    class: 'text-no-wrap w-full',
+    key: 'asset',
+    label: t('common.asset'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    class: 'text-no-wrap w-full',
+    key: 'protocol',
+    label: t('common.protocol'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    class: 'text-no-wrap',
+    key: 'usdPrice',
+    label: t('common.price_in_symbol', {
+      symbol: get(currencySymbol),
+    }),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    key: 'amount',
+    label: t('common.amount'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    class: 'text-no-wrap',
+    key: 'usdValue',
+    label: t('common.value_in_symbol', {
+      symbol: get(currencySymbol),
+    }),
+    sortable: true,
+  }];
 
   if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
@@ -260,6 +263,14 @@ watch(search, () => setPage(1));
           v-else
           :asset="row.asset"
           :is-collection-parent="!!row.breakdown"
+        />
+      </template>
+      <template #item.protocol="{ row }">
+        <BalanceTopProtocols
+          v-if="row.perProtocol"
+          :protocols="row.perProtocol"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          :asset="row.asset"
         />
       </template>
       <template #item.usdPrice="{ row }">
