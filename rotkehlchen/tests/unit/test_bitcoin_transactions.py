@@ -307,3 +307,109 @@ def test_2input_1output(
         # Confirm totals match the original values in the tx.
         assert fee_amount1 + fee_amount2 == FVal('0.000480000000000000000000000000000000000000000000000000000000000000000000000000000')  # noqa: E501
         assert transfer_amount1 + transfer_amount2 == FVal('1.41800000000000000000000000000000000000000000000000000000000000000000000000000')  # noqa: E501
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('btc_accounts', [[
+    'bc1qpeuhg6gcs4gdze7cmp3tmu9yjzkp7edtt6f4k4',
+    '1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH',
+    'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+    'bc1qxdw4t0uvnztl6jxuxvvpnsmx9fg4w7qxv5tgm4',
+    '1HZwkjkeaoZfTSaJxDw6aKkxp45agDiEzN',
+]])
+def test_3input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+    """This tx actually has 4 inputs, but 1 input is also an output, with its output value being
+    more than its input value, canceling it out as an input, and resulting in only 3 actual inputs.
+    """
+    assert get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=(tx_id := 'cccd3a9ce6c59fd0b5ae4244cb9b239387efa31c96e0d45c0c0b82c0d7ee3bd8'),
+    ) == [HistoryEvent(
+        event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1711929790000)),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount1 := FVal('0.0000349900109618287314696311430719520663908035422202581481970374366538300400020661')),  # noqa: E501
+        location_label=(address1 := btc_accounts[0]),
+        notes=f'Spend {fee_amount1} BTC for fees',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount2 := FVal('0.0000000549945190856342651844284640239668045982288898709259014812816730849799989669482')),  # noqa: E501
+        location_label=(address2 := btc_accounts[1]),
+        notes=f'Spend {fee_amount2} BTC for fees',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount3 := FVal('0.0000000549945190856342651844284640239668045982288898709259014812816730849799989669518')),  # noqa: E501
+        location_label=(address3 := btc_accounts[2]),
+        notes=f'Spend {fee_amount3} BTC for fees',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=(spend_amount1 := FVal('0.00343890998903817126853036885692804793360919645777974185180296256334616995999793')),  # noqa: E501
+        location_label=address1,
+        notes=f'Send {spend_amount1} BTC to {(address4 := btc_accounts[3])}, {(address5 := btc_accounts[4])}',  # noqa: E501
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=(spend_amount2 := FVal('0.00000540500548091436573481557153597603319540177111012907409851871832691502000103305')),  # noqa: E501
+        location_label=address2,
+        notes=f'Send {spend_amount2} BTC to {address4}, {address5}',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=5,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=(spend_amount3 := FVal('0.00000540500548091436573481557153597603319540177111012907409851871832691502000103305')),  # noqa: E501
+        location_label=address3,
+        notes=f'Send {spend_amount3} BTC to {address4}, {address5}',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=6,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=FVal('0.00031546'),
+        location_label=address4,
+        notes=f'Receive 0.00031546 BTC from {address1}, {address2}, {address3}',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=7,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=FVal('0.00313426'),
+        location_label=address5,
+        notes=f'Receive 0.00313426 BTC from {address1}, {address2}, {address3}',
+    )]

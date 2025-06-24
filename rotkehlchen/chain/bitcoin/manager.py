@@ -474,7 +474,7 @@ class BitcoinManager:
             notes=notes,
         )
 
-    def _decode_single_side_transfers(
+    def _decode_single_to_many_transfers(
             self,
             tx: BitcoinTx,
             single_address: BTCAddress,
@@ -487,7 +487,7 @@ class BitcoinManager:
         """
         spend_events: list[HistoryEvent] = []
         receive_events: list[HistoryEvent] = []
-        get_sender_receiver = (
+        get_sender_receiver = (  # to avoid repeating the if check in every loop iteration
             (lambda addr: (single_address, addr))
             if single_address_side == BtcTxIODirection.INPUT else
             (lambda addr: (addr, single_address))
@@ -521,6 +521,43 @@ class BitcoinManager:
             ))
 
         return spend_events + receive_events  # keep all spend events first
+
+    def _decode_many_to_many_transfers(
+            self,
+            tx: BitcoinTx,
+            inputs: dict[BTCAddress, FVal],
+            outputs: dict[BTCAddress, FVal],
+    ) -> list[HistoryEvent]:
+        """Decodes transfers in a transaction with multiple inputs and multiple outputs.
+        Since there's no direct mapping between specific inputs and outputs,
+        we decode events as follows:
+        1. Total amount sent from each input address to all outputs
+        2. Total amount received by each output address from all inputs
+
+        Note: The logic where this function is called in `decode_transaction` guarantees
+        that the `inputs` and `outputs` dicts both have multiple entries.
+
+        Returns a list of HistoryEvents.
+        """
+        events: list[HistoryEvent] = []
+        for totals_dict, event_type, notes in (
+            (inputs, HistoryEventType.SPEND, f"Send {{amount}} BTC to {', '.join(outputs.keys())}"),  # noqa: E501
+            (outputs, HistoryEventType.RECEIVE, f"Receive {{amount}} BTC from {', '.join(inputs.keys())}"),  # noqa: E501
+        ):
+            for address, amount in totals_dict.items():
+                if address not in self.tracked_accounts:
+                    continue
+
+                events.append(self.create_event(
+                    tx=tx,
+                    event_type=event_type,
+                    event_subtype=HistoryEventSubType.NONE,
+                    amount=amount,
+                    notes=notes.format(amount=amount),
+                    location_label=address,
+                ))
+
+        return events
 
     def decode_transaction(self, tx: BitcoinTx) -> list[HistoryEvent]:
         """Decode a BitcoinTx into HistoryEvents.
@@ -578,21 +615,25 @@ class BitcoinManager:
                     'input/output amounts. Should not happen.',
                 )
         elif in_len == 1:
-            transfer_events = self._decode_single_side_transfers(
+            transfer_events = self._decode_single_to_many_transfers(
                 tx=tx,
                 single_address=next(iter(input_totals)),
                 single_address_side=BtcTxIODirection.INPUT,
                 other_side_totals=output_totals,
             )
         elif out_len == 1:
-            transfer_events = self._decode_single_side_transfers(
+            transfer_events = self._decode_single_to_many_transfers(
                 tx=tx,
                 single_address=next(iter(output_totals)),
                 single_address_side=BtcTxIODirection.OUTPUT,
                 other_side_totals=input_totals,
             )
         else:
-            transfer_events = []  # TODO: add support for multi-in multi-out txs
+            transfer_events = self._decode_many_to_many_transfers(
+                tx=tx,
+                inputs=input_totals,
+                outputs=output_totals,
+            )
 
         for idx, event in enumerate(all_events := fee_events + op_return_events + transfer_events):
             event.sequence_index = idx  # assign sequence indexes in the proper order
