@@ -1082,7 +1082,7 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             ('MER-2', 'Mercurial'),
             ('ATLAS', 'Star Atlas'),
         ]
-        assert (tokens_before := cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]) == 12161  # noqa: E501
+        assert (tokens_before := cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]) == 12164  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before  # noqa: E501
         assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
             ('COPE',),
@@ -1119,6 +1119,12 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             ('MNGO', 'USDT'),
             ('RAY', 'BUSD'),
         ]
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' AND identifier IN ('HODLER','LAND','LEMON')").fetchall() == (user_added_tokens_before := [  # tokens that were added manually  # noqa: E501
+            ('HODLER', 'The Little Hodler'),
+            ('LAND', 'The Real Goal'),
+            ('LEMON', 'Dog Stolen From Tesla'),
+        ])
+        assert table_exists(cursor=cursor, name='user_added_solana_tokens') is False
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 13)
@@ -1186,6 +1192,10 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             (cope_identifier, 'USDT'),
             (mango_identifier, 'USDT'),
         ]
+        # check that the temporary table was created and the assets' type changed.
+        assert table_exists(cursor=cursor, name='user_added_solana_tokens') is True
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y' AND identifier IN ('HODLER','LAND','LEMON')").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='W' AND identifier IN ('HODLER','LAND','LEMON')").fetchall() == user_added_tokens_before  # noqa: E501
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

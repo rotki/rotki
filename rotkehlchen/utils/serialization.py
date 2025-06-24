@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
+    SolanaToken,
     UnderlyingToken,
 )
 from rotkehlchen.assets.types import AssetType
@@ -95,6 +96,19 @@ def deserialize_asset_with_oracles_from_db(
             protocol=asset_data[11],
             underlying_tokens=underlying_tokens,
             collectible_id=tokenid_to_collectible_id(identifier=identifier),
+        )
+    if asset_type == AssetType.SOLANA_TOKEN:
+        return SolanaToken.initialize(
+            address=asset_data[2],
+            token_kind=TokenKind.deserialize_solana_from_db(asset_data[13]),
+            decimals=asset_data[3],
+            name=identifier if asset_data[4] is None else asset_data[4],
+            symbol=asset_data[5],
+            started=Timestamp(asset_data[6]),
+            swapped_for=CryptoAsset(asset_data[8]) if asset_data[8] is not None else None,
+            coingecko=asset_data[9],
+            cryptocompare=asset_data[10],
+            protocol=asset_data[11],
         )
     if asset_type == AssetType.FIAT:
         return FiatAsset.initialize(

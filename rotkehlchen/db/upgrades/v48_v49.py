@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.upgrades.upgrade_utils import process_solana_asset_migration
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
@@ -19,6 +20,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """Upgrades the DB from v48 to v49. This is expected to be in v1.40 release.
 
     - Fix zksynclite_swaps table schema: change TEXT_NOT NULL to TEXT NOT NULL for to_amount column
+    - Migrate solana assets to CAIPS format
     """
     @progress_step(description='Fixing zksynclite_swaps table schema.')
     def _fix_zksynclite_swaps_schema(write_cursor: 'DBCursor') -> None:
@@ -47,5 +49,26 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",  # noqa: E501
             insert_columns='tx_id, from_asset, from_amount, to_asset, COALESCE(to_amount, "0")',
         )
+
+    @progress_step(description='Migrating solana assets to CAIPS format.')
+    def _migrate_solana_assets_to_caips(write_cursor: 'DBCursor') -> None:
+        write_cursor.switch_foreign_keys('OFF')
+        if len(process_solana_asset_migration(
+            write_cursor=write_cursor,
+            table_updates=[
+                ('assets', 'identifier'),
+                ('timed_balances', 'currency'),
+                ('manually_tracked_balances', 'asset'),
+                ('margin_positions', 'pl_currency'),
+                ('margin_positions', 'fee_currency'),
+                ('history_events', 'asset'),
+            ],
+        )) == 0:
+            log.debug('Missing CSV file. Skipping solana assets migration.')
+            return
+
+        write_cursor.switch_foreign_keys('ON')
+        # Delete the known duplicates
+        write_cursor.execute('DELETE FROM assets WHERE identifier IN (?, ?)', ('TRISIG', 'HODLSOL'))  # noqa: E501
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=False)

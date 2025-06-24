@@ -15,6 +15,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     Nft,
+    SolanaToken,
     UnderlyingToken,
 )
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
@@ -246,6 +247,9 @@ class GlobalDBHandler:
                     if asset.is_evm_token():
                         asset = cast('EvmToken', asset)
                         GlobalDBHandler.add_evm_token_data(write_cursor, asset)
+                    elif asset.is_solana_token():
+                        asset = cast('SolanaToken', asset)
+                        GlobalDBHandler.add_solana_token_data(write_cursor, asset)
                     else:
                         asset = cast('CryptoAsset', asset)
 
@@ -340,19 +344,20 @@ class GlobalDBHandler:
                         'protocol': entry[11],
                     })
                     data.update(common_data)
+                elif asset_type == AssetType.SOLANA_TOKEN:
+                    data.update({
+                        'protocol': entry[16],
+                        'token_kind': TokenKind.deserialize_solana_from_db(entry[17]).serialize(),
+                        'address': entry[18],
+                        'decimals': entry[19],
+                    })
+                    data.update(common_data)
                 elif AssetType.is_crypto_asset(asset_type):
                     data.update(common_data)
                 elif asset_type == AssetType.CUSTOM_ASSET:
                     data.update({
                         'notes': entry[14],
                         'custom_asset_type': entry[15],
-                    })
-                elif asset_type == AssetType.SOLANA_TOKEN:
-                    data.update({
-                        'protocol': entry[16],
-                        'token_kind': TokenKind.deserialize_solana_from_db(entry[17]),
-                        'address': entry[18],
-                        'decimals': entry[19],
                     })
                 else:
                     raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
@@ -797,33 +802,46 @@ class GlobalDBHandler:
 
         If no token for the given address can be found None is returned.
         """
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT A.identifier, B.address, B.chain, B.token_kind, B.decimals, C.name, '
-                'A.symbol, A.started, A.swapped_for, A.coingecko, A.cryptocompare, B.protocol '
-                'FROM evm_tokens AS B JOIN '
-                'common_asset_details AS A ON B.identifier = A.identifier '
-                'JOIN assets AS C on C.identifier=A.identifier WHERE B.address=? AND B.chain=?;',
-                (address, chain_id.serialize_for_db()),
-            )
-            results = cursor.fetchall()
-            if len(results) == 0:
-                return None
+        return GlobalDBHandler._get_single_token_from_db(
+            table_name='evm_tokens',
+            token_class=EvmToken,
+            address_filter=('address', address),
+            chain_filter=('chain', chain_id.serialize_for_db()),
+            extra_columns=['B.chain'],
+        )
 
-            token_data = results[0]
-            underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(cursor, token_data[0])
+    @staticmethod
+    def get_solana_token(address: SolanaAddress) -> SolanaToken | None:
+        """Gets all details for a solana token by its address
 
-        try:
-            return EvmToken.deserialize_from_db(
-                entry=token_data,
-                underlying_tokens=underlying_tokens,
-            )
-        except UnknownAsset as e:
-            log.error(
-                f'Found unknown swapped_for asset {e!s} in '
-                f'the DB when deserializing an EvmToken',
-            )
-            return None
+        If no token for the given address can be found None is returned.
+        """
+        return GlobalDBHandler._get_single_token_from_db(
+            table_name='solana_tokens',
+            token_class=SolanaToken,
+            address_filter=('address', address),
+        )
+
+    @staticmethod
+    def get_solana_tokens(
+            exceptions: set[SolanaAddress] | None = None,
+            protocol: str | None = None,
+            ignore_spam: bool = True,
+    ) -> list[SolanaToken]:
+        """Gets all solana tokens from the DB
+
+        Can also accept filtering parameters.
+        - List of addresses to ignore via exceptions
+        - Protocol for which to return tokens
+        - ignore_spam (default True) to filter out "spam protocol" assets
+        """
+        return GlobalDBHandler._get_tokens_from_db(
+            table_name='solana_tokens',
+            token_class=SolanaToken,
+            exceptions=exceptions,
+            protocol=protocol,
+            ignore_spam=ignore_spam,
+        )
 
     @staticmethod
     def get_evm_tokens(
@@ -839,46 +857,190 @@ class GlobalDBHandler:
         - Protocol for which to return tokens
         - ignore_spam (default True) to filter out "spam protocol" assets
         """
-        querystr = (
-            'SELECT A.identifier, B.address,  B.chain, B.token_kind, B.decimals, A.name, '
-            'C.symbol, C.started, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol '
-            'FROM evm_tokens as B LEFT OUTER JOIN '
-            'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
-            'C.identifier = B.identifier WHERE B.chain = ? '
+        return GlobalDBHandler._get_tokens_from_db(
+            table_name='evm_tokens',
+            token_class=EvmToken,
+            exceptions=exceptions,
+            protocol=protocol,
+            ignore_spam=ignore_spam,
+            chain_filter=('chain', chain_id.serialize_for_db()),
+            extra_columns=['B.chain'],
         )
-        bindings_list: list[str | (int | ChecksumEvmAddress)] = [chain_id.serialize_for_db()]
-        if exceptions is not None or protocol is not None or ignore_spam is True:
-            querystr_additions = []
-            if exceptions is not None:
-                questionmarks = '?' * len(exceptions)
-                querystr_additions.append(f'B.address NOT IN ({",".join(questionmarks)}) ')
-                bindings_list.extend(exceptions)
-            if protocol is not None:
-                querystr_additions.append('B.protocol=? ')
-                bindings_list.append(protocol)
-            if ignore_spam:  # NB: != for nullable needs to be accompanied by IS NULL
-                querystr_additions.append('(B.protocol!=? OR protocol IS NULL) ')
-                bindings_list.append(SPAM_PROTOCOL)
 
-            querystr += 'AND ' + 'AND '.join(querystr_additions) + ';'
-        else:
-            querystr += ';'
+    @staticmethod
+    @overload
+    def _get_single_token_from_db(
+            table_name: str,
+            token_class: type[EvmToken],
+            address_filter: tuple[str, Any],
+            chain_filter: tuple[str, Any] | None = None,
+            extra_columns: list[str] | None = None,
+    ) -> EvmToken | None:
+        ...
+
+    @staticmethod
+    @overload
+    def _get_single_token_from_db(
+            table_name: str,
+            token_class: type[SolanaToken],
+            address_filter: tuple[str, Any],
+            chain_filter: tuple[str, Any] | None = None,
+            extra_columns: list[str] | None = None,
+    ) -> SolanaToken | None:
+        ...
+
+    @staticmethod
+    def _get_single_token_from_db(
+            table_name: str,
+            token_class: type[EvmToken] | type[SolanaToken],
+            address_filter: tuple[str, Any],
+            chain_filter: tuple[str, Any] | None = None,
+            extra_columns: list[str] | None = None,
+    ) -> SolanaToken | EvmToken | None:
+        """Generic helper to retrieve a single token by address from database.
+
+        Args:
+            table_name: Database table to query
+            token_class: Token class to use for deserialization
+            address_filter: Tuple of (column, value) for address filtering
+            chain_filter: Optional tuple of (column, value) for chain filtering
+            extra_columns: Additional columns to select
+        """
+        base_columns = [
+            'A.identifier', 'B.address', 'B.token_kind', 'B.decimals', 'C.name',
+            'A.symbol', 'A.started', 'A.swapped_for', 'A.coingecko', 'A.cryptocompare', 'B.protocol',  # noqa: E501
+        ]
+        if extra_columns:
+            base_columns[2:2] = extra_columns
+
+        select_columns = ', '.join(base_columns)
+        querystr = (
+            f'SELECT {select_columns} '
+            f'FROM {table_name} AS B JOIN '
+            f'common_asset_details AS A ON B.identifier = A.identifier '
+            f'JOIN assets AS C on C.identifier=A.identifier WHERE '
+        )
+        bindings_list, where_conditions = [], []
+        address_column, address_value = address_filter
+        where_conditions.append(f'B.{address_column}=?')
+        bindings_list.append(address_value)
+
+        if chain_filter:
+            chain_column, chain_value = chain_filter
+            where_conditions.append(f'B.{chain_column}=?')
+            bindings_list.append(chain_value)
+
+        querystr += ' AND '.join(where_conditions) + ';'
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            if len(results := cursor.execute(querystr, bindings_list).fetchall()) == 0:
+                return None
+
+            token_data, underlying_tokens = results[0], None
+            if issubclass(token_class, EvmToken):
+                underlying_tokens = GlobalDBHandler.fetch_underlying_tokens(cursor, token_data[0])
+
+        try:
+            if issubclass(token_class, EvmToken):
+                return token_class.deserialize_from_db(
+                    entry=token_data,
+                    underlying_tokens=underlying_tokens,
+                )
+            else:
+                return token_class.deserialize_from_db(entry=token_data)
+        except UnknownAsset as e:
+            log.error(
+                f'Found unknown swapped_for asset {e!s} in '
+                f'the DB when deserializing a {token_class!s}',
+            )
+            return None
+
+    @staticmethod
+    def _get_tokens_from_db(
+            table_name: str,
+            token_class: type[EvmToken] | type[SolanaToken],
+            exceptions: set | None = None,
+            protocol: str | None = None,
+            ignore_spam: bool = True,
+            chain_filter: tuple[str, Any] | None = None,
+            extra_columns: list[str] | None = None,
+    ) -> list:
+        """Generic helper to retrieve tokens from database.
+
+        Args:
+            table_name: Database table to query
+            token_class: Token class to use for deserialization
+            exceptions: Addresses to exclude
+            protocol: Specific protocol filter
+            ignore_spam: Filter spam protocols
+            chain_filter: Tuple of (column, value) for chain filtering
+            extra_columns: Additional columns to select
+        """
+        base_columns = [
+            'A.identifier', 'B.address', 'B.token_kind', 'B.decimals', 'A.name',
+            'C.symbol', 'C.started', 'C.swapped_for', 'C.coingecko', 'C.cryptocompare', 'B.protocol',  # noqa: E501
+        ]
+        if extra_columns:
+            base_columns[2:2] = extra_columns
+
+        select_columns = ', '.join(base_columns)
+
+        # Build query
+        querystr = (
+            f'SELECT {select_columns} '
+            f'FROM {table_name} as B LEFT OUTER JOIN '
+            f'assets AS A on B.identifier = A.identifier JOIN common_asset_details AS C ON '
+            f'C.identifier = B.identifier'
+        )
+
+        bindings_list = []
+        where_conditions = []
+        if chain_filter:
+            column, value = chain_filter
+            where_conditions.append(f'B.{column} = ?')
+            bindings_list.append(value)
+
+        if exceptions is not None:
+            questionmarks = ','.join('?' * len(exceptions))
+            where_conditions.append(f'B.address NOT IN ({questionmarks})')
+            bindings_list.extend(exceptions)
+
+        if protocol is not None:
+            where_conditions.append('B.protocol=?')
+            bindings_list.append(protocol)
+
+        if ignore_spam:
+            where_conditions.append('(B.protocol!=? OR protocol IS NULL)')
+            bindings_list.append(SPAM_PROTOCOL)
+
+        if where_conditions:
+            querystr += ' WHERE ' + ' AND '.join(where_conditions)
+        querystr += ';'
 
         bindings = tuple(bindings_list)
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(querystr, bindings)
             tokens = []
+
             for entry in cursor:
-                with GlobalDBHandler().conn.read_ctx() as other_cursor:
-                    underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(other_cursor, entry[0])  # noqa: E501
+                underlying_tokens = None
+                if issubclass(token_class, EvmToken):
+                    with GlobalDBHandler().conn.read_ctx() as other_cursor:
+                        underlying_tokens = GlobalDBHandler().fetch_underlying_tokens(
+                            cursor=other_cursor,
+                            parent_token_identifier=entry[0],
+                        )
 
                 try:
-                    token = EvmToken.deserialize_from_db(entry, underlying_tokens)
+                    token: EvmToken | SolanaToken
+                    if issubclass(token_class, EvmToken):
+                        token = token_class.deserialize_from_db(entry, underlying_tokens)
+                    else:
+                        token = token_class.deserialize_from_db(entry)
                     tokens.append(token)
                 except UnknownAsset as e:
                     log.error(
                         f'Found unknown swapped_for asset {e!s} in '
-                        f'the DB when deserializing an EvmToken',
+                        f'the DB when deserializing a {token_class!s}',
                     )
 
         return tokens
@@ -951,48 +1113,146 @@ class GlobalDBHandler:
 
         May raise InputError if the token already exists or we fail to add the underlying tokens
         """
-        try:
-            write_cursor.execute(
-                'INSERT INTO '
-                'evm_tokens(identifier, token_kind, chain, address, decimals, protocol) '
-                'VALUES(?, ?, ?, ?, ?, ?)',
-                (
-                    entry.identifier,
-                    entry.token_kind.serialize_for_db(),
-                    entry.chain_id.serialize_for_db(),
-                    entry.evm_address,
-                    entry.decimals,
-                    entry.protocol,
-                ),
-            )
-        except sqlite3.IntegrityError as e:
-            exception_msg = str(e)
-            if 'FOREIGN KEY' in exception_msg:
-                # should not really happen since API should check for this
-                msg = (
-                    f'Ethereum token with address {entry.evm_address} can not be put '
-                    f'in the DB due to asset with identifier {entry.identifier} doesnt exist'
-                )
-            else:
-                msg = f'Ethereum token with identifier {entry.identifier} already exists in the DB'
-            raise InputError(msg) from e
-
-        if entry.underlying_tokens is not None:
-            GlobalDBHandler._add_underlying_tokens(
+        GlobalDBHandler._add_token_data(
+            write_cursor=write_cursor,
+            query='INSERT INTO evm_tokens (identifier, token_kind, address, chain, decimals, protocol) VALUES (?,?,?,?,?,?)',  # noqa: E501
+            bindings=(
+                entry.identifier,
+                entry.token_kind.serialize_for_db(),
+                entry.evm_address,
+                entry.chain_id.serialize_for_db(),
+                entry.decimals,
+                entry.protocol,
+            ),
+            token_type='evm',
+            post_insert_callback=lambda: GlobalDBHandler._add_underlying_tokens(
                 write_cursor=write_cursor,
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
                 chain_id=entry.chain_id,
-            )
+            ) if entry.underlying_tokens is not None else None,
+        )
+
+    @staticmethod
+    def add_solana_token_data(write_cursor: DBCursor, entry: SolanaToken) -> None:
+        """Adds solana token specific information into the global DB
+
+        May raise InputError if the token already exists
+        """
+        GlobalDBHandler._add_token_data(
+            write_cursor=write_cursor,
+            query='INSERT INTO solana_tokens (identifier, token_kind, address, decimals, protocol) VALUES (?,?,?,?,?)',  # noqa: E501
+            bindings=(
+                entry.identifier,
+                entry.token_kind.serialize_for_db(),
+                entry.mint_address,
+                entry.decimals,
+                entry.protocol,
+            ),
+            token_type='solana',
+        )
+
+    @staticmethod
+    def _add_token_data(
+            write_cursor: 'DBCursor',
+            query: str,
+            bindings: tuple,
+            token_type: Literal['evm', 'solana'],
+            post_insert_callback: Callable | None = None,
+    ) -> None:
+        """Generic function to add token-specific data to the global DB"""
+        try:
+            write_cursor.execute(query, bindings)
+        except sqlite3.IntegrityError as e:
+            exception_msg = str(e)
+            if 'FOREIGN KEY' in exception_msg:
+                msg = (
+                    f'{token_type} token with address {bindings[2]} can not be put '
+                    f'in the DB due to asset with identifier {bindings[0]} doesnt exist'
+                )
+            else:
+                msg = f'{token_type} token with identifier {bindings[0]} already exists in the DB'
+            raise InputError(msg) from e
+
+        if post_insert_callback:
+            post_insert_callback()
 
     @staticmethod
     def edit_evm_token(entry: EvmToken) -> str:
         """Edits an EVM token entry in the DB
-
-        May raise InputError if there is an error during updating
+        May raise:
+        - InputError if there is an error during updating
 
         Returns the token's rotki identifier and clears the cache of the asset resolver
         """
+        def evm_update_callback(write_cursor: 'DBCursor', _entry: EvmToken) -> None:
+            write_cursor.execute(
+                'UPDATE evm_tokens SET token_kind=?, chain=?, address=?, decimals=?, '
+                'protocol=? WHERE identifier=?',
+                (
+                    _entry.token_kind.serialize_for_db(),
+                    _entry.chain_id.serialize_for_db(),
+                    _entry.evm_address,
+                    _entry.decimals,
+                    _entry.protocol,
+                    _entry.identifier,
+                ),
+            )
+            if write_cursor.rowcount != 1:
+                raise InputError(f'Tried to edit non existing token with address {_entry.evm_address} at chain {entry.chain_id}')  # noqa: E501
+
+            write_cursor.execute(
+                'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
+                (_entry.identifier,),
+            )
+            if _entry.underlying_tokens is not None:
+                GlobalDBHandler()._add_underlying_tokens(
+                    write_cursor=write_cursor,
+                    parent_token_identifier=_entry.identifier,
+                    underlying_tokens=_entry.underlying_tokens,
+                    chain_id=_entry.chain_id,
+                )
+
+        return GlobalDBHandler._edit_token(
+            entry=entry,
+            check_rowcount=False,
+            address=entry.evm_address,
+            token_specific_update_callback=evm_update_callback,
+        )
+
+    @staticmethod
+    def edit_solana_token(entry: SolanaToken) -> str:
+        """Edits a Solana token entry in the DB
+        May raise:
+        - InputError if there is an error during updating
+
+        Returns the token's rotki identifier and clears the cache of the asset resolver
+        """
+        return GlobalDBHandler._edit_token(
+            entry=entry,
+            token_specific_update_callback=lambda _write_cursor, _entry: _write_cursor.execute(
+                'UPDATE solana_tokens SET token_kind=?, address=?, decimals=?, '
+                'protocol=? WHERE identifier=?',
+                (
+                    _entry.token_kind.serialize_for_db(),
+                    _entry.mint_address,
+                    _entry.decimals,
+                    _entry.protocol,
+                    _entry.identifier,
+                ),
+            ),
+            address=entry.mint_address,
+            check_rowcount=True,
+        )
+
+    @staticmethod
+    def _edit_token(
+            entry: SolanaToken | EvmToken,
+            check_rowcount: bool,
+            token_specific_update_callback: Callable,
+            address: SolanaAddress | ChecksumEvmAddress | None,
+    ) -> str:
+        """Generic token editing function that handles the common pattern."""
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 write_cursor.execute(
@@ -1016,52 +1276,20 @@ class GlobalDBHandler:
                         entry.identifier,
                     ),
                 )
-                write_cursor.execute(
-                    'UPDATE evm_tokens SET token_kind=?, chain=?, address=?, decimals=?, '
-                    'protocol=? WHERE identifier=?',
-                    (
-                        entry.token_kind.serialize_for_db(),
-                        entry.chain_id.serialize_for_db(),
-                        entry.evm_address,
-                        entry.decimals,
-                        entry.protocol,
-                        entry.identifier,
-                    ),
-                )
-                if write_cursor.rowcount != 1:
-                    raise InputError(
-                        f'Tried to edit non existing EVM token with address {entry.evm_address} at chain {entry.chain_id}',  # noqa: E501
-                    )
 
-                # Since this is editing, make sure no underlying tokens exist
-                write_cursor.execute(
-                    'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
-                    (entry.identifier,),
-                )
-                if entry.underlying_tokens is not None:  # and now add any if needed
-                    GlobalDBHandler()._add_underlying_tokens(
-                        write_cursor=write_cursor,
-                        parent_token_identifier=entry.identifier,
-                        underlying_tokens=entry.underlying_tokens,
-                        chain_id=entry.chain_id,
-                    )
-
-                rotki_id = GlobalDBHandler.get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
-                if rotki_id is None:
-                    raise InputError(
-                        f'Unexpected DB state. EVM token {entry.evm_address} at chain '
-                        f'{entry.chain_id} exists in the DB but its corresponding asset '
-                        f'entry was not found.',
-                    )
+                token_specific_update_callback(write_cursor, entry)
+                if write_cursor.rowcount != 1 and check_rowcount:
+                    raise InputError(f'Tried to edit non existing token with address {address}')
 
         except sqlite3.IntegrityError as e:
+            chain_info = f' at chain {entry.chain_id}' if hasattr(entry, 'chain_id') else ''
             raise InputError(
-                f'Failed to update DB entry for EVM token with address {entry.evm_address} at chain {entry.chain_id}'  # noqa: E501
+                f'Failed to update DB entry for token with address {address}{chain_info} '
                 f'due to a constraint being hit. Make sure the new values are valid ',
             ) from e
 
         AssetResolver.clean_memory_cache(entry.identifier)
-        return rotki_id
+        return entry.identifier
 
     @staticmethod
     def set_token_protocol_if_missing(token: EvmToken, new_protocol: str) -> None:
@@ -1092,6 +1320,10 @@ class GlobalDBHandler:
 
         if asset.is_evm_token():
             GlobalDBHandler.edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
+            return
+
+        if asset.is_solana_token():
+            GlobalDBHandler.edit_solana_token(asset)   # type: ignore[arg-type]  # it is definitely a solana token
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1178,6 +1410,7 @@ class GlobalDBHandler:
         evm_token_type = AssetType.EVM_TOKEN.serialize_for_db()    # pylint: disable=no-member
         extra_check_evm = ''
         evm_query_list: list[int | str] = [evm_token_type, symbol]
+        solana_query_list: list[int | str] = [AssetType.SOLANA_TOKEN.serialize_for_db(), symbol]
         if chain_id is not None:
             extra_check_evm += ' AND B.chain=? '
             evm_query_list.append(chain_id.serialize_for_db())
@@ -1198,10 +1431,13 @@ class GlobalDBHandler:
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
         ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND B.symbol = ? COLLATE NOCASE{extra_check_common}
+        UNION ALL
+        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, null, B.token_kind, null, null from assets as A JOIN solana_tokens as B
+        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.symbol = ? COLLATE NOCASE
         """  # noqa: E501
         assets = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, evm_query_list + common_query_list)
+            cursor.execute(querystr, evm_query_list + common_query_list + solana_query_list)
             for entry in cursor.fetchall():
                 asset_type = AssetType.deserialize_from_db(entry[1])
                 underlying_tokens: list[UnderlyingToken] | None = None

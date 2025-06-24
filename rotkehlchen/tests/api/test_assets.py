@@ -15,6 +15,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
+from rotkehlchen.constants.resolver import solana_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -49,6 +50,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Location,
+    SolanaAddress,
     TimestampMS,
     TokenKind,
 )
@@ -1236,3 +1238,60 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
     assert token.name == 'A new name'
     assert token.symbol == ''
     assert token.decimals == 18
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
+    token_identifier = solana_address_to_identifier(
+        address=(token_address := SolanaAddress('9wK8yN6iz1ie5kEJkvZCTxyN1x5sTdNfx8yeMY8Ebonk')),
+        token_type=TokenKind.SPL_TOKEN,
+    )
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json=(payload := {
+            'asset_type': 'solana token',
+            'address': token_address,
+            'name': 'Hosico Cat',
+            'symbol': 'HOSICO',
+            'decimals': 6,
+            'coingecko': 'hosico-cat',
+            'cryptocompare': None,
+            'token_kind': 'spl_token',
+            'protocol': '',
+            'started': 1745929399,
+        }),
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['identifier'] == token_identifier
+
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'allassetsresource',
+        ),
+        json={
+            'identifiers': [token_identifier],
+        },
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 1
+    assert result['entries'] == [
+        {
+            'address': token_address,
+            'identifier': token_identifier,
+            'asset_type': payload['asset_type'],
+            'coingecko': payload['coingecko'],
+            'cryptocompare': None,
+            'decimals': payload['decimals'],
+            'name': payload['name'],
+            'symbol': payload['symbol'],
+            'started': payload['started'],
+            'forked': None,
+            'swapped_for': None,
+            'protocol': None,
+            'token_kind': ' '.join(payload['token_kind'].split('_')),  # type: ignore[attr-defined]  # it is a string
+        },
+    ]

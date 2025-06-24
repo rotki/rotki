@@ -149,7 +149,7 @@ def _init_db_with_target_version(
         stack.enter_context(target_patch(target_version=target_version))
         stack.enter_context(mock_db_schema_sanity_check())
         stack.enter_context(no_tables_created_after_init)
-        if target_version <= 47:
+        if target_version <= 48:
             stack.enter_context(mock_dbhandler_update_owned_assets())
             stack.enter_context(mock_dbhandler_sync_globaldb_assets())
         return DBHandler(
@@ -3555,10 +3555,34 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         ).fetchone()[0]
         assert swaps_count > 0, 'Expected some swap data'
 
-        # Store the data to verify it's preserved
-        swaps_data = cursor.execute(
-            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id',  # noqa: E501
-        ).fetchall()
+        # check that old format solana assets exist
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE identifier IN ('$NAP', 'ACS', 'AI16Z', 'BONK', 'TRISIG', 'HODLSOL')").fetchone()[0] == 6  # noqa: E501
+        tokens_mapping = {  # define before/after mapping for token identifiers
+            '$NAP': 'solana/token:4G86CMxGsMdLETrYnavMFKPhQzKTvDBYGMRAdVtr72nu',
+            'ACS': 'solana/token:5MAYDfq5yxtudAhtfyuMBuHZjgAbaS9tbEyEQYAhDS5y',
+            'AI16Z': 'solana/token:HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC',
+            'HODLSOL': 'solana/token:58UC31xFjDJhv1NnBF73mtxcsxN92SWjhYRzbfmvDREJ',
+        }
+        expected_timed_balances_before = [
+            ('$NAP', '100.5', '15000.0'),
+            ('ACS', '5000.0', '5000.0'),
+            ('AI16Z', '1000000.0', '50.0'),
+        ]
+        expected_history_events_before = [
+            ('$NAP', '10.0', 'receive'),
+            ('ACS', '1000.0', 'receive'),
+            ('HODLSOL', '500.0', 'receive'),
+        ]
+        expected_margin_positions_before = [
+            ('AI16Z', '100.0'),
+            ('ACS', '-50.0'),
+        ]
+        # check old asset references in other tables exist
+        assert cursor.execute('SELECT currency, amount, usd_value FROM timed_balances WHERE currency IN ("$NAP", "ACS", "AI16Z")').fetchall() == expected_timed_balances_before  # noqa: E501
+        assert cursor.execute('SELECT asset, amount, type FROM history_events WHERE asset IN ("$NAP", "ACS", "HODLSOL")').fetchall() == expected_history_events_before  # noqa: E501
+        assert cursor.execute('SELECT pl_currency, profit_loss FROM margin_positions WHERE pl_currency IN ("AI16Z", "ACS")').fetchall() == expected_margin_positions_before  # noqa: E501
+        # it should not have any CAIPS format assets before upgrade
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier LIKE "solana:%" ORDER BY identifier').fetchone()[0] == 0  # noqa: E501
 
     # Logout and upgrade
     db_v48.logout()
@@ -3581,10 +3605,23 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         assert 'TEXT_NOT NULL' not in schema_info[0], 'TEXT_NOT NULL bug should be fixed'
         assert 'to_amount TEXT NOT NULL' in schema_info[0], 'Should have correct TEXT NOT NULL syntax'  # noqa: E501
 
-        # Check that data was preserved
-        new_swaps_data = cursor.execute(
-            'SELECT tx_id, from_asset, from_amount, to_asset, to_amount FROM zksynclite_swaps ORDER BY tx_id',  # noqa: E501
-        ).fetchall()
-        assert new_swaps_data == swaps_data, 'Swap data should be preserved after upgrade'
+        # Test solana assets migration to CAIPS format
+        # verify old format assets are gone
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN ("$NAP", "ACS", "AI16Z", "BONK") ORDER BY identifier').fetchone()[0] == 0  # noqa: E501
+        # verify duplicates were deleted
+        assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN ("TRISIG", "HODLSOL")').fetchone()[0] == 0  # noqa: E501
+        # Check that asset references were updated in other tables
+        assert cursor.execute('SELECT currency, amount, usd_value FROM timed_balances WHERE currency LIKE "solana%"').fetchall() == [  # noqa: E501
+            (tokens_mapping[entry[0]], entry[1], entry[2])
+            for entry in expected_timed_balances_before
+        ]
+        assert cursor.execute('SELECT asset, amount, type FROM history_events WHERE asset LIKE "solana%"').fetchall() == [  # noqa: E501
+            (tokens_mapping[entry[0]], entry[1], entry[2])
+            for entry in expected_history_events_before
+        ]
+        assert cursor.execute('SELECT pl_currency, profit_loss FROM margin_positions WHERE pl_currency LIKE "solana%"').fetchall() == [  # noqa: E501
+            (tokens_mapping[entry[0]], entry[1])
+            for entry in expected_margin_positions_before
+        ]
 
     db.logout()

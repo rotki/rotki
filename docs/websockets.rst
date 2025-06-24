@@ -577,3 +577,21 @@ Track the progress for when we need to query prices at multiple timestamps.
 - ``total``: Total number of combinations asset-price that will be queried.
 - ``processed``: Number of prices queried.
 - ``subtype``: Set to "multiple_prices_query_status" to identify prices queries.
+
+
+Solana Tokens Manual Migration
+=================================
+
+Solana tokens that require manual migration by the user.
+
+::
+
+    {
+        "type": "progress_updates",
+        "data": {
+            "identifiers": ['HODL', 'TRUMP']
+        }
+    }
+
+
+- ``identifiers``: Asset identifiers that need to manually migrated to solana tokens.

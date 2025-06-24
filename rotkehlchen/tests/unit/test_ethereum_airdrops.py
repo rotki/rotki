@@ -248,7 +248,7 @@ def prepare_airdrop_mock_response(
     'coingecko': 'shutter',
     'cryptocompare': 'SHUTTER',
 }, {
-    'asset_type': 'SOLANA_TOKEN',  # test with non EVM token
+    'asset_type': 'OTHER',  # test with non EVM token
     'name': 'Some Non EVM Token',
     'symbol': 'NONEVM',
     'coingecko': 'nonevm',

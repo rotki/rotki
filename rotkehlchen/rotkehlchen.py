@@ -127,7 +127,7 @@ from rotkehlchen.utils.misc import combine_dicts, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
 
 logger = logging.getLogger(__name__)
@@ -530,12 +530,26 @@ class Rotkehlchen:
         # Send a notification to the user if data associated with
         # old erc721 tokens has been saved during the db upgrade.
         # TODO: Remove this after a couple versions (added in version 1.38).
-        with self.data.db.conn.read_ctx() as cursor:
-            if cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='temp_erc721_data'").fetchone()[0] != 0:  # noqa: E501
-                self.msg_aggregator.add_warning(
-                    'Data associated with invalid ERC721 assets is present in your database. '
-                    'Please contact rotki support via our discord to resolve this issue.',
-                )
+        self._check_migration_table_and_notify(
+            conn=self.data.db.conn,
+            table_name='temp_erc721_data',
+            notification_callback=lambda: self.msg_aggregator.add_warning(
+                'Data associated with invalid ERC721 assets is present in your database. '
+                'Please contact rotki support via our discord to resolve this issue.',
+            ),
+        )
+
+        # Send a notification to the user if custom Solana tokens were previously
+        # added and need to be migrated manually in the app.
+        # TODO: Remove this after a couple versions (added in version 1.40).
+        self._check_migration_table_and_notify(
+            conn=GlobalDBHandler().conn,
+            table_name='user_added_solana_tokens',
+            notification_callback=lambda: self.msg_aggregator.add_message(
+                message_type=WSMessageType.SOLANA_TOKENS_MIGRATION,
+                data={'identifiers': [i[0] for i in cursor.execute('SELECT identifier FROM user_added_solana_tokens')]},  # noqa: E501
+            ),
+        )
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:
@@ -1361,3 +1375,16 @@ class Rotkehlchen:
                 to_asset=to_asset,
                 purge_old=purge_old,
             )
+
+    @staticmethod
+    def _check_migration_table_and_notify(
+            conn: 'DBConnection',
+            table_name: str,
+            notification_callback: Callable,
+    ) -> None:
+        """Helper function to check if a migration table
+        exists and send notification if it does.
+        """
+        with conn.read_ctx() as cursor:
+            if cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", (table_name,)).fetchone()[0] != 0:  # noqa: E501
+                notification_callback()

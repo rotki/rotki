@@ -16,13 +16,14 @@ if TYPE_CHECKING:
         EvmToken,
         FiatAsset,
         Nft,
+        SolanaToken,
     )
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
+T = TypeVar('T', 'FiatAsset', 'CryptoAsset', 'EvmToken', 'Nft', 'SolanaToken', 'AssetWithNameAndType', 'AssetWithSymbol', 'AssetWithOracles')  # noqa: E501
 
 
 class AssetResolver:
