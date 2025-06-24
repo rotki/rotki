@@ -1,4 +1,5 @@
 import logging
+import re
 import urllib
 from collections.abc import Mapping, Sequence
 from enum import Enum, StrEnum
@@ -50,6 +51,7 @@ from rotkehlchen.types import (
     HexColorCode,
     Location,
     Price,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -66,6 +68,8 @@ from rotkehlchen.utils.mixins.enums import (
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+SOLANA_ADDRESS_RE = re.compile(r'^[1-9A-HJ-NP-Za-km-z]{32,44}$')  # Solana addresses are base58 encoded, 32-44 characters  # noqa: E501
 
 
 class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
@@ -688,6 +692,34 @@ class EvmAddressField(fields.Field):
             ) from e
 
         return address
+
+
+class SolanaAddressField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: SolanaAddress | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> SolanaAddress:
+        if not SOLANA_ADDRESS_RE.match(value):
+            raise ValidationError(
+                f'Given value {value} is not a solana address',
+                field_name='address',
+            )
+
+        return SolanaAddress(value)
 
 
 class EVMTransactionHashField(fields.Field):
