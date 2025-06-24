@@ -40,7 +40,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
-from rotkehlchen.tests.utils.database import column_exists
+from rotkehlchen.tests.utils.database import column_exists, index_exists
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
@@ -1060,6 +1060,132 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
         assert cursor.execute(
             'SELECT COUNT(*) FROM default_rpc_nodes WHERE endpoint=""',
         ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('custom_globaldb', ['v12_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [12])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='solana_tokens') is False
+        assert index_exists(cursor=cursor, name='idx_solana_tokens_identifier') is False
+        assert cursor.execute("SELECT COUNT(*) FROM token_kinds WHERE token_kind IN ('D', 'E')").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' LIMIT 10").fetchall() == [  # noqa: E501
+            ('COPE', 'Cope'),
+            ('FIDA', 'Bonfida'),
+            ('HOLY', 'Holy Trinity'),
+            ('RAY', 'Raydium'),
+            ('MEDIA', 'Media Network'),
+            ('STEP', 'Step Finance'),
+            ('SNY', 'Synthetify Token'),
+            ('MNGO', 'Mango'),
+            ('MER-2', 'Mercurial'),
+            ('ATLAS', 'Star Atlas'),
+        ]
+        assert (tokens_before := cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]) == 12161  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before  # noqa: E501
+        assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
+            ('COPE',),
+            ('RAY',),
+            ('MNGO',),
+        ]
+        assert cursor.execute('SELECT asset FROM multiasset_mappings WHERE collection_id IN (500, 501, 502) ORDER BY collection_id').fetchall() == [  # noqa: E501
+            ('COPE',),
+            ('RAY',),
+            ('MNGO',),
+        ]
+        assert cursor.execute('SELECT * FROM user_owned_assets').fetchall() == [
+            ('COPE',),
+            ('RAY',),
+            ('MNGO',),
+        ]
+        assert cursor.execute('SELECT from_asset, to_asset FROM price_history').fetchall() == [
+            ('COPE', 'USD'),
+            ('MNGO', 'ETH'),
+            ('USD', 'RAY'),
+        ]
+        assert cursor.execute("SELECT exchange_symbol, local_id FROM location_asset_mappings WHERE exchange_symbol IN ('TRISIG', 'TRUMPSOL')").fetchall() == [  # noqa: E501
+            ('TRISIG', 'TRISIG'),
+            ('TRUMPSOL', 'TRUMP'),
+            ('TRISIG', 'TRISIG'),
+        ]
+        assert cursor.execute("SELECT symbol, local_id FROM counterparty_asset_mappings WHERE symbol IN ('BONK', 'WIF', 'POPCAT')").fetchall() == [  # noqa: E501
+            ('BONK', 'BONK'),
+            ('WIF', 'WIF'),
+            ('POPCAT', 'POPCAT'),
+        ]
+        assert cursor.execute('SELECT base_asset, quote_asset FROM binance_pairs').fetchall() == [
+            ('COPE', 'USDT'),
+            ('MNGO', 'USDT'),
+            ('RAY', 'BUSD'),
+        ]
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 13)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 13
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='solana_tokens') is True
+        assert index_exists(cursor=cursor, name='idx_solana_tokens_identifier') is True
+        assert cursor.execute("SELECT COUNT(*) FROM token_kinds WHERE token_kind IN ('D', 'E')").fetchone()[0] == 2  # noqa: E501
+        assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' LIMIT 10").fetchall() == [  # noqa: E501
+            (cope_identifier := 'solana/token:8HGyAAB1yoM1ttS7pXjHMa3dukTFGQggnFFH3hJZgzQh', 'Cope'),  # noqa: E501
+            ('solana/token:EchesyfXePKdLtoiZSL8pBe8Myagyy8ZRqsACNCFGnvp', 'Bonfida'),
+            ('solana/token:3GECTP7H4Tww3w8jEPJCJtXUtXxiZty31S9szs84CcwQ', 'Holy Trinity'),
+            (raydium_identifier := 'solana/token:4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', 'Raydium'),  # noqa: E501
+            ('solana/token:ETAtLmCmsoiEEKfNrHKJ2kYy3MoABhU6NQvpSfij5tDs', 'Media Network'),
+            ('solana/token:StepAscQoEioFxxWGnh2sLBDFp9d8rvKz2Yp39iDpyT', 'Step Finance'),
+            ('solana/token:4dmKkXNHdgYsXqBHCuMikNQWwVomZURhYvkkX5c4pQ7y', 'Synthetify Token'),
+            (mango_identifier := 'solana/token:MangoCzJ36AjZyKwVj3VnYU4GTonjfVEnJmvvWaxLac', 'Mango'),  # noqa: E501
+            ('solana/token:MERt85fc5boKw3BW1eYdxonEuJNvXbiMbs6hvheau5K', 'Mercurial'),
+            ('solana/token:ATLASXmbPQxBUYbxPsV97usA3fPQYEqzQBUHgiFCUsXx', 'Star Atlas'),
+        ]
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE identifier IN ('HODLSOL','TRISIG')").fetchone()[0] == 0  # noqa: E501
+        # token count reduced by 2 due to removal duplicate HODLSOL and TRISIG duplicate entries
+        assert cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0] == tokens_before - 2
+        assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before - 2  # noqa: E501
+        assert cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y' AND identifier NOT LIKE 'solana%'").fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
+            (cope_identifier,),
+            (raydium_identifier,),
+            (mango_identifier,),
+        ]
+        assert cursor.execute('SELECT asset FROM multiasset_mappings WHERE collection_id IN (500, 501, 502) ORDER BY collection_id').fetchall() == [  # noqa: E501
+            (cope_identifier,),
+            (raydium_identifier,),
+            (mango_identifier,),
+        ]
+        assert cursor.execute('SELECT * FROM user_owned_assets').fetchall() == [
+            (cope_identifier,),
+            (raydium_identifier,),
+            (mango_identifier,),
+        ]
+        assert cursor.execute('SELECT from_asset, to_asset FROM price_history').fetchall() == [
+            (cope_identifier, 'USD'),
+            (mango_identifier, 'ETH'),
+            ('USD', raydium_identifier),
+        ]
+        assert cursor.execute("SELECT exchange_symbol, local_id FROM location_asset_mappings WHERE exchange_symbol IN ('TRISIG', 'TRUMPSOL')").fetchall() == [  # noqa: E501
+            ('TRISIG', trisig_sol_identifier := 'solana/token:BLDiYcvm3CLcgZ7XUBPgz6idSAkNmWY6MBbm8Xpjpump'),  # noqa: E501
+            ('TRUMPSOL', 'solana/token:6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'),
+            ('TRISIG', trisig_sol_identifier),
+        ]
+        assert cursor.execute("SELECT symbol, local_id FROM counterparty_asset_mappings WHERE symbol IN ('BONK', 'WIF', 'POPCAT')").fetchall() == [  # noqa: E501
+            ('BONK', 'solana/token:DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263'),
+            ('WIF', 'solana/token:EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm'),
+            ('POPCAT', 'solana/token:7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr'),
+        ]
+        assert cursor.execute('SELECT base_asset, quote_asset FROM binance_pairs').fetchall() == [
+            (raydium_identifier, 'BUSD'),
+            (cope_identifier, 'USDT'),
+            (mango_identifier, 'USDT'),
+        ]
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

@@ -1,8 +1,16 @@
-from rotkehlchen.types import EVM_TOKEN_KINDS, ChainID, ChecksumEvmAddress, TokenKind
+from rotkehlchen.types import (
+    EVM_TOKEN_KINDS,
+    SOLANA_TOKEN_KINDS,
+    ChainID,
+    ChecksumEvmAddress,
+    SolanaAddress,
+    TokenKind,
+)
 
 ETHEREUM_DIRECTIVE = '_ceth_'
 ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
 EVM_CHAIN_DIRECTIVE = 'eip155'
+SOLANA_CHAIN_DIRECTIVE = 'solana'
 
 
 def evm_address_to_identifier(
@@ -48,3 +56,14 @@ def strethaddress_to_identifier(address: str) -> str:
         chain_id=ChainID.ETHEREUM,
         token_type=TokenKind.ERC20,
     )
+
+
+def solana_address_to_identifier(address: SolanaAddress, token_type: SOLANA_TOKEN_KINDS) -> str:
+    """Converts a Solana address and token type into a CAIP-19 identifier.
+
+    Uses 'solana' prefix instead of full CAIP-2 chain reference to save database space.
+
+    Example: SPL_TOKEN becomes 'solana/token:<address>'.
+    See: https://namespaces.chainagnostic.org/solana/caip19
+    """
+    return f'{SOLANA_CHAIN_DIRECTIVE}/{str(token_type)[4:]}:{address}'

@@ -16,8 +16,11 @@ import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
-from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
-from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
+from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_INDEXES, MINIMIZED_USER_DB_SCHEMA
+from rotkehlchen.globaldb.minimized_schema import (
+    MINIMIZED_GLOBAL_DB_INDEXES,
+    MINIMIZED_GLOBAL_DB_SCHEMA,
+)
 from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import ts_now
 
@@ -275,10 +278,13 @@ class DBConnection:
             )
         self._set_progress_handler()
         self.minimized_schema = None
+        self.minimized_indexes = None
         if connection_type == DBConnectionType.USER:
             self.minimized_schema = MINIMIZED_USER_DB_SCHEMA
+            self.minimized_indexes = MINIMIZED_USER_DB_INDEXES
         elif connection_type == DBConnectionType.GLOBAL:
             self.minimized_schema = MINIMIZED_GLOBAL_DB_SCHEMA
+            self.minimized_indexes = MINIMIZED_GLOBAL_DB_INDEXES
 
     def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
@@ -518,7 +524,8 @@ class DBConnection:
         """
         assert (
             self.connection_type != DBConnectionType.TRANSIENT and
-            self.minimized_schema is not None
+            self.minimized_schema is not None and
+            self.minimized_indexes is not None
         )
 
         with self.read_ctx() as cursor:
@@ -526,4 +533,5 @@ class DBConnection:
                 cursor=cursor,
                 db_name=self.connection_type.name.lower(),
                 minimized_schema=self.minimized_schema,
+                minimized_indexes=self.minimized_indexes,
             )

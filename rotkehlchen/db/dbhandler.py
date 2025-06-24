@@ -14,7 +14,7 @@ from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import (
@@ -199,7 +199,7 @@ class DBHandler:
             'version': (int, ROTKEHLCHEN_DB_VERSION),
             'last_write_ts': (int, Timestamp(0)),
             'premium_should_sync': (str_to_bool, DEFAULT_PREMIUM_SHOULD_SYNC),
-            'main_currency': (lambda x: Asset(x).resolve(), A_USD.resolve_to_fiat_asset()),
+            'main_currency': (Asset, A_USD),
             'ongoing_upgrade_from_version': (int, None),
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
@@ -386,7 +386,7 @@ class DBHandler:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> AssetWithOracles:
+    def get_setting(self, cursor: 'DBCursor', name: Literal['main_currency']) -> Asset:
         ...
 
     @overload
@@ -423,13 +423,9 @@ class DBHandler:
                 'beacon_rpc_endpoint',
                 'ask_user_upon_size_discrepancy',
             ],
-    ) -> int | Timestamp | bool | AssetWithOracles | list['ExchangeLocationID'] | str | None:
+    ) -> int | Timestamp | bool | Asset | list['ExchangeLocationID'] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
-        cursor.execute(
-            'SELECT value FROM settings WHERE name=?;', (name,),
-        )
-        result = cursor.fetchone()
-        if result is not None:
+        if (result := cursor.execute('SELECT value FROM settings WHERE name=?;', (name,)).fetchone()) is not None:  # noqa: E501
             return deserializer(result[0])  # type: ignore
 
         return default_value  # type: ignore
