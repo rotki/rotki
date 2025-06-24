@@ -75,24 +75,6 @@ export function appendAssetBalance(
     assets[identifier] = { ...balanceSum(ownedAsset, value) };
 }
 
-export function sumAssetBalances(
-  balances: AssetBalances[],
-  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>,
-): AssetBalances {
-  const summed: AssetBalances = {};
-  for (const balance of balances) {
-    for (const [asset, value] of Object.entries(balance)) {
-      const identifier = getAssociatedAssetIdentifier(asset);
-      const associatedAsset: string = get(identifier);
-
-      if (summed[associatedAsset])
-        summed[associatedAsset] = balanceSum(value, summed[associatedAsset]);
-      else summed[associatedAsset] = { ...value };
-    }
-  }
-  return summed;
-}
-
 export function sum(balances: { usdValue: BigNumber }[]): BigNumber {
   return bigNumberSum(balances.map(account => account.usdValue));
 }
