@@ -4089,6 +4089,9 @@
   "progress_screen": {
     "progress": "{progress} %"
   },
+  "protocol_icon": {
+    "contains_manual": "Includes manual balance"
+  },
   "purge_selector": {
     "centralized_exchange_to_clear": {
       "hint": "Empty this field to remove the data for all centralized exchanges",
