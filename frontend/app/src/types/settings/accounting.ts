@@ -1,12 +1,12 @@
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export enum AccountingTreatment {
   SWAP = 'swap',
 }
 
-const AccountingTreatmentEnum = z.nativeEnum(AccountingTreatment);
+const AccountingTreatmentEnum = z.enum(AccountingTreatment);
 
 export const AccountingRuleWithLinkedProperty = z.object({
   linkedSetting: z.string().optional(),

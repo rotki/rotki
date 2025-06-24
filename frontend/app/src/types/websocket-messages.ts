@@ -1,7 +1,7 @@
 import { CalendarEventWithReminder } from '@/types/history/calendar';
 import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { Blockchain, CommonQueryStatusData, type MaybePromise, type Notification } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
@@ -41,12 +41,11 @@ export const SocketMessageProgressUpdateSubType = {
 
 export type SocketMessageProgressUpdateSubType = (typeof SocketMessageProgressUpdateSubType)[keyof typeof SocketMessageProgressUpdateSubType];
 
-export const EvmTransactionQueryData = z
-  .object({
-    period: z.tuple([z.number(), z.number()]),
-    status: z.nativeEnum(EvmTransactionsQueryStatus),
-  })
-  .merge(EvmChainAddress);
+export const EvmTransactionQueryData = z.object({
+  period: z.tuple([z.number(), z.number()]),
+  status: z.enum(EvmTransactionsQueryStatus),
+  ...EvmChainAddress.shape,
+});
 
 export const EvmUnDecodedTransactionsData = CommonQueryStatusData.extend({
   chain: z.string(),
@@ -63,7 +62,7 @@ export const EvmUndecodedTransactionBreakdown = z.object({
   undecoded: z.number(),
 });
 
-export const EvmUndecodedTransactionResponse = z.record(EvmUndecodedTransactionBreakdown);
+export const EvmUndecodedTransactionResponse = z.record(z.string(), EvmUndecodedTransactionBreakdown);
 
 export type EvmUndecodedTransactionResponse = z.infer<typeof EvmUndecodedTransactionResponse>;
 
@@ -86,7 +85,7 @@ export const HistoryEventsQueryData = z.object({
   location: z.string(),
   name: z.string(),
   period: z.tuple([z.number(), z.number()]).optional(),
-  status: z.nativeEnum(HistoryEventsQueryStatus),
+  status: z.enum(HistoryEventsQueryStatus),
 });
 
 export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
@@ -160,8 +159,8 @@ export const RefreshBalancesType = {
 } as const;
 
 export const RefreshBalancesData = z.object({
-  blockchain: z.nativeEnum(Blockchain),
-  type: z.nativeEnum(RefreshBalancesType),
+  blockchain: z.enum(Blockchain),
+  type: z.enum(RefreshBalancesType),
 });
 
 export const AccountingRuleConflictData = z.object({

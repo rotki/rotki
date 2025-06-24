@@ -1,10 +1,13 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { AssetBalance, Balance } from '../balances';
 import { NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
 
-const TimedBalance = Balance.merge(TimedEntry);
+const TimedBalance = z.object({
+  ...Balance.shape,
+  ...TimedEntry.shape,
+});
 
 export type TimedBalance = z.infer<typeof TimedBalance>;
 
@@ -26,7 +29,10 @@ export const LocationData = z.array(LocationDataItem);
 
 export type LocationData = z.infer<typeof LocationData>;
 
-const TimedAssetBalance = AssetBalance.merge(TimedEntry);
+const TimedAssetBalance = z.object({
+  ...AssetBalance.shape,
+  ...TimedEntry.shape,
+});
 
 export const TimedAssetBalances = z.array(TimedAssetBalance);
 
@@ -66,7 +72,7 @@ export const FailedHistoricalAssetPriceResponse = z.object({
 export type FailedHistoricalAssetPriceResponse = z.infer<typeof FailedHistoricalAssetPriceResponse>;
 
 export const HistoricalAssetPriceResponse = FailedHistoricalAssetPriceResponse.extend({
-  prices: z.record(NumericString),
+  prices: z.record(z.string(), NumericString),
 });
 
 export type HistoricalAssetPriceResponse = z.infer<typeof HistoricalAssetPriceResponse>;

@@ -1,7 +1,7 @@
-import { type PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
+import { PriceOracle, PriceOracleEnum } from '@/types/settings/price-oracle';
 import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'es-toolkit/compat';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const AssetPriceInput = z.tuple([NumericString, z.number()]);
 
@@ -14,13 +14,13 @@ export const AssetPrice = z.object({
 
 export type AssetPrice = z.infer<typeof AssetPrice>;
 
-export const AssetPrices = z.record(AssetPrice);
+export const AssetPrices = z.record(z.string(), AssetPrice);
 
 export type AssetPrices = z.infer<typeof AssetPrices>;
 
 export const AssetPriceResponse = z.object({
-  assets: z.record(AssetPriceInput),
-  oracles: z.record(PriceOracleEnum, z.number()),
+  assets: z.record(z.string(), AssetPriceInput),
+  oracles: z.partialRecord(PriceOracleEnum, z.number()),
   targetAsset: z.string(),
 }).transform((response) => {
   const mappedAssets: AssetPrices = {};
@@ -31,7 +31,7 @@ export const AssetPriceResponse = z.object({
     const oracleKey = Object.entries(response.oracles).find(([_, value]) => value === oracle)?.[0] ?? '';
 
     mappedAssets[asset] = {
-      isManualPrice: oracle === response.oracles.manualcurrent,
+      isManualPrice: oracle === response.oracles[PriceOracle.MANUALCURRENT],
       oracle: oracleKey,
       value,
     };
@@ -59,8 +59,8 @@ export interface OracleCacheMeta extends AssetPair {
   readonly toTimestamp: string;
 }
 
-const TimedPrices = z.record(NumericString);
-const AssetTimedPrices = z.record(TimedPrices);
+const TimedPrices = z.record(z.string(), NumericString);
+const AssetTimedPrices = z.record(z.string(), TimedPrices);
 
 export const HistoricPrices = z.object({
   assets: AssetTimedPrices,
@@ -83,7 +83,8 @@ export interface AssetPriceInfo extends Balance {
   readonly usdPrice: BigNumber;
 }
 
-export const ManualPrice = AssetPair.extend({
+export const ManualPrice = z.object({
+  ...AssetPair.shape,
   price: NumericString,
 });
 
@@ -98,7 +99,8 @@ export const ManualPrices = z.array(ManualPrice);
 
 export type ManualPrices = z.infer<typeof ManualPrices>;
 
-export const HistoricalPrice = ManualPrice.extend({
+export const HistoricalPrice = z.object({
+  ...ManualPrice.shape,
   timestamp: z.number(),
 });
 
@@ -108,19 +110,22 @@ export const HistoricalPrices = z.array(HistoricalPrice);
 
 export type HistoricalPrices = z.infer<typeof HistoricalPrices>;
 
-export const ManualPriceFormPayload = AssetPair.extend({
+export const ManualPriceFormPayload = z.object({
+  ...AssetPair.shape,
   price: z.string(),
 });
 
 export type ManualPriceFormPayload = z.infer<typeof ManualPriceFormPayload>;
 
-export const HistoricalPriceFormPayload = ManualPriceFormPayload.extend({
+export const HistoricalPriceFormPayload = z.object({
+  ...ManualPriceFormPayload.shape,
   timestamp: z.number(),
 });
 
 export type HistoricalPriceFormPayload = z.infer<typeof HistoricalPriceFormPayload>;
 
-export const HistoricalPriceDeletePayload = AssetPair.extend({
+export const HistoricalPriceDeletePayload = z.object({
+  ...AssetPair.shape,
   timestamp: z.number(),
 });
 
@@ -140,7 +145,10 @@ export const PriceInformation = z.object({
 
 export type PriceInformation = z.infer<typeof PriceInformation>;
 
-export const NftPrice = PriceInformation.merge(AssetEntry);
+export const NftPrice = z.object({
+  ...PriceInformation.shape,
+  ...AssetEntry.shape,
+});
 
 export type NftPrice = z.infer<typeof NftPrice>;
 

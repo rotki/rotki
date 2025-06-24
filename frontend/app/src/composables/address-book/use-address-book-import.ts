@@ -3,7 +3,7 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { useNotificationsStore } from '@/store/notifications';
 import { logger } from '@/utils/logging';
 import { groupBy, omit } from 'es-toolkit';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const CSVRow = z.object({
   address: z.string().min(1),

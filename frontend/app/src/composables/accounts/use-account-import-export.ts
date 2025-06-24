@@ -17,7 +17,7 @@ import { downloadFileByTextContent } from '@/utils/download';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
 import { Blockchain, Severity } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const CSVRow = z.object({
   address: z.string(),

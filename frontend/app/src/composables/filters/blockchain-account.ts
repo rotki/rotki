@@ -4,7 +4,7 @@ import type { MaybeRef } from '@vueuse/core';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import { arrayify } from '@/utils/array';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 enum BlockchainAccountFilterKeys {
   ADDRESS = 'address',
@@ -89,4 +89,5 @@ export const AccountExternalFilterSchema = z.object({
   q: z.string().optional(),
   tab: z.coerce.number().optional(),
   tags: CommaSeparatedStringSchema,
-}).merge(RouterExpandedIdsSchema);
+  ...RouterExpandedIdsSchema.shape,
+});

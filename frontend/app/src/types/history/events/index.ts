@@ -1,7 +1,7 @@
 import { CollectionCommonFields } from '@/types/collection';
 import { EntryMeta } from '@/types/history/meta';
 import { type BigNumber, HistoryEventEntryType, NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const LiquityStakingEventExtraData = z.object({
   asset: z.string(),
@@ -112,7 +112,7 @@ export const EvmHistoryEvent = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.EVM_EVENT),
-  extraData: z.unknown().nullable(),
+  extraData: z.unknown().nullish(),
   product: z.string().nullable(),
   txHash: z.string(),
 });
@@ -145,7 +145,7 @@ export const EthDepositEvent = CommonHistoryEvent.extend({
   address: z.string().nullable(),
   counterparty: z.string().nullable(),
   entryType: z.literal(HistoryEventEntryType.ETH_DEPOSIT_EVENT),
-  extraData: z.unknown().nullable(),
+  extraData: z.unknown().nullable().nullish(),
   product: z.string().nullable(),
   txHash: z.string(),
   validatorIndex: z.number(),
@@ -338,21 +338,23 @@ export enum HistoryEventAccountingRuleStatus {
   PROCESSED = 'processed',
 }
 
-export const HistoryEventAccountingRuleStatusEnum = z.nativeEnum(HistoryEventAccountingRuleStatus);
+export const HistoryEventAccountingRuleStatusEnum = z.enum(HistoryEventAccountingRuleStatus);
 
-export const HistoryEventMeta = EntryMeta.merge(
-  z.object({
-    customized: z.boolean().optional(),
-    eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
-    groupedEventsNum: z.number().nullish(),
-    hasDetails: z.boolean().optional(),
-    hidden: z.boolean().optional(),
-  }),
-);
+export const HistoryEventMeta = z.object({
+  ...EntryMeta.shape,
+  customized: z.boolean().optional(),
+  eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
+  groupedEventsNum: z.number().nullish(),
+  hasDetails: z.boolean().optional(),
+  hidden: z.boolean().optional(),
+});
 
 export type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;
 
-const HistoryEventEntryWithMeta = z.object({ entry: HistoryEvent }).merge(HistoryEventMeta);
+const HistoryEventEntryWithMeta = z.object({
+  entry: HistoryEvent,
+  ...HistoryEventMeta.shape,
+});
 
 export type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
 
@@ -383,7 +385,7 @@ export interface OnlineHistoryEventsRequestPayload {
 }
 
 export const SkippedHistoryEventsSummary = z.object({
-  locations: z.record(z.number()),
+  locations: z.record(z.string(), z.number()),
   total: z.number(),
 });
 

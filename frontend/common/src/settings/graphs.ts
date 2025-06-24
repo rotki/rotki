@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { assert } from '../assertions';
 import { TimeUnit } from './frontend';
 
@@ -17,11 +17,11 @@ export enum TimeFramePersist {
   REMEMBER = 'REMEMBER',
 }
 
-export const TimeFramePeriodEnum = z.nativeEnum(TimeFramePeriod);
+export const TimeFramePeriodEnum = z.enum(TimeFramePeriod);
 
 export type TimeFramePeriodEnum = z.infer<typeof TimeFramePeriodEnum>;
 
-const TimeFramePersistEnum = z.nativeEnum(TimeFramePersist);
+const TimeFramePersistEnum = z.enum(TimeFramePersist);
 
 export const TimeFrameSetting = z.union([TimeFramePeriodEnum, TimeFramePersistEnum]);
 

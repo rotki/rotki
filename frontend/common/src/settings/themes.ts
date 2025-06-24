@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 
 export interface Themes {
   readonly light: ThemeColors;
@@ -19,7 +19,7 @@ export enum Theme {
   LIGHT = 2,
 }
 
-export const ThemeEnum = z.nativeEnum(Theme);
+export const ThemeEnum = z.enum(Theme);
 
 export const SELECTED_THEME = 'selectedTheme';
 

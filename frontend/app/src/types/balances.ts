@@ -1,5 +1,5 @@
 import { Balance, type BigNumber } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export interface Eth2Validator {
   readonly validatorIndex?: string;
@@ -14,11 +14,11 @@ export interface LocationBalance {
 
 export type BalanceByLocation = Record<string, BigNumber>;
 
-export const AssetBalances = z.record(Balance);
+export const AssetBalances = z.record(z.string(), Balance);
 
 export type AssetBalances = z.infer<typeof AssetBalances>;
 
-export const AccountAssetBalances = z.record(AssetBalances);
+export const AccountAssetBalances = z.record(z.string(), AssetBalances);
 
 export type AccountAssetBalances = z.infer<typeof AccountAssetBalances>;
 
@@ -32,7 +32,7 @@ export const EvmTokens = z.object({
   tokens: z.array(z.string()).nullish(),
 });
 
-export const EvmTokensRecord = z.record(EvmTokens);
+export const EvmTokensRecord = z.record(z.string(), EvmTokens);
 
 export type EvmTokensRecord = z.infer<typeof EvmTokensRecord>;
 

@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export enum Module {
   MAKERDAO_VAULTS = 'makerdao_vaults',
@@ -19,7 +19,7 @@ export enum PurgeableOnlyModule {
 
 export type PurgeableModule = Module | PurgeableOnlyModule;
 
-export const ModuleEnum = z.nativeEnum(Module);
+export const ModuleEnum = z.enum(Module);
 
 export type ModuleEnum = z.infer<typeof ModuleEnum>;
 

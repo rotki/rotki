@@ -1,7 +1,7 @@
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
 import { AssetCollection, AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export interface AssetDBVersion {
   readonly local: number;
@@ -32,11 +32,10 @@ export interface AssetMergePayload {
   readonly targetIdentifier: string;
 }
 
-export const AssetInfoWithId = AssetInfo.merge(
-  z.object({
-    identifier: z.string().min(1),
-  }),
-).transform((data: any) => ({
+export const AssetInfoWithId = z.object({
+  ...AssetInfo.shape,
+  identifier: z.string().min(1),
+}).transform((data: any) => ({
   ...data,
   isCustomAsset: data.isCustomAsset || data.assetType === 'custom asset',
 }));
@@ -48,8 +47,8 @@ export const AssetsWithId = z.array(AssetInfoWithId);
 export type AssetsWithId = z.infer<typeof AssetsWithId>;
 
 export const AssetMap = z.object({
-  assetCollections: z.record(AssetCollection),
-  assets: z.record(AssetInfoWithTransformer),
+  assetCollections: z.record(z.string(), AssetCollection),
+  assets: z.record(z.string(), AssetInfoWithTransformer),
 });
 
 export type AssetMap = z.infer<typeof AssetMap>;

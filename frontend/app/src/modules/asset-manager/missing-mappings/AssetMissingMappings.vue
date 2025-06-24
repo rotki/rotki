@@ -9,7 +9,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useMissingMappingsDB } from '@/modules/asset-manager/missing-mappings/use-missing-mappings-db';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import z from 'zod';
+import z from 'zod/v4';
 
 const QuerySchema = z.object({
   identifier: z.string().optional().default(''),

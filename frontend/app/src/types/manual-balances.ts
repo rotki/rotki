@@ -1,13 +1,13 @@
 import type { PaginationRequestPayload } from '@/types/common';
 import { BalanceType } from '@/types/balances';
 import { NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const RawManualBalance = z.object({
   amount: NumericString,
   asset: z.string(),
   assetIsMissing: z.boolean().optional(),
-  balanceType: z.nativeEnum(BalanceType),
+  balanceType: z.enum(BalanceType),
   label: z.string(),
   location: z.string(),
   tags: z.array(z.string()).nullable(),
@@ -15,15 +15,17 @@ const RawManualBalance = z.object({
 
 export type RawManualBalance = z.infer<typeof RawManualBalance>;
 
-export const ManualBalance = z
-  .object({
-    identifier: z.number().positive(),
-  })
-  .merge(RawManualBalance);
+export const ManualBalance = z.object({
+  identifier: z.number().positive(),
+  ...RawManualBalance.shape,
+});
 
 export type ManualBalance = z.infer<typeof ManualBalance>;
 
-export const ManualBalanceWithValue = ManualBalance.merge(z.object({ usdValue: NumericString }));
+export const ManualBalanceWithValue = z.object({
+  ...ManualBalance.shape,
+  usdValue: NumericString,
+});
 
 export type ManualBalanceWithValue = z.infer<typeof ManualBalanceWithValue>;
 
@@ -33,7 +35,10 @@ export const ManualBalances = z.object({
 
 export type ManualBalances = z.infer<typeof ManualBalances>;
 
-const ManualBalanceWithPrice = ManualBalanceWithValue.merge(z.object({ usdPrice: NumericString.optional() }));
+const ManualBalanceWithPrice = z.object({
+  ...ManualBalanceWithValue.shape,
+  usdPrice: NumericString.optional(),
+});
 
 export type ManualBalanceWithPrice = z.infer<typeof ManualBalanceWithPrice>;
 

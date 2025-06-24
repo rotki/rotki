@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const Tag = z.object({
   backgroundColor: z.string(),
@@ -9,7 +9,7 @@ export const Tag = z.object({
 
 export type Tag = z.infer<typeof Tag>;
 
-export const Tags = z.record(Tag);
+export const Tags = z.record(z.string(), Tag);
 
 export type Tags = z.infer<typeof Tags>;
 

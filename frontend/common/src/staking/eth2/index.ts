@@ -1,5 +1,5 @@
 import type { Account } from '../../account';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { Balance, Percentage } from '../../balances';
 import { type BigNumber, NumericString } from '../../numbers';
 
@@ -42,7 +42,7 @@ export const EthStakingPerformanceResponse = z.object({
   entriesFound: z.number(),
   entriesTotal: z.number(),
   sums: EthStakingStats,
-  validators: z.record(EthStakingStats),
+  validators: z.record(z.string(), EthStakingStats),
 });
 
 export type EthStakingPerformanceResponse = z.infer<typeof EthStakingPerformanceResponse>;

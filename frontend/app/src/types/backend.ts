@@ -1,5 +1,5 @@
 import { ActiveLogLevel } from '@shared/ipc';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 const BackendVersion = z.object({
   downloadUrl: z.string().nullish(),

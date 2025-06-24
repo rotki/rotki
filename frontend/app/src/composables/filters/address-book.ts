@@ -1,7 +1,7 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { isValidEthAddress } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 enum AddressBookFilterKeys {
   NAME = 'name',

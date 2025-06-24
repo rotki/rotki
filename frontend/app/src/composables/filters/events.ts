@@ -18,7 +18,7 @@ import { getDateInputISOFormat } from '@/utils/date';
 import { isEthBlockEventType, isEthDepositEventType, isEvmEventType, isOnlineHistoryEventType, isWithdrawalEventType } from '@/utils/history/events';
 import { HistoryEventEntryType, isValidEthAddress, isValidTxHash } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 enum HistoryEventFilterKeys {
   START = 'start',

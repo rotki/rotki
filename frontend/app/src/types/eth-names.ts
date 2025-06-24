@@ -1,13 +1,13 @@
 import type { PaginationRequestPayload } from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
 import { Blockchain } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
-export const EthNames = z.record(z.string().nullable());
+export const EthNames = z.record(z.string(), z.string().nullable());
 
 export type EthNames = z.infer<typeof EthNames>;
 
-const BlockchainEnum = z.nativeEnum(Blockchain);
+const BlockchainEnum = z.enum(Blockchain);
 
 export const AddressNameRequestPayload = z.object({
   address: z.string(),
