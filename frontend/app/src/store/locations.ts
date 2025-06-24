@@ -66,14 +66,23 @@ export const useLocationStore = defineStore('locations', () => {
     return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.isExchangeWithoutApiSecret);
   });
 
+  const experimentalExchanges = computed<string[]>(() => {
+    const locations = get(allLocations);
+    return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.experimental);
+  });
+
+  const useIsExperimentalExchange = (location: MaybeRef<string>): ComputedRef<boolean> => computed(() => get(experimentalExchanges).includes(get(location)));
+
   return {
     allExchanges,
     allLocations,
     exchangesWithKey,
     exchangesWithoutApiSecret,
     exchangesWithPassphrase,
+    experimentalExchanges,
     fetchAllTradeLocations,
     tradeLocations,
+    useIsExperimentalExchange,
   };
 });
 
