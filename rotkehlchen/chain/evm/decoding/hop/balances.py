@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
@@ -106,11 +106,11 @@ class HopBalances(ProtocolWithBalance):
                 staking_token, rewards_token = EvmToken(evm_address_to_identifier(
                     address=checksummed_staking_token,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 )), EvmToken(evm_address_to_identifier(
                     address=checksummed_rewards_token,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 ))
             except (UnknownAsset, WrongAssetType):
                 log.error(f'Found {self.evm_inquirer.chain_name} Hop balance for unknown token {checksummed_staking_token} or {checksummed_rewards_token}. Skipping')  # noqa: E501

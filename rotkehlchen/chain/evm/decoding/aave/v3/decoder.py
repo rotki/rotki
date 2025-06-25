@@ -14,7 +14,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from ..constants import CPT_AAVE_V3, MINT
@@ -75,7 +75,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 amount=int.from_bytes(tx_log.data[:32]),
                 asset=EvmToken(evm_address_to_identifier(
                     address=tx_log.address,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                     chain_id=self.evm_inquirer.chain_id,
                 )),
             ) for tx_log in context.all_logs

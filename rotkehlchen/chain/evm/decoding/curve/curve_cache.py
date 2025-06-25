@@ -43,8 +43,8 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.network import request_get_dict
 
@@ -175,7 +175,7 @@ def _ensure_single_pool_curve_tokens_existence(
                     evm_inquirer=evm_inquirer,
                     underlying_tokens=[UnderlyingToken(
                         address=underlying_token_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=ONE,
                     )],
                     encounter=encounter,
@@ -243,7 +243,7 @@ def _ensure_single_pool_curve_tokens_existence(
                 encounter=encounter,
                 underlying_tokens=[UnderlyingToken(
                     address=pool.lp_token_address,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                     weight=ONE,
                 )],
                 fallback_decimals=18,  # all gauges have 18 decimals https://t.me/curvefi/654915  # noqa: E501

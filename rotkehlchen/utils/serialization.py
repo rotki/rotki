@@ -15,7 +15,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChainID, EvmTokenKind, Location, Timestamp
+from rotkehlchen.types import ChainID, Location, Timestamp, TokenKind
 
 
 class RKLEncoder(json.JSONEncoder):
@@ -84,7 +84,7 @@ def deserialize_asset_with_oracles_from_db(
         return EvmToken.initialize(
             address=asset_data[2],
             chain_id=ChainID(asset_data[12]),
-            token_kind=EvmTokenKind.deserialize_from_db(asset_data[13]),
+            token_kind=TokenKind.deserialize_evm_from_db(asset_data[13]),
             decimals=decimals,
             name=name,
             symbol=symbol,

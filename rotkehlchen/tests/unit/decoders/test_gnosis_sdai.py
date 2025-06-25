@@ -9,12 +9,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, EvmTokenKind, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, TimestampMS, TokenKind, deserialize_evm_tx_hash
 
 A_GNOSIS_SDAI = evm_address_to_identifier(
     address=GNOSIS_SDAI_ADDRESS,
     chain_id=ChainID.GNOSIS,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 )
 
 

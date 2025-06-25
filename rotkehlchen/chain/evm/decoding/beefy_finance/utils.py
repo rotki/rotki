@@ -11,8 +11,8 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address, deser
 from rotkehlchen.types import (
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
+    TokenKind,
 )
 from rotkehlchen.utils.network import request_get
 
@@ -68,7 +68,7 @@ def _process_beefy_vault(
         protocol=CPT_BEEFY_FINANCE,
         underlying_tokens=[UnderlyingToken(
             address=underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
         encounter=encounter,

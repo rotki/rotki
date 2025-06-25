@@ -34,11 +34,11 @@ from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     ChainID,
-    EvmTokenKind,
     Location,
     LocationAssetMappingUpdateEntry,
     Timestamp,
     TimestampMS,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
@@ -544,7 +544,7 @@ def test_delisted_pair_trades_work(mock_bitfinex: 'Bitfinex') -> None:
         userdb=mock_bitfinex.db,
         evm_address=string_to_evm_address('0x607F4C5BB672230e8672085532f7e901544a7375'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
     )
     mock_bitfinex.pair_bfx_symbols_map = {}
     raw_result = [

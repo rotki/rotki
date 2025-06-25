@@ -3,7 +3,7 @@ import SimpleTable from '@/components/common/SimpleTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { toMessages } from '@/utils/validation';
-import { EvmTokenKind, isValidEthAddress, type UnderlyingToken } from '@rotki/common';
+import { isValidEthAddress, TokenKind, type UnderlyingToken } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 
@@ -12,7 +12,7 @@ const modelValue = defineModel<UnderlyingToken[]>({ required: true });
 const { t } = useI18n({ useScope: 'global' });
 
 const underlyingAddress = ref<string>('');
-const tokenKind = ref<EvmTokenKind>(EvmTokenKind.ERC20);
+const tokenKind = ref<TokenKind>(TokenKind.ERC20);
 const underlyingWeight = ref<string>('');
 
 const rules = {
@@ -73,7 +73,7 @@ function deleteToken(address: string) {
 function resetForm() {
   set(underlyingAddress, '');
   set(underlyingWeight, '');
-  set(tokenKind, EvmTokenKind.ERC20);
+  set(tokenKind, TokenKind.ERC20);
 }
 </script>
 

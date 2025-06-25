@@ -22,7 +22,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -105,7 +105,7 @@ def query_balancer_data(
                             evm_address=deserialize_evm_address(token['address']),
                             encounter=token_encounter_info,
                         ).evm_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=FVal(token['weight']) if token.get('weight') is not None else default_weight,  # noqa: E501
                     )
                     for token in underlying_tokens

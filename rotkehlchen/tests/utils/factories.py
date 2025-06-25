@@ -23,7 +23,6 @@ from rotkehlchen.types import (
     BTCAddress,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     HexColorCode,
@@ -31,6 +30,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -114,7 +114,7 @@ def make_ethereum_transaction(
 CUSTOM_USDT = EvmToken.initialize(
     address=string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
     chain_id=ChainID.ETHEREUM,
-    token_kind=EvmTokenKind.ERC20,
+    token_kind=TokenKind.ERC20,
     name='Tether',
     symbol='USDT',
     started=Timestamp(1402358400),

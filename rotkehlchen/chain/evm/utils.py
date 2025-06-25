@@ -19,9 +19,9 @@ from rotkehlchen.types import (
     UNISWAP_PROTOCOL,
     VELODROME_POOL_PROTOCOL,
     ChainID,
-    EvmTokenKind,
     Price,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -144,12 +144,12 @@ def lp_price_from_uniswaplike_pool_contract(
         token0 = EvmToken(evm_address_to_identifier(
             address=decoded[0],
             chain_id=token.chain_id,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
         ))
         token1 = EvmToken(evm_address_to_identifier(
             address=decoded[1],
             chain_id=token.chain_id,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
         ))
     except (UnknownAsset, WrongAssetType):
         log.debug(

@@ -20,9 +20,9 @@ from rotkehlchen.types import (
     VELODROME_POOL_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -31,17 +31,17 @@ WETH_OP_GAUGE_ADDRESS = string_to_evm_address('0xCC53CD0a8EC812D46F0E2c7CC5AADd8
 WETH_OP_LP_TOKEN = evm_address_to_identifier(
     address=WETH_OP_POOL_ADDRESS,
     chain_id=ChainID.OPTIMISM,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 )
 VELO_V2_TOKEN = evm_address_to_identifier(
     address=string_to_evm_address('0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
     chain_id=ChainID.OPTIMISM,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 )
 VELO_V1_TOKEN = evm_address_to_identifier(
     address=string_to_evm_address('0x3c8B650257cFb5f272f799F5e2b4e65093a11a05'),
     chain_id=ChainID.OPTIMISM,
-    token_type=EvmTokenKind.ERC20,
+    token_type=TokenKind.ERC20,
 )
 
 
@@ -145,7 +145,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
     )
     timestamp = TimestampMS(1685968046000)
     pool = string_to_evm_address('0x6fE665F19517Cd6076866dB0548177d0E628156a')
-    lp_token_identifier = evm_address_to_identifier(pool, ChainID.OPTIMISM, EvmTokenKind.ERC20)
+    lp_token_identifier = evm_address_to_identifier(pool, ChainID.OPTIMISM, TokenKind.ERC20)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -333,7 +333,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             location=Location.OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=Asset(evm_address_to_identifier(address=pool, chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20)),  # noqa: E501
+            asset=Asset(evm_address_to_identifier(address=pool, chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20)),  # noqa: E501
             amount=ZERO,
             location_label=user_address,
             notes=f'Revoke vAMM-OP/USDC spending approval of {user_address} by 0x9c12939390052919aF3155f41Bf4160Fd3666A6f',  # noqa: E501

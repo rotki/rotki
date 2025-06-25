@@ -67,10 +67,10 @@ from rotkehlchen.types import (
     AssetAmount,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     Timestamp,
     TimestampMS,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -88,7 +88,7 @@ selfkey_asset = EvmToken.initialize(
     swapped_for=None,
     address=selfkey_address,
     chain_id=ChainID.ETHEREUM,
-    token_kind=EvmTokenKind.ERC20,
+    token_kind=TokenKind.ERC20,
     decimals=18,
     cryptocompare=None,
     coingecko='selfkey',
@@ -104,7 +104,7 @@ selfkey_asset_data = AssetData(
     swapped_for=None,
     address=selfkey_address,
     chain_id=ChainID.ETHEREUM,
-    token_kind=EvmTokenKind.ERC20,
+    token_kind=TokenKind.ERC20,
     decimals=18,
     cryptocompare='KEY',
     coingecko='selfkey',
@@ -196,7 +196,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='willdell',
         symbol='DELME',
@@ -211,7 +211,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
         globaldb.add_asset(EvmToken.initialize(
             address=make_evm_address(),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             swapped_for=asset_to_delete,
         ))
 
@@ -221,7 +221,7 @@ def test_add_edit_token_with_wrong_swapped_for(globaldb):
     bat_custom = EvmToken.initialize(
         address=resolved_bat.evm_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=resolved_bat.decimals,
         name=resolved_bat.name,
         symbol=resolved_bat.symbol,
@@ -287,7 +287,7 @@ def test_get_asset_with_symbol(globaldb):
             swapped_for=None,
             address=bihukey_address,
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='BIHU',
             coingecko='key',
@@ -331,7 +331,7 @@ def test_get_asset_with_symbol(globaldb):
         swapped_for=None,
         address=renbtc_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=8,
         cryptocompare=None,
         coingecko='renbtc',
@@ -344,7 +344,7 @@ def test_get_asset_with_symbol(globaldb):
         swapped_for=None,
         address='0xDBf31dF14B66535aF65AaC99C32e9eA844e14501',
         chain_id=ChainID.POLYGON_POS,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=8,
         cryptocompare='',
         coingecko='renbtc',
@@ -357,7 +357,7 @@ def test_get_asset_with_symbol(globaldb):
         swapped_for=None,
         address='0xfCe146bF3146100cfe5dB4129cf6C82b0eF4Ad8c',
         chain_id=ChainID.BINANCE_SC,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=8,
         cryptocompare='',
         coingecko='renbtc',
@@ -548,7 +548,7 @@ def test_global_db_restore(globaldb, database):
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='willdell',
         symbol='DELME',
@@ -559,14 +559,14 @@ def test_global_db_restore(globaldb, database):
     with_underlying = EvmToken.initialize(
         address=with_underlying_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='Not a scam',
         symbol='NSCM',
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=1,
         )],
     )
@@ -670,7 +670,7 @@ def test_global_db_reset(globaldb, database):
     token_to_delete = EvmToken.initialize(
         address=address_to_delete,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='willdell',
         symbol='DELME',
@@ -681,14 +681,14 @@ def test_global_db_reset(globaldb, database):
     with_underlying = EvmToken.initialize(
         address=with_underlying_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='Not a scam',
         symbol='NSCM',
         started=0,
         underlying_tokens=[UnderlyingToken(
             address=address_to_delete,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=1,
         )],
     )
@@ -705,7 +705,7 @@ def test_global_db_reset(globaldb, database):
     one_inch_update = EvmToken.initialize(
         address='0x111111111117dC0aa78b770fA6A738034120C302',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         name='1inch boi',
         symbol='1INCH',
         decimals=18,
@@ -884,13 +884,13 @@ def test_asset_deletion(globaldb):
     token_data = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='a',
         name='b',
         decimals=0,
         underlying_tokens=[UnderlyingToken(
             address=make_evm_address(),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -1085,7 +1085,7 @@ def test_edit_token_with_missing_information(database):
         userdb=database,
         symbol='IDONTEXIST',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_address=token_address,
     )
     assert peth.name == peth.identifier
@@ -1098,7 +1098,7 @@ def test_edit_token_with_missing_information(database):
         name='IDONTEXIST NAME',
         decimals=18,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_address=token_address,
     )
     assert peth.name == 'IDONTEXIST NAME'
@@ -1172,7 +1172,7 @@ def test_get_assets_missing_information_by_symbol(globaldb):
     token = EvmToken.initialize(
         address=token_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name=None,
         symbol='BPTTT',
@@ -1184,7 +1184,7 @@ def test_get_assets_missing_information_by_symbol(globaldb):
     token = EvmToken.initialize(
         address=token_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='Test token',
         symbol='BPTTT',
@@ -1203,7 +1203,7 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInqui
     token = EvmToken(ethaddress_to_identifier(string_to_evm_address('0x39cf57b4dECb8aE3deC0dFcA1E2eA2C320416288')))  # noqa: E501
     assert check_if_spam_token(symbol=token.symbol, name=token.name) is True
     # Visit https://op-reward.xyz and claim rewards
-    token = EvmToken(evm_address_to_identifier(address='0x168fbA6072EE467931484a418EDeb5FcC1B9fb79', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20))  # noqa: E501
+    token = EvmToken(evm_address_to_identifier(address='0x168fbA6072EE467931484a418EDeb5FcC1B9fb79', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20))  # noqa: E501
     assert check_if_spam_token(symbol=token.symbol, name=token.name) is True
     # $ USDCGift.com <- Visit to claim bonus
     token = EvmToken(ethaddress_to_identifier(string_to_evm_address('0x68Ca006dB91312Cd60a2238Ce775bE5F9f738bBa')))  # noqa: E501
@@ -1212,7 +1212,7 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInqui
     token = get_or_create_evm_token(
         userdb=database,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_address=string_to_evm_address('0x245151454C790EB870498e9E5B590145fAC1463F'),
         evm_inquirer=ethereum_inquirer,
     )
@@ -1253,7 +1253,7 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInqui
         symbol='PETAL-f',
         decimals=18,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_address=make_evm_address(),
         protocol=CURVE_POOL_PROTOCOL,
     )
@@ -1325,6 +1325,6 @@ def test_error_bad_underlying_token(globaldb: GlobalDBHandler):
         globaldb._add_underlying_tokens(
             write_cursor=write_cursor,
             parent_token_identifier=A_LUSD.identifier,
-            underlying_tokens=[UnderlyingToken(address=a_lusd.evm_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501
+            underlying_tokens=[UnderlyingToken(address=a_lusd.evm_address, token_kind=TokenKind.ERC20, weight=ONE)],  # noqa: E501
             chain_id=a_lusd.chain_id,
         )

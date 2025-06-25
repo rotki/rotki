@@ -30,13 +30,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    EVM_TOKEN_KINDS,
     SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EVMTxHash,
     SupportedBlockchain,
     Timestamp,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -75,7 +76,7 @@ def _query_or_get_given_token_info(
         name: str | None,
         symbol: str | None,
         decimals: int | None,
-        token_kind: EvmTokenKind,
+        token_kind: EVM_TOKEN_KINDS,
 ) -> tuple[str | None, str | None, int | None]:
     """
     Query ethereum to retrieve basic contract information for the given address.
@@ -84,7 +85,7 @@ def _query_or_get_given_token_info(
     May raise:
     - NotERC20Conformant
     """
-    if token_kind == EvmTokenKind.ERC20:
+    if token_kind == TokenKind.ERC20:
         info = evm_inquirer.get_erc20_contract_info(evm_address)
         decimals = info['decimals'] if decimals is None else decimals
         symbol = info['symbol'] if symbol is None else symbol
@@ -92,7 +93,7 @@ def _query_or_get_given_token_info(
         if None in (decimals, symbol, name):
             raise NotERC20Conformant(f'Token {evm_address} is not ERC20 conformant')  # pylint: disable=raise-missing-from
 
-    elif token_kind == EvmTokenKind.ERC721:
+    elif token_kind == TokenKind.ERC721:
         info = evm_inquirer.get_erc721_contract_info(evm_address)
         decimals = 0
         if symbol is None:
@@ -207,7 +208,7 @@ class TokenEncounterInfo(NamedTuple):
 def get_token(
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
-        token_kind: EvmTokenKind = EvmTokenKind.ERC20,
+        token_kind: EVM_TOKEN_KINDS = TokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> EvmToken | None:
     """
@@ -234,7 +235,7 @@ def get_or_create_evm_token(
         userdb: 'DBHandler',
         evm_address: ChecksumEvmAddress,
         chain_id: ChainID,
-        token_kind: EvmTokenKind = EvmTokenKind.ERC20,
+        token_kind: EVM_TOKEN_KINDS = TokenKind.ERC20,
         symbol: str | None = None,
         name: str | None = None,
         decimals: int | None = None,

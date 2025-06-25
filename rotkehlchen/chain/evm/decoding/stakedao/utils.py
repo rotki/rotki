@@ -11,7 +11,7 @@ from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
@@ -88,7 +88,7 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
                         encounter=encounter,
                     ).evm_address,
                     weight=ONE,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                 )],
             )
             only_gauges.add(gauge_token_addr)

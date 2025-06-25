@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
+from rotkehlchen.types import EvmTransaction, EVMTxHash, Location, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
@@ -171,13 +171,13 @@ class BaseDecoderTools:
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
         amount_raw_or_token_id = int.from_bytes(tx_log.data)
-        if token.token_kind == EvmTokenKind.ERC20:
+        if token.token_kind == TokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
             if event_type in OUTGOING_EVENT_TYPES:
                 notes = f'{verb} {amount} {token.symbol} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
                 notes = f'{verb} {amount} {token.symbol} from {counterparty_or_address} to {location_label}'  # noqa: E501
-        elif token.token_kind == EvmTokenKind.ERC721:
+        else:  # erc721
             if (collectible_id := tokenid_to_collectible_id(identifier=token.identifier)) is None:
                 log.debug(f'Failed to get token id from identifier when decoding token {token} as ERC721')  # noqa: E501
                 return None
@@ -188,8 +188,6 @@ class BaseDecoderTools:
                 notes = f'{verb} {name} with id {collectible_id} from {location_label} to {counterparty_or_address}'  # noqa: E501
             else:
                 notes = f'{verb} {name} with id {collectible_id} from {counterparty_or_address} to {location_label}'  # noqa: E501
-        else:
-            return None  # unknown kind
 
         if amount == ZERO:
             return None  # Zero transfers are useless, so ignoring them
@@ -352,7 +350,7 @@ class BaseDecoderTools:
                     evm_inquirer=self.evm_inquirer,
                     evm_address=token_address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                 )
 
             resolved_result[asset.identifier] = asset_normalized_value(amount=token_amount, asset=asset)  # noqa: E501

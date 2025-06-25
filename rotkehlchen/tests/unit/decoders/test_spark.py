@@ -12,7 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import EvmTokenKind, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, TimestampMS, TokenKind, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -124,7 +124,7 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
         evm_address=string_to_evm_address('0x6715bc100A183cc65502F05845b589c1919ca3d3'),
         chain_id=ethereum_inquirer.chain_id,
         protocol=CPT_SPARK,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
     )
     tx_hash = deserialize_evm_tx_hash('0xe7ae42aa6b3815b135c5dfe62222421e43013d30ec132f18d52b396229ce5c6a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -195,7 +195,7 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
         evm_address=string_to_evm_address('0x629D562E92fED431122e865Cc650Bc6bdE6B96b0'),
         chain_id=gnosis_inquirer.chain_id,
         protocol=CPT_SPARK,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
     )
     tx_hash = deserialize_evm_tx_hash('0x783c3199d405cbf9a9f95ac31e6aeeb0c092d405d4abd56ec2cd3c62b760b3e8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)

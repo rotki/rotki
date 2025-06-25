@@ -15,7 +15,7 @@ from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
-from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
+from rotkehlchen.types import OracleSource, SupportedBlockchain, TokenKind
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -142,7 +142,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 old_id_to_new[identifier] = evm_address_to_identifier(
                     address=identifier[ETHEREUM_DIRECTIVE_LENGTH:],
                     chain_id=ChainID.ETHEREUM,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 )
             elif identifier in OTHER_EVM_CHAINS_ASSETS:
                 old_id_to_new[identifier] = OTHER_EVM_CHAINS_ASSETS[identifier]
@@ -162,7 +162,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                         evm_address_to_identifier(
                             address=old_identifier[ETHEREUM_DIRECTIVE_LENGTH:],
                             chain_id=ChainID.ETHEREUM,
-                            token_type=EvmTokenKind.ERC20,
+                            token_type=TokenKind.ERC20,
                         ),
                         old_identifier,
                     ),
@@ -273,7 +273,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 new_id = evm_address_to_identifier(
                     address=token[ETHEREUM_DIRECTIVE_LENGTH:],
                     chain_id=ChainID.ETHEREUM,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 )
                 update_rows.append(
                     (
@@ -308,7 +308,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 new_id = evm_address_to_identifier(
                     address=entry[6][ETHEREUM_DIRECTIVE_LENGTH:],
                     chain_id=ChainID.ETHEREUM,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 )
             new_entries.append((
                 entry[0], entry[1], entry[2], entry[3], entry[4], entry[5], new_id,

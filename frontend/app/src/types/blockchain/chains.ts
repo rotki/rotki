@@ -1,4 +1,4 @@
-import { Blockchain, EvmTokenKind } from '@rotki/common';
+import { Blockchain, TokenKind } from '@rotki/common';
 
 const BtcChains = [Blockchain.BTC, Blockchain.BCH] as const;
 
@@ -13,17 +13,17 @@ export function isBlockchain(chain: string): chain is Blockchain {
 }
 
 export interface EvmTokenData {
-  identifier: EvmTokenKind;
+  identifier: TokenKind;
   label: string;
 }
 
 export const evmTokenKindsData: EvmTokenData[] = [
   {
-    identifier: EvmTokenKind.ERC20,
+    identifier: TokenKind.ERC20,
     label: 'ERC20',
   },
   {
-    identifier: EvmTokenKind.ERC721,
+    identifier: TokenKind.ERC721,
     label: 'ERC721',
   },
 ];

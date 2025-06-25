@@ -44,8 +44,8 @@ from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
     UNISWAPV3_PROTOCOL,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
@@ -115,7 +115,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         self.uniswap_v3_nft = evm_address_to_identifier(
             address=nft_manager,
             chain_id=evm_inquirer.chain_id,
-            token_type=EvmTokenKind.ERC721,
+            token_type=TokenKind.ERC721,
         )
 
     def _compare_with_maybe_native_token(
@@ -434,7 +434,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 userdb=self.evm_inquirer.database,
                 evm_address=token,
                 chain_id=self.evm_inquirer.chain_id,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 evm_inquirer=self.evm_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=context.transaction.tx_hash),
             )
@@ -554,7 +554,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 userdb=self.evm_inquirer.database,
                 evm_address=self.nft_manager,
                 chain_id=self.evm_inquirer.chain_id,
-                token_kind=EvmTokenKind.ERC721,
+                token_kind=TokenKind.ERC721,
                 symbol=f'UNI-V3-POS-{(collectible_id := tokenid_to_collectible_id(identifier=context.event.asset.identifier))}',  # noqa: E501
                 name=f'Uniswap V3 Positions #{collectible_id}',
                 collectible_id=str(collectible_id),

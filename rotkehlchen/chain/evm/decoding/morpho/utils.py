@@ -21,8 +21,8 @@ from rotkehlchen.types import (
     MORPHO_VAULT_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -92,7 +92,7 @@ def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
         symbol=vault['symbol'],
         underlying_tokens=[UnderlyingToken(
             address=underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
         encounter=encounter,

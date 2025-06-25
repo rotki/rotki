@@ -30,9 +30,9 @@ from rotkehlchen.types import (
     UNISWAP_PROTOCOL,
     UNISWAPV3_PROTOCOL,
     ChainID,
-    EvmTokenKind,
     Price,
     Timestamp,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -372,7 +372,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
         pool_token=EvmToken.initialize(
             address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             protocol=UNISWAP_PROTOCOL,
             decimals=18,
         ),
@@ -392,7 +392,7 @@ def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
         pool_token=EvmToken.initialize(
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC721,
+            token_kind=TokenKind.ERC721,
             protocol=UNISWAPV3_PROTOCOL,
             collectible_id='953465',
         ),

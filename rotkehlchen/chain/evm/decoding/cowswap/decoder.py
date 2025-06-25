@@ -31,7 +31,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, EVMTxHash, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -100,7 +100,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             target_token = EvmToken(evm_address_to_identifier(
                 address=target_token_address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             ))
             for event in context.decoded_events:
                 if (

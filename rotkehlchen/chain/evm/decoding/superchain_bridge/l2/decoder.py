@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_p
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ class SuperchainL2SideBridgeCommonDecoder(DecoderInterface, ABC):
                 asset = EvmToken(identifier=evm_address_to_identifier(
                     address=l2_token_address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 ))
                 valid_assets = (asset,)
             except (UnknownAsset, WrongAssetType):

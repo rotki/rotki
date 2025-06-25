@@ -1152,10 +1152,21 @@ class FValWithTolerance(NamedTuple):
     tolerance: FVal = ZERO
 
 
-class EvmTokenKind(DBCharEnumMixIn):
+class TokenKind(DBCharEnumMixIn):
     ERC20 = auto()
     ERC721 = auto()
     UNKNOWN = auto()
+
+    @classmethod
+    def deserialize_evm_from_db(cls, value: Any) -> 'EVM_TOKEN_KINDS':
+        """Deserialize specifically for EVM token kinds"""
+        if (result := cls.deserialize_from_db(value)) not in (TokenKind.ERC20, TokenKind.ERC721):
+            raise DeserializationError(f'Expected EVM token kind, got {result}')
+
+        return result  # type: ignore[return-value]  # the check above ensures it's an evm token kind.
+
+
+EVM_TOKEN_KINDS = Literal[TokenKind.ERC20, TokenKind.ERC721]
 
 
 class CacheType(Enum):

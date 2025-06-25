@@ -7,7 +7,7 @@ from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,
     ETHEREUM_DIRECTIVE_LENGTH,
     ChainID,
-    EvmTokenKind,
+    TokenKind,
     evm_address_to_identifier,
     strethaddress_to_identifier,
 )
@@ -198,7 +198,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
         new_id = evm_address_to_identifier(
             address=entry[0],
             chain_id=ChainID.ETHEREUM,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
             collectible_id=None,
         )
         old_ethereum_id_to_new[entry[3]] = new_id
@@ -207,7 +207,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
     for entry in old_ethereum_data:
         evm_tuples.append((
             str(entry[0]),  # identifier
-            EvmTokenKind.ERC20.serialize_for_db(),  # token type
+            TokenKind.ERC20.serialize_for_db(),  # token type
             ChainID.ETHEREUM.value,  # chain
             str(entry[1]),  # address
             entry[2],  # decimals
@@ -291,13 +291,13 @@ def translate_underlying_table(cursor: 'DBCursor') -> list[tuple[str, str, str]]
         new_address = evm_address_to_identifier(
             address=row[0],
             chain_id=ChainID.ETHEREUM,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
             collectible_id=None,
         )
         new_parent = evm_address_to_identifier(
             address=row[2],
             chain_id=ChainID.ETHEREUM,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
             collectible_id=None,
         )
         mappings.append((new_address, row[1], new_parent))

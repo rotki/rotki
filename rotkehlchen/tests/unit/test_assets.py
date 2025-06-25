@@ -34,7 +34,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
 from rotkehlchen.tasks.manager import should_run_periodic_task
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, EvmTokenKind
+from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -289,227 +289,227 @@ def test_cryptocompare_asset_support(cryptocompare):
         strethaddress_to_identifier('0x6967299e9F3d5312740Aa61dEe6E9ea658958e31'),
         'eip155:42161/erc20:0x602Eb0D99A5e3e76D1510372C4d2020e12EaEa8a',
         'KON',
-        evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0x2dff88a56767223a5529ea5960da7a3f5f766406', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0xe238ecb42c424e877652ad82d8a939183a04c35f', chain_id=ChainID.POLYGON_POS, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0xA35923162C49cF95e6BF26623385eb431ad920D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GDX but cc has gold miner
+        evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x2dff88a56767223a5529ea5960da7a3f5f766406', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xe238ecb42c424e877652ad82d8a939183a04c35f', chain_id=ChainID.POLYGON_POS, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xA35923162C49cF95e6BF26623385eb431ad920D3', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x297E4e5e59Ad72B1B0A2fd446929e76117be0E0a', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # GDX but cc has gold miner
         'KING',  # different king
-        evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BEN memecoin but cc has bitcoen
-        evm_address_to_identifier(address='0xF831938CaF837cd505dE196BBb408D81A06376ab', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # JEFF memecoin but cc has jeff on space
-        evm_address_to_identifier(address='0x3c8b650257cfb5f272f799f5e2b4e65093a11a05', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # velodrome but cc has a different one
-        evm_address_to_identifier(address='0x01BA67AAC7f75f647D94220Cc98FB30FCc5105Bf', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # lyra but cc has scryptia
+        evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # BEN memecoin but cc has bitcoen
+        evm_address_to_identifier(address='0xF831938CaF837cd505dE196BBb408D81A06376ab', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # JEFF memecoin but cc has jeff on space
+        evm_address_to_identifier(address='0x3c8b650257cfb5f272f799f5e2b4e65093a11a05', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # velodrome but cc has a different one
+        evm_address_to_identifier(address='0x01BA67AAC7f75f647D94220Cc98FB30FCc5105Bf', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # lyra but cc has scryptia
         'ACS',
         'HDX',
         'NXRA',
         'NOM',
-        evm_address_to_identifier(address='0x9559Aaa82d9649C7A7b220E7c461d2E74c9a3593', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # reth2 in cc
-        evm_address_to_identifier(address='0xAB846Fb6C81370327e784Ae7CbB6d6a6af6Ff4BF', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # paladin but cc has policypal
-        evm_address_to_identifier(address='0x01597E397605Bf280674Bf292623460b4204C375', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # bent token but bent finance in cc
-        evm_address_to_identifier(address='0xb3Ad645dB386D7F6D753B2b9C3F4B853DA6890B8', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # contractor but cc has creator platform
-        evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # consumer price index but cc has crypto price
+        evm_address_to_identifier(address='0x9559Aaa82d9649C7A7b220E7c461d2E74c9a3593', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # reth2 in cc
+        evm_address_to_identifier(address='0xAB846Fb6C81370327e784Ae7CbB6d6a6af6Ff4BF', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # paladin but cc has policypal
+        evm_address_to_identifier(address='0x01597E397605Bf280674Bf292623460b4204C375', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # bent token but bent finance in cc
+        evm_address_to_identifier(address='0xb3Ad645dB386D7F6D753B2b9C3F4B853DA6890B8', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # contractor but cc has creator platform
+        evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # consumer price index but cc has crypto price
         'IRON',  # iron fish but cc has iron
         'VARA',  # equilibre but VARA chain in cc
-        evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # eaglegx but cc has EagleCoin
-        evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
-        evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
-        evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have an older meme coin pepeai
-        evm_address_to_identifier(address='0x3007083EAA95497cD6B2b809fB97B6A30bdF53D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # address doesn't match
+        evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # eaglegx but cc has EagleCoin
+        evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
+        evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
+        evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # we have an older meme coin pepeai
+        evm_address_to_identifier(address='0x3007083EAA95497cD6B2b809fB97B6A30bdF53D3', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # address doesn't match
         'ANDY',  # we have andy on sol but cc has andy
-        evm_address_to_identifier(address='0x22B6C31c2bEB8f2d0d5373146Eed41Ab9eDe3caf', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have cocktailbar and cc has coin of champions
-        evm_address_to_identifier(address='0xb8a87405d9a4F2F866319B77004e88dfF66c0d92', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have soraAI but cc has sora validator
-        evm_address_to_identifier(address='0x20547341E58fB558637FA15379C92e11F7b7F710', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have mozaic and cc has mozik
-        evm_address_to_identifier(address='0xe7E4279b80D319EDe2889855135A22021baf0907', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have zeus founding and cc has zeus network
-        evm_address_to_identifier(address='0xf53AD2c6851052A81B42133467480961B2321C09', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have pooled eth but cc has jpeg's ETH
-        evm_address_to_identifier(address='0x04cC847F81A01328c69EA58321f2E0F8e8ED9681', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have a unknown WLD token but cc has worldcoin
-        evm_address_to_identifier(address='0xbbd6CD3A31Cbc5CbD6f89D476D15D5bD2F260AcB', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have a unknown AERO token
-        evm_address_to_identifier(address='0x1efF8aF5D577060BA4ac8A29A13525bb0Ee2A3D5', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have balancer pool token but cc has black pool
-        evm_address_to_identifier(address='0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have balancer pool token but cc has black pool
-        evm_address_to_identifier(address='0x6432096f054288Ee45b7f6ad8863a1F4A8e1201C', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have fomo base but cc has aavegochi fomo
+        evm_address_to_identifier(address='0x22B6C31c2bEB8f2d0d5373146Eed41Ab9eDe3caf', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # we have cocktailbar and cc has coin of champions
+        evm_address_to_identifier(address='0xb8a87405d9a4F2F866319B77004e88dfF66c0d92', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # we have soraAI but cc has sora validator
+        evm_address_to_identifier(address='0x20547341E58fB558637FA15379C92e11F7b7F710', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501  # we have mozaic and cc has mozik
+        evm_address_to_identifier(address='0xe7E4279b80D319EDe2889855135A22021baf0907', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # we have zeus founding and cc has zeus network
+        evm_address_to_identifier(address='0xf53AD2c6851052A81B42133467480961B2321C09', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # we have pooled eth but cc has jpeg's ETH
+        evm_address_to_identifier(address='0x04cC847F81A01328c69EA58321f2E0F8e8ED9681', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # we have a unknown WLD token but cc has worldcoin
+        evm_address_to_identifier(address='0xbbd6CD3A31Cbc5CbD6f89D476D15D5bD2F260AcB', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # we have a unknown AERO token
+        evm_address_to_identifier(address='0x1efF8aF5D577060BA4ac8A29A13525bb0Ee2A3D5', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # we have balancer pool token but cc has black pool
+        evm_address_to_identifier(address='0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # we have balancer pool token but cc has black pool
+        evm_address_to_identifier(address='0x6432096f054288Ee45b7f6ad8863a1F4A8e1201C', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # we have fomo base but cc has aavegochi fomo
         'WZRD',  # bitcoin wizards but cc has wizardia
-        evm_address_to_identifier(address='0xb0eCc6ac0073c063DCFC026cCdC9039Cae2998E1', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # account abstraction but cc has alva
-        evm_address_to_identifier(address='0x12652C6d93FDB6F4f37d48A8687783C782BB0d10', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # entangle cc gold fever
-        evm_address_to_identifier(address='0x6043A3f2f4Fe127d81896220369F9E9CF5Fdf66F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # panda but cc has panda dao
-        evm_address_to_identifier(address='0x77be1ba1Cd2D7a63BFfC772D361168cc327dd8bc', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # meow meme coin but cc has ZERO
-        evm_address_to_identifier(address='0x13832bEC9b7029a82988017a7f6095BDf0207D62', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # milk but cc has milkshake
-        evm_address_to_identifier(address='0xeF0b2Ccb53A683fA48799245f376D6a60929f003', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # unknown moon and cc has reddit moon
-        evm_address_to_identifier(address='0xfF07fc776206BDdd9d285A5E571dcDF98131120B', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # chiUSD but cc has CHI GAS TOKEN
-        evm_address_to_identifier(address='0x6DcB98f460457fe4952e12779Ba852F82eCC62C1', chain_id=ChainID.ARBITRUM_NOVA, token_type=EvmTokenKind.ERC20),  # noqa: E501  # bricks but cc has MyBricks
-        evm_address_to_identifier(address='0x5e06eA564efcB3158a85dBF0B9E017cb003ff56f', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # usd stable but cc has Mountain Protocol
-        evm_address_to_identifier(address='0x1d75AA781665A189b240ca3D6D3CbB540EC7f02A', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # base frens but cc has farm friends
-        evm_address_to_identifier(address='0x8Fa0FF7350B07c2e1244daD303fbe4ec71bB7E9a', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # scam ETH token
-        evm_address_to_identifier(address='0x70da6ec1fCbE89122c66ECAAC8430CB15580b8Ee', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # wif fake token
-        evm_address_to_identifier(address='0x302ab9ae394D675676Ddb41E294169224824fc9A', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # cheezburger but cc has chiliz
-        evm_address_to_identifier(address='0x3108ccFd96816F9E663baA0E8c5951D229E8C6da', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # cc has a dark without any address info
+        evm_address_to_identifier(address='0xb0eCc6ac0073c063DCFC026cCdC9039Cae2998E1', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501  # account abstraction but cc has alva
+        evm_address_to_identifier(address='0x12652C6d93FDB6F4f37d48A8687783C782BB0d10', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # entangle cc gold fever
+        evm_address_to_identifier(address='0x6043A3f2f4Fe127d81896220369F9E9CF5Fdf66F', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # panda but cc has panda dao
+        evm_address_to_identifier(address='0x77be1ba1Cd2D7a63BFfC772D361168cc327dd8bc', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # meow meme coin but cc has ZERO
+        evm_address_to_identifier(address='0x13832bEC9b7029a82988017a7f6095BDf0207D62', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # milk but cc has milkshake
+        evm_address_to_identifier(address='0xeF0b2Ccb53A683fA48799245f376D6a60929f003', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # unknown moon and cc has reddit moon
+        evm_address_to_identifier(address='0xfF07fc776206BDdd9d285A5E571dcDF98131120B', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # chiUSD but cc has CHI GAS TOKEN
+        evm_address_to_identifier(address='0x6DcB98f460457fe4952e12779Ba852F82eCC62C1', chain_id=ChainID.ARBITRUM_NOVA, token_type=TokenKind.ERC20),  # noqa: E501  # bricks but cc has MyBricks
+        evm_address_to_identifier(address='0x5e06eA564efcB3158a85dBF0B9E017cb003ff56f', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # usd stable but cc has Mountain Protocol
+        evm_address_to_identifier(address='0x1d75AA781665A189b240ca3D6D3CbB540EC7f02A', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # base frens but cc has farm friends
+        evm_address_to_identifier(address='0x8Fa0FF7350B07c2e1244daD303fbe4ec71bB7E9a', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # scam ETH token
+        evm_address_to_identifier(address='0x70da6ec1fCbE89122c66ECAAC8430CB15580b8Ee', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # wif fake token
+        evm_address_to_identifier(address='0x302ab9ae394D675676Ddb41E294169224824fc9A', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # cheezburger but cc has chiliz
+        evm_address_to_identifier(address='0x3108ccFd96816F9E663baA0E8c5951D229E8C6da', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # cc has a dark without any address info
         'SBF',  # we have sam token but cc has sam in jail
-        evm_address_to_identifier(address='0x79F05c263055BA20EE0e814ACD117C20CAA10e0c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ICE
-        evm_address_to_identifier(address='0xc335Df7C25b72eEC661d5Aa32a7c2B7b2a1D1874', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ice
-        evm_address_to_identifier(address='0xa8a8d0373642977CD491e29572484012174ADfBd', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Jesus on base but cc doesn't have any
-        evm_address_to_identifier(address='0x12E8E49A585123F85b08Fe4114443f9E7dbe0746', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # fake jesus on base
-        evm_address_to_identifier(address='0x348Fdfe2c35934A96C1353185F09D0F9efBAdA86', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # trove on base but trove isn't listed on base
-        evm_address_to_identifier(address='0x994f0DffdbaE0BbF09b652D6f11A493fd33F42B9', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501 # this is eagle coin but cc is eagle token
+        evm_address_to_identifier(address='0x79F05c263055BA20EE0e814ACD117C20CAA10e0c', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # different ICE
+        evm_address_to_identifier(address='0xc335Df7C25b72eEC661d5Aa32a7c2B7b2a1D1874', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # different ice
+        evm_address_to_identifier(address='0xa8a8d0373642977CD491e29572484012174ADfBd', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Jesus on base but cc doesn't have any
+        evm_address_to_identifier(address='0x12E8E49A585123F85b08Fe4114443f9E7dbe0746', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # fake jesus on base
+        evm_address_to_identifier(address='0x348Fdfe2c35934A96C1353185F09D0F9efBAdA86', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # trove on base but trove isn't listed on base
+        evm_address_to_identifier(address='0x994f0DffdbaE0BbF09b652D6f11A493fd33F42B9', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501 # this is eagle coin but cc is eagle token
         'POCHITA',  # this is a different pochita as seen by the token logo
         'WORM',  # this is deep worm but cc is healthy worm
         'TRAC',  # this is trac(ordinals) but cc is origin trail
         'MVRS',  # this is magaverse but cc is meta mvrs
         'KACY',  # this is markkacy but cc is Kassandra
-        evm_address_to_identifier(address='0x8d80de8A78198396329dfA769aD54d24bF90E7aa', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Nami.Trade but CC has Nirvana Chain
-        evm_address_to_identifier(address='0x832904863978b94802123106e6eB491BDF0Df928', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # OptiToken but CC has Optimus AI
-        evm_address_to_identifier(address='0x126c121f99e1E211dF2e5f8De2d96Fa36647c855', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # DEGEN Index but CC has Degen
-        evm_address_to_identifier(address='0xAE6e3540E97b0b9EA8797B157B510e133afb6282', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # DEGEN Index but CC has Degen
-        evm_address_to_identifier(address='0x908EF6B57a6BB5B043Ea6EF84142895b519c713c', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Matchcup but CC has Matching Game
-        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # SIMP Token but CC has SO-COL
-        evm_address_to_identifier(address='0xb8919522331C59f5C16bDfAA6A121a6E03A91F62', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Home but CC has OtterHome
-        evm_address_to_identifier(address='0xea3Fb6f331735252E7Bfb0b24b3B761301293DBe', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Vader USD but CC has Verified USD
-        evm_address_to_identifier(address='0x44dB359bf01F8b521A6295E4d56991277f410AA2', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0x7616113782AaDAB041d7B10d474F8A0c04EFf258', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Vee Token but CC has BLOCKv
-        evm_address_to_identifier(address='0x326f5834d73a2dc02b3c492E9ef1b24399d430b3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # StargateToken but CC has Stargate Finance
-        evm_address_to_identifier(address='0xAD038Eb671c44b853887A7E32528FaB35dC5D710', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Dola Borrowing Right but CC has deBridge
-        evm_address_to_identifier(address='0xD04E772BC0d591fBD288f2E2a86aFA3D3CB647F8', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # CryptoGPT Token but CC has QnA3.AI
-        evm_address_to_identifier(address='0xE0151763455A8a021e64880C238ba1cff3787fF0', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Aped but CC has Baddest Alpha Ape Bundle
-        evm_address_to_identifier(address='0xDFE29AFdF5A7D0bb92A01A56Adabfa87D652E0E7', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Optimus but CC has Opus
-        evm_address_to_identifier(address='0x9CBf044bc535db4C93a9F11205A69631d9DCeF26', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Billy Token but CC has Billy
-        evm_address_to_identifier(address='0x5888641e3e6cBeA6D84Ba81EDb217bD691d3bE38', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Bobo but CC has BOBO
-        evm_address_to_identifier(address='0x9452D45d33490234B8C96f42342F1Be28c0FE097', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Swaperry but CC has Perry The BNB
-        evm_address_to_identifier(address='0xB6b8CCD230Bb4235C7b87986274E7aB550b72261', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # HALO Token but CC has Halo Coin
-        evm_address_to_identifier(address='0xAAA6C1E32C55A7Bfa8066A6FAE9b42650F262418', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Ramses but CC has Ramifi Protocol
-        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Karate but CC has Karate Combat
-        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Turbos Finance but CC has Turbos Finance
-        evm_address_to_identifier(address='0xF1182229B71E79E504b1d2bF076C15a277311e05', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # LBR but CC has Lybra Finance
-        evm_address_to_identifier(address='0x9A601C5bb360811d96A23689066af316a30c3027', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Pika but CC has Pikaboss
-        evm_address_to_identifier(address='0xC9D21E5A24110b67af31aF464edfDC2dAe5Ec7D5', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BitMeme but CC has Bytom
-        evm_address_to_identifier(address='0x244b797d622D4DEe8b188b03546ACAAbD0Cf91A0', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Four but CC has 4THPILLAR TECHNOLOGIES
-        evm_address_to_identifier(address='0x9Ee75952E3408ed7005225855aA1835D6d0023CA', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Stamen Tellus Token but CC has Statter Network
-        evm_address_to_identifier(address='0xdFA46478F9e5EA86d57387849598dbFB2e964b02', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Mai Stablecoin but CC has Mindsync
-        evm_address_to_identifier(address='0xb504035a11E672e12a099F32B1672b9C4a78b22f', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Safereum but CC has Safereum
-        evm_address_to_identifier(address='0x27DCB425C7005DD7558F9583797edA39A8D70ABd', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Wrapped Ether but CC has WETH
-        evm_address_to_identifier(address='0x95987b0cdC7F65d989A30B3B7132a38388c548Eb', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # PURSE TOKEN but CC has Pundi X PURSE
-        evm_address_to_identifier(address='0xC256F81d35a54c3599B424171d719E9Ae87b2E9b', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # ZOOA but CC has Zoopia
-        evm_address_to_identifier(address='0x56cCEA18F8c7c23328Cdfd545c50c7c370f8d263', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # RSCOIN but CC has ResearchCoin
-        evm_address_to_identifier(address='0x3ADb04E127b9C0a5D36094125669d4603AC52a0c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Gro Vault Token but CC has Genesis Vision
-        evm_address_to_identifier(address='0x21ad647b8F4Fe333212e735bfC1F36B4941E6Ad2', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Squid but CC has Squid Game
-        evm_address_to_identifier(address='0x35A9b440Da4410dD63dF8c54672b728970560328', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Mana but CC has Decentraland
-        evm_address_to_identifier(address='0x33d63Ba1E57E54779F7dDAeaA7109349344cf5F1', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # DATA Economy Index but CC has Streamr
-        evm_address_to_identifier(address='0x47110d43175f7f2C2425E7d15792acC5817EB44f', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Bankless DeFi Innovation Index but CC has GamiFi
-        evm_address_to_identifier(address='0xcf32c644fed4FeFF94017a10B2882Bf71eE740dD', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Brawl Token but CC has BitBrawl
-        evm_address_to_identifier(address='0x3001f57F8308b189EB412a64322Aad5eF9951290', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GEC but CC has Geco.one
-        evm_address_to_identifier(address='0x7e4C1D51ace44E26c5924d590995dEA3eB8aD505', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Gameta but CC has HIPPOP
-        evm_address_to_identifier(address='0xaA247c0D81B83812e1ABf8bAB078E4540D87e3fB', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # meson.network but CC has Manson Coin
-        evm_address_to_identifier(address='0x102c776DDB30C754dEd4fDcC77A19230A60D4e4f', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Flooring Lab Credit but CC has FlowChainCoin
-        evm_address_to_identifier(address='0x3417E54A51924C225330f8770514aD5560B9098D', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # REDKoin but CC has RED TOKEN
-        evm_address_to_identifier(address='0xCa0E54b636DB823847B29F506BFFEE743F57729D', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Chi USD but CC has Chi Gastoken
-        evm_address_to_identifier(address='0x39FdE572a18448F8139b7788099F0a0740f51205', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Oath Token but CC has OATH Protocol
-        evm_address_to_identifier(address='0xbfD291DA8A403DAAF7e5E9DC1ec0aCEaCd4848B9', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # dForce USD but CC has USX Quantum
-        evm_address_to_identifier(address='0xB0ae108669CEB86E9E98e8fE9e40d98b867855fD', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # OneRing but CC has Darwinia Network
-        evm_address_to_identifier(address='0x12ff4a259e14D4DCd239C447D23C9b00F7781d8F', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # PEPE Optimism but CC has Pepe
-        evm_address_to_identifier(address='0x3F56e0c36d275367b8C502090EDF38289b3dEa0d', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # QiDao but CC has BENQI
-        evm_address_to_identifier(address='0x3Ebb31CB2888e0Acbb81cBE2FeC65AEE24be3BD4', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # AVT but CC has Aventus
-        evm_address_to_identifier(address='0xB25EA095997F5bBaa6cEa962c4fBf3bfc3C09776', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Promethios but CC has Matr1x Fire
-        evm_address_to_identifier(address='0x47536F17F4fF30e64A96a7555826b8f9e66ec468', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # MUMMY but CC has Mummy Finance
-        evm_address_to_identifier(address='0x8901cB2e82CC95c01e42206F8d1F417FE53e7Af0', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # YieldFarming Index but CC has Your Futures Exchange
-        evm_address_to_identifier(address='0xC1c167CC44f7923cd0062c4370Df962f9DDB16f5', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Pepe but CC has Pepe
-        evm_address_to_identifier(address='0x57ebDb4c8E41eBAc32986DF4A4D591296E5fB0F1', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # SSS but CC has StarSharks
-        evm_address_to_identifier(address='0xb532178708814F0c174B29B991D2b355106Afbc3', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Astrava but CC has AirSwap
-        evm_address_to_identifier(address='0xAb1047894dA4ec207c71bE0AEF5c7885e07B2DaF', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # LSD DAO but CC has Pontem Liquidswap
-        evm_address_to_identifier(address='0x2e80259C9071B6176205FF5F5Eb6F7EC8361b93f', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # HashDAO Token but CC has Provenance Blockchain
-        evm_address_to_identifier(address='0xef9aE714dCd61A9DE189c63c40B0082F2ead576D', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0x158b4eD5b3bd2383ceC2A045C7c8F3594B72Cad2', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0xFe1F3C6D42376e74d3E9C0724ed132c1e0Dcdd8a', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0xbf0c7ccB143126C1bE90a426f676f5cb313956d9', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Tempest but CC has Temtum
-        evm_address_to_identifier(address='0xFd5494CDf4f1a5b5abA8cE5D7ee1d04eF47f2FCA', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0x9e57B3d7fD1a8F8FcE8C4214cC1148D518D6f6fE', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0xf4d620009d9381094CD70eBEE2B0730E095A3b12', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test but CC has Test
-        evm_address_to_identifier(address='0xcb7348d51E49402591A6a382F3a76e33FD4b341e', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Pepe but CC has Pepe
-        evm_address_to_identifier(address='0xDe8E894148C47cC0BaEfd0Bc56BA0DBc1a61201A', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Bc Game but CC has BlockChainGames
-        evm_address_to_identifier(address='0xA1f085846381335aD10C86E1001dFB833C218897', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # CHERY FINANCE but CC has Crafting Finance
-        evm_address_to_identifier(address='0x00e1724885473B63bCE08a9f0a52F35b0979e35A', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Oath Token but CC has OATH Protocol
-        evm_address_to_identifier(address='0x2c94dab6B2C970d9e3049491AAC48e8E0F3b3068', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # ECO but CC has Ormeus Ecosystem
-        evm_address_to_identifier(address='0x619f56Ad816f7182678E6443c8A7b2d276305C86', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # POP but CC has Popcoin
-        evm_address_to_identifier(address='0x00e1724885473B63bCE08a9f0a52F35b0979e35A', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Oath Token but CC has OATH Protocol
-        evm_address_to_identifier(address='0xbf1aeA8670D2528E08334083616dD9C5F3B087aE', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Mai Stablecoin but CC has Mindsync
-        evm_address_to_identifier(address='0x9E53e88dCff56d3062510A745952DEC4cEFDff9E', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Basic Dog Meme but CC has DOG•GO•TO•THE•MOON
-        evm_address_to_identifier(address='0x8901cB2e82CC95c01e42206F8d1F417FE53e7Af0', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # YieldFarming Index but CC has Your Futures Exchange
-        evm_address_to_identifier(address='0x5c185329BC7720AebD804357043121D26036D1B3', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BAI but CC has BearAI
-        evm_address_to_identifier(address='0x5D1A42E32d84560fF46f4F06302fE4C69d28135d', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # AAA but CC has Moon Rabbit
-        evm_address_to_identifier(address='0x8544FE9D190fD7EC52860abBf45088E81Ee24a8c', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Toshi but CC has Toshi
-        evm_address_to_identifier(address='0xd7c9621e3A5051f5e5A5982c8c430Fd4B55Eda22', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Blue but CC has Bluefin
-        evm_address_to_identifier(address='0x595675dcbe5D2aD1f4d7b910c50567c0f9230633', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # ShipeDEX but CC has ShipChain
-        evm_address_to_identifier(address='0xc142171B138DB17a1B7Cb999C44526094a4dae05', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # dForce USD but CC has USX Quantum
-        evm_address_to_identifier(address='0xb53Be0BE88bA245B5086E558D00Ad56ee7344556', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # TOSHI but CC has Toshi
-        evm_address_to_identifier(address='0x60b72C00681A43e423F097ab61CC526a1045B048', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # friend.tech but CC has Friend.tech
-        evm_address_to_identifier(address='0x03617dC1ab7f959cc3593bB43ca43e192e6662da', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Colibri but CC has Drone Coin
-        evm_address_to_identifier(address='0x2168eb98C6D416Afb85E7beef5abDc4FB4177dfE', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Blp but CC has BullPerks
-        evm_address_to_identifier(address='0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GoldenBoys but CC has CyberDragon Gold
-        evm_address_to_identifier(address='0xC19669A405067927865B40Ea045a2baabbbe57f5', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # STAR but CC has FileStar
-        evm_address_to_identifier(address='0x2B6A85CD35D15691357eea61d88cB3f401A92FC3', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # SurvToken but CC has Survival Game Online
-        evm_address_to_identifier(address='0x5D67a4AFb9fBFc3640e163e93766Cf1eAF2F7045', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Gold but CC has Goldario
-        evm_address_to_identifier(address='0x9Cc2fC2f75768b0307925C7935396Ec9D94bbA44', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Meta but CC has Meta
-        evm_address_to_identifier(address='0x60be663a88401c917372b945b7D04cd75e5ABd12', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # LA but CC has LATOKEN
-        evm_address_to_identifier(address='0xEf6b19D71B342EAE33773346b05EAD8F0966BD42', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # TEST but CC has Test
-        evm_address_to_identifier(address='0x7Ee9cf972BC8441ebc112c5F01a96Ce85b0a44Bd', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Dai but CC has Dai
-        evm_address_to_identifier(address='0x2259ba575F7C66cF10d59a1Fe2F7BA77C5685770', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BAI but CC has BearAI
-        evm_address_to_identifier(address='0xBe449c2aB88B5D9BF33eDe32270957d240155597', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Mushroom but CC has Meta Ruffy
-        evm_address_to_identifier(address='0xCa080DD32EEaa87711Db63543C9712b08795926a', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # test but CC has Test
-        evm_address_to_identifier(address='0xE2B21D4684b2bA62F3BE1FE286eacb90D26E394d', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # CryptoOracle Collective but CC has Coin of the champions
-        evm_address_to_identifier(address='0xf908326E871561E31b346499F70854350aCe3Dd2', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Base AI but CC has BearAI
-        evm_address_to_identifier(address='0x0e80F46D9Eb7611748e07aC234be4eBa260e4531', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Test Token but CC has ThunderCore
-        evm_address_to_identifier(address='0x981D41C115a2d48Cb1215D13Bda8f989d407c9c5', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Xena but CC has XEN Crypto
-        evm_address_to_identifier(address='0x07388Ecb5584622c80fbd21355bFB778f77361D8', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # TestToken but CC has Titan Coin
-        evm_address_to_identifier(address='0xba7D47f471ADD16875e765edEe0858C3413A56Fd', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Meta but CC has Meta (mStable Governance: Meta)
-        evm_address_to_identifier(address='0x063D2DB6D348Fa5957b78B6141d144426486c68C', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # SocioCat but CC has Simon's Cat
-        evm_address_to_identifier(address='0x3CCEc427b833496FE7FDB62b577C109551E12f55', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # THE KEY 33 but CC has SelfKey
-        evm_address_to_identifier(address='0x0a5aBd23cC5e3F4061270482b571e93226F7Df7A', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # THE KEY 33 but CC has SelfKey
-        evm_address_to_identifier(address='0x7EC4Ef6F0F5D46f0A462cee307Ea8CB8efcca4DC', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # MEME MASTER but CC has Mastercoin
-        evm_address_to_identifier(address='0x7BC401227777F173Ff871993b198A8632741B9Bb', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Detto Token but CC has Delta Exchange
-        evm_address_to_identifier(address='0x677a3AfA51bA1a95f70F5B971DcA72047690faA2', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # TEST NAME but CC has Test
-        evm_address_to_identifier(address='0x58Ed4FD0C3d930b674BA50a293f03ef6cD7dE7a3', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # ArbiDex Token but CC has ARCS
-        evm_address_to_identifier(address='0x8fCC55494C7939d563620C8f697D462A0D8C230F', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Cool Base Cool but CC has Casino Betting Coin
-        evm_address_to_identifier(address='0xC435B542aCB241185c72D3653447E070994Da59f', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Free Coin but CC has FREE coin
-        evm_address_to_identifier(address='0xa11810F2df32263A65Ef7f5f5754F88CCd8De8df', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # ALI but CC has Alethea Artificial Liquid Intelligence Token
-        evm_address_to_identifier(address='0xFAaA87943bFca6D97434bE3d26C589647FEA4375', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # ACEToken but CC has Fusionist
-        evm_address_to_identifier(address='0x1337420dED5ADb9980CFc35f8f2B054ea86f8aB1', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Subsquid but CC has SQD
-        evm_address_to_identifier(address='0x1cCF27211e8bf052f6255329ed641B4E94E80603', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # meta baby but CC has BabySwap
-        evm_address_to_identifier(address='0xcb1592591996765Ec0eFc1f92599A19767ee5ffA', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # BIO but CC has Bio Protocol
-        evm_address_to_identifier(address='0xEab49138BA2Ea6dd776220fE26b7b8E446638956', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Send but CC has Suilend
-        evm_address_to_identifier(address='0x7e3784220740e61dC700501bd6771226E11d8897', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Cyber Arena Token but CC has Simon's Cat
-        evm_address_to_identifier(address='0x1121AcC14c63f3C872BFcA497d10926A6098AAc5', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Department Of Government Efficiency but CC has Dogecoin
-        evm_address_to_identifier(address='0x67f0870BB897F5E1c369976b4A2962d527B9562c', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Department Of Government Efficiency but CC has Dogecoin
-        evm_address_to_identifier(address='0xf9Fa60EF4F23F00CCE403cc4d2c11Baf4880A0d6', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # FARCANA but CC has Farmland Protocol
-        evm_address_to_identifier(address='0x5F32AbeeBD3c2fac1E7459A27e1AE9f1C16ccccA', chain_id=ChainID.POLYGON_POS, token_type=EvmTokenKind.ERC20),  # noqa: E501  # FARCANA but CC has Farmland Protocol
-        evm_address_to_identifier(address='0x6bfDB6f4E65Ead27118592A41eB927cEa6956198', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Fame AI but CC has Fimarkcoin
-        evm_address_to_identifier(address='0x6bfDB6f4E65Ead27118592A41eB927cEa6956198', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Fame AI but CC has Fimarkcoin
-        evm_address_to_identifier(address='0x1C4CcA7C5DB003824208aDDA61Bd749e55F463a3', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GAME by Virtuals but CC has GameBuild
-        evm_address_to_identifier(address='0x0C1dC73159e30c4b06170F2593D3118968a0DCa5', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GoPlus Security but CC has Triffic
-        evm_address_to_identifier(address='0x7eDC0eC89F987ECd85617b891c44fE462a325869', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Gunstar Metaverse but CC has CoinGhost
-        evm_address_to_identifier(address='0xD5D053D5B769383e860d1520Da7a908E00919F36', chain_id=ChainID.AVALANCHE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # JUICE but CC has Juice Finance
-        evm_address_to_identifier(address='0xc732B6586A93b6B7CF5FeD3470808Bc74998224D', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # KmonCoin but CC has Kryptomon
-        evm_address_to_identifier(address='0xc4170fd71ECed3C80baDca77f4e12E8AaC1e3436', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # KmonCoin but CC has Kryptomon
-        evm_address_to_identifier(address='0x55cD6469F597452B5A7536e2CD98fDE4c1247ee4', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Luna by Virtuals but CC has Terra
-        evm_address_to_identifier(address='0x0000000000c5dc95539589fbD24BE07c6C14eCa4', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Milady Cult Coin but CC has Cult DAO
-        evm_address_to_identifier(address='0x0944D5848BD9F60A34Ba92aEa300d4286696Eb76', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Palette Token but CC has Poollotto.finance
-        evm_address_to_identifier(address='0xB299751B088336E165dA313c33e3195B8c6663A6', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # StarHeroes but CC has FileStar
-        evm_address_to_identifier(address='0xB299751B088336E165dA313c33e3195B8c6663A6', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # StarHeroes but CC has FileStar
-        evm_address_to_identifier(address='0x35bEdBF9291b22218a0dA863170dcC9329Ef2563', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # TAP Coin but CC has TAP FANTASY
-        evm_address_to_identifier(address='0xfd418e42783382E86Ae91e445406600Ba144D162', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Zircuit but CC has ZrCoin
-        evm_address_to_identifier(address='0x5c8D0C48810FD37A0A824D074ee290E64f7A8Fa2', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # AVL but CC has Aston Villa Fan Token
-        evm_address_to_identifier(address='0x9BeEE89723cEeC27d7c2834bec6834208FFdc202', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # AVL but CC has Aston Villa Fan Token
-        evm_address_to_identifier(address='0x0Db510e79909666d6dEc7f5e49370838c16D950f', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Super Anon but CC has ANON
-        evm_address_to_identifier(address='0x28561B8A2360F463011c16b6Cc0B0cbEF8dbBcad', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # MOO DENG but CC has Moo Deng (moodengsol.com)
-        evm_address_to_identifier(address='0x3C6256F234Ba638E5883c46b3fEdb00ea2e66b8A', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Moongate but CC has Megatech
-        evm_address_to_identifier(address='0x3Ab1A5f76E12202d1AD1548A08a799501581Da4E', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # DIN but CC has Dinero
-        evm_address_to_identifier(address='0xe343167631d89B6Ffc58B88d6b7fB0228795491D', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Global Dollar but CC has USDG
-        evm_address_to_identifier(address='0xcacf1ca03983CE6c7E235fb20C70aCC70ed13509', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # AstroPepeX but CC has ApolloX
-        evm_address_to_identifier(address='0xed4e879087ebD0e8A77d66870012B5e0dffd0Fa4', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # AstroPepeX but CC has ApolloX
-        evm_address_to_identifier(address='0xdBcD57cc74b180f928258F7B1a32F6f7e64BF12e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Baby Pepe Token but CC has Blast Pepe
-        evm_address_to_identifier(address='0xFc4b4ec763722B71eB1D729749B447A9645f5F30', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # DumbMoney but CC has GameStop
-        evm_address_to_identifier(address='0xb02eF03245fc7DF987BBd876768E6d441b7099B6', chain_id=ChainID.POLYGON_POS, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Satoshi Airline but CC has Jet Protocol
-        evm_address_to_identifier(address='0x7f72EBb448387537C174a5D17E762C877db28fB6', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Fishkoin but CC has Koinos
-        evm_address_to_identifier(address='0x4f7eA8F6487a7007ca054F35c4a7b961f5b18961', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # GoldenCat but CC has CatCoin Token
-        evm_address_to_identifier(address='0x8808434a831eFea81170A56a9ddc57Cc9E6De1d8', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Bork on Ethereum but CC has Bork
-        evm_address_to_identifier(address='0xBA5E66FB16944Da22A62Ea4FD70ad02008744460', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Based Turbo but CC has Turbo
-        evm_address_to_identifier(address='0x49d803d2DF2295185610f44961F2Dcd40326F25C', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Shark Cat but CC has Siacoin
-        evm_address_to_identifier(address='0x23D3F4EaaA515403C6765bb623F287a8Cca28F2b', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Broccoli but CC has CZ'S Dog (broccoli.gg)
+        evm_address_to_identifier(address='0x8d80de8A78198396329dfA769aD54d24bF90E7aa', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Nami.Trade but CC has Nirvana Chain
+        evm_address_to_identifier(address='0x832904863978b94802123106e6eB491BDF0Df928', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # OptiToken but CC has Optimus AI
+        evm_address_to_identifier(address='0x126c121f99e1E211dF2e5f8De2d96Fa36647c855', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # DEGEN Index but CC has Degen
+        evm_address_to_identifier(address='0xAE6e3540E97b0b9EA8797B157B510e133afb6282', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501  # DEGEN Index but CC has Degen
+        evm_address_to_identifier(address='0x908EF6B57a6BB5B043Ea6EF84142895b519c713c', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Matchcup but CC has Matching Game
+        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # SIMP Token but CC has SO-COL
+        evm_address_to_identifier(address='0xb8919522331C59f5C16bDfAA6A121a6E03A91F62', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Home but CC has OtterHome
+        evm_address_to_identifier(address='0xea3Fb6f331735252E7Bfb0b24b3B761301293DBe', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Vader USD but CC has Verified USD
+        evm_address_to_identifier(address='0x44dB359bf01F8b521A6295E4d56991277f410AA2', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0x7616113782AaDAB041d7B10d474F8A0c04EFf258', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Vee Token but CC has BLOCKv
+        evm_address_to_identifier(address='0x326f5834d73a2dc02b3c492E9ef1b24399d430b3', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # StargateToken but CC has Stargate Finance
+        evm_address_to_identifier(address='0xAD038Eb671c44b853887A7E32528FaB35dC5D710', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Dola Borrowing Right but CC has deBridge
+        evm_address_to_identifier(address='0xD04E772BC0d591fBD288f2E2a86aFA3D3CB647F8', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # CryptoGPT Token but CC has QnA3.AI
+        evm_address_to_identifier(address='0xE0151763455A8a021e64880C238ba1cff3787fF0', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Aped but CC has Baddest Alpha Ape Bundle
+        evm_address_to_identifier(address='0xDFE29AFdF5A7D0bb92A01A56Adabfa87D652E0E7', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Optimus but CC has Opus
+        evm_address_to_identifier(address='0x9CBf044bc535db4C93a9F11205A69631d9DCeF26', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Billy Token but CC has Billy
+        evm_address_to_identifier(address='0x5888641e3e6cBeA6D84Ba81EDb217bD691d3bE38', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Bobo but CC has BOBO
+        evm_address_to_identifier(address='0x9452D45d33490234B8C96f42342F1Be28c0FE097', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Swaperry but CC has Perry The BNB
+        evm_address_to_identifier(address='0xB6b8CCD230Bb4235C7b87986274E7aB550b72261', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # HALO Token but CC has Halo Coin
+        evm_address_to_identifier(address='0xAAA6C1E32C55A7Bfa8066A6FAE9b42650F262418', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501  # Ramses but CC has Ramifi Protocol
+        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Karate but CC has Karate Combat
+        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Turbos Finance but CC has Turbos Finance
+        evm_address_to_identifier(address='0xF1182229B71E79E504b1d2bF076C15a277311e05', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # LBR but CC has Lybra Finance
+        evm_address_to_identifier(address='0x9A601C5bb360811d96A23689066af316a30c3027', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Pika but CC has Pikaboss
+        evm_address_to_identifier(address='0xC9D21E5A24110b67af31aF464edfDC2dAe5Ec7D5', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # BitMeme but CC has Bytom
+        evm_address_to_identifier(address='0x244b797d622D4DEe8b188b03546ACAAbD0Cf91A0', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Four but CC has 4THPILLAR TECHNOLOGIES
+        evm_address_to_identifier(address='0x9Ee75952E3408ed7005225855aA1835D6d0023CA', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Stamen Tellus Token but CC has Statter Network
+        evm_address_to_identifier(address='0xdFA46478F9e5EA86d57387849598dbFB2e964b02', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Mai Stablecoin but CC has Mindsync
+        evm_address_to_identifier(address='0xb504035a11E672e12a099F32B1672b9C4a78b22f', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Safereum but CC has Safereum
+        evm_address_to_identifier(address='0x27DCB425C7005DD7558F9583797edA39A8D70ABd', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Wrapped Ether but CC has WETH
+        evm_address_to_identifier(address='0x95987b0cdC7F65d989A30B3B7132a38388c548Eb', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # PURSE TOKEN but CC has Pundi X PURSE
+        evm_address_to_identifier(address='0xC256F81d35a54c3599B424171d719E9Ae87b2E9b', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # ZOOA but CC has Zoopia
+        evm_address_to_identifier(address='0x56cCEA18F8c7c23328Cdfd545c50c7c370f8d263', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # RSCOIN but CC has ResearchCoin
+        evm_address_to_identifier(address='0x3ADb04E127b9C0a5D36094125669d4603AC52a0c', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Gro Vault Token but CC has Genesis Vision
+        evm_address_to_identifier(address='0x21ad647b8F4Fe333212e735bfC1F36B4941E6Ad2', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Squid but CC has Squid Game
+        evm_address_to_identifier(address='0x35A9b440Da4410dD63dF8c54672b728970560328', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Mana but CC has Decentraland
+        evm_address_to_identifier(address='0x33d63Ba1E57E54779F7dDAeaA7109349344cf5F1', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # DATA Economy Index but CC has Streamr
+        evm_address_to_identifier(address='0x47110d43175f7f2C2425E7d15792acC5817EB44f', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Bankless DeFi Innovation Index but CC has GamiFi
+        evm_address_to_identifier(address='0xcf32c644fed4FeFF94017a10B2882Bf71eE740dD', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Brawl Token but CC has BitBrawl
+        evm_address_to_identifier(address='0x3001f57F8308b189EB412a64322Aad5eF9951290', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # GEC but CC has Geco.one
+        evm_address_to_identifier(address='0x7e4C1D51ace44E26c5924d590995dEA3eB8aD505', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Gameta but CC has HIPPOP
+        evm_address_to_identifier(address='0xaA247c0D81B83812e1ABf8bAB078E4540D87e3fB', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # meson.network but CC has Manson Coin
+        evm_address_to_identifier(address='0x102c776DDB30C754dEd4fDcC77A19230A60D4e4f', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Flooring Lab Credit but CC has FlowChainCoin
+        evm_address_to_identifier(address='0x3417E54A51924C225330f8770514aD5560B9098D', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # REDKoin but CC has RED TOKEN
+        evm_address_to_identifier(address='0xCa0E54b636DB823847B29F506BFFEE743F57729D', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Chi USD but CC has Chi Gastoken
+        evm_address_to_identifier(address='0x39FdE572a18448F8139b7788099F0a0740f51205', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Oath Token but CC has OATH Protocol
+        evm_address_to_identifier(address='0xbfD291DA8A403DAAF7e5E9DC1ec0aCEaCd4848B9', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # dForce USD but CC has USX Quantum
+        evm_address_to_identifier(address='0xB0ae108669CEB86E9E98e8fE9e40d98b867855fD', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # OneRing but CC has Darwinia Network
+        evm_address_to_identifier(address='0x12ff4a259e14D4DCd239C447D23C9b00F7781d8F', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # PEPE Optimism but CC has Pepe
+        evm_address_to_identifier(address='0x3F56e0c36d275367b8C502090EDF38289b3dEa0d', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # QiDao but CC has BENQI
+        evm_address_to_identifier(address='0x3Ebb31CB2888e0Acbb81cBE2FeC65AEE24be3BD4', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # AVT but CC has Aventus
+        evm_address_to_identifier(address='0xB25EA095997F5bBaa6cEa962c4fBf3bfc3C09776', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Promethios but CC has Matr1x Fire
+        evm_address_to_identifier(address='0x47536F17F4fF30e64A96a7555826b8f9e66ec468', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # MUMMY but CC has Mummy Finance
+        evm_address_to_identifier(address='0x8901cB2e82CC95c01e42206F8d1F417FE53e7Af0', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # YieldFarming Index but CC has Your Futures Exchange
+        evm_address_to_identifier(address='0xC1c167CC44f7923cd0062c4370Df962f9DDB16f5', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Pepe but CC has Pepe
+        evm_address_to_identifier(address='0x57ebDb4c8E41eBAc32986DF4A4D591296E5fB0F1', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # SSS but CC has StarSharks
+        evm_address_to_identifier(address='0xb532178708814F0c174B29B991D2b355106Afbc3', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Astrava but CC has AirSwap
+        evm_address_to_identifier(address='0xAb1047894dA4ec207c71bE0AEF5c7885e07B2DaF', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # LSD DAO but CC has Pontem Liquidswap
+        evm_address_to_identifier(address='0x2e80259C9071B6176205FF5F5Eb6F7EC8361b93f', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # HashDAO Token but CC has Provenance Blockchain
+        evm_address_to_identifier(address='0xef9aE714dCd61A9DE189c63c40B0082F2ead576D', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0x158b4eD5b3bd2383ceC2A045C7c8F3594B72Cad2', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0xFe1F3C6D42376e74d3E9C0724ed132c1e0Dcdd8a', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0xbf0c7ccB143126C1bE90a426f676f5cb313956d9', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Tempest but CC has Temtum
+        evm_address_to_identifier(address='0xFd5494CDf4f1a5b5abA8cE5D7ee1d04eF47f2FCA', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0x9e57B3d7fD1a8F8FcE8C4214cC1148D518D6f6fE', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0xf4d620009d9381094CD70eBEE2B0730E095A3b12', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Test but CC has Test
+        evm_address_to_identifier(address='0xcb7348d51E49402591A6a382F3a76e33FD4b341e', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Pepe but CC has Pepe
+        evm_address_to_identifier(address='0xDe8E894148C47cC0BaEfd0Bc56BA0DBc1a61201A', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Bc Game but CC has BlockChainGames
+        evm_address_to_identifier(address='0xA1f085846381335aD10C86E1001dFB833C218897', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # CHERY FINANCE but CC has Crafting Finance
+        evm_address_to_identifier(address='0x00e1724885473B63bCE08a9f0a52F35b0979e35A', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # Oath Token but CC has OATH Protocol
+        evm_address_to_identifier(address='0x2c94dab6B2C970d9e3049491AAC48e8E0F3b3068', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # ECO but CC has Ormeus Ecosystem
+        evm_address_to_identifier(address='0x619f56Ad816f7182678E6443c8A7b2d276305C86', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501  # POP but CC has Popcoin
+        evm_address_to_identifier(address='0x00e1724885473B63bCE08a9f0a52F35b0979e35A', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Oath Token but CC has OATH Protocol
+        evm_address_to_identifier(address='0xbf1aeA8670D2528E08334083616dD9C5F3B087aE', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Mai Stablecoin but CC has Mindsync
+        evm_address_to_identifier(address='0x9E53e88dCff56d3062510A745952DEC4cEFDff9E', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Basic Dog Meme but CC has DOG•GO•TO•THE•MOON
+        evm_address_to_identifier(address='0x8901cB2e82CC95c01e42206F8d1F417FE53e7Af0', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # YieldFarming Index but CC has Your Futures Exchange
+        evm_address_to_identifier(address='0x5c185329BC7720AebD804357043121D26036D1B3', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # BAI but CC has BearAI
+        evm_address_to_identifier(address='0x5D1A42E32d84560fF46f4F06302fE4C69d28135d', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # AAA but CC has Moon Rabbit
+        evm_address_to_identifier(address='0x8544FE9D190fD7EC52860abBf45088E81Ee24a8c', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Toshi but CC has Toshi
+        evm_address_to_identifier(address='0xd7c9621e3A5051f5e5A5982c8c430Fd4B55Eda22', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Blue but CC has Bluefin
+        evm_address_to_identifier(address='0x595675dcbe5D2aD1f4d7b910c50567c0f9230633', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # ShipeDEX but CC has ShipChain
+        evm_address_to_identifier(address='0xc142171B138DB17a1B7Cb999C44526094a4dae05', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # dForce USD but CC has USX Quantum
+        evm_address_to_identifier(address='0xb53Be0BE88bA245B5086E558D00Ad56ee7344556', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # TOSHI but CC has Toshi
+        evm_address_to_identifier(address='0x60b72C00681A43e423F097ab61CC526a1045B048', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # friend.tech but CC has Friend.tech
+        evm_address_to_identifier(address='0x03617dC1ab7f959cc3593bB43ca43e192e6662da', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Colibri but CC has Drone Coin
+        evm_address_to_identifier(address='0x2168eb98C6D416Afb85E7beef5abDc4FB4177dfE', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Blp but CC has BullPerks
+        evm_address_to_identifier(address='0xbeFD5C25A59ef2C1316c5A4944931171F30Cd3E4', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # GoldenBoys but CC has CyberDragon Gold
+        evm_address_to_identifier(address='0xC19669A405067927865B40Ea045a2baabbbe57f5', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # STAR but CC has FileStar
+        evm_address_to_identifier(address='0x2B6A85CD35D15691357eea61d88cB3f401A92FC3', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # SurvToken but CC has Survival Game Online
+        evm_address_to_identifier(address='0x5D67a4AFb9fBFc3640e163e93766Cf1eAF2F7045', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Gold but CC has Goldario
+        evm_address_to_identifier(address='0x9Cc2fC2f75768b0307925C7935396Ec9D94bbA44', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Meta but CC has Meta
+        evm_address_to_identifier(address='0x60be663a88401c917372b945b7D04cd75e5ABd12', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # LA but CC has LATOKEN
+        evm_address_to_identifier(address='0xEf6b19D71B342EAE33773346b05EAD8F0966BD42', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # TEST but CC has Test
+        evm_address_to_identifier(address='0x7Ee9cf972BC8441ebc112c5F01a96Ce85b0a44Bd', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Dai but CC has Dai
+        evm_address_to_identifier(address='0x2259ba575F7C66cF10d59a1Fe2F7BA77C5685770', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # BAI but CC has BearAI
+        evm_address_to_identifier(address='0xBe449c2aB88B5D9BF33eDe32270957d240155597', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Mushroom but CC has Meta Ruffy
+        evm_address_to_identifier(address='0xCa080DD32EEaa87711Db63543C9712b08795926a', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # test but CC has Test
+        evm_address_to_identifier(address='0xE2B21D4684b2bA62F3BE1FE286eacb90D26E394d', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # CryptoOracle Collective but CC has Coin of the champions
+        evm_address_to_identifier(address='0xf908326E871561E31b346499F70854350aCe3Dd2', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Base AI but CC has BearAI
+        evm_address_to_identifier(address='0x0e80F46D9Eb7611748e07aC234be4eBa260e4531', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Test Token but CC has ThunderCore
+        evm_address_to_identifier(address='0x981D41C115a2d48Cb1215D13Bda8f989d407c9c5', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Xena but CC has XEN Crypto
+        evm_address_to_identifier(address='0x07388Ecb5584622c80fbd21355bFB778f77361D8', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # TestToken but CC has Titan Coin
+        evm_address_to_identifier(address='0xba7D47f471ADD16875e765edEe0858C3413A56Fd', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Meta but CC has Meta (mStable Governance: Meta)
+        evm_address_to_identifier(address='0x063D2DB6D348Fa5957b78B6141d144426486c68C', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # SocioCat but CC has Simon's Cat
+        evm_address_to_identifier(address='0x3CCEc427b833496FE7FDB62b577C109551E12f55', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # THE KEY 33 but CC has SelfKey
+        evm_address_to_identifier(address='0x0a5aBd23cC5e3F4061270482b571e93226F7Df7A', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # THE KEY 33 but CC has SelfKey
+        evm_address_to_identifier(address='0x7EC4Ef6F0F5D46f0A462cee307Ea8CB8efcca4DC', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # MEME MASTER but CC has Mastercoin
+        evm_address_to_identifier(address='0x7BC401227777F173Ff871993b198A8632741B9Bb', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Detto Token but CC has Delta Exchange
+        evm_address_to_identifier(address='0x677a3AfA51bA1a95f70F5B971DcA72047690faA2', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # TEST NAME but CC has Test
+        evm_address_to_identifier(address='0x58Ed4FD0C3d930b674BA50a293f03ef6cD7dE7a3', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # ArbiDex Token but CC has ARCS
+        evm_address_to_identifier(address='0x8fCC55494C7939d563620C8f697D462A0D8C230F', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Cool Base Cool but CC has Casino Betting Coin
+        evm_address_to_identifier(address='0xC435B542aCB241185c72D3653447E070994Da59f', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Free Coin but CC has FREE coin
+        evm_address_to_identifier(address='0xa11810F2df32263A65Ef7f5f5754F88CCd8De8df', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # ALI but CC has Alethea Artificial Liquid Intelligence Token
+        evm_address_to_identifier(address='0xFAaA87943bFca6D97434bE3d26C589647FEA4375', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # ACEToken but CC has Fusionist
+        evm_address_to_identifier(address='0x1337420dED5ADb9980CFc35f8f2B054ea86f8aB1', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Subsquid but CC has SQD
+        evm_address_to_identifier(address='0x1cCF27211e8bf052f6255329ed641B4E94E80603', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # meta baby but CC has BabySwap
+        evm_address_to_identifier(address='0xcb1592591996765Ec0eFc1f92599A19767ee5ffA', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # BIO but CC has Bio Protocol
+        evm_address_to_identifier(address='0xEab49138BA2Ea6dd776220fE26b7b8E446638956', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Send but CC has Suilend
+        evm_address_to_identifier(address='0x7e3784220740e61dC700501bd6771226E11d8897', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Cyber Arena Token but CC has Simon's Cat
+        evm_address_to_identifier(address='0x1121AcC14c63f3C872BFcA497d10926A6098AAc5', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Department Of Government Efficiency but CC has Dogecoin
+        evm_address_to_identifier(address='0x67f0870BB897F5E1c369976b4A2962d527B9562c', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Department Of Government Efficiency but CC has Dogecoin
+        evm_address_to_identifier(address='0xf9Fa60EF4F23F00CCE403cc4d2c11Baf4880A0d6', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # FARCANA but CC has Farmland Protocol
+        evm_address_to_identifier(address='0x5F32AbeeBD3c2fac1E7459A27e1AE9f1C16ccccA', chain_id=ChainID.POLYGON_POS, token_type=TokenKind.ERC20),  # noqa: E501  # FARCANA but CC has Farmland Protocol
+        evm_address_to_identifier(address='0x6bfDB6f4E65Ead27118592A41eB927cEa6956198', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Fame AI but CC has Fimarkcoin
+        evm_address_to_identifier(address='0x6bfDB6f4E65Ead27118592A41eB927cEa6956198', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Fame AI but CC has Fimarkcoin
+        evm_address_to_identifier(address='0x1C4CcA7C5DB003824208aDDA61Bd749e55F463a3', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # GAME by Virtuals but CC has GameBuild
+        evm_address_to_identifier(address='0x0C1dC73159e30c4b06170F2593D3118968a0DCa5', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # GoPlus Security but CC has Triffic
+        evm_address_to_identifier(address='0x7eDC0eC89F987ECd85617b891c44fE462a325869', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Gunstar Metaverse but CC has CoinGhost
+        evm_address_to_identifier(address='0xD5D053D5B769383e860d1520Da7a908E00919F36', chain_id=ChainID.AVALANCHE, token_type=TokenKind.ERC20),  # noqa: E501  # JUICE but CC has Juice Finance
+        evm_address_to_identifier(address='0xc732B6586A93b6B7CF5FeD3470808Bc74998224D', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # KmonCoin but CC has Kryptomon
+        evm_address_to_identifier(address='0xc4170fd71ECed3C80baDca77f4e12E8AaC1e3436', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # KmonCoin but CC has Kryptomon
+        evm_address_to_identifier(address='0x55cD6469F597452B5A7536e2CD98fDE4c1247ee4', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Luna by Virtuals but CC has Terra
+        evm_address_to_identifier(address='0x0000000000c5dc95539589fbD24BE07c6C14eCa4', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Milady Cult Coin but CC has Cult DAO
+        evm_address_to_identifier(address='0x0944D5848BD9F60A34Ba92aEa300d4286696Eb76', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Palette Token but CC has Poollotto.finance
+        evm_address_to_identifier(address='0xB299751B088336E165dA313c33e3195B8c6663A6', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # StarHeroes but CC has FileStar
+        evm_address_to_identifier(address='0xB299751B088336E165dA313c33e3195B8c6663A6', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501  # StarHeroes but CC has FileStar
+        evm_address_to_identifier(address='0x35bEdBF9291b22218a0dA863170dcC9329Ef2563', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # TAP Coin but CC has TAP FANTASY
+        evm_address_to_identifier(address='0xfd418e42783382E86Ae91e445406600Ba144D162', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Zircuit but CC has ZrCoin
+        evm_address_to_identifier(address='0x5c8D0C48810FD37A0A824D074ee290E64f7A8Fa2', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # AVL but CC has Aston Villa Fan Token
+        evm_address_to_identifier(address='0x9BeEE89723cEeC27d7c2834bec6834208FFdc202', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # AVL but CC has Aston Villa Fan Token
+        evm_address_to_identifier(address='0x0Db510e79909666d6dEc7f5e49370838c16D950f', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Super Anon but CC has ANON
+        evm_address_to_identifier(address='0x28561B8A2360F463011c16b6Cc0B0cbEF8dbBcad', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # MOO DENG but CC has Moo Deng (moodengsol.com)
+        evm_address_to_identifier(address='0x3C6256F234Ba638E5883c46b3fEdb00ea2e66b8A', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Moongate but CC has Megatech
+        evm_address_to_identifier(address='0x3Ab1A5f76E12202d1AD1548A08a799501581Da4E', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # DIN but CC has Dinero
+        evm_address_to_identifier(address='0xe343167631d89B6Ffc58B88d6b7fB0228795491D', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Global Dollar but CC has USDG
+        evm_address_to_identifier(address='0xcacf1ca03983CE6c7E235fb20C70aCC70ed13509', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # AstroPepeX but CC has ApolloX
+        evm_address_to_identifier(address='0xed4e879087ebD0e8A77d66870012B5e0dffd0Fa4', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # AstroPepeX but CC has ApolloX
+        evm_address_to_identifier(address='0xdBcD57cc74b180f928258F7B1a32F6f7e64BF12e', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Baby Pepe Token but CC has Blast Pepe
+        evm_address_to_identifier(address='0xFc4b4ec763722B71eB1D729749B447A9645f5F30', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # DumbMoney but CC has GameStop
+        evm_address_to_identifier(address='0xb02eF03245fc7DF987BBd876768E6d441b7099B6', chain_id=ChainID.POLYGON_POS, token_type=TokenKind.ERC20),  # noqa: E501  # Satoshi Airline but CC has Jet Protocol
+        evm_address_to_identifier(address='0x7f72EBb448387537C174a5D17E762C877db28fB6', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Fishkoin but CC has Koinos
+        evm_address_to_identifier(address='0x4f7eA8F6487a7007ca054F35c4a7b961f5b18961', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # GoldenCat but CC has CatCoin Token
+        evm_address_to_identifier(address='0x8808434a831eFea81170A56a9ddc57Cc9E6De1d8', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501  # Bork on Ethereum but CC has Bork
+        evm_address_to_identifier(address='0xBA5E66FB16944Da22A62Ea4FD70ad02008744460', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Based Turbo but CC has Turbo
+        evm_address_to_identifier(address='0x49d803d2DF2295185610f44961F2Dcd40326F25C', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # noqa: E501  # Shark Cat but CC has Siacoin
+        evm_address_to_identifier(address='0x23D3F4EaaA515403C6765bb623F287a8Cca28F2b', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501  # Broccoli but CC has CZ'S Dog (broccoli.gg)
         'COOHA',  # CoolMining but CC has CoolHash
         'MOR',  # Moreal but CC has Morpheus
         'OXBT',  # OXBT but CC has OXBT (Ordinals)
@@ -842,11 +842,11 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         # tether GBPT but cc has poundtoken
         'GBPT',
         # hope eth and not huobi eth
-        evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0x1fDeAF938267ca43388eD1FdB879eaF91e920c7A', chain_id=ChainID.POLYGON_POS, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0xE38faf9040c7F09958c638bBDB977083722c5156', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.GNOSIS, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x1fDeAF938267ca43388eD1FdB879eaF91e920c7A', chain_id=ChainID.POLYGON_POS, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xE38faf9040c7F09958c638bBDB977083722c5156', chain_id=ChainID.OPTIMISM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xc46F2004006d4C770346f60a7BaA3f1Cc67dFD1c', chain_id=ChainID.GNOSIS, token_type=TokenKind.ERC20),  # noqa: E501
         # peth from maker but congecko has another PETH
         strethaddress_to_identifier('0xf53AD2c6851052A81B42133467480961B2321C09'),
         # alpaca markets but coingecko has alpaca finance
@@ -892,30 +892,30 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         strethaddress_to_identifier('0xBEA0000029AD1c77D3d5D23Ba2D8893dB9d1Efab'),
         strethaddress_to_identifier('0x9F77BA354889BF6eb5c275d4AC101e9547f15AdB'),
         # boosted lusd but not lusd. Also no activity on the token
-        evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x20658291677a29EFddfd0E303f8b23113d837cC7', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         # coingecko has PTS but we have PETAL
-        evm_address_to_identifier(address='0x2e60f6C4CA05bC55A8e577DEeBD61FCe727c4a6e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x2e60f6C4CA05bC55A8e577DEeBD61FCe727c4a6e', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         # USV but the address doesn't match the one in coingecko
-        evm_address_to_identifier(address='0x6bAD6A9BcFdA3fd60Da6834aCe5F93B8cFed9598', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x6bAD6A9BcFdA3fd60Da6834aCe5F93B8cFed9598', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         # VEE but the address doesn't match the ones in coingecko
-        evm_address_to_identifier(address='0x7616113782AaDAB041d7B10d474F8A0c04EFf258', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x7616113782AaDAB041d7B10d474F8A0c04EFf258', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         # Alladin cvxCRV but coingecko has aave crv
-        evm_address_to_identifier(address='0x2b95A1Dcc3D405535f9ed33c219ab38E8d7e0884', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x2b95A1Dcc3D405535f9ed33c219ab38E8d7e0884', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         # coingecko has crypto price intex that doesn't match the address
-        evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-        evm_address_to_identifier(address='0x85089389C14Bd9c77FC2b8F0c3d1dC3363Bf06Ef', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x85089389C14Bd9c77FC2b8F0c3d1dC3363Bf06Ef', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         'RVR',  # revolutionVR but coingecko has reality vr
         'BTG-2',  # bitgem but coingecko has bitcoin gold
         # karate but coingecko has karate combat
-        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xAcf79C09Fff518EcBe2A96A2c4dA65B68fEDF6D3', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
         # simp but coingecko has socol
-        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xD0ACCF05878caFe24ff8b3F82F194C62Ed755707', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
         # coingecko has a turbos in sui
-        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x0678Ca162E737C44cab2Ea31b4bbA78482E1313d', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
         # inx but coingecko has different address
-        evm_address_to_identifier(address='0x84fE25f3921f3426395c883707950d0c00367576', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0x84fE25f3921f3426395c883707950d0c00367576', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
         # monfter but coingecko doesn't match any
-        evm_address_to_identifier(address='0xcaCc19C5Ca77E06D6578dEcaC80408Cc036e0499', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+        evm_address_to_identifier(address='0xcaCc19C5Ca77E06D6578dEcaC80408Cc036e0499', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
     )
     for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
         identifier = asset_data.identifier
@@ -1073,7 +1073,7 @@ def test_spam_detection_respects_whitelist(globaldb: 'GlobalDBHandler', database
         address=make_evm_address(),
         name='crypto.com',  # use a number that will flag it as spam
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
     )
     globaldb.add_asset(new_token_whitelisted)
 

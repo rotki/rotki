@@ -63,13 +63,13 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -707,7 +707,7 @@ def test_maybe_detect_new_spam_tokens(
     token = EvmToken.initialize(  # add a token that will be detected as spam
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         name='$ vanityeth.org ($ vanityeth.org)',
         symbol='VANITYTOKEN',
     )
@@ -883,7 +883,7 @@ def test_update_lending_protocol_underlying_assets_task(
 
             assert [UnderlyingToken(
                 address=string_to_evm_address(underlying_token_address),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=ONE,
             )] == db_token.underlying_tokens
 

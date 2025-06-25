@@ -24,10 +24,10 @@ from rotkehlchen.types import (
     YEARN_VAULTS_V2_PROTOCOL,
     YEARN_VAULTS_V3_PROTOCOL,
     ChainID,
-    EvmTokenKind,
     Location,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -44,13 +44,13 @@ def fixture_yearn_v3_curve_savings_vault(database: 'DBHandler') -> 'EvmToken':
         userdb=database,
         evm_address=string_to_evm_address('0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='scrvUSD',
         name='Curve Savings',
         protocol=YEARN_VAULTS_V3_PROTOCOL,
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -68,7 +68,7 @@ def test_deposit_yearn_v3(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvcrvUSD-2',
         name='crvUSD-2 yVault',
         decimals=18,
@@ -76,7 +76,7 @@ def test_deposit_yearn_v3(
         started=Timestamp(1713104219),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -150,7 +150,7 @@ def test_withdraw_yearn_v3(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x028eC7330ff87667b6dfb0D94b954c820195336c'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvDAI-1',
         name='DAI yVault',
         decimals=18,
@@ -158,7 +158,7 @@ def test_withdraw_yearn_v3(
         started=Timestamp(1710272855),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -219,7 +219,7 @@ def test_deposit_yearn_v2(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0xcC2EFb8bEdB6eD69ADeE0c3762470c38D4730C50'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvCurve-crvDOLA-f',
         name='Curve crvDOLA Factory yVault',
         decimals=18,
@@ -227,7 +227,7 @@ def test_deposit_yearn_v2(
         started=Timestamp(1635529757),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xef484de8C07B6e2d732A92B5F78e81B38f99f95E'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -300,7 +300,7 @@ def test_increase_deposit_yearn_v2(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvUSDC',
         name='USDC yVault',
         decimals=6,
@@ -308,7 +308,7 @@ def test_increase_deposit_yearn_v2(
         started=Timestamp(1635529757),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -369,7 +369,7 @@ def test_withdraw_yearn_v2(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x790a60024bC3aea28385b60480f15a0771f26D09'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvCurve-YFIETH',
         name='Curve YFI-ETH Pool yVault',
         decimals=18,
@@ -377,7 +377,7 @@ def test_withdraw_yearn_v2(
         started=Timestamp(1644320324),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x29059568bB40344487d62f7450E78b8E6C74e0e5'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -727,7 +727,7 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
         userdb=ethereum_inquirer.database,
         evm_address=vault_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvDAI',
         name='DAI yVault',
         decimals=18,
@@ -735,7 +735,7 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
         started=Timestamp(1625883889),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),  # DAI
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )

@@ -88,10 +88,10 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Price,
     SupportedBlockchain,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -386,14 +386,14 @@ def test_price_underlying_tokens(inquirer, globaldb):
     token = EvmToken.initialize(
         address=address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='Test',
         symbol='YAB',
         underlying_tokens=[
-            UnderlyingToken(address=A_AAVE.resolve_to_evm_token().evm_address, token_kind=EvmTokenKind.ERC20, weight=aave_weight),  # noqa: E501
-            UnderlyingToken(address=A_LINK.resolve_to_evm_token().evm_address, token_kind=EvmTokenKind.ERC20, weight=link_weight),  # noqa: E501
-            UnderlyingToken(address=A_CRV.resolve_to_evm_token().evm_address, token_kind=EvmTokenKind.ERC20, weight=crv_weight),  # noqa: E501
+            UnderlyingToken(address=A_AAVE.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=aave_weight),  # noqa: E501
+            UnderlyingToken(address=A_LINK.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=link_weight),  # noqa: E501
+            UnderlyingToken(address=A_CRV.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=crv_weight),  # noqa: E501
         ],
     )
     globaldb.add_asset(token)
@@ -522,7 +522,7 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
         assert inquirer.find_usd_price(EvmToken(evm_address_to_identifier(
             address=address,
             chain_id=chain_id,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
         ))).is_close(price)
 
 
@@ -569,12 +569,12 @@ def test_price_non_ethereum_evm_token(inquirer_defi, globaldb):
     evm_address_to_identifier(
         address=address,
         chain_id=ChainID.BINANCE_SC,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     token = EvmToken.initialize(
         address=address,
         chain_id=ChainID.BINANCE_SC,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='SLOUGI',
         symbol='SLOUGI',
@@ -715,7 +715,7 @@ def test_find_yearn_vaults_v3_price(
         userdb=database,
         evm_address=string_to_evm_address('0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='yvcrvUSD-2',
         name='crvUSD-2 yVault',
         decimals=18,
@@ -723,7 +723,7 @@ def test_find_yearn_vaults_v3_price(
         started=Timestamp(1713104219),
         underlying_tokens=[UnderlyingToken(
             address=crvusd_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -809,7 +809,7 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     globaldb.add_asset(EvmToken.initialize(
         address=string_to_evm_address('0x66a2A913e447d6b4BF33EFbec43aAeF87890FBbc'),
         chain_id=ChainID.BOBA,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='USDC',
         symbol='USDC',
@@ -817,7 +817,7 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     globaldb.add_asset(EvmToken.initialize(
         address=string_to_evm_address('0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7'),
         chain_id=ChainID.AVALANCHE,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='Wrapped Avax',
         symbol='WAVAX',
@@ -826,7 +826,7 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     globaldb.add_asset(EvmToken.initialize(
         address=string_to_evm_address('0x15C3Eb3B621d1Bff62CbA1c9536B7c1AE9149b57'),
         chain_id=ChainID.EVMOS,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='USD Coin on Axelar',
         symbol='USDC',
@@ -834,7 +834,7 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     globaldb.add_asset(EvmToken.initialize(
         address=string_to_evm_address('0xA8CE8aee21bC2A48a5EF670afCc9274C7bbbC035'),
         chain_id=ChainID.POLYGON_ZKEVM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='USD Coin',
         symbol='USDC',
@@ -882,7 +882,7 @@ def test_fake_symbol_doesnt_query_cc(inquirer: 'Inquirer'):
     token = EvmToken.initialize(
         address=string_to_evm_address('0x9fca10428566808CC9175412491dF4681cF39cE4'),
         chain_id=ChainID.GNOSIS,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         name='Fake USDC',
         symbol='USDC',
         decimals=18,
@@ -994,18 +994,18 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
         userdb=database,
         evm_address=string_to_evm_address('0x63E0d47A6964aD1565345Da9bfA66659F4983F02'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='pufETH/wstETH',
         name='Balancer pufETH/wstETH',
         decimals=18,
         protocol=CPT_BALANCER_V2,
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=FVal('0.5'),
         ), UnderlyingToken(
             address=string_to_evm_address('0xD9A442856C234a39a81a089C06451EBAa4306a72'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=FVal('0.5'),
         )],
     )
@@ -1013,18 +1013,18 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
         userdb=database,
         evm_address=string_to_evm_address('0x19AD01cDc68d831F8E97A2CF9f552D16315eF175'),
         chain_id=ChainID.ARBITRUM_ONE,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='50PRF-50USDC',
         name='Balancer CoW AMM 50 PRF 50 USDC',
         decimals=18,
         protocol=CPT_BALANCER_V1,
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x1310952Bc5594852459Ee45bfD0df70b34Ac5509'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=FVal('0.5'),
         ), UnderlyingToken(
             address=string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=FVal('0.5'),
         )],
     )
@@ -1032,18 +1032,18 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
         userdb=database,
         evm_address=string_to_evm_address('0xAeF24dd15Ad265319A5F0Bfa53bF3CD328375B7B'),
         chain_id=ChainID.ARBITRUM_ONE,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='BCoW-50RING-50wstETH',
         name='Balancer CoW AMM 50 RING 50 wstETH',
         decimals=18,
         protocol=CPT_BALANCER_V1,
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x9e523234D36973f9e38642886197D023C88e307e'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=FVal('0.5'),
         ), UnderlyingToken(
             address=string_to_evm_address('0x5979D7b546E38E414F7E9822514be443A4800529'),
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=FVal('0.5'),
         )],
     )
@@ -1087,7 +1087,7 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
         userdb=database,
         evm_address=string_to_evm_address('0xaee0844A089d4De3677CDB1d0AE4595a89963E78'),
         chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='SY-LBTC',
         name='SY-LBTC',
         decimals=8,
@@ -1097,7 +1097,7 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
         userdb=database,
         evm_address=string_to_evm_address('0x5fe30Ac5cb1aBB0e44CdffB2916c254AEb368650'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='PT-FRAX-USDC',
         name='PT FRAX-USDC',
         decimals=18,
@@ -1107,7 +1107,7 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
         userdb=database,
         evm_address=string_to_evm_address('0x1DFe41cc7F7860BA7f1076ca6d0fedD707c87A00'),
         chain_id=ChainID.OPTIMISM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='YT-wstETH',
         name='YT-wstETH',
         decimals=18,
@@ -1117,7 +1117,7 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
         userdb=database,
         evm_address=string_to_evm_address('0x080f52A881ba96EEE2268682733C857c560e5dd4'),
         chain_id=ChainID.BINANCE_SC,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='PENDLE-LPT',
         name='LP wBETH',
         decimals=18,
@@ -1146,7 +1146,7 @@ def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', databa
         userdb=database,
         evm_address=string_to_evm_address('0x7f50786A0b15723D741727882ee99a0BF34e3466'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='sdCRV-gauge',
         name='Stake DAO sdCRV Gauge',
         decimals=18,
@@ -1157,12 +1157,12 @@ def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', databa
                     userdb=database,
                     evm_address=string_to_evm_address('0xD1b5651E55D4CeeD36251c61c50C889B36F6abB5'),
                     chain_id=ChainID.ETHEREUM,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                     symbol='sdCRV',
                     name='Stake DAO CRV',
                     decimals=18,
                 ).evm_address,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=ONE,
             ),
         ],
@@ -1181,7 +1181,7 @@ def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', databa
                 chain_id=ChainID.ETHEREUM,
                 protocol=CPT_CURVE,
             ).evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -1198,7 +1198,7 @@ def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', 
         userdb=database,
         evm_address=string_to_evm_address('0x0014E0be19De3118b5b29842dd1696a2A98EB9Db'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='mooCurveUSDC-USDf',
         name='Moo Curve USDC-USDf',
         decimals=18,
@@ -1209,12 +1209,12 @@ def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', 
                     userdb=database,
                     evm_address=string_to_evm_address('0x72310DAAed61321b02B08A547150c07522c6a976'),
                     chain_id=ChainID.ETHEREUM,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                     symbol='USDC/USDf',
                     name='USDC/USDf',
                     decimals=18,
                 ).evm_address,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=ONE,
             ),
         ],
@@ -1237,7 +1237,7 @@ def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'I
             userdb=database,
             evm_address=token_address,
             chain_id=chain_id,
-            token_kind=EvmTokenKind.ERC721,
+            token_kind=TokenKind.ERC721,
             symbol=f'UNI-V3-POS-{token_id}',
             name=f'Uniswap V3 Positions #{token_id}',
             collectible_id=token_id,

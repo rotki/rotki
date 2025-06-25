@@ -20,8 +20,8 @@ from rotkehlchen.types import (
     CURVE_LENDING_VAULTS_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
+    TokenKind,
 )
 
 from .constants import CURVE_VAULT_ABI
@@ -81,7 +81,7 @@ def _process_curve_lending_vault(database: 'DBHandler', vault: dict[str, Any]) -
         symbol='cvcrvUSD',
         underlying_tokens=[UnderlyingToken(
             address=underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
         encounter=encounter,

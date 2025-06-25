@@ -44,7 +44,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, GeneralCacheType
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, GeneralCacheType, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -401,7 +401,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     userdb=self.base.database,
                     evm_address=self.voting_escrow_address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC721,
+                    token_kind=TokenKind.ERC721,
                     collectible_id=str(token_id),
                 ),
             )])
@@ -451,7 +451,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 userdb=self.base.database,
                 evm_address=self.voting_escrow_address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_kind=EvmTokenKind.ERC721,
+                token_kind=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             ),
             amount=ZERO,

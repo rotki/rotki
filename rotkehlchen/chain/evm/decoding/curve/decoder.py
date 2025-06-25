@@ -58,7 +58,7 @@ from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -601,7 +601,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             Asset(evm_address_to_identifier(
                 address=address,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             )) if address != ETH_SPECIAL_ADDRESS else A_ETH for address in pool_addresses
         ]
 

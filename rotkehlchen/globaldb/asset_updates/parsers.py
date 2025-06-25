@@ -8,7 +8,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp, TokenKind
 
 from .types import VersionRange
 
@@ -188,7 +188,7 @@ class AssetParser(BaseAssetParser[AssetData]):
     def _parse_evm_token_data(
             self,
             insert_text: str,
-    ) -> tuple[ChecksumEvmAddress, int | None, str | None, ChainID | None, EvmTokenKind | None]:
+    ) -> tuple[ChecksumEvmAddress, int | None, str | None, ChainID | None, TokenKind | None]:
         """Read information related to evm assets from the insert line.
         May raise:
             - DeserializationError: if the regex didn't work or we failed to deserialize any value
@@ -217,7 +217,7 @@ class AssetParser(BaseAssetParser[AssetData]):
             insert_text=insert_text,
         )
         token_kind = (
-            EvmTokenKind.deserialize_from_db(token_kind_value)
+            TokenKind.deserialize_evm_from_db(token_kind_value)
             if token_kind_value is not None
             else None
         )

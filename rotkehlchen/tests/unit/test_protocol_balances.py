@@ -120,8 +120,8 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Price,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -283,7 +283,7 @@ def test_velodrome_v2_staking_balances(
     weth_op_lp_token = evm_address_to_identifier(
         address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
         chain_id=ChainID.OPTIMISM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     assert user_balance.assets[Asset(weth_op_lp_token).resolve_to_evm_token()][CPT_VELODROME] == Balance(  # noqa: E501
         amount=FVal('0.043087772070655563'),  # staked in gauge
@@ -618,7 +618,7 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
         userdb=blockchain.database,
         evm_address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='aEthUSDC',
         protocol=CPT_AAVE_V3,
     )
@@ -626,7 +626,7 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
         userdb=blockchain.database,
         evm_address=string_to_evm_address('0xB0fe3D292f4bd50De902Ba5bDF120Ad66E9d7a39'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='stableDebtEthUSDC',
         protocol=CPT_AAVE_V3,
     )
@@ -634,7 +634,7 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
         userdb=blockchain.database,
         evm_address=string_to_evm_address('0x72E95b8931767C79bA4EeE721354d6E99a61D004'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         symbol='variableDebtEthUSDC',
         protocol=CPT_AAVE_V3,
     )

@@ -65,12 +65,13 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
 from rotkehlchen.types import (
+    EVM_TOKEN_KINDS,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Location,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
@@ -1143,15 +1144,15 @@ class EVMTransactionDecoder(ABC):
     def _get_transfer_or_approval_token_kind_and_id(
             self,
             tx_log: EvmTxReceiptLog,
-    ) -> tuple[EvmTokenKind, str | None] | None:
+    ) -> tuple[EVM_TOKEN_KINDS, str | None] | None:
         """Determine if a transfer or approval event is for an erc20 or erc721 token.
         Returns the token kind and id (or None for erc20) in a tuple, or None on error."""
         if self._is_non_conformant_erc721(tx_log.address):
-            return EvmTokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data  # noqa: E501
+            return TokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data  # noqa: E501
         elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
-            return EvmTokenKind.ERC20, None  # no token_id for erc20
+            return TokenKind.ERC20, None  # no token_id for erc20
         elif len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args
-            return EvmTokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics  # noqa: E501
+            return TokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics  # noqa: E501
         else:
             log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
             return None

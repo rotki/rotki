@@ -18,7 +18,7 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -223,7 +223,7 @@ def update_ilk_registry(
                 userdb=ethereum.database,
                 chain_id=ChainID.ETHEREUM,
                 evm_address=token_address,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 evm_inquirer=ethereum,
                 encounter=TokenEncounterInfo(description='Querying makerdao collaterals registry'),
             )
