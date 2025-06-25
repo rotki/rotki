@@ -315,7 +315,7 @@ defineExpose({
       :location="location"
       :v$="v$"
       :datetime="datetime"
-      :hide-price-fields="isInformationalEvent"
+      :no-price-fields="isInformationalEvent"
     />
 
     <RuiDivider class="mb-6 mt-2" />

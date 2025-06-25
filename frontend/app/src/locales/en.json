@@ -4223,6 +4223,7 @@
     "title": "{name} balances"
   },
   "swap_event_form": {
+    "add_asset": "Add asset",
     "fee_notes": "Fee notes",
     "receive_amount": "Receive Amount",
     "receive_asset": "Receive Asset",
@@ -4486,6 +4487,7 @@
           }
         },
         "asset_price": {
+          "failed": "Failed to submit price",
           "hint": "If you change the asset price, rotki will save the historic price that will be considered in PnL report calculation",
           "label": "Asset price in {symbol} at the time"
         },

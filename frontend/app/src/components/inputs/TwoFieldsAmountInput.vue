@@ -6,10 +6,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const primaryValue = defineModel<string>('primaryValue', { required: true });
+const secondaryValue = defineModel<string>('secondaryValue', { required: true });
+
 const props = withDefaults(
   defineProps<{
-    primaryValue: string;
-    secondaryValue: string;
     label?: { primary?: string; secondary?: string };
     errorMessages?: {
       primary?: string | string[];
@@ -27,8 +28,6 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:primary-value', value: string): void;
-  (e: 'update:secondary-value', value: string): void;
   (e: 'update:reversed', reversed: boolean): void;
 }>();
 
@@ -49,14 +48,6 @@ function reverse() {
       get(primaryInput)?.focus();
     else get(secondaryInput)?.focus();
   });
-}
-
-function updatePrimaryValue(value: string) {
-  emit('update:primary-value', value);
-}
-
-function updateSecondaryValue(value: string) {
-  emit('update:secondary-value', value);
 }
 
 const aggregatedErrorMessages = computed(() => {
@@ -82,7 +73,7 @@ const focused = ref<boolean>(false);
   >
     <AmountInput
       ref="primaryInput"
-      :model-value="primaryValue"
+      v-model="primaryValue"
       :disabled="reversed || disabled"
       :hide-details="!reversed"
       variant="filled"
@@ -91,7 +82,6 @@ const focused = ref<boolean>(false);
       :class="`${!reversed ? 'input__enabled' : ''}`"
       :label="label.primary"
       :error-messages="aggregatedErrorMessages"
-      @update:model-value="updatePrimaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
     />
@@ -106,7 +96,7 @@ const focused = ref<boolean>(false);
 
     <AmountInput
       ref="secondaryInput"
-      :model-value="secondaryValue"
+      v-model="secondaryValue"
       :disabled="!reversed || disabled"
       :hide-details="reversed"
       variant="filled"
@@ -115,7 +105,6 @@ const focused = ref<boolean>(false);
       :class="`${reversed ? 'input__enabled' : ''}`"
       :label="label.secondary"
       :error-messages="aggregatedErrorMessages"
-      @update:model-value="updateSecondaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
     />

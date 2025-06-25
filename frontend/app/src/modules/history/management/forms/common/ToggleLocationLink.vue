@@ -46,7 +46,10 @@ watchImmediate(() => props.location, () => {
 
 <template>
   <div class="pt-1">
-    <RuiTooltip :disabled="disabled">
+    <RuiTooltip
+      :disabled="disabled"
+      :popper="{ placement: 'top-end' }"
+    >
       <template #activator>
         <RuiButton
           variant="text"
