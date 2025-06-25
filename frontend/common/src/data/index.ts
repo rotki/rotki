@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export interface ActionResult<T> {
   readonly result: T;
@@ -10,7 +10,7 @@ export enum EvmTokenKind {
   ERC721 = 'erc721',
 }
 
-const EvmTokenKindEnum = z.nativeEnum(EvmTokenKind);
+const EvmTokenKindEnum = z.enum(EvmTokenKind);
 
 const UnderlyingToken = z.object({
   address: z.string(),

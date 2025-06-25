@@ -2,17 +2,16 @@ import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { PaginationRequestPayload } from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
 import { PriceInformation } from '@/types/prices';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
-export const NonFungibleBalance = PriceInformation.merge(
-  z.object({
-    collectionName: z.string().nullable(),
-    id: z.string().min(1),
-    imageUrl: z.string().nullable(),
-    isLp: z.boolean().nullish(),
-    name: z.string().nullable(),
-  }),
-);
+export const NonFungibleBalance = z.object({
+  ...PriceInformation.shape,
+  collectionName: z.string().nullable(),
+  id: z.string().min(1),
+  imageUrl: z.string().nullable(),
+  isLp: z.boolean().nullish(),
+  name: z.string().nullable(),
+});
 
 export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 

@@ -1,6 +1,6 @@
 import type { PaginationRequestPayload } from '@/types/common';
 import { CollectionCommonFields } from '@/types/collection';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const CounterpartyMappingDeletePayload = z.object({
   counterparty: z.string(),

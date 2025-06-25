@@ -1,6 +1,6 @@
 import type { AssetInfoWithId } from '@/types/asset';
 import { NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 /**
  * It is like {@link AssetInfoWithId} but with two extra properties for
@@ -41,7 +41,7 @@ export interface GalleryNft extends Nft {
   address: string;
 }
 
-const Nfts = z.record(z.array(Nft));
+const Nfts = z.record(z.string(), z.array(Nft));
 
 export type Nfts = z.infer<typeof Nfts>;
 

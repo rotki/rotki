@@ -17,7 +17,7 @@ import {
   TimeFrameSetting,
 } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const FRONTEND_SETTINGS_SCHEMA_VERSION = 1;
 
@@ -29,7 +29,7 @@ export enum Quarter {
   ALL = 'ALL',
 }
 
-const QuarterEnum = z.nativeEnum(Quarter);
+const QuarterEnum = z.enum(Quarter);
 
 const ProfitLossTimeframe = z.object({
   quarter: QuarterEnum,
@@ -85,16 +85,16 @@ export enum SupportedLanguage {
   FR = 'fr',
 }
 
-const SupportedLanguageEnum = z.nativeEnum(SupportedLanguage);
+const SupportedLanguageEnum = z.enum(SupportedLanguage);
 
 export enum BlockchainRefreshButtonBehaviour {
   ONLY_REFRESH_BALANCES = 'ONLY_REFRESH_BALANCES',
   REDETECT_TOKENS = 'REDETECT_TOKENS',
 }
 
-const BlockchainRefreshButtonBehaviourEnum = z.nativeEnum(BlockchainRefreshButtonBehaviour);
+const BlockchainRefreshButtonBehaviourEnum = z.enum(BlockchainRefreshButtonBehaviour);
 
-const SavedFilterLocationEnum = z.nativeEnum(SavedFilterLocation);
+const SavedFilterLocationEnum = z.enum(SavedFilterLocation);
 
 export enum BalanceSource {
   BLOCKCHAIN = 'BLOCKCHAIN',
@@ -108,7 +108,7 @@ export const BalanceUsdValueThresholdV0 = z.object({
   [BalanceSource.MANUAL]: z.string().default('0'),
 }).optional();
 
-export const BalanceUsdValueThresholdV1 = z.record(z.nativeEnum(BalanceSource), z.string().optional());
+export const BalanceUsdValueThresholdV1 = z.partialRecord(z.enum(BalanceSource), z.string().optional());
 
 export type BalanceUsdValueThreshold = z.infer<typeof BalanceUsdValueThresholdV1>;
 
@@ -121,7 +121,13 @@ export const FrontendSettings = z.object({
   ),
   currencyLocation: CurrencyLocationEnum.default(Defaults.DEFAULT_CURRENCY_LOCATION),
   darkTheme: ThemeColors.default(DARK_COLORS),
-  dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default({}),
+  dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default(() => ({
+    [DashboardTableType.ASSETS]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+    [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+    [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+    [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+    [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  })),
   dateInputFormat: DateFormatEnum.default(Defaults.DEFAULT_DATE_INPUT_FORMAT),
   decimalSeparator: z.string().default(Defaults.DEFAULT_DECIMAL_SEPARATOR),
   defaultThemeVersion: z.number().default(1),
@@ -153,7 +159,7 @@ export const FrontendSettings = z.object({
   ),
   renderAllNftImages: z.boolean().default(true),
   savedFilters: z
-    .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
+    .partialRecord(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
     // eslint-disable-next-line unicorn/prefer-top-level-await
     .catch({}),

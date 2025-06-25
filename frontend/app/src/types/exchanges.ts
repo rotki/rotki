@@ -2,7 +2,7 @@ import type { AssetBalances } from '@/types/balances';
 import type { PaginationRequestPayload } from '@/types/common';
 import { type Collection, CollectionCommonFields } from '@/types/collection';
 import { AssetBalance, type BigNumber, NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 

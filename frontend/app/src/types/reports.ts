@@ -3,7 +3,7 @@ import type { Quarter } from '@/types/settings/frontend-settings';
 import { CollectionCommonFields } from '@/types/collection';
 import { BaseAccountingSettings } from '@/types/user';
 import { NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const ProfitLossOverviewItem = z.object({
   free: NumericString,
@@ -12,7 +12,7 @@ export const ProfitLossOverviewItem = z.object({
 
 export type ProfitLossOverviewItem = z.infer<typeof ProfitLossOverviewItem>;
 
-export const ProfitLossOverview = z.record(ProfitLossOverviewItem);
+export const ProfitLossOverview = z.record(z.string(), ProfitLossOverviewItem);
 
 export type ProfitLossOverview = z.infer<typeof ProfitLossOverview>;
 

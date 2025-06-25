@@ -1,6 +1,6 @@
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 
@@ -21,7 +21,7 @@ export interface InitialSettings {
   readonly submitUsageAnalytics: boolean;
 }
 
-export const AccountSession = z.record(z.enum(['loggedin', 'loggedout'] as const));
+export const AccountSession = z.record(z.string(), z.enum(['loggedin', 'loggedout'] as const));
 
 export type AccountSession = z.infer<typeof AccountSession>;
 

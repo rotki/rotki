@@ -7,7 +7,7 @@ import ChartJsPluginZoom from 'chartjs-plugin-zoom';
 import * as Vue from 'vue';
 import VChart from 'vue-echarts';
 import * as VueRouter from 'vue-router';
-import * as zod from 'zod';
+import * as zod from 'zod/v4';
 
 export async function setupPremium(): Promise<void> {
   /**

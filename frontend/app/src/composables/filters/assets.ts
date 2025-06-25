@@ -3,7 +3,7 @@ import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import { useSupportedChains } from '@/composables/info/chains';
 import { arrayify } from '@/utils/array';
 import { isValidEthAddress } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 enum AssetFilterKeys {
   IDENTIFIER = 'identifier',

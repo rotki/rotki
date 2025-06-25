@@ -1,4 +1,4 @@
-import z from 'zod';
+import z from 'zod/v4';
 import { NumericString } from '../numbers';
 
 export const Balance = z.object({
@@ -12,7 +12,10 @@ export const AssetEntry = z.object({
   asset: z.string().min(1),
 });
 
-export const AssetBalance = Balance.merge(AssetEntry);
+export const AssetBalance = z.object({
+  ...Balance.shape,
+  ...AssetEntry.shape,
+});
 
 export type AssetBalance = z.infer<typeof AssetBalance>;
 
@@ -28,7 +31,10 @@ const ProtocolBalanceSchema = Balance.extend({
   protocol: z.string(),
 });
 
-const BaseAssetBalanceSchema = AssetBalance.merge(z.object({ usdPrice: NumericString }));
+const BaseAssetBalanceSchema = z.object({
+  ...AssetBalance.shape,
+  usdPrice: NumericString,
+});
 
 const BreakdownSchema = BaseAssetBalanceSchema.extend({
   perProtocol: z.array(ProtocolBalanceSchema).optional(),

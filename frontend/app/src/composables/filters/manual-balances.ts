@@ -4,7 +4,7 @@ import type { MaybeRef } from '@vueuse/core';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { CommaSeparatedStringSchema } from '@/types/route';
 import { assetDeserializer, assetSuggestions } from '@/utils/assets';
-import z from 'zod';
+import z from 'zod/v4';
 
 enum ManualBalanceFilterKeys {
   LOCATION = 'location',

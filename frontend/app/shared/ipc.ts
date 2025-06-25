@@ -1,6 +1,6 @@
 import type { DebugSettings } from '@rotki/common';
 import { LogLevel } from '@shared/log-level';
-import z from 'zod';
+import z from 'zod/v4';
 
 export const BackendCode = {
   TERMINATED: 0,
@@ -36,7 +36,7 @@ export interface SystemVersion {
 
 export const ActiveLogLevel = z.preprocess(
   s => (typeof s === 'string' ? s.toLowerCase() : s),
-  z.nativeEnum(LogLevel),
+  z.enum(LogLevel),
 );
 
 export const BackendOptions = z.object({

@@ -1,5 +1,5 @@
 import { type BigNumber, NumericString } from '@rotki/common';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const CollectionCommonFields = z.object({
   entriesFound: z.number(),

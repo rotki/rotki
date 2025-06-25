@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import { AssetBalance } from '../balances';
 import { NumericString } from '../numbers';
 
@@ -11,7 +11,7 @@ const LiquityBalance = z.object({
   troveId: z.number(),
 });
 
-const LiquityBalances = z.record(LiquityBalance);
+const LiquityBalances = z.record(z.string(), LiquityBalance);
 
 export const LiquityBalancesWithCollateralInfo = z.object({
   balances: LiquityBalances,
@@ -28,14 +28,14 @@ export const LiquityStakingDetailEntry = z.object({
 
 export type LiquityStakingDetailEntry = z.infer<typeof LiquityStakingDetailEntry>;
 
-const LiquityStakingDetailProxyEntries = z.record(LiquityStakingDetailEntry);
+const LiquityStakingDetailProxyEntries = z.record(z.string(), LiquityStakingDetailEntry);
 
 const LiquityStakingDetail = z.object({
   balances: LiquityStakingDetailEntry.nullable(),
   proxies: LiquityStakingDetailProxyEntries.nullable(),
 });
 
-export const LiquityStakingDetails = z.record(LiquityStakingDetail);
+export const LiquityStakingDetails = z.record(z.string(), LiquityStakingDetail);
 
 export type LiquityStakingDetails = z.infer<typeof LiquityStakingDetails>;
 
@@ -47,14 +47,14 @@ export const LiquityPoolDetailEntry = z.object({
 
 export type LiquityPoolDetailEntry = z.infer<typeof LiquityPoolDetailEntry>;
 
-const LiquityPoolDetailProxyEntries = z.record(LiquityPoolDetailEntry);
+const LiquityPoolDetailProxyEntries = z.record(z.string(), LiquityPoolDetailEntry);
 
 const LiquityPoolDetail = z.object({
   balances: LiquityPoolDetailEntry.nullable(),
   proxies: LiquityPoolDetailProxyEntries.nullable(),
 });
 
-export const LiquityPoolDetails = z.record(LiquityPoolDetail);
+export const LiquityPoolDetails = z.record(z.string(), LiquityPoolDetail);
 
 export type LiquityPoolDetails = z.infer<typeof LiquityPoolDetails>;
 

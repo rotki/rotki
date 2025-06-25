@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export enum AddressNamePriority {
   BLOCKCHAIN_ACCOUNT = 'blockchain_account',
@@ -9,6 +9,6 @@ export enum AddressNamePriority {
   PRIVATE_ADDRESSBOOK = 'private_addressbook',
 }
 
-export const AddressNamePriorityEnum = z.nativeEnum(AddressNamePriority);
+export const AddressNamePriorityEnum = z.enum(AddressNamePriority);
 
 export type AddressNamePriorityEnum = z.infer<typeof AddressNamePriorityEnum>;
