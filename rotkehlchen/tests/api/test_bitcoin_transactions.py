@@ -1,5 +1,6 @@
 import random
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -32,8 +33,8 @@ def test_query_transactions(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
     for json, expected_len in (
-        ({'async_query': async_query, 'to_timestamp': 1740000000}, 68),  # query partial range first  # noqa: E501
-        ({'async_query': async_query}, 77),  # then query the rest
+        ({'async_query': async_query, 'to_timestamp': 1740000000}, 78),  # query partial range first  # noqa: E501
+        ({'async_query': async_query}, 87),  # then query the rest
     ):
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
@@ -50,11 +51,11 @@ def test_query_transactions(
             )
         assert len(events) == expected_len
 
-    assert events[75:] == [HistoryEvent(
-        identifier=69,
+    assert events[85:] == [HistoryEvent(
+        identifier=79,
         event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}67c97abe049b671a02e537eb901cd600430ddaa5b09b50434969e360ada748bf'),  # noqa: E501
         sequence_index=0,
-        timestamp=(timestamp := TimestampMS(1747980089000)),
+        timestamp=(timestamp := TimestampMS(1747979393000)),
         location=Location.BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -63,7 +64,7 @@ def test_query_transactions(
         location_label=(user_address := btc_accounts[0]),
         notes=f'Spend {fee_amount} BTC for fees',
     ), HistoryEvent(
-        identifier=70,
+        identifier=80,
         event_identifier=event_identifier,
         sequence_index=1,
         timestamp=timestamp,
@@ -76,7 +77,7 @@ def test_query_transactions(
         notes=f'Send {spend_amount} BTC to bc1pg8vm7hk9ashas2mxkv5g74lxn26w3qr9lqyxrql7tg95j7xja5kqjz3na4',  # noqa: E501
     )]
     assert events[0] == HistoryEvent(
-        identifier=68,
+        identifier=78,
         event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}0d39207fd965314941546a698e5f76277818e8b95f41b2e02dfe1901db86acf1',
         sequence_index=0,
         timestamp=TimestampMS(1519764871000),
@@ -88,3 +89,13 @@ def test_query_transactions(
         location_label=user_address,
         notes=f'Receive {receive_amount} BTC from 3QrkDXwdkmQgDk9kKSNCv4KrQFgegna5ym',
     )
+
+    # Ensure the cached latest tx timestamp is respected and no decoding is attempted.
+    with patch.object(rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.bitcoin_manager, 'decode_transaction') as mock_decode_tx:  # noqa: E501
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json=json,
+        )
+        assert assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
+
+    assert mock_decode_tx.call_count == 0

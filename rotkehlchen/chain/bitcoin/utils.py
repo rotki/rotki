@@ -5,19 +5,10 @@ from typing import Any
 
 import base58check
 import bech32
-from bip_utils import (
-    Bech32ChecksumError,
-    P2PKHAddrEncoder,
-    P2TRAddrEncoder,
-    P2WPKHAddrEncoder,
-    Secp256k1PublicKey,
-    SegwitBech32Decoder,
-)
+from bip_utils import Bech32ChecksumError, P2TRAddrEncoder, P2WPKHAddrEncoder, SegwitBech32Decoder
 
 from rotkehlchen.errors.serialization import EncodingError
 from rotkehlchen.types import BTCAddress
-
-from .types import string_to_btc_address
 
 BIP32_HARDEN: int = 0x80000000
 
@@ -37,6 +28,7 @@ class OpCodes:
     op_equalverify = b'\x88'
     op_hash160 = b'\xa9'
     op_checksig = b'\xac'
+    op_return = b'\x6a'
 
 
 def is_valid_btc_address(value: str) -> bool:
@@ -273,14 +265,3 @@ def scriptpubkey_to_btc_address(data: bytes) -> BTCAddress:
         return scriptpubkey_to_p2sh_address(data)
 
     return scriptpubkey_to_bech32_address(data)
-
-
-def derive_p2pkh_from_p2pk(pubkey_hex: str) -> BTCAddress:
-    """Convert P2PK public key to a p2pkh public key hash (normal bitcoin address).
-    May raise EncodingError if the public key is invalid.
-    """
-    try:
-        pub_key = Secp256k1PublicKey.FromBytes(bytes.fromhex(pubkey_hex))
-        return string_to_btc_address(P2PKHAddrEncoder.EncodeKey(pub_key))
-    except (ValueError, TypeError) as e:
-        raise EncodingError(f'Invalid p2pkh public key: {pubkey_hex}') from e
