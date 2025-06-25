@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
@@ -13,7 +13,7 @@ const { useIsTaskRunning } = useTaskStore();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useLocationBreakdown } = useLocationBalancesBreakdown();
+const { useLocationBreakdown } = useAggregatedBalances();
 const locationBreakdown = useLocationBreakdown(identifier);
 
 const loadingData = logicOr(

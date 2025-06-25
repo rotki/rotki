@@ -15,7 +15,7 @@ import {
 } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { useRefresh } from '@/composables/balances/refresh';
-import { useBlockchainAggregatedBalances } from '@/composables/blockchain/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { NoteLocation } from '@/types/notes';
@@ -38,7 +38,7 @@ const chainsFilter = ref<string[]>([]);
 const { t } = useI18n({ useScope: 'global' });
 const route = useRoute('balances-blockchain');
 
-const { useBlockchainAssets } = useBlockchainAggregatedBalances();
+const { useBlockchainBalances } = useAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 
@@ -46,7 +46,7 @@ const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
 
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
-const aggregatedBalances = useBlockchainAssets(chainsFilter);
+const aggregatedBalances = useBlockchainBalances(chainsFilter);
 
 onMounted(() => {
   const { query } = get(route);

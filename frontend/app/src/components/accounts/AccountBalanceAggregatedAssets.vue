@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useAccountAssetsSummary } from '@/modules/balances/use-account-assets-summary';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 
 const props = defineProps<{
   groupId: string;
@@ -9,14 +9,14 @@ const props = defineProps<{
 
 const { chains, groupId } = toRefs(props);
 
-const { useAccountAssets } = useAccountAssetsSummary();
-const assets = useAccountAssets(chains, groupId);
+const { useBlockchainBalances } = useAggregatedBalances();
+const balances = useBlockchainBalances(chains, groupId);
 </script>
 
 <template>
   <AssetBalances
     class="bg-white dark:bg-[#1E1E1E]"
-    :balances="assets"
+    :balances="balances"
     :details="{
       groupId,
       chains,

@@ -6,7 +6,7 @@ import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPrice
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useBalances } from '@/composables/balances';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';

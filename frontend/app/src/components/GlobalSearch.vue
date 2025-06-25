@@ -10,10 +10,9 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useInterop } from '@/composables/electron-interop';
 import { useLocations } from '@/composables/locations';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useAppRoutes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -55,8 +54,7 @@ const router = useRouter();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { balances } = useAggregatedBalances();
-const { balancesByLocation } = useLocationBalancesBreakdown();
+const { balances, balancesByLocation } = useAggregatedBalances();
 const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoRetrieval();
 

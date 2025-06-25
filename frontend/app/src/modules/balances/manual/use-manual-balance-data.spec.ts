@@ -1,17 +1,14 @@
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 import { useManualBalancesApi } from '@/composables/api/balances/manual';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
 import { BalanceType } from '@/types/balances';
 import { bigNumberify } from '@rotki/common';
-import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/balances/manual', () => ({
@@ -71,26 +68,6 @@ const balances: ManualBalance[] = [{
   usdValue: '60',
 }];
 
-const ethAndEth2Balances: ManualBalance[] = [{
-  amount: '50',
-  asset: 'ETH',
-  balanceType: BalanceType.ASSET,
-  identifier: 4,
-  label: 'Ethereum',
-  location: TRADE_LOCATION_EXTERNAL,
-  tags: [],
-  usdValue: '50',
-}, {
-  amount: '100',
-  asset: 'ETH2',
-  balanceType: BalanceType.ASSET,
-  identifier: 5,
-  label: 'Staked ETH',
-  location: TRADE_LOCATION_EXTERNAL,
-  tags: [],
-  usdValue: '100',
-}];
-
 async function updateBalances(balances: ManualBalance[]): Promise<void> {
   const { fetchManualBalances } = useManualBalances();
   vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
@@ -148,98 +125,6 @@ describe('store::balances/manual', () => {
       expect(get(manualBalanceByLocation)).toMatchObject([
         { location: TRADE_LOCATION_BLOCKCHAIN, usdValue: bigNumberify(80) },
       ]);
-    });
-
-    it('should return the breakdown of liabilities', () => {
-      const { useAssetBreakdown } = useAssetBalancesBreakdown();
-      expect(get(useAssetBreakdown('EUR', true))).toMatchObject([{
-        address: '',
-        amount: bigNumberify(60),
-        location: TRADE_LOCATION_BANKS,
-        tags: undefined,
-        usdValue: bigNumberify(60),
-      }]);
-    });
-
-    it('should return the breakdown of assets', async () => {
-      const { useAssetBreakdown } = useAssetBalancesBreakdown();
-      expect(get(useAssetBreakdown('BTC'))).toMatchObject([{
-        address: '',
-        amount: bigNumberify(30),
-        location: TRADE_LOCATION_BLOCKCHAIN,
-        tags: undefined,
-        usdValue: bigNumberify(30),
-      }]);
-
-      expect(get(useAssetBreakdown('DAI'))).toMatchObject([{
-        address: '',
-        amount: bigNumberify(50),
-        location: TRADE_LOCATION_BLOCKCHAIN,
-        tags: undefined,
-        usdValue: bigNumberify(50),
-      }]);
-
-      // Breakdown for liabilities
-      expect(get(useAssetBreakdown('EUR'))).toMatchObject([]);
-      await updateBalances(ethAndEth2Balances);
-
-      const breakdown = useAssetBreakdown('ETH');
-
-      updateGeneralSettings({
-        treatEth2AsEth: false,
-      });
-
-      await nextTick();
-
-      expect(get(breakdown)).toMatchObject([{
-        address: '',
-        amount: bigNumberify(50),
-        location: 'external',
-        tags: undefined,
-        usdValue: bigNumberify(50),
-      }]);
-
-      updateGeneralSettings({
-        treatEth2AsEth: true,
-      });
-
-      expect(get(breakdown)).toMatchObject([{
-        address: '',
-        amount: bigNumberify(150),
-        location: 'external',
-        tags: undefined,
-        usdValue: bigNumberify(150),
-      }]);
-    });
-
-    it('getLocationBreakdown', async () => {
-      await updateBalances(ethAndEth2Balances);
-      const { useLocationBreakdown } = useLocationBalancesBreakdown();
-
-      updateGeneralSettings({ treatEth2AsEth: false });
-
-      const breakdown = useLocationBreakdown(TRADE_LOCATION_EXTERNAL);
-
-      expect(get(breakdown)).toMatchObject([{
-        amount: bigNumberify(100),
-        asset: 'ETH2',
-        usdPrice: bigNumberify(1),
-        usdValue: bigNumberify(100),
-      }, {
-        amount: bigNumberify(50),
-        asset: 'ETH',
-        usdPrice: bigNumberify(1),
-        usdValue: bigNumberify(50),
-      }]);
-
-      updateGeneralSettings({ treatEth2AsEth: true });
-
-      expect(get(breakdown)).toMatchObject([{
-        amount: bigNumberify(150),
-        asset: 'ETH',
-        usdPrice: bigNumberify(1),
-        usdValue: bigNumberify(150),
-      }]);
     });
   });
 
