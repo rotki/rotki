@@ -18,7 +18,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import EFP_LIST_REGISTRY
@@ -90,7 +90,7 @@ class EfpDecoder(EfpCommonDecoder):
             asset=Asset(evm_address_to_identifier(  # EFP List NFT
                 address=EFP_LIST_REGISTRY,
                 chain_id=self.evm_inquirer.chain_id,
-                token_type=EvmTokenKind.ERC721,
+                token_type=TokenKind.ERC721,
                 collectible_id=str(int.from_bytes(context.tx_log.topics[3])),
             )),
             address=ZERO_ADDRESS,

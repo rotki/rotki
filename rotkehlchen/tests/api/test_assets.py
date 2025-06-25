@@ -48,9 +48,9 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
 )
 
 
@@ -1214,7 +1214,7 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
     token = EvmToken.initialize(
         address=make_evm_address(),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         name='Custom 2',
     )
     GlobalDBHandler.add_asset(token)

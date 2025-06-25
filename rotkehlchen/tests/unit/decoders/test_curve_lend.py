@@ -19,9 +19,9 @@ from rotkehlchen.types import (
     CURVE_LENDING_VAULTS_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -59,7 +59,7 @@ def fixture_arbitrum_vault_token(
         symbol='cvcrvUSD',
         underlying_tokens=[UnderlyingToken(
             address=arbitrum_vault_underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -113,7 +113,7 @@ def fixture_ethereum_vault_token(
         symbol='cvcrvUSD',
         underlying_tokens=[UnderlyingToken(
             address=ethereum_vault_underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )
@@ -144,7 +144,7 @@ def fixture_optimism_vault_token(
         symbol='cvcrvUSD',
         underlying_tokens=[UnderlyingToken(
             address=optimism_vault_underlying_token.evm_address,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
     )

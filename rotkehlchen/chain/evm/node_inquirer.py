@@ -69,10 +69,10 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import from_wei, get_chunks
@@ -1227,7 +1227,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 output=output,
                 properties=ERC20_PROPERTIES,
                 contract=contract,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
             )
         except (OverflowError, DecodingError) as e:
             # This can happen when contract follows the ERC20 standard methods
@@ -1245,7 +1245,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     output=output,
                     properties=ERC20_PROPERTIES,
                     contract=contract,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                 )
             except (OverflowError, DecodingError) as err:
                 # if even the bytes abi fails, this definitely isn't a valid erc20 token
@@ -1325,7 +1325,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 output=output,
                 properties=ERC721_PROPERTIES,
                 contract=EvmContract(address=address, abi=self.contracts.erc721_abi, deployed_block=0),  # noqa: E501
-                token_kind=EvmTokenKind.ERC721,
+                token_kind=TokenKind.ERC721,
             )
         except (OverflowError, DecodingError) as e:
             raise NotERC721Conformant(f'{address} token does not conform to the ERC721 spec') from e  # noqa: E501
@@ -1344,7 +1344,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             output: list[tuple[bool, bytes]],
             properties: tuple[str, ...],
             contract: EvmContract,
-            token_kind: EvmTokenKind,
+            token_kind: TokenKind,
     ) -> list[int | (str | bytes) | None]:
         """Decodes information i.e. (decimals, symbol, name) about the token contract.
         - `decimals` property defaults to 18.
@@ -1360,7 +1360,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 decoded_contract_info.append(contract.decode(method_value[1], method_name)[0])
                 continue
 
-            if token_kind == EvmTokenKind.ERC20:
+            if token_kind == TokenKind.ERC20:
                 # for missing erc20 methods, use default decimals for decimals or None for others
                 if method_name == 'decimals':
                     decoded_contract_info.append(DEFAULT_TOKEN_DECIMALS)

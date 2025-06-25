@@ -16,7 +16,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -64,7 +64,7 @@ class OdosCommonDecoderBase(DecoderInterface):
                 ((identifier := evm_address_to_identifier(
                     address=tx_log.address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 )) not in output_tokens)
             ):
                 continue

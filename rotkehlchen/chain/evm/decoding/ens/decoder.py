@@ -29,7 +29,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -76,7 +76,7 @@ class EnsCommonDecoder(DecoderInterface, CustomizableDateMixin, ABC):
             userdb=self.database,
             evm_address=context.tx_log.address,
             chain_id=self.evm_inquirer.chain_id,
-            token_kind=EvmTokenKind.ERC721,
+            token_kind=TokenKind.ERC721,
             symbol=symbol,
             name=name,
             collectible_id=str(collectible_id := int.from_bytes(context.tx_log.topics[3])),

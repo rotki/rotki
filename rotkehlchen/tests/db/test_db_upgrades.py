@@ -59,10 +59,10 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     ChainID,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
     Timestamp,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -2775,21 +2775,21 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     uniswap_erc20_token = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
     )
     erc721_token_with_id = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         name='Uniswap V3 Positions NFT-V1',
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='12345',
     )
     basename_token = get_or_create_evm_token(
@@ -2797,14 +2797,14 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         evm_address=string_to_evm_address('0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
         name='Base name',
         chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     basename_token_with_id = get_or_create_evm_token(
         userdb=db_v46,
         evm_address=string_to_evm_address('0x03c4738Ee98aE44591e1A4A4F3CaB6641d95DD9a'),
         name='Base name',
         chain_id=ChainID.BASE,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='4242',
     )
 

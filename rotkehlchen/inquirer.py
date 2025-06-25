@@ -123,10 +123,10 @@ from rotkehlchen.types import (
     YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Price,
     ProtocolsWithPriceLogic,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
@@ -945,7 +945,7 @@ class Inquirer:
                     tokens.append(EvmToken(evm_address_to_identifier(
                         address=token_address,
                         chain_id=chain_id,
-                        token_type=EvmTokenKind.ERC20,
+                        token_type=TokenKind.ERC20,
                     )))
         except UnknownAsset:
             return None
@@ -1074,7 +1074,7 @@ class Inquirer:
                 evm_address_to_identifier(
                     address=maybe_underlying_tokens[0].address,
                     chain_id=token.chain_id,
-                    token_type=EvmTokenKind.ERC20,
+                    token_type=TokenKind.ERC20,
                 ),
             )
 
@@ -1153,7 +1153,7 @@ class Inquirer:
                         underlying_tokens=[
                             UnderlyingToken(
                                 address=underlying_token_address,
-                                token_kind=EvmTokenKind.ERC20,  # this may be a guess here
+                                token_kind=TokenKind.ERC20,  # this may be a guess here
                                 weight=ONE,  # all yearn vaults have single underlying
                             )],
                         chain_id=ChainID.ETHEREUM,
@@ -1243,7 +1243,7 @@ class Inquirer:
                     arguments=[0],
                 )),
                 chain_id=lp_token.chain_id,
-                token_type=EvmTokenKind.ERC20,
+                token_type=TokenKind.ERC20,
             ))) * FVal(contract.call(
                 node_inquirer=evm_manager.node_inquirer,
                 method_name='getVirtualPrice',

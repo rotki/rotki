@@ -1,4 +1,4 @@
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import EVM_TOKEN_KINDS, ChainID, ChecksumEvmAddress, TokenKind
 
 ETHEREUM_DIRECTIVE = '_ceth_'
 ETHEREUM_DIRECTIVE_LENGTH = len(ETHEREUM_DIRECTIVE)
@@ -8,7 +8,7 @@ EVM_CHAIN_DIRECTIVE = 'eip155'
 def evm_address_to_identifier(
         address: str,
         chain_id: ChainID,
-        token_type: EvmTokenKind = EvmTokenKind.ERC20,
+        token_type: EVM_TOKEN_KINDS = TokenKind.ERC20,
         collectible_id: str | None = None,
 ) -> str:
     """Format EVM token information into the CAIPs identifier format"""
@@ -38,7 +38,7 @@ def ethaddress_to_identifier(address: ChecksumEvmAddress) -> str:
     return evm_address_to_identifier(
         address=str(address),
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
 
 
@@ -46,5 +46,5 @@ def strethaddress_to_identifier(address: str) -> str:
     return evm_address_to_identifier(
         address=str(address),
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )

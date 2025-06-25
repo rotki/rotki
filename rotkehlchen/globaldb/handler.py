@@ -44,12 +44,12 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
-    EvmTokenKind,
     Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
     Price,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 from rotkehlchen.utils.serialization import (
@@ -331,7 +331,7 @@ class GlobalDBHandler:
                     data.update({
                         'address': entry[2],
                         'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
-                        'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
+                        'token_kind': TokenKind.deserialize_evm_from_db(entry[13]).serialize(),
                         'decimals': entry[3],
                         'underlying_tokens': None,
                         'protocol': entry[11],
@@ -535,7 +535,7 @@ class GlobalDBHandler:
                 if asset_type == AssetType.EVM_TOKEN:
                     evm_address = string_to_evm_address(entry[2])
                     chain = ChainID.deserialize_from_db(entry[12])
-                    token_kind = EvmTokenKind.deserialize_from_db(entry[13])
+                    token_kind = TokenKind.deserialize_evm_from_db(entry[13])
                 else:
                     evm_address, chain, token_kind = None, None, None
                 data = AssetData(
@@ -623,7 +623,7 @@ class GlobalDBHandler:
                 protocol = result[1]
                 evm_address = result[2]
                 chain = ChainID.deserialize_from_db(result[3])
-                token_kind = EvmTokenKind.deserialize_from_db(result[4])
+                token_kind = TokenKind.deserialize_evm_from_db(result[4])
                 missing_basic_data = name is None or symbol is None or decimals is None
                 if missing_basic_data and form_with_incomplete_data is False:
                     log.debug(
@@ -888,7 +888,7 @@ class GlobalDBHandler:
             query += ' AND protocol=?'
             bindings.append(protocol)
 
-        erc721_token_kind = EvmTokenKind.ERC721.serialize_for_db()
+        erc721_token_kind = TokenKind.ERC721.serialize_for_db()
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(query, bindings)
             for identifier, address, token_kind, decimals in cursor:

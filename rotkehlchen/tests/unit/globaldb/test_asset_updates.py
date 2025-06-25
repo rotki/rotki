@@ -19,7 +19,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
+from rotkehlchen.types import ChainID, Timestamp, TokenKind
 
 VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "ETH");
     *
@@ -117,7 +117,7 @@ def get_mock_github_assets_response(
             swapped_for=None,
             address=string_to_evm_address('0xD178b20c6007572bD1FD01D205cC20D32B4A6015'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='AIDU',
             coingecko=None,
@@ -202,7 +202,7 @@ def get_mock_github_assets_response(
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='',
             coingecko='test-token',
@@ -249,7 +249,7 @@ def get_mock_github_assets_response(
             swapped_for='eip155:1/erc20:0xD178b20c6007572bD1FD01D205cC20D32B4A6015',
             address=string_to_evm_address('0x76dc5F01A1977F37b483F2C5b06618ed8FcA898C'),
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             decimals=18,
             cryptocompare='',
             coingecko='test-token',

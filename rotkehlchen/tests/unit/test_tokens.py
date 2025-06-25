@@ -28,10 +28,10 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     ChainID,
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     SupportedBlockchain,
     TimestampMS,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -232,18 +232,18 @@ def test_cache_is_per_token_type(ethereum_inquirer):
         )
 
     with patch_multicall_2(ERC20_INFO_RESPONSE):
-        erc20_token_data = query_token_info(EvmTokenKind.ERC20)
+        erc20_token_data = query_token_info(TokenKind.ERC20)
 
     with patch_multicall_2(ERC721_INFO_RESPONSE):
-        erc721_token_data = query_token_info(EvmTokenKind.ERC721)
+        erc721_token_data = query_token_info(TokenKind.ERC721)
 
     with patch.object(  # disable chain calls
         ethereum_inquirer,
         'multicall_2',
         new=MagicMock(side_effect=AssertionError('Chain calls should not be made')),
     ):
-        erc20_cached_data = query_token_info(EvmTokenKind.ERC20)
-        erc721_cached_data = query_token_info(EvmTokenKind.ERC721)
+        erc20_cached_data = query_token_info(TokenKind.ERC20)
+        erc721_cached_data = query_token_info(TokenKind.ERC721)
 
     assert erc20_token_data == erc20_cached_data == ('Tether USD', 'USDT', 6)
     assert erc721_token_data == erc721_cached_data == ('Art Blocks', 'BLOCKS', 0)
@@ -464,7 +464,7 @@ def test_erc721_token_ownership_verification(
         evm_inquirer=ethereum_inquirer,
         evm_address=(collection_address := string_to_evm_address('0xD3D9ddd0CF0A5F0BFB8f7fcEAe075DF687eAEBaB')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='7776',
     )
     token_7809 = get_or_create_evm_token(
@@ -472,7 +472,7 @@ def test_erc721_token_ownership_verification(
         evm_inquirer=ethereum_inquirer,
         evm_address=collection_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='7809',
     )
     # regression test: broken erc721 implementations to ensure token detection
@@ -481,7 +481,7 @@ def test_erc721_token_ownership_verification(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x0E3A2A1f2146d86A604adc220b4967A898D7Fe07'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='1',
         name='BROKEN #1',
         symbol='BROKEN',
@@ -490,7 +490,7 @@ def test_erc721_token_ownership_verification(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0xFaC7BEA255a6990f749363002136aF6556b31e04'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id='2',
         name='BROKEN #2',
         symbol='BROKEN',
@@ -604,7 +604,7 @@ def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
                 userdb=blockchain.database,
                 evm_address=token,
                 chain_id=chain_id,
-                token_kind=EvmTokenKind.ERC721,
+                token_kind=TokenKind.ERC721,
                 symbol='xxx',
                 name='yyy',
                 decimals=18,

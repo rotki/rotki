@@ -23,11 +23,11 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     UNISWAP_PROTOCOL,
     ChainID,
-    EvmTokenKind,
     EvmTransaction,
     Location,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -216,7 +216,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
     lp_token_identifier = evm_address_to_identifier(
         address='0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     )
     expected_events = [
         EvmEvent(

@@ -13,7 +13,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import UNISWAPV3_PROTOCOL, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import UNISWAPV3_PROTOCOL, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import get_chunks
 
 from .constants import (
@@ -155,7 +155,7 @@ class UniswapV3Balances(ProtocolWithBalance):
                     userdb=self.evm_inquirer.database,
                     evm_address=self.uniswap_v3_nft_manager.address,
                     chain_id=self.evm_inquirer.chain_id,
-                    token_kind=EvmTokenKind.ERC721,
+                    token_kind=TokenKind.ERC721,
                     collectible_id=str(collectible_id),
                     protocol=UNISWAPV3_PROTOCOL,
                 )

@@ -14,7 +14,7 @@ from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_POLYGON_
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, SupportedBlockchain
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -22,12 +22,12 @@ if TYPE_CHECKING:
 OPTIMISM_OP_TOKEN = EvmToken.initialize(
     address=string_to_evm_address('0x4200000000000000000000000000000000000042'),
     chain_id=ChainID.OPTIMISM,
-    token_kind=EvmTokenKind.ERC20,
+    token_kind=TokenKind.ERC20,
 )
 OPTIMISM_USDC_TOKEN = EvmToken.initialize(
     address=string_to_evm_address('0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
     chain_id=ChainID.OPTIMISM,
-    token_kind=EvmTokenKind.ERC20,
+    token_kind=TokenKind.ERC20,
 )
 
 ETH_ADDRESS1 = string_to_evm_address('0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4')

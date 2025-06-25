@@ -32,10 +32,10 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -155,7 +155,7 @@ def test_mint_ens_name(ethereum_inquirer, add_subgraph_api_key):  # pylint: disa
     ens_nft = get_token(
         evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
         collectible_id=token_id,
     )
     assert ens_nft.symbol == 'ENS'

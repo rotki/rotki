@@ -47,9 +47,9 @@ from rotkehlchen.types import (
     YEARN_VAULTS_V1_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
     Location,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now
 
@@ -138,7 +138,7 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
         # Check that the properties of LUSD (ethereum token) have been correctly translated
         weth_token_data = cursor.execute("SELECT identifier, token_kind, chain, address, decimals, protocol FROM evm_tokens WHERE address = '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'").fetchone()  # noqa: E501
         assert weth_token_data[0] == 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
-        assert EvmTokenKind.deserialize_from_db(weth_token_data[1]) == EvmTokenKind.ERC20
+        assert TokenKind.deserialize_evm_from_db(weth_token_data[1]) == TokenKind.ERC20
         assert ChainID.deserialize_from_db(weth_token_data[2]) == ChainID.ETHEREUM
         assert weth_token_data[3] == '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'
         assert weth_token_data[4] == 18

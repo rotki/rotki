@@ -16,7 +16,7 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetT
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Timestamp
+from rotkehlchen.types import EVM_TOKEN_KINDS, ChecksumEvmAddress, Timestamp, TokenKind
 
 from .types import ASSETS_WITH_NO_CRYPTO_ORACLES, NON_CRYPTO_ASSETS, AssetType
 
@@ -32,7 +32,7 @@ class UnderlyingToken(NamedTuple):
     Is used for pool tokens, tokensets etc.
     """
     address: ChecksumEvmAddress
-    token_kind: EvmTokenKind
+    token_kind: EVM_TOKEN_KINDS
     weight: FVal  # Floating percentage from 0 to 1
 
     def serialize(self) -> dict[str, Any]:
@@ -46,7 +46,7 @@ class UnderlyingToken(NamedTuple):
     def deserialize_from_db(cls, entry: UnderlyingTokenDBTuple) -> 'UnderlyingToken':
         return UnderlyingToken(
             address=entry[0],  # type: ignore
-            token_kind=EvmTokenKind.deserialize_from_db(entry[1]),
+            token_kind=TokenKind.deserialize_evm_from_db(entry[1]),
             weight=FVal(entry[2]),
         )
 
@@ -467,7 +467,7 @@ EthereumTokenDBTuple = tuple[
 class EvmToken(CryptoAsset):
     evm_address: ChecksumEvmAddress = field(init=False)
     chain_id: ChainID = field(init=False)
-    token_kind: EvmTokenKind = field(init=False)
+    token_kind: EVM_TOKEN_KINDS = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
     underlying_tokens: list[UnderlyingToken] = field(init=False)
@@ -494,7 +494,7 @@ class EvmToken(CryptoAsset):
             cls: type['EvmToken'],
             address: ChecksumEvmAddress,
             chain_id: ChainID,
-            token_kind: EvmTokenKind,
+            token_kind: EVM_TOKEN_KINDS,
             name: str | None = None,
             symbol: str | None = None,
             started: Timestamp | None = None,
@@ -543,7 +543,7 @@ class EvmToken(CryptoAsset):
         return EvmToken.initialize(
             address=entry[1],  # type: ignore
             chain_id=ChainID(entry[2]),
-            token_kind=EvmTokenKind.deserialize_from_db(entry[3]),
+            token_kind=TokenKind.deserialize_evm_from_db(entry[3]),
             decimals=entry[4],
             name=entry[5],
             symbol=entry[6] if entry[6] is not None else '',
@@ -597,7 +597,7 @@ class Nft(EvmToken):
         object.__setattr__(self, 'swapped_for', None)
         object.__setattr__(self, 'evm_address', address)
         object.__setattr__(self, 'chain_id', ChainID.ETHEREUM)
-        object.__setattr__(self, 'token_kind', EvmTokenKind.ERC721)
+        object.__setattr__(self, 'token_kind', TokenKind.ERC721)
         object.__setattr__(self, 'decimals', 0)
         object.__setattr__(self, 'protocol', None)
         object.__setattr__(self, 'underlying_tokens', None)
@@ -629,7 +629,7 @@ class Nft(EvmToken):
         object.__setattr__(asset, 'swapped_for', None)
         object.__setattr__(asset, 'evm_address', address)
         object.__setattr__(asset, 'chain_id', chain_id)
-        object.__setattr__(asset, 'token_kind', EvmTokenKind.ERC721)
+        object.__setattr__(asset, 'token_kind', TokenKind.ERC721)
         object.__setattr__(asset, 'decimals', 0)
         object.__setattr__(asset, 'protocol', None)
         object.__setattr__(asset, 'underlying_tokens', None)

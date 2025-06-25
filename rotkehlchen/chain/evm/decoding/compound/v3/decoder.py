@@ -23,7 +23,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -98,7 +98,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             userdb=self.base.database,
             evm_address=bytes_to_address(context.tx_log.topics[3]),
             chain_id=self.base.evm_inquirer.chain_id,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             evm_inquirer=self.base.evm_inquirer,
         )
         amount_raw = int.from_bytes(context.tx_log.data)
@@ -305,7 +305,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
         collateral_asset = EvmToken(evm_address_to_identifier(
             address=bytes_to_address(context.tx_log.topics[3]),
             chain_id=self.evm_inquirer.chain_id,
-            token_type=EvmTokenKind.ERC20,
+            token_type=TokenKind.ERC20,
         ))
         collateral_amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data),

@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -116,7 +116,7 @@ class PolygonPosBridgeDecoder(DecoderInterface):
             event.event_type == match_event_type and
             event.event_subtype == HistoryEventSubType.NONE and
             event.address == ZERO_ADDRESS and
-            event.asset.resolve_to_evm_token().token_kind == EvmTokenKind.ERC721
+            event.asset.resolve_to_evm_token().token_kind == TokenKind.ERC721
         )
 
     def _decode_plasma_receive_exit_nft(self, context: DecoderContext) -> DecodingOutput:

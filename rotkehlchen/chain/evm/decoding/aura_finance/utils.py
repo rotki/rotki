@@ -13,7 +13,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import CacheType, EvmTokenKind, Price
+from rotkehlchen.types import CacheType, Price, TokenKind
 
 from .constants import AURA_BOOSTER_ABI, CHAIN_ID_TO_BOOSTER_ADDRESSES, CPT_AURA_FINANCE
 
@@ -62,7 +62,7 @@ def _process_aura_pool(database: 'DBHandler', vault: dict[str, Any]) -> None:
                     evm_address=vault['underlying_bpt_token'],
                     encounter=encounter,
                 ).evm_address,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=ONE,
             ),
         ],
@@ -147,6 +147,6 @@ def get_aura_pool_price(inquirer: 'Inquirer', token: 'EvmToken') -> Price:
     underlying_asset = Asset(evm_address_to_identifier(
         address=token.underlying_tokens[0].address,
         chain_id=token.chain_id,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     ))
     return inquirer.find_usd_price(underlying_asset)

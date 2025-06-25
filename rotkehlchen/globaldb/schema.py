@@ -83,7 +83,7 @@ INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('Z', 26);
 INSERT OR IGNORE INTO asset_types(type, seq) VALUES ('[', 27);
 """
 
-# Custom enum table for token kindss
+# Custom enum table for token kinds
 DB_CREATE_TOKEN_KINDS = """
 CREATE TABLE IF NOT EXISTS token_kinds (
   token_kind    CHAR(1)       PRIMARY KEY NOT NULL,

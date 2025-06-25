@@ -53,10 +53,10 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ChainID,
     CostBasisMethod,
-    EvmTokenKind,
     ExchangeLocationID,
     Location,
     SupportedBlockchain,
+    TokenKind,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
 
@@ -157,7 +157,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             HistoricalPriceOracle |
             BalanceType |
             CostBasisMethod |
-            EvmTokenKind |
+            TokenKind |
             HistoryBaseEntryType |
             EventCategory |
             AccountingEventType |

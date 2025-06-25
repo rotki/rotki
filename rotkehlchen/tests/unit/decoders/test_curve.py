@@ -50,11 +50,11 @@ from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     ChainID,
     EvmInternalTransaction,
-    EvmTokenKind,
     EvmTransaction,
     Location,
     Timestamp,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -1858,7 +1858,7 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
         userdb=database,
         evm_address=gauge_address,
         chain_id=optimism_inquirer.chain_id,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_inquirer=optimism_inquirer,
         protocol=CURVE_POOL_PROTOCOL,
     )
@@ -1922,7 +1922,7 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
         userdb=database,
         evm_address=gauge_address,
         chain_id=gnosis_inquirer.chain_id,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_inquirer=gnosis_inquirer,
         protocol=CURVE_POOL_PROTOCOL,
     )

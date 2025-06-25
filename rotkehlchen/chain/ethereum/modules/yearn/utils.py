@@ -25,7 +25,7 @@ from rotkehlchen.types import (
     YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
-    EvmTokenKind,
+    TokenKind,
 )
 
 if TYPE_CHECKING:
@@ -216,7 +216,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                 symbol=vault['symbol'],
                 underlying_tokens=[UnderlyingToken(
                     address=underlying_token.evm_address,
-                    token_kind=EvmTokenKind.ERC20,
+                    token_kind=TokenKind.ERC20,
                     weight=ONE,
                 )],
                 encounter=encounter,
@@ -230,7 +230,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     protocol=YEARN_STAKING_PROTOCOL,
                     underlying_tokens=[UnderlyingToken(
                         address=vault_token.evm_address,
-                        token_kind=EvmTokenKind.ERC20,
+                        token_kind=TokenKind.ERC20,
                         weight=ONE,
                     )],
                     fallback_name=f'Yearn staking {vault_token.name}',  # fallback in case for the vaults that aren't ERC20  # noqa: E501

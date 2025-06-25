@@ -1,4 +1,4 @@
-import { EvmTokenKind } from '../data';
+import { TokenKind } from '../data';
 import { isValidEthAddress } from '../text';
 
 export function isEvmIdentifier(identifier?: string): boolean {
@@ -21,7 +21,7 @@ export function isEvmIdentifier(identifier?: string): boolean {
     return false;
 
   const protocol = chainAndProtocol[1];
-  if (!Object.values(EvmTokenKind).map(item => item.toString()).includes(protocol)) {
+  if (!Object.values(TokenKind).map(item => item.toString()).includes(protocol)) {
     return false;
   }
 

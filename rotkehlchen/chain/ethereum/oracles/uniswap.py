@@ -26,7 +26,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp, TokenKind
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 
 from .constants import (
@@ -110,7 +110,7 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
                 raise PriceQueryUnsupportedAsset(e.identifier) from e
 
             if (
-                token.token_kind != EvmTokenKind.ERC20 or
+                token.token_kind != TokenKind.ERC20 or
                 token.chain_id not in UNISWAP_SUPPORTED_CHAINS
             ):
                 raise PriceQueryUnsupportedAsset(f'{self.name} oracle: {token} is not an ERC20 token in an EVM chain supported by Uniswap')  # noqa: E501

@@ -31,10 +31,10 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmInternalTransaction,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
     Timestamp,
+    TokenKind,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
@@ -547,7 +547,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         identifier = evm_address_to_identifier(
                             address=log_address,
                             chain_id=self.evm_inquirer.chain_id,
-                            token_type=EvmTokenKind.ERC20,
+                            token_type=TokenKind.ERC20,
                         )
 
                         if identifier in ignored_assets:

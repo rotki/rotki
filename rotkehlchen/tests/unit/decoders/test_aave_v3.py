@@ -37,9 +37,9 @@ from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChecksumEvmAddress,
-    EvmTokenKind,
     Location,
     TimestampMS,
+    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -1554,10 +1554,10 @@ def test_aave_v3_lido_pool(
             evm_address=address,
             chain_id=ethereum_inquirer.chain_id,
             protocol=CPT_AAVE_V3,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             underlying_tokens=[UnderlyingToken(
                 address=string_to_evm_address('0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 weight=ONE,
             )],
         )

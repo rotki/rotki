@@ -34,7 +34,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import EvmTokenKind, Location
+from rotkehlchen.types import Location, TokenKind
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -146,7 +146,7 @@ def test_add_user_assets(
     new_token = EvmToken(evm_address_to_identifier(
         address=new_evm_token_address,
         chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
+        token_type=TokenKind.ERC20,
     ))
     assert new_token.name == 'New ERC20 token'
     assert new_token.symbol == 'NEWTOKEN'
@@ -976,7 +976,7 @@ def test_exporting_user_assets_list(
     globaldb.add_asset(EvmToken.initialize(
         address=eth_address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         decimals=18,
         name='yabirtoken',
         symbol='YAB',

@@ -18,7 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import ChainID, EvmTokenKind, ExternalService, Price, Timestamp
+from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp, TokenKind
 from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
@@ -332,8 +332,8 @@ DELISTED_ASSETS = {
     strethaddress_to_identifier('0xEd279fDD11cA84bEef15AF5D39BB4d4bEE23F0cA'),
     strethaddress_to_identifier('0x63739d137EEfAB1001245A8Bd1F3895ef3e186E7'),
     strethaddress_to_identifier('0xdA816459F1AB5631232FE5e97a05BBBb94970c95'),
-    evm_address_to_identifier(address='0x007EA5C0Ea75a8DF45D288a4debdD5bb633F9e56', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x3f515f0a8e93F2E2f891ceeB3Db4e62e202d7110', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x007EA5C0Ea75a8DF45D288a4debdD5bb633F9e56', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x3f515f0a8e93F2E2f891ceeB3Db4e62e202d7110', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
     'BBK-2',
     'IFC',
     'MEC',
@@ -358,9 +358,9 @@ DELISTED_ASSETS = {
     strethaddress_to_identifier('0x23Ccc43365D9dD3882eab88F43d515208f832430'),
     strethaddress_to_identifier('0x23Ccc43365D9dD3882eab88F43d515208f832430'),
     strethaddress_to_identifier('0x824a50dF33AC1B41Afc52f4194E2e8356C17C3aC'),
-    evm_address_to_identifier(address='0x6cd871fb811224aa23B6bF1646177CdFe5106416', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x7786B28826e2DDA4dBe344bE66A0bFbfF3d3362f', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x11C0c93035d1302083eB09841042cFa582839A8C', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x6cd871fb811224aa23B6bF1646177CdFe5106416', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x7786B28826e2DDA4dBe344bE66A0bFbfF3d3362f', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x11C0c93035d1302083eB09841042cFa582839A8C', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
     strethaddress_to_identifier('0xC12D1c73eE7DC3615BA4e37E4ABFdbDDFA38907E'),
     'SILK',
     'CRT',
@@ -394,7 +394,7 @@ DELISTED_ASSETS = {
     strethaddress_to_identifier('0x37941b3Fdb2bD332e667D452a58Be01bcacb923e'),
     strethaddress_to_identifier('0xEd025A9Fe4b30bcd68460BCA42583090c2266468'),
     strethaddress_to_identifier('0xeEd4d7316a04ee59de3d301A384262FFbDbd589a'),
-    evm_address_to_identifier(address='0xF301C8435D4dFA51641f71B0615aDD794b52c8E9', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xF301C8435D4dFA51641f71B0615aDD794b52c8E9', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
     strethaddress_to_identifier('0x18084fbA666a33d37592fA2633fD49a74DD93a88'),
     'FB',
     'ROAD',
@@ -405,53 +405,53 @@ DELISTED_ASSETS = {
     'CMT',
     'BLU',
     'ARC',
-    evm_address_to_identifier(address='0x1180C484f55024C5Ce1765101f4efaC1e7A3F6d4', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x37941b3Fdb2bD332e667D452a58Be01bcacb923e', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xA68Dd8cB83097765263AdAD881Af6eeD479c4a33', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x34364BEe11607b1963d66BCA665FDE93fCA666a8', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x82b0E50478eeaFde392D45D1259Ed1071B6fDa81', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x4672bAD527107471cB5067a887f4656D585a8A31', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xf263292e14d9D8ECd55B58dAD1F1dF825a874b7c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x0AF44e2784637218dD1D32A322D44e603A8f0c6A', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x85ca6710D0F1D511d130f6935eDDA88ACBD921bD', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x6888a16eA9792c15A4DCF2f6C623D055c8eDe792', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x1F3f9D3068568F8040775be2e8C03C103C61f3aF', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x622dFfCc4e83C64ba959530A5a5580687a57581b', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x2e98A6804E4b6c832ED0ca876a943abD3400b224', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x539EfE69bCDd21a83eFD9122571a64CC25e0282b', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x26DB5439F651CAF491A87d48799dA81F191bDB6b', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xb1c1Cb8C7c1992dba24e628bF7d38E71daD46aeB', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xd780Ae2Bf04cD96E577D3D014762f831d97129d0', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x68909e586eeAC8F47315e84B4c9788DD54Ef65Bb', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xeC46f8207D766012454c408De210BCBc2243E71c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xEee2d00Eb7DEB8Dd6924187f5AA3496B7d06E62A', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x58a4884182d9E835597f405e5F258290E46ae7C2', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x126c121f99e1E211dF2e5f8De2d96Fa36647c855', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xE38B72d6595FD3885d1D2F770aa23E94757F91a1', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x60EF10EDfF6D600cD91caeCA04caED2a2e605Fe5', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xAE6e3540E97b0b9EA8797B157B510e133afb6282', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x6bfd576220e8444CA4Cc5f89Efbd7f02a4C94C16', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x1180C484f55024C5Ce1765101f4efaC1e7A3F6d4', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x37941b3Fdb2bD332e667D452a58Be01bcacb923e', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xA68Dd8cB83097765263AdAD881Af6eeD479c4a33', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x34364BEe11607b1963d66BCA665FDE93fCA666a8', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xa456b515303B2Ce344E9d2601f91270f8c2Fea5E', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x82b0E50478eeaFde392D45D1259Ed1071B6fDa81', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x4672bAD527107471cB5067a887f4656D585a8A31', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xf263292e14d9D8ECd55B58dAD1F1dF825a874b7c', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x0AF44e2784637218dD1D32A322D44e603A8f0c6A', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x85ca6710D0F1D511d130f6935eDDA88ACBD921bD', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x6888a16eA9792c15A4DCF2f6C623D055c8eDe792', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x1F3f9D3068568F8040775be2e8C03C103C61f3aF', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x622dFfCc4e83C64ba959530A5a5580687a57581b', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x2e98A6804E4b6c832ED0ca876a943abD3400b224', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x539EfE69bCDd21a83eFD9122571a64CC25e0282b', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x26DB5439F651CAF491A87d48799dA81F191bDB6b', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xb1c1Cb8C7c1992dba24e628bF7d38E71daD46aeB', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xd780Ae2Bf04cD96E577D3D014762f831d97129d0', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x68909e586eeAC8F47315e84B4c9788DD54Ef65Bb', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xeC46f8207D766012454c408De210BCBc2243E71c', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xEee2d00Eb7DEB8Dd6924187f5AA3496B7d06E62A', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x58a4884182d9E835597f405e5F258290E46ae7C2', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x126c121f99e1E211dF2e5f8De2d96Fa36647c855', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xE38B72d6595FD3885d1D2F770aa23E94757F91a1', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x60EF10EDfF6D600cD91caeCA04caED2a2e605Fe5', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xfC1Cb4920dC1110fD61AfaB75Cf085C1f871b8C6', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xAE6e3540E97b0b9EA8797B157B510e133afb6282', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x6bfd576220e8444CA4Cc5f89Efbd7f02a4C94C16', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
     'TFC',
     'DON',
     'NUT',
-    evm_address_to_identifier(address='0x06B884e60794Ce02AafAb13791B59A2e6A07442f', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x37E8789bB9996CaC9156cD5F5Fd32599E6b91289', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x95aA5d2DbD3c16ee3fdea82D5C6EC3E38CE3314f', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x114f1388fAB456c4bA31B1850b244Eedcd024136', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xAC8E13ecC30Da7Ff04b842f21A62a1fb0f10eBd5', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x0000000000004946c0e9F43F4Dee607b0eF1fA1c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x670f9D9a26D3D42030794ff035d35a67AA092ead', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x1c7E83f8C581a967940DBfa7984744646AE46b29', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x75C9bC761d88f70156DAf83aa010E84680baF131', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x557f20CE25b41640ADe4a3085d42d7e626d7965A', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xc56c2b7e71B54d38Aab6d52E94a04Cbfa8F604fA', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x628eBC64A38269E031AFBDd3C5BA857483B5d048', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE_SC, token_type=EvmTokenKind.ERC20),  # noqa: E501
-    evm_address_to_identifier(address='0xCB5A05beF3257613E984C17DbcF039952B6d883F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x06B884e60794Ce02AafAb13791B59A2e6A07442f', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x37E8789bB9996CaC9156cD5F5Fd32599E6b91289', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x95aA5d2DbD3c16ee3fdea82D5C6EC3E38CE3314f', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x114f1388fAB456c4bA31B1850b244Eedcd024136', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xDa007777D86AC6d989cC9f79A73261b3fC5e0DA0', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xAC8E13ecC30Da7Ff04b842f21A62a1fb0f10eBd5', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x0000000000004946c0e9F43F4Dee607b0eF1fA1c', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x670f9D9a26D3D42030794ff035d35a67AA092ead', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x1c7E83f8C581a967940DBfa7984744646AE46b29', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x75C9bC761d88f70156DAf83aa010E84680baF131', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x557f20CE25b41640ADe4a3085d42d7e626d7965A', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xc56c2b7e71B54d38Aab6d52E94a04Cbfa8F604fA', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x628eBC64A38269E031AFBDd3C5BA857483B5d048', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE_SC, token_type=TokenKind.ERC20),  # noqa: E501
+    evm_address_to_identifier(address='0xCB5A05beF3257613E984C17DbcF039952B6d883F', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
 }
 
 COINGECKO_SIMPLE_VS_CURRENCIES = {

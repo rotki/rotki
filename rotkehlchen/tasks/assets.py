@@ -74,8 +74,8 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
     ChainID,
-    EvmTokenKind,
     SupportedBlockchain,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
@@ -363,8 +363,8 @@ def _update_lending_protocol_underlying_assets(
                     evm_address=reserve_address,
                     chain_id=chain_id,
                     protocol=protocol,
-                    token_kind=EvmTokenKind.ERC20,
-                    underlying_tokens=[UnderlyingToken(address=underlying_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501
+                    token_kind=TokenKind.ERC20,
+                    underlying_tokens=[UnderlyingToken(address=underlying_address, token_kind=TokenKind.ERC20, weight=ONE)],  # noqa: E501
                     symbol=symbol,
                     name=name,
                     decimals=decimals,

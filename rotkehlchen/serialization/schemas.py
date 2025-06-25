@@ -27,7 +27,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
@@ -62,7 +62,7 @@ def _validate_single_oracle_id(
 
 class UnderlyingTokenInfoSchema(Schema):
     address = EvmAddressField(required=True)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
+    token_kind = SerializableEnumField(enum_class=TokenKind, required=True)
     weight = FloatingPercentageField(required=True)
 
 
@@ -182,7 +182,7 @@ class CryptoAssetSchema(CryptoAssetFieldsSchema):
 class EvmTokenSchema(CryptoAssetFieldsSchema):
     address = EvmAddressField(required=True)
     evm_chain = EvmChainNameField(required=True)
-    token_kind = SerializableEnumField(enum_class=EvmTokenKind, required=True)
+    token_kind = SerializableEnumField(enum_class=TokenKind, required=True)
     decimals = fields.Integer(
         strict=True,
         validate=webargs.validate.Range(

@@ -35,7 +35,7 @@ from rotkehlchen.inquirer import CurrentPriceOracle
 from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, EvmTokenKind, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChainID, Price, SupportedBlockchain, Timestamp, TokenKind
 
 if TYPE_CHECKING:
     from rotkehlchen.inquirer import Inquirer
@@ -277,7 +277,7 @@ def test_invalid_token_kind_price_query(inquirer_defi: 'Inquirer'):
         name='Uniswap V3: Positions NFT',
         symbol='UNI-V3-POS',
         decimals=18,
-        token_kind=EvmTokenKind.ERC721,
+        token_kind=TokenKind.ERC721,
     )
     GlobalDBHandler().add_asset(nft_token)
     ethereum_inquirer = inquirer_defi.get_evm_manager(chain_id=ChainID.ETHEREUM).node_inquirer

@@ -38,9 +38,9 @@ from rotkehlchen.types import (
     SUSHISWAP_PROTOCOL,
     UNISWAP_PROTOCOL,
     ChecksumEvmAddress,
-    EvmTokenKind,
     EvmTransaction,
     EVMTxHash,
+    TokenKind,
 )
 from rotkehlchen.utils.misc import bytes_to_address
 
@@ -83,7 +83,7 @@ def decode_uniswap_v2_like_swap(
         userdb=database,
         evm_address=tx_log.address,
         chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
+        token_kind=TokenKind.ERC20,
         evm_inquirer=ethereum_inquirer,
         encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
     )
@@ -228,7 +228,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 userdb=database,
                 evm_address=other_log.address,
                 chain_id=ChainID.ETHEREUM,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
@@ -240,7 +240,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
                 userdb=database,
                 evm_address=other_log.address,
                 chain_id=ChainID.ETHEREUM,
-                token_kind=EvmTokenKind.ERC20,
+                token_kind=TokenKind.ERC20,
                 evm_inquirer=ethereum_inquirer,
                 encounter=TokenEncounterInfo(tx_hash=tx_hash),
             )
@@ -263,8 +263,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
     amount0 = asset_normalized_value(amount0_raw, token0)
     amount1 = asset_normalized_value(amount1_raw, token1)
     underlying_tokens = [
-        UnderlyingToken(address=token0.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
-        UnderlyingToken(address=token1.evm_address, token_kind=EvmTokenKind.ERC20, weight=FVal(0.5)),  # noqa: E501
+        UnderlyingToken(address=token0.evm_address, token_kind=TokenKind.ERC20, weight=FVal(0.5)),
+        UnderlyingToken(address=token1.evm_address, token_kind=TokenKind.ERC20, weight=FVal(0.5)),
     ]
 
     try:
@@ -273,7 +273,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             userdb=database,
             evm_address=pool_address,
             chain_id=ChainID.ETHEREUM,
-            token_kind=EvmTokenKind.ERC20,
+            token_kind=TokenKind.ERC20,
             evm_inquirer=ethereum_inquirer,
             encounter=TokenEncounterInfo(tx_hash=tx_hash),
             underlying_tokens=underlying_tokens,
