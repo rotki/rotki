@@ -766,9 +766,9 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_ID],
+            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_TS],
             **kwargs: Unpack[AddressArgType],
-    ) -> BTCAddress | None:
+    ) -> Timestamp | None:
         ...
 
     def get_dynamic_cache(
@@ -776,7 +776,7 @@ class DBHandler:
             cursor: 'DBCursor',
             name: DBCacheDynamic,
             **kwargs: Any,
-    ) -> int | Timestamp | str | ChecksumEvmAddress | BTCAddress | None:
+    ) -> int | Timestamp | str | ChecksumEvmAddress | None:
         """Returns the cache value from the `key_value_cache` table of the DB
         according to the given `name` and `kwargs`. Defaults to `None` if not found."""
         value = cursor.execute(
@@ -902,8 +902,8 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_ID],
-            value: str,
+            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_TS],
+            value: Timestamp,
             **kwargs: Unpack[AddressArgType],
     ) -> None:
         ...

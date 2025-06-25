@@ -208,7 +208,7 @@ def test_2input_1output(
     fee_event1 = HistoryEvent(
         event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
-        timestamp=(timestamp := TimestampMS(1749114454000)),
+        timestamp=(timestamp := TimestampMS(1749114440000)),
         location=Location.BITCOIN,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -412,4 +412,24 @@ def test_3input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
         amount=FVal('0.00313426'),
         location_label=address5,
         notes=f'Receive 0.00313426 BTC from {address1}, {address2}, {address3}',
+    )]
+
+
+@pytest.mark.parametrize('btc_accounts', [['1PJJygLB42VsaTgo2twFPgRT8CNz1bpGNE']])
+def test_p2pk(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+    """This is an old tx that used P2PK instead of P2PKH and has no fee."""
+    assert get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=(tx_id := '1db6251a9afce7025a2061a19e63c700dffc3bec368bd1883decfac353357a9d'),
+    ) == [HistoryEvent(
+        event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}',
+        sequence_index=0,
+        timestamp=TimestampMS(1313042188000),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=FVal('50.00000000'),
+        location_label=btc_accounts[0],
+        notes='Send 50.00000000 BTC to 15WvMGm9qG1wDb54TMcvgzZsfvz9KdxzoN',
     )]
