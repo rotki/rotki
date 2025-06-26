@@ -19,16 +19,28 @@ class WitnessVersion(Enum):
     BECH32M = auto()  # version byte of 1
 
 
-class OpCodes:
-    op_0 = b'\x00'
-    op_1 = b'\x51'
-    op_16 = b'\x60'
-    op_dup = b'\x76'
-    op_equal = b'\x87'
-    op_equalverify = b'\x88'
-    op_hash160 = b'\xa9'
-    op_checksig = b'\xac'
-    op_return = b'\x6a'
+class OpCodes(bytes, Enum):
+    """Bitcoin script opcodes.
+    Only those used in our code are included here.
+    See https://learnmeabitcoin.com/technical/script/#opcodes for a complete list.
+    """
+    # Push data
+    OP_0 = b'\x00'
+    OP_1 = b'\x51'
+    OP_16 = b'\x60'
+    OP_PUSHDATA1 = b'\x4c'
+    OP_PUSHDATA2 = b'\x4d'
+    OP_PUSHDATA4 = b'\x4e'
+    # Control flow
+    OP_RETURN = b'\x6a'
+    # Stack operators
+    OP_DUP = b'\x76'
+    # Bitwise logic
+    OP_EQUAL = b'\x87'
+    OP_EQUALVERIFY = b'\x88'
+    # Cryptography
+    OP_HASH160 = b'\xa9'
+    OP_CHECKSIG = b'\xac'
 
 
 def is_valid_btc_address(value: str) -> bool:
@@ -208,10 +220,10 @@ def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
     P2PKH: OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
     """
     if (
-        data[0:1] != OpCodes.op_dup or
-        data[1:2] != OpCodes.op_hash160 or
-        data[-2:-1] != OpCodes.op_equalverify or
-        data[-1:] != OpCodes.op_checksig
+        data[0:1] != OpCodes.OP_DUP or
+        data[1:2] != OpCodes.OP_HASH160 or
+        data[-2:-1] != OpCodes.OP_EQUALVERIFY or
+        data[-1:] != OpCodes.OP_CHECKSIG
     ):
         raise EncodingError(f'Invalid P2PKH scriptpubkey: {data.hex()}')
 
@@ -226,7 +238,7 @@ def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
 
     P2SH: OP_HASH160 <scriptHash> OP_EQUAL
     """
-    if data[0:1] != OpCodes.op_hash160 or data[-1:] != OpCodes.op_equal:
+    if data[0:1] != OpCodes.OP_HASH160 or data[-1:] != OpCodes.OP_EQUAL:
         raise EncodingError(f'Invalid P2SH scriptpubkey: {data.hex()}')
 
     prefixed_hash = bytes.fromhex('05') + data[2:22]  # 20 byte pubkey hash
@@ -238,9 +250,9 @@ def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
 def scriptpubkey_to_bech32_address(data: bytes) -> BTCAddress:
     """Return a native SegWit (bech32) address given a scriptpubkey"""
     version = data[0]
-    if OpCodes.op_1 <= data[0:1] <= OpCodes.op_16:
+    if OpCodes.OP_1 <= data[0:1] <= OpCodes.OP_16:
         version -= 0x50
-    elif data[0:1] != OpCodes.op_0:
+    elif data[0:1] != OpCodes.OP_0:
         raise EncodingError(f'Invalid bech32 scriptpubkey: {data.hex()}')
 
     address = bech32.encode('bc', version, data[2:])
@@ -258,10 +270,10 @@ def scriptpubkey_to_btc_address(data: bytes) -> BTCAddress:
     """
     first_op_code = data[0:1]
 
-    if first_op_code == OpCodes.op_dup:
+    if first_op_code == OpCodes.OP_DUP:
         return scriptpubkey_to_p2pkh_address(data)
 
-    if first_op_code == OpCodes.op_hash160:
+    if first_op_code == OpCodes.OP_HASH160:
         return scriptpubkey_to_p2sh_address(data)
 
     return scriptpubkey_to_bech32_address(data)
