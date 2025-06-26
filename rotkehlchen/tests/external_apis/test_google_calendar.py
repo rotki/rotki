@@ -183,11 +183,6 @@ def test_disconnect(google_calendar_api, database):
     """Test disconnect removes stored credentials."""
     # Store some data first
     _store_credentials(database)
-    with database.conn.write_ctx() as cursor:
-        cursor.execute(
-            'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
-            ('google_calendar_client_config', 'some_config'),
-        )
 
     result = google_calendar_api.disconnect()
     assert result == {'success': True}
@@ -225,22 +220,30 @@ def test_get_service_success(google_calendar_api, database):
 
 
 def test_get_or_create_calendar_existing(google_calendar_api, database):
-    """Test _get_or_create_calendar finds existing calendar."""
-    _store_credentials(database)
-    mock_creds = _create_mock_credentials()
+    """Test _get_or_create_calendar returns existing calendar_id from stored credentials."""
+    # Store credentials with calendar_id already set
+    creds_data = {
+        'token': 'mock_token',
+        'refresh_token': 'mock_refresh_token',
+        'user_email': 'test@example.com',
+        'calendar_id': 'existing_rotki_cal',
+    }
 
-    calendar_items = [
-        {'id': 'other_cal', 'summary': 'Other Calendar'},
-        {'id': 'rotki_cal', 'summary': 'Rotki Events'},
-    ]
-    mock_service = _create_mock_service(calendar_list_items=calendar_items)
+    with database.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
+            ('google_calendar_credentials', json.dumps(creds_data)),
+        )
+
+    mock_creds = _create_mock_credentials()
+    mock_service = _create_mock_service()
 
     with (
         patch('rotkehlchen.externalapis.google_calendar.Credentials', return_value=mock_creds),
         patch('rotkehlchen.externalapis.google_calendar.build', return_value=mock_service),
     ):
         calendar_id = google_calendar_api._get_or_create_calendar()
-        assert calendar_id == 'rotki_cal'
+        assert calendar_id == 'existing_rotki_cal'
 
 
 def test_get_or_create_calendar_create_new(google_calendar_api, database):
@@ -266,7 +269,7 @@ def test_get_or_create_calendar_insufficient_permissions(google_calendar_api, da
     mock_response = Mock()
     mock_response.status = 403
     mock_error = HttpError(mock_response, b'insufficient authentication scopes')
-    mock_service.calendarList().list().execute.side_effect = mock_error
+    mock_service.calendars().insert().execute.side_effect = mock_error
 
     with (
         patch('rotkehlchen.externalapis.google_calendar.Credentials', return_value=mock_creds),
@@ -291,7 +294,20 @@ def test_sync_events_empty_list(google_calendar_api):
 
 def test_sync_events_success(google_calendar_api, database):
     """Test sync_events creates and updates events successfully."""
-    _store_credentials(database)
+    # Store credentials with calendar_id already set
+    creds_data = {
+        'token': 'mock_token',
+        'refresh_token': 'mock_refresh_token',
+        'user_email': 'test@example.com',
+        'calendar_id': 'rotki_cal',
+    }
+
+    with database.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
+            ('google_calendar_credentials', json.dumps(creds_data)),
+        )
+
     mock_creds = _create_mock_credentials()
 
     # Create test events
@@ -326,7 +342,6 @@ def test_sync_events_success(google_calendar_api, database):
 
     # Mock service with one existing event
     mock_service = _create_mock_service(
-        calendar_list_items=[{'id': 'rotki_cal', 'summary': 'Rotki Events'}],
         existing_events=[{'id': 'existing_event', 'summary': 'ENS Renewal'}],
     )
 
@@ -489,29 +504,3 @@ def test_verify_token_scopes_missing_scope(google_calendar_api):
         pytest.raises(RemoteError, match='missing required scope'),
     ):
         google_calendar_api._verify_token_scopes('token_without_scope')
-
-
-def test_test_calendar_access_success(google_calendar_api):
-    """Test _test_calendar_access succeeds."""
-    mock_credentials = Mock()
-    mock_service = _create_mock_service(calendar_list_items=[{'id': 'cal1'}, {'id': 'cal2'}])
-
-    with patch('rotkehlchen.externalapis.google_calendar.build', return_value=mock_service):
-        # Should not raise
-        google_calendar_api._test_calendar_access(mock_credentials)
-
-
-def test_test_calendar_access_failure(google_calendar_api):
-    """Test _test_calendar_access handles API errors."""
-    mock_credentials = Mock()
-    mock_service = MagicMock()
-    mock_response = Mock()
-    mock_response.status = 403
-    mock_error = HttpError(mock_response, b'Access denied')
-    mock_service.calendarList().list().execute.side_effect = mock_error
-
-    with (
-        patch('rotkehlchen.externalapis.google_calendar.build', return_value=mock_service),
-        pytest.raises(HttpError),
-    ):
-        google_calendar_api._test_calendar_access(mock_credentials)
