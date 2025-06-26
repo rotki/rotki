@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 # Google Calendar API scope - need full calendar access to read calendar list and create calendars
-GOOGLE_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar']
+GOOGLE_CALENDAR_SCOPES = ['https://www.googleapis.com/auth/calendar.app.created']
 ROTKI_CALENDAR_NAME = 'Rotki Events'
 
 
@@ -486,7 +486,7 @@ class GoogleCalendarAPI:
         actual_scopes = token_info.get('scope', '').split(' ')
         log.debug(f'Token has scopes: {actual_scopes}')
 
-        required_scope = 'https://www.googleapis.com/auth/calendar'
+        required_scope = GOOGLE_CALENDAR_SCOPES[0]
         if required_scope not in actual_scopes:
             raise RemoteError(
                 f'Access token is missing required scope: {required_scope}. '
