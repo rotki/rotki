@@ -19,7 +19,7 @@ export function migrateSettingsIfNeeded(settings?: string): string | undefined {
     return undefined;
   }
 
-  const migratedSettings = applyMigrations(deserializedSettings);
+  const migratedSettings = applyMigrations(deserializedSettings as any);
   return migratedSettings === undefined ? settings : JSON.stringify(migratedSettings);
 }
 
