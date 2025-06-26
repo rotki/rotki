@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`10149` Users will now be able to update the historical price within the swap event form.
 * :bug:`10148` History event should not be marked as a customized event if the user only updates the historical price.
 * :bug:`-` Swaps that only differ in their timestamps will now be properly imported from Binance CSVs.
 * :bug:`10158` PnL reports will now properly handle events with the same timestamp.

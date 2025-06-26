@@ -18,7 +18,7 @@ import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { convertToTimestamp } from '@/utils/date';
 import { toMessages } from '@/utils/validation';
-import { assert, type BigNumber } from '@rotki/common';
+import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
 
 interface HistoryEventAssetPriceFormProps {
   datetime: string;
@@ -28,8 +28,7 @@ interface HistoryEventAssetPriceFormProps {
   hidePriceFields?: boolean;
   location: string | undefined;
   disabled?: boolean;
-  amountFieldProps?: Record<string, any>;
-  assetFieldProps?: Record<string, any>;
+  type?: string;
 }
 
 const amount = defineModel<string>('amount', { required: true });
@@ -175,11 +174,10 @@ defineExpose({
       <AmountInput
         v-model="amount"
         variant="outlined"
-        :data-cy="amountFieldProps?.dataCy || 'amount'"
+        :data-cy="type ? `${type}-amount` : 'amount'"
         :disabled="disabled"
-        :label="t('common.amount')"
+        :label="type ? t('transactions.events.form.asset_price.amount_label', { type: toSentenceCase((type)) }) : t('common.amount')"
         :error-messages="toMessages(v$.amount)"
-        v-bind="amountFieldProps"
         @blur="v$.amount.$touch()"
       />
       <div class="flex">
@@ -187,10 +185,10 @@ defineExpose({
           v-model="asset"
           outlined
           :disabled="disabled || disableAsset"
-          :data-cy="assetFieldProps?.dataCy || 'asset'"
+          :data-cy="type ? `${type}-asset` : 'asset'"
+          :label="type && t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) })"
           :evm-chain="evmChain"
           :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
-          v-bind="assetFieldProps"
           @blur="v$.asset.$touch()"
         />
         <ToggleLocationLink

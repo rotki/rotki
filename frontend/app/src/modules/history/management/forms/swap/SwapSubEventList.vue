@@ -49,11 +49,7 @@ interface SwapSubEventRef extends ComponentPublicInstance {
 const subEventRefs = ref<SwapSubEventRef[]>([]);
 
 function isSwapSubEventComponent(el: Element | ComponentPublicInstance | null): el is SwapSubEventRef {
-  return el !== null
-    && typeof el === 'object'
-    && '$el' in el
-    && 'submitPrice' in el
-    && typeof (el as any).submitPrice === 'function';
+  return el !== null && typeof el === 'object' && '$el' in el && 'submitPrice' in el;
 }
 
 function setSubEventRef(el: Element | ComponentPublicInstance | null, index: number) {

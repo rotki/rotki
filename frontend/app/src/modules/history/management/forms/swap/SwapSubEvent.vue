@@ -37,28 +37,6 @@ const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
-const amountLabel = computed<string>(() => {
-  switch (props.type) {
-    case 'receive':
-      return t('swap_event_form.receive_amount');
-    case 'spend':
-      return t('swap_event_form.spend_amount');
-    default:
-      return t('transactions.events.form.fee_amount.label');
-  }
-});
-
-const assetLabel = computed<string>(() => {
-  switch (props.type) {
-    case 'receive':
-      return t('swap_event_form.receive_asset');
-    case 'spend':
-      return t('swap_event_form.spend_asset');
-    default:
-      return t('transactions.events.form.fee_asset.label');
-  }
-});
-
 const rules = computed(() => (props.disabled
   ? {
       amount: {},
@@ -195,14 +173,7 @@ defineExpose({
           :datetime="datetime"
           :v$="v$"
           :location="location"
-          :amount-field-props="{
-            dataCy: `${type}-amount`,
-            label: amountLabel,
-          }"
-          :asset-field-props="{
-            dataCy: `${type}-asset`,
-            label: assetLabel,
-          }"
+          :type="type"
         />
 
         <EventLocationLabel
