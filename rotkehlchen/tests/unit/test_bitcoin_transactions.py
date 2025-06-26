@@ -147,10 +147,16 @@ def test_1input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']])
-def test_op_return(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+@pytest.mark.parametrize('use_blockcypher', [True, False])
+def test_op_return(
+        bitcoin_manager: 'BitcoinManager',
+        btc_accounts: list[BTCAddress],
+        use_blockcypher: bool,
+) -> None:
     assert get_decoded_events_of_bitcoin_tx(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := 'eb4d2def800c4993928a6f8cc3dd350933a1fb71e6706902025f29a061e5547f'),
+        use_blockcypher=use_blockcypher,
     ) == [HistoryEvent(
         event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
         sequence_index=0,
@@ -415,12 +421,19 @@ def test_3input_2output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
     )]
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [['1PJJygLB42VsaTgo2twFPgRT8CNz1bpGNE']])
-def test_p2pk(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BTCAddress]) -> None:
+@pytest.mark.parametrize('use_blockcypher', [True, False])
+def test_p2pk(
+        bitcoin_manager: 'BitcoinManager',
+        btc_accounts: list[BTCAddress],
+        use_blockcypher: bool,
+) -> None:
     """This is an old tx that used P2PK instead of P2PKH and has no fee."""
     assert get_decoded_events_of_bitcoin_tx(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := '1db6251a9afce7025a2061a19e63c700dffc3bec368bd1883decfac353357a9d'),
+        use_blockcypher=use_blockcypher,
     ) == [HistoryEvent(
         event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}',
         sequence_index=0,

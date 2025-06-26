@@ -1,19 +1,22 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
 
 from rotkehlchen.chain.bitcoin.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
+    BLOCKCYPHER_BASE_URL,
+    BLOCKCYPHER_BATCH_SIZE,
+    BLOCKCYPHER_TX_IO_LIMIT,
+    BLOCKCYPHER_TX_LIMIT,
     BLOCKSTREAM_BASE_URL,
-    BLOCKSTREAM_MEMPOOL_TX_PAGE_LENGTH,
     BTC_EVENT_IDENTIFIER_PREFIX,
     MEMPOOL_SPACE_BASE_URL,
 )
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcQueryAction, BtcTxIODirection
-from rotkehlchen.chain.bitcoin.utils import OpCodes, pubkey_to_base58_address
+from rotkehlchen.chain.bitcoin.utils import OpCodes
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -27,7 +30,7 @@ from rotkehlchen.history.events.utils import decode_transfer_direction
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timestamp
-from rotkehlchen.utils.misc import satoshis_to_btc, ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.network import request_get, request_get_dict
 
 if TYPE_CHECKING:
@@ -106,22 +109,6 @@ class BitcoinManager:
             have_transactions[account] = ((tx_count != 0), balance)
         return have_transactions
 
-    def _query_blockstream_or_mempool_transactions(
-            self,
-            base_url: str,
-            accounts: Sequence[BTCAddress],
-            options: dict[str, Any],
-    ) -> list[BitcoinTx]:
-        txs, now = [], ts_now()
-        for account in accounts:
-            txs.extend(self._query_tx_list_from_blockstream_mempool(
-                base_url=base_url,
-                account=account,
-                from_timestamp=options.get('from_timestamp', Timestamp(0)),
-                to_timestamp=options.get('to_timestamp', now),
-            ))
-        return txs
-
     @staticmethod
     def _query_blockchain_info(
             accounts: Sequence[BTCAddress],
@@ -183,66 +170,138 @@ class BitcoinManager:
             have_transactions[entry['address']] = (entry['n_tx'] != 0, balance)
         return have_transactions
 
+    def _process_raw_tx_lists(
+            self,
+            raw_tx_lists: list[list[dict[str, Any]]],
+            options: dict[str, Any],
+            processing_fn: Callable[[dict[str, Any]], BitcoinTx],
+    ) -> tuple[int, list[BitcoinTx]]:
+        """Convert raw txs into BitcoinTxs using the specified deserialize_fn.
+        The tx lists must be ordered newest to oldest (the order used by the current APIs).
+
+        If `queried_block_height` is set in options, deserialization will stop when that
+        block height is reached.
+
+        If `to_timestamp` is set in options, any transactions newer than that will be skipped.
+        But we cannot use a `from_timestamp` since the txs are returned newest to oldest.
+        If we were to quit before querying to the oldest tx, the next query would stop at the
+        cached queried_block_height and the skipped older txs would never be queried.
+
+        Returns the latest queried block height (cached and referenced in subsequent queries)
+        and the list of deserialized BitcoinTxs in a tuple.
+        """
+        tx_list: list[BitcoinTx] = []
+        last_queried_block = options.get('last_queried_block', 0)
+        to_timestamp = options.get('to_timestamp', ts_now())
+        new_block_height = 0
+        for raw_tx_list in raw_tx_lists:
+            for entry in raw_tx_list:
+                try:
+                    tx = processing_fn(entry)
+                except (
+                    DeserializationError,
+                    KeyError,
+                    RemoteError,
+                    UnableToDecryptRemoteData,
+                ) as e:
+                    msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                    log.error(f'Failed to process bitcoin transaction {entry} due to {msg}')
+                    continue
+
+                if tx.timestamp > to_timestamp:
+                    continue  # Haven't reached the requested range yet. Skip tx.
+
+                if tx.block_height <= last_queried_block:
+                    break  # All new txs have been queried. Skip tx and return.
+
+                tx_list.append(tx)
+
+            block_height = tx_list[0].block_height if len(tx_list) > 0 else last_queried_block
+            new_block_height = max(new_block_height, block_height)
+
+        return new_block_height, tx_list
+
     def _query_blockchain_info_transactions(
             self,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> list[BitcoinTx]:
-        """Query tx list from blockchain.info and deserialize them into BitcoinTx objects.
-        The txs are ordered newest to oldest from the api. The latest queried tx timestamp is
-        cached and subsequent queries will stop when that timestamp is reached.
-
-        If `to_timestamp` is set in options, any transactions newer than that will be skipped.
-        This api cannot use a `from_timestamp` since the txs are returned newest to oldest.
-        If we were to quit before querying to the oldest tx, the next query would stop at the
-        cached latest timestamp and the skipped older txs would never be queried.
-
-        Returns a list of deserialized BitcoinTxs.
+    ) -> tuple[int, list[BitcoinTx]]:
+        """Query blockchain.info for transactions.
+        Returns a tuple containing the latest queried block height and the list of txs.
         """
-        accounts_str = ', '.join(accounts)
-        log.debug(f'Querying transactions for bitcoin accounts {accounts_str} from blockchain.info')  # noqa: E501
+        return self._process_raw_tx_lists(
+            raw_tx_lists=[self._query_blockchain_info(accounts=accounts, key='txs')],
+            options=options,
+            processing_fn=BitcoinTx.deserialize_from_blockchain_info,
+        )
 
-        with self.database.conn.read_ctx() as cursor:
-            latest_queried_timestamps = [
-                cached_ts for account in accounts
-                if (cached_ts := self.database.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_BITCOIN_TX_TS,
-                    address=account,
-                )) is not None
-            ] or [Timestamp(0)]  # use zero timestamp if there are no cached timestamps
+    def _process_raw_tx_from_blockcypher(
+            self,
+            data: dict[str, Any],
+    ) -> BitcoinTx:
+        """Convert a raw tx dict from blockcypher into a BitcoinTx.
+        If the tx has a large number of TxIOs, the remaining TxIOs will be queried using the urls
+        provided in the API response.
+        May raise DeserializationError, KeyError, RemoteError, UnableToDecryptRemoteData.
+        """
+        inputs: list[dict[str, Any]] = []
+        outputs: list[dict[str, Any]] = []
+        for side, tx_io_list in (('inputs', inputs), ('outputs', outputs)):
+            next_data = data.copy()
+            while True:
+                tx_io_list.extend(list_chunk := next_data[side])
+                if (
+                    (next_url := next_data.get(f'next_{side}')) is None or
+                    len(list_chunk) < BLOCKCYPHER_TX_IO_LIMIT
+                ):
+                    break  # all TxIOs for this side have been queried
 
-        tx_list: list[BitcoinTx] = []
-        latest_queried_ts = min(latest_queried_timestamps)  # latest timestamp that all addresses are queried to.  # noqa: E501
-        to_timestamp = options.get('to_timestamp', ts_now())
-        for entry in self._query_blockchain_info(accounts=accounts, key='txs'):
-            try:
-                tx = BitcoinTx.deserialize_from_blockchain_info(entry)
-            except DeserializationError as e:
-                log.error(f'Failed to deserialize bitcoin transaction {entry} due to {e!s}')
-                continue
+                next_data = request_get_dict(url=next_url, handle_429=True, backoff_in_seconds=1)
 
-            if tx.timestamp > to_timestamp:
-                continue  # Haven't reached the requested range yet. Skip tx.
-            if tx.timestamp <= latest_queried_ts:
-                break  # All new txs have been queried - break loop, save ts to cache, and return.
+        processed_data = data.copy()  # avoid modifying the passed data dict
+        processed_data['inputs'] = inputs
+        processed_data['outputs'] = outputs
+        return BitcoinTx.deserialize_from_blockcypher(processed_data)
 
-            tx_list.append(tx)
+    def _query_blockcypher_transactions(
+            self,
+            accounts: Sequence[BTCAddress],
+            options: dict[str, Any],
+    ) -> tuple[int, list[BitcoinTx]]:
+        """Query blockcypher for transactions.
+        Txs from the api are ordered newest to oldest, with pagination via block_height.
+        Returns a tuple containing the latest queried block height and the list of txs.
+        """
+        accounts_tx_lists: dict[BTCAddress, list[dict[str, Any]]] = defaultdict(list)
+        limits = f'limit={BLOCKCYPHER_TX_LIMIT}&txlimit={BLOCKCYPHER_TX_IO_LIMIT}'
+        for accounts_chunk in get_chunks(list(accounts), BLOCKCYPHER_BATCH_SIZE):
+            before_height = None
+            while len(accounts_chunk) > 0:
+                url = f"{BLOCKCYPHER_BASE_URL}/addrs/{';'.join(accounts_chunk)}/full?{limits}"
+                if before_height is not None:
+                    url += f'&before={before_height}'
 
-        if len(tx_list) == 0:
-            log.debug(f'No new transactions found for bitcoin accounts {accounts_str}')
-            return []
-
-        with self.database.conn.write_ctx() as write_cursor:
-            for account in accounts:
-                self.database.set_dynamic_cache(
-                    write_cursor=write_cursor,
-                    name=DBCacheDynamic.LAST_BITCOIN_TX_TS,
-                    value=tx_list[0].timestamp,  # first in the list is the latest tx
-                    address=account,
+                response = request_get(
+                    url=url,
+                    handle_429=True,
+                    backoff_in_seconds=1,  # the free rate limit is 3 requests per second
                 )
+                for entry in [response] if isinstance(response, dict) else response:  # dict/list depending on single/multiple accounts  # noqa: E501
+                    accounts_tx_lists[address := BTCAddress(entry['address'])].extend(txs := entry['txs'])  # noqa: E501
+                    if len(txs) > 0:
+                        earliest_block_height = txs[-1]['block_height']
+                        before_height = (
+                            earliest_block_height if before_height is None
+                            else min(before_height, earliest_block_height)
+                        )
+                    if not entry.get('hasMore', False):
+                        accounts_chunk.remove(address)
 
-        return tx_list
+        return self._process_raw_tx_lists(
+            raw_tx_lists=list(accounts_tx_lists.values()),
+            options=options,
+            processing_fn=self._process_raw_tx_from_blockcypher,
+        )
 
     @overload
     def _query(
@@ -266,7 +325,7 @@ class BitcoinManager:
             action: Literal[BtcQueryAction.TRANSACTIONS],
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
-    ) -> list[BitcoinTx]:
+    ) -> tuple[int, list[BitcoinTx]]:
         ...
 
     def _query(
@@ -274,33 +333,42 @@ class BitcoinManager:
             action: BtcQueryAction,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any] | None = None,
-    ) -> dict[BTCAddress, FVal] | dict[BTCAddress, tuple[bool, FVal]] | list[BitcoinTx]:
+    ) -> dict[BTCAddress, FVal] | dict[BTCAddress, tuple[bool, FVal]] | tuple[int, list[BitcoinTx]]:  # noqa: E501
         """Queries bitcoin explorer APIs, if one fails the next API is tried.
         The errors from all the queries are included in the resulting remote error if all fail.
+
+        * blockchain.info: Supports all actions
+        * blockcypher: Currently only support for transactions is implemented.
+          TODO: add support for querying blockcypher for the other actions as well.
+        * blockstream.info & mempool.space: Similar APIs. Support for transactions is not
+          implemented for these because they don't handle p2pk properly.
 
         May raise:
         - RemoteError if the queries to all the APIs fail.
         """
         errors: dict[str, str] = {}
         kwargs: dict[str, Any] = {'accounts': accounts}
+        callbacks = [('blockchain.info', getattr(self, f'_query_blockchain_info_{action.name.lower()}'))]  # noqa: E501
         if action == BtcQueryAction.TRANSACTIONS:
             kwargs['options'] = options
+            callbacks.append(('blockcypher.com', self._query_blockcypher_transactions))
+        else:
+            callbacks.extend([
+                ('blockstream.info', lambda **kwargs:
+                    getattr(self, f'_query_blockstream_or_mempool_{action.name.lower()}')(
+                        base_url=BLOCKSTREAM_BASE_URL,
+                        **kwargs,
+                    ),
+                 ),
+                ('mempool.space', lambda **kwargs:
+                    getattr(self, f'_query_blockstream_or_mempool_{action.name.lower()}')(
+                        base_url=MEMPOOL_SPACE_BASE_URL,
+                        **kwargs,
+                    ),
+                 ),
+            ])
 
-        for api_name, callback in (
-            ('blockchain.info', getattr(self, f'_query_blockchain_info_{action.name.lower()}')),
-            ('blockstream.info', lambda **kwargs:
-                getattr(self, f'_query_blockstream_or_mempool_{action.name.lower()}')(
-                    base_url=BLOCKSTREAM_BASE_URL,
-                    **kwargs,
-                ),
-            ),
-            ('mempool.space', lambda **kwargs:
-                getattr(self, f'_query_blockstream_or_mempool_{action.name.lower()}')(
-                    base_url=MEMPOOL_SPACE_BASE_URL,
-                    **kwargs,
-                ),
-            ),
-        ):
+        for api_name, callback in callbacks:
             try:
                 return callback(**kwargs)
             except (
@@ -309,14 +377,14 @@ class BitcoinManager:
                     requests.exceptions.Timeout,
                     RemoteError,
                     DeserializationError,
+                    KeyError,
             ) as e:
-                errors[api_name] = str(e)
-                continue
-            except KeyError as e:
-                errors[api_name] = f"Got unexpected response from {api_name}. Couldn't find key {e!s}"  # noqa: E501
+                msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                log.debug(f'Bitcoin external API request to {api_name} failed due to {msg}. Trying next API.')  # noqa: E501
+                errors[api_name] = msg
 
         serialized_errors = ', '.join(f'{source} error is: "{error}"' for (source, error) in errors.items())  # noqa: E501
-        raise RemoteError(f'Bitcoin external API request failed. {serialized_errors}')
+        raise RemoteError(f'Bitcoin external request failed for all available APIs. {serialized_errors}')  # noqa: E501
 
     def get_balances(self, accounts: Sequence[BTCAddress]) -> dict[BTCAddress, FVal]:
         """Queries bitcoin balances for the specified accounts.
@@ -331,69 +399,6 @@ class BitcoinManager:
         """
         return self._query(action=BtcQueryAction.HAS_TRANSACTIONS, accounts=accounts)
 
-    def _query_tx_list_from_blockstream_mempool(
-            self,
-            base_url: str,
-            account: BTCAddress,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> list[BitcoinTx]:
-        """Query raw bitcoin tx list from the block explorer apis and deserialize them.
-        The txs are ordered newest to oldest from the api, with results automatically paginated.
-        The next page is requested by specifying the last seen tx id from the previous result.
-        The latest queried tx id is cached and in subsequent queries only new transactions since
-        that id are queried.
-
-        Transactions newer than `to_timestamp` will be skipped, but `from_timestamp` is currently
-        ignored. Since the api returns newest to oldest, if we quit before querying to the
-        oldest tx, the next query will stop at the existing cached id and the skipped older
-        txs would never be queried.
-
-        Returns a list of deserialized BitcoinTxs.
-        """
-        log.debug(f'Querying transactions for bitcoin account {account}')
-        with self.database.conn.read_ctx() as cursor:
-            last_tx_timestamp = self.database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_BITCOIN_TX_TS,
-                address=account,
-            ) or Timestamp(0)
-
-        tx_list: list[BitcoinTx] = []
-        last_tx_id = ''
-        while True:
-            for entry in (raw_tx_list := request_get(f'{base_url}/address/{account}/txs/chain/{last_tx_id}')):  # noqa: E501
-                try:
-                    tx = BitcoinTx.deserialize_from_blockstream_mempool(entry)
-                except DeserializationError as e:
-                    log.error(f'Failed to deserialize bitcoin transaction {entry} due to {e!s}')
-                    continue
-
-                if tx.timestamp > to_timestamp:
-                    continue  # Haven't reached the requested range yet. Skip tx.
-                if tx.timestamp <= last_tx_timestamp:
-                    return tx_list  # All new txs have been queried. Skip tx and return.
-
-                last_tx_id = tx.tx_id
-                tx_list.append(tx)
-
-            if len(raw_tx_list) < BLOCKSTREAM_MEMPOOL_TX_PAGE_LENGTH:
-                break
-
-        if len(tx_list) == 0:
-            log.debug(f'No new transactions found for bitcoin account {account}')
-            return []
-
-        with self.database.conn.write_ctx() as write_cursor:
-            self.database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_BITCOIN_TX_TS,
-                value=tx_list[0].timestamp,  # first in list is latest tx
-                address=account,
-            )
-
-        return tx_list
-
     def query_transactions(
             self,
             from_timestamp: Timestamp,
@@ -402,21 +407,59 @@ class BitcoinManager:
     ) -> None:
         """Query transactions in the time range for the specified accounts,
         decode them into HistoryEvents, and save the results to the db.
+
+        Queries for addresses that have the same latest queried block height are batched.
+        The maximum block height from any address is then saved in the cache for all addresses
+        since they are all queried up to the same to_timestamp.
         """
         # TODO: websocket messages for progress updates while querying
         self.refresh_tracked_accounts()
-        if len(tx_list := self._query(
-            action=BtcQueryAction.TRANSACTIONS,
-            accounts=addresses,
-            options={'from_timestamp': from_timestamp, 'to_timestamp': to_timestamp},
-        )) == 0:
-            return  # no new transactions found
+
+        accounts_str = ', '.join(addresses)
+        log.debug(f'Querying transactions for bitcoin accounts {accounts_str}')
+
+        accounts_by_latest_query = defaultdict(list)
+        with self.database.conn.read_ctx() as cursor:
+            for address in addresses:
+                block_height = self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_BITCOIN_TX_BLOCK,
+                    address=address,
+                ) or 0
+                accounts_by_latest_query[block_height].append(address)
+
+        tx_list: list[BitcoinTx] = []
+        new_block_height = 0
+        for last_queried_block, accounts in accounts_by_latest_query.items():
+            block_height, accounts_txs = self._query(
+                action=BtcQueryAction.TRANSACTIONS,
+                accounts=accounts,
+                options={'to_timestamp': to_timestamp, 'last_queried_block': last_queried_block},
+            )
+            if len(accounts_txs) == 0:
+                new_block_height = max(new_block_height, last_queried_block)
+                continue
+
+            new_block_height = max(new_block_height, block_height)
+            tx_list.extend(accounts_txs)
+
+        if len(tx_list) == 0:
+            log.debug(f'No new transactions found for bitcoin accounts {accounts_str}')
+            return
 
         events = []
         for tx in tx_list:
             events.extend(self.decode_transaction(tx))
 
         with self.database.conn.write_ctx() as write_cursor:
+            for address in addresses:
+                self.database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_BITCOIN_TX_BLOCK,
+                    value=new_block_height,
+                    address=address,
+                )
+
             DBHistoryEvents(self.database).add_history_events(
                 write_cursor=write_cursor,
                 history=events,
@@ -538,28 +581,6 @@ class BitcoinManager:
             notes=notes,
         )
 
-    def _maybe_derive_p2pk_address(self, raw_script: bytes) -> BTCAddress | None:
-        """Attempt to derive a P2PKH address from the public key in a P2PK script.
-        The script is structured as follows: OP_PUSHBYTES_X, PUBLIC_KEY_DATA, OP_CHECKSIG.
-        Returns the address or None on error or if the script is not a P2PK script.
-        """
-        if (
-            (script_len := len(raw_script)) < 1 or
-            script_len < (data_len := raw_script[0]) + 2 or
-            raw_script[data_len + 1:] != OpCodes.op_checksig
-        ):
-            return None  # not a valid p2pk script
-
-        pubkey_bytes = raw_script[1:data_len + 1]
-        try:
-            return pubkey_to_base58_address(data=pubkey_bytes)
-        except (ValueError, TypeError) as e:
-            log.error(
-                'Failed to derive p2pkh address from p2pk public key: '
-                f'{pubkey_bytes.hex()} due to {e!s}',
-            )
-            return None
-
     def _decode_single_to_many_transfers(
             self,
             tx: BitcoinTx,
@@ -661,16 +682,16 @@ class BitcoinManager:
             (tx.outputs, BtcTxIODirection.OUTPUT),
         ):
             for tx_io in tx_io_list:
-                if (
-                    (address := tx_io.address) is None and
-                    (address := self._maybe_derive_p2pk_address(tx_io.script)) is None
-                ):  # Unable to find an address associated with this TxIO
-                    if (event := self._maybe_decode_op_return(tx=tx, script=tx_io.script)) is not None:  # noqa: E501
-                        op_return_events.append(event)
-                    else:  # Unable to decode TxIO if it has no address and isn't op_return
-                        log.error(f'Failed to decode {tx_io} in transaction {tx.tx_id}. Skipping.')
-                else:  # address was found, add to io totals.
+                if (address := tx_io.address) is not None:
                     io_totals_per_address[direction][address] += tx_io.value
+                elif (  # decode op_return if an input is tracked and the script is present.
+                    tx_io.script is not None and
+                    any(tx_input.address in self.tracked_accounts for tx_input in tx.inputs) and
+                    (event := self._maybe_decode_op_return(tx=tx, script=tx_io.script)) is not None
+                ):
+                    op_return_events.append(event)
+                else:  # Unable to decode TxIO if it has no address and isn't op_return
+                    log.error(f'Failed to decode {tx_io} in transaction {tx.tx_id}. Skipping.')
 
         # Handle self transfers before fees to avoid including self transfer amounts
         # when calculating the proportional fee shares.
@@ -694,6 +715,14 @@ class BitcoinManager:
                     'Encountered Bitcoin transaction with mismatched '
                     'input/output amounts. Should not happen.',
                 )
+        elif tx.multi_io or (in_len > 1 and out_len > 1):
+            # if multi_io is set process it as a many-to-many even if fewer TxIOs are present.
+            # this ensures correct decoding when blockchain.info omits unrelated TxIOs.
+            transfer_events = self._decode_many_to_many_transfers(
+                tx=tx,
+                inputs=input_totals,
+                outputs=output_totals,
+            )
         elif in_len == 1:
             transfer_events = self._decode_single_to_many_transfers(
                 tx=tx,
@@ -701,18 +730,12 @@ class BitcoinManager:
                 single_address_side=BtcTxIODirection.INPUT,
                 other_side_totals=output_totals,
             )
-        elif out_len == 1:
+        else:  # out_len == 1
             transfer_events = self._decode_single_to_many_transfers(
                 tx=tx,
                 single_address=next(iter(output_totals)),
                 single_address_side=BtcTxIODirection.OUTPUT,
                 other_side_totals=input_totals,
-            )
-        else:
-            transfer_events = self._decode_many_to_many_transfers(
-                tx=tx,
-                inputs=input_totals,
-                outputs=output_totals,
             )
 
         for idx, event in enumerate(all_events := fee_events + op_return_events + transfer_events):
