@@ -46,7 +46,7 @@ const end = ref('');
 const start = ref('');
 const summary = ref<WrapStatisticsResult>();
 
-const { isMdAndDown } = useBreakpoint();
+const { isSmAndDown } = useBreakpoint();
 
 const { getEarliestEventTimestamp } = useHistoryEvents();
 
@@ -369,9 +369,9 @@ defineExpose({
         </template>
         <template #label="{ item }">
           <HashLink
-            class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1 pl-2"
+            class="bg-rui-grey-200 dark:bg-rui-grey-800 rounded-full pr-1 pl-0"
             :text="item[0]"
-            :truncate-length="isMdAndDown ? 4 : 10"
+            :truncate-length="isSmAndDown ? 6 : 20"
           />
         </template>
         <template #value="{ item }">
