@@ -101,7 +101,7 @@ const showCopy = computed<boolean>(() => props.displayMode !== 'link');
  * Icons will only be displayed for non-numerical blockchain addresses when the text is visible.
  */
 const showIcon = computed<boolean>(() => {
-  if (props.type !== 'address' || !get(blockchain) || props.hideText) {
+  if (props.type !== 'address' || props.hideText) {
     return false;
   }
 
@@ -121,14 +121,14 @@ const addressBookChain = computed<string | undefined>(() => {
 });
 
 const aliasName = computed<string | null>(() => {
-  if (get(scrambleData) || props.type !== 'address' || !isDefined(blockchain))
+  if (get(scrambleData) || props.type !== 'address')
     return null;
 
   return get(addressNameSelector(props.text, get(blockchain)));
 });
 
 const displayText = computed<string>(() => {
-  if (!isDefined(blockchain))
+  if (props.type !== 'address' && !isDefined(blockchain))
     return props.text;
 
   const linkText = props.text;
