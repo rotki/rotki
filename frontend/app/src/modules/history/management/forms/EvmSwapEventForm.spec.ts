@@ -202,14 +202,14 @@ describe('forms/EvmSwapEventForm', () => {
 
     const feeToggle = wrapper.find('[data-cy=has-fee] input');
 
-    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBe('');
-    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBe('');
+    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeFalsy();
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeFalsy();
     expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
   });
 

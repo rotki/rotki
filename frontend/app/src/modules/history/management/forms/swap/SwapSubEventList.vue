@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SwapSubEventModel } from '@/types/history/events';
+import type { ComponentPublicInstance } from 'vue';
 import SwapSubEvent from '@/modules/history/management/forms/swap/SwapSubEvent.vue';
 
 const modelValue = defineModel<SwapSubEventModel[]>({ required: true });
@@ -7,6 +8,7 @@ const modelValue = defineModel<SwapSubEventModel[]>({ required: true });
 const props = withDefaults(defineProps<{
   location: string;
   disabled?: boolean;
+  datetime: string;
   type: 'receive' | 'spend' | 'fee';
 }>(), {
   disabled: false,
@@ -39,23 +41,54 @@ function remove(index: number) {
 function add() {
   set(modelValue, [...get(modelValue), { amount: '', asset: '' }]);
 }
+
+interface SwapSubEventRef extends ComponentPublicInstance {
+  submitPrice: () => Promise<any>;
+}
+
+const subEventRefs = ref<SwapSubEventRef[]>([]);
+
+function isSwapSubEventComponent(el: Element | ComponentPublicInstance | null): el is SwapSubEventRef {
+  return el !== null && typeof el === 'object' && '$el' in el && 'submitPrice' in el;
+}
+
+function setSubEventRef(el: Element | ComponentPublicInstance | null, index: number) {
+  if (isSwapSubEventComponent(el)) {
+    subEventRefs.value[index] = el;
+  }
+}
+
+function getSubEventRefs(): SwapSubEventRef[] {
+  return get(subEventRefs).filter(Boolean);
+}
+
+defineExpose({
+  getSubEventRefs,
+});
 </script>
 
 <template>
   <div>
-    <div class="flex py-2 mb-4 items-center">
-      <div class="font-medium grow">
+    <div class="flex py-2 mb-4 items-center gap-4">
+      <div class="font-medium">
         {{ label }}
       </div>
 
       <RuiButton
-        variant="default"
+        variant="outlined"
         color="primary"
         :data-cy="`${type}-add`"
         :disabled="disabled"
+        size="sm"
         @click="add()"
       >
-        {{ t('common.actions.add') }}
+        <template #prepend>
+          <RuiIcon
+            name="lu-plus"
+            size="14"
+          />
+        </template>
+        {{ t('swap_event_form.add_asset') }}
       </RuiButton>
     </div>
 
@@ -64,18 +97,21 @@ function add() {
       :model-value="placeholder"
       :disabled="disabled"
       :location="location"
+      :datetime="datetime"
       :type="type"
       :index="0"
       single
     />
 
     <template
-      v-for="(entry, index) in modelValue"
+      v-for="(_, index) in modelValue"
       :key="index"
     >
       <SwapSubEvent
+        :ref="(el) => setSubEventRef(el, index)"
         v-model="modelValue[index]"
         :type="type"
+        :datetime="datetime"
         :location="location"
         :index="index"
         :single="modelValue.length === 1"
@@ -84,7 +120,7 @@ function add() {
 
       <RuiDivider
         v-if="index !== modelValue.length - 1"
-        class="mb-6 mt-2 mx-8"
+        class="mb-6 mt-2 mx-14"
       />
     </template>
   </div>

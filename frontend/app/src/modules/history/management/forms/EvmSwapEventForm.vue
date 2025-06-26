@@ -50,6 +50,10 @@ const hasFee = ref<boolean>(false);
 const identifiers = ref<number[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
 
+const spendListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('spendListRef');
+const receiveListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('receiveListRef');
+const feeListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('feeListRef');
+
 const datetime = useDateTime(states);
 
 const { t } = useI18n({ useScope: 'global' });
@@ -93,12 +97,41 @@ function handleValidationErrors(message: ValidationErrors | string) {
   }
 }
 
+async function submitAllPrices(): Promise<boolean> {
+  const lists = [
+    get(spendListRef),
+    get(receiveListRef),
+    get(feeListRef),
+  ].filter(Boolean);
+
+  for (const list of lists) {
+    if (!list)
+      continue;
+    const subEvents = list.getSubEventRefs();
+    for (const subEvent of subEvents) {
+      const result = await subEvent.submitPrice();
+      if (result && !result.success) {
+        handleValidationErrors(result.message || t('transactions.events.form.asset_price.failed'));
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
     return false;
   }
 
   const isEditMode = get(identifiers).length > 0;
+
+  // Submit prices from all nested HistoryEventAssetPriceForm components
+  const pricesSubmitted = await submitAllPrices();
+  if (!pricesSubmitted) {
+    return false;
+  }
 
   if (shouldSkipSave(isEditMode, get(states))) {
     return true;
@@ -222,18 +255,22 @@ defineExpose({
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
+      ref="spendListRef"
       v-model="states.spend"
       data-cy="spend"
       :location="states.location"
+      :datetime="datetime"
       type="spend"
     />
 
     <RuiDivider class="mb-6 mt-2" />
 
     <SwapSubEventList
+      ref="receiveListRef"
       v-model="states.receive"
       data-cy="receive"
       :location="states.location"
+      :datetime="datetime"
       type="receive"
     />
 
@@ -247,10 +284,12 @@ defineExpose({
     />
 
     <SwapSubEventList
+      ref="feeListRef"
       v-model="states.fee"
       data-cy="fee"
       :location="states.location"
       :disabled="!hasFee"
+      :datetime="datetime"
       type="fee"
     />
 
