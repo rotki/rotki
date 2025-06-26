@@ -55,7 +55,7 @@ def _create_mock_credentials(
     mock_creds.expired = expired
     mock_creds.token = token
     mock_creds.refresh_token = refresh_token
-    mock_creds.scopes = scopes or ['https://www.googleapis.com/auth/calendar']
+    mock_creds.scopes = scopes or ['https://www.googleapis.com/auth/calendar.app.created']
     return mock_creds
 
 
@@ -389,7 +389,7 @@ def test_complete_oauth_with_token_success(google_calendar_api, database):
     # Mock responses
     user_response = _create_mock_response(json_data={'email': 'user@example.com'})
     token_response = _create_mock_response(
-        json_data={'scope': 'https://www.googleapis.com/auth/calendar openid email'},
+        json_data={'scope': 'https://www.googleapis.com/auth/calendar.app.created openid email'},
     )
 
     mock_service = _create_mock_service(calendar_list_items=[])
@@ -471,7 +471,7 @@ def test_validate_access_token_invalid(google_calendar_api):
 def test_verify_token_scopes_success(google_calendar_api):
     """Test _verify_token_scopes with correct scope."""
     mock_response = _create_mock_response(
-        json_data={'scope': 'https://www.googleapis.com/auth/calendar openid email'},
+        json_data={'scope': 'https://www.googleapis.com/auth/calendar.app.created openid email'},
     )
 
     with patch('requests.get', return_value=mock_response):
