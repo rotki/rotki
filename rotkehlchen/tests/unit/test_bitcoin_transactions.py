@@ -182,6 +182,96 @@ def test_op_return(
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize('btc_accounts', [['17rQ1edty4CxuLHCgtvQ9kxwwpwhGrg4d9']])
+def test_op_return_multiple_pushbytes(
+        bitcoin_manager: 'BitcoinManager',
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test OP_RETURN with multiple OP_PUSHBYTES_1 operations."""
+    assert get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=(tx_id := '42c4fabe072e70eae555cb41e34291ee5c9ff205c3e5704e230339abc912b339'),
+    ) == [HistoryEvent(
+        event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1749216296000)),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount := FVal('0.00002000')),
+        location_label=(user_address := btc_accounts[0]),
+        notes=f'Spend {fee_amount} BTC for fees',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=ZERO,
+        notes='Store data on the blockchain: a0a1a2a3a4a5a6a7a8a9b0b1b2b3b4b5b6b7b8b9c0c1c2c3c4c5c6c7c8c9d0d1d2d3d4d5d6d7d8d9e0',  # noqa: E501
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=FVal('0.00006000'),
+        location_label=user_address,
+        notes='Send 0.00006000 BTC to bc1qjl5yclpqvqclq4elhl5g2f0fhwytesmk9nqzd0',
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('btc_accounts', [['17rQ1edty4CxuLHCgtvQ9kxwwpwhGrg4d9']])
+def test_op_return_pushdata1(
+        bitcoin_manager: 'BitcoinManager',
+        btc_accounts: list[BTCAddress],
+) -> None:
+    """Test OP_RETURN with OP_PUSHDATA1 (0x4c)."""
+    assert get_decoded_events_of_bitcoin_tx(
+        bitcoin_manager=bitcoin_manager,
+        tx_id=(tx_id := '2033435de7ce307341231e818ed937cd3a5e8597381fd83a7e5b0234f61b38d3'),
+    ) == [HistoryEvent(
+        event_identifier=(event_identifier := f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}'),
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1749216962000)),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_BTC,
+        amount=(fee_amount := FVal('0.00002000')),
+        location_label=(user_address := btc_accounts[0]),
+        notes=f'Spend {fee_amount} BTC for fees',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=ZERO,
+        notes='Store text on the blockchain: learnmeabitcoin',
+    ), HistoryEvent(
+        event_identifier=event_identifier,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
+        amount=FVal('0.00006000'),
+        location_label=user_address,
+        notes='Send 0.00006000 BTC to bc1qjl5yclpqvqclq4elhl5g2f0fhwytesmk9nqzd0',
+    )]
+
+
+@pytest.mark.vcr
 @pytest.mark.parametrize('btc_accounts', [
     ['bc1qyy30guv6m5ez7ntj0ayr08u23w3k5s8vg3elmxdzlh8a3xskupyqn2lp5w'],
     ['3G2W5fwfsXfgVJrBc9gxTYfHi6C9zUdtVd'],

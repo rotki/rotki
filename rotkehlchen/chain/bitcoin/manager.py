@@ -559,17 +559,50 @@ class BitcoinManager:
         Returns the history event or None on error.
         """
         if not (
-            len(script) > 2 and
-            script[:1] == OpCodes.op_return
+            (script_len := len(script)) >= 2 and
+            script[:1] == OpCodes.OP_RETURN
         ):
             return None  # not an OP_RETURN script
 
-        # TODO: handle multiple OP_PUSHBYTES
-        data_len = int.from_bytes(script[1:2])
-        data = script[2:2 + data_len]
+        data_chunks, position = [], 1
+        while position < script_len:
+            push_opcode = script[position:position + 1]  # Use slice instead of index to avoid converting op code to int.  # noqa: E501
+            position += 1  # increment for push opcode byte
+            data_len = length_bytes = 0
+            if 1 <= (push_int := int.from_bytes(push_opcode)) <= 75:  # OP_PUSHBYTES_1 to OP_PUSHBYTES_75  # noqa: E501
+                data_len = push_int
+            elif push_opcode == OpCodes.OP_PUSHDATA1:
+                length_bytes = 1
+            elif push_opcode == OpCodes.OP_PUSHDATA2:
+                length_bytes = 2
+            elif push_opcode == OpCodes.OP_PUSHDATA4:
+                length_bytes = 4
+            elif push_opcode == OpCodes.OP_0:
+                data_chunks.append(b'\x00')
+                continue
+            elif 1 <= (push_int := int.from_bytes(push_opcode) - 80) <= 16:  # OP_1 to OP_16
+                data_chunks.append(push_int.to_bytes())
+                continue
 
+            if length_bytes > 0 and position + length_bytes < script_len:
+                data_len = int.from_bytes(script[position:position + length_bytes])
+                position += length_bytes
+
+            if data_len == 0 or position + data_len > script_len:
+                log.error(f'Malformed OP_RETURN script {script.hex()} in tx {tx.tx_id}')
+                break
+
+            data_chunks.append(script[position:position + data_len])
+            position += data_len
+
+        if len(data_chunks) == 0:
+            log.error(f'Failed to find any data in OP_RETURN script {script.hex()} in tx {tx.tx_id}')  # noqa: E501
+            return None
+
+        data = b''.join(data_chunks)
         try:  # maybe decode data as utf-8 text
-            notes = f"Store text on the blockchain: {data.decode('utf-8')}"
+            decoded_text = data.decode('utf-8').strip('\x00')  # Text may be padded with null bytes in some cases.  # noqa: E501
+            notes = f'Store text on the blockchain: {decoded_text}'
         except (ValueError, UnicodeDecodeError):
             notes = f'Store data on the blockchain: {data.hex()}'
 
