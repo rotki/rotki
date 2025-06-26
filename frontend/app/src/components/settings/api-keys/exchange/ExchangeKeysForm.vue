@@ -4,6 +4,7 @@ import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
+import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
@@ -19,7 +20,9 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 
 const editKeys = ref<boolean>(false);
 
-const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(useLocationStore());
+const locationStore = useLocationStore();
+const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(locationStore);
+const { useIsExperimentalExchange } = locationStore;
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { getLocationData } = useLocations();
 const { t, te } = useI18n({ useScope: 'global' });
@@ -53,6 +56,9 @@ const isCoinbasePro = computed(() => {
   const { location } = get(modelValue);
   return ['coinbaseprime'].includes(location);
 });
+
+const location = useRefMap(modelValue, item => item.location);
+const experimental = useIsExperimentalExchange(location);
 
 const showKeyWaitingTimeWarning = logicOr(isKraken, isCoinbase, isCoinbasePro);
 
@@ -346,5 +352,13 @@ defineExpose({
     type="info"
   >
     {{ t('exchange_keys_form.waiting_time_warning') }}
+  </RuiAlert>
+
+  <RuiAlert
+    v-if="experimental"
+    type="info"
+    class="mt-4"
+  >
+    {{ t('exchange_settings.inputs.experimental') }}
   </RuiAlert>
 </template>

@@ -8,6 +8,7 @@ export type AllLocation = Record<
       isExchangeWithPassphrase?: boolean;
       isExchangeWithKey?: boolean;
       isExchangeWithoutApiSecret?: boolean;
+      experimental?: boolean;
     };
   }
 >;
