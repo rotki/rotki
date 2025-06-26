@@ -158,33 +158,23 @@ def test_query_trade_history(function_scope_independentreserve):
     def mock_api_return(method, url, **kwargs):    # pylint: disable=unused-argument
         assert method == 'post'
         response = """{"Data": [
-        {"AvgPrice": 603.7,
-        "CreatedTimestampUtc": "2017-11-22T22:54:40.3249401Z",
-        "FeePercent": 0.005,
-        "OrderGuid": "foo1",
+        {"TradeGuid": "foo1",
+        "TradeTimestampUtc": "2017-11-22T22:54:40.3249401Z",
         "OrderType": "MarketOffer",
-        "Original": {"Outstanding": 0.0, "Volume": 0.5, "VolumeCurrencyType": "Primary"},
-        "Outstanding": 0.0,
-        "Price": null,
         "PrimaryCurrencyCode": "Eth",
         "SecondaryCurrencyCode": "Aud",
-        "Status": "Filled",
-        "Value": 301.85,
-        "Volume": 0.5
+        "Price": 603.7,
+        "VolumeTraded": 0.5,
+        "Value": 301.85
         }, {
-        "AvgPrice": 257.25,
-        "CreatedTimestampUtc": "2017-07-28T09:39:19.8799244Z",
-        "FeePercent": 0.005,
-        "OrderGuid": "foo2",
+        "TradeGuid": "foo2",
+        "TradeTimestampUtc": "2017-07-28T09:39:19.8799244Z",
         "OrderType": "MarketBid",
-        "Original": {"Outstanding": 0.0, "Volume": 2.64117379, "VolumeCurrencyType": "Primary"},
-        "Outstanding": 0.0,
-        "Price": null,
         "PrimaryCurrencyCode": "Eth",
         "SecondaryCurrencyCode": "Aud",
-        "Status": "Filled",
-        "Value": 679.44,
-        "Volume": 2.64117379
+        "Price": 257.25,
+        "VolumeTraded": 2.64117379,
+        "Value": 679.44
         }],
  "PageSize": 50,
  "TotalItems": 2,
@@ -224,17 +214,6 @@ def test_query_trade_history(function_scope_independentreserve):
             unique_id=unique_id_1,
         ),
     ), SwapEvent(
-        timestamp=timestamp_1,
-        location=Location.INDEPENDENTRESERVE,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_ETH,
-        amount=FVal('0.0025'),
-        location_label=exchange.name,
-        event_identifier=create_event_identifier_from_unique_id(
-            location=Location.INDEPENDENTRESERVE,
-            unique_id=unique_id_1,
-        ),
-    ), SwapEvent(
         timestamp=(timestamp_2 := TimestampMS(1501234760000)),
         location=Location.INDEPENDENTRESERVE,
         event_subtype=HistoryEventSubType.SPEND,
@@ -251,17 +230,6 @@ def test_query_trade_history(function_scope_independentreserve):
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=FVal('2.64117379'),
-        location_label=exchange.name,
-        event_identifier=create_event_identifier_from_unique_id(
-            location=Location.INDEPENDENTRESERVE,
-            unique_id=unique_id_2,
-        ),
-    ), SwapEvent(
-        timestamp=timestamp_2,
-        location=Location.INDEPENDENTRESERVE,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=A_ETH,
-        amount=FVal('0.01320586895'),
         location_label=exchange.name,
         event_identifier=create_event_identifier_from_unique_id(
             location=Location.INDEPENDENTRESERVE,
