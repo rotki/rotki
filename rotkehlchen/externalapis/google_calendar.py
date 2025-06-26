@@ -47,53 +47,39 @@ class GoogleCalendarAPI:
         if self._credentials and self._credentials.valid:
             return self._credentials
 
-        # Try to get credentials from database
-        with self.db.conn.read_ctx() as cursor:
-            result = cursor.execute(
-                'SELECT value FROM key_value_cache WHERE name=?',
-                ('google_calendar_credentials',),
-            ).fetchone()
+        try:
+            creds_data = self._load_external_credentials()
+            if creds_data is None:
+                return self._credentials
 
-            if result is None:
-                return None
+            log.info('Loading OAuth credentials')
+            self._credentials = Credentials(  # type: ignore[no-untyped-call]
+                token=creds_data['token'],
+                refresh_token=creds_data['refresh_token'],
+                scopes=GOOGLE_CALENDAR_SCOPES,
+            )
 
-            try:
-                creds_data = json.loads(result[0])
-
-                log.info('Loading OAuth credentials')
-                self._credentials = Credentials(  # type: ignore[no-untyped-call]
-                    token=creds_data['token'],
-                    refresh_token=creds_data['refresh_token'],
-                    scopes=GOOGLE_CALENDAR_SCOPES,
+            # Refresh if expired
+            if (
+                self._credentials and self._credentials.expired and
+                self._credentials.refresh_token
+            ):
+                log.debug('Refreshing expired Google Calendar credentials')
+                self._credentials.refresh(Request())  # type: ignore
+                self._store_external_credentials(
+                    self._credentials.token or '',
+                    self._credentials.refresh_token,
+                    creds_data.get('user_email', None),
                 )
 
-                # Refresh if expired
-                if (
-                    self._credentials and self._credentials.expired and
-                    self._credentials.refresh_token
-                ):
-                    log.debug('Refreshing expired Google Calendar credentials')
-                    self._credentials.refresh(Request())  # type: ignore
-
-                    # Save refreshed credentials
-                    with self.db.conn.write_ctx() as write_cursor:
-                        write_cursor.execute(
-                            'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
-                            ('google_calendar_credentials', json.dumps({
-                                'token': self._credentials.token,
-                                'refresh_token': self._credentials.refresh_token,
-                                'user_email': creds_data.get('user_email'),
-                            })),
-                        )
-
-            except (json.JSONDecodeError, KeyError) as e:
-                log.error(f'Failed to parse stored credentials: {e}')
-                return None
-            except RefreshError as e:
-                log.error(f'Failed to refresh expired credentials: {e}')
-                return None
-            else:
-                return self._credentials
+        except (json.JSONDecodeError, KeyError) as e:
+            log.error(f'Failed to parse stored credentials: {e}')
+            return None
+        except RefreshError as e:
+            log.error(f'Failed to refresh expired credentials: {e}')
+            return None
+        else:
+            return self._credentials
 
     def is_authenticated(self) -> bool:
         """Check if user has valid Google Calendar credentials."""
@@ -115,17 +101,10 @@ class GoogleCalendarAPI:
     def get_connected_user_email(self) -> str | None:
         """Get the email of the connected Google account."""
         try:
+            creds_data = self._load_external_credentials()
             # Try to get email from stored credentials first
-            with self.db.conn.read_ctx() as cursor:
-                result = cursor.execute(
-                    'SELECT value FROM key_value_cache WHERE name=?',
-                    ('google_calendar_credentials',),
-                ).fetchone()
-
-                if result:
-                    creds_data = json.loads(result[0])
-                    if 'user_email' in creds_data:
-                        return creds_data['user_email']
+            if creds_data is not None and 'user_email' in creds_data:
+                return creds_data['user_email']
 
             # If no email in stored credentials, try to get it from Google API
             credentials = self._get_credentials()
@@ -161,8 +140,8 @@ class GoogleCalendarAPI:
         """Disconnect Google Calendar by removing stored credentials."""
         with self.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                'DELETE FROM key_value_cache WHERE name IN (?, ?)',
-                ('google_calendar_credentials', 'google_calendar_client_config'),
+                'DELETE FROM key_value_cache WHERE name = ?',
+                ('google_calendar_credentials',),
             )
 
         self._credentials = None
@@ -195,17 +174,18 @@ class GoogleCalendarAPI:
         - AuthenticationError if Google Calendar is not authenticated
         - RemoteError if insufficient permissions or API errors occur
         """
+
         service = self._get_service()
+        cred_data = self._load_external_credentials()
+
+        if cred_data is None:
+            raise ValueError('Google Calendar credentials must be stored in DB')
+
+        if cred_data.get('calendar_id') is not None:
+            return cred_data['calendar_id']
 
         try:
-            # First, try to find existing Rotki calendar
-            calendars = service.calendarList().list().execute()  # pylint: disable=no-member
-            for calendar in calendars.get('items', []):
-                if calendar.get('summary') == ROTKI_CALENDAR_NAME:
-                    log.debug(f'Found existing Rotki calendar with ID: {calendar["id"]}')
-                    return calendar['id']
-
-            # Calendar doesn't exist, create it
+            # Create new calendar
             calendar_body = {
                 'summary': ROTKI_CALENDAR_NAME,
                 'description': (
@@ -218,6 +198,14 @@ class GoogleCalendarAPI:
             created_calendar = service.calendars().insert(body=calendar_body).execute()  # pylint: disable=no-member
             calendar_id = created_calendar['id']
             log.info(f'Created new Rotki calendar with ID: {calendar_id}')
+
+            # Store the calendar ID in credentials
+            self._store_external_credentials(
+                cred_data['token'],
+                cred_data['refresh_token'],
+                cred_data.get('user_email', None),
+                calendar_id,
+            )
 
         except HttpError as e:
             if e.resp.status == 403 and 'insufficient authentication scopes' in str(e).lower():
@@ -273,7 +261,12 @@ class GoogleCalendarAPI:
                     break
 
         except HttpError as e:
-            raise RemoteError(f'Failed to list existing calendar events: {e}') from e
+            if e.resp.status == 404:
+                log.warning(f'Calendar {calendar_id} not found, creating new calendar')
+                calendar_id = self._get_or_create_calendar()
+                existing_events = {}
+            else:
+                raise RemoteError(f'Failed to list existing calendar events: {e}') from e
 
         # Sync each rotki event
         for entry in events:
@@ -370,9 +363,28 @@ class GoogleCalendarAPI:
                     log.debug(f'Created event: {entry.name}')
 
             except HttpError as e:
-                error_msg = f'Failed to sync event "{entry.name}": {e}'
-                log.error(error_msg)
-                errors.append(error_msg)
+                if e.resp.status == 404:
+                    # Calendar was deleted, recreate and retry the event
+                    log.warning(f'Calendar {calendar_id} not found during event sync, recreating')
+                    calendar_id = self._get_or_create_calendar()
+                    try:
+                        # Retry creating the event with new calendar
+                        service.events().insert(  # pylint: disable=no-member
+                            calendarId=calendar_id,
+                            body=event_data,
+                        ).execute()
+                        events_created += 1
+                        log.debug(f'Created event: {entry.name} (after calendar recreation)')
+                        # Clear existing_events since we have a new calendar
+                        existing_events = {}
+                    except HttpError as retry_e:
+                        error_msg = f'Failed sync for "{entry.name}" after recreation: {retry_e}'
+                        log.error(error_msg)
+                        errors.append(error_msg)
+                else:
+                    error_msg = f'Failed to sync event "{entry.name}": {e}'
+                    log.error(error_msg)
+                    errors.append(error_msg)
 
         result = {
             'events_processed': events_processed,
@@ -407,9 +419,8 @@ class GoogleCalendarAPI:
             user_info = self._validate_access_token(access_token)
             self._verify_token_scopes(access_token)
 
-            # Create and test credentials
+            # Create credentials
             credentials = self._create_credentials(access_token, refresh_token)
-            self._test_calendar_access(credentials)
 
             # Store credentials and update instance state
             email_address = user_info.get('email', 'Unknown')
@@ -502,27 +513,36 @@ class GoogleCalendarAPI:
             scopes=GOOGLE_CALENDAR_SCOPES,
         )
 
-    def _test_calendar_access(self, credentials: Credentials) -> None:
-        """Test credentials by making a Calendar API call."""
-        service = build('calendar', 'v3', credentials=credentials)
+    def _load_external_credentials(self) -> dict[str, str] | None:
+        with self.db.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT value FROM key_value_cache WHERE name=?',
+                ('google_calendar_credentials',),
+            ).fetchone()
 
-        log.debug('Testing calendar API access...')
-        calendar_list = service.calendarList().list().execute()  # pylint: disable=no-member
-        calendar_count = len(calendar_list.get('items', []))
-        log.debug(f'Calendar API test successful, found {calendar_count} calendars')
+            if result is None:
+                return None
+
+            return json.loads(result[0])
 
     def _store_external_credentials(
             self,
             access_token: str,
             refresh_token: str,
-            user_email: str,
+            user_email: str | None = None,
+            calendar_id: str | None = None,
     ) -> None:
         """Store external OAuth credentials in database."""
         credentials_data = {
             'token': access_token,
             'refresh_token': refresh_token,
-            'user_email': user_email,
         }
+
+        if user_email:
+            credentials_data['user_email'] = user_email
+
+        if calendar_id:
+            credentials_data['calendar_id'] = calendar_id
 
         with self.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
