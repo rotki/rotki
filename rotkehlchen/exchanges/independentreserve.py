@@ -43,7 +43,6 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
     ExchangeAuthCredentials,
     Price,
     Timestamp,
@@ -106,11 +105,15 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
         return None   # Can end up being None for some things like this: 'Comment': 'Initial balance after Bitcoin fork'  # noqa: E501
     amount = deserialize_fval(raw_amount)
 
+    # Use SettleTimestampUtc if available, otherwise fall back to CreatedTimestampUtc
+    if (timestamp_field := raw_tx.get('SettleTimestampUtc')) is None:
+        timestamp_field = raw_tx['CreatedTimestampUtc']
+
     return AssetMovement(
         location=Location.INDEPENDENTRESERVE,
         event_type=movement_type,
         timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
-            date=raw_tx['CreatedTimestampUtc'],
+            date=timestamp_field,
             formatstr='iso8601',
             location='IndependentReserve',
         )),
@@ -325,11 +328,11 @@ class Independentreserve(ExchangeInterface):
             end_ts: Timestamp,
     ) -> list[SwapEvent]:
         """Query IndependentReserve trades and convert them into SwapEvents.
-        https://www.independentreserve.com/products/api#GetClosedFilledOrders
+        https://www.independentreserve.com/products/api#GetTrades
         May raise RemoteError.
         """
         try:
-            resp_trades = self._gather_paginated_data(path='GetClosedFilledOrders')
+            resp_trades = self._gather_paginated_data(path='GetTrades')
         except KeyError as e:
             self.msg_aggregator.add_error(
                 f'Error processing independentreserve trades response. '
@@ -342,7 +345,7 @@ class Independentreserve(ExchangeInterface):
             try:
                 log.debug(f'Processing raw IndependentReserve trade: {raw_trade}')
                 timestamp = deserialize_timestamp_from_date(
-                    date=raw_trade['CreatedTimestampUtc'],
+                    date=raw_trade['TradeTimestampUtc'],
                     formatstr='iso8601',
                     location='IndependentReserve',
                 )
@@ -351,24 +354,20 @@ class Independentreserve(ExchangeInterface):
 
                 spend, receive = get_swap_spend_receive(
                     is_buy='Bid' in raw_trade['OrderType'],
-                    base_asset=(base_asset := independentreserve_asset(raw_trade['PrimaryCurrencyCode'])),  # noqa: E501
+                    base_asset=independentreserve_asset(raw_trade['PrimaryCurrencyCode']),
                     quote_asset=independentreserve_asset(raw_trade['SecondaryCurrencyCode']),
-                    amount=(amount := (FVal(raw_trade['Volume']) - FVal(raw_trade['Outstanding']))),  # noqa: E501
-                    rate=Price(FVal(raw_trade['AvgPrice'])),
+                    amount=FVal(raw_trade['VolumeTraded']),
+                    rate=Price(FVal(raw_trade['Price'])),
                 )
                 events.extend(create_swap_events(
                     timestamp=ts_sec_to_ms(timestamp),
                     location=self.location,
                     spend=spend,
                     receive=receive,
-                    fee=AssetAmount(
-                        asset=base_asset,
-                        amount=FVal(raw_trade['FeePercent']) * amount,
-                    ),
                     location_label=self.name,
                     event_identifier=create_event_identifier_from_unique_id(
                         location=self.location,
-                        unique_id=str(raw_trade['OrderGuid']),
+                        unique_id=str(raw_trade['TradeGuid']),
                     ),
                 ))
             except UnsupportedAsset as e:
