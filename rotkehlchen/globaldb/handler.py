@@ -3,7 +3,7 @@ import shutil
 import sqlite3
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from gevent.lock import Semaphore
 
@@ -477,89 +477,6 @@ class GlobalDBHandler:
                 search_result.append(entry_info)
 
         return search_result
-
-    @overload
-    @staticmethod
-    def get_all_asset_data(
-            mapping: Literal[True],
-            serialized: bool = False,
-            specific_ids: list[str] | None = None,
-    ) -> dict[str, dict[str, Any]]:
-        ...
-
-    @overload
-    @staticmethod
-    def get_all_asset_data(
-            mapping: Literal[False],
-            serialized: bool = False,
-            specific_ids: list[str] | None = None,
-    ) -> list[AssetData]:
-        ...
-
-    @staticmethod
-    def get_all_asset_data(
-            mapping: bool,
-            serialized: bool = False,
-            specific_ids: list[str] | None = None,
-    ) -> list[AssetData] | dict[str, dict[str, Any]]:
-        """Return all asset data from the DB or all data matching the given ids
-
-        If mapping is True, return them as a Dict of identifier to data
-        If mapping is False, return them as a List of AssetData
-        """
-        result: list[AssetData] | dict[str, dict[str, Any]]
-        if mapping:
-            result = {}
-        else:
-            result = []
-        specific_ids_query = ''
-        if specific_ids is not None:
-            specific_ids_query = f'AND A.identifier in ({",".join("?" * len(specific_ids))})'
-        querystr = f"""
-        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind FROM assets as A JOIN evm_tokens as B
-        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = '{AssetType.EVM_TOKEN.serialize_for_db()}' {specific_ids_query}
-        UNION ALL
-        SELECT A.identifier, A.type, null, null, A.name, B.symbol,  B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null from assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE A.type != '{AssetType.EVM_TOKEN.serialize_for_db()}' {specific_ids_query};
-        """  # noqa: E501
-        if specific_ids is not None:
-            bindings = (*specific_ids, *specific_ids)
-        else:
-            bindings = ()
-
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(querystr, bindings)
-            for entry in cursor:
-                asset_type = AssetType.deserialize_from_db(entry[1])
-                evm_address: ChecksumEvmAddress | None
-                if asset_type == AssetType.EVM_TOKEN:
-                    evm_address = string_to_evm_address(entry[2])
-                    chain = ChainID.deserialize_from_db(entry[12])
-                    token_kind = TokenKind.deserialize_evm_from_db(entry[13])
-                else:
-                    evm_address, chain, token_kind = None, None, None
-                data = AssetData(
-                    identifier=entry[0],
-                    asset_type=asset_type,
-                    address=evm_address,
-                    chain_id=chain,
-                    token_kind=token_kind,
-                    decimals=entry[3],
-                    name=entry[4],
-                    symbol=entry[5],
-                    started=entry[6],
-                    forked=entry[7],
-                    swapped_for=entry[8],
-                    coingecko=entry[9],
-                    cryptocompare=entry[10],
-                    protocol=entry[11],
-                )
-                if mapping:
-                    result[entry[0]] = data.serialize() if serialized else data  # type: ignore
-                else:
-                    result.append(data)  # type: ignore
-
-        return result
 
     @staticmethod
     def get_asset_data(

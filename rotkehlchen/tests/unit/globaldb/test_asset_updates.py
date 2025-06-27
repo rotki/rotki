@@ -360,7 +360,24 @@ def test_parse_full_insert_assets(
 ) -> None:
     text = text.replace('\n', '')
     if expected_data is not None:
-        assert expected_data == assets_updater.asset_parser.parse(
+        # Convert AssetData to dict for comparison since parser now returns dict
+        expected_dict = {
+            'identifier': expected_data.identifier,
+            'name': expected_data.name,
+            'symbol': expected_data.symbol,
+            'asset_type': expected_data.asset_type,
+            'started': expected_data.started,
+            'forked': expected_data.forked,
+            'swapped_for': expected_data.swapped_for,
+            'address': expected_data.address,
+            'chain_id': expected_data.chain_id,
+            'token_kind': expected_data.token_kind,
+            'decimals': expected_data.decimals,
+            'cryptocompare': expected_data.cryptocompare,
+            'coingecko': expected_data.coingecko,
+            'protocol': expected_data.protocol,
+        }
+        assert expected_dict == assets_updater.asset_parser.parse(
             insert_text=text,
             connection=globaldb.conn,
             version=15,  # any version works for assets since no change has happened.

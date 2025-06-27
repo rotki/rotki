@@ -1,9 +1,9 @@
 import abc
 import logging
 import re
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -94,7 +94,7 @@ class BaseAssetParser(abc.ABC, Generic[T]):
         return self._double_quotes_re.sub(replace_double_quotes, text)
 
 
-class AssetParser(BaseAssetParser[AssetData]):
+class AssetParser(BaseAssetParser[dict[str, Any]]):
     """Parser for assets introduced in global db v3 (assets v15+)."""
 
     def __init__(self) -> None:
@@ -106,30 +106,30 @@ class AssetParser(BaseAssetParser[AssetData]):
             (VersionRange(15, None), self._parse),
         ]
 
-    def _parse(self, connection: 'DBConnection', insert_text: str) -> AssetData:
+    def _parse(self, connection: 'DBConnection', insert_text: str) -> dict[str, Any]:
         asset_data = self._parse_asset_data(insert_text)
         address = decimals = protocol = chain_id = token_kind = None
-        if asset_data.asset_type == AssetType.EVM_TOKEN:
+        if asset_data['asset_type'] == AssetType.EVM_TOKEN:
             address, decimals, protocol, chain_id, token_kind = self._parse_evm_token_data(insert_text)  # noqa: E501
 
-        return AssetData(
-            identifier=asset_data.identifier,
-            name=asset_data.name,
-            symbol=asset_data.symbol,
-            asset_type=asset_data.asset_type,
-            started=asset_data.started,
-            forked=asset_data.forked,
-            swapped_for=asset_data.swapped_for,
-            address=address,
-            chain_id=chain_id,
-            token_kind=token_kind,
-            decimals=decimals,
-            cryptocompare=asset_data.cryptocompare,
-            coingecko=asset_data.coingecko,
-            protocol=protocol,
-        )
+        return {
+            'identifier': asset_data['identifier'],
+            'name': asset_data['name'],
+            'symbol': asset_data['symbol'],
+            'asset_type': asset_data['asset_type'],
+            'started': asset_data['started'],
+            'forked': asset_data['forked'],
+            'swapped_for': asset_data['swapped_for'],
+            'address': address,
+            'chain_id': chain_id,
+            'token_kind': token_kind,
+            'decimals': decimals,
+            'cryptocompare': asset_data['cryptocompare'],
+            'coingecko': asset_data['coingecko'],
+            'protocol': protocol,
+        }
 
-    def _parse_asset_data(self, insert_text: str) -> AssetData:
+    def _parse_asset_data(self, insert_text: str) -> dict[str, Any]:
         """Parse basic asset data for format"""
         assets_match = self._assets_re.match(insert_text)
         if assets_match is None:
@@ -152,38 +152,38 @@ class AssetParser(BaseAssetParser[AssetData]):
 
         raw_started = self._parse_optional_int(common_details_match.group(6), 'started', insert_text)  # noqa: E501
         started = Timestamp(raw_started) if raw_started else None
-        return AssetData(
-            identifier=self._parse_str(common_details_match.group(1), 'identifier', insert_text),
-            asset_type=asset_type,
-            name=self._parse_str(assets_match.group(2), 'name', insert_text),
-            symbol=self._parse_str(common_details_match.group(2), 'symbol', insert_text),
-            started=started,
-            swapped_for=self._parse_optional_str(
+        return {
+            'identifier': self._parse_str(common_details_match.group(1), 'identifier', insert_text),  # noqa: E501
+            'asset_type': asset_type,
+            'name': self._parse_str(assets_match.group(2), 'name', insert_text),
+            'symbol': self._parse_str(common_details_match.group(2), 'symbol', insert_text),
+            'started': started,
+            'swapped_for': self._parse_optional_str(
                 common_details_match.group(7),
                 'swapped_for',
                 insert_text,
             ),
-            coingecko=self._parse_optional_str(
+            'coingecko': self._parse_optional_str(
                 common_details_match.group(3),
                 'coingecko',
                 insert_text,
             ),
-            cryptocompare=self._parse_optional_str(
+            'cryptocompare': self._parse_optional_str(
                 common_details_match.group(4),
                 'cryptocompare',
                 insert_text,
             ),
-            forked=self._parse_optional_str(
+            'forked': self._parse_optional_str(
                 common_details_match.group(5),
                 'forked',
                 insert_text,
             ),
-            chain_id=None,
-            address=None,
-            token_kind=None,
-            decimals=None,
-            protocol=None,
-        )
+            'chain_id': None,
+            'address': None,
+            'token_kind': None,
+            'decimals': None,
+            'protocol': None,
+        }
 
     def _parse_evm_token_data(
             self,
