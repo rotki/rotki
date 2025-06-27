@@ -131,6 +131,7 @@ const { handleBlockchainRefresh } = useRefresh();
             chains: chainsFilter,
           }"
           :visible-columns="dashboardTablesVisibleColumns[tableType]"
+          show-per-protocol
           sticky-header
         />
       </RuiCard>

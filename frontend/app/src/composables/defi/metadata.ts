@@ -37,11 +37,13 @@ export const useDefiMetadata = createSharedComposable(() => {
       identifier,
     );
 
+  const getDefiImageUrl = (identifier: string, icon: string | undefined): string => {
+    const imageName = icon ?? `${get(identifier)}.svg`;
+    return `./assets/images/protocols/${imageName}`;
+  };
+
   const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> =>
-    computed(() => {
-      const imageName = get(getDefiData(identifier))?.icon || `${get(identifier)}.svg`;
-      return `./assets/images/protocols/${imageName}`;
-    });
+    computed(() => getDefiImageUrl(get(identifier), get(getDefiData(identifier))?.icon));
 
   const getDefiIdentifierByName = (name: MaybeRef<string>): ComputedRef<string> =>
     useValueOrDefault(
@@ -53,6 +55,7 @@ export const useDefiMetadata = createSharedComposable(() => {
     getDefiData,
     getDefiIdentifierByName,
     getDefiImage,
+    getDefiImageUrl,
     getDefiName,
     loading,
     metadata,

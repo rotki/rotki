@@ -17,6 +17,7 @@ const balances = useBlockchainBalances(chains, groupId);
   <AssetBalances
     class="bg-white dark:bg-[#1E1E1E]"
     :balances="balances"
+    show-per-protocol
     :details="{
       groupId,
       chains,

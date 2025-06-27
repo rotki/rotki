@@ -7,6 +7,7 @@ import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -37,6 +38,7 @@ const props = withDefaults(
     isLiability?: boolean;
     allBreakdown?: boolean;
     visibleColumns?: TableColumn[];
+    showPerProtocol?: boolean;
   }>(),
   {
     allBreakdown: false,
@@ -45,6 +47,7 @@ const props = withDefaults(
     hideTotal: false,
     isLiability: false,
     loading: false,
+    showPerProtocol: false,
     stickyHeader: false,
     visibleColumns: () => [],
   },
@@ -92,41 +95,47 @@ function percentageOfCurrentGroup(value: BigNumber) {
 }
 
 const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
-  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [
-    {
-      cellClass: 'py-0',
-      class: 'text-no-wrap w-full',
-      key: 'asset',
-      label: t('common.asset'),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      key: 'usdPrice',
-      label: t('common.price_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
-      sortable: true,
-    },
-    {
-      align: 'end',
-      cellClass: 'py-0',
-      key: 'amount',
-      label: t('common.amount'),
-      sortable: true,
-    },
-    {
+  const headers: DataTableColumn<AssetBalanceWithPrice>[] = [{
+    cellClass: 'py-0',
+    class: 'text-no-wrap w-full',
+    key: 'asset',
+    label: t('common.asset'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    key: 'usdPrice',
+    label: t('common.price_in_symbol', {
+      symbol: get(currencySymbol),
+    }),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    key: 'amount',
+    label: t('common.amount'),
+    sortable: true,
+  }, {
+    align: 'end',
+    cellClass: 'py-0',
+    class: 'text-no-wrap',
+    key: 'usdValue',
+    label: t('common.value_in_symbol', {
+      symbol: get(currencySymbol),
+    }),
+    sortable: true,
+  }];
+
+  if (props.showPerProtocol) {
+    headers.splice(1, 0, {
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
-      key: 'usdValue',
-      label: t('common.value_in_symbol', {
-        symbol: get(currencySymbol),
-      }),
-      sortable: true,
-    },
-  ];
+      key: 'perProtocol',
+      label: t('common.protocol'),
+      sortable: false,
+    });
+  }
 
   if (props.visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
@@ -177,6 +186,14 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       <AssetDetails
         :asset="row.asset"
         :is-collection-parent="!!row.breakdown"
+      />
+    </template>
+    <template #item.perProtocol="{ row }">
+      <BalanceTopProtocols
+        v-if="row.perProtocol"
+        :protocols="row.perProtocol"
+        :loading="!row.usdPrice || row.usdPrice.lt(0)"
+        :asset="row.asset"
       />
     </template>
     <template #item.usdPrice="{ row }">
