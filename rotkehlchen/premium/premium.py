@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Literal, NamedTuple, cast
+from typing import Any, Final, Literal, NamedTuple, cast
 from urllib.parse import urlencode
 
 import machineid
@@ -46,8 +46,9 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
-DEFAULT_ERROR_MSG = 'Failed to contact rotki server. Check logs for more details'
-DEFAULT_OK_CODES = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+COMPONENTS_VERSION: Final = 13
+DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
+DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
 
 
 def check_response_status_code(
@@ -169,7 +170,8 @@ class Premium:
         self.session = create_session()
         self.apiversion = '1'
         rotki_base_url = 'rotki.com'
-        if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
+        self.is_production = is_production()
+        if self.is_production is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
             rotki_base_url = 'staging.rotki.com'
 
         self.rotki_api = f'https://{rotki_base_url}/api/{self.apiversion}/'
@@ -449,12 +451,16 @@ class Premium:
         there is an error returned by the server
         - Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        data = self.sign('statistics_rendererv2', version=13)
+        data = self.sign(
+            'statistics_rendererv2',
+            version=COMPONENTS_VERSION if self.is_production else int(os.environ.get('ROTKI_COMPONENTS_VERSION', COMPONENTS_VERSION)),  # noqa: E501
+        )
 
         try:
             response = self.session.get(
                 self.rotki_api + 'statistics_rendererv2',
                 data=data,
+                headers={} if self.is_production else {'ROTKI_DEV': 'true'},
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
