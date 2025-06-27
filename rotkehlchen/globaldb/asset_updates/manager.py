@@ -12,7 +12,6 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.settings import CachedSettings
@@ -176,7 +175,7 @@ class AssetsUpdater:
         self.msg_aggregator = msg_aggregator
         self.local_assets_version = globaldb.get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = -1  # integer value that represents no update
-        self.conflicts: dict[str, tuple[AssetData, AssetData]] = {}
+        self.conflicts: dict[str, tuple[dict[str, Any], dict[str, Any]]] = {}
         self.asset_parser = AssetParser()
         self.asset_collection_parser = AssetCollectionParser()
         self.multiasset_mappings_parser = MultiAssetMappingsParser()
@@ -290,7 +289,7 @@ class AssetsUpdater:
     def _handle_asset_update(
             self,
             connection: 'DBConnection',
-            remote_asset_data: AssetData,
+            remote_asset_data: dict[str, Any],
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             action: str,
             full_insert: str,
@@ -303,14 +302,14 @@ class AssetsUpdater:
         local_asset: Asset | None = None
         with suppress(UnknownAsset):
             # we avoid querying the packaged db to prevent the copy of constant assets
-            local_asset = Asset(remote_asset_data.identifier).check_existence(query_packaged_db=False)  # noqa: E501
+            local_asset = Asset(remote_asset_data['identifier']).check_existence(query_packaged_db=False)  # noqa: E501
 
         try:
             with connection.savepoint_ctx() as cursor:
                 # if the action is to update an asset, but it doesn't exist in the DB
                 if action.strip().startswith('UPDATE') and cursor.execute(
                     'SELECT COUNT(*) FROM assets WHERE identifier=?',
-                    (remote_asset_data.identifier,),
+                    (remote_asset_data['identifier'],),
                 ).fetchone()[0] == 0:
                     executeall(cursor, full_insert)  # we apply the full insert query
                 else:
@@ -325,7 +324,7 @@ class AssetsUpdater:
                         executeall(cursor, full_insert)
                 except sqlite3.Error as e:
                     self.msg_aggregator.add_warning(
-                        f'Failed to add asset {remote_asset_data.identifier} in the '
+                        f'Failed to add asset {remote_asset_data["identifier"]} in the '
                         f'DB during the v{version} assets update. Skipping entry. '
                         f'Error: {e!s}',
                     )
@@ -349,19 +348,18 @@ class AssetsUpdater:
                         _force_remote_asset(cursor, local_asset, full_insert)
                 except sqlite3.Error as e:
                     self.msg_aggregator.add_warning(
-                        f'Failed to resolve conflict for {remote_asset_data.identifier} in '
+                        f'Failed to resolve conflict for {remote_asset_data["identifier"]} in '
                         f'the DB during the v{version} assets update. Skipping entry. '
                         f'Error: {e!s}',
                     )
                 return  # fail or succeed continue to next entry
 
             # else can't resolve. Mark it for the user to resolve.
-            # TODO: When assets refactor is finished, remove the usage of AssetData here
-            local_data = self.globaldb.get_all_asset_data(
-                mapping=False,
-                serialized=False,
-                specific_ids=[local_asset.identifier],
-            )[0]
+            try:
+                local_data = local_asset.resolve().get_asset_data()
+            except UnknownAsset:
+                # If we can't resolve the asset, skip this conflict
+                return
             # always take the last one, if there is multiple conflicts for a single asset
             self.conflicts[local_asset.identifier] = (local_data, remote_asset_data)
 
@@ -540,8 +538,25 @@ class AssetsUpdater:
 
                 temp_db_connection.close()
                 if len(self.conflicts) != 0:
+                    def serialize_asset_dict(asset_dict: dict[str, Any]) -> dict[str, Any]:
+                        """Serialize asset dict similar to AssetData.serialize()"""
+                        result = asset_dict.copy()
+                        result.pop('identifier', None)
+                        result.pop('chain_id', None)
+                        if 'asset_type' in result and hasattr(result['asset_type'], 'serialize_for_db'):  # noqa: E501
+                            result['asset_type'] = str(result['asset_type'])
+                        if asset_dict.get('chain_id') is not None:
+                            result['evm_chain'] = asset_dict['chain_id'].to_name()
+                        if 'token_kind' in result and result['token_kind'] is not None and hasattr(result['token_kind'], 'serialize'):  # noqa: E501
+                            result['token_kind'] = result['token_kind'].serialize()
+                        return result
+
                     return [
-                        {'identifier': x[0].identifier, 'local': x[0].serialize(), 'remote': x[1].serialize()}  # noqa: E501
+                        {
+                            'identifier': x[0]['identifier'],
+                            'local': serialize_asset_dict(x[0]),
+                            'remote': serialize_asset_dict(x[1]),
+                        }
                         for x in self.conflicts.values()
                     ]
 

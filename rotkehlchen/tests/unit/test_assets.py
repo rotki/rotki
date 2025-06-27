@@ -541,7 +541,15 @@ def test_cryptocompare_asset_support(cryptocompare):
         'HAT',  # Top Hat but CC has Hawala.Exchange
 
     )
-    for asset_data in GlobalDBHandler.get_all_asset_data(mapping=False):
+    # Get all asset identifiers and check each one using the existing get_asset_data method
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute('SELECT identifier FROM assets')
+        all_identifiers = [row[0] for row in cursor]
+
+    for identifier in all_identifiers:
+        asset_data = GlobalDBHandler.get_asset_data(identifier, form_with_incomplete_data=False)
+        if asset_data is None:
+            continue
         potential_support = (
             asset_data.cryptocompare == '' and
             asset_data.symbol in cc_assets and
@@ -560,8 +568,14 @@ def test_cryptocompare_asset_support(cryptocompare):
 
 def test_assets_tokens_addresses_are_checksummed():
     """Test that all ethereum saved token asset addresses are checksummed"""
-    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
-        if asset_data.asset_type != AssetType.EVM_TOKEN:
+    # Get all asset identifiers and check each one using the existing get_asset_data method
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute('SELECT identifier FROM assets')
+        all_identifiers = [row[0] for row in cursor]
+
+    for identifier in all_identifiers:
+        asset_data = GlobalDBHandler.get_asset_data(identifier, form_with_incomplete_data=False)
+        if asset_data is None or asset_data.asset_type != AssetType.EVM_TOKEN:
             continue
 
         msg = (
@@ -917,8 +931,15 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         # monfter but coingecko doesn't match any
         evm_address_to_identifier(address='0xcaCc19C5Ca77E06D6578dEcaC80408Cc036e0499', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
     )
-    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
-        identifier = asset_data.identifier
+    # Get all asset identifiers and check each one using the existing get_asset_data method
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute('SELECT identifier FROM assets')
+        all_identifiers = [row[0] for row in cursor]
+
+    for identifier in all_identifiers:
+        asset_data = GlobalDBHandler.get_asset_data(identifier, form_with_incomplete_data=False)
+        if asset_data is None:
+            continue
         if (
             identifier in DELISTED_ASSETS or  # delisted assets won't be in the mapping
             asset_data.asset_type == AssetType.FIAT or

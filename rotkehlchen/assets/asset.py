@@ -227,6 +227,10 @@ class AssetWithNameAndType(Asset, abc.ABC):
     asset_type: AssetType = field(init=False)
     name: str = field(init=False)
 
+    def get_asset_data(self) -> dict[str, Any]:
+        """Returns asset data as a dictionary"""
+        raise NotImplementedError('Subclasses must implement get_asset_data')
+
     def to_dict(self) -> dict[str, Any]:
         return super().to_dict() | {
             'name': self.name,
@@ -323,6 +327,25 @@ class FiatAsset(AssetWithOracles):
         object.__setattr__(asset, 'coingecko', coingecko)
         return asset
 
+    def get_asset_data(self) -> dict[str, Any]:
+        """Returns asset data as a dictionary for this FiatAsset"""
+        return {
+            'identifier': self.identifier,
+            'name': self.name,
+            'symbol': self.symbol,
+            'asset_type': self.asset_type,
+            'started': None,
+            'forked': None,
+            'swapped_for': None,
+            'address': None,
+            'chain_id': None,
+            'token_kind': None,
+            'decimals': None,
+            'cryptocompare': self.cryptocompare,
+            'coingecko': self.coingecko,
+            'protocol': None,
+        }
+
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
 class CryptoAsset(AssetWithOracles):
@@ -391,6 +414,25 @@ class CryptoAsset(AssetWithOracles):
             'coingecko': self.coingecko,
         }
 
+    def get_asset_data(self) -> dict[str, Any]:
+        """Returns asset data as a dictionary for this CryptoAsset"""
+        return {
+            'identifier': self.identifier,
+            'name': self.name,
+            'symbol': self.symbol,
+            'asset_type': self.asset_type,
+            'started': self.started,
+            'forked': self.forked.identifier if self.forked is not None else None,
+            'swapped_for': self.swapped_for.identifier if self.swapped_for is not None else None,
+            'address': None,
+            'chain_id': None,
+            'token_kind': None,
+            'decimals': None,
+            'cryptocompare': self.cryptocompare,
+            'coingecko': self.coingecko,
+            'protocol': None,
+        }
+
 
 class CustomAsset(AssetWithNameAndType):
     notes: str | None = field(init=False)
@@ -434,6 +476,25 @@ class CustomAsset(AssetWithNameAndType):
             self.custom_asset_type,
             self.notes,
         )
+
+    def get_asset_data(self) -> dict[str, Any]:
+        """Returns asset data as a dictionary for this CustomAsset"""
+        return {
+            'identifier': self.identifier,
+            'name': self.name,
+            'symbol': '',  # Custom assets don't have symbols
+            'asset_type': self.asset_type,
+            'started': None,
+            'forked': None,
+            'swapped_for': None,
+            'address': None,
+            'chain_id': None,
+            'token_kind': None,
+            'decimals': None,
+            'cryptocompare': None,
+            'coingecko': None,
+            'protocol': None,
+        }
 
     def to_dict(self, export_with_type: bool = True) -> dict[str, Any]:
         result = super().to_dict() | {
@@ -575,6 +636,25 @@ class EvmToken(CryptoAsset):
             self.protocol in (CPT_AAVE_V3, CPT_SPARK) and
             DEBT_TOKEN_SYMBOL_REGEX.match(self.symbol) is not None
         )
+
+    def get_asset_data(self) -> dict[str, Any]:
+        """Returns asset data as a dictionary for this EvmToken"""
+        return {
+            'identifier': self.identifier,
+            'name': self.name,
+            'symbol': self.symbol,
+            'asset_type': self.asset_type,
+            'started': self.started,
+            'forked': self.forked.identifier if self.forked is not None else None,
+            'swapped_for': self.swapped_for.identifier if self.swapped_for is not None else None,
+            'address': self.evm_address,
+            'chain_id': self.chain_id,
+            'token_kind': self.token_kind,
+            'decimals': self.decimals,
+            'cryptocompare': self.cryptocompare,
+            'coingecko': self.coingecko,
+            'protocol': self.protocol,
+        }
 
 
 class Nft(EvmToken):
