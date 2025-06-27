@@ -3,8 +3,7 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
-import { useLocationBalancesBreakdown } from '@/modules/balances/use-location-balances-breakdown';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -134,8 +133,7 @@ export function userSettings(): UserSettingsApi {
 
 export function balancesApi(): BalancesApi {
   const { assetPriceInCurrentCurrency, useExchangeRate } = usePriceUtils();
-  const { balancesByLocation } = useLocationBalancesBreakdown();
-  const { balances } = useAggregatedBalances();
+  const { balances, balancesByLocation } = useAggregatedBalances();
   const { createKey, isPending } = useHistoricCachePriceStore();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

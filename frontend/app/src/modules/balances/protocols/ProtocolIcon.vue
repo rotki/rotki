@@ -1,11 +1,10 @@
 <script lang="ts" setup>
 import AppImage from '@/components/common/AppImage.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import { useLocations } from '@/composables/locations';
+import { useRefMap } from '@/composables/utils/useRefMap';
+import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ProtocolBalance, toSentenceCase } from '@rotki/common';
-
-type LocationImage = { image: string; type: 'image' } | { icon: string; type: 'icon' } | undefined;
 
 const props = defineProps<{
   protocolBalance: ProtocolBalance;
@@ -13,43 +12,12 @@ const props = defineProps<{
   loading?: boolean;
 }>();
 
+const { protocolBalance } = toRefs(props);
+const protocol = useRefMap(protocolBalance, balance => balance.protocol);
+
 const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
-const { locationData } = useLocations();
 const { t } = useI18n({ useScope: 'global' });
-
-const protocolName = computed<string>(() => {
-  const data = get(locationData(props.protocolBalance.protocol));
-  return data?.name || toSentenceCase(props.protocolBalance.protocol);
-});
-
-const location = computed<LocationImage>(() => {
-  const protocol = props.protocolBalance.protocol;
-  if (protocol === 'address') {
-    return {
-      icon: 'lu-wallet',
-      type: 'icon',
-    };
-  }
-  const data = get(locationData(protocol));
-
-  if (!data) {
-    return undefined;
-  }
-
-  if (data.image) {
-    return {
-      image: data.image,
-      type: 'image',
-    };
-  }
-  else if (data.icon) {
-    return {
-      icon: data.icon,
-      type: 'icon',
-    };
-  }
-  return undefined;
-});
+const { protocolData } = useProtocolData(protocol);
 </script>
 
 <template>
@@ -64,15 +32,15 @@ const location = computed<LocationImage>(() => {
         class="rounded-full size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700 cursor-pointer"
       >
         <RuiIcon
-          v-if="location?.type === 'icon'"
+          v-if="protocolData?.type === 'icon'"
           color="secondary"
           :size="20"
-          :name="location.icon"
+          :name="protocolData.icon"
         />
         <AppImage
-          v-else-if="location?.type === 'image'"
+          v-else-if="protocolData?.type === 'image'"
           class="icon-bg rounded-full overflow-hidden"
-          :src="location.image"
+          :src="protocolData.image"
           size="24px"
           :loading="loading"
           contain
@@ -88,7 +56,7 @@ const location = computed<LocationImage>(() => {
 
     <div class="flex flex-col gap-1">
       <div class="font-medium text-sm">
-        {{ protocolName }}
+        {{ protocolData?.name ?? toSentenceCase(protocol) }}
         <div
           v-if="protocolBalance.containsManual"
           class="font-normal text-caption"

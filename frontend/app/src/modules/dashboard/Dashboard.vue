@@ -4,7 +4,7 @@ import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
 import { useTaskStore } from '@/store/tasks';

@@ -2,7 +2,7 @@ import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
 import { useBalancesApi } from '@/composables/api/balances';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useBlockchains } from '@/composables/blockchain';
 import { useStatusUpdater } from '@/composables/status';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';

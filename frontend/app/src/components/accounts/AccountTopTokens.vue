@@ -3,9 +3,11 @@ import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { useAccountAssetsSummary } from '@/modules/balances/use-account-assets-summary';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { sortDesc } from '@/utils/bignumbers';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { type AssetBalance, Zero } from '@rotki/common';
+import { pick } from 'es-toolkit';
 
 const props = defineProps<{
   chains: string[];
@@ -14,11 +16,15 @@ const props = defineProps<{
 }>();
 
 const { chains } = toRefs(props);
-const { useAccountTopTokens } = useAccountAssetsSummary();
+const { useBlockchainBalances } = useAggregatedBalances();
 const router = useRouter();
 
 const address = computed<string>(() => getAccountAddress(props.row));
-const topTokens = useAccountTopTokens(chains, address);
+const balances = useBlockchainBalances(chains, address);
+
+const topTokens = computed<AssetBalance[]>(() => get(balances)
+  .map(balance => pick(balance, ['asset', 'usdValue', 'amount']))
+  .sort((a, b) => sortDesc(a.usdValue, b.usdValue)));
 
 const assets = computed<AssetBalance[]>(() => {
   const row = props.row;

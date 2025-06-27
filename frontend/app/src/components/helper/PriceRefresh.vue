@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useBalances } from '@/composables/balances';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';

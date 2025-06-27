@@ -8,8 +8,8 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { useRefresh } from '@/composables/balances/refresh';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
-import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
@@ -34,7 +34,7 @@ const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
 
 const { exchange } = toRefs(props);
 const { useIsTaskRunning } = useTaskStore();
-const { getBalances } = useExchangeData();
+const { useExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
@@ -69,7 +69,7 @@ watch(route, () => {
 });
 
 function exchangeBalance(exchange: string): BigNumber {
-  const balances = get(getBalances(exchange));
+  const balances = get(useExchangeBalances(exchange));
   return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
 }
 
@@ -91,7 +91,7 @@ const balances = computed(() => {
   if (!currentExchange)
     return [];
 
-  return get(getBalances(currentExchange));
+  return get(useExchangeBalances(currentExchange));
 });
 
 const vueRouter = useRouter();

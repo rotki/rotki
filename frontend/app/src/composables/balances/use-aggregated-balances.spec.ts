@@ -1,5 +1,8 @@
+import type { ExchangeData } from '@/types/exchanges';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -11,9 +14,17 @@ import {
   createTestManualBalance,
   createTestPriceInfo,
 } from '@test/utils/create-data';
+import { updateGeneralSettings } from '@test/utils/general-settings';
+import {
+  createMockExchangeBalances,
+  testAccounts,
+  testEthereumBalances,
+  testExchangeBalances,
+  testManualBalances,
+} from '@test/utils/test-data';
 import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAggregatedBalances } from './aggregated';
+import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 
 vi.mock('@/modules/assets/use-collection-info', () => ({
@@ -22,11 +33,17 @@ vi.mock('@/modules/assets/use-collection-info', () => ({
       if (asset === 'ETH' || asset === 'WETH') {
         return '21';
       }
+      else if (asset.endsWith('USDC')) {
+        return 'USDC';
+      }
       return undefined;
     })),
     useCollectionMainAsset: vi.fn((collectionId: string) => computed(() => {
       if (collectionId === '21') {
         return 'ETH';
+      }
+      else if (collectionId.endsWith('USDC')) {
+        return 'USDC';
       }
       return undefined;
     })),
@@ -222,7 +239,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('compound', 100, 100, true),
         ],
-        usdPrice: Zero,
+        usdPrice: bigNumberify(-1),
         usdValue: bigNumberify(100),
       }]);
     });
@@ -467,6 +484,270 @@ describe('useAggregatedBalances', () => {
       const ethBreakdown = ethItems[0];
       expect(ethBreakdown.amount).toEqual(bigNumberify(5));
       expect(ethBreakdown.usdValue).toEqual(bigNumberify(20000));
+    });
+  });
+
+  describe('useLocationBreakdown', () => {
+    it('should return location breakdown for manual balances with asset association support', async () => {
+      const { manualBalances } = storeToRefs(useBalancesStore());
+      const { useLocationBreakdown } = useAggregatedBalances();
+
+      // Set up manual balances with ETH and ETH2
+      const ethAndEth2Balances = [{
+        amount: bigNumberify(50),
+        asset: 'ETH',
+        balanceType: BalanceType.ASSET,
+        identifier: 4,
+        label: 'Ethereum',
+        location: 'external',
+        tags: [],
+        usdValue: bigNumberify(50),
+      }, {
+        amount: bigNumberify(100),
+        asset: 'ETH2',
+        balanceType: BalanceType.ASSET,
+        identifier: 5,
+        label: 'Staked ETH',
+        location: 'external',
+        tags: [],
+        usdValue: bigNumberify(100),
+      }];
+
+      set(manualBalances, ethAndEth2Balances);
+
+      updateGeneralSettings({ treatEth2AsEth: false });
+
+      const breakdown = useLocationBreakdown('external');
+
+      expect(get(breakdown)).toMatchObject([{
+        amount: bigNumberify(50),
+        asset: 'ETH',
+        perProtocol: [{
+          amount: bigNumberify(50),
+          containsManual: true,
+          protocol: 'external',
+          usdValue: bigNumberify(50),
+        }],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(50),
+      }, {
+        amount: bigNumberify(100),
+        asset: 'ETH2',
+        perProtocol: [{
+          amount: bigNumberify(100),
+          containsManual: true,
+          protocol: 'external',
+          usdValue: bigNumberify(100),
+        }],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(100),
+      }]);
+
+      updateGeneralSettings({ treatEth2AsEth: true });
+
+      expect(get(breakdown)).toMatchObject([{
+        amount: bigNumberify(150),
+        asset: 'ETH',
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(150),
+      }]);
+    });
+
+    it('should return location breakdown with collection grouping for complex assets', () => {
+      const { exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
+      const { updateBalances } = useBalancesStore();
+      const { updateAccounts } = useBlockchainAccountsStore();
+      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+
+      // Set up test data for collection grouping
+      set(connectedExchanges, [{
+        location: 'kraken',
+        name: 'Kraken 1',
+      }]);
+
+      set(manualBalances, testManualBalances);
+      set(exchangeBalances, testExchangeBalances);
+      updateBalances('eth', testEthereumBalances);
+      updateAccounts('eth', testAccounts);
+
+      const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
+      const { useLocationBreakdown } = useAggregatedBalances();
+      set(fetchedAssetCollections, {
+        GNO: {
+          mainAsset: 'GNO',
+          name: 'GNO',
+          symbol: 'GNO',
+        },
+        USDC: {
+          mainAsset: 'USDC',
+          name: 'USDC',
+          symbol: 'USDC',
+        },
+      });
+      const locationBreakdown = useLocationBreakdown('kraken');
+      const expectedResult: AssetBalanceWithPrice[] = [{
+        amount: bigNumberify(4000),
+        asset: 'USDC',
+        breakdown: [{
+          amount: bigNumberify(2500),
+          asset: 'aUSDC',
+          perProtocol: [{
+            amount: bigNumberify(2500),
+            containsManual: true,
+            protocol: 'kraken',
+            usdValue: bigNumberify(2500),
+          }],
+          usdPrice: bigNumberify(-1),
+          usdValue: bigNumberify(2500),
+        }, {
+          amount: bigNumberify(1000),
+          asset: 'cUSDC',
+          perProtocol: [{
+            amount: bigNumberify(1000),
+            protocol: 'kraken',
+            usdValue: bigNumberify(1000),
+          }],
+          usdPrice: bigNumberify(-1),
+          usdValue: bigNumberify(1000),
+        }, {
+          amount: bigNumberify(500),
+          asset: 'bUSDC',
+          perProtocol: [{
+            amount: bigNumberify(500),
+            containsManual: true,
+            protocol: 'kraken',
+            usdValue: bigNumberify(500),
+          }],
+          usdPrice: bigNumberify(-1),
+          usdValue: bigNumberify(500),
+        }],
+        perProtocol: [{
+          amount: bigNumberify(4000),
+          protocol: 'kraken',
+          usdValue: bigNumberify(4000),
+        }],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(4000),
+      }, {
+        amount: bigNumberify(2000),
+        asset: 'GNO',
+        perProtocol: [{
+          amount: bigNumberify(2000),
+          containsManual: true,
+          protocol: 'kraken',
+          usdValue: bigNumberify(2000),
+        }],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(2000),
+      }];
+      expect(get(locationBreakdown)).toStrictEqual(expectedResult);
+    });
+
+    it('should handle asset association for location breakdown in exchange balances', async () => {
+      const { exchangeBalances } = storeToRefs(useBalancesStore());
+      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+      const { useLocationBreakdown } = useAggregatedBalances();
+
+      const mockBalances: ExchangeData = {
+        kraken: {
+          ETH: createTestBalance(1000, 1000),
+          ETH2: createTestBalance(1000, 1000),
+        },
+      };
+
+      set(exchangeBalances, mockBalances);
+      set(connectedExchanges, [{
+        location: 'kraken',
+        name: 'Kraken',
+      }]);
+
+      updateGeneralSettings({ treatEth2AsEth: false });
+
+      const locationBreakdown = useLocationBreakdown('kraken');
+
+      expect(get(locationBreakdown)).toMatchObject([{
+        amount: bigNumberify(1000),
+        asset: 'ETH',
+        perProtocol: [
+          createProtocolTestBalance('kraken', 1000, 1000),
+        ],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(1000),
+      }, {
+        amount: bigNumberify(1000),
+        asset: 'ETH2',
+        perProtocol: [
+          createProtocolTestBalance('kraken', 1000, 1000),
+        ],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(1000),
+      }]);
+
+      updateGeneralSettings({ treatEth2AsEth: true });
+
+      await nextTick();
+
+      expect(get(locationBreakdown)).toMatchObject([{
+        amount: bigNumberify(2000),
+        asset: 'ETH',
+        perProtocol: [
+          createProtocolTestBalance('kraken', 2000, 2000),
+        ],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(2000),
+      }]);
+    });
+
+    it('should respect the asset association for the location breakdown', async () => {
+      const sessionSettingsStore = useSessionSettingsStore();
+      const { useLocationBreakdown } = useAggregatedBalances();
+      const { connectedExchanges } = storeToRefs(sessionSettingsStore);
+      const { exchangeBalances } = storeToRefs(useBalancesStore());
+      set(exchangeBalances, createMockExchangeBalances());
+
+      set(connectedExchanges, [{
+        location: 'kraken',
+        name: 'Kraken',
+      }, {
+        location: 'coinbase',
+        name: 'Coinbase',
+      }]);
+
+      updateGeneralSettings({ treatEth2AsEth: false });
+
+      const locationBreakdown = useLocationBreakdown('kraken');
+
+      expect(get(locationBreakdown)).toMatchObject([{
+        amount: bigNumberify(1000),
+        asset: 'ETH',
+        perProtocol: [
+          createProtocolTestBalance('kraken', 1000, 1000),
+        ],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(1000),
+      }, {
+        amount: bigNumberify(1000),
+        asset: 'ETH2',
+        perProtocol: [
+          createProtocolTestBalance('kraken', 1000, 1000),
+        ],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(1000),
+      }]);
+
+      updateGeneralSettings({ treatEth2AsEth: true });
+
+      await nextTick();
+
+      expect(get(locationBreakdown)).toMatchObject([{
+        amount: bigNumberify(2000),
+        asset: 'ETH',
+        perProtocol: [
+          createProtocolTestBalance('kraken', 2000, 2000),
+        ],
+        usdPrice: bigNumberify(-1),
+        usdValue: bigNumberify(2000),
+      }]);
     });
   });
 });

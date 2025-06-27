@@ -1,7 +1,7 @@
 import type { TaskMeta } from '@/types/task';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/aggregated';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
