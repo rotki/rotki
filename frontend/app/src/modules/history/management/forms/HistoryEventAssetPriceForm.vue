@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<HistoryEventAssetPriceFormProps>(), {
   noPriceFields: false,
 });
 
-const { datetime, disableAsset, hidePriceFields, noPriceFields } = toRefs(props);
+const { datetime, disableAsset, disabled, hidePriceFields, noPriceFields } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -124,7 +124,7 @@ watch(amount, () => {
 });
 
 async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
-  if (get(noPriceFields))
+  if (get(noPriceFields) || get(disabled))
     return { success: true };
 
   const assetVal = get(asset);
@@ -226,7 +226,7 @@ defineExpose({
       v-model:secondary-value="fiatValue"
       class="mb-4"
       :loading="fetching"
-      :disabled="fetching"
+      :disabled="fetching || disabled"
       :label="{
         primary: t('transactions.events.form.asset_price.label', {
           symbol: currencySymbol,
