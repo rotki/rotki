@@ -179,7 +179,7 @@ def is_etherscan_rate_limited(response: dict[str, Any]) -> bool:
     """Checks if etherscan is rate limited.
     Suppression is for errors parsing when response does not match etherscan"""
     rate_limited = False
-    with suppress(json.JSONDecodeError, KeyError, UnicodeDecodeError, ValueError):
+    with suppress(json.JSONDecodeError, KeyError, UnicodeDecodeError, ValueError, TypeError):
         body = jsonloads_dict(response['body']['string'])
         rate_limited = (
             int(body.get('status', 0)) == 0 and
