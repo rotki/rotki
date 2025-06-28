@@ -4225,11 +4225,7 @@
   "swap_event_form": {
     "add_asset": "Add asset",
     "fee_notes": "Fee notes",
-    "receive_amount": "Receive Amount",
-    "receive_asset": "Receive Asset",
     "receive_notes": "Receive notes",
-    "spend_amount": "Spend Amount",
-    "spend_asset": "Spend Asset",
     "spend_notes": "Spend notes",
     "unique_id": "Unique Identifier",
     "unique_id_hint": "It is combined with the event location to create a unique event identifier"

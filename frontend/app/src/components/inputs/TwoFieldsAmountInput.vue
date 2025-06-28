@@ -68,6 +68,7 @@ const focused = ref<boolean>(false);
       'flex-col': !reversed,
       'flex-col-reverse': reversed,
       'focused': focused,
+      disabled,
     }"
     v-bind="$attrs"
   >
@@ -132,6 +133,12 @@ const focused = ref<boolean>(false);
     margin: -1px 0;
   }
 
+  &.disabled {
+    :deep(label) {
+      @apply border-dotted border-rui-grey-400;
+    }
+  }
+
   :deep(label) {
     @apply border-t-0 border border-[#0000006b];
     @apply rounded-b rounded-t-none #{!important};
@@ -182,6 +189,12 @@ const focused = ref<boolean>(false);
 
 .dark {
   .wrapper {
+    &.disabled {
+      :deep(label) {
+        @apply border-rui-grey-700;
+      }
+    }
+
     :deep(label) {
       @apply border-white/[0.42];
       @apply bg-rui-grey-800 bg-opacity-40 #{!important};
