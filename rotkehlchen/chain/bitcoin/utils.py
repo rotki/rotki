@@ -119,7 +119,7 @@ def pubkey_to_base58_address(data: bytes) -> BTCAddress:
 
     Source:
     https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses#How_to_create_Bitcoin_Address
-    https://hackernoon.com/how-to-generate-bitcoin-addresses-technical-address-generation-explanation-rus3z9e
+    https://hackernoon.com/basics-of-paper-wallets-a40639dec8b2
 
     May raise:
     - ValueError, TypeError due to b58encode
