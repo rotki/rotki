@@ -162,7 +162,7 @@ async function send() {
 
   const params = {
     amount: get(amount),
-    assetIdentifier: isNative ? undefined : assetVal,
+    assetIdentifier: assetVal,
     chain: get(assetChain),
     native: isNative,
     to: get(toAddress),

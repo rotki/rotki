@@ -2,6 +2,7 @@
 import TradeConnectedAddressBadge from '@/modules/onchain/send/TradeConnectedAddressBadge.vue';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import Pairing from '@/modules/onchain/wallet-bridge/Pairing.vue';
+import { useMainStore } from '@/store/main';
 
 definePage({
   meta: {
@@ -14,6 +15,12 @@ const { t } = useI18n({ useScope: 'global' });
 const walletStore = useWalletStore();
 const { connected, connectedAddress, connectedChainId, supportedChainsIdForConnectedAccount } = storeToRefs(walletStore);
 const { disconnect } = walletStore;
+
+const { setConnected } = useMainStore();
+
+onBeforeMount(() => {
+  setConnected(true);
+});
 
 const firstStep = '1';
 </script>
