@@ -205,6 +205,9 @@ BTCAddress = NewType('BTCAddress', T_BTCAddress)
 T_Eth2PubKey = str
 Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 
+T_SolanaAddress = str
+SolanaAddress = NewType('SolanaAddress', T_SolanaAddress)
+
 BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress
 AnyBlockchainAddress = TypeVar(
     'AnyBlockchainAddress',
@@ -1157,6 +1160,10 @@ class TokenKind(DBCharEnumMixIn):
     ERC721 = auto()
     UNKNOWN = auto()
 
+    # Solana tokens
+    SPL_TOKEN = auto()  # fungible tokens on solana - https://spl.solana.com/token
+    SPL_NFT = auto()  # nfts on solana - https://developers.metaplex.com/token-metadata
+
     @classmethod
     def deserialize_evm_from_db(cls, value: Any) -> 'EVM_TOKEN_KINDS':
         """Deserialize specifically for EVM token kinds"""
@@ -1165,8 +1172,17 @@ class TokenKind(DBCharEnumMixIn):
 
         return result  # type: ignore[return-value]  # the check above ensures it's an evm token kind.
 
+    @classmethod
+    def deserialize_solana_from_db(cls, value: Any) -> 'SOLANA_TOKEN_KINDS':
+        """Deserialize specifically for Solana token kinds"""
+        if (result := cls.deserialize_from_db(value)) not in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT):  # noqa: E501
+            raise DeserializationError(f'Expected solana token kind, got {result}')
+
+        return result  # type: ignore[return-value]  # the check above ensures it's solana token kind.
+
 
 EVM_TOKEN_KINDS = Literal[TokenKind.ERC20, TokenKind.ERC721]
+SOLANA_TOKEN_KINDS = Literal[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT]
 
 
 class CacheType(Enum):

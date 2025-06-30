@@ -3328,6 +3328,7 @@ def test_latest_upgrade_correctness(user_data_dir):
         cursor=cursor,
         db_name=db.conn.connection_type.name.lower(),
         minimized_schema=db.conn.minimized_schema,
+        minimized_indexes=db.conn.minimized_indexes,
     )
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables_after_upgrade = {x[0] for x in result}

@@ -129,7 +129,7 @@ def get_main_currency_price(
         msg_aggregator: MessagesAggregator,
 ) -> tuple[AssetWithOracles, Price]:
     """Gets the main currency and its equivalent price at a particular timestamp."""
-    main_currency = db.get_setting(cursor, name='main_currency')
+    main_currency = db.get_setting(cursor, name='main_currency').resolve_to_asset_with_oracles()
     main_currency_price = None
     try:
         main_currency_price = PriceHistorian().query_historical_price(

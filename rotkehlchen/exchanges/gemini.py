@@ -84,7 +84,10 @@ def gemini_symbol_to_base_quote(symbol: str) -> tuple[AssetWithOracles, AssetWit
     if symbol.endswith('perp'):
         raise UnprocessableTradePair(symbol)
 
-    special_cases = {'moodengusd': ('MOODENG', 'USD'), 'xrprlusd': ('XRP', 'RLUSD')}
+    special_cases = {
+        'xrprlusd': ('XRP', 'RLUSD'),
+        'moodengusd': ('solana/token:ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY', 'USD'),  # moodeng solana identifier  # noqa: E501
+    }
     if symbol in special_cases:
         base, quote = special_cases[symbol]
         return asset_from_gemini(base), asset_from_gemini(quote)

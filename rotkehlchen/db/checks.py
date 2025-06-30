@@ -40,66 +40,93 @@ def sanity_check_impl(
         cursor: 'DBCursor',
         db_name: str,
         minimized_schema: dict[str, str],
+        minimized_indexes: dict[str, str],
 ) -> None:
     """The implementation of the DB sanity check. Out of DBConnection to keep things cleaner"""
+    # Fetch all tables and indexes from the database
+    db_objects: dict[str, dict[str, tuple[str, str]]] = {'table': {}, 'index': {}}
+    # Fetch tables
     cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='table'")
-    tables_data_from_db: dict[str, tuple[str, str]] = {}
     for (name, raw_script) in cursor:
         table_properties = re.findall(
             pattern=r'createtable.*?\((.+)\)',
             string=db_script_normalizer(raw_script),
         )[0]
-        # Store table properties for comparison with expected table structure and
-        # raw_script for the ease of debugging
-        tables_data_from_db[name] = (table_properties, raw_script)
+        db_objects['table'][name] = (table_properties, raw_script)
 
-    # Check that there are no extra structures such as views
+    # Fetch indexes (excluding auto-generated ones)
+    cursor.execute("SELECT name, sql FROM sqlite_master WHERE type='index' AND sql IS NOT NULL")
+    for (name, raw_script) in cursor:
+        normalized_script = db_script_normalizer(raw_script).replace('createindexifnotexists', 'createindex')  # noqa: E501
+        db_objects['index'][name] = (normalized_script, raw_script)
+
+    # Check for extra structures such as views
     extra_db_structures = cursor.execute(
         "SELECT type, name, sql FROM sqlite_master WHERE type NOT IN ('table', 'index')",
     ).fetchall()
-    if len(extra_db_structures) > 0:
-        logger.critical(
-            f'Unexpected structures in {db_name} database: {extra_db_structures}',
-        )
-        raise DBSchemaError(
-            f'There are unexpected structures in your {db_name} database. '
-            f'Check the logs for more details. ' + DEFAULT_SANITY_CHECK_MESSAGE,
-        )
 
-    # Check what tables are missing from the db
-    missing_tables = minimized_schema.keys() - tables_data_from_db.keys()
-    if len(missing_tables) > 0:
-        raise DBSchemaError(
-            f'Tables {missing_tables} are missing from your {db_name} '
-            f'database. ' + DEFAULT_SANITY_CHECK_MESSAGE,
-        )
+    # Prepare all error and warning messages
+    errors = []
+    warnings = []
+    info_msgs = []
 
-    # Check what extra tables are in the db
-    extra_tables = tables_data_from_db.keys() - minimized_schema.keys()
-    if len(extra_tables) > 0:
-        logger.info(
-            f'Your {db_name} database has the following unexpected tables: '
-            f'{extra_tables}. Feel free to delete them.',
-        )
-        for extra_table in extra_tables:
-            tables_data_from_db.pop(extra_table)
+    if extra_db_structures:
+        logger.critical(f'Unexpected structures in {db_name} database: {extra_db_structures}')
+        errors.append(f'There are unexpected structures in your {db_name} database.')
 
-    # Check structure of which tables in the database differ from the expected.
-    differing_tables_properties: dict[str, tuple[tuple[str, str], str]] = {}
-    # At this point keys of two dictionaries match
-    for table_name, table_data in tables_data_from_db.items():
-        if table_data[0] != minimized_schema[table_name].lower():
-            differing_tables_properties[table_name] = (
-                table_data,
-                minimized_schema[table_name],
-            )
+    # Check tables and indexes
+    for obj_type, minimized_data in [('table', minimized_schema), ('index', minimized_indexes)]:
+        db_data = db_objects[obj_type]
+        missing = minimized_data.keys() - db_data.keys()
+        if missing:
+            msg = f'{obj_type.capitalize()}s {missing} are missing from your {db_name} database.'
+            if obj_type == 'table':
+                errors.append(msg)
+            else:  # indexes
+                warnings.append(msg + ' Consider recreating them for better performance.')
+                logger.warning(msg)
 
-    if len(differing_tables_properties) > 0:
-        log_msg = f'Differing tables in the {db_name} database are:'
-        for table_name, ((raw_script, minimized_script), structure_expected) in differing_tables_properties.items():  # noqa: E501
-            log_msg += (f'\n- For table {table_name} expected {structure_expected} but found {minimized_script}. Table raw script is: {raw_script}')  # noqa: E501
-        logger.critical(log_msg)
-        raise DBSchemaError(
-            f'Structure of some tables in your {db_name} database differ from the '
-            f'expected. Check the logs for more details. ' + DEFAULT_SANITY_CHECK_MESSAGE,
-        )
+        extra = db_data.keys() - minimized_data.keys()
+        if extra:
+            msg = f'Your {db_name} database has the following unexpected {obj_type}s: {extra}.'
+            if obj_type == 'table':
+                info_msgs.append(msg + ' Feel free to delete them.')
+            else:  # indexes
+                info_msgs.append(msg + ' These are not harmful but are not required.')
+            logger.info(msg)
+            for extra_obj in extra:
+                db_data.pop(extra_obj)
+
+        # Check differing structures
+        differing: dict[str, tuple[tuple[str, str], str]] = {}
+        for obj_name, obj_data in db_data.items():
+            if obj_name in minimized_data:
+                expected = minimized_data[obj_name]
+                if obj_type == 'table':
+                    # For tables, compare the properties part
+                    if obj_data[0] != expected.lower():
+                        differing[obj_name] = (obj_data, expected)
+                else:  # For indexes, normalize both sides by removing "ifnotexists"
+                    expected_normalized = expected.replace('createindexifnotexists', 'createindex')
+                    if obj_data[0] != expected_normalized:
+                        differing[obj_name] = (obj_data, expected)
+
+        if differing:
+            log_msg = f'Differing {obj_type}s in the {db_name} database are:'
+            for obj_name, ((normalized_or_props, raw_script), expected) in differing.items():
+                log_msg += f'\n- For {obj_type} {obj_name} expected {expected} but found {normalized_or_props}. {obj_type.capitalize()} raw script is: {raw_script}'  # noqa: E501
+
+            if obj_type == 'table':
+                logger.critical(log_msg)
+                errors.append(f'Structure of some tables in your {db_name} database differ from the expected.')  # noqa: E501
+            else:  # indexes
+                logger.warning(log_msg)
+                warnings.append(f'Structure of some indexes in your {db_name} database differ from the expected.')  # noqa: E501
+
+    for msg in info_msgs:
+        logger.info(msg)
+
+    # Raise error if there are any critical issues
+    if errors:
+        error_msg = ' '.join(errors) + ' Check the logs for more details. ' + DEFAULT_SANITY_CHECK_MESSAGE  # noqa: E501
+        raise DBSchemaError(error_msg)

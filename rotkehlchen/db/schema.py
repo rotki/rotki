@@ -746,23 +746,25 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 """
 
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
-# Shown below are before/after query speeds we observed for each index.
-# Before: 12951ms, After: 0ms
-DB_CREATE_ENTRY_TYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_entry_type ON history_events(entry_type);'  # noqa: E501
-# Before: 13001ms, After: 1ms
-DB_CREATE_TIMESTAMP_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_timestamp ON history_events(timestamp);'  # noqa: E501
-# Before: 13436ms, After: 857ms
-DB_CREATE_LOCATION_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_location ON history_events(location);'  # noqa: E501
-# Before: 12982ms, After: 57ms
-DB_CREATE_LOCATION_LABEL_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_location_label ON history_events(location_label);'  # noqa: E501
-# Before: 13114ms, After: 251ms
-DB_CREATE_ASSET_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);'  # noqa: E501
-# Before: 12995ms, After: 7ms
-DB_CREATE_TYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);'  # noqa: E501
-# Before: 12937ms, After: 2ms
-DB_CREATE_SUBTYPE_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);'  # noqa: E501
-# Before: 14723ms, After: 5184ms
-DB_CREATE_IGNORED_INDEX = 'CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);'  # noqa: E501
+# Shown below are before/after query speeds we observed for each index:
+# idx_history_events_entry_type: Before: 12951ms, After: 0ms
+# idx_history_events_timestamp: Before: 13001ms, After: 1ms
+# idx_history_events_location: Before: 13436ms, After: 857ms
+# idx_history_events_location_label: Before: 12982ms, After: 57ms
+# idx_history_events_asset: Before: 13114ms, After: 251ms
+# idx_history_events_type: Before: 12995ms, After: 7ms
+# idx_history_events_subtype: Before: 12937ms, After: 2ms
+# idx_history_events_ignored: Before: 14723ms, After: 5184ms
+DB_CREATE_INDEXES = """
+CREATE INDEX IF NOT EXISTS idx_history_events_entry_type ON history_events(entry_type);
+CREATE INDEX IF NOT EXISTS idx_history_events_timestamp ON history_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_history_events_location ON history_events(location);
+CREATE INDEX IF NOT EXISTS idx_history_events_location_label ON history_events(location_label);
+CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
+CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
+CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
+CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+"""
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
@@ -820,14 +822,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
-{DB_CREATE_ENTRY_TYPE_INDEX}
-{DB_CREATE_TIMESTAMP_INDEX}
-{DB_CREATE_LOCATION_INDEX}
-{DB_CREATE_LOCATION_LABEL_INDEX}
-{DB_CREATE_ASSET_INDEX}
-{DB_CREATE_TYPE_INDEX}
-{DB_CREATE_SUBTYPE_INDEX}
-{DB_CREATE_IGNORED_INDEX}
+{DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

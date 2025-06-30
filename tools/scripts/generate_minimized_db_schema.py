@@ -12,8 +12,14 @@ from pathlib import Path
 from typing import Literal
 
 from rotkehlchen.db.checks import db_script_normalizer
-from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES as USER_DB_CREATE_TABLES
-from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES as GLOBAL_DB_CREATE_TABLES
+from rotkehlchen.db.schema import (
+    DB_CREATE_INDEXES as USER_DB_CREATE_INDEXES,
+    DB_SCRIPT_CREATE_TABLES as USER_DB_CREATE_TABLES,
+)
+from rotkehlchen.globaldb.schema import (
+    DB_CREATE_INDEXES as GLOBAL_DB_CREATE_INDEXES,
+    DB_SCRIPT_CREATE_TABLES as GLOBAL_DB_CREATE_TABLES,
+)
 from rotkehlchen.utils.misc import get_system_spec
 
 p = argparse.ArgumentParser()
@@ -36,6 +42,7 @@ db_name: Literal['user', 'global'] = args.db_name
 # Make dictionary of table_name: table_properties. Without whitespaces. For example:
 # this {"ens_mappings": "CREATETABLEIFNOTEXISTSens_mappings(addressTEXTNOTNULLPRIMARYKEY,ens_nameTEXTUNIQUE,last_updateINTEGERNOTNULL);"}  # noqa: E501
 db_script = USER_DB_CREATE_TABLES if db_name == 'user' else GLOBAL_DB_CREATE_TABLES
+index_script = USER_DB_CREATE_INDEXES if db_name == 'user' else GLOBAL_DB_CREATE_INDEXES
 regexp_result = re.findall(
     pattern=r'createtableifnotexists(.+?)\((.+?)\);',
     # Replacing new lines and white spaces since they may vary if by an accident code of a
@@ -56,6 +63,26 @@ lines.extend((
 ))
 for name, properties in regexp_result:
     lines.append(f'    "{name}": "{properties}",')
+lines.append('}')
+
+# Parse indexes by first extracting each CREATE INDEX statement
+index_regexp_result = []
+index_pattern = re.compile(
+    r'CREATE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+(\S+)\s+ON\s+(\S+)\s*\(([^)]+)\)',
+    re.IGNORECASE,
+)
+for entry in index_script.strip().split(';'):
+    statement = entry.strip()
+    if statement and (_match := index_pattern.match(statement)):
+        index_name = _match.group(1).lower()
+        table_name = _match.group(2).lower()
+        columns = _match.group(3).lower().replace(' ', '')
+        index_regexp_result.append((index_name, table_name, columns))
+
+lines.extend(('', f'MINIMIZED_{db_name.upper()}_DB_INDEXES = {{'))
+for index_name, table_name, columns in index_regexp_result:
+    index_definition = f'createindexifnotexists{index_name}on{table_name}({columns})'
+    lines.append(f'    "{index_name}": "{index_definition}",')
 lines.append('}')
 
 # Save to the file

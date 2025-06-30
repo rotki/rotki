@@ -404,7 +404,7 @@ def test_gemini_symbol_to_base_quote():
     assert gemini_symbol_to_base_quote('linkbtc') == (A_LINK, A_BTC)
     assert gemini_symbol_to_base_quote('btcgusd') == (A_BTC, A_GUSD)
     assert gemini_symbol_to_base_quote('linkpaxg') == (A_LINK, A_PAXG)
-    assert gemini_symbol_to_base_quote('moodengusd') == (Asset('MOODENG'), A_USD)
+    assert gemini_symbol_to_base_quote('moodengusd') == (Asset('solana/token:ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY'), A_USD)  # noqa: E501
 
     with pytest.raises(UnprocessableTradePair):
         gemini_symbol_to_base_quote('btcusdperp')

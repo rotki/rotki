@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Final, Generic, Literal, NamedTuple, Self, TypeVar
 
+from eth_utils import is_hex_address
+
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset
@@ -36,6 +38,7 @@ from rotkehlchen.types import (
     Location,
     OptionalBlockchainAddress,
     OptionalChainAddress,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
 )
@@ -1800,7 +1803,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             and_op: bool = True,
             substring_search: str | None = None,
             chain_id: ChainID | None = None,
-            address: ChecksumEvmAddress | None = None,
+            address: ChecksumEvmAddress | SolanaAddress | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'LevenshteinFilterQuery':
         assert substring_search is not None or address is not None  # substring search and address can't be none at the same time  # noqa: E501
@@ -1858,9 +1861,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             filters.append((nested_filter, 'assets'))
 
         if address is not None:
-            filters.append(
-                (DBEqualsFilter(and_op=True, column='address', value=address), 'assets'),
-            )
+            filters.append((DBEqualsFilter(and_op=True, column='evm_tokens.address' if is_hex_address(address) else 'solana_tokens.address', value=address), 'assets'))  # noqa: E501
 
         filter_query.filters = filters
         return filter_query

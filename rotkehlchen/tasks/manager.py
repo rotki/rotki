@@ -227,7 +227,7 @@ class TaskManager:
 
         with self.database.conn.read_ctx() as cursor:
             assets = self.database.query_owned_assets(cursor)
-            main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
+            main_currency = self.database.get_setting(cursor=cursor, name='main_currency').resolve_to_asset_with_oracles()  # noqa: E501
 
         if main_currency.cryptocompare == '':  # main currency not supported
             self.prepared_cryptocompare_query = True
