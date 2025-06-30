@@ -29,8 +29,8 @@ const dot = '•';
       :chain="item.chain"
     />
     <div class="flex-1">
-      <div class="flex items-start justify-between text-rui-text-secondary text-sm">
-        <div class="flex items-center gap-2 pb-1.5">
+      <div class="flex items-center justify-between text-rui-text-secondary text-sm">
+        <div class="flex items-center gap-2">
           <DateDisplay
             class="!text-xs"
             :timestamp="item.timestamp"
