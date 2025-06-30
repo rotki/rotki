@@ -6,6 +6,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest import mock
+from unittest.mock import patch
 
 import gevent
 import pytest
@@ -16,6 +17,7 @@ from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
@@ -303,7 +305,10 @@ def test_user_creation_with_invalid_premium_credentials(
         'premium_api_key': VALID_PREMIUM_KEY,
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
-    with ExitStack() as stack:
+    with (
+        ExitStack() as stack,
+        patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', side_effect=RemoteError('Invalid API-KEY')),  # noqa: E501
+    ):
         patch_no_op_unlock(rotki, stack)
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
 
@@ -1035,15 +1040,16 @@ def test_user_set_premium_credentials_errors(
 
     # Set valid format but not authenticated premium credentials for logged in user
     data = {'premium_api_key': VALID_PREMIUM_KEY, 'premium_api_secret': VALID_PREMIUM_SECRET}
-    response = requests.patch(
-        api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
-        json=data,
-    )
-    assert_error_response(
-        response=response,
-        contained_in_msg='Invalid API-KEY',
-        status_code=HTTPStatus.FORBIDDEN,
-    )
+    with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', side_effect=RemoteError('Invalid API-KEY')):  # noqa: E501
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+            json=data,
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='Invalid API-KEY',
+            status_code=HTTPStatus.FORBIDDEN,
+        )
 
 
 def test_users_by_name_endpoint_errors(
