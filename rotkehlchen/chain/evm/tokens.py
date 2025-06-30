@@ -13,6 +13,7 @@ from rotkehlchen.chain.ethereum.utils import (
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import UNISWAP_V3_NFT_MANAGER_ADDRESSES
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -469,6 +470,7 @@ class EvmTokens(ABC):  # noqa: B024
                 all_tokens.update(token_list)
                 addresses_to_tokens[address] = token_list
 
+        tokens_with_balance = set()
         multicall_chunks = generate_multicall_chunks(
             addresses_to_tokens=addresses_to_tokens,
             chunk_length=chunk_size,
@@ -479,9 +481,14 @@ class EvmTokens(ABC):  # noqa: B024
                 call_order=call_order,
             )
             for address, balances in new_balances.items():
-                addresses_to_balances[address].update(balances)
+                for token, balance in balances.items():
+                    if balance == ZERO:
+                        continue  # skip any zero balance tokens
 
-        token_usd_price = cast('dict[EvmToken, Price]', Inquirer.find_usd_prices(list(all_tokens)))
+                    tokens_with_balance.add(token)
+                    addresses_to_balances[address][token] = balance
+
+        token_usd_price = cast('dict[EvmToken, Price]', Inquirer.find_usd_prices(list(tokens_with_balance)))  # noqa: E501
         return dict(addresses_to_balances), token_usd_price
 
     def _get_token_exceptions(self) -> set[ChecksumEvmAddress]:
