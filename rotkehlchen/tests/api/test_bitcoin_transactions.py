@@ -14,6 +14,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.fixtures import WebsocketReader
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.types import Location, TimestampMS
 
@@ -26,10 +27,12 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('btc_accounts', [['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']])
 @pytest.mark.parametrize('use_blockcypher', [True, False])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_query_transactions(
         rotkehlchen_api_server: 'APIServer',
         btc_accounts: list['BTCAddress'],
         use_blockcypher: bool,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that bitcoin transactions are properly queried via the api.
     Since there are quite a number of transactions, only check decoding of first and last txs.
@@ -66,6 +69,16 @@ def test_query_transactions(
                 has_premium=True,
             )
         assert len(events) == expected_len
+
+        # Confirm WS tx status messages were sent
+        websocket_connection.wait_until_messages_num(4, timeout=5)
+        assert list(websocket_connection.messages) == [
+            {'type': 'transaction_status', 'data': {'addresses': btc_accounts, 'chain': 'BTC', 'subtype': 'bitcoin', 'status': 'decoding_transactions_finished'}},  # noqa: E501
+            {'type': 'transaction_status', 'data': {'addresses': btc_accounts, 'chain': 'BTC', 'subtype': 'bitcoin', 'status': 'decoding_transactions_started'}},  # noqa: E501
+            {'type': 'transaction_status', 'data': {'addresses': btc_accounts, 'chain': 'BTC', 'subtype': 'bitcoin', 'status': 'querying_transactions_finished'}},  # noqa: E501
+            {'type': 'transaction_status', 'data': {'addresses': btc_accounts, 'chain': 'BTC', 'subtype': 'bitcoin', 'status': 'querying_transactions_started'}},  # noqa: E501
+        ]
+        websocket_connection.messages.clear()
 
     assert events[74:] == [HistoryEvent(
         identifier=68,

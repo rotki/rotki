@@ -5,6 +5,11 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import (
+    TransactionStatusStep,
+    TransactionStatusSubType,
+    WSMessageType,
+)
 from rotkehlchen.chain.bitcoin.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
     BLOCKCYPHER_BASE_URL,
@@ -399,6 +404,22 @@ class BitcoinManager:
         """
         return self._query(action=BtcQueryAction.HAS_TRANSACTIONS, accounts=accounts)
 
+    def _send_tx_ws_status(
+            self,
+            addresses: list[BTCAddress],
+            status: TransactionStatusStep,
+    ) -> None:
+        """Send tx querying status WS message to the frontend."""
+        self.database.msg_aggregator.add_message(
+            message_type=WSMessageType.TRANSACTION_STATUS,
+            data={
+                'addresses': addresses,
+                'chain': SupportedBlockchain.BITCOIN.value,
+                'subtype': str(TransactionStatusSubType.BITCOIN),
+                'status': str(status),
+            },
+        )
+
     def query_transactions(
             self,
             from_timestamp: Timestamp,
@@ -412,7 +433,10 @@ class BitcoinManager:
         The maximum block height from any address is then saved in the cache for all addresses
         since they are all queried up to the same to_timestamp.
         """
-        # TODO: websocket messages for progress updates while querying
+        self._send_tx_ws_status(
+            addresses=addresses,
+            status=TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED,
+        )
         self.refresh_tracked_accounts()
 
         accounts_str = ', '.join(addresses)
@@ -443,10 +467,18 @@ class BitcoinManager:
             new_block_height = max(new_block_height, block_height)
             tx_list.extend(accounts_txs)
 
+        self._send_tx_ws_status(
+            addresses=addresses,
+            status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+        )
         if len(tx_list) == 0:
             log.debug(f'No new transactions found for bitcoin accounts {accounts_str}')
             return
 
+        self._send_tx_ws_status(
+            addresses=addresses,
+            status=TransactionStatusStep.DECODING_TRANSACTIONS_STARTED,
+        )
         events = []
         for tx in tx_list:
             events.extend(self.decode_transaction(tx))
@@ -464,6 +496,11 @@ class BitcoinManager:
                 write_cursor=write_cursor,
                 history=events,
             )
+
+        self._send_tx_ws_status(
+            addresses=addresses,
+            status=TransactionStatusStep.DECODING_TRANSACTIONS_FINISHED,
+        )
 
     @staticmethod
     def create_event(
