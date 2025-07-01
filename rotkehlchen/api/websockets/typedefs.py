@@ -11,7 +11,7 @@ from enum import Enum, auto
 class WSMessageType(Enum):
     LEGACY = auto()
     BALANCE_SNAPSHOT_ERROR = auto()
-    EVM_TRANSACTION_STATUS = auto()
+    TRANSACTION_STATUS = auto()
     PREMIUM_STATUS_UPDATE = auto()
     DB_UPGRADE_STATUS = auto()
     # Used for evm/evmlike address migration after new chain integration
@@ -52,6 +52,16 @@ class TransactionStatusStep(Enum):
     QUERYING_INTERNAL_TRANSACTIONS = auto()
     QUERYING_EVM_TOKENS_TRANSACTIONS = auto()
     QUERYING_TRANSACTIONS_FINISHED = auto()
+    DECODING_TRANSACTIONS_STARTED = auto()
+    DECODING_TRANSACTIONS_FINISHED = auto()
+
+    def __str__(self) -> str:
+        return self.name.lower()  # pylint: disable=no-member
+
+
+class TransactionStatusSubType(Enum):
+    EVM = auto()
+    BITCOIN = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

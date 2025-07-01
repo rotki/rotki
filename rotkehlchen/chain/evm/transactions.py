@@ -8,7 +8,11 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, cast
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
+from rotkehlchen.api.websockets.typedefs import (
+    TransactionStatusStep,
+    TransactionStatusSubType,
+    WSMessageType,
+)
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -64,23 +68,24 @@ def with_tx_status_messaging(func: T) -> T:
             *args: Any,
             **kwargs: Any,
     ) -> None:
-        chain_id = self.evm_inquirer.chain_id.to_name()
         with self.address_tx_locks[address]:
             self.msg_aggregator.add_message(
-                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                message_type=WSMessageType.TRANSACTION_STATUS,
                 data={
                     'address': address,
-                    'evm_chain': chain_id,
+                    'chain': self.evm_inquirer.blockchain.value,
+                    'subtype': str(TransactionStatusSubType.EVM),
                     'period': [start_ts, end_ts],
                     'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_STARTED),
                 },
             )
             result = func(self, address, start_ts, end_ts, *args, **kwargs)
             self.msg_aggregator.add_message(
-                message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                message_type=WSMessageType.TRANSACTION_STATUS,
                 data={
                     'address': address,
-                    'evm_chain': chain_id,
+                    'chain': self.evm_inquirer.blockchain.value,
+                    'subtype': str(TransactionStatusSubType.EVM),
                     'period': [start_ts, end_ts],
                     'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED),
                 },
@@ -213,10 +218,11 @@ class EvmTransactions(ABC):  # noqa: B024
                         )
 
                 self.msg_aggregator.add_message(
-                    message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                    message_type=WSMessageType.TRANSACTION_STATUS,
                     data={
                         'address': address,
-                        'evm_chain': self.evm_inquirer.chain_id.to_name(),
+                        'chain': self.evm_inquirer.blockchain.value,
+                        'subtype': str(TransactionStatusSubType.EVM),
                         'period': [period.from_value, new_transactions[-1].timestamp],
                         'status': str(TransactionStatusStep.QUERYING_TRANSACTIONS),
                     },
@@ -333,10 +339,11 @@ class EvmTransactions(ABC):  # noqa: B024
                             )
 
                     self.msg_aggregator.add_message(
-                        message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                        message_type=WSMessageType.TRANSACTION_STATUS,
                         data={
                             'address': address,
-                            'evm_chain': self.evm_inquirer.chain_id.to_name(),
+                            'chain': self.evm_inquirer.blockchain.value,
+                            'subtype': str(TransactionStatusSubType.EVM),
                             'period': [period_or_hash.from_value, timestamp],
                             'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
                         },
@@ -479,10 +486,11 @@ class EvmTransactions(ABC):  # noqa: B024
                             )
 
                     self.msg_aggregator.add_message(
-                        message_type=WSMessageType.EVM_TRANSACTION_STATUS,
+                        message_type=WSMessageType.TRANSACTION_STATUS,
                         data={
                             'address': address,
-                            'evm_chain': self.evm_inquirer.chain_id.to_name(),
+                            'chain': self.evm_inquirer.blockchain.value,
+                            'subtype': str(TransactionStatusSubType.EVM),
                             'period': [period.from_value, tx.timestamp],
                             'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),
                         },

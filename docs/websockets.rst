@@ -207,6 +207,54 @@ Having API keys for some services (such as etherscan) is crucial for rotki to wo
 - ``location``: For services like etherscan that require different API keys for different locations this is the location for which the API key is needed. If a service does not require a location then this key will be missing.
 
 
+Query transactions
+=========================
+
+While querying transactions the backend sends ws messages giving status updates. There are different schemas depending on the type of transactions being queried. This is specified by the `subtype` key which can have a value of either `evm` or `bitcoin`.
+
+For EVM transactions:
+
+::
+
+    {
+        "type": "transaction_status",
+        "data": {
+            "address": "0x123...",
+            "chain": "optimism",
+            "subtype": "evm",
+            "period": [1600000000, 1700000000],
+            "status": "querying_transactions"
+        }
+    }
+
+
+- ``address``: The EVM address being queried for transactions.
+- ``chain``: The EVM chain for which transactions are being queried.
+- ``subtype``: Labels which type of transaction status message this is. Will be `evm` for EVM transactions.
+- ``period``: The time range that is being queried.
+- ``status``: Either `querying_transactions_started`, `querying_transactions`, `querying_internal_transactions`, `querying_evm_tokens_transactions`, or `querying_transactions_finished`.
+
+For Bitcoin transactions:
+
+::
+
+    {
+        "type": "transaction_status",
+        "data": {
+            "addresses": ["bc1q...", "bc1q..."],
+            "chain": "btc",
+            "subtype": "bitcoin",
+            "status": "querying_transactions_started"
+        }
+    }
+
+
+- ``addresses``: The list of Bitcoin addresses being queried for transactions.
+- ``chain``: The chain for which transactions are being queried. Will be `btc` for Bitcoin transactions.
+- ``subtype``: Labels which type of transaction status message this is. Will be `bitcoin` for Bitcoin transactions.
+- ``status``: Either `querying_transactions_started`, `querying_transactions_finished`, `decoding_transactions_started`, or `decoding_transactions_finished`.
+
+
 Query new history events
 =========================
 
@@ -215,7 +263,7 @@ In addition to history from evm transactions we need to query events from exchan
 ::
 
     {
-        "type": "querying_events_status",
+        "type": "history_events_status",
         "data": {
             "status": "querying_events_started",
             "location": "kraken",
@@ -235,9 +283,9 @@ Finally the backend provides more granular information to know what interval of 
 ::
 
     {
-        "type": "querying_events_status",
+        "type": "history_events_status",
         "data": {
-            "status": "history_event_status",
+            "status": "querying_events_status_update",
             "location": "kraken",
             "event_type": "history_query",
             "name": "My kraken exchange",
