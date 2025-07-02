@@ -10,12 +10,23 @@ CURVE_COUNTERPARTY_DETAILS: Final = CounterpartyDetails(
     label='Curve.fi',
     image='curve.png',
 )
+ADD_LIQUIDITY_2_ASSETS: Final = b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h'  # noqa: E501
+ADD_LIQUIDITY_2_ASSETS_OPTIMIZED: Final = b'q\x96\xcb\xf6=\xf1\xf2\xec c\x8eh>\xbeQ\xd1\x82`\xbeQ\x05\x92\xee\x1e.\xfe?<\xfdL3\xe9'  # in CurveTwocryptoOptimized  # noqa: E501
+ADD_LIQUIDITY_3_ASSETS: Final = b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r'  # noqa: E501
+ADD_LIQUIDITY_4_ASSETS: Final = b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d'  # noqa: E501
+ADD_LIQUIDITY_DYNAMIC_ASSETS: Final = b'\x18\x9cb;fk\x1bE\xb8=qx\xf3\x9b\x8c\x08|\xb0\x97t1|\xa2\xf5<-<7&\xf2"\xa2'  # in DepositAndStake Zap  # noqa: E501
 ADD_LIQUIDITY_EVENTS: Final = {
-    b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r',  # ADD_LIQUIDITY  # noqa: E501
-    b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h',  # ADD_LIQUIDITY_2_ASSETS  # noqa: E501
-    b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d',  # ADD_LIQUIDITY_4_ASSETS  # noqa: E501
-    b'\x18\x9cb;fk\x1bE\xb8=qx\xf3\x9b\x8c\x08|\xb0\x97t1|\xa2\xf5<-<7&\xf2"\xa2',  # AddLiquidity in DepositAndStake Zap  # noqa: E501
-    b'q\x96\xcb\xf6=\xf1\xf2\xec c\x8eh>\xbeQ\xd1\x82`\xbeQ\x05\x92\xee\x1e.\xfe?<\xfdL3\xe9',  # AddLiquidity used in CurveTwocryptoOptimized  #  noqa: E501
+    ADD_LIQUIDITY_2_ASSETS,
+    ADD_LIQUIDITY_2_ASSETS_OPTIMIZED,
+    ADD_LIQUIDITY_3_ASSETS,
+    ADD_LIQUIDITY_4_ASSETS,
+    ADD_LIQUIDITY_DYNAMIC_ASSETS,
+}
+ADD_LIQUIDITY_TOKEN_COUNTS: Final = {
+    ADD_LIQUIDITY_2_ASSETS: 2,
+    ADD_LIQUIDITY_2_ASSETS_OPTIMIZED: 2,
+    ADD_LIQUIDITY_3_ASSETS: 3,
+    ADD_LIQUIDITY_4_ASSETS: 4,
 }
 ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE = b'T\n\xb3\x85\xf9\xb5\xd4P\xa2t\x04\x17,\xaa\xdeQk;\xa3\xf4\xbe\x88#\x9a\xc5j*\xd1\xde*\x1fZ'  # noqa: E501
 REMOVE_LIQUIDITY_IMBALANCE: Final = {
