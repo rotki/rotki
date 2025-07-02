@@ -2,17 +2,16 @@
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
+import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
@@ -28,15 +27,12 @@ import { sortAssetBalances } from '@/utils/balances';
 import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
 import { type AssetBalance, type AssetBalanceWithPrice, type BigNumber, type Nullable, One } from '@rotki/common';
 
-const props = withDefaults(
-  defineProps<{
-    title: string;
-    balances: AssetBalanceWithPrice[];
-    tableType: DashboardTableType;
-    loading?: boolean;
-  }>(),
-  { loading: false },
-);
+const props = withDefaults(defineProps<{
+  title: string;
+  balances: AssetBalanceWithPrice[];
+  tableType: DashboardTableType;
+  loading?: boolean;
+}>(), { loading: false });
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -104,10 +100,6 @@ function setTablePagination(event: TablePaginationData | undefined) {
     itemsPerPage: limit,
     page,
   });
-}
-
-function getAssets(item: AssetBalanceWithPrice): string[] {
-  return item.breakdown?.map(entry => entry.asset) ?? [];
 }
 
 const sorted = computed<AssetBalanceWithPrice[]>(() => {
@@ -196,6 +188,14 @@ function redirectToManualBalance(item: AssetBalanceWithPrice) {
       },
     });
   }
+}
+
+function isRowExpandable(row: AssetBalanceWithPrice): boolean {
+  const hasBreakdown = Boolean(row.breakdown);
+  const isNativeToken = isEvmNativeToken(row.asset);
+  const hasMultipleProtocols = (row.perProtocol?.length ?? 0) > 1;
+
+  return hasBreakdown || isNativeToken || hasMultipleProtocols;
 }
 
 watch(search, () => setPage(1));
@@ -339,28 +339,15 @@ watch(search, () => setPage(1));
         </RowAppend>
       </template>
       <template #expanded-item="{ row }">
-        <EvmNativeTokenBreakdown
-          v-if="isEvmNativeToken(row.asset)"
-          show-percentage
-          :total="row.usdValue"
-          :assets="getAssets(row)"
-          :identifier="row.asset"
+        <AssetRowDetails
+          :row="row"
           :is-liability="tableType === DashboardTableType.LIABILITIES"
-          class="bg-white dark:bg-[#1E1E1E] my-2"
-        />
-        <AssetBalances
-          v-else
-          hide-total
-          v-bind="props"
-          :balances="row.breakdown ?? []"
-          all-breakdown
-          :is-liability="tableType === DashboardTableType.LIABILITIES"
-          class="bg-white dark:bg-[#1E1E1E] my-2"
+          :loading="loading"
         />
       </template>
       <template #item.expand="{ row }">
         <RuiTableRowExpander
-          v-if="row.breakdown || isEvmNativeToken(row.asset)"
+          v-if="isRowExpandable(row)"
           :expanded="expanded.includes(row)"
           @click="expanded = expanded.includes(row) ? [] : [row]"
         />

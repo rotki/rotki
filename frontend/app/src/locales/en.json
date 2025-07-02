@@ -1007,6 +1007,12 @@
   "asset_balances": {
     "loading": "Please wait while rotki queries the balances..."
   },
+  "asset_details_layout": {
+    "tab": {
+      "breakdown": "Breakdown",
+      "per_protocol": "Per Protocol"
+    }
+  },
   "asset_form": {
     "add_error": "Couldn't save asset",
     "edit_error": "Couldn't edit asset",
