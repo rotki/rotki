@@ -134,6 +134,7 @@ declare global {
     'chartjs-plugin-zoom': any;
     'VueUse': any;
     'VueUseShared': any;
+    'ECharts': any;
     'zod': any;
     'bn': any;
     'VueRouter': any;
