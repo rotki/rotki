@@ -46,7 +46,7 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
-COMPONENTS_VERSION: Final = 13
+COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
 DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
 
