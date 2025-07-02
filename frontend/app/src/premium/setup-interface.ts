@@ -24,6 +24,7 @@ import {
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { convertToTimestamp, getDateInputISOFormat } from '@/utils/date';
+import { logger } from '@/utils/logging';
 import dayjs from 'dayjs';
 
 const date: DateUtilities = {
@@ -107,6 +108,7 @@ export function usePremiumApi(): PremiumInterface {
       data: data(),
       date,
       graphs,
+      logger,
       settings: settings(),
     }),
     useHostComponents: true,

@@ -157,9 +157,20 @@ interface GetGraphApi {
   (): NewGraphApi;
 }
 
+export interface LoggerApi {
+  error: (...args: any[]) => void;
+  warn: (...args: any[]) => void;
+  info: (...args: any[]) => void;
+  debug: (...args: any[]) => void;
+  trace: (...args: any[]) => void;
+  success: (...args: any[]) => void;
+  log: (...args: any[]) => void;
+}
+
 export interface PremiumApi {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;
   readonly graphs: GetGraphApi;
+  readonly logger: LoggerApi;
 }
