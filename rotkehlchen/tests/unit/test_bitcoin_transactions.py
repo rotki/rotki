@@ -524,7 +524,7 @@ def test_p2pk(
         bitcoin_manager=bitcoin_manager,
         tx_id=(tx_id := '1db6251a9afce7025a2061a19e63c700dffc3bec368bd1883decfac353357a9d'),
         use_blockcypher=use_blockcypher,
-    ) == [HistoryEvent(
+    ) == [expected_event := HistoryEvent(
         event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_id}',
         sequence_index=0,
         timestamp=TimestampMS(1313042188000),
@@ -536,3 +536,5 @@ def test_p2pk(
         location_label=btc_accounts[0],
         notes='Send 50.00000000 BTC to 15WvMGm9qG1wDb54TMcvgzZsfvz9KdxzoN',
     )]
+
+    assert expected_event.serialize()['tx_hash'] == tx_id
