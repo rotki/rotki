@@ -9,7 +9,7 @@ import type {
 import type { ProtocolBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -37,7 +37,6 @@ interface UseBlockchainAccountDataReturn {
   getAccountDetails: (chain: string, address: string) => AccountBalances;
   getBlockchainAccounts: (chain: string) => BlockchainAccountWithBalance[];
   useAccountTags: (address: MaybeRef<string>) => ComputedRef<string[]>;
-  useAccountDetails: (chain: Ref<string>, address: Ref<string>) => ComputedRef<AccountBalances>;
   getAccountList: (accountData: Accounts, balanceData: Balances) => BlockchainAccountWithBalance[];
 }
 
@@ -98,16 +97,6 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       liabilities: [],
     };
   };
-
-  const useAccountDetails = (
-    chain: Ref<string>,
-    address: Ref<string>,
-  ): ComputedRef<AccountBalances> => computed<AccountBalances>(() => getAccountBalances(
-    get(balances),
-    get(chain),
-    get(address),
-    get(assetAssociationMap),
-  ));
 
   const getAccountDetails = (
     chain: string,
@@ -275,7 +264,6 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     getAccountList,
     getAccounts,
     getBlockchainAccounts,
-    useAccountDetails,
     useAccountTags,
   };
 }

@@ -1,3 +1,4 @@
+import type { EthBalance } from '@/types/blockchain/balances';
 import type { AssetPriceInfo } from '@/types/prices';
 import type { MaybeRef } from '@vueuse/core';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -22,7 +23,7 @@ interface UseAggregatedBalancesReturn {
   liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPrice[]>;
   assetPriceInfo: (identifier: MaybeRef<string>, groupCollection?: MaybeRef<boolean>) => ComputedRef<AssetPriceInfo>;
   assets: ComputedRef<string[]>;
-  useBlockchainBalances: (chains: MaybeRef<string[]>, address?: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
+  useBlockchainBalances: (chains: MaybeRef<string[]>, address?: MaybeRef<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPrice[]>;
   useExchangeBalances: (exchange?: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
   useLocationBreakdown: (location: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
@@ -90,11 +91,15 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       });
     });
 
-  const useBlockchainBalances = (chains: MaybeRef<string[]> = [], address?: MaybeRef<string>): ComputedRef<AssetBalanceWithPrice[]> => computed<AssetBalanceWithPrice[]>(() => {
+  const useBlockchainBalances = (
+    chains: MaybeRef<string[]> = [],
+    address?: MaybeRef<string>,
+    key: keyof EthBalance = 'assets',
+  ): ComputedRef<AssetBalanceWithPrice[]> => computed<AssetBalanceWithPrice[]>(() => {
     const selectedChains = get(chains);
     const filter = selectedChains.length > 0 ? selectedChains : undefined;
     const accountAddress = address ? get(address) : undefined;
-    const blockchain = blockchainToAssetProtocolBalances(get(blockchainBalances), 'assets', filter, accountAddress);
+    const blockchain = blockchainToAssetProtocolBalances(get(blockchainBalances), key, filter, accountAddress);
     return summarizeAssetProtocols({
       associatedAssets: get(assetAssociationMap),
       sources: { blockchain, exchanges: {}, manual: {} },
