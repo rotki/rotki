@@ -6,7 +6,7 @@ from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
@@ -35,12 +35,13 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-ASSETS_VERSION_KEY = 'assets_version'
-ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'
-ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
-ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
-FIRST_VERSION_WITH_COLLECTIONS = 16
-FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS = 4
+ASSETS_VERSION_KEY: Final = 'assets_version'
+ASSETS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'
+ASSET_COLLECTIONS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
+ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL: Final = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
+FIRST_VERSION_WITH_COLLECTIONS: Final = 16
+FIRST_GLOBAL_DB_VERSION_WITH_COLLECTIONS: Final = 4
+FIRST_VERSION_WITH_SOLANA_TOKENS: Final = 37
 
 
 def executeall(cursor: DBCursor, statements: str) -> None:
@@ -61,8 +62,8 @@ def _replace_assets_from_db(
 ) -> None:
     """Replace asset-related tables with data from source database.
 
-    Handles: token_kinds, asset_types, assets, evm_tokens, underlying_tokens_list,
-    common_asset_details, asset_collections, multiasset_mappings.
+    Handles: token_kinds, asset_types, assets, evm_tokens, solana_tokens,
+    underlying_tokens_list, common_asset_details, asset_collections, multiasset_mappings.
     """
     # First handle token_kinds & asset_types since other tables reference it
     required_tables = [
@@ -80,6 +81,12 @@ def _replace_assets_from_db(
     script_parts = ['PRAGMA foreign_keys = OFF;']
     with connection.write_ctx() as cursor:
         cursor.execute(f"ATTACH DATABASE '{sourcedb_path}' AS other_db;")
+        if (  # add solana_tokens table only if source db version supports it
+            (result := cursor.execute('SELECT value FROM other_db.settings WHERE name=?;', (ASSETS_VERSION_KEY,)).fetchone()) is not None and   # noqa: E501
+            int(result[0]) >= FIRST_VERSION_WITH_SOLANA_TOKENS
+        ):
+            required_tables.append('solana_tokens')
+
         cursor.execute(
             """SELECT COUNT(*) FROM sqlite_master
             WHERE type='table' AND name IN ({})
