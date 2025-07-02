@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AccountAssetBalances from '@/components/accounts/balances/AccountAssetBalances.vue';
-import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 
 const props = defineProps<{
   chain: string;
@@ -9,22 +9,25 @@ const props = defineProps<{
 
 const { address, chain } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
-const { useAccountDetails } = useBlockchainAccountData();
+const { useBlockchainBalances } = useAggregatedBalances();
 
-const details = useAccountDetails(chain, address);
+const chains = computed<string[]>(() => [chain.value]);
+
+const assets = useBlockchainBalances(chains, address);
+const liabilities = useBlockchainBalances(chains, address, 'liabilities');
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <AccountAssetBalances
       :title="t('common.assets')"
-      :assets="details.assets"
-      :flat="details.liabilities.length === 0"
+      :assets="assets"
+      :flat="liabilities.length === 0"
     />
     <AccountAssetBalances
-      v-if="details.liabilities.length > 0"
+      v-if="liabilities.length > 0"
       :title="t('account_balance_table.liabilities')"
-      :assets="details.liabilities"
+      :assets="liabilities"
     />
   </div>
 </template>
