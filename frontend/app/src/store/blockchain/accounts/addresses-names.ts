@@ -22,7 +22,7 @@ import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { Blockchain, isValidEthAddress } from '@rotki/common';
+import { Blockchain, isValidBtcAddress, isValidEthAddress } from '@rotki/common';
 
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
@@ -155,9 +155,26 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     items.forEach((item) => {
       const chains: string[] = item.blockchain
         ? [item.blockchain]
-        : get(supportedChains)
-            .filter(chain => !isValidEthAddress(item.address) || ['evm', 'evmlike'].includes(chain.type))
-            .map(chain => chain.id);
+        : ((): string[] => {
+            const address = item.address;
+            // Determine appropriate chains based on address type
+            if (isValidEthAddress(address)) {
+              // ETH address - check EVM and EVM-like chains
+              return get(supportedChains)
+                .filter(chain => ['evm', 'evmlike'].includes(chain.type))
+                .map(chain => chain.id);
+            }
+            else if (isValidBtcAddress(address)) {
+              // Bitcoin address - check Bitcoin chains only
+              return get(supportedChains)
+                .filter(chain => chain.type === 'bitcoin')
+                .map(chain => chain.id);
+            }
+            else {
+              // Unknown address type - check all chains as fallback
+              return get(supportedChains).map(chain => chain.id);
+            }
+          })();
 
       chains.forEach((chain) => {
         const key = createKey(item.address, chain);

@@ -18,6 +18,7 @@ import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import {
   type AddTransactionHashPayload,
+  type BitcoinChainAddress,
   type BlockchainAddress,
   type EvmChainAddress,
   OnlineHistoryEventsQueryType,
@@ -36,7 +37,7 @@ import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-que
 import { logger } from '@/utils/logging';
 import { Severity, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { groupBy, omit, partition } from 'es-toolkit';
+import { groupBy, omit } from 'es-toolkit';
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
@@ -55,7 +56,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { updateSetting } = useFrontendSettingsStore();
   const { getChain, isEvmLikeChains } = useSupportedChains();
-  const { getEvmAccounts, getEvmLikeAccounts } = useHistoryTransactionAccounts();
+  const { getBitcoinAccounts, getEvmAccounts, getEvmLikeAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const {
     decodeTransactionsTask,
@@ -74,12 +75,16 @@ export const useHistoryTransactions = createSharedComposable(() => {
   });
 
   const syncTransactionTask = async (
-    account: EvmChainAddress,
+    account: EvmChainAddress | BitcoinChainAddress,
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
     const taskType = TaskType.TX;
     const isEvm = type === TransactionChainType.EVM;
-    const blockchain = getChain(account.evmChain);
+    const isBitcoin = type === TransactionChainType.BITCOIN;
+
+    const chainName = isBitcoin ? (account as BitcoinChainAddress).chain : (account as EvmChainAddress).evmChain;
+    const blockchain = isBitcoin ? chainName : getChain(chainName);
+
     const blockchainAccount: BlockchainAddress = {
       address: account.address,
       blockchain,
@@ -91,7 +96,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     const { taskId } = await fetchTransactionsTask(defaults);
     const taskMeta = {
       address: account.address,
-      chain: account.evmChain,
+      chain: chainName,
       description: t('actions.transactions.task.description', blockchainAccount),
       isEvm,
       title: t('actions.transactions.task.title'),
@@ -103,14 +108,16 @@ export const useHistoryTransactions = createSharedComposable(() => {
     catch (error: any) {
       if (error instanceof BackendCancelledTaskError) {
         logger.debug(error);
-        removeQueryStatus(account);
+        if ('evmChain' in account) {
+          removeQueryStatus(account);
+        }
       }
       else if (!isTaskCancelled(error)) {
         notify({
           display: true,
           message: t('actions.transactions.error.description', {
             address: account.address,
-            chain: toHumanReadable(account.evmChain),
+            chain: toHumanReadable(chainName),
             error,
           }),
           title: t('actions.transactions.error.title'),
@@ -123,22 +130,38 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const syncAndReDecodeEvents = async (
-    evmChain: string,
-    accounts: EvmChainAddress[],
-    type: TransactionChainType = TransactionChainType.EVM,
+    chain: string,
+    params: ({ accounts: EvmChainAddress[]; type: TransactionChainType.EVM | TransactionChainType.EVMLIKE } |
+      { accounts: BitcoinChainAddress[]; type: TransactionChainType.BITCOIN }),
   ): Promise<void> => {
-    logger.debug(`syncing ${evmChain} transactions for ${accounts.length} addresses`);
-    await awaitParallelExecution(
-      accounts,
-      item => item.evmChain + item.address,
-      async item => syncTransactionTask(item, type),
-      2,
-    );
-    logger.debug(`queued ${evmChain} transactions for decoding`);
-    queue.queue(evmChain, async () => {
-      await decodeTransactionsTask(evmChain, type);
-      logger.debug(`finished decoding ${evmChain} transactions`);
-    });
+    const { accounts, type } = params;
+    logger.debug(`syncing ${chain} transactions for ${accounts.length} addresses`);
+    const isBitcoin = type === TransactionChainType.BITCOIN;
+
+    if (isBitcoin) {
+      await awaitParallelExecution(
+        accounts,
+        item => item.chain + item.address,
+        async item => syncTransactionTask(item, type),
+        2,
+      );
+    }
+    else {
+      await awaitParallelExecution(
+        accounts,
+        item => item.evmChain + item.address,
+        async item => syncTransactionTask(item, type),
+        2,
+      );
+    }
+
+    if (!isBitcoin) {
+      logger.debug(`queued ${chain} transactions for decoding`);
+      queue.queue(chain, async () => {
+        await decodeTransactionsTask(chain, type);
+        logger.debug(`finished decoding ${chain} transactions`);
+      });
+    }
   };
 
   const { isModuleEnabled } = useModules();
@@ -187,25 +210,47 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const refreshTransactionsHandler = async (
-    addresses: EvmChainAddress[],
-    type: TransactionChainType = TransactionChainType.EVM,
+    params: { addresses: EvmChainAddress[]; type: TransactionChainType.EVM | TransactionChainType.EVMLIKE } |
+      { addresses: BitcoinChainAddress[]; type: TransactionChainType.BITCOIN },
   ): Promise<void> => {
+    const { addresses, type } = params;
     logger.debug(`refreshing ${type} transactions for ${addresses.length} addresses`);
-    const groupedByChains = Object.entries(groupBy(addresses, account => account.evmChain)).map(
-      ([evmChain, data]) => ({
+    const isBitcoin = type === TransactionChainType.BITCOIN;
+
+    if (isBitcoin) {
+      const groupedByChains = Object.entries(
+        groupBy(addresses, account => (account).chain),
+      ).map(([chain, data]) => ({
+        chain,
         data,
-        evmChain,
-      }),
-    );
+      }));
 
-    await awaitParallelExecution(
-      groupedByChains,
-      item => item.evmChain,
-      async item => syncAndReDecodeEvents(item.evmChain, item.data, type),
-      2,
-    );
+      await awaitParallelExecution(
+        groupedByChains,
+        item => item.chain,
+        async item => syncAndReDecodeEvents(item.chain, { accounts: item.data, type }),
+        2,
+      );
+    }
+    else {
+      const groupedByChains = Object.entries(
+        groupBy(addresses, account => (account).evmChain),
+      ).map(([chain, data]) => ({
+        chain,
+        data,
+      }));
 
-    queue.queue(type, async () => fetchUndecodedTransactionsBreakdown(type));
+      await awaitParallelExecution(
+        groupedByChains,
+        item => item.chain,
+        async item => syncAndReDecodeEvents(item.chain, { accounts: item.data, type }),
+        2,
+      );
+    }
+
+    if (!isBitcoin) {
+      queue.queue(type, async () => fetchUndecodedTransactionsBreakdown(type));
+    }
 
     const isEvm = type === TransactionChainType.EVM;
     if (addresses.length > 0)
@@ -265,17 +310,31 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const evmAccounts: EvmChainAddress[] = [];
     const evmLikeAccounts: EvmChainAddress[] = [];
+    const bitcoinAccounts: BitcoinChainAddress[] = [];
+
     if (accounts && accounts.length > 0) {
-      const [evmLike, evm] = partition(accounts, account => isEvmLikeChains(account.evmChain));
-      evmAccounts.push(...evm);
-      evmLikeAccounts.push(...evmLike);
+      // Separate accounts by type
+      accounts.forEach((account) => {
+        if ('evmChain' in account) {
+          if (isEvmLikeChains(account.evmChain)) {
+            evmLikeAccounts.push(account);
+          }
+          else {
+            evmAccounts.push(account);
+          }
+        }
+        else if ('chain' in account) {
+          bitcoinAccounts.push(account);
+        }
+      });
     }
     else if (fullRefresh && !disableEvmEvents) {
       evmAccounts.push(...getEvmAccounts(chains));
       evmLikeAccounts.push(...getEvmLikeAccounts(chains));
+      bitcoinAccounts.push(...getBitcoinAccounts(chains));
     }
 
-    if (evmAccounts.length + evmLikeAccounts.length > 0) {
+    if (evmAccounts.length + evmLikeAccounts.length + bitcoinAccounts.length > 0) {
       setStatus(Status.REFRESHING);
       initializeQueryStatus(evmAccounts);
       resetUndecodedTransactionsStatus();
@@ -288,11 +347,15 @@ export const useHistoryTransactions = createSharedComposable(() => {
       const asyncOperations: Promise<void>[] = [];
 
       if (fullRefresh || (accounts && accounts.length > 0)) {
-        asyncOperations.push(refreshTransactionsHandler(evmAccounts, TransactionChainType.EVM));
+        asyncOperations.push(refreshTransactionsHandler({ addresses: evmAccounts, type: TransactionChainType.EVM }));
+      }
+
+      if (fullRefresh || (accounts && bitcoinAccounts.length > 0)) {
+        asyncOperations.push(refreshTransactionsHandler({ addresses: bitcoinAccounts, type: TransactionChainType.BITCOIN }));
       }
 
       if (fullRefresh) {
-        asyncOperations.push(refreshTransactionsHandler(evmLikeAccounts, TransactionChainType.EVMLIKE));
+        asyncOperations.push(refreshTransactionsHandler({ addresses: evmLikeAccounts, type: TransactionChainType.EVMLIKE }));
       }
 
       if (fullRefresh || disableEvmEvents || exchanges) {
@@ -334,8 +397,9 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
     catch (error: any) {
       message = error.message;
-      if (error instanceof ApiValidationError)
+      if (error instanceof ApiValidationError) {
         message = error.getValidationErrors(payload);
+      }
     }
 
     return { message, success };

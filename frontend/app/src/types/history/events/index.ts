@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { CollectionCommonFields } from '@/types/collection';
 import { EntryMeta } from '@/types/history/meta';
 import { type BigNumber, HistoryEventEntryType, NumericString } from '@rotki/common';
@@ -11,6 +12,7 @@ const LiquityStakingEventExtraData = z.object({
 export enum TransactionChainType {
   EVM = 'evm',
   EVMLIKE = 'evmlike',
+  BITCOIN = 'bitcoin',
 }
 
 export interface TransactionRequestPayload {
@@ -84,6 +86,13 @@ export const EvmChainLikeAddress = z.object({
 });
 
 export type EvmChainLikeAddress = z.infer<typeof EvmChainLikeAddress>;
+
+export const BitcoinChainAddress = z.object({
+  address: z.string(),
+  chain: z.string(),
+});
+
+export type BitcoinChainAddress = z.infer<typeof BitcoinChainAddress>;
 
 export const HistoryEventDetail = z
   .object({
