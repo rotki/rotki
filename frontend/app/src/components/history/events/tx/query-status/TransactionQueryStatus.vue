@@ -1,22 +1,21 @@
 <script lang="ts" setup>
-import type { EvmTransactionQueryData } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common';
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import TransactionQueryStatusCurrent from './TransactionQueryStatusCurrent.vue';
 import TransactionQueryStatusDetails from './TransactionQueryStatusDetails.vue';
 import TransactionQueryStatusSteps from './TransactionQueryStatusSteps.vue';
 
 const props = withDefaults(defineProps<{
-  onlyChains?: Blockchain[];
-  transactions?: EvmTransactionQueryData[];
+  onlyChains?: string[];
+  queryStatuses?: TxQueryStatusData[];
 }>(), {
   onlyChains: () => [],
-  transactions: () => [],
+  queryStatuses: () => [],
 });
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { isMdAndUp } = useBreakpoint();
-const { transactions } = toRefs(props);
+const { queryStatuses } = toRefs(props);
 
 const wrapperComponentStyle = 'height: 300px';
 const itemHeight = computed<number>(() => {
@@ -32,7 +31,7 @@ const itemStyle = computed(() => ({
   height: `${get(itemHeight)}px`,
 }));
 
-const { containerProps, list, wrapperProps } = useVirtualList(transactions, {
+const { containerProps, list, wrapperProps } = useVirtualList(queryStatuses, {
   itemHeight: get(itemHeight),
 });
 </script>
@@ -49,7 +48,7 @@ const { containerProps, list, wrapperProps } = useVirtualList(transactions, {
     />
 
     <div
-      v-if="transactions.length > 0"
+      v-if="queryStatuses.length > 0"
       v-bind="containerProps"
       :class="$style['scroll-container']"
       :style="wrapperComponentStyle"
@@ -62,7 +61,10 @@ const { containerProps, list, wrapperProps } = useVirtualList(transactions, {
           class="py-1"
         >
           <TransactionQueryStatusDetails :item="item.data" />
-          <TransactionQueryStatusSteps :item="item.data" />
+          <TransactionQueryStatusSteps
+            v-if="item.data.subtype !== 'bitcoin'"
+            :item="item.data"
+          />
         </div>
       </div>
     </div>

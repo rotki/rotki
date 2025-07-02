@@ -1,22 +1,21 @@
 <script setup lang="ts">
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import type {
-  EvmTransactionQueryData,
   EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import EventDecodingStatusDetails from '@/components/history/events/EventDecodingStatusDetails.vue';
 import HistoryEventsQueryStatus from '@/components/history/events/query-status/HistoryEventsQueryStatus.vue';
-import EvmTransactionQueryStatus from '@/components/history/events/tx/query-status/EvmTransactionQueryStatus.vue';
+import TransactionQueryStatus from '@/components/history/events/tx/query-status/TransactionQueryStatus.vue';
 
 interface HistoryQueryStatusDialogProps {
-  onlyChains?: Blockchain[];
+  onlyChains?: string[];
   locations?: string[];
-  transactions?: EvmTransactionQueryData[];
+  transactions?: TxQueryStatusData[];
   decodingStatus: EvmUnDecodedTransactionsData[];
   events?: HistoryEventsQueryData[];
-  getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
+  getKey: (item: TxQueryStatusData | HistoryEventsQueryData) => string;
   loading: boolean;
 }
 
@@ -79,9 +78,8 @@ const usedLoading = logicOr(loading, loadingDebounced);
             :locations="locations"
             :events="events"
           />
-
-          <EvmTransactionQueryStatus
-            :transactions="transactions"
+          <TransactionQueryStatus
+            :query-statuses="transactions"
             :only-chains="onlyChains"
           />
 

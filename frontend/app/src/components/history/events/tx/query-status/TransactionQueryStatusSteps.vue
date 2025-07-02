@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { toSentenceCase } from '@rotki/common';
 
-const props = defineProps<{ item: EvmTransactionQueryData }>();
+const props = defineProps<{ item: TxQueryStatusData }>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { getStatusData } = useTransactionQueryStatus();
@@ -14,15 +14,7 @@ const { isMdAndDown } = useBreakpoint();
 
 const { item } = toRefs(props);
 
-const taskMeta = computed(() => {
-  const data = get(item);
-  return {
-    address: data.address,
-    chain: data.evmChain,
-  };
-});
-
-const transactionsLoading = useIsTaskRunning(TaskType.TX, taskMeta);
+const transactionsLoading = useIsTaskRunning(TaskType.TX, item);
 
 const stepList = computed(() => [
   t('transactions.query_status.statuses.querying_transactions'),

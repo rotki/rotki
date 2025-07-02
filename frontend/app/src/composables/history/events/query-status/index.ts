@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 
-interface UseQueryStatusReturn<T extends { period?: [number, number] }> {
+interface UseQueryStatusReturn<T> {
   sortedQueryStatus: Ref<T[]>;
   queryingLength: ComputedRef<number>;
   length: ComputedRef<number>;
@@ -21,7 +21,7 @@ export function useQueryStatus<T extends { period?: [number, number] }>(
   const length = useRefMap(data, ({ length }) => length);
 
   const isQueryStatusRange = (data: T): boolean => {
-    if (data.period)
+    if ('period' in data && data.period)
       return data.period[0] > 0;
 
     return false;

@@ -130,6 +130,7 @@ export type EvmHistoryEvent = z.infer<typeof EvmHistoryEvent>;
 
 export const OnlineHistoryEvent = CommonHistoryEvent.extend({
   entryType: z.literal(HistoryEventEntryType.HISTORY_EVENT),
+  txHash: z.string().optional(),
 });
 
 export type OnlineHistoryEvent = z.infer<typeof OnlineHistoryEvent>;

@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import type {
-  EvmTransactionQueryData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common';
 import EventsCacheRefreshStatusCurrent from '@/components/history/events/EventsCacheRefreshStatusCurrent.vue';
 import EventsDecodingStatusCurrent from '@/components/history/events/EventsDecodingStatusCurrent.vue';
 import HistoryQueryStatusBar from '@/components/history/events/HistoryQueryStatusBar.vue';
@@ -21,7 +20,7 @@ const currentAction = defineModel<'decode' | 'query'>('currentAction', { require
 const props = withDefaults(defineProps<{
   colspan: number;
   loading: boolean;
-  onlyChains?: Blockchain[];
+  onlyChains?: string[];
   locations?: string[];
 }>(), {
   locations: () => [],
@@ -68,14 +67,14 @@ const show = computed(() => get(loading) || get(anyEventsDecoding) || get(receiv
 const showDebounced = refDebounced(show, 400);
 const usedShow = logicOr(show, showDebounced);
 
-function getItemKey(item: EvmTransactionQueryData | HistoryEventsQueryData) {
+function getItemKey(item: TxQueryStatusData | HistoryEventsQueryData) {
   if ('eventType' in item)
     return getEventKey(item);
 
   return getTransactionKey(item);
 }
 
-function isItemQueryFinished(item: EvmTransactionQueryData | HistoryEventsQueryData) {
+function isItemQueryFinished(item: TxQueryStatusData | HistoryEventsQueryData) {
   if ('eventType' in item)
     return isEventQueryFinished(item);
 

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
 import type { RefreshTransactionsParams } from './types';
@@ -55,7 +56,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { initializeQueryStatus, removeQueryStatus } = useTxQueryStatusStore();
   const { updateSetting } = useFrontendSettingsStore();
-  const { getChain, isEvmLikeChains } = useSupportedChains();
+  const { getChain, getChainName, isEvmLikeChains } = useSupportedChains();
   const { getBitcoinAccounts, getEvmAccounts, getEvmLikeAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const {
@@ -76,17 +77,27 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
   const syncTransactionTask = async (
     account: EvmChainAddress | BitcoinChainAddress,
-    type: TransactionChainType = TransactionChainType.EVM,
+    type: TransactionChainType,
   ): Promise<void> => {
     const taskType = TaskType.TX;
-    const isEvm = type === TransactionChainType.EVM;
-    const isBitcoin = type === TransactionChainType.BITCOIN;
 
-    const chainName = isBitcoin ? (account as BitcoinChainAddress).chain : (account as EvmChainAddress).evmChain;
-    const blockchain = isBitcoin ? chainName : getChain(chainName);
+    let blockchain: string;
+    let chainName: string;
+    const address = account.address;
+    if (type === TransactionChainType.BITCOIN && 'chain' in account) {
+      chainName = account.chain;
+      blockchain = chainName;
+    }
+    else if ('evmChain' in account) {
+      chainName = account.evmChain;
+      blockchain = getChain(chainName);
+    }
+    else {
+      throw new Error('Invalid account type');
+    }
 
     const blockchainAccount: BlockchainAddress = {
-      address: account.address,
+      address,
       blockchain,
     };
     const defaults: TransactionRequestPayload = {
@@ -95,11 +106,14 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     const { taskId } = await fetchTransactionsTask(defaults);
     const taskMeta = {
-      address: account.address,
+      address,
       chain: chainName,
-      description: t('actions.transactions.task.description', blockchainAccount),
-      isEvm,
+      description: t('actions.transactions.task.description', {
+        address,
+        chain: get(getChainName(blockchain)),
+      }),
       title: t('actions.transactions.task.title'),
+      type,
     };
 
     try {
@@ -108,16 +122,14 @@ export const useHistoryTransactions = createSharedComposable(() => {
     catch (error: any) {
       if (error instanceof BackendCancelledTaskError) {
         logger.debug(error);
-        if ('evmChain' in account) {
-          removeQueryStatus(account);
-        }
+        removeQueryStatus(account);
       }
       else if (!isTaskCancelled(error)) {
         notify({
           display: true,
           message: t('actions.transactions.error.description', {
-            address: account.address,
-            chain: toHumanReadable(chainName),
+            address,
+            chain: get(getChainName(blockchain)),
             error,
           }),
           title: t('actions.transactions.error.title'),
@@ -125,7 +137,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
       }
     }
     finally {
-      setStatus(isTaskRunning(taskType, { isEvm }) ? Status.REFRESHING : Status.LOADED);
+      setStatus(isTaskRunning(taskType, { type }) ? Status.REFRESHING : Status.LOADED);
     }
   };
 
@@ -252,9 +264,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
       queue.queue(type, async () => fetchUndecodedTransactionsBreakdown(type));
     }
 
-    const isEvm = type === TransactionChainType.EVM;
     if (addresses.length > 0)
-      setStatus(isTaskRunning(TaskType.TX, { isEvm }) ? Status.REFRESHING : Status.LOADED);
+      setStatus(isTaskRunning(TaskType.TX, { type }) ? Status.REFRESHING : Status.LOADED);
     logger.debug(`finished refreshing ${type} transactions for ${addresses.length} addresses`);
   };
 
@@ -386,9 +397,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
   };
 
-  const addTransactionHash = async (
-    payload: AddTransactionHashPayload,
-  ): Promise<ActionStatus<ValidationErrors | string>> => {
+  const addTransactionHash = async (payload: AddTransactionHashPayload): Promise<ActionStatus<ValidationErrors | string>> => {
     let success = false;
     let message: ValidationErrors | string = '';
     try {

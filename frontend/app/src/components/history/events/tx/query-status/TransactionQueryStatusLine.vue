@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
-defineProps<{ item: EvmTransactionQueryData }>();
+defineProps<{ item: TxQueryStatusData }>();
 
 const { getItemTranslationKey, getLabel } = useTransactionQueryStatus();
 </script>
@@ -25,16 +25,22 @@ const { getItemTranslationKey, getLabel } = useTransactionQueryStatus();
       <div class="font-bold text-no-wrap">
         <HashLink
           :text="item.address"
-          :location="item.evmChain"
+          :location="item.chain"
         />
       </div>
     </template>
-    <template #start>
+    <template
+      v-if="item.subtype !== 'bitcoin' && item.period"
+      #start
+    >
       <div class="font-bold text-no-wrap">
         <DateDisplay :timestamp="item.period[0]" />
       </div>
     </template>
-    <template #end>
+    <template
+      v-if="item.subtype !== 'bitcoin' && item.period"
+      #end
+    >
       <div class="font-bold text-no-wrap">
         <DateDisplay :timestamp="item.period[1]" />
       </div>

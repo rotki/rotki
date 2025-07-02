@@ -606,11 +606,11 @@
     "transactions": {
       "error": {
         "description": "Failed query for {address} ({chain}): {error}",
-        "title": "Evm Transactions Query"
+        "title": "Blockchain Transactions Query"
       },
       "task": {
         "description": "Retrieving txns for {address} ({chain})",
-        "title": "Evm Transactions"
+        "title": "Blockchain Transactions"
       }
     },
     "transactions_redecode": {
@@ -3195,7 +3195,7 @@
       "done_end_date": "Done querying all transactions for {address} until {end}",
       "done_group": "Done querying all transactions information for {count} address | Done querying all transactions information for {count} addresses",
       "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying evm transactions information for {count} address | Querying evm transactions information for {count} addresses",
+      "group": "Querying transactions information for {count} address | Querying evm transactions information for {count} addresses",
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "statuses": {
@@ -3203,7 +3203,7 @@
         "querying_internal_transactions": "evm internal transactions",
         "querying_transactions": "evm transactions"
       },
-      "title": "Evm Transactions Κατάσταση ερωτήματος"
+      "title": "Transactions Κατάσταση ερωτήματος"
     },
     "query_status_events": {
       "date_range": "Αναζήτηση συμβάντων για {name} μεταξύ {start} και {end}",

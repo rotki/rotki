@@ -1,39 +1,37 @@
-import type { EvmChainAddress } from '@/types/history/events/index';
+import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useQueryStatusStore } from '@/store/history/query-status/index';
-import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
+import {
+  TransactionsQueryStatus,
+  type UnifiedTransactionStatusData,
+} from '@/types/websocket-messages';
+
+export interface TxQueryStatusData {
+  address: string;
+  chain: string;
+  status: TransactionsQueryStatus;
+  subtype: 'evm' | 'evmlike' | 'bitcoin';
+  period?: [number, number];
+}
 
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
-  const createKey = ({ address, evmChain }: EvmChainAddress): string => address + evmChain;
+  const { getChain } = useSupportedChains();
 
-  const isStatusFinished = (item: EvmTransactionQueryData): boolean =>
-    item.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+  const createKey = ({ address, chain }: { address: string; chain: string }): string => address + chain;
+
+  const isStatusFinished = (item: TxQueryStatusData): boolean => {
+    if (item.subtype === 'bitcoin') {
+      return item.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
+    }
+    return item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+  };
 
   const {
     isAllFinished,
     queryStatus,
     removeQueryStatus: remove,
     resetQueryStatus,
-  } = useQueryStatusStore<EvmTransactionQueryData>(isStatusFinished, createKey);
-
-  const setQueryStatus = (data: EvmTransactionQueryData): void => {
-    const status = { ...get(queryStatus) };
-    const key = createKey(data);
-
-    if (data.status === EvmTransactionsQueryStatus.ACCOUNT_CHANGE)
-      return;
-
-    if (data.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED) {
-      status[key] = {
-        ...data,
-        status: EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS,
-      };
-    }
-    else {
-      status[key] = data;
-    }
-
-    set(queryStatus, status);
-  };
+  } = useQueryStatusStore<TxQueryStatusData>(isStatusFinished, createKey);
 
   const initializeQueryStatus = (data: EvmChainAddress[]): void => {
     resetQueryStatus();
@@ -41,18 +39,62 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     const status = { ...get(queryStatus) };
     const now = Date.now() / 1000;
     for (const item of data) {
-      const key = createKey(item);
+      const chain = getChain(item.evmChain);
+      const key = createKey({ address: item.address, chain });
       status[key] = {
-        ...item,
+        address: item.address,
+        chain,
         period: [0, now],
-        status: EvmTransactionsQueryStatus.ACCOUNT_CHANGE,
+        status: TransactionsQueryStatus.ACCOUNT_CHANGE,
+        subtype: 'evm' as const,
       };
     }
     set(queryStatus, status);
   };
 
-  const removeQueryStatus = (data: EvmChainAddress): void => {
-    remove(createKey(data));
+  const removeQueryStatus = (data: EvmChainAddress | BitcoinChainAddress): void => {
+    if ('evmChain' in data) {
+      const chain = getChain(data.evmChain);
+      remove(createKey({ address: data.address, chain }));
+    }
+    else {
+      remove(createKey({ address: data.address, chain: data.chain }));
+    }
+  };
+
+  const setUnifiedTxQueryStatus = (data: UnifiedTransactionStatusData): void => {
+    if (data.status === TransactionsQueryStatus.ACCOUNT_CHANGE) {
+      return;
+    }
+
+    const status = { ...get(queryStatus) };
+    const chain = data.chain.toLowerCase();
+
+    // Convert bitcoin transactions (with addresses array) to individual entries
+    if (data.subtype === 'bitcoin') {
+      for (const address of data.addresses) {
+        const key = createKey({ address, chain });
+        status[key] = {
+          address,
+          chain,
+          status: data.status,
+          subtype: 'bitcoin' as const,
+        };
+      }
+    }
+    else {
+      // Handle EVM/EvmLike transactions (with single address)
+      const key = createKey({ address: data.address, chain });
+      status[key] = {
+        address: data.address,
+        chain,
+        period: data.period,
+        status: data.status,
+        subtype: data.subtype,
+      };
+    }
+
+    set(queryStatus, status);
   };
 
   return {
@@ -62,7 +104,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     queryStatus,
     removeQueryStatus,
     resetQueryStatus,
-    setQueryStatus,
+    setUnifiedTxQueryStatus,
   };
 });
 

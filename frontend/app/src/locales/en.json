@@ -855,11 +855,11 @@
     "transactions": {
       "error": {
         "description": "Failed query for {address} ({chain}): {error}",
-        "title": "Evm Transactions Query"
+        "title": "Blockchain Transactions Query"
       },
       "task": {
         "description": "Retrieving txns for {address} ({chain})",
-        "title": "Evm Transactions"
+        "title": "Blockchain Transactions"
       }
     },
     "transactions_redecode": {
@@ -4760,17 +4760,22 @@
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
       "done_end_date": "Done querying all transactions for {address} until {end}",
       "done_group": "Done querying all transactions information for {count} address | Done querying all transactions information for {count} addresses",
+      "done_querying": "Done querying all transactions for {address}",
       "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying evm transactions information for {count} address | Querying evm transactions information for {count} addresses",
+      "group": "Querying transactions information for {count} address | Querying transactions information for {count} addresses",
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
+      "start_decoding": "Decoding transactions for {address}",
+      "start_querying": "Querying transactions for {address}",
       "statuses": {
-        "pending": "Pending",
+        "pending": "pending",
         "querying_evm_tokens_transactions": "evm tokens transactions",
+        "querying_finished": "finished",
         "querying_internal_transactions": "evm internal transactions",
+        "querying_started": "started",
         "querying_transactions": "evm transactions"
       },
-      "title": "Evm Transactions Query Status"
+      "title": "Transactions Query Status"
     },
     "query_status_events": {
       "date_range": "Querying events for {name} between {start} and {end}",
