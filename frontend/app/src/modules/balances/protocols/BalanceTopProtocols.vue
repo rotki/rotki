@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { ProtocolBalance } from '@rotki/common';
-import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
+import ProtocolTooltipIcon from '@/modules/balances/protocols/ProtocolTooltipIcon.vue';
 
 const props = withDefaults(defineProps<{
   protocols: ProtocolBalance[];
@@ -23,7 +23,7 @@ const showMore = computed<number>(() => get(protocols).length - get(visible));
     class="flex justify-end pl-2"
   >
     <!-- Single protocol: no tooltip, no overlap -->
-    <ProtocolIcon
+    <ProtocolTooltipIcon
       v-if="protocols.length === 1"
       :protocol-balance="protocols[0]"
       :asset="asset"
@@ -32,7 +32,7 @@ const showMore = computed<number>(() => get(protocols).length - get(visible));
 
     <!-- Multiple protocols: with tooltips and overlap -->
     <template v-else>
-      <ProtocolIcon
+      <ProtocolTooltipIcon
         v-for="protocolBalance in protocols.slice(0, visible)"
         :key="protocolBalance.protocol"
         :protocol-balance="protocolBalance"

@@ -5,11 +5,11 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useLocations } from '@/composables/locations';
 import { toSentenceCase } from '@rotki/common';
 
-interface ImageProtocol { image: string; type: 'image'; name: string }
+export interface ImageProtocol { image: string; type: 'image'; name: string }
 
-interface IconProtocol { icon: string; type: 'icon'; name: string }
+export interface IconProtocol { icon: string; type: 'icon'; name: string }
 
-type ProtocolData = ImageProtocol | IconProtocol | undefined;
+export type ProtocolData = ImageProtocol | IconProtocol | undefined;
 
 interface UseProtocolDataReturn { protocolData: ComputedRef<ProtocolData> }
 
