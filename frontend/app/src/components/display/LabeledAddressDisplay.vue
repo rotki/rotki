@@ -50,10 +50,15 @@ const aliasName = computed<string>(() => {
 
   const accountData = get(account);
   const chain = getChain(accountData);
+  const labelVal = get(label);
+
+  if (accountData.data.type === 'xpub') {
+    return labelVal;
+  }
   const name = get(addressNameSelector(get(accountAddress), chain));
 
   if (!name)
-    return get(label);
+    return labelVal;
 
   return name;
 });
