@@ -165,12 +165,3 @@ export const customTimeframe: Timeframe = {
   timestampRange: -1,
   xAxisStepSize: 1,
 };
-
-export interface TooltipDisplayOption {
-  visible: boolean;
-  id: string;
-  left: number;
-  top: number;
-  xAlign: string;
-  yAlign: string;
-}

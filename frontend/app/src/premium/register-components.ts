@@ -8,7 +8,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
-import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import MissingDailyPrices from '@/components/graphs/MissingDailyPrices.vue';
 import NewGraphTooltipWrapper from '@/components/graphs/NewGraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -115,7 +114,7 @@ export function registerComponents(app: App): void {
   app.component('ExportSnapshotDialog', ExportSnapshotDialog);
   // Version 18 - 1.25
   app.component('MenuTooltipButton', MenuTooltipButton);
-  app.component('GraphTooltipWrapper', GraphTooltipWrapper);
+  // 'GraphTooltipWrapper' removed at 1.40
   // Version 19 - 1.26
   // LpPoolIcon was removed at 1.37
   // Version 20 - 1.27
