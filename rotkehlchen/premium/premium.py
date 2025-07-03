@@ -48,7 +48,7 @@ class RemoteMetadata(NamedTuple):
 
 COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
-DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST, HTTPStatus.CREATED)
 NEST_API_ENDPOINTS: Final = ('backup', 'devices')
 
 
@@ -212,7 +212,7 @@ class Premium:
         try:
             response = self.session.get(
                 f'{self.rotki_nest}{(method := "devices")}',
-                data=self.sign(method=method),
+                params=self.sign(method=method),
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
@@ -266,16 +266,17 @@ class Premium:
         try:
             response = self.session.put(
                 url=f'{self.rotki_nest}{(method := "devices")}',
-                data=self.sign(
+                json=self.sign(
                     method=method,
                     device_identifier=device_id,
                     device_name=platform.system(),
                 ),
+                headers={'Content-Type': 'application/json'},
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
-        return _process_dict_response(response)
+        check_response_status_code(response=response, status_codes=DEFAULT_OK_CODES)
 
     def delete_device(self, device_id: str) -> None:
         """Deletes a device for the user from the rotki server
