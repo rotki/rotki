@@ -2,7 +2,7 @@ import type { NetValue } from '@rotki/common';
 import type { EChartsOption, LineSeriesOption, XAXisComponentOption, YAXisComponentOption } from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
 import type { ComputedRef, Ref } from 'vue';
-import { useNewGraph } from '@/composables/graphs';
+import { useGraph } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface AxisConfig {
@@ -28,7 +28,7 @@ export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueCha
   });
 
   const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
-  const { baseColor, gradient } = useNewGraph();
+  const { baseColor, gradient } = useGraph();
 
   const createSliderZoomOptions = (): DataZoomComponentOption => ({
     handleSize: 20,

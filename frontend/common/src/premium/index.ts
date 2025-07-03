@@ -45,13 +45,8 @@ export interface StatisticsApi {
 
 export interface DateUtilities {
   epoch: () => number;
-  format: (date: string, oldFormat: string, newFormat: string) => string;
-  now: (format: string) => string;
   epochToFormat: (epoch: number, format: string) => string;
-  dateToEpoch: (date: string, format: string) => number;
   epochStartSubtract: (amount: number, unit: TimeUnit) => number;
-  toUserSelectedFormat: (timestamp: number) => string;
-  getDateInputISOFormat: (format: string) => string;
   convertToTimestamp: (date: string, dateFormat?: string) => number;
 }
 
@@ -135,27 +130,7 @@ export interface NewGraphApi {
   secondaryColor: ComputedRef<string>;
 }
 
-export interface GraphApi {
-  getCanvasCtx: () => CanvasRenderingContext2D;
-  baseColor: ComputedRef<string>;
-  gradient: ComputedRef<CanvasGradient>;
-  secondaryColor: ComputedRef<string>;
-  backgroundColor: ComputedRef<string>;
-  fontColor: ComputedRef<string>;
-  gridColor: ComputedRef<string>;
-}
-
-interface GetGraphApi {
-  /**
-   * Initializes and returns an instance of GraphApi for a specified canvas element.
-   *
-   * @param {string} canvasId - The ID of the canvas element where the graph will be rendered.
-   * @returns {GraphApi} An instance of the GraphApi that provides methods to interact with the graph.
-   * @deprecated
-   */
-  (canvasId: string): GraphApi;
-  (): NewGraphApi;
-}
+type GetGraphApi = () => NewGraphApi;
 
 export interface LoggerApi {
   error: (...args: any[]) => void;

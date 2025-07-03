@@ -1,8 +1,6 @@
 import type { Ref } from 'vue';
 import { useDarkMode } from '@/composables/dark-mode';
-import { assert, type BigNumber, type GradientArea, type GraphApi, type NewGraphApi, Zero } from '@rotki/common';
-import { Chart, registerables } from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
+import { type BigNumber, type GradientArea, type NewGraphApi, Zero } from '@rotki/common';
 import { LineChart, PieChart } from 'echarts/charts';
 import { DataZoomComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import { use } from 'echarts/core';
@@ -19,14 +17,9 @@ export function initGraph(): void {
     PieChart,
     LegendComponent,
   ]);
-
-  // chart.js
-  Chart.defaults.font.family = 'Roboto';
-  Chart.register(...registerables);
-  Chart.register(zoomPlugin);
 }
 
-export function useNewGraph(): NewGraphApi {
+export function useGraph(): NewGraphApi {
   const { isDark } = useRotkiTheme();
   const { store } = useRotkiTheme();
   const { usedTheme } = useDarkMode();
@@ -101,49 +94,5 @@ export function useGraphTooltip(): UseGraphTooltipReturn {
   return {
     resetTooltipData,
     tooltipData,
-  };
-}
-
-export function useGraph(canvasId: string): GraphApi {
-  const getCanvasCtx = (): CanvasRenderingContext2D => {
-    const canvas = document.getElementById(canvasId);
-    assert(canvas && canvas instanceof HTMLCanvasElement, 'Canvas could not be found');
-    const context = canvas.getContext('2d');
-    assert(context, 'Context could not be found');
-    return context;
-  };
-
-  const { isDark } = useRotkiTheme();
-
-  const { usedTheme } = useDarkMode();
-
-  const white = '#ffffff';
-  const secondaryBlack = '#3f1300';
-
-  const baseColor = computed(() => get(usedTheme).graph);
-  const fadeColor = computed(() => (get(isDark) ? '#1e1e1e' : white));
-
-  const gradient = computed(() => {
-    const context = getCanvasCtx();
-    const areaGradient = context.createLinearGradient(0, 0, 0, context.canvas.height * 0.5 || 300);
-    areaGradient.addColorStop(0, get(baseColor));
-    areaGradient.addColorStop(1, `${get(fadeColor)}00`);
-    return areaGradient;
-  });
-
-  const secondaryColor = computed(() => (get(isDark) ? white : secondaryBlack));
-  const backgroundColor = computed(() => (!get(isDark) ? white : secondaryBlack));
-
-  const fontColor = computed(() => (get(isDark) ? 'rgba(255,255,255,.5)' : 'rgba(0,0,0,.7)'));
-  const gridColor = computed(() => (get(isDark) ? '#555' : '#ddd'));
-
-  return {
-    backgroundColor,
-    baseColor,
-    fontColor,
-    getCanvasCtx,
-    gradient,
-    gridColor,
-    secondaryColor,
   };
 }
