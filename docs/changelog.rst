@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix the notification error where it can't query alias names for the xpub address.
 * :bug:`-` Fix the asset name appearing as "undefined" in the on-chain transaction history.
 * :bug:`-` Fix division by zero error when querying price for LP tokens of empty curve pools.
 * :bug:`10149` Users will now be able to update the historical price within the swap event form.
