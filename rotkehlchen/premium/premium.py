@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Final, Literal, NamedTuple, cast
+from typing import Any, Final, Literal, NamedTuple
 from urllib.parse import urlencode
 
 import machineid
@@ -48,7 +48,12 @@ class RemoteMetadata(NamedTuple):
 
 COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
-DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST, HTTPStatus.CREATED)
+DEFAULT_OK_CODES: Final = (
+    HTTPStatus.OK,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.CREATED,
+)
 NEST_API_ENDPOINTS: Final = ('backup', 'devices')
 
 
@@ -229,33 +234,39 @@ class Premium:
         - RemoteError
         - PremiumAuthenticationError: when the device can't be registered
         """
-        device_data = self.get_remote_devices_information()
-        try:
-            num_devices, devices_limit = len(device_data['devices']), device_data['limit']
-        except KeyError as e:
-            raise RemoteError(
-                f'Could not fetch the list of devices due to missing key {e}',
-            ) from e
-
         device_id = machineid.hashed_id(self.username)
 
-        for device in device_data['devices']:
-            device = cast('dict[str, str]', device)
-            if (remote_id := device.get('device_identifier')) == device_id:
-                break
-            if remote_id is None:
-                log.error(f'Remote device {device} has no identifier in the server response')
-        else:  # device not found
-            if num_devices < devices_limit:
-                # try to register the device
-                self._register_new_device(device_id)
-            else:
-                # user has to edit his devices
-                raise PremiumAuthenticationError(
-                    f'The limit of {devices_limit} devices has been reached',
-                )
+        # Check if device is already registered
+        try:
+            response = self.session.post(
+                url=f'{self.rotki_nest}devices/check',
+                json=self.sign(
+                    method='devices',
+                    device_identifier=device_id,
+                ),
+                headers={'Content-Type': 'application/json'},
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to check device registration due to: {e}') from e
 
-    def _register_new_device(self, device_id: str) -> dict:
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            raise PremiumAuthenticationError('Premium credentials not valid')
+
+        if response.status_code == HTTPStatus.OK:
+            # Device is already registered
+            return
+
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            # Device is not registered, try to register it
+            self._register_new_device(device_id)
+        else:
+            # Unexpected status code
+            check_response_status_code(
+                response=response,
+                status_codes=[HTTPStatus.OK, HTTPStatus.NOT_FOUND],
+            )
+
+    def _register_new_device(self, device_id: str) -> None:
         """
         Register a new device at the rotki server using the provided id.
         May raise:
@@ -269,7 +280,8 @@ class Premium:
                 json=self.sign(
                     method=method,
                     device_identifier=device_id,
-                    device_name=platform.system(),
+                    device_name='neto',
+                    platform=platform.system()
                 ),
                 headers={'Content-Type': 'application/json'},
             )
