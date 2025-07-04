@@ -1,4 +1,4 @@
-import type { EvmHistoryEvent } from '@/types/history/events';
+import type { EvmHistoryEvent } from '@/types/history/events/schemas';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
 import { setupDayjs } from '@/utils/date';

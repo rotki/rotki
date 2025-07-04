@@ -1,5 +1,5 @@
 import type { AssetMap } from '@/types/asset';
-import type { EthWithdrawalEvent } from '@/types/history/events';
+import type { EthWithdrawalEvent } from '@/types/history/events/schemas';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEvents } from '@/composables/history/events';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';

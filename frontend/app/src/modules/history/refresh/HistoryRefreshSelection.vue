@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData, RefreshChainAddress } from '@/modules/history/refresh/types';
 import type { Exchange } from '@/types/exchanges';
-import type { OnlineHistoryEventsQueryType } from '@/types/history/events';
+import type { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';

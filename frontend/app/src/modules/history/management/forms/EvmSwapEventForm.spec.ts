@@ -1,5 +1,5 @@
 import type { GroupAddEventData, GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { AddEvmSwapEventPayload, EditEvmSwapEventPayload, EvmSwapEvent } from '@/types/history/events';
+import type { AddEvmSwapEventPayload, EditEvmSwapEventPayload, EvmSwapEvent } from '@/types/history/events/schemas';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { Pinia } from 'pinia';
 import { useAssetInfoApi } from '@/composables/api/assets/info';

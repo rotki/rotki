@@ -2,7 +2,7 @@
 import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events';
+import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { useFormStateWatcher } from '@/composables/form';

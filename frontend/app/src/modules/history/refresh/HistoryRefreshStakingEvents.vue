@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { OnlineHistoryEventsQueryType } from '@/types/history/events';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { getTextToken, toHumanReadable } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
 

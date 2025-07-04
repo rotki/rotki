@@ -1,6 +1,6 @@
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
-import type { HistoryEvent, HistoryEventRow } from '@/types/history/events';
+import type { HistoryEvent, HistoryEventRow } from '@/types/history/events/schemas';
 import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type * as Vue from 'vue';

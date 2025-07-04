@@ -1,5 +1,5 @@
 import type { AssetMap } from '@/types/asset';
-import type { OnlineHistoryEvent } from '@/types/history/events';
+import type { OnlineHistoryEvent } from '@/types/history/events/schemas';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEvents } from '@/composables/history/events';

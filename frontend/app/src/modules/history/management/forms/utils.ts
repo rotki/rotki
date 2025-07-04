@@ -1,4 +1,4 @@
-import type { EvmSwapEvent, SwapSubEventModel } from '@/types/history/events';
+import type { EvmSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
 
 export function toSubEvent(event: EvmSwapEvent): Required<SwapSubEventModel> {
   return {

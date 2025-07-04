@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events';
+import type { AssetMovementEvent, HistoryEventEntry, OnlineHistoryEvent } from '@/types/history/events/schemas';
 import type { Blockchain } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';

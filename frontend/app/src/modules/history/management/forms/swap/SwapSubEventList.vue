@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SwapSubEventModel } from '@/types/history/events';
+import type { SwapSubEventModel } from '@/types/history/events/schemas';
 import SwapSubEvent from '@/modules/history/management/forms/swap/SwapSubEvent.vue';
 
 const modelValue = defineModel<SwapSubEventModel[]>({ required: true });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ActionStatus } from '@/types/action';
-import type { NewHistoryEventPayload } from '@/types/history/events';
+import type { NewHistoryEventPayload } from '@/types/history/events/schemas';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 import type { Validation } from '@vuelidate/core';
 import AmountInput from '@/components/inputs/AmountInput.vue';

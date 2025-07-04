@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEventRef,

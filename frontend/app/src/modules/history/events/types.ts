@@ -1,4 +1,4 @@
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 
 interface HistoryEventIgnorePayload {
   readonly type: 'ignore';

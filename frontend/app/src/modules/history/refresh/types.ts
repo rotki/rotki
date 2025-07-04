@@ -1,5 +1,6 @@
 import type { Exchange } from '@/types/exchanges';
-import type { BitcoinChainAddress, EvmChainAddress, OnlineHistoryEventsQueryType } from '@/types/history/events';
+import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import type { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 export type RefreshChainAddress = EvmChainAddress | BitcoinChainAddress;
 

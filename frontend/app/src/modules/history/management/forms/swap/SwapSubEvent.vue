@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SwapSubEventModel } from '@/types/history/events';
+import type { SwapSubEventModel } from '@/types/history/events/schemas';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';

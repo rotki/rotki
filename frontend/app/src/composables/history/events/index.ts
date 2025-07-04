@@ -8,7 +8,7 @@ import type {
   HistoryEventRow,
   HistoryEventsCollectionResponse,
   ModifyHistoryEventPayload,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import type { MaybeRef } from '@vueuse/core';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';

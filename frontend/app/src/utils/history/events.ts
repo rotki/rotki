@@ -10,7 +10,7 @@ import {
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
   type OnlineHistoryEvent,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
