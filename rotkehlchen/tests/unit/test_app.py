@@ -2,9 +2,12 @@ from unittest import mock
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.errors.misc import SystemPermissionError
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, SUPPORTED_EXCHANGES
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
 from rotkehlchen.types import Location
 
@@ -62,3 +65,36 @@ def test_initializing_rotki_with_datadir_with_wrong_permissions(mock_os_access, 
         success = False
 
     assert success is True
+
+
+def test_solana_tokens_migration_notification(uninitialized_rotkehlchen):
+    """Test that Solana tokens migration notification is sent when table exists"""
+    rotki = uninitialized_rotkehlchen
+    rotki.msg_aggregator.rotki_notifier = MockRotkiNotifier()
+
+    # Create user_added_solana_tokens table in globaldb
+    with GlobalDBHandler().conn.write_ctx() as cursor:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS user_added_solana_tokens (
+                identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE
+            )
+        """)
+        cursor.execute("INSERT INTO user_added_solana_tokens VALUES ('token1'), ('token2')")
+
+    # Mock greenlet spawning to avoid background tasks
+    with mock.patch.object(rotki.greenlet_manager, 'spawn_and_track'):
+        # Unlock user
+        rotki.unlock_user(
+            user='testuser',
+            password='123',
+            create_new=True,
+            sync_approval='unknown',
+            premium_credentials=None,
+            resume_from_backup=False,
+        )
+
+    # Check notification
+    messages = rotki.msg_aggregator.rotki_notifier.messages
+    assert len(messages) == 1
+    assert messages[0].message_type == WSMessageType.SOLANA_TOKENS_MIGRATION
+    assert messages[0].data == {'identifiers': ['token1', 'token2']}
