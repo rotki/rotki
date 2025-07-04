@@ -18,17 +18,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.fixture(name='monerium_credentials')
-def _fixture_monerium_credentials(database):
-    """Input mock monerium credentials to the DB for testing"""
-    with database.user_write() as write_cursor:
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
-            'VALUES(?, ?, ?)',
-            (ExternalService.MONERIUM.name.lower(), 'mockuser', 'mockpassword'),
-        )
-
-
 def mock_monerium_and_run_periodic_task(task_manager, contents):
     def mock_monerium(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, contents)

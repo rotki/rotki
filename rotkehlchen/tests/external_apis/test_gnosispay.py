@@ -16,18 +16,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
-
-
-@pytest.fixture(name='gnosispay_credentials')
-def _fixture_gnosispay_credentials(database):
-    """Input mock monerium credentials to the DB for testing"""
-    with database.user_write() as write_cursor:
-        write_cursor.execute(
-            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
-            'VALUES(?, ?, ?)',
-            (ExternalService.GNOSIS_PAY.name.lower(), 'token', None),
-        )
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
 def mock_gnosispay_and_run_periodic_task(task_manager, contents):
