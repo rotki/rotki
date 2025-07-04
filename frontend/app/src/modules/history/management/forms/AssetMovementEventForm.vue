@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events';
+import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events/schemas';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events';
+import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events/schemas';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';

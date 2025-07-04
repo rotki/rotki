@@ -724,11 +724,11 @@
     "transactions": {
       "error": {
         "description": "Échec de la requête pour {address} ({chain}) : {error}",
-        "title": "Requête des transactions Evm"
+        "title": "Requête des transactions Blockchain"
       },
       "task": {
         "description": "Récupération des transactions pour {address} ({chain})",
-        "title": "Transactions Evm"
+        "title": "Transactions Blockchain"
       }
     },
     "transactions_redecode": {
@@ -3720,7 +3720,7 @@
       "done_end_date": "Requête terminée pour toutes les transactions pour {address} jusqu'à {end}",
       "done_group": "Requête terminée pour toutes les informations de transaction pour {count} adresse | Requête terminée pour toutes les informations de transaction pour {count} adresses",
       "end_date": "Requête {status} pour {address} jusqu'à {end}",
-      "group": "Requête d'informations de transaction EVM pour {count} adresse | Requête d'informations de transaction EVM pour {count} adresses",
+      "group": "Requête d'informations de transaction pour {count} adresse | Requête d'informations de transaction EVM pour {count} adresses",
       "latest_period_date_range": "Période de requête réussie la plus récente est entre {start} et {end}",
       "latest_period_end_date": "Période de requête réussie la plus récente est jusqu'à {end}",
       "statuses": {
@@ -3728,7 +3728,7 @@
         "querying_internal_transactions": "transactions internes EVM",
         "querying_transactions": "transactions EVM"
       },
-      "title": "Statut de la requête de transactions EVM"
+      "title": "Statut de la requête de transactions"
     },
     "query_status_events": {
       "date_range": "Requête d'événements pour {name} entre {start} et {end}",

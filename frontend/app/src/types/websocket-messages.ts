@@ -1,5 +1,5 @@
 import { CalendarEventWithReminder } from '@/types/history/calendar';
-import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
+import { EvmChainLikeAddress } from '@/types/history/events';
 import { Blockchain, CommonQueryStatusData, type MaybePromise, type Notification } from '@rotki/common';
 import { z } from 'zod/v4';
 
@@ -18,8 +18,10 @@ const BalanceSnapshotError = z.object({
   location: z.string(),
 });
 
-export const EvmTransactionsQueryStatus = {
+export const TransactionsQueryStatus = {
   ACCOUNT_CHANGE: 'account_change',
+  DECODING_TRANSACTIONS_FINISHED: 'decoding_transactions_finished',
+  DECODING_TRANSACTIONS_STARTED: 'decoding_transactions_started',
   QUERYING_EVM_TOKENS_TRANSACTIONS: 'querying_evm_tokens_transactions',
   QUERYING_INTERNAL_TRANSACTIONS: 'querying_internal_transactions',
   QUERYING_TRANSACTIONS: 'querying_transactions',
@@ -27,7 +29,7 @@ export const EvmTransactionsQueryStatus = {
   QUERYING_TRANSACTIONS_STARTED: 'querying_transactions_started',
 } as const;
 
-export type EvmTransactionsQueryStatus = (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
+export type TransactionsQueryStatus = (typeof TransactionsQueryStatus)[keyof typeof TransactionsQueryStatus];
 
 export const SocketMessageProgressUpdateSubType = {
   CSV_IMPORT_RESULT: 'csv_import_result',
@@ -41,11 +43,25 @@ export const SocketMessageProgressUpdateSubType = {
 
 export type SocketMessageProgressUpdateSubType = (typeof SocketMessageProgressUpdateSubType)[keyof typeof SocketMessageProgressUpdateSubType];
 
-export const EvmTransactionQueryData = z.object({
+export const EvmTransactionStatusData = z.object({
+  address: z.string(),
+  chain: z.string(),
   period: z.tuple([z.number(), z.number()]),
-  status: z.enum(EvmTransactionsQueryStatus),
-  ...EvmChainAddress.shape,
+  status: z.enum(TransactionsQueryStatus),
+  subtype: z.literal('evm').or(z.literal('evmlike')),
 });
+
+export const BitcoinTransactionStatusData = z.object({
+  addresses: z.array(z.string()),
+  chain: z.string(),
+  status: z.enum(TransactionsQueryStatus),
+  subtype: z.literal('bitcoin'),
+});
+
+export const UnifiedTransactionStatusData = z.union([
+  EvmTransactionStatusData,
+  BitcoinTransactionStatusData,
+]);
 
 export const EvmUnDecodedTransactionsData = CommonQueryStatusData.extend({
   chain: z.string(),
@@ -92,7 +108,7 @@ export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
 export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
 
-export type EvmTransactionQueryData = z.infer<typeof EvmTransactionQueryData>;
+export type UnifiedTransactionStatusData = z.infer<typeof UnifiedTransactionStatusData>;
 
 export const PremiumStatusUpdateData = z.object({
   expired: z.boolean(),
@@ -247,7 +263,6 @@ export const SocketMessageType = {
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DB_UPLOAD_RESULT: 'database_upload_result',
   EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',
-  EVM_TRANSACTION_STATUS: 'evm_transaction_status',
   EXCHANGE_UNKNOWN_ASSET: 'exchange_unknown_asset',
   GNOSISPAY_SESSIONKEY_EXPIRED: 'gnosispay_sessionkey_expired',
   HISTORY_EVENTS_STATUS: 'history_events_status',
@@ -257,6 +272,7 @@ export const SocketMessageType = {
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   PROGRESS_UPDATES: 'progress_updates',
   REFRESH_BALANCES: 'refresh_balances',
+  TRANSACTION_STATUS: 'transaction_status',
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];
@@ -276,9 +292,9 @@ const BalancesSnapshotErrorMessage = z.object({
   type: z.literal(SocketMessageType.BALANCES_SNAPSHOT_ERROR),
 });
 
-const EvmTransactionStatusMessage = z.object({
-  data: EvmTransactionQueryData,
-  type: z.literal(SocketMessageType.EVM_TRANSACTION_STATUS),
+const TransactionStatusMessage = z.object({
+  data: UnifiedTransactionStatusData,
+  type: z.literal(SocketMessageType.TRANSACTION_STATUS),
 });
 
 const HistoryEventsStatusMessage = z.object({
@@ -355,7 +371,7 @@ export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
   BalancesSnapshotErrorMessage,
-  EvmTransactionStatusMessage,
+  TransactionStatusMessage,
   HistoryEventsStatusMessage,
   PremiumStatusUpdateMessage,
   DbUpgradeStatusMessage,

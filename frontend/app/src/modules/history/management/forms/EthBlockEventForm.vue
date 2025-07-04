@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events';
+import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events/schemas';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useFormStateWatcher } from '@/composables/form';

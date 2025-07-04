@@ -216,6 +216,25 @@ export function isValidEthAddress(address?: string): boolean {
   return /^0x[\dA-Fa-f]{40}$/.test(address);
 }
 
+export function isValidBtcAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  // P2PKH addresses (starts with 1)
+  if (/^1[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address))
+    return true;
+
+  // P2SH addresses (starts with 3)
+  if (/^3[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(address))
+    return true;
+
+  // Bech32 addresses (starts with bc1)
+  if (/^bc1[02-9ac-hj-np-z]{7,87}$/.test(address))
+    return true;
+
+  return false;
+}
+
 export function isValidTxHash(address?: string): boolean {
   if (!address)
     return false;

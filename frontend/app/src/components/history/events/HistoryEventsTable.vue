@@ -5,13 +5,15 @@ import type { ShowEventHistoryForm } from '@/modules/history/management/forms/fo
 import type { Collection } from '@/types/collection';
 import type {
   EvmChainAndTxHash,
-  HistoryEventEntry,
-  HistoryEventRow,
   PullEthBlockEventPayload,
   PullEventPayload,
   PullEvmTransactionPayload,
-  StandaloneEditableEvents,
 } from '@/types/history/events';
+import type {
+  HistoryEventEntry,
+  HistoryEventRow,
+  StandaloneEditableEvents,
+} from '@/types/history/events/schemas';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';

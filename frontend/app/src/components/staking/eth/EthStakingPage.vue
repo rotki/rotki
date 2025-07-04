@@ -19,7 +19,7 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';

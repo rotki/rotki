@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 
 const props = defineProps<{
   event: HistoryEventEntry;

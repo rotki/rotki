@@ -21,7 +21,7 @@ export function useQueryStatus<T extends { period?: [number, number] }>(
   const length = useRefMap(data, ({ length }) => length);
 
   const isQueryStatusRange = (data: T): boolean => {
-    if (data.period)
+    if ('period' in data && data.period)
       return data.period[0] > 0;
 
     return false;

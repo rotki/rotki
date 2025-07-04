@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEventRef,
@@ -21,18 +21,24 @@ const { is2xlAndUp } = useBreakpoint();
 const translationKey = computed<string>(() => {
   // consider an evm swap event as a case of evm event
   // as they are both evm events and have the same header
-  let entryType = get(event).entryType;
+  const eventVal = get(event);
+  let entryType = eventVal.entryType;
   if (entryType === HistoryEventEntryType.EVM_SWAP_EVENT)
     entryType = HistoryEventEntryType.EVM_EVENT;
+
+  if (entryType === HistoryEventEntryType.HISTORY_EVENT && 'txHash' in eventVal) {
+    entryType = HistoryEventEntryType.EVM_EVENT;
+  }
+
   return `transactions.events.headers.${toSnakeCase(entryType)}`;
 });
 
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 const assetMovementEvent = isAssetMovementEventRef(event);
-const transaction = computed(() => {
+const transaction = computed<{ location: string; txHash: string } | undefined>(() => {
   const event = props.event;
-  if ('txHash' in event) {
+  if ('txHash' in event && event.txHash) {
     return {
       location: event.location,
       txHash: event.txHash,

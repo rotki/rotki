@@ -46,7 +46,7 @@ interface UseMessageHandling {
 }
 
 export function useMessageHandling(): UseMessageHandling {
-  const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
+  const { setUnifiedTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
@@ -203,8 +203,8 @@ export function useMessageHandling(): UseMessageHandling {
       const isWarning = data.verbosity === MESSAGE_WARNING;
       addNotification(handleLegacyMessage(data.value, isWarning));
     }
-    else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
-      setTxQueryStatus(message.data);
+    else if (type === SocketMessageType.TRANSACTION_STATUS) {
+      setUnifiedTxQueryStatus(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       setEventsQueryStatus(message.data);
@@ -264,8 +264,8 @@ export function useMessageHandling(): UseMessageHandling {
         notifications.push(handleLegacyMessage(message, isWarning));
       else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR)
         notifications.push(handleSnapshotError(object));
-      else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
-        setTxQueryStatus(object);
+      else if (object.type === SocketMessageType.TRANSACTION_STATUS)
+        setUnifiedTxQueryStatus(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)

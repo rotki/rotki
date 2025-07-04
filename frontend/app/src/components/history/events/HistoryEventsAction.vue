@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type {
-  EthBlockEvent,
   EvmChainAndTxHash,
+  PullEventPayload,
+} from '@/types/history/events';
+import type {
+  EthBlockEvent,
   EvmHistoryEvent,
   EvmSwapEvent,
   HistoryEvent,
   HistoryEventEntry,
-  PullEventPayload,
   StandaloneEditableEvents,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent, isGroupEditableHistoryEvent } from '@/modules/history/management/forms/form-guards';

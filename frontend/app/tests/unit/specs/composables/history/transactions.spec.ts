@@ -3,7 +3,7 @@ import type {
   EditEvmHistoryEventPayload,
   EvmHistoryEvent,
   HistoryEventRow,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryTransactions } from '@/composables/history/events/tx';

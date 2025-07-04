@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common';
 import HistoryQueryStatusCurrent from '@/components/history/events/HistoryQueryStatusCurrent.vue';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 
 const props = withDefaults(
   defineProps<{
-    onlyChains?: Blockchain[];
+    onlyChains?: string[];
   }>(),
   {
     onlyChains: () => [],

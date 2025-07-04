@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events';
+import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events/schemas';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';

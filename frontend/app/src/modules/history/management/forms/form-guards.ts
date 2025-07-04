@@ -3,7 +3,7 @@ import type {
   GroupEditableHistoryEvents,
   HistoryEvent,
   SwapEvent,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 
 export function isGroupEditableHistoryEvent(event: HistoryEvent): event is GroupEditableHistoryEvents {

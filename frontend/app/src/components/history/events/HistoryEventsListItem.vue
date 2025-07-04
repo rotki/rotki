@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';

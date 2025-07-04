@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events';
+import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
 import HistoryEventsListSwap from '@/components/history/events/HistoryEventsListSwap.vue';
 import { flatten } from 'es-toolkit';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events';
+import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events/schemas';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';

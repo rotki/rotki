@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';

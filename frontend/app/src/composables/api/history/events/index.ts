@@ -14,13 +14,8 @@ import {
   validWithParamsSessionAndExternalService,
 } from '@/services/utils';
 import {
-  type AddHistoryEventPayload,
   type AddTransactionHashPayload,
-  type HistoryEventCollectionRow,
   HistoryEventDetail,
-  HistoryEventsCollectionResponse,
-  type ModifyHistoryEventPayload,
-  type OnlineHistoryEventsRequestPayload,
   type PullEthBlockEventPayload,
   type PullTransactionPayload,
   type RepullingTransactionPayload,
@@ -28,6 +23,13 @@ import {
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
+import {
+  type AddHistoryEventPayload,
+  type HistoryEventCollectionRow,
+  HistoryEventsCollectionResponse,
+  type ModifyHistoryEventPayload,
+  type OnlineHistoryEventsRequestPayload,
+} from '@/types/history/events/schemas';
 import { nonEmptyProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
 import { getFilename } from '@/utils/file';

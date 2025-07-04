@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { EvmTransactionQueryData } from '@/types/websocket-messages';
+import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
+import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import TransactionQueryStatusLine from '@/components/history/events/tx/query-status/TransactionQueryStatusLine.vue';
 
-defineProps<{ item: EvmTransactionQueryData }>();
+defineProps<{ item: TxQueryStatusData }>();
 </script>
 
 <template>
   <div class="flex items-center">
     <AdaptiveWrapper>
-      <EvmChainIcon
-        :chain="item.evmChain"
+      <ChainIcon
+        :chain="item.chain"
         size="1.25rem"
       />
     </AdaptiveWrapper>
@@ -22,6 +22,7 @@ defineProps<{ item: EvmTransactionQueryData }>();
     />
 
     <RuiTooltip
+      v-if="item.subtype !== 'bitcoin' && item.period"
       class="ml-2 cursor-pointer"
       :open-delay="400"
       tooltip-class="max-w-[12rem]"

@@ -11,11 +11,11 @@ import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
-  HistoryEventRow,
   PullEthBlockEventPayload,
   PullEvmTransactionPayload,
   RepullingTransactionPayload,
 } from '@/types/history/events';
+import type { HistoryEventRow } from '@/types/history/events/schemas';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';

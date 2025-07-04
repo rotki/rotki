@@ -2,7 +2,7 @@ import type {
   EvmSwapEvent,
   GroupEditableHistoryEvents,
   StandaloneEditableEvents,
-} from '@/types/history/events';
+} from '@/types/history/events/schemas';
 
 export interface AddEventData {
   type: 'add';

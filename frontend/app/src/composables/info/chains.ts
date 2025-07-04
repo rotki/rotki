@@ -26,6 +26,10 @@ function isEvmLikeChain(info: ChainInfo): info is EvmLikeChainInfo {
   return info.type === 'evmlike';
 }
 
+function isBitcoinChain(info: ChainInfo): info is ChainInfo {
+  return info.type === 'bitcoin';
+}
+
 export const useSupportedChains = createSharedComposable(() => {
   const { fetchAllEvmChains, fetchSupportedChains } = useSupportedChainsApi();
 
@@ -58,6 +62,10 @@ export const useSupportedChains = createSharedComposable(() => {
     get(supportedChains).filter(isEvmLikeChain),
   );
 
+  const bitcoinChainsData = computed<ChainInfo[]>(() =>
+    get(supportedChains).filter(isBitcoinChain),
+  );
+
   const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(evmChainsData, x => x.id !== Blockchain.AVAX);
 
   const txChains = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
@@ -76,6 +84,12 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const isEvmLikeChains = (chain: MaybeRef<string>): boolean => {
     const chains = get(evmLikeChainsData);
+    const selectedChain = get(chain);
+    return chains.some(x => x.id === selectedChain);
+  };
+
+  const isBtcChains = (chain: MaybeRef<string>): boolean => {
+    const chains = get(bitcoinChainsData);
     const selectedChain = get(chain);
     return chains.some(x => x.id === selectedChain);
   };
@@ -112,6 +126,9 @@ export const useSupportedChains = createSharedComposable(() => {
     const chainData = get(supportedChains).find((item) => {
       const transformed = getTextToken(toSnakeCase(location));
       if ('evmChainName' in item && getTextToken(item.evmChainName) === transformed)
+        return true;
+
+      if (getTextToken(item.name) === transformed)
         return true;
 
       return getTextToken(item.id) === transformed;
@@ -191,6 +208,7 @@ export const useSupportedChains = createSharedComposable(() => {
 
   return {
     allEvmChains,
+    bitcoinChainsData,
     evmChainNames,
     evmChains,
     evmChainsData,
@@ -204,6 +222,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChainName,
     getEvmChainName,
     getNativeAsset,
+    isBtcChains,
     isEvm,
     isEvmLikeChains,
     matchChain,
