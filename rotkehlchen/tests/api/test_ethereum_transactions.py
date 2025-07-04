@@ -3,7 +3,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
-from unittest.mock import _patch, patch
+from unittest.mock import _patch, call, patch
 
 import gevent
 import pytest
@@ -14,10 +14,12 @@ from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_MKR, A_USDT, A_WETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -30,7 +32,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
@@ -67,12 +69,14 @@ from rotkehlchen.types import (
     EvmTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
+    Location,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -1552,3 +1556,173 @@ def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') ->
             cursor=cursor,
             query_filter=HistoryEventFilterQuery.make(),
         )[0] == 5
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_monerium_gnosis_pay_events_update(
+        rotkehlchen_api_server: 'APIServer',
+        monerium_credentials: None,
+        gnosispay_credentials: None,
+) -> None:
+    """Test that monerium and gnosis pay event are properly updated when decoding/redecoding."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '
+            'merchant_city, country, mcc, transaction_symbol, transaction_amount, '
+            'billing_symbol, billing_amount, reversal_symbol, reversal_amount) '
+            'VALUES(?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?, ?)',
+            (
+                (gnosis_pay_tx_1 := make_evm_tx_hash()),
+                (gnosis_pay_ts_1 := TimestampMS(1600000000)),
+                'SomeCompany', 'Sevilla', 'ES', 6666,
+                'EUR', '50', None, None, 'EUR', '5',
+            ),
+        )
+        # We can go ahead and add these events, and they won't be removed when re-decoding since
+        # there aren't any corresponding txs in the evm_transactions table.
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[(gnosispay_event1 := EvmEvent(
+                tx_hash=gnosis_pay_tx_1,
+                sequence_index=0,
+                timestamp=gnosis_pay_ts_1,
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_EUR,
+                amount=ONE,
+                counterparty=CPT_GNOSIS_PAY,
+            )), (gnosispay_event2 := EvmEvent(
+                tx_hash=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1610000000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_EUR,
+                amount=ONE,
+                counterparty=CPT_GNOSIS_PAY,
+            )), (monerium_event := EvmEvent(
+                tx_hash=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1620000000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+                counterparty=CPT_MONERIUM,
+            )), EvmEvent(
+                tx_hash=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1630000000),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            )],
+        )
+
+    # Check that redecoding specific transactions works correctly
+    with (
+        patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
+        patch('rotkehlchen.externalapis.gnosispay.GnosisPay.query_remote_for_tx_and_update_events') as mock_gnosis_pay,  # noqa: E501
+        patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_query_transaction_receipt'),  # noqa: E501
+        patch.object(rotki.chains_aggregator.arbitrum_one.transactions, 'get_or_query_transaction_receipt'),  # noqa: E501
+        patch.object(
+            rotki.chains_aggregator.gnosis.transactions_decoder,
+            'decode_and_get_transaction_hashes',
+            side_effect=lambda **kwargs: [gnosispay_event1, gnosispay_event2],
+        ),
+        patch.object(
+            rotki.chains_aggregator.arbitrum_one.transactions_decoder,
+            'decode_and_get_transaction_hashes',
+            side_effect=lambda **kwargs: [monerium_event],
+        ),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
+            json={
+                'transactions': [
+                    {'evm_chain': 'gnosis', 'tx_hash': gnosispay_event1.tx_hash.hex()},
+                    {'evm_chain': 'gnosis', 'tx_hash': gnosispay_event2.tx_hash.hex()},
+                    {'evm_chain': 'arbitrum_one', 'tx_hash': monerium_event.tx_hash.hex()},
+                ],
+            },
+        )
+        assert_proper_response(response)
+
+    assert mock_monerium.call_count == 1
+    assert mock_monerium.call_args_list == [call(tx_hash=monerium_event.tx_hash)]
+    assert mock_gnosis_pay.call_count == 1
+    assert mock_gnosis_pay.call_args_list == [
+        call(tx_timestamp=ts_ms_to_sec(gnosispay_event2.timestamp)),
+    ]  # only the ts of the second event is queried since there's already gnosis pay data in the db for the first event.  # noqa: E501
+
+    # Check that when redecoding all events, the APIs are simply queried once for all data.
+    with (
+        patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
+        patch('rotkehlchen.externalapis.gnosispay.GnosisPay.get_and_process_transactions') as mock_gnosis_pay,  # noqa: E501
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'evmpendingtransactionsdecodingresource'),
+            json={'async_query': False, 'ignore_cache': True, 'chains': ['gnosis']},
+        )
+        assert_proper_response(response)
+
+    assert mock_monerium.call_count == 1
+    assert mock_monerium.call_args_list == [call()]  # no tx_hash specified, querying all data.
+    assert mock_gnosis_pay.call_count == 1
+    assert mock_gnosis_pay.call_args_list == [call(after_ts=Timestamp(0))]  # ts of zero, querying all data.  # noqa: E501
+
+    # Check that when only decoding new transactions, only the data for the new events is queried.
+    with rotki.data.db.user_write() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_hash=(new_gnosispay_tx_hash := make_evm_tx_hash()),
+                sequence_index=0,
+                timestamp=(new_gnosispay_ts := TimestampMS(1640000000)),
+                location=Location.GNOSIS,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_EUR,
+                amount=ONE,
+                counterparty=CPT_GNOSIS_PAY,
+            ), EvmEvent(
+                tx_hash=(new_monerium_tx_hash := make_evm_tx_hash()),
+                sequence_index=0,
+                timestamp=TimestampMS(1650000000),
+                location=Location.ARBITRUM_ONE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+                counterparty=CPT_MONERIUM,
+            )],
+        )
+
+    with (
+        patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
+        patch('rotkehlchen.externalapis.gnosispay.GnosisPay.get_and_process_transactions') as mock_gnosis_pay,  # noqa: E501
+        patch('rotkehlchen.db.evmtx.DBEvmTx.count_hashes_not_decoded', side_effect=lambda **kwargs: 2),  # noqa: E501
+        patch.object(
+            rotki.chains_aggregator.gnosis.transactions_decoder,
+            'get_and_decode_undecoded_transactions',
+            side_effect=lambda **kwargs: [new_gnosispay_tx_hash, new_monerium_tx_hash],
+        ),
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'evmpendingtransactionsdecodingresource'),
+            json={'async_query': False, 'chains': ['gnosis']},
+        )
+        assert_proper_response(response)
+
+    assert mock_monerium.call_count == 1
+    assert mock_monerium.call_args_list == [call(tx_hash=new_monerium_tx_hash)]
+    assert mock_gnosis_pay.call_count == 1
+    assert mock_gnosis_pay.call_args_list == [call(
+        after_ts=Timestamp(ts_ms_to_sec(new_gnosispay_ts) - 1),
+    )]

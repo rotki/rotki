@@ -870,7 +870,7 @@ class EVMTransactionDecoder(ABC):
             self,
             limit: int | None = None,
             send_ws_notifications: bool = False,
-    ) -> None:
+    ) -> list[EVMTxHash]:
         """Checks the DB for up to `limit` undecoded transactions and decodes them.
         If a list of addresses is provided then only the transactions involving those
         addresses are decoded.
@@ -890,6 +890,7 @@ class EVMTransactionDecoder(ABC):
                     send_ws_notifications=send_ws_notifications,
                 )
             log.debug(f'Finished task to process undecoded transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
+            return hashes
 
     def decode_and_get_transaction_hashes(
             self,

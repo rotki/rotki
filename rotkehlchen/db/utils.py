@@ -1,7 +1,7 @@
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, Union
 
 from eth_utils import is_checksum_address
 
@@ -397,7 +397,10 @@ def update_table_schema(
     return False
 
 
-def get_query_chunks(data: Sequence[int | str]) -> list[tuple[Sequence[int | str], str]]:
+T = TypeVar('T')
+
+
+def get_query_chunks(data: Sequence[T]) -> list[tuple[Sequence[T], str]]:
     """Chunk data to be included in a query as placeholder variables.
     Returns a list of tuples containing the bindings and string of placeholders for each chunk.
     """
