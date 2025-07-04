@@ -542,14 +542,15 @@ class Rotkehlchen:
         # Send a notification to the user if custom Solana tokens were previously
         # added and need to be migrated manually in the app.
         # TODO: Remove this after a couple versions (added in version 1.40).
-        self._check_migration_table_and_notify(
-            conn=GlobalDBHandler().conn,
-            table_name='user_added_solana_tokens',
-            notification_callback=lambda: self.msg_aggregator.add_message(
-                message_type=WSMessageType.SOLANA_TOKENS_MIGRATION,
-                data={'identifiers': [i[0] for i in cursor.execute('SELECT identifier FROM user_added_solana_tokens')]},  # noqa: E501
-            ),
-        )
+        with (global_conn := GlobalDBHandler().conn).cursor() as cursor:
+            self._check_migration_table_and_notify(
+                conn=global_conn,
+                table_name='user_added_solana_tokens',
+                notification_callback=lambda: self.msg_aggregator.add_message(
+                    message_type=WSMessageType.SOLANA_TOKENS_MIGRATION,
+                    data={'identifiers': [i[0] for i in cursor.execute('SELECT identifier FROM user_added_solana_tokens')]},  # noqa: E501
+                ),
+            )
 
     def _logout(self) -> None:
         if not self.user_is_logged_in:
