@@ -1,7 +1,7 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import { type TxQueryStatusData, useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
+import { isBitcoinTxQueryStatusData, type TxQueryStatusData, useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { TransactionsQueryStatus } from '@/types/websocket-messages';
 
 type TranslationKey = 'transactions.query_status.done_date_range'
@@ -54,7 +54,7 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<string[]> = []): 
   const length = useRefMap(filtered, (arr: TxQueryStatusData[]) => arr.length);
 
   const isQueryStatusRange = (data: TxQueryStatusData): boolean => {
-    if (data.subtype !== 'bitcoin' && data.period)
+    if (!isBitcoinTxQueryStatusData(data) && data.period)
       return data.period[0] > 0;
 
     return false;
@@ -100,7 +100,7 @@ export function useTransactionQueryStatus(onlyChains: MaybeRef<string[]> = []): 
   const getItemTranslationKey = (item: TxQueryStatusData): TranslationKey => {
     const isRange = isQueryStatusRange(item);
 
-    if (item.subtype === 'bitcoin') {
+    if (isBitcoinTxQueryStatusData(item)) {
       if (item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED) {
         return 'transactions.query_status.start_querying';
       }

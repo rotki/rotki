@@ -6,12 +6,38 @@ import {
   type UnifiedTransactionStatusData,
 } from '@/types/websocket-messages';
 
-export interface TxQueryStatusData {
+interface BaseTxQueryStatusData {
   address: string;
   chain: string;
   status: TransactionsQueryStatus;
-  subtype: 'evm' | 'evmlike' | 'bitcoin';
-  period?: [number, number];
+}
+
+export interface EvmTxQueryStatusData extends BaseTxQueryStatusData {
+  subtype: 'evm';
+  period: [number, number];
+}
+
+export interface EvmlikeTxQueryStatusData extends BaseTxQueryStatusData {
+  subtype: 'evmlike';
+  period: [number, number];
+}
+
+export interface BitcoinTxQueryStatusData extends BaseTxQueryStatusData {
+  subtype: 'bitcoin';
+}
+
+export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData;
+
+export function isEvmTxQueryStatusData(data: TxQueryStatusData): data is EvmTxQueryStatusData {
+  return data.subtype === 'evm';
+}
+
+export function isEvmlikeTxQueryStatusData(data: TxQueryStatusData): data is EvmlikeTxQueryStatusData {
+  return data.subtype === 'evmlike';
+}
+
+export function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQueryStatusData {
+  return data.subtype === 'bitcoin';
 }
 
 export const useTxQueryStatusStore = defineStore('history/transaction-query-status', () => {
@@ -20,7 +46,7 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   const createKey = ({ address, chain }: { address: string; chain: string }): string => address + chain;
 
   const isStatusFinished = (item: TxQueryStatusData): boolean => {
-    if (item.subtype === 'bitcoin') {
+    if (isBitcoinTxQueryStatusData(item)) {
       return item.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
     }
     return item.status === TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;

@@ -151,30 +151,31 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return cachedName || null;
   });
 
+  const getChainsForAddress = (address: string): string[] => {
+    // Determine appropriate chains based on address type
+    if (isValidEthAddress(address)) {
+      // ETH address - check EVM and EVM-like chains
+      return get(supportedChains)
+        .filter(chain => ['evm', 'evmlike'].includes(chain.type))
+        .map(chain => chain.id);
+    }
+    else if (isValidBtcAddress(address)) {
+      // Bitcoin address - check Bitcoin chains only
+      return get(supportedChains)
+        .filter(chain => chain.type === 'bitcoin')
+        .map(chain => chain.id);
+    }
+    else {
+      // Unknown address type - check all chains as fallback
+      return get(supportedChains).map(chain => chain.id);
+    }
+  };
+
   const resetAddressNamesData = (items: AddressBookSimplePayload[]): void => {
     items.forEach((item) => {
       const chains: string[] = item.blockchain
         ? [item.blockchain]
-        : ((): string[] => {
-            const address = item.address;
-            // Determine appropriate chains based on address type
-            if (isValidEthAddress(address)) {
-              // ETH address - check EVM and EVM-like chains
-              return get(supportedChains)
-                .filter(chain => ['evm', 'evmlike'].includes(chain.type))
-                .map(chain => chain.id);
-            }
-            else if (isValidBtcAddress(address)) {
-              // Bitcoin address - check Bitcoin chains only
-              return get(supportedChains)
-                .filter(chain => chain.type === 'bitcoin')
-                .map(chain => chain.id);
-            }
-            else {
-              // Unknown address type - check all chains as fallback
-              return get(supportedChains).map(chain => chain.id);
-            }
-          })();
+        : getChainsForAddress(item.address);
 
       chains.forEach((chain) => {
         const key = createKey(item.address, chain);

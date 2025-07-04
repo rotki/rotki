@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 
-interface UseQueryStatusReturn<T> {
+interface UseQueryStatusReturn<T extends { period?: [number, number] }> {
   sortedQueryStatus: Ref<T[]>;
   queryingLength: ComputedRef<number>;
   length: ComputedRef<number>;

@@ -108,10 +108,6 @@ export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
 export type BalanceSnapshotError = z.infer<typeof BalanceSnapshotError>;
 
-export type EvmTransactionStatusData = z.infer<typeof EvmTransactionStatusData>;
-
-export type BitcoinTransactionStatusData = z.infer<typeof BitcoinTransactionStatusData>;
-
 export type UnifiedTransactionStatusData = z.infer<typeof UnifiedTransactionStatusData>;
 
 export const PremiumStatusUpdateData = z.object({
