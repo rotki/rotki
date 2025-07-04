@@ -94,7 +94,7 @@ from rotkehlchen.constants.assets import (
     A_WBTC,
     A_WETH_ARB,
 )
-from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
@@ -660,19 +660,19 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
         blockchain.query_evm_tokens(manager=ethereum_manager, balances=balances)
 
     # Check individual balances instead of full BalanceSheet comparison
-    assert balances[blockchain.accounts.eth[0]].assets[a_eth_usdc][DEFAULT_BALANCE_LABEL] == Balance(  # noqa: E501
+    assert balances[blockchain.accounts.eth[0]].assets[a_eth_usdc][CPT_AAVE_V3] == Balance(
         amount=FVal(123),
         usd_value=FVal(123) * aave_prices[a_eth_usdc],
     )
-    assert balances[blockchain.accounts.eth[0]].liabilities[stable_debt_eth_usdc][DEFAULT_BALANCE_LABEL] == Balance(  # noqa: E501
+    assert balances[blockchain.accounts.eth[0]].liabilities[stable_debt_eth_usdc][CPT_AAVE_V3] == Balance(  # noqa: E501
         amount=FVal(456),
         usd_value=FVal(456) * aave_prices[stable_debt_eth_usdc],
     )
-    assert balances[blockchain.accounts.eth[1]].liabilities[stable_debt_eth_usdc][DEFAULT_BALANCE_LABEL] == Balance(  # noqa: E501
+    assert balances[blockchain.accounts.eth[1]].liabilities[stable_debt_eth_usdc][CPT_AAVE_V3] == Balance(  # noqa: E501
         amount=FVal(456),
         usd_value=FVal(456) * aave_prices[stable_debt_eth_usdc],
     )
-    assert balances[blockchain.accounts.eth[1]].liabilities[variable_debt_eth_usdc][DEFAULT_BALANCE_LABEL] == Balance(  # noqa: E501
+    assert balances[blockchain.accounts.eth[1]].liabilities[variable_debt_eth_usdc][CPT_AAVE_V3] == Balance(  # noqa: E501
         amount=FVal(789),
         usd_value=FVal(789) * aave_prices[variable_debt_eth_usdc],
     )
@@ -757,7 +757,7 @@ def test_compound_v3_token_balances_liabilities(
             amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
     assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC][CPT_COMPOUND_V3] == get_balance('48076.773054')  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3][DEFAULT_BALANCE_LABEL] == get_balance('0.32795')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3][CPT_COMPOUND_V3] == get_balance('0.32795')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

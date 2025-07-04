@@ -27,6 +27,7 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
 from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
+from rotkehlchen.chain.balances import BlockchainBalances, BlockchainBalancesUpdate
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesBase,
@@ -115,14 +116,13 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
+    get_token_counterparty_protocol,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
-
-from .balances import BlockchainBalances, BlockchainBalancesUpdate
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
@@ -936,12 +936,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     amount=token_balance,
                     usd_value=token_balance * token_usd_price[token],
                 )
+                protocol = get_token_counterparty_protocol(token) or balance_label
                 if dsr_proxy_append is True:
-                    balances[account].assets[token][balance_label] += balance
+                    balances[account].assets[token][protocol] += balance
                 elif token.is_liability():
-                    balances[account].liabilities[token][balance_label] = balance
+                    balances[account].liabilities[token][protocol] = balance
                 else:
-                    balances[account].assets[token][balance_label] = balance
+                    balances[account].assets[token][protocol] = balance
 
     def query_evm_tokens(
             self,

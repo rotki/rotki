@@ -33,7 +33,7 @@ from rotkehlchen.utils.mixins.enums import (
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import Asset, EvmToken
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 ModuleName = Literal[
@@ -91,6 +91,60 @@ HOP_PROTOCOL_LP = 'hop_lp'
 MORPHO_VAULT_PROTOCOL: Final = 'morpho_vaults'
 CURVE_LENDING_VAULTS_PROTOCOL = 'curve_lending_vaults'
 PENDLE_PROTOCOL = 'pendle'
+
+
+def get_token_counterparty_protocol(token: 'EvmToken') -> str | None:
+    """Converts a token's protocol identifier to the corresponding counterparty type.
+    Returns None for spam tokens, otherwise maps known protocols to their CPT constants.
+
+    TODO: This is a temporary hack to work around circular import issues.
+    This function should be removed once the circular imports are resolved
+    and protocols/counterparties are properly unified in a single location.
+    https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=118936356
+    """
+    from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
+    from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
+    from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+        CPT_YEARN_V1,
+        CPT_YEARN_V2,
+        CPT_YEARN_V3,
+    )
+    from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+    from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+    from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
+    from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
+    from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+    from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+
+    if token.protocol == SPAM_PROTOCOL:
+        return None
+    elif token.protocol == AERODROME_POOL_PROTOCOL:
+        return CPT_AERODROME
+    elif token.protocol == VELODROME_POOL_PROTOCOL:
+        return CPT_VELODROME
+    elif token.protocol == PICKLE_JAR_PROTOCOL:
+        return CPT_PICKLE
+    elif token.protocol == SUSHISWAP_PROTOCOL:
+        return CPT_SUSHISWAP_V2
+    elif token.protocol == UNISWAP_PROTOCOL:
+        return CPT_UNISWAP_V2
+    elif token.protocol == UNISWAPV3_PROTOCOL:
+        return CPT_UNISWAP_V3
+    elif token.protocol == YEARN_VAULTS_V1_PROTOCOL:
+        return CPT_YEARN_V1
+    elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
+        return CPT_YEARN_V2
+    elif token.protocol == YEARN_VAULTS_V3_PROTOCOL:
+        return CPT_YEARN_V3
+    elif token.protocol in (CURVE_POOL_PROTOCOL, CURVE_LENDING_VAULTS_PROTOCOL):
+        return CPT_CURVE
+    elif token.protocol == PENDLE_PROTOCOL:
+        return CPT_PENDLE
+    elif token.protocol == HOP_PROTOCOL_LP:
+        return CPT_HOP
+    elif token.protocol == MORPHO_VAULT_PROTOCOL:
+        return CPT_MORPHO
+    return token.protocol
 
 
 # The protocols for which we know how to calculate their prices
