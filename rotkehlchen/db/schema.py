@@ -745,6 +745,34 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
 );
 """
 
+# Table for storing accounting information overlay on history events
+DB_CREATE_HISTORY_EVENTS_ACCOUNTING = """
+CREATE TABLE IF NOT EXISTS history_events_accounting (
+    history_event_id INTEGER NOT NULL,
+    total_amount_before TEXT NOT NULL,
+    cost_basis_before TEXT,
+    is_taxable INTEGER NOT NULL CHECK (is_taxable IN (0, 1)),
+    pnl_taxable TEXT NOT NULL,
+    pnl_free TEXT NOT NULL,
+    accounting_settings_hash TEXT NOT NULL,
+    FOREIGN KEY(history_event_id) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY(history_event_id, accounting_settings_hash)
+);
+"""
+
+# Table for tracking asset balances per location over time
+DB_CREATE_ASSET_LOCATION_BALANCES = """
+CREATE TABLE IF NOT EXISTS asset_location_balances (
+    timestamp INTEGER NOT NULL,
+    location CHAR(1) NOT NULL REFERENCES location(location),
+    location_label TEXT,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    PRIMARY KEY(timestamp, location, location_label, asset)
+);
+"""
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -764,6 +792,11 @@ CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
 CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+CREATE INDEX IF NOT EXISTS idx_history_events_accounting_event ON history_events_accounting(history_event_id);
+CREATE INDEX IF NOT EXISTS idx_history_events_accounting_settings ON history_events_accounting(accounting_settings_hash);
+CREATE INDEX IF NOT EXISTS idx_asset_location_balances_timestamp ON asset_location_balances(timestamp);
+CREATE INDEX IF NOT EXISTS idx_asset_location_balances_asset ON asset_location_balances(asset);
+CREATE INDEX IF NOT EXISTS idx_asset_location_balances_location ON asset_location_balances(location, location_label);
 """
 
 DB_SCRIPT_CREATE_TABLES = f"""
@@ -822,6 +855,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
 {DB_CREATE_GNOSISPAY_DATA}
+{DB_CREATE_HISTORY_EVENTS_ACCOUNTING}
+{DB_CREATE_ASSET_LOCATION_BALANCES}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

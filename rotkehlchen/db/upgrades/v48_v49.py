@@ -21,6 +21,8 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     - Fix zksynclite_swaps table schema: change TEXT_NOT NULL to TEXT NOT NULL for to_amount column
     - Migrate solana assets to CAIPS format
+    - Add history_events_accounting table for accounting data overlay
+    - Add asset_location_balances table for tracking asset balances per location
     """
     @progress_step(description='Fixing zksynclite_swaps table schema.')
     def _fix_zksynclite_swaps_schema(write_cursor: 'DBCursor') -> None:
@@ -70,5 +72,59 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
         # Delete the known duplicates
         write_cursor.execute('DELETE FROM assets WHERE identifier IN (?, ?)', ('TRISIG', 'HODLSOL'))  # noqa: E501
+
+    @progress_step(description='Creating history_events_accounting table.')
+    def _create_history_events_accounting_table(write_cursor: 'DBCursor') -> None:
+        """Create the history_events_accounting table for storing accounting data overlay"""
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS history_events_accounting (
+            history_event_id INTEGER NOT NULL,
+            total_amount_before TEXT NOT NULL,
+            cost_basis_before TEXT,
+            is_taxable INTEGER NOT NULL CHECK (is_taxable IN (0, 1)),
+            pnl_taxable TEXT NOT NULL,
+            pnl_free TEXT NOT NULL,
+            accounting_settings_hash TEXT NOT NULL,
+            FOREIGN KEY(history_event_id) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+            PRIMARY KEY(history_event_id, accounting_settings_hash)
+        );
+        """)
+        # Create indexes for performance
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_history_events_accounting_event '
+            'ON history_events_accounting(history_event_id);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_history_events_accounting_settings '
+            'ON history_events_accounting(accounting_settings_hash);',
+        )
+
+    @progress_step(description='Creating asset_location_balances table.')
+    def _create_asset_location_balances_table(write_cursor: 'DBCursor') -> None:
+        """Create the asset_location_balances table for tracking asset balances per location"""
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS asset_location_balances (
+            timestamp INTEGER NOT NULL,
+            location CHAR(1) NOT NULL REFERENCES location(location),
+            location_label TEXT,
+            asset TEXT NOT NULL,
+            amount TEXT NOT NULL,
+            FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+            PRIMARY KEY(timestamp, location, location_label, asset)
+        );
+        """)
+        # Create indexes for performance
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_asset_location_balances_timestamp '
+            'ON asset_location_balances(timestamp);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_asset_location_balances_asset '
+            'ON asset_location_balances(asset);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_asset_location_balances_location '
+            'ON asset_location_balances(location, location_label);',
+        )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=False)
