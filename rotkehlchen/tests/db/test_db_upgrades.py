@@ -3634,7 +3634,7 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
 
         # Verify the table schemas are correct
         accounting_schema = cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name='history_events_accounting'"
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='history_events_accounting'",
         ).fetchone()[0]
         assert 'history_event_id INTEGER NOT NULL' in accounting_schema
         assert 'total_amount_before TEXT NOT NULL' in accounting_schema
@@ -3647,7 +3647,7 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         assert 'PRIMARY KEY(history_event_id, accounting_settings_hash)' in accounting_schema
 
         balances_schema = cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name='asset_location_balances'"
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='asset_location_balances'",
         ).fetchone()[0]
         assert 'timestamp INTEGER NOT NULL' in balances_schema
         assert 'location CHAR(1) NOT NULL REFERENCES location(location)' in balances_schema
@@ -3659,7 +3659,7 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
 
         # Verify the indexes were created
         indexes = cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name IN ('history_events_accounting', 'asset_location_balances')"
+            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name IN ('history_events_accounting', 'asset_location_balances')",
         ).fetchall()
         index_names = [idx[0] for idx in indexes]
         assert 'idx_history_events_accounting_event' in index_names

@@ -758,7 +758,7 @@ CREATE TABLE IF NOT EXISTS history_events_accounting (
     FOREIGN KEY(history_event_id) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
     PRIMARY KEY(history_event_id, accounting_settings_hash)
 );
-"""
+"""  # noqa: E501
 
 # Table for tracking asset balances per location over time
 DB_CREATE_ASSET_LOCATION_BALANCES = """
@@ -797,7 +797,7 @@ CREATE INDEX IF NOT EXISTS idx_history_events_accounting_settings ON history_eve
 CREATE INDEX IF NOT EXISTS idx_asset_location_balances_timestamp ON asset_location_balances(timestamp);
 CREATE INDEX IF NOT EXISTS idx_asset_location_balances_asset ON asset_location_balances(asset);
 CREATE INDEX IF NOT EXISTS idx_asset_location_balances_location ON asset_location_balances(location, location_label);
-"""
+"""  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;

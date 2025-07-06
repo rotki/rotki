@@ -88,7 +88,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             FOREIGN KEY(history_event_id) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
             PRIMARY KEY(history_event_id, accounting_settings_hash)
         );
-        """)
+        """)  # noqa: E501
         # Create indexes for performance
         write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_history_events_accounting_event '
