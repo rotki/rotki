@@ -21,8 +21,8 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -45,12 +45,12 @@ class AssetAcquisitionEvent:
         )
 
     @classmethod
-    def from_processed_event(cls: type['AssetAcquisitionEvent'], event: 'ProcessedAccountingEvent') -> 'AssetAcquisitionEvent':  # noqa: E501
+    def from_history_event(cls: type['AssetAcquisitionEvent'], event: 'HistoryEvent', price: Price, index: int) -> 'AssetAcquisitionEvent':  # noqa: E501
         return cls(
-            amount=event.taxable_amount + event.free_amount,
-            timestamp=event.timestamp,
-            rate=event.price,
-            index=event.index,
+            amount=event.amount,
+            timestamp=Timestamp(event.timestamp // 1000),  # Convert from milliseconds to seconds
+            rate=price,
+            index=index,
         )
 
     @classmethod
@@ -651,10 +651,14 @@ class CostBasisCalculator(CustomizableDateMixin):
 
     def obtain_asset(
             self,
-            event: 'ProcessedAccountingEvent',
+            event: 'HistoryEvent',
+            price: Price,
+            index: int,
     ) -> None:
         """Adds an acquisition event for an asset"""
-        asset_event = AssetAcquisitionEvent.from_processed_event(event=event)
+        asset_event = AssetAcquisitionEvent.from_history_event(
+            event=event, price=price, index=index,
+        )
         asset_events = self.get_events(event.asset)
         asset_events.acquisitions_manager.add_in_event(asset_event)
 

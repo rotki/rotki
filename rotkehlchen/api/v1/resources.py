@@ -23,8 +23,6 @@ from rotkehlchen.api.rest import (
 from rotkehlchen.api.v1.common_resources import BaseMethodView
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
-    AccountingReportDataSchema,
-    AccountingReportsSchema,
     AccountingRuleConflictsPagination,
     AccountingRulesQuerySchema,
     AddressbookAddressesSchema,
@@ -1519,30 +1517,6 @@ class HistoryActionableItemsResource(BaseMethodView):
         return self.rest_api.get_history_actionable_items()
 
 
-class AccountingReportsResource(BaseMethodView):
-
-    get_schema = AccountingReportsSchema(required_report_id=False)
-    delete_schema = AccountingReportsSchema(required_report_id=True)
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='view_args')
-    def get(self, report_id: int | None) -> Response:
-        return self.rest_api.get_pnl_reports(report_id=report_id)
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='view_args')
-    def delete(self, report_id: int) -> Response:
-        return self.rest_api.purge_pnl_report_data(report_id=report_id)
-
-
-class AccountingReportDataResource(BaseMethodView):
-
-    post_schema = AccountingReportDataSchema()
-
-    @require_loggedin_user()
-    @ignore_kwarg_parser.use_kwargs(post_schema, location='json_and_query_and_view_args')
-    def post(self, filter_query: ReportDataFilterQuery) -> Response:
-        return self.rest_api.get_report_data(filter_query=filter_query)
 
 
 class HistoryExportingResource(BaseMethodView):

@@ -26,8 +26,6 @@ from rotkehlchen.accounting.constants import (
     EVENT_CATEGORY_DETAILS,
     EVENT_CATEGORY_MAPPINGS,
     EVENT_GROUPING_ORDER,
-    FREE_PNL_EVENTS_LIMIT,
-    FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
@@ -38,7 +36,6 @@ from rotkehlchen.accounting.export.csv import (
 )
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
-from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
@@ -151,12 +148,10 @@ from rotkehlchen.db.filtering import (
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
-    ReportDataFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.queried_addresses import QueriedAddresses
-from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
@@ -1721,47 +1716,6 @@ class RestAPI:
 
         return OK_RESULT
 
-    def get_history_actionable_items(self) -> Response:
-        pot = self.rotkehlchen.accountant.pots[0]
-        missing_acquisitions = pot.cost_basis.missing_acquisitions
-        missing_prices = pot.cost_basis.missing_prices
-
-        processed_missing_acquisitions = [entry.serialize() for entry in missing_acquisitions]
-        processed_missing_prices = [entry.serialize() for entry in missing_prices]
-        result_dict = _wrap_in_ok_result(
-            {
-                'report_id': pot.report_id,
-                'missing_acquisitions': processed_missing_acquisitions,
-                'missing_prices': processed_missing_prices,
-            },
-        )
-        return api_response(result_dict, status_code=HTTPStatus.OK)
-
-    def export_processed_history_csv(self, directory_path: Path) -> Response:
-        success, msg = self.rotkehlchen.accountant.export(directory_path)
-        if success is False:
-            return api_response(wrap_in_fail_result(msg), status_code=HTTPStatus.CONFLICT)
-
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-
-    def download_processed_history_csv(self) -> Response:
-        success, zipfile = self.rotkehlchen.accountant.export(directory_path=None)
-        if success is False:
-            return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
-
-        try:
-            register_post_download_cleanup(Path(zipfile))
-            return send_file(
-                path_or_file=zipfile,
-                mimetype='application/zip',
-                as_attachment=True,
-                download_name='report.zip',
-            )
-        except FileNotFoundError:
-            return api_response(
-                wrap_in_fail_result('No file was found'),
-                status_code=HTTPStatus.NOT_FOUND,
-            )
 
     def get_history_status(self) -> Response:
         result = self.rotkehlchen.get_history_query_status()
@@ -3534,66 +3488,6 @@ class RestAPI:
             filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_pnl_report_data(self, report_id: int) -> Response:
-        dbreports = DBAccountingReports(self.rotkehlchen.data.db)
-        try:
-            dbreports.purge_report_data(report_id=report_id)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
-
-    def get_pnl_reports(
-            self,
-            report_id: int | None,
-    ) -> Response:
-        with_limit = False
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            with_limit = True
-            entries_limit = FREE_REPORTS_LOOKUP_LIMIT
-
-        dbreports = DBAccountingReports(self.rotkehlchen.data.db)
-        reports, entries_found = dbreports.get_reports(
-            report_id=report_id,
-            with_limit=with_limit,
-        )
-
-        # success
-        result_dict = _wrap_in_ok_result({
-            'entries': reports,
-            'entries_found': entries_found,
-            'entries_limit': entries_limit,
-        })
-        return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
-
-    def get_report_data(self, filter_query: ReportDataFilterQuery) -> Response:
-        with_limit = False
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            with_limit = True
-            entries_limit = FREE_PNL_EVENTS_LIMIT
-
-        dbreports = DBAccountingReports(self.rotkehlchen.data.db)
-        try:
-            report_data, entries_found, entries_total = dbreports.get_report_data(
-                filter_=filter_query,
-                with_limit=with_limit,
-            )
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-
-        result = {
-            'entries': [x.to_exported_dict(
-                ts_converter=self.rotkehlchen.accountant.pots[0].timestamp_to_date,
-                export_type=AccountingEventExportType.API,
-            ) for x in report_data],
-            'entries_found': entries_found,
-            'entries_total': entries_total,
-            'entries_limit': entries_limit,
-        }
-        result_dict = _wrap_in_result(result, '')
-        return api_response(result_dict, status_code=HTTPStatus.OK)
 
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()

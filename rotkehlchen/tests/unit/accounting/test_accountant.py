@@ -157,7 +157,7 @@ class TestEventProcessing:
 
     @patch('rotkehlchen.accounting.accountant.PriceHistorian')
     def test_basic_accounting_calculation(
-        self, mock_historian_class, new_accountant, sample_history_events,
+            self, mock_historian_class, new_accountant, sample_history_events,
     ):
         """Test basic accounting calculation for events"""
         # Mock price to 1000 USD per ETH
@@ -220,7 +220,7 @@ class TestInvalidation:
 
     @patch('rotkehlchen.accounting.accountant.PriceHistorian')
     def test_invalidate_from_timestamp(
-        self, mock_historian_class, new_accountant, sample_history_events,
+            self, mock_historian_class, new_accountant, sample_history_events,
     ):
         """Test invalidating accounting data from a specific timestamp"""
         mock_historian = mock_historian_class.return_value
@@ -253,7 +253,7 @@ class TestInvalidation:
 
     @patch('rotkehlchen.accounting.accountant.PriceHistorian')
     def test_invalidate_specific_assets(
-        self, mock_historian_class, new_accountant, sample_history_events,
+            self, mock_historian_class, new_accountant, sample_history_events,
     ):
         """Test invalidating accounting data for specific assets only"""
         mock_historian = mock_historian_class.return_value
@@ -287,7 +287,7 @@ class TestPnLCalculation:
 
     @patch('rotkehlchen.accounting.accountant.PriceHistorian')
     def test_pnl_totals_calculation(
-        self, mock_historian_class, new_accountant, sample_history_events,
+            self, mock_historian_class, new_accountant, sample_history_events,
     ):
         """Test that PnL totals are calculated correctly"""
         mock_historian = mock_historian_class.return_value
@@ -323,7 +323,7 @@ class TestDataAccess:
 
     @patch('rotkehlchen.accounting.accountant.PriceHistorian')
     def test_get_events_with_accounting(
-        self, mock_historian_class, new_accountant, sample_history_events,
+            self, mock_historian_class, new_accountant, sample_history_events,
     ):
         """Test retrieving events with accounting data overlay"""
         mock_historian = mock_historian_class.return_value

@@ -2,30 +2,29 @@ import contextlib
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
+from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
-from rotkehlchen.accounting.cost_basis.prefork import (
-    handle_prefork_asset_acquisitions,
-    handle_prefork_asset_spends,
-)
 from rotkehlchen.accounting.history_base_entries import EventsAccountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_KFEE
-from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.eth2 import DBEth2
-from rotkehlchen.db.reports import DBAccountingReports
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.types import EventDirection
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType as HEventType,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -70,7 +69,13 @@ class AccountingPot(CustomizableDateMixin):
             msg_aggregator=msg_aggregator,
         )
         self.pnls = PnlTotals()
-        self.processed_events: list[ProcessedAccountingEvent] = []
+        self.accountant = Accountant(
+            db=database,
+            msg_aggregator=msg_aggregator,
+            chains_aggregator=None,  # type: ignore[arg-type]  # TODO: Fix when integrating chains_aggregator
+            premium=None,  # Will be set via activate_premium_status if needed
+        )
+        self.event_count = 0  # Track number of events processed
         self.events_accountant = EventsAccountant(
             evm_accounting_aggregators=evm_accounting_aggregators,
             pot=self,
@@ -81,21 +86,9 @@ class AccountingPot(CustomizableDateMixin):
         self.query_start_ts = self.query_end_ts = Timestamp(0)
         self.report_id: int | None = None
 
-    def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
-        dbpnl = DBAccountingReports(self.database)
-        self.processed_events.append(event)
-        try:
-            dbpnl.add_report_data(
-                report_id=self.report_id,  # type: ignore # report id is initialized by now
-                time=event.timestamp,
-                ts_converter=self.timestamp_to_date,
-                event=event,
-            )
-        except (DeserializationError, InputError) as e:
-            log.error(str(e))
-            return
-
-        log.debug(event.to_string(self.timestamp_to_date))
+    def _track_pnl(self, event_type: AccountingEventType, pnl: PNL) -> None:
+        """Track PnL for this event type"""
+        self.pnls[event_type] += pnl
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> Price:
         """Get the profit_currency price of asset in the given timestamp
@@ -134,7 +127,7 @@ class AccountingPot(CustomizableDateMixin):
         self.pnls.reset()
         self.cost_basis.reset(settings)
         self.events_accountant.reset()
-        self.processed_events = []
+        self.event_count = 0
 
     def add_in_event(
             self,  # pylint: disable=unused-argument
@@ -157,62 +150,68 @@ class AccountingPot(CustomizableDateMixin):
             return
 
         if given_price is not None:
-            price = given_price
+            # Custom price provided
+            pass
         else:
             try:
-                price = self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
+                self.get_rate_in_profit_currency(asset=asset, timestamp=timestamp)
             except (PriceQueryUnsupportedAsset, RemoteError):
-                price = ZERO_PRICE
+                # Use default price for now
+                pass
             except NoPriceForGivenTimestamp as e:
                 # In the case of NoPriceForGivenTimestamp when we got rate limited we let
                 # it propagate so the user can take action after the report is made
                 if e.rate_limited is True:
                     raise
-                price = ZERO_PRICE
+                # Use default price for now
 
-        prefork_events = handle_prefork_asset_acquisitions(
-            cost_basis=self.cost_basis,
+        # Handle prefork acquisitions (simplified - skip for now)
+        # TODO: Reimplement prefork handling with new system
+
+        # Determine amounts for tracking (unused for now but may be needed later)
+        if taxable is True:
+            _taxable_amount = amount
+            _free_amount = ZERO
+        else:
+            _taxable_amount = ZERO
+            _free_amount = amount
+
+        # Create a history event that represents this accounting event
+        history_event = HistoryEvent(
+            event_identifier=f'accounting_{self.event_count}',
+            sequence_index=0,
+            timestamp=TimestampMS(timestamp * 1000),  # Convert to milliseconds
             location=location,
-            timestamp=timestamp,
+            location_label=f'{event_type.serialize()}',
             asset=asset,
             amount=amount,
-            price=price,
-            ignored_asset_ids=self.ignored_asset_ids,
-            starting_index=len(self.processed_events),
-        )
-        for prefork_event in prefork_events:
-            self._add_processed_event(prefork_event)
-
-        if taxable is True:
-            taxable_amount = amount
-            free_amount = ZERO
-        else:
-            taxable_amount = ZERO
-            free_amount = amount
-        event = ProcessedAccountingEvent(
-            event_type=event_type,
             notes=notes,
-            location=location,
-            timestamp=timestamp,
-            asset=asset,
-            taxable_amount=taxable_amount,
-            free_amount=free_amount,
-            price=price,
-            pnl=PNL(),  # filled out later
-            cost_basis=None,
-            index=len(self.processed_events),
+            event_type=HEventType.RECEIVE,  # Map accounting events to history event types
+            event_subtype=HistoryEventSubType.NONE,
+            extra_data=extra_data or {},
         )
-        if extra_data:
-            event.extra_data = extra_data
-        self.cost_basis.obtain_asset(event)
-        # count profit/losses if we are inside the query period
-        if timestamp >= self.query_start_ts and taxable:
-            self.pnls[event_type] += event.calculate_pnl(
-                count_entire_amount_spend=False,
-                count_cost_basis_pnl=True,
-            )
 
-        self._add_processed_event(event)
+        # Add to database via our new accounting system
+        with self.database.user_write() as write_cursor:
+            dbevents = DBHistoryEvents(self.database)
+            history_event.identifier = dbevents.add_history_event(write_cursor, history_event)
+
+        # Ensure accounting is calculated for this event
+        self.accountant.ensure_accounting_calculated(up_to_timestamp=timestamp)
+
+        # Track cost basis acquisition
+        # TODO: Update cost basis to work with new system
+
+        # Track PnL if in query period
+        if timestamp >= self.query_start_ts and taxable:
+            # Calculate PnL using our new system
+            pnl_data = self.accountant.get_pnl_totals(
+                start_ts=timestamp,
+                end_ts=timestamp,
+            )
+            self._track_pnl(event_type, PNL(taxable=pnl_data.taxable, free=pnl_data.free))
+
+        self.event_count += 1
 
     def add_out_event(
             self,
@@ -257,65 +256,55 @@ class AccountingPot(CustomizableDateMixin):
         if asset.is_fiat() and event_type == AccountingEventType.TRADE:
             taxable = False  # for buys with fiat do not count it as taxable
 
-        handle_prefork_asset_spends(
-            originating_event_id=originating_event_id,
-            cost_basis=self.cost_basis,
-            asset=asset,
-            amount=amount,
-            timestamp=timestamp,
-        )
-        if given_price is not None:
-            price = given_price
-        else:
-            price = self.get_rate_in_profit_currency(
-                asset=asset,
-                timestamp=timestamp,
-            )
+        # Handle prefork spends (simplified - skip for now)
+        # TODO: Reimplement prefork handling with new system
+
+        # Price handling (simplified for new system)
+        # TODO: Integrate price handling with new accounting system
 
         if asset == A_KFEE:
-            count_cost_basis_pnl = False
+            # KFEE handling
             taxable = False
 
-        spend_cost = None
-        if count_cost_basis_pnl:
-            spend_cost = self.cost_basis.spend_asset(
-                originating_event_id=originating_event_id,
-                location=location,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                rate=price,
-                taxable_spend=taxable,
-            )
+        # TODO: Integrate cost basis spending with new system
+
         taxable_amount = taxable_amount_ratio * amount
         free_amount = amount - taxable_amount
-        if spend_cost:
-            taxable_amount = spend_cost.taxable_amount
-            free_amount = amount - spend_cost.taxable_amount
 
-        spend_event = ProcessedAccountingEvent(
-            event_type=event_type,
-            notes=notes,
+        # Create a history event for spending
+
+        history_event = HistoryEvent(
+            event_identifier=f'accounting_{self.event_count}',
+            sequence_index=0,
+            timestamp=TimestampMS(timestamp * 1000),  # Convert to milliseconds
             location=location,
-            timestamp=timestamp,
+            location_label=f'{event_type.serialize()}',
             asset=asset,
-            taxable_amount=taxable_amount,
-            free_amount=free_amount,
-            price=price,
-            pnl=PNL(),  # filled out later
-            cost_basis=spend_cost,
-            index=len(self.processed_events),
+            amount=-amount,  # Negative for spending
+            notes=notes,
+            event_type=HEventType.SPEND,  # Map to spend event type
+            event_subtype=HistoryEventSubType.NONE,
+            extra_data=extra_data or {},
         )
-        if extra_data:
-            spend_event.extra_data = extra_data
-        # count profit/losses if we are inside the query period
-        if timestamp >= self.query_start_ts and taxable:
-            self.pnls[event_type] += spend_event.calculate_pnl(
-                count_entire_amount_spend=count_entire_amount_spend,
-                count_cost_basis_pnl=count_cost_basis_pnl,
-            )
 
-        self._add_processed_event(spend_event)
+        # Add to database via our new accounting system
+        with self.database.user_write() as write_cursor:
+            dbevents = DBHistoryEvents(self.database)
+            history_event.identifier = dbevents.add_history_event(write_cursor, history_event)
+
+        # Ensure accounting is calculated for this event
+        self.accountant.ensure_accounting_calculated(up_to_timestamp=timestamp)
+
+        # Track PnL if in query period
+        if timestamp >= self.query_start_ts and taxable:
+            # Calculate PnL using our new system
+            pnl_data = self.accountant.get_pnl_totals(
+                start_ts=timestamp,
+                end_ts=timestamp,
+            )
+            self._track_pnl(event_type, PNL(taxable=pnl_data.taxable, free=pnl_data.free))
+
+        self.event_count += 1
         return free_amount, taxable_amount
 
     def add_asset_change_event(

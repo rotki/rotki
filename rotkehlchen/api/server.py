@@ -20,8 +20,6 @@ from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AccountingLinkablePropertiesResource,
-    AccountingReportDataResource,
-    AccountingReportsResource,
     AccountingRulesConflictsResource,
     AccountingRulesExportResource,
     AccountingRulesImportResource,
@@ -234,17 +232,6 @@ URLS_V1: URLS = [
     ('/history/events/export', ExportHistoryEventResource),
     ('/history/events/export/download', ExportHistoryDownloadResource),
     ('/history/actionable_items', HistoryActionableItemsResource),
-    ('/reports', AccountingReportsResource),
-    (
-        '/reports/<int:report_id>',
-        AccountingReportsResource,
-        'per_report_resource',
-    ),
-    (
-        '/reports/<int:report_id>/data',
-        AccountingReportDataResource,
-        'per_report_data_resource',
-    ),
     ('/accounting/rules', AccountingRulesResource),
     ('/accounting/rules/import', AccountingRulesImportResource),
     ('/accounting/rules/export', AccountingRulesExportResource),

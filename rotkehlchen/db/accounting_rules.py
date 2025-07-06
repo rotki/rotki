@@ -538,7 +538,7 @@ def query_missing_accounting_rules(
         # iterator
         current_event_index = 0
         for event_binding, event in bindings_and_events_iterator:
-            if accountant.processable_events_cache.get(event.identifier) is not None:  # type: ignore
+            if accountant.processable_events_cache.get(event.identifier) is not None:
                 current_event_index += 1
                 continue
 
@@ -572,22 +572,18 @@ def query_missing_accounting_rules(
             if len(new_missing_accounting_rule) != 0:
                 current_event_index += len(new_missing_accounting_rule)
                 if accounting_outcome is EventAccountingRuleStatus.NOT_PROCESSED:  # we processed it in the callback so is not missing  # noqa: E501
-                    accountant.processable_events_cache.add(
-                        key=event.identifier,  # type: ignore  # the identifier is optional in the event
-                        value=EventAccountingRuleStatus.PROCESSED,
-                    )
+                    accountant.processable_events_cache[event.identifier] = EventAccountingRuleStatus.PROCESSED
 
                 # update information about the new events
                 for processed_event_id, event_type_identifier in new_missing_accounting_rule:
-                    accountant.processable_events_cache.add(
-                        key=processed_event_id,
-                        value=EventAccountingRuleStatus.PROCESSED,
-                    )
-                    accountant.processable_events_cache_signatures.get(event_type_identifier).append(processed_event_id)
+                    accountant.processable_events_cache[processed_event_id] = EventAccountingRuleStatus.PROCESSED
+                    if event_type_identifier not in accountant.processable_events_cache_signatures:
+                        accountant.processable_events_cache_signatures[event_type_identifier] = []
+                    accountant.processable_events_cache_signatures[event_type_identifier].append(processed_event_id)
 
     result = []
     for event in events:
-        if (processable_status := accountant.processable_events_cache.get(event.identifier)) is None:  # type: ignore # noqa: E501
+        if (processable_status := accountant.processable_events_cache.get(event.identifier)) is None:
             result.append(EventAccountingRuleStatus.NOT_PROCESSED)
         else:
             result.append(processable_status)

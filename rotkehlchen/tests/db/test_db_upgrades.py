@@ -3585,8 +3585,8 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier LIKE "solana:%" ORDER BY identifier').fetchone()[0] == 0  # noqa: E501
 
         # Check that new accounting tables do not exist yet
-        assert not table_exists(cursor, 'history_events_accounting'), 'history_events_accounting table should not exist before upgrade'
-        assert not table_exists(cursor, 'asset_location_balances'), 'asset_location_balances table should not exist before upgrade'
+        assert not table_exists(cursor, 'history_events_accounting'), 'history_events_accounting table should not exist before upgrade'  # noqa: E501
+        assert not table_exists(cursor, 'asset_location_balances'), 'asset_location_balances table should not exist before upgrade'  # noqa: E501
 
     # Logout and upgrade
     db_v48.logout()
@@ -3629,12 +3629,12 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         ]
 
         # Check that new accounting tables were created
-        assert table_exists(cursor, 'history_events_accounting'), 'history_events_accounting table should exist after upgrade'
-        assert table_exists(cursor, 'asset_location_balances'), 'asset_location_balances table should exist after upgrade'
+        assert table_exists(cursor, 'history_events_accounting'), 'history_events_accounting table should exist after upgrade'  # noqa: E501
+        assert table_exists(cursor, 'asset_location_balances'), 'asset_location_balances table should exist after upgrade'  # noqa: E501
 
         # Verify the table schemas are correct
         accounting_schema = cursor.execute(
-            "SELECT sql FROM sqlite_master WHERE type='table' AND name='history_events_accounting'",
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='history_events_accounting'",  # noqa: E501
         ).fetchone()[0]
         assert 'history_event_id INTEGER NOT NULL' in accounting_schema
         assert 'total_amount_before TEXT NOT NULL' in accounting_schema
@@ -3643,7 +3643,7 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
         assert 'pnl_taxable TEXT NOT NULL' in accounting_schema
         assert 'pnl_free TEXT NOT NULL' in accounting_schema
         assert 'accounting_settings_hash TEXT NOT NULL' in accounting_schema
-        assert 'FOREIGN KEY(history_event_id) REFERENCES history_events(identifier)' in accounting_schema
+        assert 'FOREIGN KEY(history_event_id) REFERENCES history_events(identifier)' in accounting_schema  # noqa: E501
         assert 'PRIMARY KEY(history_event_id, accounting_settings_hash)' in accounting_schema
 
         balances_schema = cursor.execute(
@@ -3659,7 +3659,7 @@ def test_upgrade_db_48_to_49(user_data_dir, messages_aggregator):
 
         # Verify the indexes were created
         indexes = cursor.execute(
-            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name IN ('history_events_accounting', 'asset_location_balances')",
+            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name IN ('history_events_accounting', 'asset_location_balances')",  # noqa: E501
         ).fetchall()
         index_names = [idx[0] for idx in indexes]
         assert 'idx_history_events_accounting_event' in index_names

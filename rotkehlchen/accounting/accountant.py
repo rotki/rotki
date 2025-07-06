@@ -2,9 +2,9 @@ import hashlib
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.accounting.pnl import PnlTotals
+from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.accounting_data import (
     AccountingData,
     HistoryEventWithAccounting,
@@ -12,6 +12,7 @@ from rotkehlchen.accounting.structures.accounting_data import (
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
@@ -49,11 +50,47 @@ class Accountant:
         self.premium = premium
         self.chains_aggregator = chains_aggregator
 
+        # Compatibility attributes for gradual migration
+        self.pots: list[Any] = []  # Will be removed after full migration
+        self.first_processed_timestamp = Timestamp(0)
+        self.query_start_ts = Timestamp(0)
+        self.query_end_ts = Timestamp(0)
+        self.currently_processing_timestamp = Timestamp(0)
+
+        # Initialize CSV exporter for compatibility
+        from rotkehlchen.accounting.export.csv import CSVExporter
+        self.csvexporter = CSVExporter(database=db)
+
+        self.processable_events_cache: dict[Any, Any] = {}  # For accounting rules compatibility
+        self.processable_events_cache_signatures: dict[Any, list[Any]] = {}  # For rules compatibility
+
     def activate_premium_status(self, premium: Premium) -> None:
         self.premium = premium
 
     def deactivate_premium_status(self) -> None:
         self.premium = None
+
+    def process_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            events: list[Any],  # Accept any event type for compatibility
+    ) -> int:
+        """
+        Compatibility method for processing history.
+        In the new system, accounting is calculated progressively.
+        Returns a placeholder report_id since reports are removed.
+        """
+        # Set timestamps for compatibility
+        self.query_start_ts = start_ts
+        self.query_end_ts = end_ts
+
+        # In the new system, we would ensure accounting is calculated
+        # up to the end timestamp
+        self.ensure_accounting_calculated(up_to_timestamp=end_ts)
+        
+        # Return a placeholder report_id since reports system is removed
+        return 1
 
     # --- Core Incremental Accounting ---
 
@@ -216,28 +253,29 @@ class Accountant:
                 query_params.extend(params[3:])
             cursor.execute(query, query_params)
 
-            results = []
+            results: list[HistoryEventWithAccounting] = []
             for row in cursor.fetchall():
                 # TODO: Properly deserialize HistoryBaseEntry from row
-                # For now, create a placeholder
-                event = None  # Will need proper deserialization
+                # For now, skip since we can't deserialize yet
+                pass
 
-                if row[-6] is not None:  # Has accounting data
-                    accounting_data = AccountingData(
-                        total_amount_before=FVal(row[-6]),
-                        cost_basis_before=FVal(row[-5]) if row[-5] else None,
-                        is_taxable=bool(row[-4]),
-                        pnl_taxable=FVal(row[-3]),
-                        pnl_free=FVal(row[-2]),
-                        settings_hash=row[-1],
-                    )
-                else:
-                    accounting_data = None
+                # Accounting data deserialization code (commented until event deserialization is implemented)
+                # if row[-6] is not None:  # Has accounting data
+                #     accounting_data = AccountingData(
+                #         total_amount_before=FVal(row[-6]),
+                #         cost_basis_before=FVal(row[-5]) if row[-5] else None,
+                #         is_taxable=bool(row[-4]),
+                #         pnl_taxable=FVal(row[-3]),
+                #         pnl_free=FVal(row[-2]),
+                #         settings_hash=row[-1],
+                #     )
+                # else:
+                #     accounting_data = None
 
-                results.append(HistoryEventWithAccounting(
-                    event=event,
-                    accounting_data=accounting_data,
-                ))
+                # results.append(HistoryEventWithAccounting(
+                #     event=properly_deserialized_event,
+                #     accounting_data=accounting_data,
+                # ))
 
             return results
 
@@ -262,10 +300,14 @@ class Accountant:
 
             result = cursor.fetchone()
             if result and result[0] is not None:
-                return PnlTotals(
+                # Create a PnlTotals with a single entry for the totals
+                from rotkehlchen.accounting.mixins.event import AccountingEventType
+                totals = PnlTotals()
+                totals[AccountingEventType.TRANSACTION_EVENT] = PNL(
                     taxable=FVal(str(result[0])),
                     free=FVal(str(result[1] or 0)),
                 )
+                return totals
             else:
                 return PnlTotals()
 
@@ -439,7 +481,7 @@ class Accountant:
             extra_data=None,  # TODO: Deserialize extra_data
         )
 
-    def _determine_event_taxability(self, event: HistoryBaseEntry, settings) -> bool:
+    def _determine_event_taxability(self, event: HistoryBaseEntry, settings: DBSettings) -> bool:
         """Determine if an event is taxable based on event type and settings"""
         # Simplified logic - would need proper implementation based on accounting rules
         from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -508,11 +550,11 @@ class Accountant:
         """Get list of event IDs that don't have accounting data for given settings"""
         with self.db.conn.read_ctx() as cursor:
             timestamp_filter = ''
-            params = [settings_hash]
+            params: list[str | int] = [settings_hash]
 
             if up_to_timestamp is not None:
                 timestamp_filter = ' AND he.timestamp <= ?'
-                params.append(up_to_timestamp)
+                params.append(int(up_to_timestamp))
 
             cursor.execute(f"""
                 SELECT he.identifier
