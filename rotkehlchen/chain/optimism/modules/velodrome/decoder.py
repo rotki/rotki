@@ -54,4 +54,4 @@ class VelodromeDecoder(VelodromeLikeDecoder):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_VELODROME, label='velodrome_finance', image='velodrome.png'),)  # noqa: E501
+        return (CounterpartyDetails(identifier=CPT_VELODROME, label='Velodrome Finance', image='velodrome.png'),)  # noqa: E501
