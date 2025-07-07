@@ -11,12 +11,15 @@ from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteTXType,
 )
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_sync_response_with_result,
@@ -33,6 +36,7 @@ from rotkehlchen.tests.utils.factories import (
     make_random_timestamp,
 )
 from rotkehlchen.types import (
+    BTCAddress,
     ChainID,
     EvmTransaction,
     Location,
@@ -40,6 +44,7 @@ from rotkehlchen.types import (
     OnlyPurgeableModuleName,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
 )
 
 if TYPE_CHECKING:
@@ -204,6 +209,58 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
+
+    # check that removing bitcoin events works
+    events_db = DBHistoryEvents(rotki.data.db)
+    event_identifier1, event_identifier2 = 'xxxx', 'zzzz'
+    with rotki.data.db.user_write() as write_cursor:
+        for event in [HistoryEvent(
+            event_identifier=event_identifier,
+            sequence_index=0,
+            timestamp=TimestampMS(1600000000000),
+            location=Location.BITCOIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_BTC,
+            amount=FVal('0.0001'),
+        ) for event_identifier in (event_identifier1, event_identifier2)]:
+            events_db.add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+                mapping_values=(  # Mark the first event as customized
+                    {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED}
+                    if event.event_identifier == event_identifier1 else {}
+                ),
+            )
+        rotki.data.db.set_dynamic_cache(  # also add a cache entry that should get deleted in purge
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BITCOIN_TX_BLOCK,
+            value=12345,
+            address=BTCAddress('bc1xxxxxxxxxx'),
+        )
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchaintransactionsresource',
+        ),
+        json={'chain': 'btc'},
+    )
+    assert_simple_ok_response(response)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = events_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+            has_premium=True,
+        )
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?;',
+            (f"{DBCacheDynamic.LAST_BITCOIN_TX_BLOCK.value[0].format(address='')}%",),
+        ).fetchone()[0] == 0
+
+    # Only the uncustomized event should have been removed.
+    assert len(events) == 1
+    events[0].event_identifier = event_identifier2
 
 
 def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:

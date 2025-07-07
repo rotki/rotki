@@ -238,11 +238,11 @@ from rotkehlchen.serialization.schemas import (
 )
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
+    CHAINS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SOLANA_TOKEN_KINDS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
-    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -634,10 +634,10 @@ class BlockchainTransactionsResource(BaseMethodView):
     @use_kwargs(delete_schema, location='json')
     def delete(
             self,
-            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
+            chain: CHAINS_WITH_TRANSACTIONS_TYPE | None,
             tx_hash: EVMTxHash | None,
     ) -> Response:
-        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)
+        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)  # type: ignore[arg-type] # schema ensures chain is included when tx_hash is present.
 
 
 class EvmTransactionsResource(BaseMethodView):

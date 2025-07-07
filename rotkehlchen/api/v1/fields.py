@@ -383,8 +383,15 @@ class FloatingPercentageField(fields.Field[FVal]):
 
 class BlockchainField(fields.Field):
 
-    def __init__(self, *, exclude_types: Sequence[SupportedBlockchain] | None = None, **kwargs: Any) -> None:  # noqa: E501
+    def __init__(
+            self,
+            *,
+            exclude_types: Sequence[SupportedBlockchain] | None = None,
+            allow_only: Sequence[SupportedBlockchain] | None = None,
+            **kwargs: Any,
+    ) -> None:
         self.exclude_types = exclude_types
+        self.allow_only = allow_only
         super().__init__(**kwargs)
 
     def _deserialize(
