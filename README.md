@@ -12,19 +12,17 @@
 
 <div align="center">
 
-[![GitHub release](https://img.shields.io/github/release/rotki/rotki.svg)](https://GitHub.com/rotki/rotki/releases/)
-[![Docker Image Version](https://img.shields.io/docker/v/rotki/rotki/latest?label=Docker)](https://hub.docker.com/r/rotki/rotki)
-[![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg)](https://GitHub.com/rotki/rotki/commit/)
-[![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat)](https://github.com/rotki/rotki/graphs/contributors)
-[![Visitors](https://api.visitorbadge.io/api/visitors?path=rotki%2Frotki%20&countColor=%23263759&style=flat)](https://rotki.com/)
-[![GitHub forks](https://img.shields.io/github/forks/rotki/rotki)](https://github.com/rotki/rotki/forks)
-[![GitHub stars](https://img.shields.io/github/stars/rotki/rotki)](https://github.com/rotki/rotki/stargazers)
-[![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki)](https://github.com/rotki/rotki/commits/master)
-[![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/rotki/rotki/badge)](https://www.gitpoap.io/gh/rotki/rotki)
-[![Github downloads](https://img.shields.io/github/downloads/rotki/rotki/total.svg)](https://GitHub.com/rotki/rotki/releases/)
-[![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen)](https://rotki.com/jobs/)
-[![X Follow](https://img.shields.io/twitter/follow/rotkiapp)](https://twitter.com/rotkiapp)
-[![Discord](https://img.shields.io/discord/657906918408585217.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.rotki.com/)
+[![GitHub release](https://img.shields.io/github/release/rotki/rotki.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://GitHub.com/rotki/rotki/releases/)
+[![Docker Image Version](https://img.shields.io/docker/v/rotki/rotki/latest?label=Docker?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://hub.docker.com/r/rotki/rotki)
+[![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://GitHub.com/rotki/rotki/commit/)
+[![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/graphs/contributors)
+[![GitHub forks](https://img.shields.io/github/forks/rotki/rotki?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/forks)
+[![GitHub stars](https://img.shields.io/github/stars/rotki/rotki?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/stargazers)
+[![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/commits/master)
+[![Github downloads](https://img.shields.io/github/downloads/rotki/rotki/total.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://GitHub.com/rotki/rotki/releases/)
+[![Hiring](https://img.shields.io/badge/Hiring-Open-brightgreen?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://rotki.com/jobs/)
+[![X Follow](https://img.shields.io/twitter/follow/rotkiapp?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://twitter.com/rotkiapp)
+[![Discord](https://img.shields.io/discord/657906918408585217.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://discord.rotki.com/)
 
 </div>
 
