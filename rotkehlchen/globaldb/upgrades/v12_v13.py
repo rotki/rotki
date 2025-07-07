@@ -88,7 +88,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
         write_cursor.execute("""
        CREATE TABLE IF NOT EXISTS user_added_solana_tokens (
            identifier TEXT NOT NULL UNIQUE,
-           FOREIGN KEY(identifier) REFERENCES assets(identifier)
+           FOREIGN KEY (identifier) REFERENCES assets(identifier) ON DELETE CASCADE
        );
        """)
         write_cursor.executemany(  # record which tokens were user-added for manual upgrade

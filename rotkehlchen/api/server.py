@@ -136,6 +136,7 @@ from rotkehlchen.api.v1.resources import (
     ReverseEnsResource,
     RpcNodesResource,
     SettingsResource,
+    SolanaTokenMigrationResource,
     SpamEvmTokenResource,
     StakingResource,
     StatisticsAssetBalanceResource,
@@ -339,6 +340,7 @@ URLS_V1: URLS = [
     ('/wallet/transfer/native', PrepareNativeTransferResource),
     ('/wallet/interacted', AddressesInteractedResource),
     ('/wallet/balance', AccountTokenBalanceResource),
+    ('/solana/tokens/migrate', SolanaTokenMigrationResource),
 ]
 
 logger = logging.getLogger(__name__)
