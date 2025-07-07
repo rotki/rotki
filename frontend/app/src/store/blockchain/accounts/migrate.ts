@@ -17,7 +17,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   let migratedAddresses = ref<MigratedAddresses>([]);
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
-  const { getChainName, isEvm, txChains } = useSupportedChains();
+  const { evmAndEvmLikeTxChainsInfo, getChainName, isEvm } = useSupportedChains();
   const { fetchAccounts } = useBlockchains();
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
@@ -25,7 +25,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   const { notify } = useNotificationsStore();
 
   const handleMigratedAccounts = (): void => {
-    const txEvmChainsVal = get(txChains);
+    const txEvmChainsVal = get(evmAndEvmLikeTxChainsInfo);
     assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
     const tokenChains: string[] = txEvmChainsVal.map(x => x.id);
     const addresses: Record<string, string[]> = {};
