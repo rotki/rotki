@@ -899,8 +899,8 @@ class Location(DBCharEnumMixIn):
         return ChainID.POLYGON_POS.value
 
     @staticmethod
-    def from_chain(chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
-        assert chain in SUPPORTED_EVM_EVMLIKE_CHAINS
+    def from_chain(chain: CHAINS_WITH_TRANSACTIONS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
+        assert chain in CHAINS_WITH_TRANSACTIONS
         match chain:
             case SupportedBlockchain.ETHEREUM:
                 return Location.ETHEREUM
@@ -920,6 +920,8 @@ class Location(DBCharEnumMixIn):
                 return Location.BINANCE_SC
             case SupportedBlockchain.ZKSYNC_LITE:
                 return Location.ZKSYNC_LITE
+            case SupportedBlockchain.BITCOIN:
+                return Location.BITCOIN
             case _:  # should never happen
                 raise AssertionError(f'Got in Location.from_chain for {chain}')
 
@@ -931,8 +933,7 @@ EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_
 EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
 EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
 
-# For now Location enum has only evmlike chains. This will change so keep separate variable
-BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE
+BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE | Literal[Location.BITCOIN]
 
 
 class ExchangeAuthCredentials(NamedTuple):

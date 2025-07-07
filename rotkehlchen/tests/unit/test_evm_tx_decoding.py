@@ -189,7 +189,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
         assert write_cursor.execute('SELECT COUNT(*) from evm_events_info').fetchone()[0] == 2
         assert write_cursor.execute('SELECT COUNT(*) from evm_tx_mappings').fetchone()[0] == 1
 
-        dbevents.reset_evm_events_for_redecode(write_cursor, Location.ETHEREUM)
+        dbevents.reset_events_for_redecode(write_cursor, Location.ETHEREUM)
         # after deletion we only keep the customized event
         assert write_cursor.execute('SELECT event_identifier from history_events').fetchall() == [(events[1].event_identifier,)]  # noqa: E501
         assert write_cursor.execute('SELECT identifier from evm_events_info').fetchall() == [(events[1].identifier,)]  # noqa: E501

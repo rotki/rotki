@@ -114,7 +114,6 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
     NON_EVM_CHAINS,
-    SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -318,12 +317,7 @@ class RequiredAddressOptionalChainSchema(Schema):
 
 class BlockchainTransactionDeletionSchema(Schema):
     chain = BlockchainField(
-        exclude_types=(
-            SupportedBlockchain.ETHEREUM_BEACONCHAIN,
-            SupportedBlockchain.AVALANCHE,
-            *typing.get_args(SUPPORTED_BITCOIN_CHAINS),
-            *typing.get_args(SUPPORTED_SUBSTRATE_CHAINS),
-        ),
+        allow_only=typing.get_args(CHAINS_WITH_TRANSACTIONS),
         required=False,
         load_default=None,
     )
@@ -335,9 +329,18 @@ class BlockchainTransactionDeletionSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        if data['tx_hash'] is not None and data['chain'] is None:
+        if data['tx_hash'] is None:
+            return
+
+        if (chain := data['chain']) is None:
             raise ValidationError(
                 message='Deleting a specific transaction needs both tx_hash and chain',
+                field_name='tx_hash',
+            )
+
+        if not chain.is_evm():
+            raise ValidationError(
+                message='Deleting a specific transaction is only supported for evm chains',
                 field_name='tx_hash',
             )
 

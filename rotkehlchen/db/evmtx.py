@@ -243,8 +243,9 @@ class DBEvmTx:
 
     def delete_evm_transaction_data(
             self,
-            chain: SUPPORTED_EVM_CHAINS_TYPE | None,
-            tx_hash: EVMTxHash | None,
+            write_cursor: 'DBCursor',
+            chain: SUPPORTED_EVM_CHAINS_TYPE | None = None,
+            tx_hash: EVMTxHash | None = None,
     ) -> None:
         """Deletes evm transaction related data from the DB.
         Either all data, data related to a single chain or a single chain/tx_hash only"""
@@ -268,14 +269,12 @@ class DBEvmTx:
                     (f'{entry.to_range_prefix("internaltxs")}\\_%', '\\'),
                     (f'{entry.to_range_prefix("tokentxs")}\\_%', '\\'),
                 ])
-                with self.db.user_write() as write_cursor:
-                    write_cursor.executemany(
-                        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                        query_ranges_tuples,
-                    )
+                write_cursor.executemany(
+                    'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+                    query_ranges_tuples,
+                )
 
-        with self.db.user_write() as write_cursor:  # finally delete transactions
-            write_cursor.execute(delete_query, delete_bindings)
+        write_cursor.execute(delete_query, delete_bindings)  # finally delete transactions
 
     def get_transaction_hashes_no_receipt(
             self,
