@@ -195,7 +195,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
         Object.entries(loopringBalances).map(([address, assets]) => [
           address,
           {
-            assets,
+            assets: Object.fromEntries(Object.entries(assets).map(([asset, value]) => [asset, { address: value }])),
             liabilities: {},
           },
         ]),
@@ -205,7 +205,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
       for (const loopringAssets of Object.values(loopringBalances)) {
         for (const [asset, value] of Object.entries(loopringAssets)) {
           const identifier = getAssociatedAssetIdentifier(asset);
-          const associatedAsset: string = get(identifier);
+          const associatedAsset: string = get(identifier) ?? asset;
           const ownedAsset = assets[associatedAsset];
 
           if (!ownedAsset)
