@@ -9,13 +9,16 @@ separate ProcessedAccountingEvent objects.
 TODO: Reimplement CSV export to work with HistoryEventWithAccounting
 """
 import csv
+import json
 import logging
 import os
+from collections.abc import Collection
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Collection
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -66,6 +69,8 @@ class CSVExporter:
 
     def __init__(self, database: 'DBHandler'):
         self.database = database
+        # Initialize transaction explorers from settings for compatibility
+        self.transaction_explorers = self._init_transaction_explorers()
         log.warning('CSV export functionality has been temporarily removed')
 
     def reset(self, start_ts: Any, end_ts: Any) -> None:
@@ -78,3 +83,31 @@ class CSVExporter:
     def export(self, events: Any, pnls: PnlTotals, directory: Path) -> tuple[bool, str]:
         """Placeholder export method"""
         return False, 'CSV export functionality has been removed and needs to be redesigned'
+
+    def _init_transaction_explorers(self) -> dict[Any, str]:
+        """Initialize transaction explorers from frontend settings for compatibility"""
+        explorers = {}
+        with self.database.conn.read_ctx() as cursor:
+            settings = self.database.get_settings(cursor)
+            if settings.frontend_settings:
+                try:
+                    frontend_data = json.loads(settings.frontend_settings)
+                    if 'explorers' in frontend_data:
+                        for chain_str, chain_data in frontend_data['explorers'].items():
+                            try:
+                                if chain_str == 'eth':
+                                    chain = SupportedBlockchain.ETHEREUM
+                                elif chain_str == 'polygon_pos':
+                                    chain = SupportedBlockchain.POLYGON_POS
+                                else:
+                                    # Skip other chains for now
+                                    continue
+
+                                if isinstance(chain_data, dict) and 'transaction' in chain_data:
+                                    explorers[chain] = chain_data['transaction']
+                            except (KeyError, ValueError, TypeError):
+                                continue  # Skip problematic chain configs
+                except json.JSONDecodeError:
+                    pass
+
+        return explorers

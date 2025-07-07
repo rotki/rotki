@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.structures.accounting_data import AccountingData
     from rotkehlchen.db.settings import DBSettings
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
 
@@ -111,6 +112,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             notes: str | None = None,
             identifier: int | None = None,
             extra_data: ExtraDataType | None = None,
+            accounting_data: 'AccountingData | None' = None,
     ) -> None:
         """
         - `event_identifier`: the identifier shared between related events
@@ -120,6 +122,8 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
            user address. For exchange events it's the exchange name assigned by the user
         - `extra_data`: Contains event specific extra data. Optional, only for events that
            need to keep extra information such as the CDP ID of a makerdao vault etc.
+        - `accounting_data`: Optional accounting information (cost basis, PnL, etc.) overlay
+           for this event. None if not yet calculated or not applicable.
         """
         self.event_identifier = event_identifier
         self.sequence_index = sequence_index
@@ -133,6 +137,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         self.notes = notes
         self.identifier = identifier
         self.extra_data = extra_data
+        self.accounting_data = accounting_data
 
         # Check that the received event type and subtype is a valid combination
         if __debug__:  # noqa: SIM102
@@ -451,6 +456,7 @@ class HistoryEvent(HistoryBaseEntry):
             notes: str | None = None,
             identifier: int | None = None,
             extra_data: dict[str, Any] | None = None,
+            accounting_data: 'AccountingData | None' = None,
     ) -> None:
         super().__init__(
             event_identifier=event_identifier,
@@ -465,6 +471,7 @@ class HistoryEvent(HistoryBaseEntry):
             notes=notes,
             identifier=identifier,
             extra_data=extra_data,
+            accounting_data=accounting_data,
         )
 
     @property

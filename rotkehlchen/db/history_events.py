@@ -350,11 +350,43 @@ class DBHistoryEvents:
             has_premium: bool,
             group_by_event_ids: bool = False,
             match_exact_events: bool = True,
+            include_accounting: bool = False,
+            accounting_settings_hash: str | None = None,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+        # Build the base fields and joins
+        base_fields = (
+            f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS}'
+        )
+        base_joins = ALL_EVENTS_DATA_JOIN
+
+        # Add accounting fields and join if requested
+        if include_accounting:
+            accounting_fields = (
+                ', hea.total_amount_before, hea.cost_basis_before, hea.is_taxable, '
+                'hea.pnl_taxable, hea.pnl_free, hea.accounting_settings_hash'
+            )
+            base_fields += accounting_fields
+            if accounting_settings_hash:
+                base_joins += (
+                    '\nLEFT JOIN history_events_accounting hea ON '
+                    'history_events.identifier = hea.history_event_id AND '
+                    'hea.accounting_settings_hash = ?'
+                )
+                # Add the settings hash to query bindings
+                query_bindings = [accounting_settings_hash]
+            else:
+                base_joins += (
+                    '\nLEFT JOIN history_events_accounting hea ON '
+                    'history_events.identifier = hea.history_event_id'
+                )
+                query_bindings = []
+        else:
+            query_bindings = []
+
+        base_suffix = f'{base_fields} {base_joins}'
         if group_by_event_ids:
-            filters, query_bindings = filter_query.prepare(
+            filters, filter_bindings = filter_query.prepare(
                 with_group_by=True,
                 with_pagination=False,
                 with_order=match_exact_events is True,  # skip order when we want the whole group of events since we order in an outer part of the query later  # noqa: E501
@@ -362,11 +394,14 @@ class DBHistoryEvents:
             )
             prefix = 'SELECT COUNT(*), *'
         else:
-            filters, query_bindings = filter_query.prepare(
+            filters, filter_bindings = filter_query.prepare(
                 with_order=match_exact_events is True,  # same as above
                 with_pagination=False,
             )
             prefix = 'SELECT *'
+
+        # Combine bindings (accounting bindings first, then filter bindings)
+        query_bindings.extend(filter_bindings)
 
         if has_premium:
             suffix, limit = base_suffix, []
@@ -475,6 +510,8 @@ class DBHistoryEvents:
             has_premium: bool,
             group_by_event_ids: bool = False,
             match_exact_events: bool = True,
+            include_accounting: bool = False,
+            accounting_settings_hash: str | None = None,
     ) -> (
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] |
         list[tuple[int, EvmEvent]] | list[EvmEvent] |
@@ -482,6 +519,9 @@ class DBHistoryEvents:
         list[tuple[int, EthWithdrawalEvent]] | list[EthWithdrawalEvent]
     ):
         """Get all events from the DB, deserialized depending on the event type
+
+        If include_accounting is True, will also fetch accounting data and attach it to events.
+        The accounting_settings_hash parameter allows fetching specific accounting calculations.
 
         TODO: To not query all columns with all joins for all cases, we perhaps can
         peek on the entry type of the filter and adjust the SELECT fields accordingly?
@@ -492,6 +532,8 @@ class DBHistoryEvents:
             group_by_event_ids=group_by_event_ids,
             match_exact_events=match_exact_events,
             entries_limit=FREE_HISTORY_EVENTS_LIMIT,
+            include_accounting=include_accounting,
+            accounting_settings_hash=accounting_settings_hash,
         )
         if filter_query.pagination is not None:
             base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
@@ -560,6 +602,30 @@ class DBHistoryEvents:
                 log.error(f'Failed to deserialize history event {entry} due to {e!s}')
                 failed_to_deserialize = True
                 continue
+
+            # Attach accounting data if requested and available
+            if include_accounting:
+                # Accounting data is at the end of the row
+                # Check if we have accounting data (not all NULL)
+                accounting_start_idx = -6  # Last 6 fields are accounting data
+                if entry[accounting_start_idx] is not None:  # total_amount_before
+                    from rotkehlchen.accounting.structures.accounting_data import AccountingData
+
+                    accounting_data = AccountingData(
+                        total_amount_before=FVal(entry[accounting_start_idx]),
+                        cost_basis_before=(
+                            FVal(entry[accounting_start_idx + 1])
+                            if entry[accounting_start_idx + 1] is not None
+                            else None
+                        ),
+                        is_taxable=bool(entry[accounting_start_idx + 2]),
+                        pnl_taxable=FVal(entry[accounting_start_idx + 3]),
+                        pnl_free=FVal(entry[accounting_start_idx + 4]),
+                        settings_hash=entry[accounting_start_idx + 5],
+                    )
+                    deserialized_event.accounting_data = accounting_data
+                else:
+                    deserialized_event.accounting_data = None
 
             if group_by_event_ids is True:
                 output.append((entry[0], deserialized_event))  # type: ignore
@@ -720,6 +786,8 @@ class DBHistoryEvents:
             filter_query=query_filter,
             group_by_event_ids=group_by_event_ids,
             entries_limit=free_limit,
+            include_accounting=False,
+            accounting_settings_hash=None,
         )
         count_without_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({premium_query})',
@@ -740,6 +808,8 @@ class DBHistoryEvents:
             filter_query=query_filter,
             group_by_event_ids=group_by_event_ids,
             entries_limit=free_limit,
+            include_accounting=False,
+            accounting_settings_hash=None,
         )
         count_with_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({free_query})',

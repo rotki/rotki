@@ -1716,10 +1716,32 @@ class RestAPI:
 
         return OK_RESULT
 
-
     def get_history_status(self) -> Response:
         result = self.rotkehlchen.get_history_query_status()
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def get_history_actionable_items(self) -> Response:
+        """Placeholder for removed functionality"""
+        return api_response(
+            wrap_in_fail_result(
+                'History actionable items functionality has been removed pending redesign',
+            ),
+            status_code=HTTPStatus.NOT_IMPLEMENTED,
+        )
+
+    def export_processed_history_csv(self, directory_path: Path) -> Response:
+        """Placeholder for removed functionality"""
+        return api_response(
+            wrap_in_fail_result('CSV export functionality has been removed pending redesign'),
+            status_code=HTTPStatus.NOT_IMPLEMENTED,
+        )
+
+    def download_processed_history_csv(self) -> Response:
+        """Placeholder for removed functionality"""
+        return api_response(
+            wrap_in_fail_result('CSV download functionality has been removed pending redesign'),
+            status_code=HTTPStatus.NOT_IMPLEMENTED,
+        )
 
     def query_periodic_data(self) -> Response:
         data = self.rotkehlchen.query_periodic_data()
@@ -3488,7 +3510,6 @@ class RestAPI:
             filepath.unlink()  # should not raise file not found as marshmallow should check
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-
     def get_associated_locations(self) -> Response:
         locations = self.rotkehlchen.data.db.get_associated_locations()
         return api_response(
@@ -4763,8 +4784,9 @@ class RestAPI:
             counterparty=counterparty,
         )
         affected_events = accountant.processable_events_cache_signatures.get(type_identifier)
-        for event_id in affected_events:
-            accountant.processable_events_cache.remove(event_id)
+        if affected_events:
+            for event_id in affected_events:
+                accountant.processable_events_cache.pop(event_id, None)
 
     def add_accounting_rule(
             self,

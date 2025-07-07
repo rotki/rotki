@@ -168,6 +168,7 @@ cargo run -- --database ../data/global.db --port 4343
 #### Styling
 - Transitioning from scoped SCSS with BEM to tailwind
 - Follow existing patterns for consistency
+- Python: Do not add imports inside functions but add them to the top of the file.
 
 #### Testing
 - Run tests with `pnpm run test:unit` from `frontend/` directory

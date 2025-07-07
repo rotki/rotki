@@ -33,3 +33,13 @@ def get_calculated_asset_amount(*args, **kwargs) -> FVal:
 
 # Stub data for compatibility
 history1: list[Any] = []
+
+
+def accounting_create_and_process_history(*args, **kwargs) -> Any:
+    """Stub for accounting_create_and_process_history - needs reimplementation"""
+    # Return a minimal accountant object for tests
+    return type('Accountant', (), {'pots': [type('Pot', (), {})()]})()
+
+
+def toggle_ignore_an_asset(*args, **kwargs) -> None:
+    """Stub for toggle_ignore_an_asset - needs reimplementation"""

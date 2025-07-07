@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.structures.accounting_data import AccountingData
     from rotkehlchen.history.events.structures.types import EVM_EVENT_DB_TUPLE_READ
 
 
@@ -100,6 +101,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
             event_identifier: str | None = None,
+            accounting_data: 'AccountingData | None' = None,
     ) -> None:
         if event_identifier is None:
             calculated_event_identifier = f'{location.to_chain_id()}{tx_hash.hex()}'
@@ -119,6 +121,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             notes=notes,
             identifier=identifier,
             extra_data=extra_data,
+            accounting_data=accounting_data,
         )
         self.address = address
         self.tx_hash = tx_hash

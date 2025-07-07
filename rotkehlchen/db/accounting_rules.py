@@ -572,18 +572,25 @@ def query_missing_accounting_rules(
             if len(new_missing_accounting_rule) != 0:
                 current_event_index += len(new_missing_accounting_rule)
                 if accounting_outcome is EventAccountingRuleStatus.NOT_PROCESSED:  # we processed it in the callback so is not missing  # noqa: E501
-                    accountant.processable_events_cache[event.identifier] = EventAccountingRuleStatus.PROCESSED
+                    accountant.processable_events_cache[event.identifier] = (
+                        EventAccountingRuleStatus.PROCESSED
+                    )
 
                 # update information about the new events
                 for processed_event_id, event_type_identifier in new_missing_accounting_rule:
-                    accountant.processable_events_cache[processed_event_id] = EventAccountingRuleStatus.PROCESSED
+                    accountant.processable_events_cache[processed_event_id] = (
+                        EventAccountingRuleStatus.PROCESSED
+                    )
                     if event_type_identifier not in accountant.processable_events_cache_signatures:
                         accountant.processable_events_cache_signatures[event_type_identifier] = []
-                    accountant.processable_events_cache_signatures[event_type_identifier].append(processed_event_id)
+                    accountant.processable_events_cache_signatures[event_type_identifier].append(
+                        processed_event_id,
+                    )
 
     result = []
     for event in events:
-        if (processable_status := accountant.processable_events_cache.get(event.identifier)) is None:
+        processable_status = accountant.processable_events_cache.get(event.identifier)
+        if processable_status is None:
             result.append(EventAccountingRuleStatus.NOT_PROCESSED)
         else:
             result.append(processable_status)

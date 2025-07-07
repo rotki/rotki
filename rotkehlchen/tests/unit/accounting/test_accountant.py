@@ -1,9 +1,11 @@
+# pylint: disable=redefined-outer-name
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.constants.assets import A_ETH, A_USD
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -74,7 +76,6 @@ def sample_history_events(database):
     ])
 
     # Save events to database
-    from rotkehlchen.db.history_events import DBHistoryEvents
     dbevents = DBHistoryEvents(database)
 
     with database.user_write() as write_cursor:

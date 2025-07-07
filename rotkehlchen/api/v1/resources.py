@@ -21,7 +21,7 @@ from rotkehlchen.api.rest import (
     wrap_in_fail_result,
 )
 from rotkehlchen.api.v1.common_resources import BaseMethodView
-from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
+from rotkehlchen.api.v1.parser import resource_parser
 from rotkehlchen.api.v1.schemas import (
     AccountingRuleConflictsPagination,
     AccountingRulesQuerySchema,
@@ -217,7 +217,6 @@ from rotkehlchen.db.filtering import (
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
-    ReportDataFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1515,8 +1514,6 @@ class HistoryActionableItemsResource(BaseMethodView):
     @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_history_actionable_items()
-
-
 
 
 class HistoryExportingResource(BaseMethodView):

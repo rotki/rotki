@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.structures.accounting_data import AccountingData
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,6 +67,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             is_fee: bool = False,
             location_label: str | None = None,
             notes: str | None = None,
+            accounting_data: 'AccountingData | None' = None,
     ) -> None:
         """
         An asset movement (deposit/withdrawal) event. Important to note that the amount of
@@ -110,6 +112,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             identifier=identifier,
             extra_data=extra_data,
             location_label=location_label,
+            accounting_data=accounting_data,
         )
 
     @property

@@ -15,7 +15,6 @@ from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -69,7 +68,6 @@ from rotkehlchen.db.filtering import (
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     PaginatedFilterQuery,
-    ReportDataFilterQuery,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -1799,8 +1797,6 @@ class AsyncFilePathSchema(AsyncQueryArgumentSchema):
 
 class HistoryProcessingExportSchema(AsyncDirectoryPathSchema, TimestampRangeSchema):
     """Schema for exporting history events"""
-
-
 
 
 class HistoryExportingSchema(Schema):
