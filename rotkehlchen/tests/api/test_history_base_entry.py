@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
+    A_BTC,
     A_DAI,
     A_ETH,
     A_SUSHI,
@@ -729,6 +730,37 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['entries_found'] == 2
     assert result['entries'][0]['entry']['user_notes'] == f'Send 2.5 ETH to {address}'
     assert result['entries'][1]['entry']['user_notes'] == 'Receive 2.5 ETH from 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # noqa: E501
+
+
+def test_get_events_with_location_labels_filter(rotkehlchen_api_server: 'APIServer') -> None:
+    """Regression test for a problem where filtering by location_labels used an evm filter query
+    even if they were not evm addresses.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    with rotki.data.db.conn.write_ctx() as cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=cursor,
+            history=[HistoryEvent(
+                event_identifier=(event_identifier := 'btc_xxxxxx'),
+                sequence_index=0,
+                timestamp=TimestampMS(1722153222000),
+                location=Location.BITCOIN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=FVal('0.001'),
+                location_label='bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+            )],
+        )
+
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'location_labels': ['bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4']},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries_found'] == 1
+    assert result['entries'][0]['entry']['event_identifier'] == event_identifier
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])

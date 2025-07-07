@@ -648,7 +648,11 @@ class HistoryEventSchema(
             **_kwargs: Any,
     ) -> dict[str, Any]:
         should_query_eth_staking_event = data['validator_indices'] is not None
-        should_query_evm_event = any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes', 'addresses'))  # noqa: E501
+        location_labels = data['location_labels']
+        should_query_evm_event = (
+            any(data[x] is not None for x in ('products', 'counterparties', 'tx_hashes', 'addresses')) or  # noqa: E501
+            (location_labels is not None and all(is_checksum_address(x) for x in location_labels))
+        )  # use evm filter when location_labels are evm addresses, so the "address" column is also included in the filter  # noqa: E501
         counterparties = data['counterparties']
         entry_types = data['entry_types']
         if counterparties is not None and CPT_ETH2 in counterparties:
@@ -693,7 +697,7 @@ class HistoryEventSchema(
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
             'event_identifiers': data['event_identifiers'],
-            'location_labels': (location_labels := data['location_labels']),
+            'location_labels': location_labels,
             'assets': [data['asset']] if data['asset'] is not None else None,
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
@@ -704,7 +708,7 @@ class HistoryEventSchema(
         }
 
         filter_query: HistoryEventFilterQuery | (EvmEventFilterQuery | EthStakingEventFilterQuery)
-        if should_query_evm_event or location_labels is not None:  # use evm event filter since only evm events have the "address" column for counterparty checks  # noqa: E501
+        if should_query_evm_event:
             filter_query = EvmEventFilterQuery.make(
                 **common_arguments,
                 tx_hashes=data['tx_hashes'],
