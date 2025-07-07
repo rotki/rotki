@@ -42,7 +42,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   cellClass: 'py-1',
   class: 'text-no-wrap w-full',
   key: 'perProtocol',
-  label: t('common.protocol'),
+  label: t('common.location'),
   sortable: true,
 }, {
   align: 'end',
