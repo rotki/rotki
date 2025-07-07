@@ -3490,16 +3490,13 @@ def test_unfinished_upgrades(
         for write_version in (backup_version, backup_version - 1):
             backup_path = user_data_dir / f'{ts_now()}_rotkehlchen_db_v{write_version}.backup'
             shutil.copy(Path(__file__).parent.parent / 'data' / 'v33_rotkehlchen.db', backup_path)
-            backup_connection = DBConnection(
-                path=str(backup_path),
-                connection_type=DBConnectionType.USER,
-                sql_vm_instructions_cb=0,
-                db_writer_port=db_writer_port,
-            )
-            backup_connection.executescript("PRAGMA key='123'")  # unlock
-            with backup_connection.write_ctx() as write_cursor:
-                write_cursor.execute('INSERT INTO settings VALUES(?, ?)', ('is_backup', write_version))  # mark as a backup  # noqa: E501
-            backup_connection.close()
+            # For test backups, modify using the same approach as the main code
+            backup_conn = sqlcipher.connect(str(backup_path), check_same_thread=False, isolation_level=None)
+            # Use the same unlock approach as the main code
+            backup_conn.executescript("PRAGMA key='123'")
+            backup_conn.execute('PRAGMA foreign_keys=ON')
+            backup_conn.execute('INSERT INTO settings VALUES(?, ?)', ('is_backup', write_version))  # mark as a backup  # noqa: E501
+            backup_conn.close()
 
             if backup_version == 33:
                 db = _init_db_with_target_version(  # Now the backup should be used

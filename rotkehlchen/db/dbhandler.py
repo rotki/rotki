@@ -488,16 +488,22 @@ class DBHandler:
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            for _conn in (conn._conn, conn):  # both reader and writer
-                _conn.executescript(script)
-                _conn.execute('PRAGMA foreign_keys=ON')
-                # Optimizations for the combined trades view
-                # the following will fail with DatabaseError in case of wrong password.
-                # If this goes away at any point it needs to be replaced by something
-                # that checks the password is correct at this same point in the code
-                _conn.execute('PRAGMA cache_size = -32768')
-                # switch to WAL mode: https://www.sqlite.org/wal.html
-                _conn.execute('PRAGMA journal_mode=WAL;')
+            # Execute on the reader connection first
+            conn._conn.executescript(script)
+            conn._conn.execute('PRAGMA foreign_keys=ON')
+            # Optimizations for the combined trades view
+            # the following will fail with DatabaseError in case of wrong password.
+            # If this goes away at any point it needs to be replaced by something
+            # that checks the password is correct at this same point in the code
+            conn._conn.execute('PRAGMA cache_size = -32768')
+            # switch to WAL mode: https://www.sqlite.org/wal.html
+            conn._conn.execute('PRAGMA journal_mode=WAL;')
+            
+            # Now execute on the writer connection through the wrapper
+            conn.executescript(script)
+            conn.execute('PRAGMA foreign_keys=ON')
+            conn.execute('PRAGMA cache_size = -32768')
+            conn.execute('PRAGMA journal_mode=WAL;')
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             conn.close()
             raise AuthenticationError(
@@ -523,8 +529,10 @@ class DBHandler:
         if self.sqlcipher_version == 3:
             script += f'PRAGMA kdf_iter={KDF_ITER};'
         try:
-            for _conn in (conn._conn, conn):  # both reader and writer connections
-                _conn.executescript(script)
+            # Execute on the reader connection first
+            conn._conn.executescript(script)
+            # Now execute on the writer connection through the wrapper
+            conn.executescript(script)
         except sqlcipher.OperationalError as e:  # pylint: disable=no-member
             log.error(
                 f'At change password could not re-key the open {conn_attribute} '
