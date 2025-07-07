@@ -13,9 +13,9 @@
 <div align="center">
 
 [![GitHub release](https://img.shields.io/github/release/rotki/rotki.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://GitHub.com/rotki/rotki/releases/)
-[![Docker Image Version](https://img.shields.io/docker/v/rotki/rotki/latest?label=Docker?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://hub.docker.com/r/rotki/rotki)
+[![Docker Image Version](https://img.shields.io/docker/v/rotki/rotki/latest?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://hub.docker.com/r/rotki/rotki)
 [![GitHub commits](https://img.shields.io/github/commits-since/rotki/rotki/latest.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://GitHub.com/rotki/rotki/commit/)
-[![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?style=flat?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/graphs/contributors)
+[![GitHub contributors](https://img.shields.io/github/contributors/rotki/rotki.svg?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/graphs/contributors)
 [![GitHub forks](https://img.shields.io/github/forks/rotki/rotki?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/forks)
 [![GitHub stars](https://img.shields.io/github/stars/rotki/rotki?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/stargazers)
 [![GitHub last commit](https://img.shields.io/github/last-commit/rotki/rotki?colorA=f6f8fa&colorB=f6f8fa&style=flat)](https://github.com/rotki/rotki/commits/master)
