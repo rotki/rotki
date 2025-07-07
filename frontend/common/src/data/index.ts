@@ -5,16 +5,25 @@ export interface ActionResult<T> {
   readonly message: string;
 }
 
-export enum TokenKind {
+export enum EvmTokenKind {
   ERC20 = 'erc20',
   ERC721 = 'erc721',
 }
 
-const TokenKindEnum = z.enum(TokenKind);
+const EvmTokenKindEnum = z.enum(EvmTokenKind);
+
+export enum SolanaTokenKind {
+  SPL_TOKEN = 'spl token',
+  SPL_NFT = 'spl nft',
+}
+
+const SolanaTokenKindEnum = z.enum(SolanaTokenKind);
+
+export const TokenKind = z.union([EvmTokenKindEnum, SolanaTokenKindEnum]);
 
 const UnderlyingToken = z.object({
   address: z.string(),
-  tokenKind: TokenKindEnum,
+  tokenKind: EvmTokenKindEnum,
   weight: z.string(),
 });
 
@@ -29,7 +38,7 @@ const BaseAsset = z.object({
   started: z.number().nullish(),
   swappedFor: z.string().nullish(),
   symbol: z.string().nullish(),
-  tokenKind: TokenKindEnum.nullish(),
+  tokenKind: TokenKind.nullish(),
 });
 
 export const SupportedAsset = BaseAsset.extend({

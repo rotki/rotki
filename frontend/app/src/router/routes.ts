@@ -27,6 +27,7 @@ export const Routes = {
   ASSET_MANAGER_MISSING_MAPPINGS: ensureRoute('/asset-manager/more/missing-mappings'),
   ASSET_MANAGER_MORE: ensureRoute('/asset-manager/more'),
   ASSET_MANAGER_NEWLY_DETECTED: ensureRoute('/asset-manager/more/newly-detected'),
+  ASSET_MANAGER_SOLANA_TOKEN_MIGRATION: ensureRoute('/asset-manager/more/solana-token-migration'),
   ASSETS: ensureRoute('/assets/:identifier'),
   BALANCES: ensureRoute('/balances'),
   BALANCES_BLOCKCHAIN: ensureRoute('/balances/blockchain'),
@@ -157,6 +158,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-list-collapse' as const,
       route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
       text: t('navigation_menu.manage_assets_sub.newly_detected'),
+    },
+    ASSET_MANAGER_SOLANA_TOKEN_MIGRATION: {
+      icon: 'lu-coins' as const,
+      route: Routes.ASSET_MANAGER_SOLANA_TOKEN_MIGRATION,
+      text: t('navigation_menu.manage_assets_sub.solana_token_migration'),
     },
     ASSETS: {
       route: Routes.ASSETS,

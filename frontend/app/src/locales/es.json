@@ -765,7 +765,7 @@
     },
     "underlying_tokens": "Underlying tokens",
     "validation": {
-      "valid_address": "Please input valid ETH address"
+      "valid_address": "Please input valid address"
     }
   },
   "asset_icon": {

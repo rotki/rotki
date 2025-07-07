@@ -11,6 +11,7 @@ import { useSync } from '@/composables/session/sync';
 import {
   useExchangeUnknownAssetHandler,
 } from '@/modules/asset-manager/missing-mappings/use-exchange-unknown-asset-handler';
+import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { Routes } from '@/router/routes';
 import { camelCaseTransformer } from '@/services/axios-transformers';
@@ -33,6 +34,7 @@ import {
   type ProgressUpdateResultData,
   SocketMessageProgressUpdateSubType,
   SocketMessageType,
+  type SolanaTokensMigrationData,
   WebsocketMessage,
 } from '@/types/websocket-messages';
 import { uniqueStrings } from '@/utils/data';
@@ -59,6 +61,7 @@ export function useMessageHandling(): UseMessageHandling {
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
   const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
   const { setStakingQueryStatus: setLiquityStakingQueryStatus } = useLiquityStore();
+  const solanaTokenMigrationStore = useSolanaTokenMigrationStore();
   const { handle: handleMissingApiKeyMessage } = useMissingApiKeyHandler(t);
   const { handle: handleAccountingRuleConflictMessage } = useAccountingRuleConflictMessageHandler(t);
   const { handle: handleCalendarReminder } = useCalendarReminderHandler(t);
@@ -154,6 +157,19 @@ export function useMessageHandling(): UseMessageHandling {
     title: t('notification_messages.gnosis_pay_session_key_expired.title'),
   });
 
+  const handleSolanaTokensMigration = async (data: SolanaTokensMigrationData): Promise<Notification> => ({
+    action: {
+      action: async () => router.push(Routes.ASSET_MANAGER_SOLANA_TOKEN_MIGRATION.toString()),
+      icon: 'lu-arrow-right',
+      label: t('notification_messages.solana_tokens_migration.action'),
+      persist: true,
+    },
+    display: true,
+    message: t('notification_messages.solana_tokens_migration.message', { tokens: data.identifiers.map(item => `- ${item}`).join('\n') }),
+    severity: Severity.WARNING,
+    title: t('notification_messages.solana_tokens_migration.title'),
+  });
+
   const handleProgressUpdates = async (rawData: ProgressUpdateResultData): Promise<Notification | null> => {
     const subtype = rawData.subtype;
 
@@ -247,6 +263,10 @@ export function useMessageHandling(): UseMessageHandling {
     }
     else if (type === SocketMessageType.GNOSISPAY_SESSIONKEY_EXPIRED) {
       addNotification(await handleGnosisPaySessionKeyExpired(message.data));
+    }
+    else if (type === SocketMessageType.SOLANA_TOKENS_MIGRATION) {
+      solanaTokenMigrationStore.setIdentifiers(message.data.identifiers);
+      addNotification(await handleSolanaTokensMigration(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type.toString()}'`);

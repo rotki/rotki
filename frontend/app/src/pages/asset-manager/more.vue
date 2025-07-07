@@ -18,6 +18,7 @@ const tabs = computed<TabContent[]>(() => {
     Routes.ASSET_MANAGER_COUNTERPARTY_MAPPING,
     Routes.ASSET_MANAGER_NEWLY_DETECTED,
     Routes.ASSET_MANAGER_MISSING_MAPPINGS,
+    Routes.ASSET_MANAGER_SOLANA_TOKEN_MIGRATION,
   ];
 });
 
