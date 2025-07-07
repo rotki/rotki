@@ -68,7 +68,9 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(evmChainsData, x => x.id !== Blockchain.AVAX);
 
-  const txChains = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
+  const evmAndEvmLikeTxChainsInfo = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
+
+  const allTxChainsInfo = computed<ChainInfo[]>(() => [...get(evmAndEvmLikeTxChainsInfo), ...get(bitcoinChainsData)]);
 
   const evmChains: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.id);
 
@@ -181,7 +183,7 @@ export const useSupportedChains = createSharedComposable(() => {
     return `./assets/images/protocols/${image}`;
   });
 
-  const txChainsToLocation = useArrayMap(txChains, (item) => {
+  const txChainsToLocation = useArrayMap(evmAndEvmLikeTxChainsInfo, (item) => {
     if ('evmChainName' in item)
       return toHumanReadable(item.evmChainName);
 
@@ -208,7 +210,9 @@ export const useSupportedChains = createSharedComposable(() => {
 
   return {
     allEvmChains,
+    allTxChainsInfo,
     bitcoinChainsData,
+    evmAndEvmLikeTxChainsInfo,
     evmChainNames,
     evmChains,
     evmChainsData,
@@ -228,7 +232,6 @@ export const useSupportedChains = createSharedComposable(() => {
     matchChain,
     supportedChains,
     supportsTransactions,
-    txChains,
     txChainsToLocation,
     txEvmChains,
   };

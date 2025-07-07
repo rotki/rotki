@@ -57,7 +57,7 @@ vi.mock('@/composables/info/chains', async () => {
         name: 'Optimism',
         nativeToken: 'ETH',
       } satisfies EvmChainInfo]),
-      txChains: computed(() => [{
+      evmAndEvmLikeTxChainsInfo: computed(() => [{
         evmChainName: 'optimism',
         id: Blockchain.OPTIMISM,
         type: 'evm',

@@ -18,7 +18,7 @@ import { toSentenceCase } from '@rotki/common';
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];
 const { allExchanges } = storeToRefs(useLocationStore());
-const { txChains } = useSupportedChains();
+const { allTxChainsInfo } = useSupportedChains();
 
 const { purgeCache } = useSessionPurge();
 const { deleteModuleData } = useBlockchainBalancesApi();
@@ -132,7 +132,7 @@ const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
   },
 );
 
-const chainsSelection = useArrayMap(txChains, item => item.id);
+const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
 </script>
 
 <template>

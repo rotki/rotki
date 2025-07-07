@@ -41,8 +41,8 @@ const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
-const { txChains } = useSupportedChains();
-const txChainIds = useArrayMap(txChains, x => x.id);
+const { allTxChainsInfo } = useSupportedChains();
+const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 </script>
 
 <template>

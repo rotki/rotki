@@ -27,8 +27,8 @@ const evmChain = useRefPropVModel(modelValue, 'evmChain');
 const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { getChain, txEvmChains } = useSupportedChains();
-const txChains = useArrayMap(txEvmChains, x => x.id);
+const { evmAndEvmLikeTxChainsInfo, getChain } = useSupportedChains();
+const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
 
 const chainOptions = computed(() => {
   const accountChains = Object.entries(get(accountsPerChain))
