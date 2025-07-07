@@ -773,7 +773,7 @@
     },
     "underlying_tokens": "底层代币",
     "validation": {
-      "valid_address": "请输入有效的ETH地址"
+      "valid_address": "请输入有效的地址"
     }
   },
   "asset_icon": {

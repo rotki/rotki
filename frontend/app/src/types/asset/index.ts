@@ -122,6 +122,8 @@ export type ConflictResolution = Readonly<Record<string, ConflictResolutionStrat
 
 export const EVM_TOKEN = 'evm token';
 
+export const SOLANA_TOKEN = 'solana token';
+
 export const CUSTOM_ASSET = 'custom asset';
 
 export interface AssetUpdatePayload {

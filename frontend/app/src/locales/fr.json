@@ -896,7 +896,7 @@
     },
     "underlying_tokens": "Jetons sous-jacents",
     "validation": {
-      "valid_address": "Veuillez saisir une adresse ETH valide"
+      "valid_address": "Veuillez saisir une adresse valide"
     }
   },
   "asset_icon": {

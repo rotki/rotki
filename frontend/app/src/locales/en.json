@@ -1051,7 +1051,7 @@
     },
     "underlying_tokens": "Underlying tokens",
     "validation": {
-      "valid_address": "Please input valid ETH address"
+      "valid_address": "Please input valid address"
     }
   },
   "asset_icon": {
@@ -1113,7 +1113,20 @@
     "edit_error": "Could not edit asset: {message}",
     "edit_title": "Edit an asset",
     "merge_assets": "Merge Assets",
-    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
+    "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)",
+    "solana_token_migration": {
+      "dialog_title": "Migrate Solana Token",
+      "merge_suggestion": {
+        "message": "The token {sourceAsset} already exists as {targetAsset}. Would you like to merge them instead?",
+        "title": "Asset Already Exists"
+      },
+      "migrate_button": "Migrate",
+      "migrating_asset": "Migrating Asset",
+      "migration_error": "Migration failed",
+      "migration_success": "Token migrated successfully",
+      "solana_address": "Solana Address",
+      "validation_error": "Please fill in all required fields"
+    }
   },
   "asset_mappings": {
     "error": {
@@ -3379,7 +3392,8 @@
       "custom_assets": "Custom Assets",
       "missing_mappings": "Missing CEX Mappings",
       "more": "More",
-      "newly_detected": "Newly Detected Tokens"
+      "newly_detected": "Newly Detected Tokens",
+      "solana_token_migration": "Solana Token Migration"
     },
     "manage_prices": "Manage Prices",
     "manage_prices_sub": {
@@ -3541,6 +3555,11 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "solana_tokens_migration": {
+      "action": "Migrate tokens",
+      "message": "Tokens with these identifiers are missing some fields and need to be migrated manually:\n {tokens}",
+      "title": "Solana Tokens Migration"
     },
     "unknown_asset_mapping": {
       "message": "We could not find a mapping for {groupCount} exchange assets",

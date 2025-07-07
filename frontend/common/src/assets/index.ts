@@ -1,5 +1,5 @@
-import { TokenKind } from '../data';
-import { isValidEthAddress } from '../text';
+import { EvmTokenKind } from '../data';
+import { isValidEthAddress, isValidSolanaAddress } from '../text';
 
 export function isEvmIdentifier(identifier?: string): boolean {
   if (!identifier)
@@ -21,12 +21,27 @@ export function isEvmIdentifier(identifier?: string): boolean {
     return false;
 
   const protocol = chainAndProtocol[1];
-  if (!Object.values(TokenKind).map(item => item.toString()).includes(protocol)) {
+  if (!Object.values(EvmTokenKind).map(item => item.toString()).includes(protocol)) {
     return false;
   }
 
   const address = parts[2];
   return !(!address || !isValidEthAddress(address));
+}
+
+export function isSolanaTokenIdentifier(identifier?: string): boolean {
+  if (!identifier)
+    return false;
+
+  const parts = identifier.split(':');
+  if (parts.length !== 2)
+    return false;
+
+  if (!parts[0] || parts[0] !== 'solana/token')
+    return false;
+
+  const address = parts[1];
+  return !(!address || !isValidSolanaAddress(address));
 }
 
 export function getAddressFromEvmIdentifier(identifier?: string): string {

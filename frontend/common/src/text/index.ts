@@ -235,6 +235,15 @@ export function isValidBtcAddress(address?: string): boolean {
   return false;
 }
 
+export function isValidSolanaAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  // Solana addresses are base58 encoded and should be 32-44 characters long
+  // They use the base58 alphabet: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address);
+}
+
 export function isValidTxHash(address?: string): boolean {
   if (!address)
     return false;

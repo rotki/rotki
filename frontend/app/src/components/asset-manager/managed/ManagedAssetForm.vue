@@ -11,11 +11,11 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
-import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
-import { evmTokenKindsData } from '@/types/blockchain/chains';
+import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/types/asset';
+import { evmTokenKindsData, solanaTokenKindsData } from '@/types/blockchain/chains';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { isValidEthAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
+import { isValidEthAddress, isValidSolanaAddress, onlyIfTruthy, type SupportedAsset, toSentenceCase, type UnderlyingToken } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
@@ -80,6 +80,10 @@ const { fetchTokenDetails } = useAssetInfoRetrieval();
 const { addAsset, editAsset, getAssetTypes } = useAssetManagementApi();
 
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
+const isSolanaToken = computed<boolean>(() => get(assetType) === SOLANA_TOKEN);
+
+const isTokenRequiresAddress = logicOr(isEvmToken, isSolanaToken);
+
 const externalServerValidation = () => true;
 
 const states = {
@@ -100,10 +104,10 @@ const states = {
 
 const v$ = useVuelidate({
   address: {
-    required: requiredIf(isEvmToken),
+    required: requiredIf(isTokenRequiresAddress),
     validated: helpers.withMessage(
       t('asset_form.validation.valid_address'),
-      (v: string) => !get(isEvmToken) || isValidEthAddress(v),
+      (v: string) => !get(isTokenRequiresAddress) || (get(isEvmToken) && isValidEthAddress(v)) || (get(isSolanaToken) && isValidSolanaAddress(v)),
     ),
   },
   assetType: { required },
@@ -153,9 +157,15 @@ async function saveAsset() {
     underlyingTokens: get(underlyingTokens).length > 0 ? get(underlyingTokens) : undefined,
   }, ['ended', 'active', 'customAssetType']);
 
-  const assetPayload = get(isEvmToken)
-    ? payload
-    : omit(payload, ['decimals', 'address', 'evmChain', 'tokenKind', 'underlyingTokens']);
+  let assetPayload = payload;
+
+  if (!get(isEvmToken)) {
+    assetPayload = omit(assetPayload, ['underlyingTokens', 'evmChain']);
+
+    if (!get(isSolanaToken)) {
+      assetPayload = omit(assetPayload, ['decimals', 'address', 'tokenKind']);
+    }
+  }
 
   if (props.editMode) {
     newIdentifier = get(identifier);
@@ -336,7 +346,7 @@ defineExpose({
             @blur="v$.address.$touch()"
           >
             <template
-              v-if="isEvmToken && editMode"
+              v-if="editMode"
               #append
             >
               <RuiButton
@@ -349,6 +359,40 @@ defineExpose({
               </RuiButton>
             </template>
           </RuiTextField>
+        </div>
+      </template>
+
+      <template v-else-if="isSolanaToken">
+        <div
+          class="col-span-2"
+          data-cy="token-select"
+        >
+          <RuiMenuSelect
+            v-model="tokenKind"
+            :label="t('asset_form.labels.token_kind')"
+            :options="solanaTokenKindsData"
+            :disabled="editMode"
+            :error-messages="toMessages(v$.tokenKind)"
+            key-attr="identifier"
+            text-attr="label"
+            variant="outlined"
+          />
+        </div>
+        <div
+          class="col-span-2"
+          data-cy="address-input"
+        >
+          <RuiTextField
+            v-model="address"
+            variant="outlined"
+            color="primary"
+            :loading="fetching"
+            :error-messages="toMessages(v$.address)"
+            :label="t('common.address')"
+            :disabled="loading || fetching || editMode"
+            @keydown.space.
+            @blur="v$.address.$touch()"
+          />
         </div>
       </template>
 
@@ -367,7 +411,7 @@ defineExpose({
 
         <RuiTextField
           v-model="symbol"
-          :class="isEvmToken ? 'md:col-span-1' : 'md:col-span-2'"
+          :class="isTokenRequiresAddress ? 'md:col-span-1' : 'md:col-span-2'"
           data-cy="symbol-input"
           variant="outlined"
           color="primary"
@@ -377,7 +421,7 @@ defineExpose({
           @blur="v$.symbol.$touch()"
         />
         <div
-          v-if="isEvmToken"
+          v-if="isTokenRequiresAddress"
           data-cy="decimal-input"
         >
           <RuiTextField
