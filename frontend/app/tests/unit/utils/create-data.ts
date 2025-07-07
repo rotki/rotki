@@ -3,6 +3,16 @@ import type { AssetPrice } from '@/types/prices';
 import { BalanceType } from '@/types/balances';
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
 
+export function createTestBalanceResponse(amount: number, usdValue: number): {
+  amount: string;
+  usdValue: string;
+} {
+  return {
+    amount: amount.toString(),
+    usdValue: usdValue.toString(),
+  };
+}
+
 export function createTestBalance(amount: number, usdValue: number): Balance {
   return {
     amount: bigNumberify(amount),
