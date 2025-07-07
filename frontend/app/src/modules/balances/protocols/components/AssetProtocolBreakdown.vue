@@ -22,7 +22,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const cols = computed<DataTableColumn<ProtocolBalance>[]>(() => [{
   align: 'start',
   key: 'protocol',
-  label: t('common.protocol'),
+  label: t('common.location'),
   sortable: true,
 }, {
   align: 'end',

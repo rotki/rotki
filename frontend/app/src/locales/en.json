@@ -1010,7 +1010,7 @@
   "asset_details_layout": {
     "tab": {
       "breakdown": "Breakdown",
-      "per_protocol": "Per Protocol"
+      "per_location": "Per Location"
     }
   },
   "asset_form": {

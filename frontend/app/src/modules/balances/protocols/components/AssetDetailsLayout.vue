@@ -33,7 +33,7 @@ const showTabs = logicAnd(hasBreakdown, hasPerProtocol);
         class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
       >
         <RuiTab>{{ t('asset_details_layout.tab.breakdown') }}</RuiTab>
-        <RuiTab>{{ t('asset_details_layout.tab.per_protocol') }}</RuiTab>
+        <RuiTab>{{ t('asset_details_layout.tab.per_location') }}</RuiTab>
       </RuiTabs>
       <RuiTabItems :model-value="tab">
         <RuiTabItem>

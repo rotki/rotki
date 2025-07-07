@@ -121,7 +121,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     cellClass: 'py-0',
     class: 'text-no-wrap w-full',
     key: 'protocol',
-    label: t('common.protocol'),
+    label: t('common.location'),
     sortable: true,
   }, {
     align: 'end',
