@@ -5,17 +5,24 @@ import type {
   RecentTransaction,
   TransactionParams,
 } from '@/modules/onchain/types';
+import type UniversalProvider from '@walletconnect/universal-provider';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { logger } from '@/utils/logging';
 import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
 import { type AppKit, createAppKit } from '@reown/appkit/vue';
-import { assert, bigNumberify } from '@rotki/common';
+import { bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { BrowserProvider, formatUnits, getAddress, type TransactionResponse } from 'ethers';
 import { useTradeApi } from './send/use-trade-api';
+import {
+  handleTransactionError,
+  prepareTransactionPayload,
+  validateTransactionRequirements,
+} from './transaction-helpers';
 
 export const ROTKI_DAPP_METADATA = {
   description: 'Rotki Dapp',
@@ -68,7 +75,16 @@ export const useWalletStore = defineStore('wallet', () => {
   const waitingForWalletConfirmation = ref<boolean>(false);
   const isWalletConnect = ref<boolean>(false);
 
-  const appKit: AppKit = buildAppKit();
+  let appKit: AppKit | undefined;
+
+  const getAppKit = (): AppKit => {
+    if (!appKit) {
+      logger.debug('Initializing AppKit');
+      appKit = buildAppKit();
+      setupAppKitListener();
+    }
+    return appKit;
+  };
 
   const { getAssetMappingHandler } = useAssetCacheStore();
   const { getChainFromChainId, getChainIdFromNamespace, updateStatePostTransaction } = useWalletHelper();
@@ -86,10 +102,10 @@ export const useWalletStore = defineStore('wallet', () => {
   const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
 
   const updateApprovedChainIds = (): void => {
-    assert(appKit);
+    const appKitInstance = getAppKit();
 
     // @ts-expect-error accessing protected method to get approved chain IDs
-    const data = appKit.getApprovedCaipNetworksData();
+    const data = appKitInstance.getApprovedCaipNetworksData();
     if (data) {
       const approvedCaipNetworkIds = data.approvedCaipNetworkIds;
       set(supportedChainIds, approvedCaipNetworkIds);
@@ -97,16 +113,18 @@ export const useWalletStore = defineStore('wallet', () => {
   };
 
   const getBrowserProvider = (): BrowserProvider => {
-    assert(appKit);
-    const walletProvider = appKit.getProvider(EIP155);
+    const appKitInstance = getAppKit();
+    const walletProvider = appKitInstance.getProvider(EIP155);
     return new BrowserProvider(walletProvider as any);
   };
 
-  const setupAppKitListener = (): void => {
-    assert(appKit);
+  function setupAppKitListener(): void {
+    if (!appKit)
+      return;
 
     appKit.subscribeAccount((account) => {
-      assert(appKit);
+      if (!appKit)
+        return;
 
       set(connected, account.isConnected);
       set(connectedAddress, account.isConnected && account.address ? getAddress(account.address) : undefined);
@@ -127,28 +145,28 @@ export const useWalletStore = defineStore('wallet', () => {
     appKit.subscribeNetwork((newState) => {
       set(connectedChainId, newState.chainId);
     });
-  };
-
-  setupAppKitListener();
+  }
 
   const open = async (): Promise<void> => {
-    assert(appKit);
-    await appKit.open();
+    const appKitInstance = getAppKit();
+    await appKitInstance.open();
   };
 
   const resetState = (): void => {
+    logger.debug('Resetting wallet state');
     set(connected, false);
     set(preparing, false);
     set(connectedAddress, undefined);
     set(supportedChainIds, []);
     set(isWalletConnect, false);
     set(waitingForWalletConfirmation, false);
+    appKit = undefined;
   };
 
   const disconnect = async (): Promise<void> => {
-    assert(appKit);
-    await appKit.disconnect();
-
+    if (appKit) {
+      await appKit.disconnect();
+    }
     resetState();
   };
 
@@ -161,11 +179,11 @@ export const useWalletStore = defineStore('wallet', () => {
   };
 
   const switchNetwork = async (chainId: bigint): Promise<void> => {
-    assert(appKit);
+    const appKitInstance = getAppKit();
 
     const network = supportedNetworks.find(item => BigInt(item.id) === chainId);
     if (network) {
-      await appKit.switchNetwork(network);
+      await appKitInstance.switchNetwork(network);
     }
   };
 
@@ -217,10 +235,10 @@ export const useWalletStore = defineStore('wallet', () => {
         if (!assetMapping) {
           return id;
         }
-        return assetMapping[id]?.symbol || id;
+        return assetMapping[id]?.symbol ?? id;
       })();
 
-    return `Send ${amount} ${asset || params.assetIdentifier} from ${fromAddress} to ${params.to}`;
+    return `Send ${amount} ${asset ?? params.assetIdentifier} from ${fromAddress} to ${params.to}`;
   };
 
   const addRecentTransaction = async (hash: string, chain: string, params: TransactionParams): Promise<void> => {
@@ -255,114 +273,91 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const getRecentTransactionByTxHash = (hash: string): RecentTransaction | undefined => get(recentTransactions).find(item => item.hash === hash);
 
-  const sendTransaction = async (params: TransactionParams): Promise<TransactionResponse> => {
-    assert(appKit);
+  const executeTransaction = async (backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse): Promise<TransactionResponse> => {
+    set(waitingForWalletConfirmation, true);
+    const provider = getBrowserProvider();
+    const signer = await provider.getSigner();
+    const tx = await signer.sendTransaction({
+      ...backendPayload,
+      type: 0,
+    });
+    set(waitingForWalletConfirmation, false);
+    return tx;
+  };
 
-    const universalProvider = await appKit.getUniversalProvider();
+  const handleTransactionSuccess = async (tx: TransactionResponse, chainId: number, params: TransactionParams): Promise<void> => {
+    startPromise(addRecentTransaction(tx.hash, getChainFromChainId(chainId), params));
+    await tx.wait();
+    updateTransactionStatus(tx.hash, 'completed');
+    startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
+  };
 
-    if (universalProvider && universalProvider.isWalletConnect) {
-      try {
-        const session = universalProvider.session;
-        if (session && session.topic) {
-          set(preparing, true);
-          const pingPromise = universalProvider.client.ping({ topic: session.topic });
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Ping timeout after 5s')), 5000);
-          });
-
-          await Promise.race([pingPromise, timeoutPromise]);
-        }
-      }
-      catch {
-        throw new Error('It seems that your wallet is inactive. If you are using browser wallet bridge, make sure the page is open.');
-      }
-      finally {
-        set(preparing, false);
-      }
-    }
+  const checkWalletConnection = async (universalProvider: UniversalProvider | undefined): Promise<void> => {
+    if (!universalProvider?.isWalletConnect)
+      return;
 
     try {
-      const fromAddress = get(connectedAddress);
-      const chainId = get(connectedChainId);
-      const evmChain = getEvmChainName(params.chain);
+      const session = universalProvider.session;
+      if (session?.topic) {
+        set(preparing, true);
+        const pingPromise = universalProvider.client.ping({ topic: session.topic });
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Ping timeout after 5s')), 5000);
+        });
 
-      if (!chainId || !evmChain) {
-        throw new Error('No chain ID available');
+        await Promise.race([pingPromise, timeoutPromise]);
       }
+    }
+    catch {
+      throw new Error('It seems that your wallet is inactive. If you are using browser wallet bridge, make sure the page is open.');
+    }
+    finally {
+      set(preparing, false);
+    }
+  };
 
-      assert(fromAddress);
+  const sendTransaction = async (params: TransactionParams): Promise<TransactionResponse> => {
+    const appKitInstance = getAppKit();
 
-      let tx;
-      let backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse | undefined;
+    const universalProvider = await appKitInstance.getUniversalProvider();
+    await checkWalletConnection(universalProvider);
+
+    try {
+      const { chainId, evmChain, fromAddress } = validateTransactionRequirements({
+        connectedAddress: get(connectedAddress),
+        connectedChainId: get(connectedChainId),
+        getEvmChainName,
+        params,
+      });
+
       set(preparing, true);
-
-      if (!params.native) {
-        // ERC20 transfer
-        const token = params.assetIdentifier;
-        assert(token);
-
-        const payload = {
-          amount: params.amount,
-          fromAddress,
-          toAddress: params.to,
-          token,
-        };
-        backendPayload = await prepareERC20Transfer(payload);
-      }
-      else {
-        // Native token transfer
-        const payload = {
-          amount: params.amount,
-          chain: evmChain,
-          fromAddress,
-          toAddress: params.to,
-        };
-        backendPayload = {
-          ...await prepareNativeTransfer(payload),
-          data: '0x',
-        };
-      }
-
+      const backendPayload = await prepareTransactionPayload(
+        params,
+        fromAddress,
+        evmChain,
+        {
+          prepareERC20Transfer,
+          prepareNativeTransfer,
+        },
+      );
       set(preparing, false);
 
-      if (backendPayload) {
-        set(waitingForWalletConfirmation, true);
-        const provider = getBrowserProvider();
-        const signer = await provider.getSigner();
-        tx = await signer.sendTransaction({
-          ...backendPayload,
-          type: 0,
-        });
-        set(waitingForWalletConfirmation, false);
-        startPromise(addRecentTransaction(tx.hash, getChainFromChainId(chainId), params));
-        await tx.wait();
-        updateTransactionStatus(tx.hash, 'completed');
-        startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
-      }
-      else {
-        throw new Error('Failed to load the payload from backend');
-      }
+      const tx = await executeTransaction(backendPayload);
+      await handleTransactionSuccess(tx, chainId, params);
 
       return tx;
     }
     catch (error) {
-      set(preparing, false);
-      set(waitingForWalletConfirmation, false);
-
-      // If it's a transaction error with a hash, update its status
-      if (error && typeof error === 'object' && 'transaction' in error
-        && error.transaction && typeof error.transaction === 'object'
-        && 'hash' in error.transaction && error.transaction.hash
-        && typeof error.transaction.hash === 'string') {
-        updateTransactionStatus(error.transaction.hash, 'failed');
-      }
-      console.error('Transaction failed:', error);
+      handleTransactionError(error, {
+        setPreparing: (value: boolean) => set(preparing, value),
+        setWaitingForWalletConfirmation: (value: boolean) => set(waitingForWalletConfirmation, value),
+        updateTransactionStatus,
+      });
       throw error;
     }
   };
 
   return {
-    appKit,
     connected,
     connectedAddress,
     connectedChainId,
@@ -375,7 +370,6 @@ export const useWalletStore = defineStore('wallet', () => {
     recentTransactions,
     resetWalletConnection,
     sendTransaction,
-    supportedChainIds,
     supportedChainsForConnectedAccount,
     supportedChainsIdForConnectedAccount,
     switchNetwork,
