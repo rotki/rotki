@@ -136,31 +136,50 @@ const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
 });
 
 const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventRow[]>>(() => {
+  const eventsList = get(events);
+
+  if (eventsList.length === 0)
+    return {};
+
   const mapping: Record<string, HistoryEventRow[]> = {};
-  for (const event of get(events)) {
+
+  for (const event of eventsList) {
     if (Array.isArray(event)) {
       const filtered = event.filter(({ hidden }) => !hidden);
       if (filtered.length > 0) {
         const eventId = filtered[0].eventIdentifier;
-        if (!mapping[eventId]) {
-          mapping[eventId] = [];
-        }
-        mapping[eventId].push(filtered);
+        const existing = mapping[eventId];
+        if (existing)
+          existing.push(filtered);
+        else
+          mapping[eventId] = [filtered];
       }
     }
     else if (!event.hidden) {
       const eventId = event.eventIdentifier;
-      if (!mapping[eventId]) {
-        mapping[eventId] = [];
-      }
-      mapping[eventId].push(event);
+      const existing = mapping[eventId];
+      if (existing)
+        existing.push(event);
+      else
+        mapping[eventId] = [event];
     }
   }
+
   return mapping;
 });
 
-const loading = refDebounced(logicOr(groupLoading, eventsLoading), 300);
+const loading = refDebounced(logicOr(groupLoading, eventsLoading), 100);
 const hasIgnoredEvent = useArraySome(events, event => Array.isArray(event) && event.some(item => item.ignoredInAccounting));
+
+const flattenedRows = computed<HistoryEventEntry[]>(() => {
+  const data = get(groups, 'data');
+  return flatten(data);
+});
+
+const flattenedEvents = computed<HistoryEventEntry[]>(() => {
+  const eventsList = get(events);
+  return flatten(eventsList);
+});
 
 function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
   return item.ignoredInAccounting ? 'opacity-50' : '';
@@ -197,13 +216,13 @@ async function onConfirmDelete(payload: HistoryEventDeletePayload): Promise<void
 }
 
 function suggestNextSequenceId(group: HistoryEventEntry): string {
-  const all = get(events);
+  const allFlattened = get(flattenedEvents);
 
-  if (!all?.length)
+  if (!allFlattened?.length)
     return (Number(group.sequenceIndex) + 1).toString();
 
   const eventIdentifierHeader = group.eventIdentifier;
-  const filtered = flatten(all)
+  const filtered = allFlattened
     .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
     .map(({ sequenceIndex }) => Number(sequenceIndex))
     .sort((a, b) => b - a);
@@ -249,7 +268,8 @@ function redecode(payload: PullEventPayload, eventIdentifier: string): void {
     return;
   }
 
-  const childEvents = flatten(get(eventsGroupedByEventIdentifier)[eventIdentifier] || []);
+  const groupedEvents = get(eventsGroupedByEventIdentifier)[eventIdentifier] || [];
+  const childEvents = flatten(groupedEvents);
   const isAnyCustom = childEvents.some(item => item.customized);
 
   if (!isAnyCustom) {
@@ -319,13 +339,13 @@ function addMissingRule($event: any, row: HistoryEventEntry): void {
     :collection="groups"
     @set-page="emit('set-page', $event)"
   >
-    <template #default="{ data: rows, showUpgradeRow, limit, total, found, entriesFoundTotal }">
+    <template #default="{ showUpgradeRow, limit, total, found, entriesFoundTotal }">
       <RuiDataTable
         v-model:pagination.external="pagination"
         v-model:sort.external="sort"
-        :expanded="flatten(rows)"
+        :expanded="flattenedRows"
         :cols="cols"
-        :rows="flatten(rows)"
+        :rows="flattenedRows"
         :loading="loading"
         :item-class="getItemClass"
         :empty="{ label: t('data_table.no_data') }"
