@@ -94,11 +94,8 @@ class AccountingPot(CustomizableDateMixin):
         """Get the profit_currency price of asset in the given timestamp
 
         May raise:
-        - PriceQueryUnsupportedAsset if from/to asset is missing from price oracles
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the price oracle
-        - RemoteError if there is a problem reaching the price oracle server
-        or with reading the response returned by the server
         """
         if asset == self.profit_currency:
             rate = Price(ONE)

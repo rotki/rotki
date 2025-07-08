@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
@@ -23,11 +24,14 @@ from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsuppo
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventType,
+)
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
+from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
@@ -64,6 +68,8 @@ class Accountant:
         self.query_start_ts = Timestamp(0)
         self.query_end_ts = Timestamp(0)
         self.currently_processing_timestamp = Timestamp(0)
+        with self.db.conn.read_ctx() as cursor:
+            self.profit_currency = self.db.get_setting(cursor, 'main_currency')
 
         # Initialize CSV exporter for compatibility
         self.csvexporter = CSVExporter(database=db)
@@ -91,6 +97,8 @@ class Accountant:
         # Set timestamps for compatibility
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
+        with self.db.conn.read_ctx() as cursor:
+            self.profit_currency = self.db.get_setting(cursor, 'main_currency')
 
         # In the new system, we would ensure accounting is calculated
         # up to the end timestamp
@@ -113,13 +121,13 @@ class Accountant:
             settings_hash = self.get_current_settings_hash()
 
         # Check if we have accounting data up to the requested timestamp
-        missing_events = self._get_events_missing_accounting(
+        from_ts = self._get_earliest_timestamp_missing_accounting(
             settings_hash=settings_hash,
             up_to_timestamp=up_to_timestamp,
         )
 
-        if missing_events:
-            log.info(f'Found {len(missing_events)} events missing accounting data')
+        if from_ts is not None:
+            log.info(f'Found events missing accounting data from timestamp {from_ts}')
 
     def invalidate_from_timestamp(
             self,
@@ -189,14 +197,14 @@ class Accountant:
         log.info('Processing pending accounting work')
         settings_hash = self.get_current_settings_hash()
 
-        # Get events that need accounting calculation
-        missing_events = self._get_events_missing_accounting(settings_hash)
+        # Get the earliest timestamp that needs accounting calculation
+        from_ts = self._get_earliest_timestamp_missing_accounting(settings_hash)
 
-        if not missing_events:
+        if from_ts is None:
             return False
 
         # Calculate accounting data progressively
-        events_processed = self._calculate_accounting_for_events(missing_events, settings_hash)
+        events_processed = self._calculate_accounting_for_events(from_ts, settings_hash)
 
         if events_processed > 0:
             log.info(f'Processed accounting for {events_processed} events')
@@ -288,12 +296,12 @@ class Accountant:
 
     def _calculate_accounting_for_events(
             self,
-            event_ids: list[int],
+            from_ts: Timestamp,
             settings_hash: str,
     ) -> int:
         """
-        Calculate accounting data for the given event IDs.
-        Events should be from one timestamp range and processed chronologically.
+        Calculate accounting data for events from the given timestamp onwards.
+        Events are processed chronologically.
         Returns the number of events processed.
 
         May raise:
@@ -301,22 +309,26 @@ class Accountant:
           (UnknownAsset, UnsupportedAsset, DeserializationError, ValueError, ConversionError)
           are logged and the problematic event is skipped.
         """
-        if not event_ids:
-            return 0
-
-        log.info(f'Calculating accounting for {len(event_ids)} events')
+        log.info(f'Calculating accounting for events from timestamp {from_ts}')
 
         # Get the current accounting settings
         with self.db.conn.read_ctx() as cursor:
             db_settings = self.db.get_settings(cursor)
 
-        # Get all events data ordered by timestamp
-        events_data = self._get_events_data_ordered(event_ids)
-        if len(events_data) == 0:
+        # Get all events from the timestamp onwards using DBHistoryEvents
+        history_events_db = DBHistoryEvents(self.db)
+        with self.db.conn.read_ctx() as cursor:
+            events = history_events_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(from_ts=from_ts),
+                has_premium=True,  # ignore limits for accounting
+            )
+
+        if len(events) == 0:
             return 0
 
         # Step 1: Load progressive state (balances and cost basis)
-        first_event_timestamp = Timestamp(events_data[0][4])  # timestamp is at index 4
+        first_event_timestamp = Timestamp(ts_ms_to_sec(events[0].timestamp))
         asset_balances, cost_basis_calculator = self._load_progressive_state(
             before_timestamp=first_event_timestamp,
             settings=db_settings,
@@ -329,10 +341,8 @@ class Accountant:
         balance_data_to_insert = []
 
         # Step 2: Process events chronologically
-        for row in events_data:
+        for event in events:
             try:
-                # Deserialize the history event
-                event = self._deserialize_history_event_from_row(row)
                 event_timestamp = ts_ms_to_sec(event.timestamp)
 
                 # Get balance key for tracking
@@ -344,7 +354,11 @@ class Accountant:
                 total_amount_before = asset_balances.get(balance_key, ZERO)
 
                 # Step 3: Get historical price for this event
-                price = self._get_historical_price(event.asset, event_timestamp, db_settings)
+                try:
+                    price = self._get_historical_price(event.asset, event_timestamp, db_settings)
+                except NoPriceForGivenTimestamp:
+                    # TODO: Add the missing price message for users
+                    continue
 
                 # Step 4: Determine event taxability using accounting rules
                 is_taxable = self._determine_event_taxability_with_rules(event, db_settings)
@@ -361,12 +375,9 @@ class Accountant:
                 )
 
                 # Step 6: Update running balances based on event direction
-                direction = event.maybe_get_direction()
-                if direction == 'in':
-                    # Acquisition
+                if (direction := event.maybe_get_direction()) == EventDirection.IN:
                     asset_balances[balance_key] = total_amount_before + event.amount
-                elif direction == 'out':
-                    # Spend
+                elif direction == EventDirection.OUT:  # spend
                     asset_balances[balance_key] = total_amount_before - event.amount
                     if asset_balances[balance_key] < ZERO:
                         log.warning(
@@ -374,6 +385,11 @@ class Accountant:
                             f'balance went to {asset_balances[balance_key]}',
                         )
                         asset_balances[balance_key] = ZERO
+                else:
+                    log.debug(
+                        f'Found event {event} with neutral direction during accounting. Skipping.',
+                    )
+                    continue
 
                 # Step 7: Prepare accounting data for batch insert
                 accounting_data_to_insert.append((
@@ -404,7 +420,7 @@ class Accountant:
                 ValueError,
                 ConversionError,
             ) as e:
-                log.error(f'Failed to process event {row[0]}: {e}')
+                log.error(f'Failed to process event {event.identifier}: {e}')
                 continue
 
         # Batch insert all accounting data
@@ -426,26 +442,6 @@ class Accountant:
 
         log.info(f'Successfully processed accounting for {processed_count} events')
         return processed_count
-
-    def _deserialize_history_event_from_row(self, row: tuple) -> HistoryBaseEntry:
-        """Deserialize a history event from a database row"""
-        # This is a simplified deserialization - would need proper implementation
-        # based on the entry_type to get the correct HistoryBaseEntry subclass
-
-        return HistoryEvent(
-            event_identifier=row[2],
-            sequence_index=row[3],
-            timestamp=TimestampMS(row[4]),
-            location=Location.deserialize_from_db(row[5]),
-            location_label=row[6],
-            asset=Asset(row[7]),
-            amount=FVal(row[8]),
-            notes=row[9],
-            event_type=HistoryEventType.deserialize(row[10]),
-            event_subtype=HistoryEventSubType.deserialize(row[11]),
-            identifier=row[0],
-            extra_data=None,  # TODO: Deserialize extra_data
-        )
 
     def _determine_event_taxability(self, event: HistoryBaseEntry, settings: DBSettings) -> bool:
         """Determine if an event is taxable based on event type and settings"""
@@ -477,23 +473,6 @@ class Accountant:
 
     # --- Internal Helper Methods ---
 
-    def _get_events_data_ordered(self, event_ids: list[int]) -> list[tuple]:
-        """Get events data ordered by timestamp for the given event IDs"""
-        if not event_ids:
-            return []
-
-        with self.db.conn.read_ctx() as cursor:
-            placeholders = ','.join('?' * len(event_ids))
-            cursor.execute(f"""
-                SELECT identifier, entry_type, event_identifier, sequence_index,
-                       timestamp, location, location_label, asset, amount, notes,
-                       event_type, event_subtype, extra_data
-                FROM history_events
-                WHERE identifier IN ({placeholders})
-                ORDER BY timestamp, sequence_index
-            """, event_ids)
-            return cursor.fetchall()
-
     def _load_progressive_state(
             self,
             before_timestamp: Timestamp,
@@ -501,11 +480,6 @@ class Accountant:
     ) -> tuple[dict[tuple[Asset, str, str], FVal], CostBasisCalculator]:
         """
         Load progressive state (balances and cost basis) from before the given timestamp.
-
-        No exceptions are raised to the caller. Individual event processing errors
-        UnknownAsset, UnsupportedAsset, DeserializationError, ValueError, ConversionError,
-        NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError)
-        are logged and the problematic event is skipped.
         """
         # Initialize empty state
         asset_balances: dict[tuple[Asset, str, str], FVal] = {}
@@ -538,70 +512,40 @@ class Accountant:
                     balance_key = (asset, location_str, location_label)
                     asset_balances[balance_key] = FVal(result[0])
 
-            # Load all history events before this timestamp to rebuild cost basis state
-            cursor.execute("""
-                SELECT identifier, asset, amount, timestamp, event_type, event_subtype
-                FROM history_events
-                WHERE timestamp < ?
-                ORDER BY timestamp, sequence_index
-            """, (before_timestamp,))
-
-            events_for_cost_basis = cursor.fetchall()
+        # Load all history events before this timestamp to rebuild cost basis state
+        history_events_db = DBHistoryEvents(self.db)
+        with self.db.conn.read_ctx() as cursor:
+            events_for_cost_basis = history_events_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    to_ts=Timestamp(before_timestamp - 1),  # Exclude the timestamp itself
+                ),
+                has_premium=True,  # ignore limits for accounting
+            )
 
         # Process events to rebuild cost basis calculator state
-        for event_row in events_for_cost_basis:
+        for event in events_for_cost_basis:
             try:
-                (
-                    event_id, asset_id, amount_str, timestamp_ms,
-                    event_type_str, event_subtype_str,
-                ) = event_row
-                asset = Asset(asset_id)
-                amount = FVal(amount_str)
-                timestamp_sec = Timestamp(timestamp_ms // 1000)
+                timestamp_sec = ts_ms_to_sec(event.timestamp)
 
                 # Get price for this event (we need it for cost basis)
-                price = self._get_historical_price(asset, timestamp_sec, settings)
-
-                # Determine if this was an acquisition or spend
-                event_type = HistoryEventType.deserialize(event_type_str)
-                event_subtype = HistoryEventSubType.deserialize(event_subtype_str)
-
-                # Create a minimal history event for cost basis calculator
-                temp_event = HistoryEvent(
-                    event_identifier='temp',
-                    sequence_index=0,
-                    timestamp=TimestampMS(timestamp_ms),
-                    location=Location.EXTERNAL,  # Placeholder
-                    event_type=event_type,
-                    event_subtype=event_subtype,
-                    asset=asset,
-                    amount=amount,
-                    identifier=event_id,
-                )
-
-                # Add to cost basis calculator based on event type
-                if amount > ZERO and event_subtype in (
-                    HistoryEventSubType.RECEIVE,
-                    HistoryEventSubType.DEPOSIT_ASSET,
-                ):
+                price = self._get_historical_price(event.asset, timestamp_sec, settings)
+                # Add to cost basis calculator based on direction
+                if (direction := event.maybe_get_direction()) == EventDirection.IN:
                     # This is an acquisition
                     cost_basis_calculator.obtain_asset(
-                        event=temp_event,
+                        event=event,
                         price=price,
-                        index=event_id,
+                        index=event.identifier or 0,
                     )
-                elif amount > ZERO and event_subtype in (
-                    HistoryEventSubType.SPEND,
-                    HistoryEventSubType.REMOVE_ASSET,
-                    HistoryEventSubType.FEE,
-                ):
+                elif direction == EventDirection.OUT:
                     # This is a spend
                     cost_basis_calculator.spend_asset(
-                        originating_event_id=event_id,
-                        location=Location.EXTERNAL,
+                        originating_event_id=event.identifier,
+                        location=event.location,
                         timestamp=timestamp_sec,
-                        asset=asset,
-                        amount=amount,
+                        asset=event.asset,
+                        amount=event.amount,
                         rate=price,
                         taxable_spend=True,
                     )
@@ -616,7 +560,9 @@ class Accountant:
                 PriceQueryUnsupportedAsset,
                 RemoteError,
             ) as e:
-                log.warning(f'Failed to process event {event_row[0]} for cost basis state: {e}')
+                log.warning(
+                    f'Failed to process event {event.identifier} for cost basis state: {e}',
+                )
                 continue
 
         log.info(f'Loaded progressive state with {len(asset_balances)} balance entries')
@@ -626,27 +572,13 @@ class Accountant:
             self,
             asset: Asset,
             timestamp: Timestamp,
-            settings: DBSettings,
     ) -> Price:
         """Get historical price for asset at timestamp using PriceHistorian"""
-        try:
-            # Use the existing price historian from chains aggregator
-            if hasattr(self.chains_aggregator, 'price_historian'):
-                price_historian = self.chains_aggregator.price_historian
-            else:
-                # Fallback to creating a simple price historian
-                price_historian = PriceHistorian(
-                    data_directory=self.db.user_data_dir,
-                )
-
-            return price_historian.query_historical_price(
-                from_asset=asset,
-                to_asset=settings.main_currency,
-                timestamp=timestamp,
-            )
-        except (NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset, RemoteError):
-            log.warning(f'Could not find price for {asset} at {timestamp}, using fallback')
-            return ZERO_PRICE
+        return PriceHistorian().query_historical_price(
+            from_asset=asset,
+            to_asset=self.profit_currency,
+            timestamp=timestamp,
+        )
 
     def _determine_event_taxability_with_rules(
             self,
@@ -732,7 +664,7 @@ class Accountant:
         # Use maybe_get_direction to determine how to handle the event
         direction = event.maybe_get_direction()
 
-        if direction == 'in':
+        if direction == EventDirection.IN:
             # This is an acquisition - add to cost basis calculator
             # Calculate cost basis before this acquisition (for display purposes)
             asset_events = cost_basis_calculator.get_events(event.asset)
@@ -757,7 +689,7 @@ class Accountant:
                     index=event.identifier or 0,
                 )
 
-        elif direction == 'out':
+        elif direction == EventDirection.OUT:
             # This is a spend - calculate PnL
             spend_amount = event.amount
             if spend_amount <= total_amount_before:
@@ -848,12 +780,14 @@ class Accountant:
 
         return settings_data
 
-    def _get_events_missing_accounting(
+    def _get_earliest_timestamp_missing_accounting(
             self,
             settings_hash: str,
             up_to_timestamp: Timestamp | None = None,
-    ) -> list[int]:
-        """Get list of event IDs that don't have accounting data for given settings"""
+    ) -> Timestamp | None:
+        """
+        Get the earliest timestamp of events that don't have accounting data for given settings
+        """
         with self.db.conn.read_ctx() as cursor:
             timestamp_filter = ''
             params: list[str | int] = [settings_hash]
@@ -863,12 +797,14 @@ class Accountant:
                 params.append(int(up_to_timestamp))
 
             cursor.execute(f"""
-                SELECT he.identifier
+                SELECT MIN(he.timestamp)
                 FROM history_events he
                 LEFT JOIN history_events_accounting hea ON he.identifier = hea.history_event_id
                     AND hea.accounting_settings_hash = ?
                 WHERE hea.history_event_id IS NULL{timestamp_filter}
-                ORDER BY he.timestamp, he.sequence_index
             """, params)
 
-            return [row[0] for row in cursor.fetchall()]
+            result = cursor.fetchone()
+            if result and result[0] is not None:
+                return Timestamp(ts_ms_to_sec(result[0]))
+            return None
