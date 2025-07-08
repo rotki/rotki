@@ -658,6 +658,15 @@ class EvmTransactionsResource(BaseMethodView):
         )
 
 
+class EvmTransactionsStatusResource(BaseMethodView):
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_evm_transactions_status(async_query=async_query)
+
+
 class EvmlikeTransactionsResource(BaseMethodView):
     put_schema = EvmlikeTransactionDecodingSchema()
 

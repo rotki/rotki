@@ -243,6 +243,7 @@ from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTIONS_TYPE,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    EVM_CHAINS_WITH_TRANSACTIONS,
     SOLANA_TOKEN_KINDS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
@@ -3042,6 +3043,28 @@ class RestAPI:
             'message': '',
             'status_code': HTTPStatus.OK,
         }
+
+    @async_api_call()
+    def get_evm_transactions_status(self) -> dict[str, Any]:
+        """Get the last timestamp when evm transactions were queried and how many
+        transactions are waiting to be decoded.
+        """
+        where_str = ' OR '.join(['name LIKE ?'] * len(EVM_CHAINS_WITH_TRANSACTIONS))
+        bindings = [
+            f'{blockchain.to_range_prefix("txs")}_%'
+            for blockchain in EVM_CHAINS_WITH_TRANSACTIONS
+        ]
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            last_queried_ts = cursor.execute(
+                f'SELECT MIN(end_ts) FROM used_query_ranges WHERE {where_str}',
+                bindings,
+            ).fetchone()[0] or Timestamp(0)
+
+        undecoded_count = DBEvmTx(self.rotkehlchen.data.db).count_hashes_not_decoded(chain_id=None)
+        return _wrap_in_ok_result({
+            'last_queried_ts': last_queried_ts,
+            'undecoded_tx_count': undecoded_count,
+        })
 
     @async_api_call()
     def decode_pending_evmlike_transactions(
