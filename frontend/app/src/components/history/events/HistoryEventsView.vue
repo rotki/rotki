@@ -23,7 +23,6 @@ import HistoryEventFormDialog from '@/components/history/events/HistoryEventForm
 import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
 import HistoryEventsProtocolCacheUpdateStatus
   from '@/components/history/events/HistoryEventsProtocolCacheUpdateStatus.vue';
-import HistoryEventsTable from '@/components/history/events/HistoryEventsTable.vue';
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
 import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
@@ -38,6 +37,7 @@ import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
