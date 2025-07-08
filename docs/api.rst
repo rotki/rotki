@@ -13818,6 +13818,45 @@ Refetch EVM transactions for a specific time period
    :statuscode 500: Internal rotki error
 
 
+Get EVM transaction status
+===========================
+
+.. http:post:: /api/(version)/blockchains/evm/transactions/status
+
+   Doing a GET on the transactions status endpoint will query status information about how recently all EVM chains
+   have been queried for transactions and how many transactions are waiting to be decoded.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/evm/transactions/status HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {"result": {"last_queried_ts": 1600000000, "undecoded_tx_count": 3}, "message": "" }
+
+   :resjson object result: An object containing the status data
+   :resjson integer last_queried_ts: The last timestamp when transactions for all EVM chains have been queried.
+   :resjson integer undecoded_tx_count: The number of transactions waiting to be decoded.
+   :statuscode 200: Status successfully queried.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+
 Active management
 ==================
 
