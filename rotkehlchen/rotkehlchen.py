@@ -62,7 +62,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
-from rotkehlchen.db.utils import replace_tag_mappings
+from rotkehlchen.db.utils import replace_tag_mappings, table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
@@ -550,6 +550,7 @@ class Rotkehlchen:
                     message_type=WSMessageType.SOLANA_TOKENS_MIGRATION,
                     data={'identifiers': [i[0] for i in cursor.execute('SELECT identifier FROM user_added_solana_tokens')]},  # noqa: E501
                 ),
+                extra_check_callback=lambda: cursor.execute('SELECT COUNT(*) FROM user_added_solana_tokens').fetchone()[0] > 0,  # noqa: E501
             )
 
     def _logout(self) -> None:
@@ -1382,10 +1383,11 @@ class Rotkehlchen:
             conn: 'DBConnection',
             table_name: str,
             notification_callback: Callable,
+            extra_check_callback: Callable | None = None,
     ) -> None:
         """Helper function to check if a migration table
         exists and send notification if it does.
         """
         with conn.read_ctx() as cursor:
-            if cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", (table_name,)).fetchone()[0] != 0:  # noqa: E501
+            if table_exists(cursor, table_name) and (extra_check_callback is None or extra_check_callback()):  # noqa: E501
                 notification_callback()

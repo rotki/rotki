@@ -51,6 +51,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     FiatAsset,
+    SolanaToken,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
@@ -241,6 +242,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     EVM_EVMLIKE_LOCATIONS,
+    SOLANA_TOKEN_KINDS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
@@ -277,6 +279,7 @@ from rotkehlchen.types import (
     Price,
     ProtocolsWithCache,
     PurgeableModuleName,
+    SolanaAddress,
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
@@ -420,6 +423,7 @@ class RestAPI:
         self.waited_greenlets = [mainloop_greenlet]
         self.task_lock = Semaphore()
         self.login_lock = Semaphore()
+        self.migration_lock = Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
 
@@ -5583,3 +5587,70 @@ class RestAPI:
             return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
 
         return _wrap_in_ok_result(result=balance)
+
+    @async_api_call()
+    def migrate_solana_token(
+            self,
+            old_asset: 'CryptoAsset',
+            address: 'SolanaAddress',
+            decimals: int,
+            token_kind: 'SOLANA_TOKEN_KINDS',
+    ) -> dict[str, Any]:
+        """This is a temporary endpoint to correct custom user input
+        solana tokens input before release 1.40.
+
+        Creates a new solana token with the provided address and metadata,
+        replaces all references in the database and cleans up the migration table if necessary.
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            if cursor.execute(
+                'SELECT COUNT(*) FROM user_added_solana_tokens WHERE identifier = ?',
+                (old_asset.identifier,),
+            ).fetchone()[0] == 0:
+                return wrap_in_fail_result(
+                    message='Token does not exist in user_added_solana_tokens table',
+                    status_code=HTTPStatus.CONFLICT,
+                )
+        with self.migration_lock:  # prevent race conditions when migrating last few tokens simultaneously  # noqa: E501
+            try:
+                GlobalDBHandler.add_asset(solana_token := SolanaToken.initialize(
+                    address=address,
+                    token_kind=token_kind,
+                    decimals=decimals,
+                    name=old_asset.name,
+                    symbol=old_asset.symbol,
+                    started=old_asset.started,
+                    forked=old_asset.forked,
+                    swapped_for=old_asset.swapped_for,
+                    coingecko=old_asset.coingecko,
+                    cryptocompare=old_asset.cryptocompare,
+                ))
+            except InputError as e:
+                return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+            try:
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    self.rotkehlchen.data.db.add_asset_identifiers(
+                        write_cursor=write_cursor,
+                        asset_identifiers=[solana_token.identifier],
+                    )
+                self.rotkehlchen.data.db.replace_asset_identifier(
+                    source_identifier=old_asset.identifier,
+                    target_asset=solana_token,
+                )
+            except (UnknownAsset, InputError) as e:
+                # delete newly created asset from global db, safe since we just added it above
+                GlobalDBHandler.delete_asset_by_identifier(solana_token.identifier)
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    # delete won't fail, either asset doesn't exist or has no references
+                    self.rotkehlchen.data.db.delete_asset_identifier(
+                        write_cursor=write_cursor,
+                        asset_id=solana_token.identifier,
+                    )
+                return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                if write_cursor.execute('SELECT COUNT(*) FROM user_added_solana_tokens').fetchone()[0] == 0:  # noqa: E501
+                    write_cursor.execute('DROP TABLE user_added_solana_tokens')
+
+        return OK_RESULT

@@ -142,6 +142,7 @@ from rotkehlchen.types import (
     ProtocolsWithCache,
     SupportedBlockchain,
     Timestamp,
+    TokenKind,
     UserNote,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -176,6 +177,7 @@ from .fields import (
     PositiveAmountField,
     PriceField,
     SerializableEnumField,
+    SolanaAddressField,
     StrEnumField,
     TaxFreeAfterPeriodField,
     TimestampField,
@@ -4173,4 +4175,19 @@ class Eth2StakingEventsResetSchema(Schema):
         enum_class=HistoryBaseEntryType,
         allow_only=(HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT),  # noqa: E501
         required=True,
+    )
+
+
+class SolanaTokenMigrationSchema(AsyncQueryArgumentSchema):
+    old_asset = AssetField(required=True, expected_type=CryptoAsset, form_with_incomplete_data=True)  # noqa: E501
+    address = SolanaAddressField(required=True)
+    decimals = fields.Integer(
+        strict=True,
+        validate=webargs.validate.Range(min=0),
+        required=True,
+    )
+    token_kind = SerializableEnumField(
+        enum_class=TokenKind,
+        required=True,
+        allow_only=[TokenKind.SPL_TOKEN, TokenKind.SPL_NFT],
     )

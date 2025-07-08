@@ -160,6 +160,7 @@ from rotkehlchen.api.v1.schemas import (
     SnapshotImportingSchema,
     SnapshotQuerySchema,
     SnapshotTimestampQuerySchema,
+    SolanaTokenMigrationSchema,
     SpamTokenListSchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
@@ -190,6 +191,7 @@ from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
     AssetWithOracles,
+    CryptoAsset,
     CustomAsset,
     EvmToken,
 )
@@ -237,6 +239,7 @@ from rotkehlchen.serialization.schemas import (
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    SOLANA_TOKEN_KINDS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -263,6 +266,7 @@ from rotkehlchen.types import (
     OptionalChainAddress,
     Price,
     ProtocolsWithCache,
+    SolanaAddress,
     SupportedBlockchain,
     Timestamp,
     UserNote,
@@ -3435,4 +3439,28 @@ class RefetchEvmTransactionsResource(BaseMethodView):
             async_query=async_query,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+        )
+
+
+class SolanaTokenMigrationResource(BaseMethodView):
+    """This is a temporary endpoint to correct custom user
+    input solana tokens input before release 1.40.
+    """
+    post_schema = SolanaTokenMigrationSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            old_asset: 'CryptoAsset',
+            address: 'SolanaAddress',
+            decimals: int,
+            token_kind: SOLANA_TOKEN_KINDS,
+    ) -> Response:
+        return self.rest_api.migrate_solana_token(
+            old_asset=old_asset,
+            address=address,
+            decimals=decimals,
+            token_kind=token_kind,
         )

@@ -14096,3 +14096,55 @@ Ethereum staking events
    :statuscode 400: Failed to validate the data or invalid entry type provided.
    :statuscode 401: No user is currently logged in.
    :statuscode 500: Internal rotki error.
+
+
+Solana Token Migration
+======================
+
+.. http:post:: /api/(version)/solana/tokens/migrate
+
+   Migrates a user-added Solana token to the proper token type. This endpoint creates a new Solana token with the provided address and metadata, replaces all references in the database, and cleans up the migration table if necessary. This is a temporary endpoint to correct custom user input solana tokens input before release 1.40.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/solana/tokens/migrate HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "async_query": false,
+          "old_asset": "RAYDIUMSOL",
+          "address": "So11111111111111111111111111111111111112",
+          "decimals": 9,
+          "token_kind": "spl_token"
+      }
+
+   :reqjson bool async_query: Optional. Whether to process the request asynchronously. Defaults to false.
+   :reqjson string old_asset: The old asset identifier to migrate from. Must exist in the user_added_solana_tokens table.
+   :reqjson string address: The new Solana address (mint address) for the token
+   :reqjson int decimals: The number of decimal places for the token
+   :reqjson string token_kind: The type of Solana token. Must be either "spl_token" or "spl_nft"
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure of the migration operation.
+   :statuscode 200: Token migration completed successfully.
+   :statuscode 400: Failed to validate the data or invalid parameters provided.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Token does not exist in user_added_solana_tokens table, or failed to create the new Solana token due to unknown asset or input error.
+   :statuscode 500: Internal rotki error.
