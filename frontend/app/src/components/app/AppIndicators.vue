@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
-import GlobalSearch from '@/components/GlobalSearch.vue';
 import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import BackButton from '@/components/helper/BackButton.vue';
 import UserNotesIndicator from '@/components/notes/UserNotesIndicator.vue';
@@ -14,6 +13,7 @@ import UserDropdown from '@/components/UserDropdown.vue';
 import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { checkIfDevelopment } from '@shared/utils';
+import EvmQueryIndicatorToggle from './EvmQueryIndicatorToggle.vue';
 
 const isDevelopment = checkIfDevelopment();
 const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
@@ -27,7 +27,6 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
 <template>
   <div class="flex overflow-hidden grow items-center">
     <SyncIndicator />
-    <GlobalSearch v-if="isSmAndUp" />
     <BackButton />
   </div>
   <div class="flex overflow-hidden h-full items-center">
@@ -44,6 +43,7 @@ const { showHelpBar, showNotesSidebar, showNotificationBar, showPinned } = store
         <RuiIcon name="lu-code-xml" />
       </RuiButton>
     </RouterLink>
+    <EvmQueryIndicatorToggle />
     <AppUpdateIndicator />
     <UserNotesIndicator v-model:visible="showNotesSidebar" />
     <PinnedIndicator v-model:visible="showPinned" />
