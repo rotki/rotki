@@ -442,7 +442,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Transaction hashes should be 32 bytes in length',
+        contained_in_msg='EVM transaction hashes should be 32 bytes in length',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.bitcoin.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteSwapData,
     ZKSyncLiteTransaction,
@@ -212,10 +213,14 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
 
     # check that removing bitcoin events works
     events_db = DBHistoryEvents(rotki.data.db)
-    event_identifier1, event_identifier2 = 'xxxx', 'zzzz'
+    btc_tx_hash1, btc_tx_hash2, btc_tx_hash3 = (
+        'e47f43692083b6b4bb3d4d6150acd3c016b09fb841e4055e1f5bb8ad44858bc6',
+        '450c309b70fb3f71b63b10ce60af17499bd21b1db39aa47b19bf22166ee67144',
+        'eb4d2def800c4993928a6f8cc3dd350933a1fb71e6706902025f29a061e5547f',
+    )
     with rotki.data.db.user_write() as write_cursor:
         for event in [HistoryEvent(
-            event_identifier=event_identifier,
+            event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_hash}',
             sequence_index=0,
             timestamp=TimestampMS(1600000000000),
             location=Location.BITCOIN,
@@ -223,13 +228,13 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
             event_subtype=HistoryEventSubType.NONE,
             asset=A_BTC,
             amount=FVal('0.0001'),
-        ) for event_identifier in (event_identifier1, event_identifier2)]:
+        ) for tx_hash in (btc_tx_hash1, btc_tx_hash2, btc_tx_hash3)]:
             events_db.add_history_event(
                 write_cursor=write_cursor,
                 event=event,
                 mapping_values=(  # Mark the first event as customized
                     {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED}
-                    if event.event_identifier == event_identifier1 else {}
+                    if btc_tx_hash1 in event.event_identifier else {}
                 ),
             )
         rotki.data.db.set_dynamic_cache(  # also add a cache entry that should get deleted in purge
@@ -239,28 +244,39 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
             address=BTCAddress('bc1xxxxxxxxxx'),
         )
 
+    # check deleting by hash
     response = requests.delete(
-        api_url_for(
-            rotkehlchen_api_server,
-            'blockchaintransactionsresource',
-        ),
+        api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+        json={'chain': 'btc', 'tx_hash': btc_tx_hash2},
+    )
+    assert_simple_ok_response(response)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert len(events := events_db.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
+            has_premium=True,
+        )) == 2  # only deleted the one event for the specified hash
+        assert all(btc_tx_hash2 not in x.event_identifier for x in events)
+
+    # check deleting all
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
         json={'chain': 'btc'},
     )
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = events_db.get_history_events(
+        assert len(events := events_db.get_history_events(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
             has_premium=True,
-        )
+        )) == 1  # Only the customized event remains
+        assert btc_tx_hash1 in events[0].event_identifier
+
+        # also check that the cached tx block is removed
         assert cursor.execute(
             'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?;',
             (f"{DBCacheDynamic.LAST_BITCOIN_TX_BLOCK.value[0].format(address='')}%",),
         ).fetchone()[0] == 0
-
-    # Only the uncustomized event should have been removed.
-    assert len(events) == 1
-    events[0].event_identifier = event_identifier2
 
 
 def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:

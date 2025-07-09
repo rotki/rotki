@@ -182,6 +182,7 @@ from .fields import (
     TimestampField,
     TimestampMSField,
     XpubField,
+    validate_and_deserialize_evm_tx_hash,
 )
 from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats
 
@@ -321,28 +322,27 @@ class BlockchainTransactionDeletionSchema(Schema):
         required=False,
         load_default=None,
     )
-    tx_hash = EVMTransactionHashField(required=False, load_default=None)
+    tx_hash = NonEmptyStringField(required=False, load_default=None)
 
-    @validates_schema
-    def validate_tx_deletion_schema(
+    @post_load
+    def validate_and_transform_data(
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> None:
-        if data['tx_hash'] is None:
-            return
+    ) -> dict[str, Any]:
+        """Validate that tx_hash is only specified with a chain, and if chain is EVM or EVM like,
+        deserialize the tx_hash. Hashes for other chains remain as strings.
+        """
+        if (tx_hash := data['tx_hash']) is not None:
+            if (chain := data['chain']) is None:
+                raise ValidationError(
+                    message='Deleting a specific transaction needs both tx_hash and chain',
+                    field_name='tx_hash',
+                )
+            if chain.is_evm_or_evmlike():
+                data['tx_hash'] = validate_and_deserialize_evm_tx_hash(tx_hash)
 
-        if (chain := data['chain']) is None:
-            raise ValidationError(
-                message='Deleting a specific transaction needs both tx_hash and chain',
-                field_name='tx_hash',
-            )
-
-        if not chain.is_evm():
-            raise ValidationError(
-                message='Deleting a specific transaction is only supported for evm chains',
-                field_name='tx_hash',
-            )
+        return data
 
 
 class TransactionQuerySchema(
