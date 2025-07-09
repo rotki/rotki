@@ -729,6 +729,21 @@ class SolanaAddressField(fields.Field):
         return SolanaAddress(value)
 
 
+def validate_and_deserialize_evm_tx_hash(value: str) -> EVMTxHash:
+    """Ensure that the given value is a valid evm transaction hash and deserialize it.
+    May raise ValidationError or DeserializationError.
+    """
+    try:
+        txhash = bytes.fromhex(value.removeprefix('0x'))
+    except ValueError as e:
+        raise ValidationError(f'Could not turn transaction hash {value} to bytes') from e
+
+    if (length := len(txhash)) != 32:
+        raise ValidationError(f'EVM transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
+
+    return deserialize_evm_tx_hash(txhash)
+
+
 class EVMTransactionHashField(fields.Field):
 
     @staticmethod
@@ -748,20 +763,10 @@ class EVMTransactionHashField(fields.Field):
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
     ) -> EVMTxHash:
-        # Make sure that given value is a transaction hash
         if not isinstance(value, str):
             raise ValidationError('Transaction hash should be a string')
 
-        try:
-            txhash = bytes.fromhex(value.removeprefix('0x'))
-        except ValueError as e:
-            raise ValidationError(f'Could not turn transaction hash {value} to bytes') from e
-
-        length = len(txhash)
-        if length != 32:
-            raise ValidationError(f'Transaction hashes should be 32 bytes in length. Given {length=}')  # noqa: E501
-
-        return deserialize_evm_tx_hash(txhash)
+        return validate_and_deserialize_evm_tx_hash(value)
 
 
 class AssetTypeField(fields.Field):

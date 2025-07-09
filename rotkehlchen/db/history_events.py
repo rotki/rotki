@@ -8,6 +8,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.bitcoin.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
@@ -56,7 +57,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
     BLOCKCHAIN_LOCATIONS_TYPE,
-    EVM_EVMLIKE_LOCATIONS_TYPE,
+    BTCTxHash,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
@@ -280,8 +281,8 @@ class DBHistoryEvents:
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
-            tx_hashes: list[EVMTxHash],
-            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+            tx_hashes: Sequence[EVMTxHash | BTCTxHash],
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
             delete_customized: bool = False,
     ) -> None:
         """Delete all relevant (by transaction hash) history events except those that
@@ -292,17 +293,28 @@ class DBHistoryEvents:
         code in v37 -> v38 upgrade as that is not limited to the number of transactions
         and won't potentially raise a too many sql variables error
         """
-        customized_event_ids = []
-        if not delete_customized:
-            customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
-        querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
-        if (length := len(customized_event_ids)) != 0:
-            querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings = [*tx_hashes, *customized_event_ids]
+        placeholders = ', '.join(['?'] * len(tx_hashes))
+        if location == Location.BITCOIN:
+            where_str = f'WHERE event_identifier IN ({placeholders})'
+            bindings = [f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_hash}' for tx_hash in tx_hashes]  # type: ignore  # tx_hashes will be strings for bitcoin
         else:
-            bindings = tx_hashes  # type: ignore  # different type of elements in the list
+            where_str = (
+                f'WHERE identifier IN (SELECT identifier FROM evm_events_info '
+                f'WHERE tx_hash IN ({placeholders}))'
+            )
+            bindings = list(tx_hashes)  # type: ignore  # different type of elements in the list
 
-        write_cursor.execute(querystr, bindings)
+        if (
+            delete_customized is False and
+            (length := len(customized_event_ids := self.get_customized_event_identifiers(
+                cursor=write_cursor,
+                location=location,
+            ))) != 0
+        ):
+            where_str += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            bindings.extend(customized_event_ids)  # type: ignore  # different type of elements in the list
+
+        write_cursor.execute(f'DELETE FROM history_events {where_str}', bindings)
 
     def get_customized_event_identifiers(
             self,
