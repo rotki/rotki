@@ -49,7 +49,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check, premium_create_and_verify
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
@@ -898,18 +897,12 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_GNOSISPAY_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
             return None
 
-        from_ts = Timestamp(0)
-        with self.database.conn.read_ctx() as cursor:
-            cursor.execute('SELECT value FROM key_value_cache WHERE name=?', (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value,))  # noqa: E501
-            if (result := cursor.fetchone()) is not None:
-                from_ts = deserialize_timestamp(result[0])
-
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
-            task_name='Query Gnosis Pay transaction',
+            task_name='Query Gnosis Pay transactions',
             exception_is_error=False,  # don't spam user messages if errors happen
             method=gnosispay.get_and_process_transactions,
-            after_ts=from_ts,
+            after_ts=Timestamp(0),
         )]
 
     def _maybe_create_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:
