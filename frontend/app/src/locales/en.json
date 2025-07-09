@@ -1004,6 +1004,12 @@
     "moto": "the opensource portfolio manager that protects your privacy",
     "name": "rotki"
   },
+  "app_indicators": {
+    "evm_query_indicator": {
+      "hide": "Hide EVM Events Query Status in Dashboard",
+      "show": "Show EVM Events Query Status in Dashboard"
+    }
+  },
   "asset_balances": {
     "loading": "Please wait while rotki queries the balances..."
   },
@@ -1835,6 +1841,13 @@
         "substrate": "Substrate Address"
       },
       "title": "blockchain"
+    },
+    "evm_query_indicator": {
+      "go_to_history_events": "Go to history events",
+      "incomplete_decoding": "EVM events last queried {time}, events decoding processes are incomplete, the protocol balances might be outdated.",
+      "last_queried": "EVM events last queried {time}, the protocol balances might be outdated if EVM events hasn't updated for too long",
+      "never_queried": "EVM events have not been queried yet. Go to history events to start query them.",
+      "processing": "Querying and decoding of the history events is in progress, wait until it finishes to see updated protocol balances."
     },
     "exchange_balances": {
       "add": "Add an exchange",
@@ -2794,7 +2807,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "Search ({modifier} + {key})",
     "no_actions": "No actions found",
     "search_placeholder": "Search anything..."
   },

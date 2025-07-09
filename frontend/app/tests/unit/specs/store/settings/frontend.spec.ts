@@ -87,6 +87,7 @@ describe('settings:frontend', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
+      showEvmQueryIndicator: true,
       savedFilters: {},
       balanceUsdValueThreshold: {},
     });
@@ -165,6 +166,7 @@ describe('settings:frontend', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
+      showEvmQueryIndicator: true,
       subscriptDecimals: false,
       savedFilters: {},
       balanceUsdValueThreshold: {

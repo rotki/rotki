@@ -1902,7 +1902,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "Buscar ({modifier} + {key})",
     "no_actions": "No actions found",
     "search_placeholder": "Search anything..."
   },

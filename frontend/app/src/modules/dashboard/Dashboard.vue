@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
 import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
+import EvmQueryIndicator from '@/components/dashboard/EvmQueryIndicator.vue';
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
@@ -35,20 +37,47 @@ const isAllBalancesLoading = useIsTaskRunning(TaskType.QUERY_BALANCES);
 const isBlockchainLoading = logicOr(isQueryingBlockchain, isLoopringLoading);
 const isAnyLoading = logicOr(isBlockchainLoading, isExchangeLoading, isAllBalancesLoading);
 const dismissedMessage = useSessionStorage('rotki.messages.dash.dismissed', false);
+
+const dashboardRef = ref<HTMLElement>();
+const floatingRef = ref<HTMLElement>();
+const dashboardWidth = ref(0);
+
+const { width } = useElementSize(dashboardRef);
+watch(width, (newWidth) => {
+  set(dashboardWidth, newWidth);
+});
+
+const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
+
+const { showEvmQueryIndicator } = storeToRefs(useFrontendSettingsStore());
+
+const { height: floatingHeight } = useElementSize(floatingRef);
+
+const paddingTop = computed(() => get(floatingHeight) || 0);
 </script>
 
 <template>
   <div
+    ref="dashboardRef"
     class="pb-6"
     data-cy="dashboard"
   >
-    <DynamicMessageDisplay
-      v-if="activeDashboardMessages.length > 0 && !dismissedMessage"
-      class="!-mt-6 mb-4"
-      :messages="activeDashboardMessages"
-      @dismiss="dismissedMessage = true"
-    />
-    <div class="container">
+    <div
+      ref="floatingRef"
+      class="fixed z-[7] top-14 md:top-16 shadow-sm"
+      :style="{ width: `${dashboardWidth}px` }"
+    >
+      <DynamicMessageDisplay
+        v-if="showDynamicMessage"
+        :messages="activeDashboardMessages"
+        @dismiss="dismissedMessage = true"
+      />
+      <EvmQueryIndicator v-if="showEvmQueryIndicator" />
+    </div>
+    <div
+      class="container"
+      :style="{ paddingTop: `${paddingTop}px` }"
+    >
       <div class="flex flex-wrap gap-6">
         <div class="w-full">
           <OverallBalances />

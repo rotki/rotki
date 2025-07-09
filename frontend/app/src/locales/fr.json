@@ -2157,7 +2157,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "Rechercher ({modifier} + {key})",
     "no_actions": "Aucune action trouvée",
     "search_placeholder": "Rechercher n'importe quoi..."
   },

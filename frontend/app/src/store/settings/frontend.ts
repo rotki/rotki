@@ -39,6 +39,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const defaultThemeVersion = useComputedRef(settings, 'defaultThemeVersion');
   const graphZeroBased = useComputedRef(settings, 'graphZeroBased');
   const ignoreSnapshotError = useComputedRef(settings, 'ignoreSnapshotError');
+  const showEvmQueryIndicator = useComputedRef(settings, 'showEvmQueryIndicator');
   const showGraphRangeSelector = useComputedRef(settings, 'showGraphRangeSelector');
   const nftsInNetValue = useComputedRef(settings, 'nftsInNetValue');
   const persistTableSorting = useComputedRef(settings, 'persistTableSorting');
@@ -143,6 +144,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     selectedTheme,
     settings,
     shouldRefreshValidatorDailyStats,
+    showEvmQueryIndicator,
     showGraphRangeSelector,
     subscriptDecimals,
     thousandSeparator,

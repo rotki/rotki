@@ -61,6 +61,7 @@ describe('settings:utils', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
+      showEvmQueryIndicator: true,
       savedFilters: {},
       balanceUsdValueThreshold: {},
     });

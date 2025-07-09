@@ -58,6 +58,7 @@
   "savedFilters": {},
   "selectedTheme": 1,
   "shouldRefreshValidatorDailyStats": false,
+  "showEvmQueryIndicator": true,
   "showGraphRangeSelector": true,
   "subscriptDecimals": false,
   "thousandSeparator": ",",

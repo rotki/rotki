@@ -7,7 +7,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import AppImage from '@/components/common/AppImage.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
@@ -47,7 +46,6 @@ const search = ref<string>('');
 const loading = ref(false);
 const visibleItems = ref<SearchItem[]>([]);
 
-const modifier = computed<string>(() => (get(isMac) ? 'Cmd' : 'Ctrl'));
 const key = '/';
 
 const router = useRouter();
@@ -400,17 +398,33 @@ onBeforeMount(async () => {
     content-class="mt-[16rem] !top-0 pb-2"
   >
     <template #activator="{ attrs }">
-      <MenuTooltipButton
-        :tooltip="
-          t('global_search.menu_tooltip', {
-            modifier,
-            key,
-          })
-        "
-        v-bind="attrs"
-      >
-        <RuiIcon name="lu-search" />
-      </MenuTooltipButton>
+      <div class="px-3 pt-2 pb-4">
+        <RuiTextField
+          model-value=""
+          hide-details
+          dense
+          :label="t('common.actions.search')"
+          variant="outlined"
+          readonly
+          class="opacity-60 [&>div:first-child]:bg-rui-grey-100 [&>div:first-child]:dark:bg-rui-grey-800 [&_fieldset]:!rounded-lg [&_fieldset]:!opacity-50"
+          color="primary"
+          v-bind="attrs"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-search"
+              size="18"
+            />
+          </template>
+          <template #append>
+            <RuiIcon
+              name="lu-command"
+              size="14"
+            />
+            {{ key }}
+          </template>
+        </RuiTextField>
+      </div>
     </template>
     <RuiCard
       variant="flat"

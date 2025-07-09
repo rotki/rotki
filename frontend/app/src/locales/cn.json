@@ -1957,7 +1957,6 @@
     }
   },
   "global_search": {
-    "menu_tooltip": "搜索 ({modifier} + {key})",
     "no_actions": "没有找到动作",
     "search_placeholder": "搜索任何内容..."
   },

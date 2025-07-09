@@ -37,6 +37,11 @@ import { omit } from 'es-toolkit';
 
 interface QueryExchangePayload { name: string; location: string }
 
+interface EvmTransactionStatus {
+  lastQueriedTs: number;
+  pendingDecode: boolean;
+}
+
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
@@ -59,6 +64,7 @@ interface UseHistoryEventsApiReturn {
   downloadHistoryEventsCSV: (filePath: string) => Promise<ActionStatus>;
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
+  getEvmTransactionStatus: () => Promise<EvmTransactionStatus>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -325,6 +331,17 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
+  const getEvmTransactionStatus = async (): Promise<EvmTransactionStatus> => {
+    const response = await api.instance.get<ActionResult<any>>(
+      '/blockchains/evm/transactions/status',
+      {
+        validateStatus: validStatus,
+      },
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     addHistoryEvent,
     addTransactionHash,
@@ -338,6 +355,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     fetchHistoryEvents,
     fetchTransactionsTask,
     getEventDetails,
+    getEvmTransactionStatus,
     getHistoryEventCounterpartiesData,
     getHistoryEventProductsData,
     getTransactionTypeMappings,
