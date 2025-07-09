@@ -1414,6 +1414,8 @@ DEFAULT_ADDRESS_NAME_PRIORITY: Sequence[AddressNameSource] = (
 
 
 class HistoryEventQueryType(SerializableEnumNameMixin):
-    """Locations to query for history events"""
+    """Locations to query for history event data"""
     ETH_WITHDRAWALS = auto()
     BLOCK_PRODUCTIONS = auto()
+    MONERIUM = auto()
+    GNOSIS_PAY = auto()

@@ -3708,9 +3708,26 @@ class RestAPI:
 
     @async_api_call()
     def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
-        """Queries the specified event type for any new events and saves them in the DB"""
+        """Query the specified event type for data and add/update the events in the DB."""
         try:
-            # query eth staking events
+            if query_type == HistoryEventQueryType.GNOSIS_PAY:
+                if (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is None:
+                    return wrap_in_fail_result(
+                        message='Gnosis Pay module could not be initialized',
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+                gnosis_pay.get_and_process_transactions(after_ts=Timestamp(0))
+                return OK_RESULT
+            elif query_type == HistoryEventQueryType.MONERIUM:
+                if (monerium := init_monerium(self.rotkehlchen.data.db)) is None:
+                    return wrap_in_fail_result(
+                        message='Monerium module could not be initialized',
+                        status_code=HTTPStatus.CONFLICT,
+                    )
+                monerium.get_and_process_orders()
+                return OK_RESULT
+
+            # else query_type is either ETH_WITHDRAWALS or BLOCK_PRODUCTIONS and eth2 is needed
             eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')
             if eth2 is None:
                 return wrap_in_fail_result(
