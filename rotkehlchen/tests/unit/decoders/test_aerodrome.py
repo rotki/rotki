@@ -15,7 +15,6 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
     ChainID,
     Location,
     TimestampMS,
@@ -133,7 +132,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
         ),
     ]
     assert events == expected_events
-    assert EvmToken(pool_token.identifier).protocol == AERODROME_POOL_PROTOCOL
+    assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
 @pytest.mark.vcr
@@ -192,7 +191,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
         ),
     ]
     assert events == expected_events
-    assert EvmToken(pool_token.identifier).protocol == AERODROME_POOL_PROTOCOL
+    assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
 @pytest.mark.vcr

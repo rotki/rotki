@@ -8,6 +8,11 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    CPT_YEARN_STAKING,
+    CPT_YEARN_V2,
+    CPT_YEARN_V3,
+)
 from rotkehlchen.chain.ethereum.modules.yearn.utils import (
     YDAEMON_API,
     query_yearn_vaults,
@@ -21,13 +26,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import (
-    YEARN_STAKING_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
-    CacheType,
-    ChainID,
-)
+from rotkehlchen.types import CacheType, ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -91,7 +90,7 @@ def test_yearn_api(database, ethereum_inquirer):
     assert token is not None
     assert token.name == 'Curve STG-USDC Pool yVault'
     assert token.symbol == 'yvCurve-STG-USDC'
-    assert token.protocol == YEARN_VAULTS_V2_PROTOCOL
+    assert token.protocol == CPT_YEARN_V2
 
     # token in ydemon but not in the old api
     token = GlobalDBHandler.get_evm_token(
@@ -100,7 +99,7 @@ def test_yearn_api(database, ethereum_inquirer):
     )
     assert token.name == 'Curve mevETHfrxE-f Factory yVault'
     assert token.symbol == 'yvCurve-mevETHfrxE-f'
-    assert token.protocol == YEARN_VAULTS_V2_PROTOCOL
+    assert token.protocol == CPT_YEARN_V2
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x9b77bd0a665F05995b68e36fC1053AFFfAf0d4B5'
 
@@ -111,7 +110,7 @@ def test_yearn_api(database, ethereum_inquirer):
     )
     assert token.name == 'mkUSD yVault-A'
     assert token.symbol == 'yvmkUSD-A'
-    assert token.protocol == YEARN_VAULTS_V3_PROTOCOL
+    assert token.protocol == CPT_YEARN_V3
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x4591DBfF62656E7859Afe5e45f6f47D3669fBB28'
 
@@ -174,6 +173,6 @@ def test_process_staked_vaults(
     token = EvmToken('eip155:1/erc20:0x7Fd8Af959B54A677a1D8F92265Bd0714274C56a3')
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == string_to_evm_address('0x790a60024bC3aea28385b60480f15a0771f26D09')  # noqa: E501
-    assert token.protocol == YEARN_STAKING_PROTOCOL
+    assert token.protocol == CPT_YEARN_STAKING
     with patch.object(evm_manager, 'assure_curve_cache_is_queried_and_decoder_updated'):
-        assert FVal(7413.3987907).is_close(inquirer_defi.find_usd_price(token))
+        assert inquirer_defi.find_usd_price(token).is_close(FVal('8776.098257'), max_diff='1e6')

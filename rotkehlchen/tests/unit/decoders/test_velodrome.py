@@ -17,7 +17,6 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    VELODROME_POOL_PROTOCOL,
     CacheType,
     ChainID,
     Location,
@@ -128,7 +127,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
         ),
     ]
     assert events == expected_events
-    assert EvmToken(WETH_OP_LP_TOKEN).protocol == VELODROME_POOL_PROTOCOL
+    assert EvmToken(WETH_OP_LP_TOKEN).protocol == CPT_VELODROME
 
 
 @pytest.mark.vcr
@@ -204,7 +203,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
         ),
     ]
     assert events == expected_events
-    assert EvmToken(lp_token_identifier).protocol == VELODROME_POOL_PROTOCOL
+    assert EvmToken(lp_token_identifier).protocol == CPT_VELODROME
 
 
 @pytest.mark.vcr
@@ -216,7 +215,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
         userdb=optimism_transaction_decoder.evm_inquirer.database,
         evm_address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
         chain_id=ChainID.OPTIMISM,
-        protocol=VELODROME_POOL_PROTOCOL,
+        protocol=CPT_VELODROME,
         symbol='vAMMV2-WETH/OP',
     )
     evmhash = deserialize_evm_tx_hash('0x81351bf9ca6d78bff92d2b714d68dd7c785bb70de0e250bc7bc6ab073736d1ce')  # noqa: E501
@@ -748,7 +747,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
         userdb=optimism_transaction_decoder.evm_inquirer.database,
         evm_address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
         chain_id=ChainID.OPTIMISM,
-        protocol=VELODROME_POOL_PROTOCOL,
+        protocol=CPT_VELODROME,
         symbol='vAMMV2-WETH/OP',
     )
     evmhash = deserialize_evm_tx_hash('0x1bfa588dc839b13205e80bbfd7b7748a4c599854a03b52bb5476d6edae2e95a9')  # noqa: E501
@@ -801,7 +800,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
         ),
     ]
     assert events == expected_events
-    assert EvmToken(WETH_OP_LP_TOKEN).protocol == VELODROME_POOL_PROTOCOL
+    assert EvmToken(WETH_OP_LP_TOKEN).protocol == CPT_VELODROME
 
 
 @pytest.mark.vcr

@@ -11,20 +11,18 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
+from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V1, CPT_YEARN_V2
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
-    CURVE_POOL_PROTOCOL,
-    GEARBOX_PROTOCOL,
-    PICKLE_JAR_PROTOCOL,
     SPAM_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
     ChainID,
     Location,
     Timestamp,
@@ -41,14 +39,14 @@ ASSET_MAPPING: Final = 'INSERT INTO multiasset_mappings(collection_id, asset) VA
 ASSET_UPDATE: Final = "[('{address}', Chain.{chain_name}, '{coingecko}', '{cryptocompare}', {field_updates}, '{protocol}', {underlying_token_addresses})],"  # noqa: E501
 NON_EVM_ASSET_INSERT = "INSERT INTO assets(identifier, name, type) VALUES('{identifier}', '{name}', '{type}'); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES('{identifier}', '{symbol}', '{coingecko}', '{cryptocompare}', {forked}, {started}, {swapped_for});"  # noqa: E501
 IGNORED_PROTOCOLS: Final = {
-    CURVE_POOL_PROTOCOL,
-    YEARN_VAULTS_V1_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    AERODROME_POOL_PROTOCOL,
-    PICKLE_JAR_PROTOCOL,
+    CPT_CURVE,
+    CPT_YEARN_V1,
+    CPT_YEARN_V2,
+    CPT_VELODROME,
+    CPT_AERODROME,
+    CPT_PICKLE,
     SPAM_PROTOCOL,
-    GEARBOX_PROTOCOL,
+    CPT_GEARBOX,
 }
 
 

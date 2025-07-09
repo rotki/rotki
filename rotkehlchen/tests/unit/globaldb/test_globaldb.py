@@ -24,6 +24,7 @@ from rotkehlchen.assets.utils import (
 )
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
@@ -62,7 +63,6 @@ from rotkehlchen.tests.utils.globaldb import (
     globaldb_get_general_cache_last_queried_ts,
 )
 from rotkehlchen.types import (
-    CURVE_POOL_PROTOCOL,
     SPAM_PROTOCOL,
     AssetAmount,
     CacheType,
@@ -1255,9 +1255,9 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInqui
         chain_id=ChainID.ETHEREUM,
         token_kind=TokenKind.ERC20,
         evm_address=make_evm_address(),
-        protocol=CURVE_POOL_PROTOCOL,
+        protocol=CPT_CURVE,
     )
-    assert token.protocol == CURVE_POOL_PROTOCOL
+    assert token.protocol == CPT_CURVE
     with database.conn.read_ctx() as cursor:
         assert token.identifier not in database.get_ignored_asset_ids(cursor)
 

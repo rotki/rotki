@@ -44,7 +44,6 @@ from rotkehlchen.tests.utils.database import column_exists, index_exists
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
-    YEARN_VAULTS_V1_PROTOCOL,
     CacheType,
     ChainID,
     Location,
@@ -315,7 +314,7 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
         # check that yearn tokens got their protocol updated
         cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', ('yearn-v1',))
         assert cursor.fetchone()[0] == 0
-        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+        cursor.execute('SELECT COUNT(*) from evm_tokens WHERE protocol=?', ('yearn_vaults_v1',))
         assert cursor.fetchone()[0] == YEARN_V1_ASSETS_IN_V3
 
 
@@ -1126,6 +1125,28 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         ])
         assert table_exists(cursor=cursor, name='user_added_solana_tokens') is False
 
+        protocol_mapping = {
+            'aerodrome_pool': 'aerodrome',
+            'velodrome_pool': 'velodrome',
+            'pickle_jar': 'pickle finance',
+            'SLP': 'sushiswap-v2',
+            'UNI-V2': 'uniswap-v2',
+            'UNI-V3': 'uniswap-v3',
+            'yearn_vaults_v1': 'yearn-v1',
+            'yearn_vaults_v2': 'yearn-v2',
+            'yearn_vaults_v3': 'yearn-v3',
+            'curve_pool': 'curve',
+            'curve_lending_vaults': 'curve',
+            'pendle': 'pendle',
+            'hop_lp': 'hop',
+            'morpho_vaults': 'morpho',
+        }
+        # Check that protocol names are still in old format before upgrade
+        assert (protocol_tokens_count := cursor.execute(
+            f"SELECT COUNT(*) FROM evm_tokens WHERE protocol IN ({','.join(['?' for _ in protocol_mapping])})",  # noqa: E501
+            tuple(protocol_mapping),
+        ).fetchone()[0]) > 0
+
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 13)
         maybe_upgrade_globaldb(
@@ -1196,6 +1217,16 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         assert table_exists(cursor=cursor, name='user_added_solana_tokens') is True
         assert cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y' AND identifier IN ('HODLER','LAND','LEMON')").fetchone()[0] == 0  # noqa: E501
         assert cursor.execute("SELECT identifier, name FROM assets WHERE type='W' AND identifier IN ('HODLER','LAND','LEMON')").fetchall() == user_added_tokens_before  # noqa: E501
+
+        # verify that old protocol names are gone and new counterparty identifiers are present
+        for protocols, expected_count in (
+            (protocol_mapping, 0),
+            (protocol_mapping.values(), protocol_tokens_count),
+        ):
+            assert cursor.execute(
+                f"SELECT COUNT(*) FROM evm_tokens WHERE protocol IN ({','.join(['?' for _ in protocols])})",  # noqa: E501
+                tuple(protocols),
+            ).fetchone()[0] == expected_count
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

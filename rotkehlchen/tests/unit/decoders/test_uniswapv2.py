@@ -21,7 +21,6 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    UNISWAP_PROTOCOL,
     ChainID,
     EvmTransaction,
     Location,
@@ -276,7 +275,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
     ]
     assert events == expected_events
     lp_token = EvmToken(lp_token_identifier)
-    assert lp_token.protocol == UNISWAP_PROTOCOL
+    assert lp_token.protocol == CPT_UNISWAP_V2
     assert lp_token.symbol == 'UNI-V2 DAI-USDC'
 
 

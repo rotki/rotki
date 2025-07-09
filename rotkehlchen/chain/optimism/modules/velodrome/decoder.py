@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import VELODROME_POOL_PROTOCOL, CacheType
+from rotkehlchen.types import CacheType
 
 from .constants import ROUTER_V1, ROUTER_V2, VOTER_CONTRACT_ADDRESS, VOTING_ESCROW_CONTRACT_ADDRESS
 
@@ -43,7 +43,6 @@ class VelodromeDecoder(VelodromeLikeDecoder):
             gauge_bribes_cache_type=CacheType.VELODROME_GAUGE_BRIBE_ADDRESS,
             pool_cache_type=CacheType.VELODROME_POOL_ADDRESS,
             read_fn=read_velodrome_pools_and_gauges_from_cache,
-            pool_token_protocol=VELODROME_POOL_PROTOCOL,
         )
 
     @staticmethod

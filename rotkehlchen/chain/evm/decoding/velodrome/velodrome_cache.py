@@ -22,8 +22,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
     AddressbookEntry,
     CacheType,
     ChainID,
@@ -191,11 +189,9 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     """
     if inquirer.chain_id == ChainID.OPTIMISM:
         data_contract = inquirer.contracts.contract(VELODROME_SUGAR_V2_CONTRACT)
-        protocol = VELODROME_POOL_PROTOCOL
         counterparty = CPT_VELODROME
     else:
         data_contract = inquirer.contracts.contract(AERODROME_SUGAR_V2_CONTRACT)
-        protocol = AERODROME_POOL_PROTOCOL
         counterparty = CPT_AERODROME
 
     pool_data: list[dict] = []
@@ -310,7 +306,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             chain_id=inquirer.chain_id,
             evm_inquirer=inquirer,
             encounter=encounter,
-            protocol=protocol,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
+            protocol=counterparty,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
             fallback_decimals=entry.pool_decimals,
             fallback_name=f'{pool_name} Pool',
             fallback_symbol=pool_name,

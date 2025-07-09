@@ -18,6 +18,7 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
     """This globalDB upgrade does the following:
     - Add new token kinds (SPL Tokens & NFTs) for the solana ecosystem.
     - Add solana_tokens table and migrate solana tokens to that.
+    - Convert legacy protocol names in evm_tokens to standardized counterparty identifiers.
 
     This upgrade takes place in v1.40.0"""
     @progress_step('Add new token kinds for Solana')
@@ -95,5 +96,33 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
             'INSERT INTO user_added_solana_tokens(identifier) VALUES (?)',
             user_tokens,
         )
+
+    @progress_step('Update token protocols to use counterparty identifiers')
+    def _update_token_protocols_to_counterparties(write_cursor: 'DBCursor') -> None:
+        """Updates token protocol identifiers to use their corresponding counterparty values."""
+        write_cursor.execute("""
+            UPDATE evm_tokens SET protocol = CASE protocol
+                WHEN 'aerodrome_pool' THEN 'aerodrome'
+                WHEN 'velodrome_pool' THEN 'velodrome'
+                WHEN 'pickle_jar' THEN 'pickle finance'
+                WHEN 'SLP' THEN 'sushiswap-v2'
+                WHEN 'UNI-V2' THEN 'uniswap-v2'
+                WHEN 'UNI-V3' THEN 'uniswap-v3'
+                WHEN 'yearn_vaults_v1' THEN 'yearn-v1'
+                WHEN 'yearn_vaults_v2' THEN 'yearn-v2'
+                WHEN 'yearn_vaults_v3' THEN 'yearn-v3'
+                WHEN 'curve_pool' THEN 'curve'
+                WHEN 'curve_lending_vaults' THEN 'curve'
+                WHEN 'pendle' THEN 'pendle'
+                WHEN 'hop_lp' THEN 'hop'
+                WHEN 'morpho_vaults' THEN 'morpho'
+                ELSE protocol
+            END
+            WHERE protocol IN (
+                'aerodrome_pool', 'velodrome_pool', 'pickle_jar', 'SLP', 'UNI-V2', 'UNI-V3',
+                'yearn_vaults_v1', 'yearn_vaults_v2', 'yearn_vaults_v3', 'curve_pool',
+                'curve_lending_vaults', 'pendle', 'hop_lp', 'morpho_vaults'
+            )
+        """)
 
     perform_globaldb_upgrade_steps(connection, progress_handler)

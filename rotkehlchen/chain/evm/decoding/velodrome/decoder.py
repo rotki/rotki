@@ -76,7 +76,6 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             gauge_fees_cache_type: GeneralCacheType,
             pool_cache_type: CacheType,
             read_fn: Callable[[], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
-            pool_token_protocol: str,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -91,7 +90,6 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             read_data_from_cache_method=read_fn,
         )
         self.counterparty = counterparty
-        self.pool_token_protocol = pool_token_protocol
         self.protocol_addresses = routers  # protocol_addresses are updated with pools in post_cache_update_callback  # noqa: E501
         self.voting_escrow_address = voting_escrow_address
         self.gauge_bribes_cache_type = gauge_bribes_cache_type
@@ -142,7 +140,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 event.product = EvmProduct.POOL
                 GlobalDBHandler.set_token_protocol_if_missing(
                     token=event.asset.resolve_to_evm_token(),
-                    new_protocol=self.pool_token_protocol,
+                    new_protocol=self.counterparty,
                 )
 
         return DEFAULT_DECODING_OUTPUT
@@ -265,7 +263,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
                     GlobalDBHandler.set_token_protocol_if_missing(
                         token=event.asset.resolve_to_evm_token(),
-                        new_protocol=self.pool_token_protocol,
+                        new_protocol=self.counterparty,
                     )
                 elif context.tx_log.topics[0] == GAUGE_WITHDRAW_V2:
                     event.event_type = HistoryEventType.WITHDRAWAL

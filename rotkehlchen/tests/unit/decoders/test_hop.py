@@ -26,7 +26,6 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    HOP_PROTOCOL_LP,
     CacheType,
     ChecksumEvmAddress,
     Location,
@@ -673,7 +672,7 @@ def test_hop_add_liquidity(
         ),
     ]
     assert events == expected_events
-    assert EvmToken('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D').protocol == HOP_PROTOCOL_LP  # noqa: E501
+    assert EvmToken('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D').protocol == CPT_HOP  # noqa: E501
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_value(
             cursor=cursor,

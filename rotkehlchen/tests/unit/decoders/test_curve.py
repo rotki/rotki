@@ -47,7 +47,6 @@ from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    CURVE_POOL_PROTOCOL,
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,
@@ -1860,7 +1859,7 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
         chain_id=optimism_inquirer.chain_id,
         token_kind=TokenKind.ERC20,
         evm_inquirer=optimism_inquirer,
-        protocol=CURVE_POOL_PROTOCOL,
+        protocol=CPT_CURVE,
     )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
@@ -1924,7 +1923,7 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
         chain_id=gnosis_inquirer.chain_id,
         token_kind=TokenKind.ERC20,
         evm_inquirer=gnosis_inquirer,
-        protocol=CURVE_POOL_PROTOCOL,
+        protocol=CPT_CURVE,
     )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,

@@ -23,6 +23,11 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.constants import (
+    CPT_UNISWAP_V2,
+    CPT_UNISWAP_V3,
+    UNISWAP_ICON,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.utils import decode_basic_uniswap_info
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     COLLECT_LIQUIDITY_SIGNATURE,
@@ -42,14 +47,11 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
-    UNISWAPV3_PROTOCOL,
     ChecksumEvmAddress,
     EvmTransaction,
     TokenKind,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec
-
-from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -558,7 +560,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
                 symbol=f'UNI-V3-POS-{(collectible_id := tokenid_to_collectible_id(identifier=context.event.asset.identifier))}',  # noqa: E501
                 name=f'Uniswap V3 Positions #{collectible_id}',
                 collectible_id=str(collectible_id),
-                protocol=UNISWAPV3_PROTOCOL,
+                protocol=CPT_UNISWAP_V3,
             )
             return TransferEnrichmentOutput(matched_counterparty=CPT_UNISWAP_V3)
 

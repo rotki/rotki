@@ -7,6 +7,7 @@ from unittest.mock import patch
 import requests
 from freezegun import freeze_time
 
+from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.decoding.morpho.utils import (
     MORPHO_BLUE_API,
     MORPHO_REWARDS_API,
@@ -23,7 +24,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import MORPHO_VAULT_PROTOCOL, CacheType, ChainID
+from rotkehlchen.types import CacheType, ChainID
 
 if TYPE_CHECKING:
     from unittest.mock import _patch
@@ -87,7 +88,7 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
     )) is not None
     assert token.name == 'Anzen Boosted USDC'
     assert token.symbol == 'AnzenUSDC'
-    assert token.protocol == MORPHO_VAULT_PROTOCOL
+    assert token.protocol == CPT_MORPHO
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
