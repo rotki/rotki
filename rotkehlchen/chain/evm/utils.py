@@ -7,6 +7,8 @@ from web3.types import BlockIdentifier
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -15,9 +17,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
-    UNISWAP_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
     ChainID,
     Price,
     Timestamp,
@@ -27,7 +26,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.types import LP_TOKEN_AS_POOL_CONTRACT_ABIS
+    from rotkehlchen.chain.evm.protocol_constants import LP_TOKEN_AS_POOL_CONTRACT_ABIS
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -36,9 +35,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 LP_TOKEN_AS_POOL_PROTOCOL_TO_ABI_NAME: Final[dict[str, 'LP_TOKEN_AS_POOL_CONTRACT_ABIS']] = {
-    VELODROME_POOL_PROTOCOL: 'VELO_V2_LP',
-    AERODROME_POOL_PROTOCOL: 'VELO_V2_LP',
-    UNISWAP_PROTOCOL: 'UNISWAP_V2_LP',
+    CPT_VELODROME: 'VELO_V2_LP',
+    CPT_AERODROME: 'VELO_V2_LP',
+    CPT_UNISWAP_V2: 'UNISWAP_V2_LP',
 }
 FVAL_ERROR_NAME: Final = 'token supply'
 FVAL_ERROR_LOCATION: Final = 'uniswap-like pool price query'

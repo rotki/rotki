@@ -7,6 +7,11 @@ import requests
 
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.yearn.constants import (
+    CPT_YEARN_STAKING,
+    CPT_YEARN_V2,
+    CPT_YEARN_V3,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -20,9 +25,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int
 from rotkehlchen.types import (
-    YEARN_STAKING_PROTOCOL,
-    YEARN_VAULTS_V2_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
     TokenKind,
@@ -185,9 +187,9 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             continue
 
         if version.startswith('0.'):  # version '0.x.x' happens in ydaemon and is always a v2 vault
-            vault_type = YEARN_VAULTS_V2_PROTOCOL
+            vault_type = CPT_YEARN_V2
         elif version.startswith(('3.', '~3.')):  # '~' indicates it has basically the same functionality as a yearn vault but is not deployed by yearn  # noqa: E501
-            vault_type = YEARN_VAULTS_V3_PROTOCOL
+            vault_type = CPT_YEARN_V3
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
             continue
@@ -227,7 +229,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     evm_address=staking_address,
                     evm_inquirer=ethereum_inquirer,
                     chain_id=ChainID.ETHEREUM,
-                    protocol=YEARN_STAKING_PROTOCOL,
+                    protocol=CPT_YEARN_STAKING,
                     underlying_tokens=[UnderlyingToken(
                         address=vault_token.evm_address,
                         token_kind=TokenKind.ERC20,

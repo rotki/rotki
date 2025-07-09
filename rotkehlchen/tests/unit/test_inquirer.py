@@ -15,6 +15,7 @@ from web3 import HTTPProvider, Web3
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
@@ -25,6 +26,8 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
 )
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.transactions import ADDED_RECEIVER_ABI, BLOCKREWARDS_ADDRESS
@@ -80,11 +83,7 @@ from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.morpho import create_ethereum_morpho_vault_token
 from rotkehlchen.types import (
-    AERODROME_POOL_PROTOCOL,
     EVM_CHAINS_WITH_TRANSACTIONS,
-    UNISWAPV3_PROTOCOL,
-    VELODROME_POOL_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -412,7 +411,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
     with globaldb.conn.write_ctx() as write_cursor:
         write_cursor.execute(  # the protocol attribute is missing from the packaged db for this token as of this commit and is necessary for price calculation  # noqa: E501
             'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
-            ('UNI-V2', identifier),
+            (CPT_UNISWAP_V2, identifier),
         )
     AssetResolver.clean_memory_cache(identifier)
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
@@ -430,7 +429,7 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
         userdb=optimism_manager.node_inquirer.database,
         evm_address=string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'),
         chain_id=ChainID.OPTIMISM,
-        protocol=VELODROME_POOL_PROTOCOL,
+        protocol=CPT_VELODROME,
     )
     inquirer.inject_evm_managers([(ChainID.OPTIMISM, optimism_manager)])
     price = inquirer.find_lp_price_from_uniswaplike_pool(token=token)
@@ -450,7 +449,7 @@ def test_find_aerodrome_lp_token_price(inquirer, base_manager):
         userdb=base_manager.node_inquirer.database,
         evm_address=string_to_evm_address('0x4299f2004C4Ee942dC7A70356c112aE507597268'),
         chain_id=ChainID.BASE,
-        protocol=AERODROME_POOL_PROTOCOL,
+        protocol=CPT_AERODROME,
     )
     inquirer.inject_evm_managers([(ChainID.BASE, base_manager)])
     price = inquirer.find_usd_price(asset=token)
@@ -719,7 +718,7 @@ def test_find_yearn_vaults_v3_price(
         symbol='yvcrvUSD-2',
         name='crvUSD-2 yVault',
         decimals=18,
-        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        protocol=CPT_YEARN_V3,
         started=Timestamp(1713104219),
         underlying_tokens=[UnderlyingToken(
             address=crvusd_address,
@@ -1065,8 +1064,7 @@ def test_find_curve_lending_vault_price(
         ethereum_vault_token: 'EvmToken',
 ) -> None:
     """Test that we get the correct price for Curve lending vault tokens."""
-    price = inquirer_defi.find_usd_price(asset=ethereum_vault_token)
-    assert price.is_close(FVal(0.00102), max_diff='1e-5')
+    assert inquirer_defi.find_usd_price(asset=ethereum_vault_token) == FVal('0.001070537672945388847465')  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1185,8 +1183,13 @@ def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', databa
             weight=ONE,
         )],
     )
-    assert inquirer_defi.find_usd_price(oeth_weth_gauge) == FVal('1846.5254044791955')
-    assert inquirer_defi.find_usd_price(sdcrv_gauge) == FVal('0.506007')
+    with patch.object(
+        target=inquirer_defi.get_evm_manager(chain_id=ChainID.ETHEREUM),
+        attribute='assure_curve_cache_is_queried_and_decoder_updated',
+    ):  # prevent curve cache update.
+        assert inquirer_defi.find_usd_price(oeth_weth_gauge) == FVal('2665.123154399471')
+
+    assert inquirer_defi.find_usd_price(sdcrv_gauge) == FVal('0.372365')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1241,7 +1244,7 @@ def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'I
             symbol=f'UNI-V3-POS-{token_id}',
             name=f'Uniswap V3 Positions #{token_id}',
             collectible_id=token_id,
-            protocol=UNISWAPV3_PROTOCOL,
+            protocol=CPT_UNISWAP_V3,
         ))
 
     assert get_position_price(

@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_USD
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -27,8 +28,6 @@ from rotkehlchen.history.types import (
 from rotkehlchen.tests.utils.constants import A_GBP
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.types import (
-    UNISWAP_PROTOCOL,
-    UNISWAPV3_PROTOCOL,
     ChainID,
     Price,
     Timestamp,
@@ -373,7 +372,7 @@ def test_uniswap_v2_position_price_query(price_historian: PriceHistorian):
             address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
             chain_id=ChainID.ETHEREUM,
             token_kind=TokenKind.ERC20,
-            protocol=UNISWAP_PROTOCOL,
+            protocol=CPT_UNISWAP_V2,
             decimals=18,
         ),
         pool_token_amount=FVal('0.015374510179577256'),
@@ -393,7 +392,7 @@ def test_uniswap_v3_position_price_query(price_historian: PriceHistorian):
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
             chain_id=ChainID.ETHEREUM,
             token_kind=TokenKind.ERC721,
-            protocol=UNISWAPV3_PROTOCOL,
+            protocol=CPT_UNISWAP_V3,
             collectible_id='953465',
         ),
         pool_token_amount=ZERO,

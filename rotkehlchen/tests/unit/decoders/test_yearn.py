@@ -21,8 +21,6 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    YEARN_VAULTS_V2_PROTOCOL,
-    YEARN_VAULTS_V3_PROTOCOL,
     ChainID,
     Location,
     Timestamp,
@@ -47,7 +45,7 @@ def fixture_yearn_v3_curve_savings_vault(database: 'DBHandler') -> 'EvmToken':
         token_kind=TokenKind.ERC20,
         symbol='scrvUSD',
         name='Curve Savings',
-        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        protocol=CPT_YEARN_V3,
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
             token_kind=TokenKind.ERC20,
@@ -72,7 +70,7 @@ def test_deposit_yearn_v3(
         symbol='yvcrvUSD-2',
         name='crvUSD-2 yVault',
         decimals=18,
-        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        protocol=CPT_YEARN_V3,
         started=Timestamp(1713104219),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
@@ -154,7 +152,7 @@ def test_withdraw_yearn_v3(
         symbol='yvDAI-1',
         name='DAI yVault',
         decimals=18,
-        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        protocol=CPT_YEARN_V3,
         started=Timestamp(1710272855),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
@@ -223,7 +221,7 @@ def test_deposit_yearn_v2(
         symbol='yvCurve-crvDOLA-f',
         name='Curve crvDOLA Factory yVault',
         decimals=18,
-        protocol=YEARN_VAULTS_V2_PROTOCOL,
+        protocol=CPT_YEARN_V2,
         started=Timestamp(1635529757),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xef484de8C07B6e2d732A92B5F78e81B38f99f95E'),
@@ -304,7 +302,7 @@ def test_increase_deposit_yearn_v2(
         symbol='yvUSDC',
         name='USDC yVault',
         decimals=6,
-        protocol=YEARN_VAULTS_V2_PROTOCOL,
+        protocol=CPT_YEARN_V2,
         started=Timestamp(1635529757),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
@@ -373,7 +371,7 @@ def test_withdraw_yearn_v2(
         symbol='yvCurve-YFIETH',
         name='Curve YFI-ETH Pool yVault',
         decimals=18,
-        protocol=YEARN_VAULTS_V2_PROTOCOL,
+        protocol=CPT_YEARN_V2,
         started=Timestamp(1644320324),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x29059568bB40344487d62f7450E78b8E6C74e0e5'),
@@ -731,7 +729,7 @@ def test_withdraw_yearn_v2_many_transfers_in_tx(
         symbol='yvDAI',
         name='DAI yVault',
         decimals=18,
-        protocol=YEARN_VAULTS_V2_PROTOCOL,
+        protocol=CPT_YEARN_V2,
         started=Timestamp(1625883889),
         underlying_tokens=[UnderlyingToken(
             address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),  # DAI

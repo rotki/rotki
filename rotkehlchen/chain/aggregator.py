@@ -36,14 +36,7 @@ from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import SAFE_BASIC_ABI
-from rotkehlchen.chain.ethereum.modules import (
-    MODULE_NAME_TO_PATH,
-    Liquity,
-    Loopring,
-    MakerdaoDsr,
-    MakerdaoVaults,
-    PickleFinance,
-)
+from rotkehlchen.chain.ethereum.modules import MODULE_NAME_TO_PATH
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
@@ -116,7 +109,6 @@ from rotkehlchen.types import (
     Price,
     SupportedBlockchain,
     Timestamp,
-    get_token_counterparty_protocol,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
@@ -137,7 +129,12 @@ if TYPE_CHECKING:
         ValidatorDailyStats,
         ValidatorDetailsWithStatus,
     )
+    from rotkehlchen.chain.ethereum.modules.l2.loopring import Loopring
+    from rotkehlchen.chain.ethereum.modules.liquity.trove import Liquity
+    from rotkehlchen.chain.ethereum.modules.makerdao.dsr import MakerdaoDsr
+    from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVaults
     from rotkehlchen.chain.ethereum.modules.nft.nfts import Nfts
+    from rotkehlchen.chain.ethereum.modules.pickle_finance.main import PickleFinance
     from rotkehlchen.chain.ethereum.modules.sushiswap.sushiswap import Sushiswap
     from rotkehlchen.chain.ethereum.modules.uniswap.uniswap import Uniswap
     from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
@@ -466,39 +463,39 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         return
 
     @overload
-    def get_module(self, module_name: Literal['eth2']) -> Optional['Eth2']:
+    def get_module(self, module_name: Literal['eth2']) -> 'Eth2 | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['loopring']) -> Loopring | None:
+    def get_module(self, module_name: Literal['loopring']) -> 'Loopring | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['makerdao_dsr']) -> MakerdaoDsr | None:
+    def get_module(self, module_name: Literal['makerdao_dsr']) -> 'MakerdaoDsr | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['makerdao_vaults']) -> MakerdaoVaults | None:
+    def get_module(self, module_name: Literal['makerdao_vaults']) -> 'MakerdaoVaults | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['uniswap']) -> Optional['Uniswap']:
+    def get_module(self, module_name: Literal['uniswap']) -> 'Uniswap | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['sushiswap']) -> Optional['Sushiswap']:
+    def get_module(self, module_name: Literal['sushiswap']) -> 'Sushiswap | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['liquity']) -> Liquity | None:
+    def get_module(self, module_name: Literal['liquity']) -> 'Liquity | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['pickle_finance']) -> PickleFinance | None:
+    def get_module(self, module_name: Literal['pickle_finance']) -> 'PickleFinance | None':
         ...
 
     @overload
-    def get_module(self, module_name: Literal['nfts']) -> Optional['Nfts']:
+    def get_module(self, module_name: Literal['nfts']) -> 'Nfts | None':
         ...
 
     def get_module(self, module_name: ModuleName) -> Any | None:
@@ -936,7 +933,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     amount=token_balance,
                     usd_value=token_balance * token_usd_price[token],
                 )
-                protocol = get_token_counterparty_protocol(token) or balance_label
+                protocol = token.protocol or balance_label
                 if dsr_proxy_append is True:
                     balances[account].assets[token][protocol] += balance
                 elif token.is_liability():

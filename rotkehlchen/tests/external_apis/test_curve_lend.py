@@ -6,7 +6,7 @@ from unittest.mock import patch
 import requests
 from freezegun import freeze_time
 
-from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_BASE_API_URL
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE, CURVE_BASE_API_URL
 from rotkehlchen.chain.evm.decoding.curve.lend.utils import query_curve_lending_vaults
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import WEEK_IN_SECONDS
@@ -16,7 +16,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import CURVE_LENDING_VAULTS_PROTOCOL, CacheType, ChainID
+from rotkehlchen.types import CacheType, ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -56,7 +56,7 @@ def test_curve_lend_api(database: 'DBHandler') -> None:
     )) is not None
     assert token.name == 'Borrow crvUSD (WETH collateral)'
     assert token.symbol == 'cvcrvUSD'
-    assert token.protocol == CURVE_LENDING_VAULTS_PROTOCOL
+    assert token.protocol == CPT_CURVE
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5'
 

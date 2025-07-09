@@ -38,7 +38,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
-    CURVE_POOL_PROTOCOL,
     AddressbookEntry,
     CacheType,
     ChainID,
@@ -219,7 +218,7 @@ def _ensure_single_pool_curve_tokens_existence(
             evm_address=pool.lp_token_address,
             chain_id=evm_inquirer.chain_id,
             evm_inquirer=evm_inquirer,
-            protocol=CURVE_POOL_PROTOCOL,
+            protocol=CPT_CURVE,
             encounter=encounter,
         )
     except NotERC20Conformant as e:

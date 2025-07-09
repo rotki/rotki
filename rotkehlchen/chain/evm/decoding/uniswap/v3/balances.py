@@ -13,7 +13,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import UNISWAPV3_PROTOCOL, ChecksumEvmAddress, TokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import get_chunks
 
 from .constants import (
@@ -157,7 +157,7 @@ class UniswapV3Balances(ProtocolWithBalance):
                     chain_id=self.evm_inquirer.chain_id,
                     token_kind=TokenKind.ERC721,
                     collectible_id=str(collectible_id),
-                    protocol=UNISWAPV3_PROTOCOL,
+                    protocol=CPT_UNISWAP_V3,
                 )
                 if (usd_value := Inquirer.find_usd_price(token)) == ZERO_PRICE:
                     continue

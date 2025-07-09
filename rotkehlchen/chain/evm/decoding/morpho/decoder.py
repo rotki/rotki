@@ -20,7 +20,7 @@ from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import MORPHO_VAULT_PROTOCOL, CacheType, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_MORPHO
@@ -83,7 +83,7 @@ class MorphoCommonDecoder(DecoderInterface, ReloadableDecoderMixin):
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             query_body = 'FROM evm_tokens WHERE protocol=? AND chain=?'
-            bindings = (MORPHO_VAULT_PROTOCOL, self.evm_inquirer.chain_id.serialize_for_db())
+            bindings = (CPT_MORPHO, self.evm_inquirer.chain_id.serialize_for_db())
 
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
             if cursor.fetchone()[0] != len(self.vaults):

@@ -27,11 +27,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CURVE_LENDING_VAULTS_PROTOCOL, CacheType, ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .common import CurveBorrowRepayCommonDecoder
 from .constants import (
+    CURVE_LEND_VAULT_SYMBOL,
     CURVE_VAULT_ABI,
     CURVE_VAULT_GAUGE_WITHDRAW,
     DEPOSIT_TOPIC,
@@ -90,8 +91,12 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             return None  # we didn't update the globaldb cache, and we have the data already
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            query_body = 'FROM evm_tokens WHERE protocol=? AND chain=?'
-            bindings = (CURVE_LENDING_VAULTS_PROTOCOL, self.evm_inquirer.chain_id.serialize_for_db())  # noqa: E501
+            query_body = (
+                'FROM evm_tokens LEFT JOIN common_asset_details '
+                'ON evm_tokens.identifier = common_asset_details.identifier '
+                'WHERE protocol=? AND symbol=? AND chain=?'
+            )
+            bindings = (CPT_CURVE, CURVE_LEND_VAULT_SYMBOL, self.evm_inquirer.chain_id.serialize_for_db())  # noqa: E501
 
             cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
             if cursor.fetchone()[0] == len(self.vaults):
