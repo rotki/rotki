@@ -26,13 +26,13 @@ def test_refresh_gnosis_pay_and_monerium(
         'gnosis_pay',
         'rotkehlchen.externalapis.gnosispay.GnosisPay.get_and_process_transactions',
         ExternalService.GNOSIS_PAY,
-        'Gnosis Pay module could not be initialized',
+        'Unable to refresh Gnosis Pay data due to missing credentials',
         call(after_ts=Timestamp(0)),
     ), (
         'monerium',
         'rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders',
         ExternalService.MONERIUM,
-        'Monerium module could not be initialized',
+        'Unable to refresh Monerium data due to missing credentials',
         call(),
     )):
         with patch(patch_path) as mock_query_service:

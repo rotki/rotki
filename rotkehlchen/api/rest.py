@@ -3713,7 +3713,7 @@ class RestAPI:
             if query_type == HistoryEventQueryType.GNOSIS_PAY:
                 if (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is None:
                     return wrap_in_fail_result(
-                        message='Gnosis Pay module could not be initialized',
+                        message='Unable to refresh Gnosis Pay data due to missing credentials',
                         status_code=HTTPStatus.CONFLICT,
                     )
                 gnosis_pay.get_and_process_transactions(after_ts=Timestamp(0))
@@ -3721,7 +3721,7 @@ class RestAPI:
             elif query_type == HistoryEventQueryType.MONERIUM:
                 if (monerium := init_monerium(self.rotkehlchen.data.db)) is None:
                     return wrap_in_fail_result(
-                        message='Monerium module could not be initialized',
+                        message='Unable to refresh Monerium data due to missing credentials',
                         status_code=HTTPStatus.CONFLICT,
                     )
                 monerium.get_and_process_orders()
