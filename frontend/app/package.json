@@ -43,10 +43,10 @@
   "dependencies": {
     "@reown/appkit": "1.7.15",
     "@reown/appkit-adapter-ethers": "1.7.15",
-    "@reown/walletkit": "1.2.8",
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "2.5.0",
     "@types/jsdom": "21.1.7",
+    "@types/ws": "8.18.1",
     "@vuelidate/core": "2.0.3",
     "@vuelidate/validators": "2.0.4",
     "@vueuse/core": "13.5.0",
@@ -55,6 +55,7 @@
     "@walletconnect/core": "2.21.4",
     "axios": "1.10.0",
     "bignumber.js": "9.1.2",
+    "bufferutil": "4.0.9",
     "consola": "3.4.2",
     "dayjs": "1.11.13",
     "dexie": "4.0.11",
@@ -69,11 +70,13 @@
     "roboto-fontface": "*",
     "theme-colors": "0.1.0",
     "typeface-roboto-mono": "1.1.13",
+    "utf-8-validate": "6.0.5",
     "vanilla-jsoneditor": "3.7.0",
     "vue": "3.5.17",
     "vue-echarts": "7.0.3",
     "vue-i18n": "11.1.10",
     "vue-router": "4.5.1",
+    "ws": "8.18.3",
     "zod": "3.25.76"
   },
   "devDependencies": {

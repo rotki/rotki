@@ -19,6 +19,9 @@ interface UseInteropReturn {
   closeApp: () => Promise<void>;
   metamaskImport: () => Promise<string[]>;
   openWalletConnectBridge: () => Promise<void>;
+  walletBridgeConnect: () => Promise<boolean>;
+  walletBridgeHttpListening: () => Promise<boolean>;
+  walletBridgeWebSocketListening: () => Promise<boolean>;
   restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   version: () => Promise<SystemVersion | WebVersion>;
@@ -31,6 +34,7 @@ interface UseInteropReturn {
   checkForUpdates: () => Promise<any>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;
+  notifyUserLogout: () => void;
   /**
    * Electron attaches a path property to {@see File}. In normal DOM inside a browser this property does not exist.
    * The method will return the path if we are in app session and the property exists or it will return undefined.
@@ -126,6 +130,10 @@ const interop: UseInteropReturn = {
     await window.interop?.openUrl(externalLinks.premium);
   },
 
+  notifyUserLogout: (): void => {
+    window.interop?.notifyUserLogout();
+  },
+
   openDirectory: async (title: string): Promise<string | undefined> =>
     (await window.interop?.openDirectory(title)) ?? undefined,
 
@@ -175,6 +183,7 @@ const interop: UseInteropReturn = {
   updateTray: (update: TrayUpdate): void => {
     window.interop?.updateTray(update);
   },
+
   version: async (): Promise<SystemVersion | WebVersion> => {
     if (!window.interop) {
       return Promise.resolve({
@@ -183,6 +192,24 @@ const interop: UseInteropReturn = {
       });
     }
     return window.interop?.version();
+  },
+
+  walletBridgeConnect: async (): Promise<boolean> => {
+    if (!window.interop)
+      return false;
+    return (await window.interop.walletBridgeConnect()) ?? false;
+  },
+
+  walletBridgeHttpListening: async (): Promise<boolean> => {
+    if (!window.interop)
+      return false;
+    return (await window.interop.walletBridgeHttpListening()) ?? false;
+  },
+
+  walletBridgeWebSocketListening: async (): Promise<boolean> => {
+    if (!window.interop)
+      return false;
+    return (await window.interop.walletBridgeWebSocketListening()) ?? false;
   },
 };
 

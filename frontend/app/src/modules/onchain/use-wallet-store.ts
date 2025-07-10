@@ -1,4 +1,3 @@
-import type UniversalProvider from '@walletconnect/universal-provider';
 import type {
   GasFeeEstimation,
   PrepareERC20TransferResponse,
@@ -6,13 +5,9 @@ import type {
   RecentTransaction,
   TransactionParams,
 } from '@/modules/onchain/types';
-import { EthersAdapter } from '@reown/appkit-adapter-ethers';
-import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
-import { type AppKit, createAppKit } from '@reown/appkit/vue';
-import { bigNumberify } from '@rotki/common';
+import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { BrowserProvider, formatUnits, getAddress, type TransactionResponse } from 'ethers';
-import { useInterop } from '@/composables/electron-interop';
+import { type BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
@@ -23,167 +18,111 @@ import {
   prepareTransactionPayload,
   validateTransactionRequirements,
 } from './transaction-helpers';
-
-export const ROTKI_DAPP_METADATA = {
-  description: 'Rotki Dapp',
-  icons: ['https://raw.githubusercontent.com/rotki/data/refs/heads/main/assets/default_icons/website_logo.png'],
-  name: 'Rotki Dapp',
-  url: 'https://rotki.com',
-};
-
-export const EIP155 = 'eip155';
-
-export const supportedNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
-  mainnet,
-  base,
-  arbitrum,
-  optimism,
-  bsc,
-  gnosis,
-  polygon,
-  scroll,
-] as const;
+import { useInjectedWallet } from './wallet-bridge/use-injected-wallet';
+import { useWalletConnect } from './wallet-connect/use-wallet-connect';
 
 const DEFAULT_GAS_LIMIT = 21000n; // for native transfers
 
-function buildAppKit(): AppKit {
-  const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string;
-
-  return createAppKit({
-    adapters: [new EthersAdapter()],
-    allowUnsupportedChain: true,
-    features: {
-      analytics: true,
-      email: false,
-      onramp: false,
-      socials: false,
-      swaps: false,
-    },
-    metadata: ROTKI_DAPP_METADATA,
-    networks: supportedNetworks,
-    projectId,
-  });
-}
+export type WalletMode = 'walletconnect' | 'local-bridge';
 
 export const useWalletStore = defineStore('wallet', () => {
-  const connected = ref<boolean>(false);
-  const connectedAddress = ref<string>();
-  const connectedChainId = ref<number>();
-  const supportedChainIds = ref<string[]>([]);
+  // Shared state - only the essential state that needs to be centralized
   const recentTransactions = ref<RecentTransaction[]>([]);
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
-  const isWalletConnect = ref<boolean>(false);
+  const walletMode = ref<WalletMode>('local-bridge');
 
-  let appKit: AppKit | undefined;
-
-  const getAppKit = (): AppKit => {
-    if (!appKit) {
-      logger.debug('Initializing AppKit');
-      appKit = buildAppKit();
-      setupAppKitListener();
-    }
-    return appKit;
-  };
+  // Initialize composables for both wallet modes
+  const walletConnect = useWalletConnect();
+  const injectedWallet = useInjectedWallet((isLoading: boolean) => {
+    set(preparing, isLoading);
+  });
 
   const { getAssetMappingHandler } = useAssetCacheStore();
-  const { getChainFromChainId, getChainIdFromNamespace, updateStatePostTransaction } = useWalletHelper();
+  const { getChainFromChainId, updateStatePostTransaction } = useWalletHelper();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
   const { getEvmChainName } = useSupportedChains();
 
+  // Computed properties that delegate to the appropriate composable
+  const connected = computed<boolean>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.connected) : get(injectedWallet.connected));
+
+  const connectedAddress = computed<string | undefined>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.connectedAddress) : get(injectedWallet.connectedAddress));
+
+  const connectedChainId = computed<number | undefined>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.connectedChainId) : get(injectedWallet.connectedChainId));
+
+  const supportedChainIds = computed<string[]>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.supportedChainIds) : []);
+
+  const isWalletConnect = computed<boolean>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.isWalletConnect) : false);
+
   const supportedChainsIdForConnectedAccount = computed<number[]>(() => {
     const supportedChainIdsVal = get(supportedChainIds);
-    if (supportedChainIdsVal.length === 0) {
-      return supportedNetworks.map(item => Number(item.id));
+    if (supportedChainIdsVal.length === 0 || get(walletMode) === 'local-bridge') {
+      // For local bridge or when no supported chains, return all supported networks
+      return [1, 8453, 42161, 10, 56, 100, 137, 534352]; // mainnet, base, arbitrum, optimism, bsc, gnosis, polygon, scroll
     }
+    const { getChainIdFromNamespace } = useWalletHelper();
     return supportedChainIdsVal.map(item => getChainIdFromNamespace(item));
   });
 
   const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
 
-  const updateApprovedChainIds = (): void => {
-    const appKitInstance = getAppKit();
-
-    // @ts-expect-error accessing protected method to get approved chain IDs
-    const data = appKitInstance.getApprovedCaipNetworksData();
-    if (data) {
-      const approvedCaipNetworkIds = data.approvedCaipNetworkIds;
-      set(supportedChainIds, approvedCaipNetworkIds);
-    }
-  };
-
   const getBrowserProvider = (): BrowserProvider => {
-    const appKitInstance = getAppKit();
-    const walletProvider = appKitInstance.getProvider(EIP155);
-    return new BrowserProvider(walletProvider as any);
+    if (get(walletMode) === 'local-bridge') {
+      return injectedWallet.getBrowserProvider();
+    }
+    return walletConnect.getBrowserProvider();
   };
-
-  function setupAppKitListener(): void {
-    if (!appKit)
-      return;
-
-    appKit.subscribeAccount((account) => {
-      if (!appKit)
-        return;
-
-      set(connected, account.isConnected);
-      set(connectedAddress, account.isConnected && account.address ? getAddress(account.address) : undefined);
-
-      if (account.isConnected) {
-        const provider: any = appKit.getProvider(EIP155);
-        set(isWalletConnect, provider && 'isWalletConnect' in provider && provider.isWalletConnect);
-
-        const chainId = appKit.getCaipNetworkId();
-        if (chainId) {
-          set(connectedChainId, chainId);
-        }
-      }
-
-      updateApprovedChainIds();
-    });
-
-    appKit.subscribeNetwork((newState) => {
-      set(connectedChainId, newState.chainId);
-    });
-  }
 
   const open = async (): Promise<void> => {
-    const appKitInstance = getAppKit();
-    await appKitInstance.open();
+    if (get(walletMode) === 'local-bridge') {
+      await injectedWallet.open();
+    }
+    else {
+      await walletConnect.open();
+    }
   };
 
   const resetState = (): void => {
     logger.debug('Resetting wallet state');
-    set(connected, false);
     set(preparing, false);
-    set(connectedAddress, undefined);
-    set(supportedChainIds, []);
-    set(isWalletConnect, false);
     set(waitingForWalletConfirmation, false);
-    appKit = undefined;
   };
 
   const disconnect = async (): Promise<void> => {
-    if (appKit) {
-      await appKit.disconnect();
+    if (get(walletMode) === 'local-bridge') {
+      await injectedWallet.disconnect();
+    }
+    else {
+      await walletConnect.disconnect();
     }
     resetState();
   };
 
-  const { isPackaged } = useInterop();
+  const setWalletMode = async (mode: WalletMode | WalletMode[] | undefined): Promise<void> => {
+    assert(mode !== undefined && !Array.isArray(mode), 'Mode must be a single value');
+    if (get(walletMode) === mode)
+      return;
+
+    // Disconnect current mode
+    await disconnect();
+
+    // Reset state
+    resetState();
+
+    // Set new mode
+    set(walletMode, mode);
+  };
 
   const resetWalletConnection = async (): Promise<void> => {
-    if (isPackaged) {
-      await disconnect();
-    }
+    await disconnect();
   };
 
   const switchNetwork = async (chainId: bigint): Promise<void> => {
-    const appKitInstance = getAppKit();
-
-    const network = supportedNetworks.find(item => BigInt(item.id) === chainId);
-    if (network) {
-      await appKitInstance.switchNetwork(network);
+    if (get(walletMode) === 'local-bridge') {
+      await injectedWallet.switchNetwork(chainId);
+    }
+    else {
+      await walletConnect.switchNetwork(chainId);
     }
   };
 
@@ -292,35 +231,12 @@ export const useWalletStore = defineStore('wallet', () => {
     startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
   };
 
-  const checkWalletConnection = async (universalProvider: UniversalProvider | undefined): Promise<void> => {
-    if (!universalProvider?.isWalletConnect)
-      return;
-
-    try {
-      const session = universalProvider.session;
-      if (session?.topic) {
-        set(preparing, true);
-        const pingPromise = universalProvider.client.ping({ topic: session.topic });
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Ping timeout after 5s')), 5000);
-        });
-
-        await Promise.race([pingPromise, timeoutPromise]);
-      }
-    }
-    catch {
-      throw new Error('It seems that your wallet is inactive. If you are using browser wallet bridge, make sure the page is open.');
-    }
-    finally {
-      set(preparing, false);
-    }
-  };
-
   const sendTransaction = async (params: TransactionParams): Promise<TransactionResponse> => {
-    const appKitInstance = getAppKit();
-
-    const universalProvider = await appKitInstance.getUniversalProvider();
-    await checkWalletConnection(universalProvider);
+    // Check WalletConnect connection if in WalletConnect mode
+    if (get(walletMode) === 'walletconnect') {
+      // Check connection (universal provider is handled internally)
+      await walletConnect.checkWalletConnection();
+    }
 
     try {
       const { chainId, evmChain, fromAddress } = validateTransactionRequirements({
@@ -370,9 +286,12 @@ export const useWalletStore = defineStore('wallet', () => {
     recentTransactions,
     resetWalletConnection,
     sendTransaction,
+    setWalletMode,
+    supportedChainIds,
     supportedChainsForConnectedAccount,
     supportedChainsIdForConnectedAccount,
     switchNetwork,
     waitingForWalletConfirmation,
+    walletMode,
   };
 });

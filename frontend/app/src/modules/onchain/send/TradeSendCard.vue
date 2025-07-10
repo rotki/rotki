@@ -45,13 +45,14 @@ const {
   preparing,
   supportedChainsForConnectedAccount,
   waitingForWalletConfirmation,
+  walletMode,
 } = storeToRefs(walletStore);
-const { getGasFeeForChain, open, sendTransaction, switchNetwork } = walletStore;
+const { getGasFeeForChain, open, sendTransaction, setWalletMode, switchNetwork } = walletStore;
 const { addressTracked, useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
 
 const { getAssetDetail } = useTradableAsset(connectedAddress);
 const { getAssetBalance, getIsInteractedBefore } = useTradeApi();
-const { isPackaged, openWalletConnectBridge } = useInterop();
+const { isPackaged } = useInterop();
 const router = useRouter();
 
 const isNativeAsset = computed(() => {
@@ -330,22 +331,35 @@ watch([estimatedGasFee, assetBalance], () => {
       >
         {{ t('trade.warning.query_on_progress') }}
       </RuiAlert>
+      <!-- Wallet Mode Selector -->
+      <div
+        v-if="isPackaged && !connected"
+        class="flex items-center gap-4 mb-4"
+      >
+        <div class="grow" />
+        <div class="text-rui-text-secondary">
+          {{ t('trade.wallet_mode.label') }}
+        </div>
+        <RuiButtonGroup
+          :model-value="walletMode"
+          variant="outlined"
+          color="primary"
+          required
+          size="sm"
+          @update:model-value="setWalletMode($event)"
+        >
+          <RuiButton model-value="walletconnect">
+            {{ t('trade.wallet_mode.wallet_connect') }}
+          </RuiButton>
+          <RuiButton model-value="local-bridge">
+            {{ t('trade.wallet_mode.local_bridge') }}
+          </RuiButton>
+        </RuiButtonGroup>
+      </div>
+
       <div class="flex justify-end items-center">
         <div class="flex gap-2">
-          <RuiButton
-            v-if="isPackaged && !connected"
-            color="secondary"
-            @click="openWalletConnectBridge()"
-          >
-            {{ t('trade.bridge.connect_browser_wallet') }}
-            <template #append>
-              <RuiIcon
-                name="lu-arrow-up-right"
-                size="18"
-              />
-            </template>
-          </RuiButton>
-          <TradeConnectedAddressBadge />
+          <TradeConnectedAddressBadge :loading="preparing" />
           <TradeHistoryView />
         </div>
       </div>
@@ -381,6 +395,7 @@ watch([estimatedGasFee, assetBalance], () => {
         color="primary"
         size="lg"
         class="!w-full"
+        :loading="preparing"
         @click="open()"
       >
         {{ t('trade.actions.connect_wallet') }}

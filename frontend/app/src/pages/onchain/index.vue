@@ -2,6 +2,10 @@
 definePage({
   redirect: '/onchain/send',
 });
+
+defineOptions({
+  name: 'OnChain',
+});
 </script>
 
 <template>

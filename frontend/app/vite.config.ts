@@ -77,7 +77,6 @@ export default defineConfig({
       '@reown/appkit/vue',
       '@reown/appkit/networks',
       '@reown/appkit-adapter-ethers',
-      '@reown/walletkit',
       '@walletconnect/core',
       '@walletconnect/jsonrpc-utils',
       '@walletconnect/utils',
@@ -195,7 +194,6 @@ export default defineConfig({
             'zod',
           ],
           'wallet-connect': [
-            '@reown/walletkit',
             '@reown/appkit',
             '@reown/appkit-adapter-ethers',
             '@walletconnect/core',

@@ -4411,17 +4411,26 @@
     },
     "bridge": {
       "connect_browser_wallet": "Open Browser Wallet Bridge",
-      "connect_the_signer": "Connect the signer",
+      "connect_wallet": "Connect Wallet",
+      "connected_to_electron": "Connected to Rotki",
       "connecting": "Connecting...",
+      "connecting_to_electron": "Connecting to Rotki",
+      "connection_failed": "Connection Failed",
       "connection_logs": "Connection Logs",
-      "disconnect_session": "Disconnect Session",
-      "hint": "In Electron App, choose \"Wallet Connect\" and then \"Copy link\"",
-      "label": "Paste the Pair URI here",
-      "link_session": "Link session using Wallet Connect Pair URI",
-      "placeholder": "e.g. wc:b27f7767308...",
-      "start_pairing": "Start Pairing",
+      "disconnect_electron": "Disconnect",
+      "disconnected_from_electron": "Disconnected from rotki",
+      "electron_connecting_message": "Connecting to rotki, please wait...",
+      "electron_connection": "Rotki Bridge Connection",
+      "electron_disconnected_message": "Connection to rotki is not available",
+      "electron_ready_message": "Connection is established",
+      "no_wallet_connected": "No wallet connected",
+      "retry_connection": "Connect",
+      "takeover": {
+        "description": "Another bridge is now active. You can close this window.",
+        "title": "Connection Taken Over"
+      },
       "title": "rotki Browser Wallet Bridge",
-      "warning": "Keep this page open! Otherwise, you will need to create a new session to connect. Also, you need this browser tab to be focused to sign the transaction."
+      "wallet_status": "Wallet Status"
     },
     "never_interacted": "You have never interacted with this address before.",
     "recent_transactions": {
@@ -4449,6 +4458,11 @@
     "waiting_for_confirmation": {
       "not_wallet_connect": "Check your wallet to sign the transaction",
       "wallet_connect": "Check your browser / wallet to sign the transaction. If you are using a browser wallet bridge, make sure that the browser tab is focused."
+    },
+    "wallet_mode": {
+      "label": "Mode",
+      "local_bridge": "Local",
+      "wallet_connect": "Wallet Connect"
     },
     "warning": {
       "not_tracked": "This wallet address is not tracked in rotki, so you can't see your tokens.",

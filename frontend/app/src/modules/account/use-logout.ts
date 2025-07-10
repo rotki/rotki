@@ -17,17 +17,21 @@ export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
   const { setMessage } = useMessageStore();
-  const { resetTray } = useInterop();
+  const { notifyUserLogout, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { resetWalletConnection } = useWalletStore();
 
   const logout = async (navigate: boolean = true): Promise<void> => {
+    // Notify electron to cleanup wallet bridge connections BEFORE disconnecting
+    notifyUserLogout();
+
     await resetWalletConnection();
     set(logged, false);
     const user = get(username); // save the username, after the await below, it is reset
     // allow some time for the components to leave the dom completely and show loading overlay
     await promiseTimeout(1500);
     resetTray();
+
     try {
       await callLogout(user);
     }

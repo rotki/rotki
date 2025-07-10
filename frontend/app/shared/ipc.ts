@@ -76,6 +76,20 @@ export interface OAuthFailure {
 
 export type OAuthResult = OAuthFailure | OAuthSuccess;
 
+export interface WalletBridgeRequest {
+  readonly method: string;
+  readonly params?: Array<unknown>;
+}
+
+export interface WalletBridgeResponse {
+  readonly result?: any;
+  readonly error?: {
+    readonly code: number;
+    readonly message: string;
+    readonly data?: any;
+  };
+}
+
 export interface Listeners {
   onError: (backendOutput: string, code: BackendCode) => void;
   onAbout: () => void;
@@ -108,4 +122,10 @@ export interface Interop {
   storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;
+  walletBridgeRequest: (request: WalletBridgeRequest) => Promise<WalletBridgeResponse>;
+  walletBridgeConnect: () => Promise<boolean>;
+  walletBridgeDisconnect: () => Promise<void>;
+  walletBridgeHttpListening: () => Promise<boolean>;
+  walletBridgeWebSocketListening: () => Promise<boolean>;
+  notifyUserLogout: () => void;
 }
