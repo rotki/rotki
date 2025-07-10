@@ -11,13 +11,15 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Final, Literal, NamedTuple
+from typing import Any, Final, Literal, NamedTuple, TypedDict, cast
 from urllib.parse import urlencode
 
 import machineid
 import requests
 
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
@@ -46,6 +48,14 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
+class UserLimits(TypedDict):
+    limit_of_devices: int
+    pnl_events_limit: int
+    max_backup_size_mb: int
+    history_events_limit: int
+    reports_lookup_limit: int
+
+
 COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
 DEFAULT_OK_CODES: Final = (
@@ -55,6 +65,7 @@ DEFAULT_OK_CODES: Final = (
     HTTPStatus.CREATED,
 )
 NEST_API_ENDPOINTS: Final = ('backup', 'devices')
+USER_LIMIT_TYPE = Literal['history_events_limit', 'pnl_events_limit', 'reports_lookup_limit']
 
 
 def check_response_status_code(
@@ -185,11 +196,15 @@ class Premium:
         self.rotki_nest = f'https://{rotki_base_url}/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
         self.username = username
+        # Cache user limits to avoid repeated API calls during the session
+        self._cached_limits: UserLimits | None = None
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
         self.session.headers.update({'API-KEY': self.credentials.serialize_key()})
         set_user_agent(self.session)
+        # Clear cached limits when credentials change
+        self._cached_limits = None
 
     def set_credentials(self, credentials: PremiumCredentials) -> None:
         """Try to set the credentials for a premium rotkehlchen subscription
@@ -281,9 +296,8 @@ class Premium:
                     method=method,
                     device_identifier=device_id,
                     device_name='neto',
-                    platform=platform.system()
+                    platform=platform.system(),
                 ),
-                headers={'Content-Type': 'application/json'},
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
@@ -496,6 +510,24 @@ class Premium:
 
         return result['data']
 
+    def fetch_limits(self) -> UserLimits:
+        if self._cached_limits is not None:
+            return self._cached_limits
+
+        try:
+            response = self.session.get(
+                f'{self.rotki_nest}{(method := "limits")}',
+                params=self.sign(method=method),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        self._cached_limits = cast('UserLimits', _process_dict_response(response))
+        return self._cached_limits
+
     def watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
@@ -541,3 +573,32 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
 def has_premium_check(premium: Premium | None) -> bool:
     """Helper function to check if we have premium"""
     return premium is not None and premium.is_active()
+
+
+def get_user_limit(premium: Premium | None, limit_type: USER_LIMIT_TYPE) -> tuple[int, bool]:
+    """Helper function to get a specific user limit and premium status
+
+    Returns:
+        tuple[int, bool]: (limit_value, has_premium)
+    """
+    if premium is None or premium.is_active() is False:
+        log.debug(f'No premium subscription or inactive, returning free limit for {limit_type}')
+        return _get_free_limit(limit_type), False
+
+    try:
+        limits = premium.fetch_limits()
+        return limits[limit_type], True
+    except (RemoteError, PremiumAuthenticationError) as e:
+        log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
+        return _get_free_limit(limit_type), False
+
+
+def _get_free_limit(limit_type: USER_LIMIT_TYPE) -> int:
+    """Get the free limit for a specific limit type"""
+    if limit_type == 'history_events_limit':
+        return FREE_HISTORY_EVENTS_LIMIT
+    if limit_type == 'pnl_events_limit':
+        return FREE_PNL_EVENTS_LIMIT
+
+    # can only be 'reports_lookup_limit'
+    return FREE_REPORTS_LOOKUP_LIMIT

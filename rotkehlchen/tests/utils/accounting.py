@@ -86,10 +86,11 @@ def _get_pnl_report_after_processing(
         database: 'DBHandler',
 ) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     dbpnl = DBAccountingReports(database)
-    report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]
+    report = dbpnl.get_reports(report_id=report_id, with_limit=False, limit=999999999)[0][0]
     events = dbpnl.get_report_data(
         filter_=ReportDataFilterQuery.make(report_id=1),
         with_limit=False,
+        limit=999999999,
     )[0]
     return report, events
 

@@ -26,8 +26,6 @@ from rotkehlchen.accounting.constants import (
     EVENT_CATEGORY_DETAILS,
     EVENT_CATEGORY_MAPPINGS,
     EVENT_GROUPING_ORDER,
-    FREE_PNL_EVENTS_LIMIT,
-    FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
@@ -229,7 +227,7 @@ from rotkehlchen.icons import (
 )
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import PremiumCredentials, has_premium_check
+from rotkehlchen.premium.premium import PremiumCredentials, get_user_limit, has_premium_check
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.assets import (
@@ -3682,16 +3680,16 @@ class RestAPI:
             self,
             report_id: int | None,
     ) -> Response:
-        with_limit = False
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            with_limit = True
-            entries_limit = FREE_REPORTS_LOOKUP_LIMIT
+        entries_limit, has_premium = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type='reports_lookup_limit',
+        )
 
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         reports, entries_found = dbreports.get_reports(
             report_id=report_id,
-            with_limit=with_limit,
+            with_limit=not has_premium,
+            limit=entries_limit,
         )
 
         # success
@@ -3703,17 +3701,17 @@ class RestAPI:
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     def get_report_data(self, filter_query: ReportDataFilterQuery) -> Response:
-        with_limit = False
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            with_limit = True
-            entries_limit = FREE_PNL_EVENTS_LIMIT
+        entries_limit, has_premium = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type='pnl_events_limit',
+        )
 
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         try:
             report_data, entries_found, entries_total = dbreports.get_report_data(
                 filter_=filter_query,
-                with_limit=with_limit,
+                with_limit=not has_premium,
+                limit=entries_limit,
             )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)

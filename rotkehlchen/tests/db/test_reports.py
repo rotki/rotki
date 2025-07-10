@@ -50,7 +50,11 @@ def test_report_settings(database):
         total_actions=total_actions,
         pnls=PnlTotals(),
     )
-    data, entries_num = dbreport.get_reports(report_id=report_id, with_limit=False)
+    data, entries_num = dbreport.get_reports(
+        report_id=report_id,
+        with_limit=False,
+        limit=999999999,
+    )
     assert len(data) == 1
     assert entries_num == 1
     report = data[0]
@@ -183,7 +187,11 @@ def test_report_events_sort_by_columns(database):
                 report_id=report_id,
             )
 
-            results, _, _ = dbreport.get_report_data(filter_=filter_query, with_limit=True)
+            results, _, _ = dbreport.get_report_data(
+                filter_=filter_query,
+                with_limit=True,
+                limit=1000,
+            )
             for idx, event in enumerate(results):
                 field_value_fn = test_case['check_field']
                 field_value = field_value_fn(event)
