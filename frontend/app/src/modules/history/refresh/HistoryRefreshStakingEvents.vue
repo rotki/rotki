@@ -12,7 +12,10 @@ defineProps<{
 
 const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 
-const queries: OnlineHistoryEventsQueryType[] = Object.values(OnlineHistoryEventsQueryType).sort() as unknown as OnlineHistoryEventsQueryType[];
+const queries: OnlineHistoryEventsQueryType[] = [
+  OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+  OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
+];
 
 const filteredQueries = computed<OnlineHistoryEventsQueryType[]>(() => {
   const query = getTextToken(get(search));
