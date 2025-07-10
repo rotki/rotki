@@ -221,13 +221,9 @@ class BinanceTradeEntry(BinanceMultipleEntry):
             if operation in {'Transaction Buy', 'Transaction Spend', 'Transaction Fee'}:
                 key = (operation, coin)
                 if key not in aggregated_data:
-                    aggregated_data[key] = {
-                        'Operation': operation,
-                        'Coin': coin,
-                        'Change': ZERO,
-                        INDEX: row[INDEX],  # Keep the first row's index
-                    }
-                aggregated_data[key]['Change'] += change
+                    aggregated_data[key] = row
+                else:
+                    aggregated_data[key]['Change'] += change
             else:
                 other_data.append(row)
 

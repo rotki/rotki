@@ -16,14 +16,17 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
-import { assert, type BigNumber } from '@rotki/common';
+import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
 
 interface HistoryEventAssetPriceFormProps {
   timestamp: number;
   disableAsset?: boolean;
   v$: Validation;
+  noPriceFields?: boolean;
   hidePriceFields?: boolean;
   location: string | undefined;
+  disabled?: boolean;
+  type?: string;
 }
 
 const amount = defineModel<string>('amount', { required: true });
@@ -31,10 +34,12 @@ const asset = defineModel<string | undefined>('asset', { required: true });
 
 const props = withDefaults(defineProps<HistoryEventAssetPriceFormProps>(), {
   disableAsset: false,
+  disabled: false,
   hidePriceFields: false,
+  noPriceFields: false,
 });
 
-const { disableAsset, hidePriceFields, timestamp } = toRefs(props);
+const { disabled, disableAsset, hidePriceFields, noPriceFields, timestamp } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -43,6 +48,7 @@ const assetToFiatPrice = ref<string>('');
 const fiatValueFocused = ref<boolean>(false);
 const fetchedAssetToFiatPrice = ref<string>('');
 const evmChain = ref<string>();
+const showPriceFields = ref<boolean>(!get(hidePriceFields) && !get(noPriceFields));
 
 const { useIsTaskRunning } = useTaskStore();
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
@@ -88,9 +94,9 @@ async function fetchHistoricPrices() {
 }
 
 watchImmediate(
-  [timestamp, asset, hidePriceFields],
-  async ([timestamp, asset, hidePriceFields], [oldTimestamp, oldAsset, oldHidePriceFields]) => {
-    if (timestamp !== oldTimestamp || asset !== oldAsset || (oldHidePriceFields && !hidePriceFields))
+  [timestamp, asset, showPriceFields],
+  async ([timestamp, asset, showPriceFields], [oldTimestamp, oldAsset, oldShowPriceFields]) => {
+    if (timestamp !== oldTimestamp || asset !== oldAsset || (oldShowPriceFields && !showPriceFields))
       await fetchHistoricPrices();
   },
 );
@@ -113,8 +119,8 @@ watch(amount, () => {
   onFiatValueChange();
 });
 
-async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
-  if (get(hidePriceFields))
+async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
+  if (get(noPriceFields) || get(disabled))
     return { success: true };
 
   const assetVal = get(asset);
@@ -135,7 +141,7 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
   }
   catch (error: any) {
     let message: ValidationErrors | string = error.message;
-    if (error instanceof ApiValidationError)
+    if (error instanceof ApiValidationError && payload)
       message = error.getValidationErrors(payload);
 
     return { message, success: false };
@@ -163,8 +169,9 @@ defineExpose({
       <AmountInput
         v-model="amount"
         variant="outlined"
-        data-cy="amount"
-        :label="t('common.amount')"
+        :data-cy="type ? `${type}-amount` : 'amount'"
+        :disabled="disabled"
+        :label="type ? t('transactions.events.form.asset_price.amount_label', { type: toSentenceCase((type)) }) : t('common.amount')"
         :error-messages="toMessages(v$.amount)"
         @blur="v$.amount.$touch()"
       />
@@ -172,36 +179,58 @@ defineExpose({
         <AssetSelect
           v-model="asset"
           outlined
-          :disabled="disableAsset"
-          data-cy="asset"
+          :disabled="disabled || disableAsset"
+          :data-cy="type ? `${type}-asset` : 'asset'"
+          :label="type && t('transactions.events.form.asset_price.asset_label', { type: toSentenceCase((type)) })"
           :evm-chain="evmChain"
           :error-messages="disableAsset ? [''] : toMessages(v$.asset)"
           @blur="v$.asset.$touch()"
         />
         <ToggleLocationLink
           v-model="evmChain"
+          class="ml-3"
           :disabled="disableAsset"
           :location="location"
         />
+        <div
+          v-if="hidePriceFields && !noPriceFields"
+          class="pt-1"
+        >
+          <RuiTooltip :open-delay="400">
+            <template #activator>
+              <RuiButton
+                icon
+                variant="text"
+                @click="showPriceFields = !showPriceFields"
+              >
+                <RuiIcon
+                  class="transition-all"
+                  :class="{ '-rotate-180': showPriceFields }"
+                  name="lu-chevron-down"
+                />
+              </RuiButton>
+            </template>
+            {{ t('profit_loss_events.edit_historic_price') }}
+          </RuiTooltip>
+        </div>
       </div>
     </div>
-    <template v-if="!hidePriceFields">
-      <TwoFieldsAmountInput
-        v-model:primary-value="assetToFiatPrice"
-        v-model:secondary-value="fiatValue"
-        class="mb-4"
-        :loading="fetching"
-        :disabled="fetching"
-        :label="{
-          primary: t('transactions.events.form.asset_price.label', {
-            symbol: currencySymbol,
-          }),
-          secondary: t('common.value_in_symbol', {
-            symbol: currencySymbol,
-          }),
-        }"
-        @update:reversed="fiatValueFocused = $event"
-      />
-    </template>
+    <TwoFieldsAmountInput
+      v-if="showPriceFields && !noPriceFields"
+      v-model:primary-value="assetToFiatPrice"
+      v-model:secondary-value="fiatValue"
+      class="mb-4"
+      :loading="fetching"
+      :disabled="fetching || disabled"
+      :label="{
+        primary: t('transactions.events.form.asset_price.label', {
+          symbol: currencySymbol,
+        }),
+        secondary: t('common.value_in_symbol', {
+          symbol: currencySymbol,
+        }),
+      }"
+      @update:reversed="fiatValueFocused = $event"
+    />
   </div>
 </template>

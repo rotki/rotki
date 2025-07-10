@@ -5,6 +5,7 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
@@ -63,6 +64,7 @@ const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   amount,
@@ -121,6 +123,9 @@ function applyEditableData(entry: OnlineHistoryEvent) {
   set(amount, entry.amount.toFixed());
   set(locationLabel, entry.locationLabel ?? '');
   set(notes, entry.userNotes ?? '');
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 function applyGroupHeaderData(entry: OnlineHistoryEvent) {
@@ -159,6 +164,7 @@ async function save(): Promise<boolean> {
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 

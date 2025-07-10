@@ -11,6 +11,10 @@ const props = defineProps<{
   event: HistoryEventEntry;
 }>();
 
+const emit = defineEmits<{
+  refresh: [];
+}>();
+
 const { event } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
@@ -32,6 +36,7 @@ const symbol = assetSymbol(eventAsset, {
       :resolution-options="{
         collectionParent: false,
       }"
+      @refresh="emit('refresh')"
     />
     <div
       v-if="showBalance"

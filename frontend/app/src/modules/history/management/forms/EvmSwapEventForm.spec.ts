@@ -12,6 +12,7 @@ import { setupDayjs } from '@/utils/date';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),
@@ -201,14 +202,14 @@ describe('forms/EvmSwapEventForm', () => {
 
     const feeToggle = wrapper.find('[data-cy=has-fee] input');
 
-    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBe('');
-    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBe('');
+    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeFalsy();
 
     await feeToggle.setValue(true);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeUndefined();
+    expect(wrapper.find('[data-cy=fee-amount] input').attributes('disabled')).toBeFalsy();
+    expect(wrapper.find('[data-cy=fee-asset] input').attributes('disabled')).toBeFalsy();
     expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
   });
 
@@ -291,6 +292,16 @@ describe('forms/EvmSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
+    const saveMethod = wrapper.vm.save;
+
+    editHistoryEventMock.mockResolvedValueOnce({ success: true });
+    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+
+    let saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+
+    expect(editHistoryEventMock).not.toHaveBeenCalled();
+
     const feeAmount = wrapper.find('[data-cy=fee-amount] input');
     await feeAmount.setValue('0.01');
 
@@ -301,13 +312,12 @@ describe('forms/EvmSwapEventForm', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    const saveMethod = wrapper.vm.save;
-
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
     addHistoryEventMock.mockResolvedValueOnce({ success: false });
 
-    const saveResult = await saveMethod();
+    saveResult = await saveMethod();
     expect(saveResult).toBe(true);
+
     expect(editHistoryEventMock).toHaveBeenCalledWith(
       expect.objectContaining({
         address,
@@ -485,11 +495,16 @@ describe('forms/EvmSwapEventForm', () => {
       success: false,
     });
 
+    await wrapper.find('[data-cy=address] input').setValue('0x6e15887E2CEC81434C16D587709f64603b39b541');
+
+    await vi.advanceTimersToNextTimerAsync();
+
     const saveMethod = wrapper.vm.save;
 
     const saveResult = await saveMethod();
-    await vi.advanceTimersToNextTimerAsync();
+    await nextTick();
 
+    expect(editHistoryEventMock).toHaveBeenCalled();
     expect(saveResult).toBe(false);
     expect(wrapper.find('[data-cy=address] .details').text()).toBe('Invalid ETH address format');
   });

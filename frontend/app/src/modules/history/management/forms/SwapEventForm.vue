@@ -4,9 +4,9 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events/schemas';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
-import SwapEventAssetAmount from '@/modules/history/management/forms/swap/SwapEventAssetAmount.vue';
-import SwapEventFee from '@/modules/history/management/forms/swap/SwapEventFee.vue';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useMessageStore } from '@/store/message';
@@ -44,6 +44,9 @@ const states = ref<FormData>(emptyEvent());
 const hasFee = ref<boolean>(false);
 const identifiers = ref<{ eventIdentifier: string; identifier: number }>();
 const errorMessages = ref<Record<string, string[]>>({});
+const spendAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('spendAssetPriceForm');
+const receiveAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('receiveAssetPriceForm');
+const feeAssetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('feeAssetPriceForm');
 
 const timestamp = useRefPropVModel(states, 'timestamp');
 
@@ -77,6 +80,7 @@ const v$ = useVuelidate(
 useFormStateWatcher(states, stateUpdated);
 const { setMessage } = useMessageStore();
 const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
+const { captureEditModeState, shouldSkipSave } = useEditModeStateTracker();
 
 function handleValidationErrors(message: ValidationErrors | string) {
   if (typeof message === 'string') {
@@ -89,9 +93,42 @@ function handleValidationErrors(message: ValidationErrors | string) {
   }
 }
 
+async function submitAllPrices(): Promise<boolean> {
+  const lists = [
+    get(spendAssetPriceForm),
+    get(receiveAssetPriceForm),
+    get(feeAssetPriceForm),
+  ].filter(Boolean);
+
+  for (const list of lists) {
+    if (!list) {
+      continue;
+    }
+    const result = await list.submitPrice();
+    if (result && !result.success) {
+      handleValidationErrors(result.message || t('transactions.events.form.asset_price.failed'));
+      return false;
+    }
+  }
+
+  return true;
+}
+
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
     return false;
+  }
+
+  const isEditMode = isDefined(identifiers);
+
+  // Submit prices from all nested HistoryEventAssetPriceForm components
+  const pricesSubmitted = await submitAllPrices();
+  if (!pricesSubmitted) {
+    return false;
+  }
+
+  if (shouldSkipSave(isEditMode, get(states))) {
+    return true;
   }
 
   const model = get(states);
@@ -104,7 +141,7 @@ async function save(): Promise<boolean> {
     payload.userNotes = [model.userNotes[0], model.userNotes[1]];
   }
 
-  const result = isDefined(identifiers)
+  const result = isEditMode
     ? await editHistoryEvent({
       ...omit(payload, ['uniqueId']),
       ...get(identifiers),
@@ -170,6 +207,8 @@ watchImmediate(() => props.data, (data) => {
     uniqueId: '',
     userNotes,
   });
+
+  captureEditModeState(get(states));
 });
 
 watch(hasFee, (hasFee) => {
@@ -210,26 +249,34 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <SwapEventAssetAmount
-      v-model:asset="states.spendAsset"
+    <HistoryEventAssetPriceForm
+      ref="spendAssetPriceForm"
       v-model:amount="states.spendAmount"
+      v-model:asset="states.spendAsset"
+      hide-price-fields
+      :timestamp="timestamp"
+      :v$="{
+        ...v$,
+        asset: v$.spendAsset,
+        amount: v$.spendAmount,
+      }"
       :location="states.location"
       type="spend"
-      :error-messages="{
-        asset: toMessages(v$.spendAsset),
-        amount: toMessages(v$.spendAmount),
-      }"
     />
 
-    <SwapEventAssetAmount
-      v-model:asset="states.receiveAsset"
+    <HistoryEventAssetPriceForm
+      ref="receiveAssetPriceForm"
       v-model:amount="states.receiveAmount"
+      v-model:asset="states.receiveAsset"
+      hide-price-fields
+      :timestamp="timestamp"
+      :v$="{
+        ...v$,
+        asset: v$.receiveAsset,
+        amount: v$.receiveAmount,
+      }"
       :location="states.location"
       type="receive"
-      :error-messages="{
-        asset: toMessages(v$.receiveAsset),
-        amount: toMessages(v$.receiveAmount),
-      }"
     />
 
     <RuiTextField
@@ -245,15 +292,27 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <SwapEventFee
+    <RuiCheckbox
       v-model="hasFee"
+      :label="t('transactions.events.form.has_fee.label')"
+      data-cy="has-fee"
+      color="primary"
+    />
+
+    <HistoryEventAssetPriceForm
+      ref="feeAssetPriceForm"
       v-model:amount="states.feeAmount"
       v-model:asset="states.feeAsset"
-      :location="states.location"
-      :error-messages="{
-        fee: toMessages(v$.feeAmount),
-        amount: toMessages(v$.feeAsset),
+      hide-price-fields
+      :timestamp="timestamp"
+      :disabled="!hasFee"
+      :v$="{
+        ...v$,
+        asset: v$.feeAsset,
+        amount: v$.feeAmount,
       }"
+      :location="states.location"
+      type="fee"
     />
 
     <SwapEventNotes

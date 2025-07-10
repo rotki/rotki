@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import type { ActionStatus } from '@/types/action';
+import type { ValidationErrors } from '@/types/api/errors';
 import type { SwapSubEventModel } from '@/types/history/events/schemas';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
-import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
+import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<{
   type: 'receive' | 'spend' | 'fee';
   index: number;
   disabled?: boolean;
+  timestamp: number;
   location: string;
   single: boolean;
 }>(), {
@@ -30,33 +31,11 @@ const asset = ref<string>('');
 const locationLabel = ref<string>('');
 const userNotes = ref<string>('');
 
-const evmChain = ref<string>();
+const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
-
-const amountLabel = computed<string>(() => {
-  switch (props.type) {
-    case 'receive':
-      return t('swap_event_form.receive_amount');
-    case 'spend':
-      return t('swap_event_form.spend_amount');
-    default:
-      return t('transactions.events.form.fee_amount.label');
-  }
-});
-
-const assetLabel = computed<string>(() => {
-  switch (props.type) {
-    case 'receive':
-      return t('swap_event_form.receive_asset');
-    case 'spend':
-      return t('swap_event_form.spend_asset');
-    default:
-      return t('transactions.events.form.fee_asset.label');
-  }
-});
 
 const rules = computed(() => (props.disabled
   ? {
@@ -149,48 +128,53 @@ watch(userNotes, (userNotes, oldUserNotes) => {
   }
   updateModel();
 });
+
+async function submitPrice(): Promise<ActionStatus<ValidationErrors | string> | undefined> {
+  return await get(assetPriceForm)?.submitPrice();
+}
+
+defineExpose({
+  submitPrice,
+});
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center">
-      <div
-        v-if="!single"
-        class="font-medium p-4"
-      >
-        {{ index + 1 }}
-      </div>
+  <div class="group/asset">
+    <div class="flex items-center gap-4">
+      <template v-if="!single">
+        <div
+          v-if="!single"
+          class="group-hover/asset:hidden font-medium border border-rui-grey-300 dark:border-rui-grey-800 rounded-full size-10 flex items-center justify-center"
+        >
+          {{ index + 1 }}
+        </div>
+        <RuiButton
+          class="hidden group-hover/asset:flex size-10"
+          variant="outlined"
+          :disabled="disabled"
+          :data-cy="`${type}-remove`"
+          icon
+          color="error"
+          @click="emit('remove', index)"
+        >
+          <RuiIcon
+            name="lu-trash-2"
+            size="14"
+          />
+        </RuiButton>
+      </template>
 
       <div class="grow">
-        <div class="grid md:grid-cols-2 gap-4">
-          <AmountInput
-            v-model="amount"
-            clearable
-            variant="outlined"
-            :data-cy="`${type}-amount`"
-            :disabled="disabled"
-            :label="amountLabel"
-            :error-messages="toMessages(v$.amount)"
-            @blur="v$.amount.$touch()"
-          />
-          <div class="flex">
-            <AssetSelect
-              v-model="asset"
-              outlined
-              clearable
-              :evm-chain="evmChain"
-              :disabled="disabled"
-              :data-cy="`${type}-asset`"
-              :label="assetLabel"
-              :error-messages="toMessages(v$.asset)"
-              @blur="v$.asset.$touch()"
-            />
-            <ToggleLocationLink
-              v-model="evmChain"
-              :location="location"
-            />
-          </div>
-        </div>
+        <HistoryEventAssetPriceForm
+          ref="assetPriceForm"
+          v-model:amount="amount"
+          v-model:asset="asset"
+          hide-price-fields
+          :timestamp="timestamp"
+          :v$="v$"
+          :location="location"
+          :type="type"
+        />
 
         <EventLocationLabel
           v-model="locationLabel"
@@ -200,30 +184,15 @@ watch(userNotes, (userNotes, oldUserNotes) => {
           @blur="v$.locationLabel.$touch()"
         />
       </div>
-
-      <div
-        v-if="!single"
-        class="px-4"
-      >
-        <RuiButton
-          variant="text"
-          :disabled="disabled"
-          :data-cy="`${type}-remove`"
-          icon
-          @click="emit('remove', index)"
-        >
-          <RuiIcon name="lu-trash-2" />
-        </RuiButton>
-      </div>
     </div>
     <RuiAccordions
       :class="{
-        'mx-8': !single,
+        'mx-14': !single,
       }"
     >
       <RuiAccordion
         data-cy="advanced-accordion"
-        header-class="py-4"
+        header-class="py-3"
         eager
       >
         <template #header>

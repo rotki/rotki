@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_DAI, A_OMG, A_WETH
+from rotkehlchen.constants.assets import A_CRV, A_DAI, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -85,6 +85,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
+    Inquirer.find_usd_prices = MagicMock(side_effect=Inquirer.find_usd_prices)
     with patch(
         'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
         side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
@@ -110,6 +111,14 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
         detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
     assert A_WETH in detection_result[addr3][0], 'WETH is owned by the proxy, but should be returned in the proxy owner address'  # noqa: E501
     assert tokens.evm_inquirer.multicall.call_count == 0, 'multicall should not be used for tokens detection'  # noqa: E501
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(  # Add a token that there are no actual balances for
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            (addr1, ChainID.ETHEREUM.serialize_for_db(), EVM_ACCOUNTS_DETAILS_TOKENS, A_CRV.identifier),  # noqa: E501
+        )
+
     result, token_usd_prices = tokens.query_tokens_for_addresses(
         [addr1, addr2, addr3, addr3_proxy],
     )
@@ -124,7 +133,7 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     assert A_WETH in result[addr3_proxy], 'WETH (which is owned by the proxy) is in the result of the proxy'  # noqa: E501
     assert A_WETH not in result[addr3], 'WETH is not in the result of the proxy owner address'
 
-    # test that  ignored assets are not queried
+    # test that ignored assets are not queried
     assert A_LPT not in result[addr1] and A_LPT not in result[addr2]
     found_tokens = set(result[addr1].keys()).union(
         set(result[addr2].keys()),
@@ -134,6 +143,10 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
         set(result[addr3_proxy].keys()),
     )
     assert len(token_usd_prices) == len(found_tokens)
+
+    # Confirm that prices were not queried for a token in evm_accounts_details that has no balance.
+    assert A_CRV not in found_tokens
+    assert all(asset in found_tokens for asset in Inquirer.find_usd_prices.call_args_list[0][0][0])
 
 
 def test_generate_chunks():

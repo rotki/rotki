@@ -6,6 +6,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
@@ -95,6 +96,7 @@ const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { txChainsToLocation } = useSupportedChains();
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   address,
@@ -104,6 +106,7 @@ const states = {
   eventIdentifier,
   eventSubtype,
   eventType,
+  extraData,
   location,
   locationLabel,
   notes,
@@ -160,6 +163,9 @@ function applyEditableData(entry: EvmHistoryEvent) {
   set(counterparty, entry.counterparty ?? '');
   set(product, entry.product ?? '');
   set(extraData, entry.extraData || {});
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 function applyGroupHeaderData(entry: EvmHistoryEvent) {
@@ -210,6 +216,7 @@ async function save(): Promise<boolean> {
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 
@@ -305,7 +312,7 @@ defineExpose({
       :location="location"
       :v$="v$"
       :timestamp="timestamp"
-      :hide-price-fields="isInformationalEvent"
+      :no-price-fields="isInformationalEvent"
     />
 
     <RuiDivider class="mb-6 mt-2" />

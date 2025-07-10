@@ -13,6 +13,18 @@ Changelog
 * :feature:`9913` History events can now be filtered by description.
 * :feature:`7768` Experimental version of crypto.com exchange integration. Test it and give us feedback.
 
+* :bug:`-` Fix the Kraken earned asset that is not reflecting in the selected tab.
+* :bug:`-` Fix the notification error where it can't query alias names for the xpub address.
+* :bug:`-` Fix the asset name appearing as "undefined" in the on-chain transaction history.
+* :bug:`-` Fix division by zero error when querying price for LP tokens of empty curve pools.
+* :bug:`10149` Users will now be able to update the historical price within the swap event form.
+* :bug:`10148` History event should not be marked as a customized event if the user only updates the historical price.
+* :bug:`-` Swaps that only differ in their timestamps will now be properly imported from Binance CSVs.
+* :bug:`10158` PnL reports will now properly handle events with the same timestamp.
+* :bug:`10146` Users will now be able to filter assets in the history events filter if a non-EVM location is selected.
+* :bug:`10150` The history events page will be refreshed automatically when an asset is ignored or marked as spam.
+* :bug:`10199` Independentreserve trades, deposits and withdrawals now use the execution timestamp and not the creation one.
+
 * :release:`1.39.1 <2025-06-13>`
 * :bug:`-` Users will now be able to perform on-chain send transactions using older wallets such as Trust Wallet.
 * :feature:`10079` Users will now be able to switch the chain directly from rotki on the on-chain page if they use WalletConnect.

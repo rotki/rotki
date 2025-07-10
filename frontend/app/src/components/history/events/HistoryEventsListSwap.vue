@@ -19,6 +19,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'refresh': [];
 }>();
 
 const isInitialRender = ref<boolean>(true);
@@ -195,6 +196,7 @@ watch(expanded, () => {
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @refresh="emit('refresh')"
         />
 
         <LazyLoader

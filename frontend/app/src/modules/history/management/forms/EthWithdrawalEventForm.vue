@@ -4,6 +4,7 @@ import type { EthWithdrawalEvent, NewEthWithdrawalEventPayload } from '@/types/h
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
@@ -53,10 +54,12 @@ const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { getAddresses } = useAccountAddresses();
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   amount,
   eventIdentifier,
+  isExit,
   timestamp,
   validatorIndex,
   withdrawalAddress,
@@ -93,6 +96,9 @@ function applyEditableData(entry: EthWithdrawalEvent) {
   set(validatorIndex, entry.validatorIndex.toString());
   set(withdrawalAddress, entry.locationLabel);
   set(isExit, entry.isExit);
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 function applyGroupHeaderData(entry: EthWithdrawalEvent) {
@@ -111,6 +117,9 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+
   const payload: NewEthWithdrawalEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     entryType: HistoryEventEntryType.ETH_WITHDRAWAL_EVENT,
@@ -121,14 +130,12 @@ async function save(): Promise<boolean> {
     withdrawalAddress: get(withdrawalAddress),
   };
 
-  const eventData = get(data);
-  const edit = eventData.type === 'edit' ? eventData.event : undefined;
-
   return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
+    editable ? { ...payload, identifier: editable.identifier } : payload,
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 

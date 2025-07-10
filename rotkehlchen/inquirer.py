@@ -972,6 +972,8 @@ class Inquirer:
             node_inquirer=evm_manager.node_inquirer,
             method_name='totalSupply',
         )
+        if total_supply == 0:  # pool is empty
+            return ZERO_PRICE  # avoid division by zero below and skip unneeded network calls.
 
         # Query balances for each token in the pool
         contract = EvmContract(

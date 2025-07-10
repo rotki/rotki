@@ -526,6 +526,18 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
         ))).is_close(price)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_zero_supply_curve_lp_price(inquirer_defi: 'Inquirer'):
+    """Regression test for a division by zero error when querying the price of a curve lp token
+    for a pool with zero supply."""
+    with patch('rotkehlchen.chain.evm.decoding.curve.curve_cache.request_get_dict'):
+        assert inquirer_defi.find_usd_price(
+            asset=Asset('eip155:1/erc20:0xdBE35AAD9f07c631ECD29d72b9D1c226D099729e'),
+        ) == ZERO_PRICE
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_kfee_price(inquirer):

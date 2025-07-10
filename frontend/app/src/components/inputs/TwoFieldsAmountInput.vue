@@ -6,10 +6,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const primaryValue = defineModel<string>('primaryValue', { required: true });
+const secondaryValue = defineModel<string>('secondaryValue', { required: true });
+
 const props = withDefaults(
   defineProps<{
-    primaryValue: string;
-    secondaryValue: string;
     label?: { primary?: string; secondary?: string };
     errorMessages?: {
       primary?: string | string[];
@@ -27,8 +28,6 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:primary-value', value: string): void;
-  (e: 'update:secondary-value', value: string): void;
   (e: 'update:reversed', reversed: boolean): void;
 }>();
 
@@ -51,14 +50,6 @@ function reverse() {
   });
 }
 
-function updatePrimaryValue(value: string) {
-  emit('update:primary-value', value);
-}
-
-function updateSecondaryValue(value: string) {
-  emit('update:secondary-value', value);
-}
-
 const aggregatedErrorMessages = computed(() => {
   const val = get(errorMessages);
   const primary = val?.primary || [];
@@ -77,12 +68,13 @@ const focused = ref<boolean>(false);
       'flex-col': !reversed,
       'flex-col-reverse': reversed,
       'focused': focused,
+      disabled,
     }"
     v-bind="$attrs"
   >
     <AmountInput
       ref="primaryInput"
-      :model-value="primaryValue"
+      v-model="primaryValue"
       :disabled="reversed || disabled"
       :hide-details="!reversed"
       variant="filled"
@@ -91,7 +83,6 @@ const focused = ref<boolean>(false);
       :class="`${!reversed ? 'input__enabled' : ''}`"
       :label="label.primary"
       :error-messages="aggregatedErrorMessages"
-      @update:model-value="updatePrimaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
     />
@@ -106,7 +97,7 @@ const focused = ref<boolean>(false);
 
     <AmountInput
       ref="secondaryInput"
-      :model-value="secondaryValue"
+      v-model="secondaryValue"
       :disabled="!reversed || disabled"
       :hide-details="reversed"
       variant="filled"
@@ -115,7 +106,6 @@ const focused = ref<boolean>(false);
       :class="`${reversed ? 'input__enabled' : ''}`"
       :label="label.secondary"
       :error-messages="aggregatedErrorMessages"
-      @update:model-value="updateSecondaryValue($event)"
       @focus="focused = true"
       @blur="focused = false"
     />
@@ -141,6 +131,12 @@ const focused = ref<boolean>(false);
 
   > * {
     margin: -1px 0;
+  }
+
+  &.disabled {
+    :deep(label) {
+      @apply border-dotted border-rui-grey-400;
+    }
   }
 
   :deep(label) {
@@ -193,6 +189,12 @@ const focused = ref<boolean>(false);
 
 .dark {
   .wrapper {
+    &.disabled {
+      :deep(label) {
+        @apply border-rui-grey-700;
+      }
+    }
+
     :deep(label) {
       @apply border-white/[0.42];
       @apply bg-rui-grey-800 bg-opacity-40 #{!important};

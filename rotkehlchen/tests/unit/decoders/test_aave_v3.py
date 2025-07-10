@@ -1885,3 +1885,61 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
+def test_gnosis_xdai_deposit(gnosis_inquirer, gnosis_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xbdc74d91e713209a666daf25a97da7c73aca646a7e7c0e126954e6a4c644eb72')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1751201820000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_fees := '0.00000001663646463'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Burn {gas_fees} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_XDAI,
+        amount=FVal(deposit_amount := '1000'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} WXDAI into AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=string_to_evm_address('0x721B9abAb6511b46b9ee83A1aba23BDAcB004149'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:100/erc20:0xd0Dd6cEF72143E22cCED4867eb0d5F2328715533'),
+        amount=FVal(deposit_amount),
+        location_label=user_address,
+        notes=f'Receive {deposit_amount} aGnoWXDAI from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.INTEREST,
+        asset=Asset('eip155:100/erc20:0xd0Dd6cEF72143E22cCED4867eb0d5F2328715533'),
+        amount=FVal(interest_amount := '6.116920794676377147'),
+        location_label=user_address,
+        notes=f'Receive {interest_amount} aGnoWXDAI as interest earned from AAVE v3',
+        counterparty=CPT_AAVE_V3,
+    )]

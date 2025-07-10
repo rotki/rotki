@@ -9,6 +9,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useHistoryEventProductMappings } from '@/composables/history/events/mapping/product';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { arrayify } from '@/utils/array';
@@ -68,7 +69,9 @@ export function useHistoryEventFilter(
   },
   entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>,
 ): FilterSchema<Filters, Matcher> {
-  const filters = ref<Filters>({});
+  const filters = ref<Filters>({
+    location: 'ethereum',
+  });
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
@@ -76,12 +79,14 @@ export function useHistoryEventFilter(
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
+  const { txChainsToLocation } = useSupportedChains();
   const { t } = useI18n({ useScope: 'global' });
 
   const matchers = computed<Matcher[]>(() => {
-    let selectedLocation = get(filters)?.location;
-    if (Array.isArray(selectedLocation))
-      selectedLocation = selectedLocation[0] || undefined;
+    const selectedLocation = get(filters)?.location;
+    const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
+    const evmChain = locationString && get(txChainsToLocation).includes(locationString) ? locationString : undefined;
+
     const data: Matcher[] = [
       ...(disabled?.period
         ? []
@@ -119,7 +124,7 @@ export function useHistoryEventFilter(
         deserializer: assetDeserializer(assetInfo),
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
-        suggestions: assetSuggestions(assetSearch, selectedLocation?.toString()),
+        suggestions: assetSuggestions(assetSearch, evmChain?.toString()),
       },
       {
         description: t('transactions.filter.notes'),

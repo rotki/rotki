@@ -6,6 +6,7 @@ import { useSpamAsset } from '@/composables/assets/spam';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { EVM_TOKEN } from '@/types/asset';
 import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
 
 const props = defineProps<{
@@ -13,6 +14,10 @@ const props = defineProps<{
   hideActions: boolean;
   isCollectionParent: boolean;
   iconOnly: boolean;
+}>();
+
+const emit = defineEmits<{
+  refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -30,7 +35,7 @@ const confirm = ref(false);
 const confirmType = ref<ConfirmType>('ignore');
 
 const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-const isSpamAsset = computed(() => get(asset).protocol === 'spam');
+const isSpamAsset = computed(() => get(asset).isSpam);
 const isIgnoredAsset = useIsAssetIgnored(identifier);
 const { markAssetsAsSpam } = useSpamAsset();
 const { refetchAssetInfo } = useAssetInfoRetrieval();
@@ -50,6 +55,7 @@ async function confirmAction() {
   }
 
   refetchAssetInfo(id);
+  emit('refresh');
   set(confirm, false);
 }
 
@@ -172,6 +178,7 @@ defineExpose({
                   {{ t('assets.action.ignore') }}
                 </RuiTooltip>
                 <RuiTooltip
+                  v-if="asset.assetType === EVM_TOKEN"
                   :open-delay="200"
                   :popper="{ placement: 'top' }"
                 >

@@ -1242,7 +1242,7 @@
       "ignore": "Ignore Asset",
       "info": {
         "ignore": "Asset is ignored",
-        "mark_as_spam": "Asset is marked as spam"
+        "mark_as_spam": "Marked as spam"
       },
       "mark_as_spam": "Mark as spam"
     },
@@ -4277,12 +4277,9 @@
     "title": "{name} balances"
   },
   "swap_event_form": {
+    "add_asset": "Add asset",
     "fee_notes": "Fee notes",
-    "receive_amount": "Receive Amount",
-    "receive_asset": "Receive Asset",
     "receive_notes": "Receive notes",
-    "spend_amount": "Spend Amount",
-    "spend_asset": "Spend Asset",
     "spend_notes": "Spend notes",
     "unique_id": "Unique Identifier",
     "unique_id_hint": "It is combined with the event location to create a unique event identifier"
@@ -4540,6 +4537,9 @@
           }
         },
         "asset_price": {
+          "amount_label": "{type} Amount",
+          "asset_label": "{type} Asset",
+          "failed": "Failed to submit price",
           "hint": "If you change the asset price, rotki will save the historic price that will be considered in PnL report calculation",
           "label": "Asset price in {symbol} at the time"
         },
@@ -4592,9 +4592,6 @@
           "validation": {
             "non_empty": "The fee cannot be empty when fee asset is inputted"
           }
-        },
-        "fee_amount": {
-          "label": "Fee Amount"
         },
         "fee_asset": {
           "label": "Fee Asset",

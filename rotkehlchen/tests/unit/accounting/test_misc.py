@@ -6,11 +6,15 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_EUR, A_KFEE, A_USD, A_USDT
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.accounting import (
+    accounting_create_and_process_history,
     accounting_history_process,
     check_pnls_and_csv,
     get_calculated_asset_amount,
@@ -22,6 +26,7 @@ from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
@@ -203,3 +208,66 @@ def test_main_currency_is_respected(
     assert len(warnings) == len(errors) == 0
     # Check that the price is correctly computed in GBP
     assert accountant.pots[0].processed_events[0].price == trade_rate * mocked_price_queries['USD']['GBP'][1609537953]  # noqa: E501
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+def test_process_events_with_duplicate_timestamps(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Verify that events with the same timestamp are properly processed.
+    Regression test for https://github.com/orgs/rotki/projects/11?pane=issue&itemId=115660014
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    history: list[HistoryBaseEntry] = [AssetMovement(
+        timestamp=TimestampMS(1500000000000),
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.DEPOSIT,
+        asset=A_EUR,
+        amount=FVal('100'),
+    )]
+    history.extend(create_swap_events(
+        timestamp=TimestampMS(1624791600000),
+        location=Location.KRAKEN,
+        event_identifier='1xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('50')),
+        receive=AssetAmount(asset=A_ETH, amount=FVal('0.04')),
+    ))
+    history.extend(create_swap_events(
+        timestamp=TimestampMS(1624791600000),
+        location=Location.KRAKEN,
+        event_identifier='2xyz',
+        spend=AssetAmount(asset=A_EUR, amount=FVal('50')),
+        receive=AssetAmount(asset=A_ETH, amount=FVal('0.04')),
+    ))
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_events(
+            write_cursor=write_cursor,
+            history=history,
+        )
+        # Also add a non-HistoryBaseEntry event to confirm it's also properly handled.
+        rotki.data.db.add_margin_positions(
+            write_cursor=write_cursor,
+            margin_positions=[MarginPosition(
+                location=Location.KRAKEN,
+                open_time=Timestamp(1607900400),
+                close_time=Timestamp(1624791600),
+                profit_loss=FVal('0.5'),
+                pl_currency=A_ETH,
+                fee=ZERO,
+                fee_currency=A_EUR,
+                link='',
+            )],
+        )
+
+    _, events = accounting_create_and_process_history(
+        rotki=rotki,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1624791600),
+    )
+    assert len(events) == 5  # margin position and the spend/receive from both swaps
+    assert events[0].event_type == AccountingEventType.MARGIN_POSITION
+    for i in range(1, 5):
+        assert events[i].event_type == AccountingEventType.TRADE

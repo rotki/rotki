@@ -179,3 +179,7 @@ User_ID,UTC_Time,Account,Operation,Coin,Change,Remark
 1,2024-05-16 12:57:55,Spot,Transaction Buy,HIGH,4.23900000,
 1,2024-05-16 12:57:55,Spot,Transaction Spend,BTC,-0.00452769,
 1,2024-05-16 12:57:55,Spot,Transaction Buy,HIGH,141.40200000,
+1,2024-09-12 10:15:06,Spot,Transaction Spend,ETH,-0.54321,
+1,2024-09-12 10:15:06,Spot,Transaction Buy,USDT,1234,
+1,2024-09-12 10:15:11,Spot,Transaction Spend,ETH,-0.54321,
+1,2024-09-12 10:15:11,Spot,Transaction Buy,USDT,1234,

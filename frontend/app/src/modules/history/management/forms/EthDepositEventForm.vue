@@ -5,6 +5,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
@@ -57,11 +58,13 @@ const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { getAddresses } = useAccountAddresses();
+const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   amount,
   depositor,
   eventIdentifier,
+  extraData,
   sequenceIndex,
   timestamp,
   txHash,
@@ -104,6 +107,9 @@ function applyEditableData(entry: EthDepositEvent) {
   set(validatorIndex, entry.validatorIndex.toString());
   set(depositor, entry.locationLabel);
   set(extraData, entry.extraData || {});
+
+  // Capture state snapshot for edit mode comparison
+  captureEditModeStateFromRefs(states);
 }
 
 function applyGroupHeaderData(entry: EthDepositEvent) {
@@ -124,6 +130,9 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
+  const eventData = get(data);
+  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+
   const payload: NewEthDepositEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     depositor: get(depositor),
@@ -136,14 +145,12 @@ async function save(): Promise<boolean> {
     validatorIndex: parseInt(get(validatorIndex)),
   };
 
-  const eventData = get(data);
-  const edit = eventData.type === 'edit' ? eventData.event : undefined;
-
   return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
+    editable ? { ...payload, identifier: editable.identifier } : payload,
     assetPriceForm,
     errorMessages,
     reset,
+    shouldSkipSaveFromRefs(!!editable, states),
   );
 }
 
