@@ -5,6 +5,7 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useModules } from '@/composables/session/modules';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useStatusUpdater } from '@/composables/status';
 import { useHistoryStore } from '@/store/history';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
@@ -155,14 +156,25 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
+  const { apiKey, credential } = useExternalApiKeys(t);
+
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
-    const eth2QueryTypes = [
+    const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
       OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
       OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
     ];
 
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
       return;
+
+    if (!get(apiKey('gnosis_pay')) && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
+      return;
+    }
+
+    if (!get(credential('monerium')) && queryType === OnlineHistoryEventsQueryType.MONERIUM) {
+      return;
+    }
+
     logger.debug(`querying for ${queryType} events`);
     const taskType = TaskType.QUERY_ONLINE_EVENTS;
     const { taskId } = await queryOnlineHistoryEvents({
@@ -334,7 +346,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       }
 
       const queriesToExecute: OnlineHistoryEventsQueryType[] | undefined = fullRefresh || disableEvmEvents
-        ? Object.values(OnlineHistoryEventsQueryType) as unknown as OnlineHistoryEventsQueryType[]
+        ? [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS]
         : queries;
 
       queriesToExecute?.forEach(query => asyncOperations.push(queryOnlineEvent(query)));

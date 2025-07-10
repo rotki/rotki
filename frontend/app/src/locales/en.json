@@ -2884,20 +2884,24 @@
   "history_refresh_selection": {
     "back_to_chain": "Back to chain selection",
     "refresh": "Refresh {total} {type}",
+    "refresh_disabled": "Refreshing {service} is disabled because the required API key is not configured",
     "search_address": "Search by address",
     "search_chain": "Search by chain",
     "search_events": "Search by type",
     "search_exchanges": "Search by exchange",
+    "search_protocols": "Search by protocol",
     "selection": "Select one or more to refresh their events",
     "tabs": {
       "chains": "Chains",
       "events": "ETH Staking Events",
-      "exchanges": "Exchanges"
+      "exchanges": "Exchanges",
+      "protocols": "Protocols"
     },
     "type": {
       "accounts": "Accounts | Account | Accounts",
       "events": "Events | Event | Events",
-      "exchanges": "Exchanges | Exchange | Exchanges"
+      "exchanges": "Exchanges | Exchange | Exchanges",
+      "protocols": "Protocols | Protocol | Protocols"
     }
   },
   "ignore": {

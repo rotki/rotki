@@ -286,6 +286,8 @@ export type HistoryEventRow = HistoryEventEntry | HistoryEventEntry[];
 export const OnlineHistoryEventsQueryType = {
   BLOCK_PRODUCTIONS: 'block_productions',
   ETH_WITHDRAWALS: 'eth_withdrawals',
+  GNOSIS_PAY: 'gnosis_pay',
+  MONERIUM: 'monerium',
 } as const;
 
 export type OnlineHistoryEventsQueryType = typeof OnlineHistoryEventsQueryType[keyof typeof OnlineHistoryEventsQueryType];
