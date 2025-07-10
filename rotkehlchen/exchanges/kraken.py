@@ -1,5 +1,5 @@
 # Good kraken and python resource:
-# https://github.com/zertrin/clikraken/tree/master/clikraken
+# https://github.com/zertrin/clikraken/tree/master/src/clikraken
 import base64
 import hashlib
 import hmac
