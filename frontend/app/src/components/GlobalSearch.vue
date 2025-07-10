@@ -17,6 +17,15 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { startPromise } from '@shared/utils';
 
+withDefaults(
+  defineProps<{
+    isMini?: boolean;
+  }>(),
+  {
+    isMini: false,
+  },
+);
+
 interface SearchItem {
   value: number;
   text?: string;
@@ -398,7 +407,10 @@ onBeforeMount(async () => {
     content-class="mt-[16rem] !top-0 pb-2"
   >
     <template #activator="{ attrs }">
-      <div class="px-3 pt-2 pb-4">
+      <div
+        v-if="!isMini"
+        class="px-3 pt-2 pb-4"
+      >
         <RuiTextField
           model-value=""
           hide-details
@@ -425,6 +437,18 @@ onBeforeMount(async () => {
           </template>
         </RuiTextField>
       </div>
+      <RuiButton
+        v-else
+        variant="text"
+        class=" p-2 w-full mb-4 border border-rui-grey-200 dark:border-rui-grey-700 !bg-rui-grey-100 hover:!bg-rui-grey-200 dark:!bg-rui-grey-800 hover:dark:!bg-rui-grey-700 rounded-lg"
+        v-bind="attrs"
+      >
+        <RuiIcon
+          name="lu-search"
+          class="opacity-40"
+          size="20"
+        />
+      </RuiButton>
     </template>
     <RuiCard
       variant="flat"
