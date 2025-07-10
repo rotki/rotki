@@ -57,7 +57,7 @@ interface HashLinkProps {
    */
   truncateLength?: number;
   /**
-   * Determines the type of the explorer link that will be used it the `location` is a valid blockchain.
+   * Determines the type of the explorer link that will be used if the `location` is a valid blockchain.
    * @default address
    */
   type?: keyof ExplorerUrls;
@@ -121,7 +121,8 @@ const addressBookChain = computed<string | undefined>(() => {
 });
 
 const aliasName = computed<string | null>(() => {
-  if (get(scrambleData) || props.type !== 'address')
+  const isLocationNotBlockchain = props.location && !isDefined(blockchain);
+  if (get(scrambleData) || props.type !== 'address' || isLocationNotBlockchain)
     return null;
 
   return get(addressNameSelector(props.text, get(blockchain)));

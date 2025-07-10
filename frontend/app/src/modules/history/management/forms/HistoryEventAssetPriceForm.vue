@@ -39,7 +39,7 @@ const props = withDefaults(defineProps<HistoryEventAssetPriceFormProps>(), {
   noPriceFields: false,
 });
 
-const { disabled, disableAsset, hidePriceFields, noPriceFields, timestamp } = toRefs(props);
+const { disableAsset, disabled, hidePriceFields, noPriceFields, timestamp } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
