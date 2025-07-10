@@ -17,6 +17,8 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const selection = ref<'current' | 'historical'>('current');
+
 const { events } = toRefs(useKrakenStakingStore());
 const { assetPrice } = usePriceUtils();
 
@@ -25,6 +27,10 @@ const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');
 
 const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
   const earned = get(events).received;
+
+  if (get(selection) === 'historical') {
+    return [false, earned];
+  }
 
   let loading = false;
 
@@ -74,6 +80,7 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
         :earned="earnedAssetsData[1]"
       />
       <KrakenStakingReceived
+        v-model="selection"
         :loading="earnedAssetsData[0]"
         :received="earnedAssetsData[1]"
       />
