@@ -34,8 +34,8 @@ const { protocolData } = useProtocolData(protocol);
       />
     </template>
 
-    <div class="flex flex-col gap-1">
-      <div class="font-medium text-sm">
+    <div class="flex flex-col gap-0.5">
+      <div class="font-medium text-sm mb-0.5">
         {{ protocolData?.name ?? toSentenceCase(protocol) }}
         <div
           v-if="protocolBalance.containsManual"

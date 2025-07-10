@@ -18,7 +18,7 @@ const { protocolData } = useProtocolData(protocol);
 </script>
 
 <template>
-  <div class="rounded-full size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700">
+  <div class="rounded-full overflow-hidden size-8 flex items-center justify-center border bg-white border-rui-grey-300 dark:border-rui-grey-700">
     <RuiIcon
       v-if="protocolData?.type === 'icon'"
       color="secondary"
