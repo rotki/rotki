@@ -62,7 +62,7 @@ watch(route, () => {
           />
         </RouterLink>
       </div>
-      <GlobalSearch />
+      <GlobalSearch :is-mini="isMini" />
       <NavigationMenu :is-mini="isMini" />
     </div>
     <div
