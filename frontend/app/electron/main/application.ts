@@ -145,6 +145,7 @@ export class Application {
       getRunningCorePIDs: async () => this.processHandler.checkForBackendProcess(),
       getProtocolRegistrationFailed: () => this.protocolRegistrationFailed,
       openOAuthInWindow: async (url: string) => this.window.openOAuthWindow(url),
+      sendIpcMessage: (channel: string, ...args: any[]) => this.window.sendIpcMessage(channel, ...args),
     });
     await this.window.create();
     this.window.setListener({
@@ -196,6 +197,7 @@ export class Application {
     this.menu.cleanup();
     this.window.cleanup();
     this.tray.cleanup();
+    this.ipc.cleanup();
     try {
       await this.processHandler.terminateProcesses();
     }

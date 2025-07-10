@@ -8,6 +8,7 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 defineProps<{
   appBar?: boolean;
   showWalletBridge?: boolean;
+  loading?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -32,6 +33,7 @@ const chain = computed(() => {
   <RuiButton
     v-if="!connected && !appBar"
     color="primary"
+    :loading="loading"
     @click="open()"
   >
     <template #prepend>

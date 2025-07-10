@@ -1,21 +1,20 @@
 import type { AppConfig } from '@electron/main/app-config';
 import type { LogService } from '@electron/main/log-service';
 import type { SettingsManager } from '@electron/main/settings-manager';
-import type { BackendOptions, Credentials, SystemVersion, TrayUpdate } from '@shared/ipc';
+import type { BackendOptions, Credentials, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
-import type { ProgressInfo } from 'electron-builder';
-import process from 'node:process';
 import { IpcCommands } from '@electron/ipc-commands';
-import { loadConfig } from '@electron/main/config';
-import { HttpServer } from '@electron/main/http';
-import { PasswordManager } from '@electron/main/password-manager';
-import { selectPort } from '@electron/main/port-utils';
-import { assert, type DebugSettings } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { dialog, ipcMain, nativeTheme, shell } from 'electron';
-import electronUpdater from 'electron-updater';
-
-const { autoUpdater } = electronUpdater;
+import {
+  BackendHandlers,
+  SecurityHandlers,
+  SystemHandlers,
+  UpdateHandlers,
+  WalletBridgeIpcHandlers,
+  WalletImportHandlers,
+} from '@electron/main/ipc-handlers';
+import { WalletBridgeHandlers } from '@electron/main/wallet-bridge-handlers';
+import { WalletBridgeWebSocketServer } from '@electron/main/ws';
+import { ipcMain } from 'electron';
 
 interface Callbacks {
   quit: () => Promise<void>;
@@ -27,29 +26,26 @@ interface Callbacks {
   updateDownloadProgress: (progress: number) => void;
   getProtocolRegistrationFailed: () => boolean;
   openOAuthInWindow: (url: string) => Promise<void>;
+  sendIpcMessage: (channel: string, ...args: any[]) => void;
 }
 
 export class IpcManager {
-  private readonly passwordManager = new PasswordManager();
-  private readonly httpServer: HttpServer;
-  private walletImportTimeout: NodeJS.Timeout | undefined;
+  private readonly walletBridgeWebSocketServer: WalletBridgeWebSocketServer;
+  private readonly walletBridgeHandlers: WalletBridgeHandlers;
+  private readonly systemHandlers: SystemHandlers;
+  private readonly backendHandlers: BackendHandlers;
+  private readonly updateHandlers: UpdateHandlers;
+  private readonly securityHandlers: SecurityHandlers;
+  private readonly walletImportHandlers: WalletImportHandlers;
+  private readonly walletBridgeIpcHandlers: WalletBridgeIpcHandlers;
 
-  private firstStart = true;
-  private restarting = false;
   private callbacks: Callbacks | null = null;
-
-  private static readonly updateTimeout = 5000;
-
-  private readonly version: SystemVersion = {
-    os: process.platform,
-    arch: process.arch,
-    osVersion: process.getSystemVersion(),
-    electron: process.versions.electron,
-  };
 
   private get requireCallbacks(): Callbacks {
     const callbacks = this.callbacks;
-    assert(callbacks);
+    if (!callbacks) {
+      throw new Error('IpcManager callbacks not initialized');
+    }
     return callbacks;
   }
 
@@ -58,290 +54,126 @@ export class IpcManager {
     private readonly settings: SettingsManager,
     private readonly config: AppConfig,
   ) {
-    this.httpServer = new HttpServer(logger);
+    this.walletBridgeWebSocketServer = new WalletBridgeWebSocketServer(logger);
+    this.walletBridgeHandlers = new WalletBridgeHandlers(logger, this.walletBridgeWebSocketServer);
+
+    // Initialize handler classes
+    this.systemHandlers = new SystemHandlers(logger, settings, config);
+    this.backendHandlers = new BackendHandlers(logger);
+    this.updateHandlers = new UpdateHandlers(logger, config);
+    this.securityHandlers = new SecurityHandlers();
+    this.walletImportHandlers = new WalletImportHandlers(logger);
+    this.walletBridgeIpcHandlers = new WalletBridgeIpcHandlers(logger, this.walletBridgeWebSocketServer);
+
+    // Set up bridge disconnection callback
+    this.walletBridgeWebSocketServer.setOnBridgeDisconnected(() => {
+      this.handleBridgeDisconnected();
+    });
+
+    // Set up bridge reconnection callback
+    this.walletBridgeWebSocketServer.setOnBridgeReconnected(() => {
+      this.handleBridgeReconnected();
+    });
   }
 
   initialize(callbacks: Callbacks) {
     this.callbacks = callbacks;
     this.logger.info('Registering IPC handlers');
+
+    // Initialize handler classes with their callbacks
+    this.systemHandlers.initialize({
+      updateTray: callbacks.updateTray,
+      getProtocolRegistrationFailed: callbacks.getProtocolRegistrationFailed,
+      openOAuthInWindow: callbacks.openOAuthInWindow,
+    });
+
+    this.backendHandlers.initialize({
+      restartSubprocesses: callbacks.restartSubprocesses,
+      getRunningCorePIDs: callbacks.getRunningCorePIDs,
+      sendIpcMessage: callbacks.sendIpcMessage,
+    });
+
+    this.updateHandlers.initialize({
+      terminateSubprocesses: callbacks.terminateSubprocesses,
+      updateDownloadProgress: callbacks.updateDownloadProgress,
+    });
+
+    this.walletBridgeIpcHandlers.initialize({
+      sendIpcMessage: callbacks.sendIpcMessage,
+    });
+
+    // System handlers
     ipcMain.on(IpcCommands.SYNC_GET_DEBUG, (event) => {
-      event.returnValue = { persistStore: this.settings.appSettings.persistStore ?? false } satisfies DebugSettings;
+      event.returnValue = this.systemHandlers.getDebugSettings();
     });
-
     ipcMain.on(IpcCommands.SYNC_API_URL, (event) => {
-      event.returnValue = this.config.urls;
+      event.returnValue = this.systemHandlers.getApiUrls();
     });
-
     ipcMain.on(IpcCommands.PREMIUM_LOGIN, (_event, showPremium) => {
       callbacks.updatePremiumMenu(showPremium);
     });
-
     ipcMain.handle(IpcCommands.INVOKE_CLOSE_APP, callbacks.quit);
-    ipcMain.handle(IpcCommands.INVOKE_OPEN_URL, this.openUrl);
-    ipcMain.handle(IpcCommands.INVOKE_OPEN_DIRECTORY, this.openDirectory);
-    ipcMain.handle(IpcCommands.INVOKE_OPEN_PATH, this.openPath);
-
-    ipcMain.handle(IpcCommands.INVOKE_CONFIG, this.getConfig);
-    ipcMain.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.importFromWallet);
-    ipcMain.handle(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE, this.openWalletConnectBridge);
-    ipcMain.handle(IpcCommands.INVOKE_VERSION, () => this.version);
-    ipcMain.handle(IpcCommands.INVOKE_IS_MAC, () => this.version.os === 'darwin');
-
+    ipcMain.handle(IpcCommands.INVOKE_OPEN_URL, async (_, url: string) => this.systemHandlers.openUrl(url));
+    ipcMain.handle(IpcCommands.INVOKE_OPEN_DIRECTORY, async (_, title: string, defaultPath?: string) => this.systemHandlers.openDirectory(title, defaultPath));
+    ipcMain.handle(IpcCommands.INVOKE_OPEN_PATH, (_, path: string) => this.systemHandlers.openPath(path));
+    ipcMain.handle(IpcCommands.INVOKE_CONFIG, async (_, defaultConfig: boolean) => this.systemHandlers.getConfig(defaultConfig));
+    ipcMain.handle(IpcCommands.INVOKE_VERSION, () => this.systemHandlers.getVersion());
+    ipcMain.handle(IpcCommands.INVOKE_IS_MAC, () => this.systemHandlers.getIsMac());
+    ipcMain.handle(IpcCommands.INVOKE_THEME, (_, selectedTheme: number) => this.systemHandlers.setSelectedTheme(selectedTheme));
     ipcMain.on(IpcCommands.LOG_TO_FILE, (_, level: LogLevel, message: string) => {
-      this.logger.write(level, message);
+      this.systemHandlers.logToFile(level, message);
     });
-
-    ipcMain.handle(IpcCommands.INVOKE_THEME, (event, selectedTheme: number) => {
-      const themeSource = ['dark', 'system', 'light'] as const;
-      nativeTheme.themeSource = themeSource[selectedTheme];
-      return nativeTheme.shouldUseDarkColors;
-    });
-
-    ipcMain.handle(IpcCommands.INVOKE_SUBPROCESS_START, this.restartBackend);
-
     ipcMain.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
-      callbacks.updateTray(trayUpdate);
+      this.systemHandlers.updateTray(trayUpdate);
     });
-    this.setupUpdaterInterop();
 
-    ipcMain.handle(
-      IpcCommands.INVOKE_STORE_PASSWORD,
-      async (_, credentials: Credentials) => this.passwordManager.storePassword(credentials),
-    );
-    ipcMain.handle(
-      IpcCommands.INVOKE_GET_PASSWORD,
-      async (_, username: string) => this.passwordManager.retrievePassword(username),
-    );
-    ipcMain.handle(
-      IpcCommands.INVOKE_CLEAR_PASSWORD,
-      async () => this.passwordManager.clearPasswords(),
-    );
+    // Backend handlers
+    ipcMain.handle(IpcCommands.INVOKE_SUBPROCESS_START, async (event, options) => this.backendHandlers.restartBackend(options, event));
+
+    // Update handlers
+    ipcMain.handle(IpcCommands.INVOKE_UPDATE_CHECK, this.updateHandlers.checkForUpdates);
+    ipcMain.handle(IpcCommands.INVOKE_DOWNLOAD_UPDATE, this.updateHandlers.downloadUpdate);
+    ipcMain.handle(IpcCommands.INVOKE_INSTALL_UPDATE, this.updateHandlers.installUpdate);
+
+    // Security handlers
+    ipcMain.handle(IpcCommands.INVOKE_STORE_PASSWORD, async (_, credentials: Credentials) => this.securityHandlers.storePassword(credentials));
+    ipcMain.handle(IpcCommands.INVOKE_GET_PASSWORD, async (_, username: string) => this.securityHandlers.getPassword(username));
+    ipcMain.handle(IpcCommands.INVOKE_CLEAR_PASSWORD, async () => this.securityHandlers.clearPassword());
+
+    // Wallet import handlers
+    ipcMain.handle(IpcCommands.INVOKE_WALLET_IMPORT, this.walletImportHandlers.importFromWallet);
+
+    // Wallet bridge IPC handlers
+    ipcMain.handle(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE, this.walletBridgeIpcHandlers.openWalletConnectBridge);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeHttpListening);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_WS_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeWsListening);
+    ipcMain.on(IpcCommands.USER_LOGOUT, this.walletBridgeIpcHandlers.handleUserLogout);
+
+    // Wallet Bridge handlers (from existing handler class)
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_REQUEST, this.walletBridgeHandlers.handleWalletBridgeRequest);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_CONNECT, this.walletBridgeHandlers.handleWalletBridgeConnect);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_DISCONNECT, this.walletBridgeHandlers.handleWalletBridgeDisconnect);
   }
 
-  private readonly select = async (
-    title: string,
-    prop: 'openFile' | 'openDirectory',
-    defaultPath?: string,
-  ): Promise<string | undefined> => {
-    const value = await dialog.showOpenDialog({
-      title,
-      defaultPath,
-      properties: [prop],
-    });
+  cleanup(): void {
+    this.logger.info('Cleaning up IPC manager resources...');
 
-    if (value.canceled)
-      return undefined;
+    // Stop WebSocket server
+    this.walletBridgeWebSocketServer.stop();
 
-    return value.filePaths?.[0];
-  };
-
-  private readonly openUrl = async (_event: Electron.IpcMainInvokeEvent, url: string): Promise<void> => {
-    if (!url || typeof url !== 'string' || (!this.config.isDev && !url.startsWith('https://'))) {
-      console.error(`Error: Requested to open untrusted URL: ${url} `);
-      return;
-    }
-
-    // Check if this is a Google OAuth URL and protocol registration failed
-    const isGoogleOAuthUrl = url.includes('rotki.com/oauth/google') || (url.includes('localhost') && url.includes('/oauth/google'));
-    const protocolRegistrationFailed = this.requireCallbacks.getProtocolRegistrationFailed();
-
-    if (isGoogleOAuthUrl && protocolRegistrationFailed) {
-      this.logger.info('Protocol registration failed, opening Google OAuth URL in second window instead of external browser');
-      await this.requireCallbacks.openOAuthInWindow(url);
-      return;
-    }
-
-    await shell.openExternal(url);
-  };
-
-  private readonly openDirectory = async (_event: Electron.IpcMainInvokeEvent, title: string, defaultPath?: string): Promise<string | undefined> => {
-    try {
-      return await this.select(title, 'openDirectory', defaultPath);
-    }
-    catch (error: any) {
-      console.error(error);
-      return undefined;
-    }
-  };
-
-  private readonly openPath = (_event: Electron.IpcMainInvokeEvent, path: string): void => {
-    shell.openPath(path).catch(error => this.logger.error(error));
-  };
-
-  private readonly getConfig = async (_event: Electron.IpcMainInvokeEvent, defaultConfig: boolean): Promise<Partial<BackendOptions>> => {
-    if (defaultConfig) {
-      return { logDirectory: this.logger.defaultLogDirectory };
-    }
-    else {
-      return loadConfig();
-    }
-  };
-
-  private readonly importFromWallet = async (): Promise<{ error: string } | { addresses: string[] }> => {
-    try {
-      const portNumber = await selectPort(40000);
-      return await new Promise((resolve) => {
-        const port = this.httpServer.start(
-          addresses => resolve({ addresses }),
-          portNumber,
-        );
-
-        shell.openExternal(`http://localhost:${port}`).catch((error) => {
-          resolve({ error: error.message });
-        });
-
-        if (this.walletImportTimeout)
-          clearTimeout(this.walletImportTimeout);
-
-        this.walletImportTimeout = setTimeout(() => {
-          this.httpServer.stop();
-          resolve({ error: 'waiting timeout' });
-        }, 120000);
-      });
-    }
-    catch (error: any) {
-      return { error: error.message };
-    }
-  };
-
-  private walletConnectBridgePort: number | undefined = undefined;
-
-  private readonly openWalletConnectBridge = async (): Promise<void> => {
-    try {
-      // If server is already running, just open the existing URL
-      if (this.walletConnectBridgePort) {
-        this.logger.info(`Wallet Connect Bridge already running at http://localhost:${this.walletConnectBridgePort}`);
-        await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
-        return;
-      }
-
-      const portNumber = await selectPort(40010);
-      this.walletConnectBridgePort = portNumber; // Store the port
-
-      this.httpServer.startWalletConnectBridgeServer(portNumber);
-
-      // Open the Wallet Connect Bridge in Electron (same URL in dev/prod)
-      await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
-    }
-    catch (error: any) {
-      this.logger.error(`Error opening Wallet Connect Bridge: ${error}`);
-    }
-  };
-
-  private readonly restartBackend = async (event: Electron.IpcMainInvokeEvent, options: Partial<BackendOptions>): Promise<boolean> => {
-    this.logger.info(`Restarting backend with options: ${JSON.stringify(options)}`);
-    if (this.firstStart) {
-      this.firstStart = false;
-      const pids = await this.requireCallbacks.getRunningCorePIDs();
-      if (pids.length > 0) {
-        event.sender.send(IpcCommands.BACKEND_PROCESS_DETECTED, pids);
-        this.logger.warn(`Detected existing backend process: ${pids.join(', ')}`);
-      }
-      else {
-        this.logger.debug('No existing backend process detected');
-      }
-    }
-
-    let success = false;
-
-    if (!this.restarting) {
-      this.restarting = true;
-      try {
-        this.logger.info('Starting backend process');
-        await this.requireCallbacks.restartSubprocesses(options);
-        success = true;
-      }
-      catch (error: any) {
-        this.logger.error(error);
-      }
-      finally {
-        this.restarting = false;
-      }
-    }
-
-    return success;
-  };
-
-  private readonly installUpdate = async (): Promise<Error | boolean> => {
-    const quit = new Promise<void>((resolve, reject) => setTimeout(() => {
-      startPromise((async () => {
-        try {
-          await this.quitAndInstallUpdates();
-          resolve();
-        }
-        catch (error: any) {
-          this.logger.error(error);
-          reject(error instanceof Error ? error : new Error(error));
-        }
-      })());
-    }, IpcManager.updateTimeout));
-
-    try {
-      await quit;
-      return true;
-    }
-    catch (error: any) {
-      this.logger.error(error);
-      return error;
-    }
-  };
-
-  private async quitAndInstallUpdates() {
-    await this.requireCallbacks.terminateSubprocesses(true);
-    autoUpdater.quitAndInstall();
+    // Cleanup wallet import handlers (they manage their own servers)
+    this.walletImportHandlers.cleanup();
   }
 
-  private readonly downloadUpdate = async (event: Electron.IpcMainInvokeEvent): Promise<boolean> => {
-    const progress = (progress: ProgressInfo) => {
-      event.sender.send(IpcCommands.DOWNLOAD_PROGRESS, progress.percent);
-      this.requireCallbacks.updateDownloadProgress(progress.percent);
-    };
-
-    return new Promise<boolean>((resolve) => {
-      autoUpdater.on('download-progress', progress);
-      autoUpdater.downloadUpdate()
-        .then(() => resolve(true))
-        .catch((error) => {
-          this.logger.error(error);
-          resolve(false);
-        })
-        .finally(() => {
-          autoUpdater.removeListener('download-progress', progress);
-        });
-    });
+  private readonly handleBridgeDisconnected = (): void => {
+    // Notify the main window that the bridge has been disconnected
+    this.logger.info('Bridge disconnected, sending notification to main window');
+    this.requireCallbacks.sendIpcMessage(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, 'disconnected');
   };
 
-  private readonly checkForUpdates = async (): Promise<boolean> => {
-    if (this.config.isDev) {
-      console.warn('Running in development skipping auto-updater check');
-      return false;
-    }
-
-    return new Promise<boolean>((resolve) => {
-      autoUpdater.once('update-available', () => resolve(true));
-      autoUpdater.once('update-not-available', () => resolve(false));
-      autoUpdater.once('error', (error: Error) => {
-        this.logger.error(error);
-        resolve(false);
-      });
-
-      autoUpdater.checkForUpdates().catch((error: any) => {
-        this.logger.error(error);
-        resolve(false);
-      });
-    });
+  private readonly handleBridgeReconnected = (): void => {
+    // Notify the main window that the bridge has been reconnected
+    this.logger.info('Bridge reconnected, sending notification to main window');
+    this.requireCallbacks.sendIpcMessage(IpcCommands.WALLET_BRIDGE_CONNECTION_STATUS, 'reconnected');
   };
-
-  private setupUpdaterInterop() {
-    autoUpdater.autoDownload = false;
-    autoUpdater.logger = {
-      error: (message?: any) => this.logger.error(message),
-      info: (message?: any) => this.logger.info(message),
-      debug: (message: string) => this.logger.debug(message),
-      warn: (message?: any) => this.logger.warn(message),
-    };
-    ipcMain.handle(IpcCommands.INVOKE_UPDATE_CHECK, this.checkForUpdates);
-    ipcMain.handle(IpcCommands.INVOKE_DOWNLOAD_UPDATE, this.downloadUpdate);
-    ipcMain.handle(IpcCommands.INVOKE_INSTALL_UPDATE, this.installUpdate);
-  }
 }

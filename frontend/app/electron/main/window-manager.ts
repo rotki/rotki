@@ -213,6 +213,17 @@ export class WindowManager {
     }
   }
 
+  sendIpcMessage(channel: string, ...args: any[]): void {
+    try {
+      if (this.window?.webContents) {
+        this.window.webContents.send(channel, ...args);
+      }
+    }
+    catch (error) {
+      this.logger.error(`Failed to send IPC message to channel ${channel}:`, error);
+    }
+  }
+
   async openOAuthWindow(url: string): Promise<void> {
     try {
       const oauthWindow = new BrowserWindow({

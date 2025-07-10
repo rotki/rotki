@@ -1,4 +1,4 @@
-import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from '@/types';
+import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail, Permission } from '@/types';
 import { assert } from '@rotki/common';
 import { uniqueObjects } from '@/utils/data';
 
@@ -25,7 +25,7 @@ export async function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDet
 }
 
 export async function getAddressesFromWallet(provider: EIP1193Provider): Promise<string[]> {
-  const permissions = await provider.request({
+  const permissions = await provider.request<Permission[]>({
     method: 'wallet_requestPermissions',
     params: [
       {
@@ -34,21 +34,18 @@ export async function getAddressesFromWallet(provider: EIP1193Provider): Promise
     ],
   });
 
-  const accountPermission = permissions.find(
-    permission => typeof permission !== 'string' && permission.parentCapability === 'eth_accounts',
-  );
+  const accountPermission = permissions.find(permission => permission.parentCapability === 'eth_accounts');
 
   assert(accountPermission);
 
-  const requestedAddresses = await provider.request({
+  const requestedAddresses = await provider.request<string[]>({
     method: 'eth_requestAccounts',
     params: [],
   });
 
   const addresses: string[] = [];
   requestedAddresses.forEach((item) => {
-    if (typeof item === 'string')
-      addresses.push(item);
+    addresses.push(item);
   });
 
   assert(addresses);
