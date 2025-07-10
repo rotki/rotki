@@ -118,19 +118,73 @@ cargo run -- --database ../data/global.db --port 4343
 - All frontend commands should be run from `frontend/` directory, NOT `frontend/app/`
 - The main application code is in `frontend/app/src/`
 
+### Code Organization & Maintainability
+
+- **Split complex logic**: Break down large templates and script logic into smaller, focused composables
+- **Component decomposition**: Split large components into smaller, reusable sub-components
+- **Logical separation**: Each composable should have a single, well-defined responsibility
+- **Maintainability focus**: Prioritize code readability and maintainability over brevity
+
 #### Vue.js and TypeScript Conventions
 - Use VueUse utilities for reactive state management
 - **IMPORTANT: Use `get()` and `set()` from VueUse instead of `.value` when working with refs**
-  ```typescript
-  // ❌ WRONG - Don't use .value
-  const count = ref(0)
-  count.value = 5
-  
-  // ✅ CORRECT - Use get() and set() from VueUse (auto-imported)
-  const count = ref(0)
-  set(count, 5)
-  const currentCount = get(count)
-  ```
+
+#### Explicit TypeScript Typing Requirements
+
+- **Always use explicit types for refs**: `ref<boolean>(false)` instead of `ref(false)`
+- **Always use explicit types for computed**: `computed<boolean>(() => ...)` instead of `computed(() => ...)`
+- **Always return explicit types from functions**: `function getName(): string { ... }`
+- **Always type reactive variables**: `const isLoading = ref<boolean>(false)`
+- **Always type computed properties**: `const fullName = computed<string>(() => ...)`
+
+#### Correct Examples:
+
+```typescript
+// ✅ Correct - Explicit typing with VueUse get/set
+import { get, set } from '@vueuse/shared';
+
+const isVisible = ref<boolean>(true);
+const count = ref<number>(0);
+const items = ref<string[]>([]);
+const user = ref<User>();
+
+const isEven = computed<boolean>(() => get(count) % 2 === 0);
+const formattedName = computed<string>(() => `${get(firstName)} ${get(lastName)}`);
+
+function getUserById(id: number): User | undefined {
+  return get(users).find(user => user.id === id) || undefined;
+}
+
+function updateCount(newValue: number): void {
+  set(count, newValue);
+}
+
+async function fetchData(): Promise<ApiResponse> {
+  return await $fetch('/api/data');
+}
+```
+
+#### Incorrect Examples:
+
+```typescript
+// ❌ Incorrect - Missing explicit types
+const isVisible = ref(true);
+const count = ref(0);
+const items = ref([]);
+const user = ref();
+
+const isEven = computed(() => count.value % 2 === 0);
+const formattedName = computed(() => `${firstName.value} ${lastName.value}`);
+
+function getUserById(id: number) {
+  return users.value.find(user => user.id === id) || undefined;
+}
+
+async function fetchData() {
+  return await $fetch('/api/data');
+}
+```
+
 - VueUse utilities like `get()`, `set()`, `toRefs()`, `computed()` etc. are auto-imported
 - Use Pinia for state management - stores are in `frontend/app/src/store/`
 - TypeScript is strict - ensure proper typing
