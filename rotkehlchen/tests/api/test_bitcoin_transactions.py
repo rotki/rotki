@@ -1,16 +1,14 @@
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 import requests
 
-from rotkehlchen.chain.bitcoin.constants import BTC_EVENT_IDENTIFIER_PREFIX
-from rotkehlchen.chain.bitcoin.types import BitcoinTx
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -39,26 +37,21 @@ def test_query_transactions(
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     bitcoin_manager = rotki.chains_aggregator.bitcoin_manager
+    if use_blockcypher:  # remove tx function for blockchain.info so it falls back to blockcypher
+        assert bitcoin_manager.api_callbacks[0].name == 'blockchain.info'
+        bitcoin_manager.api_callbacks[0] = bitcoin_manager.api_callbacks[0]._replace(
+            transactions_fn=None,
+        )
+
     async_query = random.choice([False, True])
-    original_blockchain_info_query = bitcoin_manager._query_blockchain_info_transactions
-
-    def mock_blockchain_info_query(**kwargs: Any) -> tuple[int, list[BitcoinTx]]:
-        """Raise a remote error so it tries the next api if we want to use blockcypher."""
-        if use_blockcypher:
-            raise RemoteError('Use blockcypher api instead.')
-
-        return original_blockchain_info_query(**kwargs)
-
-    query_patch = patch.object(bitcoin_manager, '_query_blockchain_info_transactions', new=mock_blockchain_info_query)  # noqa: E501
     for json, expected_len in (
         ({'async_query': async_query, 'to_timestamp': 1740000000}, 67),  # query partial range first  # noqa: E501
         ({'async_query': async_query}, 76),  # then query the rest
     ):
-        with query_patch:
-            response = requests.post(
-                api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
-                json=json,
-            )
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json=json,
+        )
         assert assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
         with rotki.data.db.conn.read_ctx() as cursor:
             events = DBHistoryEvents(rotki.data.db).get_history_events(
@@ -124,10 +117,7 @@ def test_query_transactions(
     )
 
     # Ensure the cached latest tx timestamp is respected and no decoding is attempted.
-    with (
-        query_patch,
-        patch.object(bitcoin_manager, 'decode_transaction') as mock_decode_tx,
-    ):
+    with patch.object(bitcoin_manager, 'decode_transaction') as mock_decode_tx:
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
             json=json,

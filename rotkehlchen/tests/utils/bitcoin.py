@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.bitcoin.constants import (
+from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCHAIN_INFO_BASE_URL,
     BLOCKCYPHER_BASE_URL,
     BLOCKCYPHER_TX_IO_LIMIT,
@@ -10,7 +10,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.bitcoin.manager import BitcoinManager
+    from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 
 
 def get_decoded_events_of_bitcoin_tx(

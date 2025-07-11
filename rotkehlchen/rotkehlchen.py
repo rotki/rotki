@@ -31,7 +31,8 @@ from rotkehlchen.chain.base.manager import BaseManager
 from rotkehlchen.chain.base.node_inquirer import BaseInquirer
 from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
 from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
-from rotkehlchen.chain.bitcoin.manager import BitcoinManager
+from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -446,6 +447,7 @@ class Rotkehlchen:
                 database=self.data.db,
             ),
             bitcoin_manager=BitcoinManager(database=self.data.db),
+            bitcoin_cash_manager=BitcoinCashManager(database=self.data.db),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,

@@ -32,7 +32,6 @@ from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesBase,
 )
-from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.constants import SAFE_BASIC_ABI
@@ -121,7 +120,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.binance_sc.manager import BinanceSCManager
-    from rotkehlchen.chain.bitcoin.manager import BitcoinManager
+    from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+    from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
     from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
@@ -291,6 +291,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             avalanche_manager: 'AvalancheManager',
             zksync_lite_manager: 'ZksyncLiteManager',
             bitcoin_manager: 'BitcoinManager',
+            bitcoin_cash_manager: 'BitcoinCashManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -315,6 +316,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.avalanche = avalanche_manager
         self.zksync_lite = zksync_lite_manager
         self.bitcoin_manager = bitcoin_manager
+        self.bitcoin_cash_manager = bitcoin_cash_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -598,7 +600,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
-        """Queries blockchain.info/blockstream for the balance of all BTC accounts
+        """Queries bitcoin block explorer APIs for the balance of all BTC accounts
 
         May raise:
         - RemoteError if there is a problem querying any remote
@@ -622,7 +624,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
-        """Queries api.haskoin.com for the balance of all BCH accounts
+        """Queries bch block explorer APIs for the balance of all BCH accounts
 
         May raise:
         - RemoteError if there is a problem querying any remote
@@ -632,7 +634,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.bch = {}
         bch_usd_price = Inquirer.find_usd_price(A_BCH)
-        balances = get_bitcoin_cash_addresses_balances(self.accounts.bch)
+        balances = self.bitcoin_cash_manager.get_balances(self.accounts.bch)
         for account, balance in balances.items():
             self.balances.bch[account] = Balance(
                 amount=balance,

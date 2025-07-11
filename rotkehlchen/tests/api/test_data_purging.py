@@ -5,7 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteSwapData,
     ZKSyncLiteTransaction,
