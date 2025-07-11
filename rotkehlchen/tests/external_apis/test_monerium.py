@@ -191,6 +191,7 @@ def test_bridge_via_monerium(task_manager, database, monerium_credentials):  # p
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
     """Test that triggering a re-decode for a monerium transaction updates correctly the notes"""
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
