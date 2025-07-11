@@ -28,9 +28,10 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import BTCAddress
+from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.bitcoin.manager import BitcoinManager
+    from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 
 
 def test_is_valid_btc_address():
@@ -513,7 +514,7 @@ def test_bitcoin_balance_api_resolver(
             assert addr in balances_to_check
 
     blockchain_info_mock = patch(
-        'rotkehlchen.chain.bitcoin.manager.request_get_dict',
+        'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
         return_value=BLOCKCHAIN_INFO_RESULT,
     ) if network_mocking else nullcontext()
     blockstream_mempool_mock = patch(
@@ -526,17 +527,15 @@ def test_bitcoin_balance_api_resolver(
         balances = bitcoin_manager.get_balances(addresses)
     check_balances(balances)
 
-    original_query_blockstream_or_mempool = bitcoin_manager._query_blockstream_or_mempool_balances
-
     def mock_query_blockstream_or_mempool(only_blockstream: bool, **kwargs):
-        if only_blockstream and 'blockstream' in kwargs['base_url']:
+        if only_blockstream and 'blockstream' in kwargs['url']:
             raise RemoteError('Fatality')
 
-        return original_query_blockstream_or_mempool(**kwargs)
+        return request_get_dict(**kwargs)
 
     # First source fails
     with patch(
-            'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockchain_info_balances',
+            'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._query_blockchain_info',
             MagicMock(side_effect=KeyError('someProperty')),
     ):
         with blockstream_mempool_mock:
@@ -545,7 +544,7 @@ def test_bitcoin_balance_api_resolver(
 
         # Second source fails
         with patch(
-            'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockstream_or_mempool_balances',
+            'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
             new=lambda *args, **kwargs: mock_query_blockstream_or_mempool(
                 only_blockstream=True,
                 **kwargs,
@@ -557,7 +556,7 @@ def test_bitcoin_balance_api_resolver(
 
             # Third source fails - FATALITY!!!
             with patch(
-                'rotkehlchen.chain.bitcoin.manager.BitcoinManager._query_blockstream_or_mempool_balances',
+                'rotkehlchen.chain.bitcoin.btc.manager.request_get_dict',
                 new=lambda *args, **kwargs: mock_query_blockstream_or_mempool(
                     only_blockstream=False,
                     **kwargs,

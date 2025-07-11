@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.chain.bitcoin.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.types import string_to_btc_address
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.bitcoin import get_decoded_events_of_bitcoin_tx
 from rotkehlchen.types import BTCAddress, Location, TimestampMS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.bitcoin.manager import BitcoinManager
+    from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
 
 
 @pytest.mark.vcr

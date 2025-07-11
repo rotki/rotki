@@ -626,7 +626,7 @@ def test_multiple_balance_queries_not_concurrent(
         wraps=rotki.chains_aggregator.ethereum.node_inquirer.get_multi_balance,
     )
     btc_balances_patch = patch(
-        'rotkehlchen.chain.bitcoin.manager.BitcoinManager.get_balances',
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager.get_balances',
         wraps=rotki.chains_aggregator.bitcoin_manager.get_balances,
     )
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)

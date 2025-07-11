@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 from marshmallow import ValidationError
 
@@ -7,6 +9,11 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
     validate_bch_address_input,
 )
+from rotkehlchen.fval import FVal
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.bitcoin.bch.manager import BitcoinCashManager
+    from rotkehlchen.types import BTCAddress
 
 
 def test_is_valid_bitcoin_cash_address():
@@ -61,3 +68,19 @@ def test_validate_bch_address_input():
     with pytest.raises(ValidationError) as exc_info:
         validate_bch_address_input('ababkjk', empty_set)
     assert 'not a valid bitcoin cash address' in str(exc_info)
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('bch_accounts', [['38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr']])
+def test_query_bch_has_transactions_and_balances(
+        bitcoin_cash_manager: 'BitcoinCashManager',
+        bch_accounts: list['BTCAddress'],
+) -> None:
+    """Test that the bch have_transactions and get_balances work correctly."""
+    user_address, expected_balance = bch_accounts[0], FVal('5.32670615')
+    assert bitcoin_cash_manager.have_transactions(
+        accounts=bch_accounts,
+    ) == {user_address: (True, expected_balance)}
+    assert bitcoin_cash_manager.get_balances(
+        accounts=bch_accounts,
+    ) == {user_address: expected_balance}

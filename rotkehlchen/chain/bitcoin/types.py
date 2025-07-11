@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from enum import Enum, auto
 from typing import Any, NamedTuple
 
@@ -22,6 +22,14 @@ class BtcQueryAction(Enum):
 class BtcTxIODirection(Enum):
     INPUT = auto()
     OUTPUT = auto()
+
+
+class BtcApiCallback(NamedTuple):
+    """Represents a callback for a bitcoin api."""
+    name: str  # Used for logging
+    balances_fn: Callable[[Sequence[BTCAddress]], dict[BTCAddress, FVal]] | None
+    has_transactions_fn: Callable[[Sequence[BTCAddress]], dict[BTCAddress, tuple[bool, FVal]]] | None  # noqa: E501
+    transactions_fn: Callable[[Sequence[BTCAddress], dict[str, Any]], tuple[int, list['BitcoinTx']]] | None  # noqa: E501
 
 
 class BtcTxIO(NamedTuple):

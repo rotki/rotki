@@ -5,7 +5,6 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin.bch import have_bch_transactions
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.utils import replace_tag_mappings
@@ -98,12 +97,8 @@ class XpubManager:
                 child = root.derive_child(idx)
                 batch_addresses.append((idx, child.address()))
 
-            if blockchain == SupportedBlockchain.BITCOIN:
-                have_tx_mapping = self.chains_aggregator.bitcoin_manager.have_transactions(
-                    accounts=[x[1] for x in batch_addresses],
-                )
-            else:
-                have_tx_mapping = have_bch_transactions([x[1] for x in batch_addresses])
+            manager = self.chains_aggregator.bitcoin_manager if blockchain == SupportedBlockchain.BITCOIN else self.chains_aggregator.bitcoin_cash_manager  # noqa: E501
+            have_tx_mapping = manager.have_transactions(accounts=[x[1] for x in batch_addresses])
             should_continue = False
             for idx, address in batch_addresses:
                 have_tx, balance = have_tx_mapping[address]
