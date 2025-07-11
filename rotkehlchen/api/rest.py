@@ -2846,6 +2846,7 @@ class RestAPI:
             tx_hashes: list[EVMTxHash] | None = None,
     ) -> None:
         """Update monerium and gnosis pay events in the DB.
+        Since these are premium features, do nothing if premium is not active.
 
         Handles three different cases:
         * Redecoding all events - `events` and `tx_hashes` are None - APIs are queried for all
@@ -2859,6 +2860,9 @@ class RestAPI:
 
         May raise RemoteError, DeserializationError.
         """
+        if not has_premium_check(self.rotkehlchen.premium):
+            return
+
         decoding_given_events = True
         if events is None:
             decoding_given_events = False
@@ -3727,22 +3731,31 @@ class RestAPI:
     def query_online_events(self, query_type: HistoryEventQueryType) -> dict[str, Any]:
         """Query the specified event type for data and add/update the events in the DB."""
         try:
-            if query_type == HistoryEventQueryType.GNOSIS_PAY:
-                if (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is None:
+            if query_type in (HistoryEventQueryType.GNOSIS_PAY, HistoryEventQueryType.MONERIUM):
+                pretty_name = query_type.name.replace('_', ' ').title()
+                if not has_premium_check(self.rotkehlchen.premium):
                     return wrap_in_fail_result(
-                        message='Unable to refresh Gnosis Pay data due to missing credentials',
-                        status_code=HTTPStatus.CONFLICT,
+                        message=f'You can only use {pretty_name} with rotki premium',
+                        status_code=HTTPStatus.FORBIDDEN,
                     )
-                gnosis_pay.get_and_process_transactions(after_ts=Timestamp(0))
-                return OK_RESULT
-            elif query_type == HistoryEventQueryType.MONERIUM:
-                if (monerium := init_monerium(self.rotkehlchen.data.db)) is None:
-                    return wrap_in_fail_result(
-                        message='Unable to refresh Monerium data due to missing credentials',
-                        status_code=HTTPStatus.CONFLICT,
-                    )
-                monerium.get_and_process_orders()
-                return OK_RESULT
+
+                if (
+                    query_type == HistoryEventQueryType.GNOSIS_PAY and
+                    (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is not None
+                ):
+                    gnosis_pay.get_and_process_transactions(after_ts=Timestamp(0))
+                    return OK_RESULT
+                elif (
+                    query_type == HistoryEventQueryType.MONERIUM and
+                    (monerium := init_monerium(self.rotkehlchen.data.db)) is not None
+                ):
+                    monerium.get_and_process_orders()
+                    return OK_RESULT
+                # else: the init function for the requested query_type failed, indicating missing credentials.  # noqa: E501
+                return wrap_in_fail_result(
+                    message=f'Unable to refresh {pretty_name} data due to missing credentials',
+                    status_code=HTTPStatus.CONFLICT,
+                )
 
             # else query_type is either ETH_WITHDRAWALS or BLOCK_PRODUCTIONS and eth2 is needed
             eth2 = self.rotkehlchen.chains_aggregator.get_module('eth2')

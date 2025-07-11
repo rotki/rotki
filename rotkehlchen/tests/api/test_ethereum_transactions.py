@@ -3,7 +3,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
-from unittest.mock import _patch, call, patch
+from unittest.mock import _Call, _patch, call, patch
 
 import gevent
 import pytest
@@ -1559,12 +1559,16 @@ def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') ->
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_monerium_gnosis_pay_events_update(
         rotkehlchen_api_server: 'APIServer',
         monerium_credentials: None,
         gnosispay_credentials: None,
+        start_with_valid_premium: bool,
 ) -> None:
-    """Test that monerium and gnosis pay event are properly updated when decoding/redecoding."""
+    """Test that monerium and gnosis pay event are properly updated when decoding/redecoding.
+    Also check that this functionality is only available for valid premium users.
+    """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.execute(
@@ -1625,6 +1629,16 @@ def test_monerium_gnosis_pay_events_update(
             )],
         )
 
+    def assert_calls(monerium_call: _Call, gnosis_pay_call: _Call) -> None:
+        """Test that the calls are properly made depending on whether premium is active."""
+        if start_with_valid_premium:
+            assert mock_monerium.call_count == 1
+            assert mock_monerium.call_args_list == [monerium_call]
+            assert mock_gnosis_pay.call_count == 1
+            assert mock_gnosis_pay.call_args_list == [gnosis_pay_call]
+        else:
+            assert mock_monerium.call_count == mock_gnosis_pay.call_count == 0
+
     # Check that redecoding specific transactions works correctly
     with (
         patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
@@ -1654,12 +1668,10 @@ def test_monerium_gnosis_pay_events_update(
         )
         assert_proper_response(response)
 
-    assert mock_monerium.call_count == 1
-    assert mock_monerium.call_args_list == [call(tx_hash=monerium_event.tx_hash)]
-    assert mock_gnosis_pay.call_count == 1
-    assert mock_gnosis_pay.call_args_list == [
-        call(tx_timestamp=ts_ms_to_sec(gnosispay_event2.timestamp)),
-    ]  # only the ts of the second event is queried since there's already gnosis pay data in the db for the first event.  # noqa: E501
+    assert_calls(
+        monerium_call=call(tx_hash=monerium_event.tx_hash),
+        gnosis_pay_call=call(tx_timestamp=ts_ms_to_sec(gnosispay_event2.timestamp)),
+    )  # only the ts of the second event is queried since there's already gnosis pay data in the db for the first event.  # noqa: E501
 
     # Check that when redecoding all events, the APIs are simply queried once for all data.
     with (
@@ -1672,10 +1684,10 @@ def test_monerium_gnosis_pay_events_update(
         )
         assert_proper_response(response)
 
-    assert mock_monerium.call_count == 1
-    assert mock_monerium.call_args_list == [call()]  # no tx_hash specified, querying all data.
-    assert mock_gnosis_pay.call_count == 1
-    assert mock_gnosis_pay.call_args_list == [call(after_ts=Timestamp(0))]  # ts of zero, querying all data.  # noqa: E501
+    assert_calls(
+        monerium_call=call(),  # no tx_hash specified, querying all data.
+        gnosis_pay_call=call(after_ts=Timestamp(0)),  # ts of zero, querying all data.
+    )
 
     # Check that when only decoding new transactions, only the data for the new events is queried.
     with rotki.data.db.user_write() as write_cursor:
@@ -1720,9 +1732,7 @@ def test_monerium_gnosis_pay_events_update(
         )
         assert_proper_response(response)
 
-    assert mock_monerium.call_count == 1
-    assert mock_monerium.call_args_list == [call(tx_hash=new_monerium_tx_hash)]
-    assert mock_gnosis_pay.call_count == 1
-    assert mock_gnosis_pay.call_args_list == [call(
-        after_ts=Timestamp(ts_ms_to_sec(new_gnosispay_ts) - 1),
-    )]
+    assert_calls(
+        monerium_call=call(tx_hash=new_monerium_tx_hash),
+        gnosis_pay_call=call(after_ts=Timestamp(ts_ms_to_sec(new_gnosispay_ts) - 1)),
+    )
