@@ -75,7 +75,7 @@ def assert_asset_at_top_position(
         max_position_index: int,
         result: list[dict[str, Any]],
 ) -> None:
-    """Aserts that an asset appears at the top of the search results."""
+    """Asserts that an asset appears at the top of the search results."""
     assert any(asset_id == entry['identifier'] for entry in result)
     for index, entry in enumerate(result):
         if entry['identifier'] == asset_id:
