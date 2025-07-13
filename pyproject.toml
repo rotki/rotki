@@ -93,7 +93,7 @@ dev = [
     "pytest-socket==0.7.0",
     "pytest-vcr==1.0.2",
     "vcrpy==7.0.0",
-    "freezegun==1.5.1",
+    "freezegun==1.5.3",
     # To test google spreadsheet uploading
     "google-auth-httplib2==0.2.0",
     "google-api-core==2.24.2",
@@ -105,9 +105,9 @@ lint = [
     "mypy-extensions==1.1.0",
     "pylint==3.3.7",
     "astroid==3.3.10",  # engine of pylint, upgrade them together
-    "ruff==0.12.2",
+    "ruff==0.12.3",
     "double-indent-rotki==0.1.7",  # our fork of double indent
-    "pyright==1.1.402",
+    "pyright==1.1.403",
     # type packages used by mypy
     # pinned here so that we can have reproducible mypy runs
     "types-chardet==5.0.4.6",
