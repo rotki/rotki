@@ -627,7 +627,7 @@ def test_multiple_balance_queries_not_concurrent(
     )
     btc_balances_patch = patch(
         'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager.get_balances',
-        wraps=rotki.chains_aggregator.bitcoin_manager.get_balances,
+        wraps=rotki.chains_aggregator.bitcoin.get_balances,
     )
     binance = try_get_first_exchange(rotki.exchange_manager, Location.BINANCE)
     assert binance is not None

@@ -97,8 +97,9 @@ class XpubManager:
                 child = root.derive_child(idx)
                 batch_addresses.append((idx, child.address()))
 
-            manager = self.chains_aggregator.bitcoin_manager if blockchain == SupportedBlockchain.BITCOIN else self.chains_aggregator.bitcoin_cash_manager  # noqa: E501
-            have_tx_mapping = manager.have_transactions(accounts=[x[1] for x in batch_addresses])
+            have_tx_mapping = self.chains_aggregator.get_chain_manager(
+                blockchain=blockchain,
+            ).have_transactions(accounts=[x[1] for x in batch_addresses])
             should_continue = False
             for idx, address in batch_addresses:
                 have_tx, balance = have_tx_mapping[address]

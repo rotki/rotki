@@ -5,7 +5,6 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_BASE_URL,
     BLOCKCYPHER_TX_IO_LIMIT,
 )
-from rotkehlchen.chain.bitcoin.types import BitcoinTx
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.utils.network import request_get_dict
 
@@ -25,7 +24,7 @@ def get_decoded_events_of_bitcoin_tx(
             data=request_get_dict(f'{BLOCKCYPHER_BASE_URL}/txs/{tx_id}?limit={BLOCKCYPHER_TX_IO_LIMIT}'),
         )
     else:
-        tx = BitcoinTx.deserialize_from_blockchain_info(
+        tx = bitcoin_manager.deserialize_tx_from_blockchain_info(
             data=request_get_dict(f'{BLOCKCHAIN_INFO_BASE_URL}/rawtx/{tx_id}'),
         )
 

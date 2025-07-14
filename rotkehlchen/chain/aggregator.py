@@ -315,8 +315,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
         self.zksync_lite = zksync_lite_manager
-        self.bitcoin_manager = bitcoin_manager
-        self.bitcoin_cash_manager = bitcoin_cash_manager
+        self.bitcoin = bitcoin_manager
+        self.bitcoin_cash = bitcoin_cash_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -610,7 +610,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.btc = {}
         btc_usd_price = Inquirer.find_usd_price(A_BTC)
-        balances = self.bitcoin_manager.get_balances(self.accounts.btc)
+        balances = self.bitcoin.get_balances(self.accounts.btc)
         for account, balance in balances.items():
             self.balances.btc[account] = Balance(
                 amount=balance,
@@ -634,7 +634,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         self.balances.bch = {}
         bch_usd_price = Inquirer.find_usd_price(A_BCH)
-        balances = self.bitcoin_cash_manager.get_balances(self.accounts.bch)
+        balances = self.bitcoin_cash.get_balances(self.accounts.bch)
         for account, balance in balances.items():
             self.balances.bch[account] = Balance(
                 amount=balance,

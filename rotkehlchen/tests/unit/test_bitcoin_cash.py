@@ -7,6 +7,7 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
     force_address_to_legacy_address,
     force_addresses_to_legacy_addresses,
     is_valid_bitcoin_cash_address,
+    legacy_to_cash_address,
     validate_bch_address_input,
 )
 from rotkehlchen.fval import FVal
@@ -46,6 +47,14 @@ def test_force_addresses_to_legacy_addresses():
         '38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr',
     }
     assert force_addresses_to_legacy_addresses(addresses) == converted_addresses
+
+
+def test_legacy_to_cash_format():
+    """Test that converting a legacy bch address to the CashAddr format works."""
+    assert legacy_to_cash_address('38ty1qB68gHsiyZ8k3RPeCJ1wYQPrUCPPr') == 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g'  # noqa: E501
+    assert legacy_to_cash_address('1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8') == 'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa'  # noqa: E501
+    assert legacy_to_cash_address('bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa') is None
+    assert legacy_to_cash_address('abcdefghijssfs') is None
 
 
 def test_validate_bch_address_input():

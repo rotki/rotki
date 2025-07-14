@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
@@ -10,7 +10,7 @@ from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusSubType,
     WSMessageType,
 )
-from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.types import (
     BitcoinTx,
     BtcApiCallback,
@@ -18,7 +18,6 @@ from rotkehlchen.chain.bitcoin.types import (
     BtcTxIODirection,
 )
 from rotkehlchen.chain.bitcoin.utils import OpCodes
-from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -30,7 +29,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.history.events.utils import decode_transfer_direction
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timestamp
-from rotkehlchen.utils.misc import ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -45,12 +44,17 @@ class BitcoinCommonManager:
             self,
             database: 'DBHandler',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
+            asset: Asset,
+            event_identifier_prefix: str,
             api_callbacks: list[BtcApiCallback],
     ) -> None:
         """Common class for the bitcoin and bitcoin cash managers."""
         self.database = database
         self.tracked_accounts: list[BTCAddress] = []
         self.blockchain = blockchain
+        self.location = Location.from_chain(self.blockchain)
+        self.asset = asset
+        self.event_identifier_prefix = event_identifier_prefix
         self.api_callbacks = api_callbacks
 
     def refresh_tracked_accounts(self) -> None:
@@ -59,6 +63,12 @@ class BitcoinCommonManager:
                 cursor=cursor,
                 blockchain=self.blockchain,
             )
+
+    def get_display_address(self, address: BTCAddress) -> BTCAddress:
+        """Returns the display address for the given address.
+        Reimplemented in subclasses to return the address in a different format.
+        """
+        return address
 
     @overload
     def _query(
@@ -235,8 +245,59 @@ class BitcoinCommonManager:
             status=TransactionStatusStep.DECODING_TRANSACTIONS_FINISHED,
         )
 
-    @staticmethod
+    def _process_raw_tx_lists(
+            self,
+            raw_tx_lists: list[list[dict[str, Any]]],
+            options: dict[str, Any],
+            processing_fn: Callable[[dict[str, Any]], BitcoinTx],
+    ) -> tuple[int, list[BitcoinTx]]:
+        """Convert raw txs into BitcoinTxs using the specified deserialize_fn.
+        The tx lists must be ordered newest to oldest (the order used by the current APIs).
+
+        If `queried_block_height` is set in options, deserialization will stop when that
+        block height is reached.
+
+        If `to_timestamp` is set in options, any transactions newer than that will be skipped.
+        But we cannot use a `from_timestamp` since the txs are returned newest to oldest.
+        If we were to quit before querying to the oldest tx, the next query would stop at the
+        cached queried_block_height and the skipped older txs would never be queried.
+
+        Returns the latest queried block height (cached and referenced in subsequent queries)
+        and the list of deserialized BitcoinTxs in a tuple.
+        """
+        tx_list: list[BitcoinTx] = []
+        last_queried_block = options.get('last_queried_block', 0)
+        to_timestamp = options.get('to_timestamp', ts_now())
+        new_block_height = 0
+        for raw_tx_list in raw_tx_lists:
+            for entry in raw_tx_list:
+                try:
+                    tx = processing_fn(entry)
+                except (
+                    DeserializationError,
+                    KeyError,
+                    RemoteError,
+                    UnableToDecryptRemoteData,
+                ) as e:
+                    msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                    log.error(f'Failed to process bitcoin transaction {entry} due to {msg}')
+                    continue
+
+                if tx.timestamp > to_timestamp:
+                    continue  # Haven't reached the requested range yet. Skip tx.
+
+                if tx.block_height <= last_queried_block:
+                    break  # All new txs have been queried. Skip tx and return.
+
+                tx_list.append(tx)
+
+            block_height = tx_list[0].block_height if len(tx_list) > 0 else last_queried_block
+            new_block_height = max(new_block_height, block_height)
+
+        return new_block_height, tx_list
+
     def create_event(
+            self,
             tx: BitcoinTx,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
@@ -245,16 +306,16 @@ class BitcoinCommonManager:
             location_label: str | None = None,
     ) -> HistoryEvent:
         return HistoryEvent(
-            event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx.tx_id}',
+            event_identifier=f'{self.event_identifier_prefix}{tx.tx_id}',
             sequence_index=0,  # events are reshuffled later
             timestamp=ts_sec_to_ms(tx.timestamp),
-            location=Location.BITCOIN,
+            location=self.location,
             event_type=event_type,
             event_subtype=event_subtype,
-            asset=A_BTC,
+            asset=self.asset,
             amount=amount,
             notes=notes,
-            location_label=location_label,
+            location_label=self.get_display_address(BTCAddress(location_label)) if location_label is not None else None,  # noqa: E501
         )
 
     def _maybe_create_fee_events(
@@ -294,8 +355,8 @@ class BitcoinCommonManager:
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.FEE,
                 amount=fee_share,
-                notes=f'Spend {fee_share} BTC for fees',
-                location_label=address,
+                notes=f'Spend {fee_share} {self.asset.identifier} for fees',
+                location_label=self.get_display_address(address),
             ))
 
         return events, totals_per_address
@@ -426,7 +487,7 @@ class BitcoinCommonManager:
                 event_type=event_type,
                 event_subtype=event_subtype,
                 amount=amount,
-                notes=f'{verb} {amount} BTC {from_to} {address}',
+                notes=f'{verb} {amount} {self.asset.identifier} {from_to} {self.get_display_address(address)}',  # noqa: E501
                 location_label=location_label,
             ))
 
@@ -450,9 +511,9 @@ class BitcoinCommonManager:
         Returns a list of HistoryEvents.
         """
         events: list[HistoryEvent] = []
-        for totals_dict, event_type, notes in (
-            (inputs, HistoryEventType.SPEND, f"Send {{amount}} BTC to {', '.join(outputs.keys())}"),  # noqa: E501
-            (outputs, HistoryEventType.RECEIVE, f"Receive {{amount}} BTC from {', '.join(inputs.keys())}"),  # noqa: E501
+        for totals_dict, other_side_dict, event_type, notes in (
+            (inputs, outputs, HistoryEventType.SPEND, f'Send {{amount}} {self.asset.identifier} to {{other_addresses}}'),  # noqa: E501
+            (outputs, inputs, HistoryEventType.RECEIVE, f'Receive {{amount}} {self.asset.identifier} from {{other_addresses}}'),  # noqa: E501
         ):
             for address, amount in totals_dict.items():
                 if address not in self.tracked_accounts:
@@ -463,7 +524,10 @@ class BitcoinCommonManager:
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.NONE,
                     amount=amount,
-                    notes=notes.format(amount=amount),
+                    notes=notes.format(
+                        amount=amount,
+                        other_addresses=', '.join([self.get_display_address(x) for x in other_side_dict]),  # noqa: E501
+                    ),
                     location_label=address,
                 ))
 
