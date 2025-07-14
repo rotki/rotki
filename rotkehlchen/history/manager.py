@@ -10,7 +10,7 @@ from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import has_premium_check
+from rotkehlchen.premium.premium import UserLimitType, get_user_limit
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
@@ -112,11 +112,14 @@ class HistoryQueryingManager:
                 )
 
         db = DBHistoryEvents(self.db)
-        has_premium = has_premium_check(self.chains_aggregator.premium)
+        history_events_limit, _ = get_user_limit(
+            premium=self.chains_aggregator.premium,
+            limit_type=UserLimitType.HISTORY_EVENTS,
+        )
         events, filter_total_found, _ = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
-            has_premium=has_premium,
+            entries_limit=history_events_limit,
         )
         return events, filter_total_found  # type: ignore  # event is guaranteed HistoryEvent
 
@@ -233,14 +236,13 @@ class HistoryQueryingManager:
         # Include all base history entries
         history_events_db = DBHistoryEvents(self.db)
         with self.db.conn.read_ctx() as cursor:
-            base_entries = history_events_db.get_history_events(
+            base_entries = history_events_db.get_history_events_internal(  # ignore limits here. Limit applied at processing  # noqa: E501
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
                     # We need to have history since before the range
                     from_ts=Timestamp(0),
                     to_ts=end_ts,
                 ),
-                has_premium=True,  # ignore limits here. Limit applied at processing
                 group_by_event_ids=False,
             )
         history.extend(base_entries)

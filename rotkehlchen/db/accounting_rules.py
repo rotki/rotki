@@ -511,13 +511,12 @@ def query_missing_accounting_rules(
     with db.conn.read_ctx() as cursor:
         # to know if an event will be processed or not in accounting we also need the related
         # events since they might use callbacks or special treatments
-        related_events = history_db.get_history_events(
+        related_events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 event_identifiers=list({event.event_identifier for event in events}),
                 order_by_rules=[('event_identifier', True), ('sequence_index', True)],
             ),
-            has_premium=True,
         )
 
     query = 'SELECT COUNT(*) FROM accounting_rules WHERE (type=? AND subtype=? AND (counterparty=? OR counterparty=?))'  # noqa: E501

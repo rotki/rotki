@@ -66,7 +66,7 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
     """A utility function to help assert on correctness of importing data from cointracking.info"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
+        events = dbevents.get_history_events_internal(cursor, filter_query=HistoryEventFilterQuery.make())  # noqa: E501
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -198,11 +198,10 @@ def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection:
 def assert_cryptocom_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -544,11 +543,10 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
 def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from crypto.com"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -728,11 +726,10 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
 def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockfi"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -810,11 +807,10 @@ def assert_blockfi_transactions_import_results(rotki: Rotkehlchen):
 def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from blockfi"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -845,11 +841,10 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
     """A utility function to help assert on correctness of importing data from nexo"""
     with rotki.data.db.conn.read_ctx() as cursor:
         events_db = DBHistoryEvents(rotki.data.db)
-        events = events_db.get_history_events(
+        events = events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -1120,11 +1115,10 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
 def assert_shapeshift_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from shapeshift"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     notes1 = """
@@ -1206,11 +1200,10 @@ def assert_uphold_transactions_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from uphold"""
     with rotki.data.db.conn.read_ctx() as cursor:
         history_db = DBHistoryEvents(rotki.data.db)
-        events = history_db.get_history_events(
+        events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -1364,11 +1357,10 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
     when using custom formats for dates
     """
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     assert events == [AssetMovement(
         identifier=1,
         event_identifier='55220a50d1f1af04042410f6c0223518cd14e1a5ad250dfb65be6404c7b6a01e',
@@ -1400,11 +1392,10 @@ def assert_custom_cointracking(rotki: Rotkehlchen):
 def assert_bisq_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing trades data from bisq"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        swap_events = DBHistoryEvents(rotki.data.db).get_history_events(
+        swap_events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -1835,11 +1826,10 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
         margin_positions = rotki.data.db.get_margin_positions(cursor)
         warnings = rotki.msg_aggregator.consume_warnings()
         errors = rotki.msg_aggregator.consume_errors()
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
     assert events == expected_events
     assert margin_positions == expected_margin_positions
     assert len(warnings) == 0
@@ -2625,11 +2615,10 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
     ]
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
-            has_premium=True,
-        )
+                    )
 
     assert expected_events == events
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
@@ -2666,11 +2655,10 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
     assert websocket_connection.messages_num() == 0
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
 
     trade1_id, trade2_id, trade3_id, trade4_id, trade5_id = '39324bc8b48e567efdfdd8b04709f9681285fae0845f0ae09a9744ac37e71184', '468eefc8785bcb4755fdeab34c259bb90839df4689707918738d81d3d8f0e222', '5c5f3e50672360a5765ce521cac1b01d6acc2e8257350fa84f161493dd07880b', '504e930f842eb62b5e4bbbc319497e4d9d3afa0adf37869b21b2f305b9a2f490', 'd68e17cae1ce5548c320227218b7c984e263be4b4b1ff72a3d1dbdde7b8f5312'  # noqa: E501
     expected_events = [SwapEvent(
@@ -2869,11 +2857,10 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_con
     ]
     with rotki.data.db.conn.read_ctx() as cursor:
         history_db = DBHistoryEvents(rotki.data.db)
-        history_events = history_db.get_history_events(
+        history_events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
         warnings = rotki.msg_aggregator.consume_warnings()
 
     assert len(history_events) == 7
@@ -2975,11 +2962,10 @@ def assert_bitcoin_tax_trades_import_results(
         ]
         with rotki.data.db.conn.read_ctx() as cursor:
             history_db = DBHistoryEvents(rotki.data.db)
-            history_events = history_db.get_history_events(
+            history_events = history_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(),
-                has_premium=False,
-            )
+                            )
         assert len(history_events) == 6
         assert len(expected_history_events) == 6
         for actual, expected in zip(history_events, expected_history_events, strict=True):
@@ -3003,10 +2989,10 @@ def assert_bitcoin_tax_trades_import_results(
         ]
         with rotki.data.db.conn.read_ctx() as cursor:
             history_db = DBHistoryEvents(rotki.data.db)
-            history_events = history_db.get_history_events(
+            history_events = history_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(),
-                has_premium=False,
+
             )
 
         assert len(history_events) == 7  # events from trades import + 1
@@ -3023,11 +3009,10 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from bitstamp"""
     with rotki.data.db.conn.read_ctx() as cursor:
         history_db = DBHistoryEvents(rotki.data.db)
-        history_events = history_db.get_history_events(
+        history_events = history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=False,
-        )
+                    )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -3090,11 +3075,10 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
 def assert_bittrex_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from bittrex"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-        )
+                    )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -3251,11 +3235,10 @@ def assert_bittrex_import_results(rotki: Rotkehlchen):
 def assert_kucoin_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from kucoin"""
     with rotki.data.db.conn.read_ctx() as cursor:
-        swap_events = DBHistoryEvents(rotki.data.db).get_history_events(
+        swap_events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KUCOIN),
-            has_premium=True,
-        )
+                    )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
@@ -3364,7 +3347,7 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockpit"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        history_events = dbevents.get_history_events(cursor=cursor, filter_query=HistoryEventFilterQuery.make(), has_premium=True)  # noqa: E501
+        history_events = dbevents.get_history_events_internal(cursor=cursor, filter_query=HistoryEventFilterQuery.make())  # noqa: E501
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()

@@ -349,7 +349,7 @@ def test_data_import_errors(
         _, history_events_count, _ = DBHistoryEvents(database).get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
+            entries_limit=None,
         )
     assert history_events_count == 0
 

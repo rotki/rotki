@@ -44,11 +44,10 @@ def test_delete_transactions_by_chain(
     ethereum_events, gnosis_events = 3, 2
     dbevmtx = DBEvmTx(database)
     with database.user_write() as write_cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor=write_cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
-            group_by_event_ids=False,
+                        group_by_event_ids=False,
         )
         assert len(events) == ethereum_events + gnosis_events
 
@@ -60,11 +59,10 @@ def test_delete_transactions_by_chain(
         )
 
     with database.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
-            group_by_event_ids=False,
+                        group_by_event_ids=False,
         )
         assert len(events) == ethereum_events
         assert all(event.location == Location.ETHEREUM for event in events)

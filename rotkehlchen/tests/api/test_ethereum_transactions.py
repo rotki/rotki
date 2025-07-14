@@ -45,7 +45,11 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
-from rotkehlchen.tests.utils.constants import GRAPH_QUERY_CRED, TXHASH_HEX_TO_BYTES
+from rotkehlchen.tests.utils.constants import (
+    GRAPH_QUERY_CRED,
+    TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
+    TXHASH_HEX_TO_BYTES,
+)
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
@@ -211,7 +215,7 @@ def query_events(
         json: dict[str, Any],
         expected_num_with_grouping: int,
         expected_totals_with_grouping: int,
-        entries_limit: int = -1,
+        entries_limit: int = TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
 ) -> list[dict[str, Any]]:
     """Query history events as frontend would have, with grouped identifiers
 
@@ -373,12 +377,11 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
         for tx_hash_hex in hashes:
             receipt = dbevmtx.get_receipt(cursor, deserialize_evm_tx_hash(hexstring_to_bytes(tx_hash_hex)), ChainID.ETHEREUM)  # noqa: E501
             assert isinstance(receipt, EvmTxReceipt) and receipt.tx_hash == hexstring_to_bytes(tx_hash_hex)  # noqa: E501
-            events = dbevents.get_history_events(
+            events = dbevents.get_history_events_internal(  # for this function we don't limit. We only limit txs.  # noqa: E501
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     tx_hashes=[TXHASH_HEX_TO_BYTES[tx_hash_hex]],
                 ),
-                has_premium=True,  # for this function we don't limit. We only limit txs.
             )
             event_ids.add(events[0].identifier)
             assert len(events) == 1
@@ -962,7 +965,10 @@ def test_query_transactions_check_decoded_events(
                 ('history_events_mappings', 2),
         ):
             assert cursor.execute(f'SELECT COUNT(*) from {name}').fetchone()[0] == count
-        customized_events = dbevents.get_history_events(cursor, EvmEventFilterQuery.make(), True)
+        customized_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(),
+        )
 
         # Check if related cache is removed
         assert rotki.data.db.get_dynamic_cache(
@@ -1069,7 +1075,7 @@ def test_events_filter_params(
             contained_in_msg=f'{{"{attribute}": ["List cant be empty"]}}',
         )
 
-    entries_limit = -1 if start_with_valid_premium else FREE_HISTORY_EVENTS_LIMIT
+    entries_limit = TEST_PREMIUM_HISTORY_EVENTS_LIMIT if start_with_valid_premium else FREE_HISTORY_EVENTS_LIMIT  # noqa: E501
     returned_events = query_events(
         rotkehlchen_api_server,
         json={
@@ -1331,20 +1337,18 @@ def test_decoding_missing_transactions(
 
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[0].tx_hash],
             ),
-            has_premium=True,
         )
         assert len(events) == 3
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[transactions[1].tx_hash],
             ),
-            has_premium=True,
         )
         assert len(events) == 2
 
@@ -1481,11 +1485,10 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
     # manually decoded
     filter_query = EvmEventFilterQuery.make(tx_hashes=[tx_hash])
     with database.conn.read_ctx() as cursor:
-        events_before_redecoding = dbevents.get_history_events(
+        events_before_redecoding = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=filter_query,
             group_by_event_ids=False,
-            has_premium=True,
         )
 
     # trigger the deletion of the transaction's data by redecoding it
@@ -1503,11 +1506,10 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
 
     # query the redecoded eventss
     with database.conn.read_ctx() as cursor:
-        events_after_redecoding = dbevents.get_history_events(
+        events_after_redecoding = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=filter_query,
             group_by_event_ids=False,
-            has_premium=True,
         )
     assert events_before_redecoding == events_after_redecoding
 

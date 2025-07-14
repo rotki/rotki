@@ -13,6 +13,7 @@ from http import HTTPStatus
 from json import JSONDecodeError
 from typing import Any, Final, Literal, NamedTuple, TypedDict, cast
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import machineid
 import requests
@@ -49,23 +50,49 @@ class RemoteMetadata(NamedTuple):
 
 
 class UserLimits(TypedDict):
+    """User limits for rotki premium subscription."""
+    # Maximum number of devices that can be registered with the premium account
     limit_of_devices: int
+    # Maximum number of profit and loss events that can be processed
     pnl_events_limit: int
+    # Maximum size in megabytes for database backups stored on rotki servers
     max_backup_size_mb: int
+    # Maximum number of history events that can be stored and processed
     history_events_limit: int
+    # Maximum number of report lookups that can be performed
     reports_lookup_limit: int
+
+
+class UserLimitType(Enum):
+    """Enum of the different limits enforced by tiers"""
+    HISTORY_EVENTS = 'history_events_limit'
+    PNL_EVENTS = 'pnl_events_limit'
+    PNL_REPORTS_LOOKUP = 'reports_lookup_limit'
+
+    def get_free_limit(self) -> int:
+        """Get the free limit for a specific limit type
+        May raise:
+        - NotImplementedError if the type is not yet supported.
+        """
+        if self == UserLimitType.HISTORY_EVENTS:
+            return FREE_HISTORY_EVENTS_LIMIT
+        if self == UserLimitType.PNL_EVENTS:
+            return FREE_PNL_EVENTS_LIMIT
+        if self == UserLimitType.PNL_REPORTS_LOOKUP:
+            return FREE_REPORTS_LOOKUP_LIMIT
+
+        raise NotImplementedError(f'Unknown limit type: {self}. This indicates a bug in the code.')
 
 
 COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
-DEFAULT_OK_CODES: Final = (
+KNOWN_STATUS_CODES: Final = (
     HTTPStatus.OK,
     HTTPStatus.UNAUTHORIZED,
     HTTPStatus.BAD_REQUEST,
     HTTPStatus.CREATED,
 )
-NEST_API_ENDPOINTS: Final = ('backup', 'devices')
-USER_LIMIT_TYPE = Literal['history_events_limit', 'pnl_events_limit', 'reports_lookup_limit']
+NEST_API_ENDPOINTS: Final = ('backup', 'devices', 'limits')
 
 
 def check_response_status_code(
@@ -87,7 +114,7 @@ def check_response_status_code(
 
 def _process_dict_response(
         response: requests.Response,
-        status_codes: Sequence[HTTPStatus] = DEFAULT_OK_CODES,
+        status_codes: Sequence[HTTPStatus] = KNOWN_STATUS_CODES,
         user_msg: str = DEFAULT_ERROR_MSG,
 ) -> dict:
     """Processes a dict response returned from the Rotkehlchen server and returns
@@ -264,22 +291,19 @@ class Premium:
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to check device registration due to: {e}') from e
 
-        if response.status_code == HTTPStatus.FORBIDDEN:
-            raise PremiumAuthenticationError('Premium credentials not valid')
-
-        if response.status_code == HTTPStatus.OK:
-            # Device is already registered
-            return
-
-        if response.status_code == HTTPStatus.NOT_FOUND:
-            # Device is not registered, try to register it
-            self._register_new_device(device_id)
-        else:
-            # Unexpected status code
-            check_response_status_code(
-                response=response,
-                status_codes=[HTTPStatus.OK, HTTPStatus.NOT_FOUND],
-            )
+        match response.status_code:
+            case HTTPStatus.OK:
+                return None  # Device is already registered
+            case HTTPStatus.FORBIDDEN:
+                raise PremiumAuthenticationError('Premium credentials not valid')
+            case HTTPStatus.NOT_FOUND:
+                # Device is not registered, try to register it
+                return self._register_new_device(device_id)
+            case _:
+                return check_response_status_code(
+                    response=response,
+                    status_codes=[HTTPStatus.OK],
+                )
 
     def _register_new_device(self, device_id: str) -> None:
         """
@@ -295,31 +319,39 @@ class Premium:
                 json=self.sign(
                     method=method,
                     device_identifier=device_id,
-                    device_name='neto',
+                    device_name=str(uuid4()),  # can be edited later.
                     platform=platform.system(),
                 ),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
-        check_response_status_code(response=response, status_codes=DEFAULT_OK_CODES)
+        if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
+            return None  # device was created or it already exists
+
+        check_response_status_code(
+            response=response,
+            status_codes=[HTTPStatus.CREATED],
+        )
 
     def delete_device(self, device_id: str) -> None:
         """Deletes a device for the user from the rotki server
         May raise:
         - RemoteError
         """
-        log.debug(f'Deleting premium registered {device_id}')
+        log.debug(f'Deleting premium registered {device_id=}')
         try:
-            self.session.delete(
+            response = self.session.delete(
                 url=f'{self.rotki_nest}{(method := "devices")}',
-                data=self.sign(
+                json=self.sign(
                     method=method,
                     device_identifier=device_id,
                 ),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to delete device due to: {e}') from e
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
 
     def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -511,6 +543,15 @@ class Premium:
         return result['data']
 
     def fetch_limits(self) -> UserLimits:
+        """Fetch user limits from the rotki server.
+
+        Retrieves the current limits for the premium subscription from the server.
+        The limits are cached during the session to avoid repeated API calls.
+
+        May raise:
+        - RemoteError: If there are problems connecting to the server
+        - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
         if self._cached_limits is not None:
             return self._cached_limits
 
@@ -526,6 +567,7 @@ class Premium:
             raise RemoteError(msg) from e
 
         self._cached_limits = cast('UserLimits', _process_dict_response(response))
+        log.debug(f'Fetched user limits from server: {self._cached_limits}')
         return self._cached_limits
 
     def watcher_query(
@@ -575,7 +617,7 @@ def has_premium_check(premium: Premium | None) -> bool:
     return premium is not None and premium.is_active()
 
 
-def get_user_limit(premium: Premium | None, limit_type: USER_LIMIT_TYPE) -> tuple[int, bool]:
+def get_user_limit(premium: Premium | None, limit_type: UserLimitType) -> tuple[int, bool]:
     """Helper function to get a specific user limit and premium status
 
     Returns:
@@ -583,22 +625,11 @@ def get_user_limit(premium: Premium | None, limit_type: USER_LIMIT_TYPE) -> tupl
     """
     if premium is None or premium.is_active() is False:
         log.debug(f'No premium subscription or inactive, returning free limit for {limit_type}')
-        return _get_free_limit(limit_type), False
+        return limit_type.get_free_limit(), False
 
     try:
         limits = premium.fetch_limits()
-        return limits[limit_type], True
+        return limits[limit_type.value], True
     except (RemoteError, PremiumAuthenticationError) as e:
         log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
-        return _get_free_limit(limit_type), False
-
-
-def _get_free_limit(limit_type: USER_LIMIT_TYPE) -> int:
-    """Get the free limit for a specific limit type"""
-    if limit_type == 'history_events_limit':
-        return FREE_HISTORY_EVENTS_LIMIT
-    if limit_type == 'pnl_events_limit':
-        return FREE_PNL_EVENTS_LIMIT
-
-    # can only be 'reports_lookup_limit'
-    return FREE_REPORTS_LOOKUP_LIMIT
+        return limit_type.get_free_limit(), False

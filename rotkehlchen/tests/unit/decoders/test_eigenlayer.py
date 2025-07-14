@@ -507,10 +507,9 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
             tx_hashes=[queue_tx_hash],
             event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
         )
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=filter_query,
-            has_premium=True,
         )
     assert events[0].extra_data == {
         'amount': '0.108703837292797064',

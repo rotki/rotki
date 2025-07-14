@@ -370,7 +370,7 @@ class Eth2(EthereumModule):
         """
         dbevents = DBHistoryEvents(self.database)
         with self.database.conn.read_ctx() as cursor:
-            deposit_events = dbevents.get_history_events(
+            deposit_events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     type_and_subtype_combinations=[
@@ -378,7 +378,6 @@ class Eth2(EthereumModule):
                     ],
                     counterparties=[CPT_ETH2],
                 ),
-                has_premium=True,  # need all events here
             )
 
         result = {}

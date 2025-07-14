@@ -7,7 +7,11 @@ from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.constants import A_GBP
+from rotkehlchen.tests.utils.constants import (
+    A_GBP,
+    TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+)
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import create_order_by_rules_list, timestamp_to_date
 
@@ -52,8 +56,7 @@ def test_report_settings(database):
     )
     data, entries_num = dbreport.get_reports(
         report_id=report_id,
-        with_limit=False,
-        limit=999999999,
+        limit=TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
     )
     assert len(data) == 1
     assert entries_num == 1
@@ -189,8 +192,7 @@ def test_report_events_sort_by_columns(database):
 
             results, _, _ = dbreport.get_report_data(
                 filter_=filter_query,
-                with_limit=True,
-                limit=1000,
+                limit=TEST_PREMIUM_PNL_EVENTS_LIMIT,
             )
             for idx, event in enumerate(results):
                 field_value_fn = test_case['check_field']

@@ -247,13 +247,12 @@ def query_coinbase_and_test(
         coinbase._query_transactions()
 
     with coinbase.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(coinbase.db).get_history_events(
+        events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 location=Location.COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
             ),
-            has_premium=True,
         )
 
     errors = coinbase.msg_aggregator.consume_errors()
@@ -393,10 +392,9 @@ def test_coinbase_staking_events(
         coinbase.query_history_events()
 
     with database.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
-            has_premium=True,
         )
 
     assert events == [HistoryEvent(
@@ -426,10 +424,9 @@ def test_coinbase_query_history_events(
         coinbase.query_history_events()
 
     with database.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(database).get_history_events(
+        events = DBHistoryEvents(database).get_history_events_internal(
             cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
-            has_premium=True,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()
@@ -1374,14 +1371,13 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
         coinbase.query_history_events()
 
     with coinbase.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(coinbase.db).get_history_events(
+        events = DBHistoryEvents(coinbase.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 location=Location.COINBASE,
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
                 order_by_rules=[('timestamp', True), ('event_identifier', False)],
             ),
-            has_premium=True,
         )
 
     warnings = coinbase.msg_aggregator.consume_warnings()

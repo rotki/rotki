@@ -581,15 +581,14 @@ class DBEth2:
                 event_subtypes=[HistoryEventSubType.CONSOLIDATE],
                 counterparties=[CPT_ETH2],
             )):
-                events.extend(events_db.get_history_events(
+                events.extend(events_db.get_history_events_internal(
                     cursor=cursor,
                     filter_query=filter_query,  # type: ignore[arg-type]  # no overload for EthStakingEventFilterQuery
-                    has_premium=True,
                 ))
 
             # Get withdrawal request events for each validator
             withdrawal_request_events = defaultdict(list)
-            for request_event in events_db.get_history_events(
+            for request_event in events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     to_ts=to_ts,
@@ -598,7 +597,6 @@ class DBEth2:
                     counterparties=[CPT_ETH2],
                     order_by_rules=[('timestamp', False)],  # reverse so we get the first request before a withdrawal below  # noqa: E501
                 ),
-                has_premium=True,
             ):
                 if (
                     request_event.extra_data is not None and

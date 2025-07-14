@@ -196,10 +196,9 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
     zksync_lite_manager.decode_transaction(transactions[0], [address])
     dbevents = DBHistoryEvents(zksync_lite_manager.database)
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
     assert events == [EvmEvent(
@@ -244,10 +243,9 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
     zksync_lite_manager.decode_transaction(transactions[0], [address])
     dbevents = DBHistoryEvents(zksync_lite_manager.database)
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
     assert events == [EvmEvent(
@@ -298,10 +296,9 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     zksync_lite_manager.decode_transaction(transactions[0], [address])
     dbevents = DBHistoryEvents(zksync_lite_manager.database)
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
     assert events == [EvmEvent(

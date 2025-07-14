@@ -679,10 +679,9 @@ def test_add_get_edit_delete_eth2_validators(
         )
 
     with database.conn.read_ctx() as cursor:  # assert events are in the DB
-        assert events == dbevents.get_history_events(
+        assert events == dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )
 
     response = requests.delete(
@@ -702,10 +701,9 @@ def test_add_get_edit_delete_eth2_validators(
 
     # after deleting validator indices, make sure their events are also gone
     with database.conn.read_ctx() as cursor:
-        assert [events[0]] == dbevents.get_history_events(
+        assert [events[0]] == dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )
         # Also confirm that the associated cached timestamp is removed
         assert database.get_dynamic_cache(

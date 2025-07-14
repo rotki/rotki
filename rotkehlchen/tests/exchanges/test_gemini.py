@@ -322,10 +322,9 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         sandbox_gemini.query_history_events()
 
     with sandbox_gemini.db.conn.read_ctx() as cursor:
-        movements = DBHistoryEvents(sandbox_gemini.db).get_history_events(
+        movements = DBHistoryEvents(sandbox_gemini.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.GEMINI),
-            has_premium=True,
         )
 
     assert len(movements) == 6

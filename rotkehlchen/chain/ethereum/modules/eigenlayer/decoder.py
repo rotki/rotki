@@ -331,10 +331,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         )
         dbevents = DBHistoryEvents(self.base.database)
         with self.base.database.conn.read_ctx() as cursor:
-            events = dbevents.get_history_events(
+            events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=db_filter,
-                has_premium=True,
             )
 
         withdrawal_root = '0x' + context.tx_log.data.hex()

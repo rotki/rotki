@@ -51,10 +51,9 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             location=location,
         )
         with self.event_db.db.conn.read_ctx() as cursor:
-            if len(events := self.event_db.get_history_events(
+            if len(events := self.event_db.get_history_events_internal(
                     cursor=cursor,
                     filter_query=db_filter,
-                    has_premium=True,
             )) == 0:
                 return None
         return events

@@ -828,7 +828,10 @@ def test_user_login(
 
     # Now let's try to login (without a consent to resume from backup)
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True, 'resume_from_backup': False}  # noqa: E501
-    with ExitStack() as stack:
+    with (
+        ExitStack() as stack,
+        patch('rotkehlchen.premium.premium.Premium.authenticate_device'),
+    ):
         patch_no_op_unlock(rotki, stack)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
@@ -846,7 +849,10 @@ def test_user_login(
 
     # Now let's try to login (with a consent to resume from backup)
     data = {'password': db_password, 'sync_approval': 'unknown', 'async_query': True, 'resume_from_backup': True}  # noqa: E501
-    with ExitStack() as stack:
+    with (
+        ExitStack() as stack,
+        patch('rotkehlchen.premium.premium.Premium.authenticate_device'),
+    ):
         patch_no_op_unlock(rotki, stack)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),

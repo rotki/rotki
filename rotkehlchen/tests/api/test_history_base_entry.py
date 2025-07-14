@@ -96,10 +96,9 @@ def assert_editing_works(
 
     def assert_event_got_edited(entry: 'HistoryBaseEntry') -> None:
         with events_db.db.conn.read_ctx() as cursor:
-            events = events_db.get_history_events(
+            events = events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(event_identifiers=[entry.event_identifier]),
-                has_premium=True,
                 group_by_event_ids=False,
             )
 
@@ -217,10 +216,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
         for asset, ignored in cursor.execute('SELECT asset, ignored FROM history_events'):
             assert ignored == (1 if asset == A_DAI.identifier else 0)
 
-        saved_events = db.get_history_events(
+        saved_events = db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
     for idx, event in enumerate(saved_events):
@@ -304,10 +302,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
 
     entries.sort(key=lambda x: x.timestamp)  # resort by timestamp
     with rotki.data.db.conn.read_ctx() as cursor:
-        saved_events = db.get_history_events(
+        saved_events = db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
         assert len(saved_events) == 14
@@ -324,10 +321,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             contained_in_msg='Tried to remove history event with id 19 which does not exist',
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_history_events(
+        saved_events = db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
         assert len(saved_events) == 14
@@ -340,10 +336,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             json={'identifiers': [2, 4]},
         )
         assert_simple_ok_response(response)
-        saved_events = db.get_history_events(
+        saved_events = db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
         # entry is now last since the timestamp was modified
@@ -359,10 +354,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
             contained_in_msg='Tried to remove history event with id 1 which was the last event of a transaction',  # noqa: E501
             status_code=HTTPStatus.CONFLICT,
         )
-        saved_events = db.get_history_events(
+        saved_events = db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
         assert saved_events == [entries[0], entries[2]] + entries[4:]
@@ -380,10 +374,9 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
                 json=json_data,
             )
             assert_simple_ok_response(response)
-        saved_events = db.get_history_events(
+        saved_events = db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
         assert saved_events == [entries[0], entries[2]] + entries[4:]
@@ -662,8 +655,8 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     db_history_events = DBHistoryEvents(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_history_events.db.user_write() as cursor:
         for limit, exclude_ignored, total, found in (
-            (None, False, 8, 8),  # premium without ignoring assets, we get all the events
-            (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events
+            (None, False, 8, 8),  # premium without ignoring assets, we get all the events  # noqa: E501
+            (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events  # noqa: E501
             (3, False, 8, 3),  # free limit (3) without ignoring assets, total events are 8 but we get only 3 (limited)  # noqa: E501
             (3, True, 3, 3),  # free limit (3) with ignoring assets, total events are 3, all shown (limit not exceeded)  # noqa: E501
             (1, False, 8, 1),  # free limit (1) without ignoring assets, total events are 8 but we get only 1 (limited)  # noqa: E501
@@ -843,10 +836,9 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         entry['identifier'] = result['identifier']
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(events := db.get_history_events(
+        assert len(events := db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )) == 3  # including the fee event.
         assert events[1].event_subtype == HistoryEventSubType.REMOVE_ASSET
@@ -898,10 +890,9 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             )
             assert_simple_ok_response(response)
 
-        saved_events = (db.get_history_events(
+        saved_events = (db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         ))
         assert len(saved_events) == 3
@@ -1008,10 +999,9 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         entry['identifier'] = result['identifier']
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events(
+        assert len(db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )) == 8  # spend/receive (2) from first swap, and spend/receive/fee (3) from the second and third  # noqa: E501
 
@@ -1020,10 +1010,9 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     entry['fee_amount'], entry['fee_asset'], entry['event_identifier'], entry['user_notes'] = '0.1', 'USD', 'test_id', ['Note1', 'Note2', 'Note3']  # noqa: E501
     requests.patch(api_url_for(rotkehlchen_api_server, 'historyeventresource'), json=entry)
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert (events := db.get_history_events(
+        assert (events := db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )) == [SwapEvent(
             identifier=1,
@@ -1192,10 +1181,9 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         assert 'identifier' in result
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(events := db.get_history_events(
+        assert len(events := db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )) == 7
         assert events[0].event_type == HistoryEventType.MULTI_TRADE
@@ -1255,10 +1243,9 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
         json=entry,
     ))
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert (events := db.get_history_events(
+        assert (events := db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )) == [EvmSwapEvent(
             identifier=1,

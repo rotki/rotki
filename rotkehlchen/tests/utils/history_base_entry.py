@@ -288,8 +288,7 @@ def store_and_retrieve_events(
                 write_cursor=write_cursor,
                 event=event,
             )
-        return dbevents.get_history_events(
+        return dbevents.get_history_events_internal(
             cursor=write_cursor,
             filter_query=HistoryEventFilterQuery.make(event_identifiers=[events[0].event_identifier]),
-            has_premium=True,
         )  # query them from db to retrieve them with their identifier

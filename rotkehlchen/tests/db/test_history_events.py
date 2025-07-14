@@ -219,9 +219,9 @@ def test_read_write_events_from_db(database):
 
 
 @pytest.mark.parametrize(
-    ('has_premium', 'group_by_event_ids'), [(True, False), (True, True), (False, False), (False, True)],  # noqa: E501
+    ('entries_limit', 'group_by_event_ids'), [(None, False), (None, True), (FREE_HISTORY_EVENTS_LIMIT, False), (FREE_HISTORY_EVENTS_LIMIT, True)],  # noqa: E501
 )
-def test_read_write_customized_events_from_db(database: DBHandler, has_premium: bool, group_by_event_ids: bool) -> None:  # noqa: E501
+def test_read_write_customized_events_from_db(database: DBHandler, entries_limit: int, group_by_event_ids: bool) -> None:  # noqa: E501
     """Tests filtering for fetching only the customized events"""
     db = DBHistoryEvents(database)
     history_data = {
@@ -265,21 +265,21 @@ def test_read_write_customized_events_from_db(database: DBHandler, has_premium: 
 
     with db.db.conn.read_ctx() as cursor:
         for (filtering_class, filter_args), expected_ids in zip(filter_query_args, expected_identifiers, strict=True):  # noqa: E501
-            events = db.get_history_events(  # type: ignore
+            events = db.get_history_events(
                 cursor=cursor,
                 filter_query=filtering_class.make(**filter_args),
-                has_premium=has_premium,
+                entries_limit=entries_limit,
                 group_by_event_ids=group_by_event_ids,
             )
             if group_by_event_ids is False:  # don't check the grouping case. Just make sure no exception is raised  # noqa: E501
-                filtered_ids = [x.tx_hash if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # noqa: E501
+                filtered_ids = [x.tx_hash if isinstance(x, EvmEvent) else x.event_identifier for x in events]  # type: ignore  # events are not tuples when group_by_event_ids is False  # noqa: E501
                 assert filtered_ids == expected_ids
 
             db.get_history_events_count(  # don't check result, just check for exception
                 cursor=cursor,
                 query_filter=filtering_class.make(**filter_args),
                 group_by_event_ids=group_by_event_ids,
-                entries_limit=None if has_premium else FREE_HISTORY_EVENTS_LIMIT,
+                entries_limit=entries_limit,
             )
 
 
@@ -305,17 +305,17 @@ def test_delete_last_event(database):
             event=make_ethereum_event(index=1),
         )
     with db.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 2
+        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 2
 
     msg = db.delete_history_events_by_identifier(identifiers=[withdrawal_event_identifier])
     assert msg is None
     with db.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 1, 'Only the EVM event should be left'  # noqa: E501
+        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'Only the EVM event should be left'  # noqa: E501
 
     msg = db.delete_history_events_by_identifier(identifiers=[evm_event_identifier])
     assert 'was the last event of a transaction' in msg
     with db.db.conn.read_ctx() as cursor:
-        assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 1, 'EVM event should be left'  # noqa: E501
+        assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'EVM event should be left'  # noqa: E501
 
 
 def test_get_history_events_free_filter(database: 'DBHandler'):
@@ -446,27 +446,27 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             assert history_events.get_history_events(  # when grouping
                 cursor=cursor,
                 filter_query=filters,
-                has_premium=True,
+                entries_limit=None,
                 group_by_event_ids=True,
             ) == history_events.get_history_events(
                 cursor=cursor,
                 filter_query=filters,
-                has_premium=False,
+                entries_limit=None,
                 group_by_event_ids=True,
             ) != []
             assert history_events.get_history_events(  # when not grouping
                 cursor=cursor,
                 filter_query=filters,
-                has_premium=True,
+                entries_limit=None,
                 group_by_event_ids=False,
             ) == history_events.get_history_events(
                 cursor=cursor,
                 filter_query=filters,
-                has_premium=False,
+                entries_limit=None,
                 group_by_event_ids=False,
             ) != []
 
-        with patch(target='rotkehlchen.db.history_events.FREE_HISTORY_EVENTS_LIMIT', new=3):
+        with patch(target='rotkehlchen.tests.db.test_history_events.FREE_HISTORY_EVENTS_LIMIT', new=3):  # noqa: E501
             for filters in (  # trying different filters with some combinations
                 HistoryEventFilterQuery.make(event_subtypes=[HistoryEventSubType.NONE]),
                 HistoryEventFilterQuery.make(assets=(A_ETH, A_USDT)),
@@ -474,32 +474,30 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
                 HistoryEventFilterQuery.make(assets=(A_ETH, A_USDC, A_USDT)),
                 HistoryEventFilterQuery.make(exclude_ignored_assets=True),
             ):
-                premium_grouped_result = history_events.get_history_events(  # when grouping
+                premium_grouped_result = history_events.get_history_events_internal(  # when grouping  # noqa: E501
                     cursor=cursor,
                     filter_query=filters,
-                    has_premium=True,
                     group_by_event_ids=True,
                 )
                 assert len(premium_grouped_result) > 3
                 free_grouped_result = history_events.get_history_events(
                     cursor=cursor,
                     filter_query=filters,
-                    has_premium=False,
+                    entries_limit=FREE_HISTORY_EVENTS_LIMIT,
                     group_by_event_ids=True,
                 )
                 assert len(free_grouped_result) == min(3, len(premium_grouped_result))
                 assert free_grouped_result == premium_grouped_result[-3:]
-                premium_result = history_events.get_history_events(  # when not grouping
+                premium_result = history_events.get_history_events_internal(  # when not grouping
                     cursor=cursor,
                     filter_query=filters,
-                    has_premium=True,
                     group_by_event_ids=False,
                 )
                 assert len(premium_result) > 3
                 free_result = history_events.get_history_events(
                     cursor=cursor,
                     filter_query=filters,
-                    has_premium=False,
+                    entries_limit=FREE_HISTORY_EVENTS_LIMIT,
                     group_by_event_ids=False,
                 )
                 for free_event in free_result:
@@ -514,6 +512,7 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
     """
     db = DBHistoryEvents(database)
     timestamp, account = TimestampMS(0), make_evm_address()
+    entries_limit = None if start_with_valid_premium else FREE_HISTORY_EVENTS_LIMIT
     with database.user_write() as write_cursor:
         db.add_history_events(
             write_cursor=write_cursor,
@@ -571,14 +570,14 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
         result_match = db.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
-            has_premium=start_with_valid_premium,
+            entries_limit=entries_limit,
             group_by_event_ids=False,
             match_exact_events=True,
         )
         result_no_match = db.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
-            has_premium=start_with_valid_premium,
+            entries_limit=entries_limit,
             group_by_event_ids=False,
             match_exact_events=False,
         )
@@ -591,14 +590,14 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
         result_match_grouped = db.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
-            has_premium=start_with_valid_premium,
+            entries_limit=entries_limit,
             group_by_event_ids=True,
             match_exact_events=True,
         )
         result_no_match_grouped = db.get_history_events(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(assets=(A_DAI,)),
-            has_premium=start_with_valid_premium,
+            entries_limit=entries_limit,
             group_by_event_ids=True,
             match_exact_events=False,
         )

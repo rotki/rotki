@@ -57,10 +57,9 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             order_by_rules=[('timestamp', True)],  # order by timestamp in ascending order
         )
         with rotki.data.db.conn.read_ctx() as cursor:
-            events = dbevents.get_history_events(
+            events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=db_filter,
-                has_premium=True,
             )
         approved_delegators = {x.address for x in events if x.address is not None}
         all_addresses = approved_delegators | set(tracked_addresses)

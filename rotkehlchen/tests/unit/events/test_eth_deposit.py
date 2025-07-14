@@ -28,10 +28,9 @@ def test_db_read_write(database):
         dbevents.add_history_event(write_cursor, event)
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EthDepositEventFilterQuery.make(),
-            has_premium=True,
         )
     assert event == events[0]
 
