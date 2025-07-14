@@ -9,7 +9,7 @@ from web3 import Web3
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
-    CHAINS_WITH_CHAIN_MANAGER,
+    EVM_CHAINS_WITH_CHAIN_MANAGER,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
@@ -35,7 +35,7 @@ class NodeName(NamedTuple):
     name: str
     endpoint: str
     owned: bool
-    blockchain: CHAINS_WITH_CHAIN_MANAGER
+    blockchain: EVM_CHAINS_WITH_CHAIN_MANAGER
 
     def serialize(self) -> dict[str, Any]:
         return {

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.chain.bitcoin.btc.constants import (
@@ -10,17 +10,22 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_TX_IO_LIMIT,
     BLOCKCYPHER_TX_LIMIT,
     BLOCKSTREAM_BASE_URL,
+    BTC_EVENT_IDENTIFIER_PREFIX,
     MEMPOOL_SPACE_BASE_URL,
 )
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
-from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback
-from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
-from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
+from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import ensure_type
+from rotkehlchen.serialization.deserialize import (
+    deserialize_int,
+    deserialize_timestamp,
+    deserialize_timestamp_from_date,
+    ensure_type,
+)
 from rotkehlchen.types import BTCAddress, SupportedBlockchain
-from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc, ts_now
+from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc
 from rotkehlchen.utils.network import request_get, request_get_dict
 
 if TYPE_CHECKING:
@@ -36,6 +41,8 @@ class BitcoinManager(BitcoinCommonManager):
         super().__init__(
             database=database,
             blockchain=SupportedBlockchain.BITCOIN,
+            asset=A_BTC,
+            event_identifier_prefix=BTC_EVENT_IDENTIFIER_PREFIX,
             api_callbacks=[BtcApiCallback(
                 name='blockchain.info',
                 balances_fn=self._query_blockchain_info_balances,
@@ -173,57 +180,6 @@ class BitcoinManager(BitcoinCommonManager):
             have_transactions[entry['address']] = (entry['n_tx'] != 0, balance)
         return have_transactions
 
-    def _process_raw_tx_lists(
-            self,
-            raw_tx_lists: list[list[dict[str, Any]]],
-            options: dict[str, Any],
-            processing_fn: Callable[[dict[str, Any]], BitcoinTx],
-    ) -> tuple[int, list[BitcoinTx]]:
-        """Convert raw txs into BitcoinTxs using the specified deserialize_fn.
-        The tx lists must be ordered newest to oldest (the order used by the current APIs).
-
-        If `queried_block_height` is set in options, deserialization will stop when that
-        block height is reached.
-
-        If `to_timestamp` is set in options, any transactions newer than that will be skipped.
-        But we cannot use a `from_timestamp` since the txs are returned newest to oldest.
-        If we were to quit before querying to the oldest tx, the next query would stop at the
-        cached queried_block_height and the skipped older txs would never be queried.
-
-        Returns the latest queried block height (cached and referenced in subsequent queries)
-        and the list of deserialized BitcoinTxs in a tuple.
-        """
-        tx_list: list[BitcoinTx] = []
-        last_queried_block = options.get('last_queried_block', 0)
-        to_timestamp = options.get('to_timestamp', ts_now())
-        new_block_height = 0
-        for raw_tx_list in raw_tx_lists:
-            for entry in raw_tx_list:
-                try:
-                    tx = processing_fn(entry)
-                except (
-                    DeserializationError,
-                    KeyError,
-                    RemoteError,
-                    UnableToDecryptRemoteData,
-                ) as e:
-                    msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
-                    log.error(f'Failed to process bitcoin transaction {entry} due to {msg}')
-                    continue
-
-                if tx.timestamp > to_timestamp:
-                    continue  # Haven't reached the requested range yet. Skip tx.
-
-                if tx.block_height <= last_queried_block:
-                    break  # All new txs have been queried. Skip tx and return.
-
-                tx_list.append(tx)
-
-            block_height = tx_list[0].block_height if len(tx_list) > 0 else last_queried_block
-            new_block_height = max(new_block_height, block_height)
-
-        return new_block_height, tx_list
-
     def _query_blockchain_info_transactions(
             self,
             accounts: Sequence[BTCAddress],
@@ -235,7 +191,7 @@ class BitcoinManager(BitcoinCommonManager):
         return self._process_raw_tx_lists(
             raw_tx_lists=[self._query_blockchain_info(accounts=accounts, key='txs')],
             options=options,
-            processing_fn=BitcoinTx.deserialize_from_blockchain_info,
+            processing_fn=self.deserialize_tx_from_blockchain_info,
         )
 
     def _process_raw_tx_from_blockcypher(
@@ -264,7 +220,7 @@ class BitcoinManager(BitcoinCommonManager):
         processed_data = data.copy()  # avoid modifying the passed data dict
         processed_data['inputs'] = inputs
         processed_data['outputs'] = outputs
-        return BitcoinTx.deserialize_from_blockcypher(processed_data)
+        return self.deserialize_tx_from_blockcypher(processed_data)
 
     def _query_blockcypher_transactions(
             self,
@@ -304,4 +260,84 @@ class BitcoinManager(BitcoinCommonManager):
             raw_tx_lists=list(accounts_tx_lists.values()),
             options=options,
             processing_fn=self._process_raw_tx_from_blockcypher,
+        )
+
+    def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> 'BitcoinTx':
+        return BitcoinTx(
+            tx_id=data['hash'],
+            timestamp=deserialize_timestamp_from_date(
+                date=data['confirmed'],
+                formatstr='iso8601',
+                location='blockcypher bitcoin tx',
+            ),
+            block_height=deserialize_int(data['block_height']),
+            fee=satoshis_to_btc(data['fees']),
+            inputs=BtcTxIO.deserialize_list(
+                data_list=data['inputs'],
+                direction=BtcTxIODirection.INPUT,
+                deserialize_fn=self.deserialize_tx_io_from_blockcypher,
+            ),
+            outputs=BtcTxIO.deserialize_list(
+                data_list=data['outputs'],
+                direction=BtcTxIODirection.OUTPUT,
+                deserialize_fn=self.deserialize_tx_io_from_blockcypher,
+            ),
+        )
+
+    def deserialize_tx_from_blockchain_info(self, data: dict[str, Any]) -> 'BitcoinTx':
+        inputs = [vin['prev_out'] for vin in data['inputs']]
+        outputs = data['out']
+        multi_io = False
+        if (
+            (vin_sz := data['vin_sz']) > 1 and
+            (vout_sz := data['vout_sz']) > 1 and
+            (len(inputs) != vin_sz or len(outputs) != vout_sz)
+        ):
+            # This api omits some TxIOs if they don't directly affect the addresses queried.
+            # Set multi_io to ensure proper many-to-many decoding if some TxIOs are missing.
+            multi_io = True
+
+        return BitcoinTx(
+            tx_id=data['hash'],
+            timestamp=deserialize_timestamp(data['time']),
+            block_height=deserialize_int(data['block_height']),
+            fee=satoshis_to_btc(data['fee']),
+            inputs=BtcTxIO.deserialize_list(
+                data_list=inputs,
+                direction=BtcTxIODirection.INPUT,
+                deserialize_fn=self.deserialize_tx_io_from_blockchain_info,
+            ),
+            outputs=BtcTxIO.deserialize_list(
+                data_list=outputs,
+                direction=BtcTxIODirection.OUTPUT,
+                deserialize_fn=self.deserialize_tx_io_from_blockchain_info,
+            ),
+            multi_io=multi_io,
+        )
+
+    @staticmethod
+    def deserialize_tx_io_from_blockcypher(
+            data: dict[str, Any],
+            direction: BtcTxIODirection,
+    ) -> 'BtcTxIO':
+        return BtcTxIO(
+            value=satoshis_to_btc(
+                data.get('value', 0) if direction == BtcTxIODirection.OUTPUT
+                else data.get('output_value', 0),
+            ),
+            script=bytes.fromhex(script) if (script := data.get('script')) is not None else None,
+            address=addresses[0] if (addresses := data['addresses']) is not None else None,
+            direction=direction,
+        )
+
+    @staticmethod
+    def deserialize_tx_io_from_blockchain_info(
+            data: dict[str, Any],
+            direction: BtcTxIODirection,
+    ) -> 'BtcTxIO':
+        return BtcTxIO(
+            value=satoshis_to_btc(data['value']),
+            script=bytes.fromhex(data['script']),
+            address=data.get('addr'),
+            direction=direction,
         )

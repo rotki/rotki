@@ -4,13 +4,7 @@ from typing import Any, NamedTuple
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import (
-    deserialize_int,
-    deserialize_timestamp,
-    deserialize_timestamp_from_date,
-)
 from rotkehlchen.types import BTCAddress, Timestamp
-from rotkehlchen.utils.misc import satoshis_to_btc
 
 
 class BtcQueryAction(Enum):
@@ -38,35 +32,6 @@ class BtcTxIO(NamedTuple):
     script: bytes | None  # optional since blockcypher omits the script for input TxIOs
     address: BTCAddress | None  # address may be missing for scripts such as op_return
     direction: BtcTxIODirection
-
-    @classmethod
-    def deserialize_from_blockcypher(
-            cls,
-            data: dict[str, Any],
-            direction: BtcTxIODirection,
-    ) -> 'BtcTxIO':
-        return BtcTxIO(
-            value=satoshis_to_btc(
-                data.get('value', 0) if direction == BtcTxIODirection.OUTPUT
-                else data.get('output_value', 0),
-            ),
-            script=bytes.fromhex(script) if (script := data.get('script')) is not None else None,
-            address=addresses[0] if (addresses := data['addresses']) is not None else None,
-            direction=direction,
-        )
-
-    @classmethod
-    def deserialize_from_blockchain_info(
-            cls,
-            data: dict[str, Any],
-            direction: BtcTxIODirection,
-    ) -> 'BtcTxIO':
-        return BtcTxIO(
-            value=satoshis_to_btc(data['value']),
-            script=bytes.fromhex(data['script']),
-            address=data.get('addr'),
-            direction=direction,
-        )
 
     @classmethod
     def deserialize(
@@ -104,61 +69,6 @@ class BitcoinTx(NamedTuple):
     inputs: list[BtcTxIO]
     outputs: list[BtcTxIO]
     multi_io: bool = False
-
-    @classmethod
-    def deserialize_from_blockcypher(cls, data: dict[str, Any]) -> 'BitcoinTx':
-        return cls(
-            tx_id=data['hash'],
-            timestamp=deserialize_timestamp_from_date(
-                date=data['confirmed'],
-                formatstr='iso8601',
-                location='blockcypher bitcoin tx',
-            ),
-            block_height=deserialize_int(data['block_height']),
-            fee=satoshis_to_btc(data['fees']),
-            inputs=BtcTxIO.deserialize_list(
-                data_list=data['inputs'],
-                direction=BtcTxIODirection.INPUT,
-                deserialize_fn=BtcTxIO.deserialize_from_blockcypher,
-            ),
-            outputs=BtcTxIO.deserialize_list(
-                data_list=data['outputs'],
-                direction=BtcTxIODirection.OUTPUT,
-                deserialize_fn=BtcTxIO.deserialize_from_blockcypher,
-            ),
-        )
-
-    @classmethod
-    def deserialize_from_blockchain_info(cls, data: dict[str, Any]) -> 'BitcoinTx':
-        inputs = [vin['prev_out'] for vin in data['inputs']]
-        outputs = data['out']
-        multi_io = False
-        if (
-            (vin_sz := data['vin_sz']) > 1 and
-            (vout_sz := data['vout_sz']) > 1 and
-            (len(inputs) != vin_sz or len(outputs) != vout_sz)
-        ):
-            # This api omits some TxIOs if they don't directly affect the addresses queried.
-            # Set multi_io to ensure proper many-to-many decoding if some TxIOs are missing.
-            multi_io = True
-
-        return cls(
-            tx_id=data['hash'],
-            timestamp=deserialize_timestamp(data['time']),
-            block_height=deserialize_int(data['block_height']),
-            fee=satoshis_to_btc(data['fee']),
-            inputs=BtcTxIO.deserialize_list(
-                data_list=inputs,
-                direction=BtcTxIODirection.INPUT,
-                deserialize_fn=BtcTxIO.deserialize_from_blockchain_info,
-            ),
-            outputs=BtcTxIO.deserialize_list(
-                data_list=outputs,
-                direction=BtcTxIODirection.OUTPUT,
-                deserialize_fn=BtcTxIO.deserialize_from_blockchain_info,
-            ),
-            multi_io=multi_io,
-        )
 
 
 def string_to_btc_address(value: str) -> BTCAddress:

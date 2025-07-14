@@ -1,54 +1,21 @@
+from typing import Final, Literal
 
-import bech32
-from base58 import b58encode_check
+from base58 import b58decode_check, b58encode_check
+from bip_utils.bech32.bch_bech32 import BchBech32Decoder, BchBech32Encoder
 from eth_typing import ChecksumAddress
 from marshmallow import ValidationError
 
 from rotkehlchen.chain.bitcoin.utils import is_valid_base58_address
 from rotkehlchen.types import BTCAddress
 
-_CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l'
-_VERSION_MAP = {
-    'legacy': [
-        ('P2SH', 5, False),
-        ('P2PKH', 0, False),
-    ],
-    'cash': [
-        ('P2SH', 8, False),
-        ('P2PKH', 0, False),
-    ],
-}
-_PREFIX = 'bitcoincash'
-
-
-def _polymod(values: list) -> int:
-    chk = 1
-    generator = [
-        (0x01, 0x98f2bc8e61),
-        (0x02, 0x79b76d99e2),
-        (0x04, 0xf33e5fb3c4),
-        (0x08, 0xae2eabe2a8),
-        (0x10, 0x1e4f43e470)]
-    for value in values:
-        top = chk >> 35
-        chk = ((chk & 0x07ffffffff) << 5) ^ value
-        for i in generator:
-            if top & i[0] != 0:
-                chk ^= i[1]
-    return chk ^ 1
-
-
-def _prefix_expand(prefix: str) -> list:
-    return [ord(x) & 0x1f for x in prefix] + [0]
+# CashAddr format main net prefix.
+# See https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md
+_PREFIX: Final = 'bitcoincash'
 
 
 def is_valid_bitcoin_cash_address(address: str) -> bool:
-    """
-    Validates a Bitcoin Cash's CashAddr format
+    """Validates a Bitcoin Cash's CashAddr format
     e.g bitcoincash:qpmmlusvvrjj9ha2xdgv8xcrpfwsqn5rngt3k26ve2
-
-    Code is take from:
-    https://github.com/oskyk/cashaddress/blob/master/cashaddress/convert.py#L125
     """
     if address.upper() != address and address.lower() != address:
         return False
@@ -58,55 +25,44 @@ def is_valid_bitcoin_cash_address(address: str) -> bool:
         address = _PREFIX + ':' + address
     elif colon_count > 1:
         return False
-    prefix, base32string = address.split(':')
-    decoded = _b32decode(base32string)
-    return _polymod(_prefix_expand(prefix) + decoded) == 0
+
+    try:
+        BchBech32Decoder.Decode(hrp=_PREFIX, addr=address)
+    except ValueError:
+        return False
+
+    return True
 
 
-def _b32decode(inputs: str) -> list:
-    return [_CHARSET.find(letter) for letter in inputs]
-
-
-def _address_type(address_type: str, version: str | int) -> tuple[str, int, bool]:
-    for mapping in _VERSION_MAP[address_type]:
-        if version in (mapping[0], mapping[1]):
-            return mapping
-    raise ValueError('Invalid Address')
-
-
-def _code_list_to_string(code_list: list[int]) -> bytes:
-    output = b''
-    for code in code_list:
-        output += bytes([code])
-    return output
+def convert_version(version: int, target_type: Literal['legacy', 'cash']) -> int:
+    """Converts a bch address version integer between legacy and cash.
+    For the original version map see:
+    https://github.com/oskyk/cashaddress/blob/master/cashaddress/convert.py#L11
+    """
+    if version == 0:  # p2pk - version is 0 for both legacy and cash
+        return 0
+    elif version in (5, 8):  # p2sh - version is 5 for legacy, 8 for cash
+        return 5 if target_type == 'legacy' else 8
+    else:
+        raise ValueError('Invalid Address')
 
 
 def cash_to_legacy_address(address: str) -> BTCAddress | None:
-    """
-    Converts a legacy BCH address to CashAddr format.
-    Code is taken from:
-    https://github.com/oskyk/cashaddress/blob/master/cashaddress/convert.py#L46
-
+    """Converts a CashAddr BCH address to legacy format.
     Returns None if an error occurred during conversion.
     """
     try:
-        is_valid = is_valid_bitcoin_cash_address(address)
-        if not is_valid:
+        if not is_valid_bitcoin_cash_address(address):
             return None
-        if address.startswith(_PREFIX) is False:
+        if not address.startswith(_PREFIX):
             address = _PREFIX + ':' + address
 
-        _, base32string = address.split(':')
-        decoded_string = _b32decode(base32string)
-        converted_bits = bech32.convertbits(decoded_string, 5, 8)
-        if converted_bits is None:
-            return None
-        version = _address_type('cash', converted_bits[0])[0]
-        legacy_version = _address_type('legacy', version)[1]
-        payload = converted_bits[1:-6]
-        return BTCAddress(b58encode_check(
-            _code_list_to_string([legacy_version] + payload),
-        ).decode())
+        version, data = BchBech32Decoder.Decode(hrp=_PREFIX, addr=address)
+        legacy_version = convert_version(
+            version=int.from_bytes(version),
+            target_type='legacy',
+        )
+        return BTCAddress(b58encode_check(bytes([legacy_version]) + data).decode())
     except ValueError:
         return None
 
@@ -126,6 +82,25 @@ def force_address_to_legacy_address(address: str) -> BTCAddress:
 def force_addresses_to_legacy_addresses(data: set[ChecksumAddress]) -> set[BTCAddress]:
     """Changes the format of a set of addresses to Legacy."""
     return {force_address_to_legacy_address(entry) for entry in data}
+
+
+def legacy_to_cash_address(address: str) -> BTCAddress | None:
+    """Convert a legacy BCH address to CashAddr format.
+    Returns None if an error occurred during conversion.
+    """
+    if not is_valid_base58_address(address):
+        return None
+
+    try:
+        decoded = b58decode_check(address)
+        cash_version = convert_version(version=decoded[0], target_type='cash')
+        return BTCAddress(BchBech32Encoder.Encode(
+            hrp=_PREFIX,
+            net_ver=bytes([cash_version]),
+            data=decoded[1:],
+        ))
+    except ValueError:
+        return None
 
 
 def validate_bch_address_input(address: str, given_addresses: set[ChecksumAddress]) -> None:

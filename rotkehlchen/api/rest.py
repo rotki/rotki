@@ -2820,11 +2820,13 @@ class RestAPI:
                 elif blockchain.is_evmlike():  # currently only zksync lite
                     for address in addresses:
                         self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(address)  # type: ignore[arg-type]  # all evmlike will be ChecksumEvmAddress
-                elif blockchain == SupportedBlockchain.BITCOIN:
-                    self.rotkehlchen.chains_aggregator.bitcoin_manager.query_transactions(
+                elif blockchain.is_bitcoin():
+                    self.rotkehlchen.chains_aggregator.get_chain_manager(
+                        blockchain=blockchain,  # type: ignore[arg-type]  # will be btc or bch
+                    ).query_transactions(
                         from_timestamp=from_timestamp,
                         to_timestamp=to_timestamp,
-                        addresses=addresses,  # type: ignore[arg-type]  # all bitcoin will be BTCAddress
+                        addresses=addresses,
                     )
                 else:
                     result = False
