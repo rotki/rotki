@@ -8,7 +8,6 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, get_eve
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 if TYPE_CHECKING:
-    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -20,11 +19,9 @@ class AccountingRulesManager:
             self,
             database: 'DBHandler',
             evm_aggregators: 'EVMAccountingAggregators',
-            pot: 'AccountingPot',
     ):
         self.database = database
         self.aggregators = evm_aggregators
-        self.pot = pot
         self.event_settings: dict[int, BaseEventSettings] = {}
         self.event_callbacks: dict[int, tuple[int, EventsAccountantCallback]] = {}
         self.eth_staking_taxable_after_withdrawal_enabled = CachedSettings().get_settings().eth_staking_taxable_after_withdrawal_enabled  # noqa: E501

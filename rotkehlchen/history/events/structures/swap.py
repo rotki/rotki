@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.structures.accounting_data import AccountingData
     from rotkehlchen.fval import FVal
     from rotkehlchen.types import Price
 
@@ -71,6 +72,7 @@ class SwapEvent(HistoryBaseEntry):
             location_label: str | None = None,
             notes: str | None = None,
             extra_data: SwapEventExtraData | None = None,
+            accounting_data: 'AccountingData | None' = None,
     ):
         """An event representing part of a swap (spend/receive/fee).
 
@@ -94,6 +96,7 @@ class SwapEvent(HistoryBaseEntry):
             notes=notes,
             identifier=identifier,
             extra_data=extra_data,
+            accounting_data=accounting_data,
         )
 
     @property

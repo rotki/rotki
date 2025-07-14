@@ -1,13 +1,14 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.accounting.pnl import PNL
-from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS, ZERO
+from rotkehlchen.constants import BCH_BSV_FORK_TS, BTC_BCH_FORK_TS, ETH_DAO_FORK_TS
 from rotkehlchen.constants.assets import A_BCH, A_BSV, A_BTC, A_ETC, A_ETH
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, Price, Timestamp
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
     from .base import CostBasisCalculator
@@ -21,8 +22,9 @@ def handle_prefork_asset_acquisitions(
         amount: FVal,
         price: Price,
         ignored_asset_ids: set[str],
-        starting_index: int,
-) -> list['ProcessedAccountingEvent']:
+        event_count: int,
+        database: Any,
+) -> list[HistoryEvent]:
     """
         Calculate the prefork asset acquisitions, meaning how is the acquisition
         of ETC pre ETH fork handled etc.
@@ -48,22 +50,31 @@ def handle_prefork_asset_acquisitions(
     for acquisition in acquisitions:
         if acquisition[0].identifier in ignored_asset_ids:
             continue
-        event = ProcessedAccountingEvent(
-            event_type=AccountingEventType.PREFORK_ACQUISITION,
-            notes=acquisition[1],
+
+        # Create a history event for the prefork acquisition
+        history_event = HistoryEvent(
+            event_identifier=f'prefork_{event_count}',
+            sequence_index=0,
+            timestamp=TimestampMS(timestamp * 1000),  # Convert to milliseconds
             location=location,
-            timestamp=timestamp,
+            location_label=f'{AccountingEventType.PREFORK_ACQUISITION.serialize()}',
             asset=acquisition[0],
-            taxable_amount=amount,
-            free_amount=ZERO,
-            price=price,
-            pnl=PNL(),
-            cost_basis=None,
-            index=starting_index,
+            amount=amount,
+            notes=acquisition[1],
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            extra_data={'prefork_acquisition': True},
         )
-        cost_basis.obtain_asset(event)
-        events.append(event)
-        starting_index += 1
+
+        # Add to database
+        with database.user_write() as write_cursor:
+            dbevents = DBHistoryEvents(database)
+            history_event.identifier = dbevents.add_history_event(write_cursor, history_event)
+
+        # TODO: Update cost basis to work with HistoryEvent instead of ProcessedAccountingEvent
+
+        events.append(history_event)
+        event_count += 1
 
     return events
 
