@@ -267,3 +267,197 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2e2aB1C1383c7Be56ffb8c9039E2d85681C936FD']])
+def test_susdc_ethereum_deposit(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xf6cbd0040b8ba30e9eea85358c1d99e2e7105aac919e2f5964786129d508f6f9')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_amount, deposited_amount, received_amount = ethereum_accounts[0], TimestampMS(1752351551000), '0.000783837589583992', '1010', '953.822804925212844028'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            amount=FVal(deposited_amount),
+            location_label=user_address,
+            notes=f'Deposit {deposited_amount} USDC in Spark Savings',
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE'),
+            amount=FVal(received_amount),
+            location_label=user_address,
+            notes=f'Receive {received_amount} sUSDC from depositing into Spark Savings',
+            counterparty=CPT_SPARK,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2154B08eb8E5f9980094Af08E9A3C1d99a4FE2d2']])
+def test_susdc_ethereum_redeem(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x2e5773d502170ff3040181fe70fd482f15c31204dda48e428e191e73dc828e44')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, timestamp, gas_amount, returned_amount, withdrawn_amount = ethereum_accounts[0], TimestampMS(1752577619000), '0.000926886160514529', '47613.475754046774802545', '50433.672545'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xBc65ad17c5C0a2A4D159fa5a503f4992c7B545FE'),
+            amount=FVal(returned_amount),
+            location_label=user_address,
+            notes=f'Return {returned_amount} sUSDC to Spark Savings',
+            counterparty=CPT_SPARK,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+            amount=FVal(withdrawn_amount),
+            location_label=user_address,
+            notes=f'Remove {withdrawn_amount} USDC from Spark Savings',
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0x37305B1cD40574E4C5Ce33f8e8306Be057fD7341'),
+        ),
+    ]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0xaE6396d2fB733e124f9b1C3BF922cF17fE1CC75A']])
+def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x2e5bac2cb234a4388d45754656bad35cc03c7dde7745de10b5b605ff28187d52')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp = TimestampMS(1726736615000)
+    gas_amount, returned_amount, withdrawn_amount = '0.002553705360907168', '76400.28490997120343213', '76424.11'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),
+        amount=FVal(returned_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Return {returned_amount} sUSDS to Spark Savings',
+        counterparty=CPT_SPARK,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xdC035D45d973E3EC169d2276DDab16f1e407384F'),
+        amount=FVal(withdrawn_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Remove {withdrawn_amount} USDS from Spark Savings',
+        counterparty=CPT_SPARK,
+        address=string_to_evm_address('0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0x2618d8078253b4765fd4ea56b3840c212830E9a3']])
+def test_deposit_susds(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xe9ca86a0ce9c0226d65203805b77d13697ad5e579989505562638095dc45cac4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp = TimestampMS(1726754135000)
+    gas_amount, deposited_amount, withdrawn_amount = '0.003750084090503928', '5114.68', '5112.913299374006156278'  # noqa: E501
+    assert events == [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xdC035D45d973E3EC169d2276DDab16f1e407384F'),
+        amount=FVal(deposited_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Deposit {deposited_amount} USDS in Spark Savings',
+        counterparty=CPT_SPARK,
+        address=string_to_evm_address('0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:1/erc20:0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD'),
+        amount=FVal(withdrawn_amount),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive {withdrawn_amount} sUSDS from depositing into Spark Savings',
+        counterparty=CPT_SPARK,
+        address=ZERO_ADDRESS,
+    )]
