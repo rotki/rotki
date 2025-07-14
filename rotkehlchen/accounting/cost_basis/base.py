@@ -16,9 +16,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import CostBasisMethod, Location, Price, Timestamp
+from rotkehlchen.types import CostBasisMethod, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
+
+# Special location key for global cost basis tracking
+GLOBAL_LOCATION_KEY = 'GLOBAL'
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -32,7 +36,7 @@ log = RotkehlchenLogsAdapter(logger)
 class AssetAcquisitionEvent:
     amount: FVal
     remaining_amount: FVal = field(init=False)  # Same as amount but reduced during processing
-    timestamp: Timestamp
+    timestamp: TimestampMS
     rate: Price
     index: int
 
@@ -48,7 +52,7 @@ class AssetAcquisitionEvent:
     def from_history_event(cls: type['AssetAcquisitionEvent'], event: 'HistoryEvent', price: Price, index: int) -> 'AssetAcquisitionEvent':  # noqa: E501
         return cls(
             amount=event.amount,
-            timestamp=Timestamp(event.timestamp // 1000),  # Convert from milliseconds to seconds
+            timestamp=event.timestamp,
             rate=price,
             index=index,
         )
@@ -89,7 +93,7 @@ class AssetAcquisitionEvent:
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class AssetSpendEvent:
-    timestamp: Timestamp
+    timestamp: TimestampMS
     location: Location
     amount: FVal  # Amount of the asset we sell
     rate: FVal  # Rate in 'profit_currency' for which we sell 1 unit of the sold asset
@@ -170,17 +174,19 @@ class BaseCostBasisMethod(ABC):
             self,
             spending_amount: FVal,
             spending_asset: Asset,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
             missing_acquisitions: list[MissingAcquisition],
             used_acquisitions: list[AssetAcquisitionEvent],
             settings: DBSettings,
-            timestamp_to_date: Callable[[Timestamp], str],
+            timestamp_to_date: Callable[[TimestampMS], str],
             average_cost_basis: FVal | None = None,
             originating_event_id: int | None = None,
     ) -> 'CostBasisInfo':
         """
         When spending `spending_amount` of `spending_asset` at `timestamp` this function
-        calculates using the method defined by class the corresponding buy(s) from which to do profit calculation.
+        calculates using the method defined by class the corresponding buy(s) from which
+        to do profit calculation.
+
         It also applies the "free after given time period" rule
         which applies for some jurisdictions such as 1 year for Germany.
 
@@ -188,7 +194,7 @@ class BaseCostBasisMethod(ABC):
 
         Returns the information in a CostBasisInfo object if enough acquisitions have
         been found.
-        """  # noqa: E501
+        """
         remaining_sold_amount = spending_amount
         taxfree_bought_cost = taxable_bought_cost = taxable_amount = taxfree_amount = ZERO
         matched_acquisitions = []
@@ -197,7 +203,7 @@ class BaseCostBasisMethod(ABC):
             if settings.taxfree_after_period is None:
                 at_taxfree_period = False
             else:
-                at_taxfree_period = acquisition_event.timestamp + settings.taxfree_after_period < timestamp  # noqa: E501
+                at_taxfree_period = acquisition_event.timestamp + ts_sec_to_ms(settings.taxfree_after_period) < timestamp  # noqa: E501
 
             if remaining_sold_amount < acquisition_event.remaining_amount:
                 acquisition_rate = acquisition_event.rate if average_cost_basis is None else average_cost_basis  # noqa: E501
@@ -402,7 +408,7 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
             self,
             spending_amount: FVal,
             spending_asset: Asset,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
             missing_acquisitions: list[MissingAcquisition],
             used_acquisitions: list[AssetAcquisitionEvent],
             settings: DBSettings,
@@ -448,18 +454,52 @@ class AverageCostBasisMethod(BaseCostBasisMethod):
 
 
 class CostBasisEvents:
-    def __init__(self, cost_basis_method: CostBasisMethod) -> None:
-        """This class contains data about acquisitions and spends."""
-        if cost_basis_method == CostBasisMethod.FIFO:
-            self.acquisitions_manager: BaseCostBasisMethod = FIFOCostBasisMethod()
-        elif cost_basis_method == CostBasisMethod.LIFO:
-            self.acquisitions_manager = LIFOCostBasisMethod()
-        elif cost_basis_method == CostBasisMethod.HIFO:
-            self.acquisitions_manager = HIFOCostBasisMethod()
-        elif cost_basis_method == CostBasisMethod.ACB:
-            self.acquisitions_manager = AverageCostBasisMethod()
+    def __init__(self, cost_basis_method: CostBasisMethod, location_aware: bool = False) -> None:
+        """This class contains data about acquisitions and spends.
+
+        Args:
+            cost_basis_method: The cost basis method to use
+            location_aware: If True, track acquisitions per location separately
+        """
+        self.location_aware = location_aware
+        self.cost_basis_method = cost_basis_method
+        # Always use the same data structure - unified approach
+        self.acquisitions_managers_by_location: dict[str, BaseCostBasisMethod] = {}
         self.spends: list[AssetSpendEvent] = []
         self.used_acquisitions: list[AssetAcquisitionEvent] = []
+        if not location_aware:  # for the global  method
+            self._create_manager_for_location(GLOBAL_LOCATION_KEY)
+
+    def _create_manager_for_location(self, location_key: str) -> BaseCostBasisMethod:
+        """Create and store a new acquisitions manager for the given location key."""
+        manager: BaseCostBasisMethod
+        if self.cost_basis_method == CostBasisMethod.FIFO:
+            manager = FIFOCostBasisMethod()
+        elif self.cost_basis_method == CostBasisMethod.LIFO:
+            manager = LIFOCostBasisMethod()
+        elif self.cost_basis_method == CostBasisMethod.HIFO:
+            manager = HIFOCostBasisMethod()
+        elif self.cost_basis_method == CostBasisMethod.ACB:
+            manager = AverageCostBasisMethod()
+        else:
+            raise ValueError(f'Unknown cost basis method: {self.cost_basis_method}')
+
+        self.acquisitions_managers_by_location[location_key] = manager
+        return manager
+
+    def get_acquisitions_manager(self, location_key: str = GLOBAL_LOCATION_KEY) -> BaseCostBasisMethod:  # noqa: E501
+        """Get the appropriate acquisitions manager for the given location key.
+
+        Args:
+            location key: The location to get the manager for. If None, uses global tracking.
+
+        Returns:
+            The acquisitions manager for the location
+        """
+        if location_key not in self.acquisitions_managers_by_location:
+            self._create_manager_for_location(location_key)
+
+        return self.acquisitions_managers_by_location[location_key]
 
 
 class MatchedAcquisition(NamedTuple):
@@ -587,7 +627,12 @@ class CostBasisCalculator(CustomizableDateMixin):
     def reset(self, settings: DBSettings) -> None:
         self.settings = settings
         self.profit_currency = settings.main_currency
-        self._events: defaultdict[Asset, CostBasisEvents] = defaultdict(lambda: CostBasisEvents(settings.cost_basis_method))  # noqa: E501
+        self.location_aware = settings.cost_basis_by_location
+        self._events: defaultdict[Asset, CostBasisEvents] = defaultdict(
+            lambda: CostBasisEvents(
+                settings.cost_basis_method, location_aware=self.location_aware,
+            ),
+        )
         self.missing_acquisitions: list[MissingAcquisition] = []
         self.missing_prices: set[MissingPrice] = set()
 
@@ -603,7 +648,8 @@ class CostBasisCalculator(CustomizableDateMixin):
             originating_event_id: int | None,
             asset: Asset,
             amount: FVal,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
+            location: Location | None = None,
     ) -> bool:
         """Searches all acquisition events for asset and reduces them by amount.
 
@@ -612,15 +658,19 @@ class CostBasisCalculator(CustomizableDateMixin):
 
         This function does the same as calculate_spend_cost_basis as far as consuming
         acquisitions is concerned but does not calculate bought cost.
+
+        Args:
+            location: The location to reduce from. If None, uses global tracking.
         """
         asset_events = self.get_events(asset)
-        if len(asset_events.acquisitions_manager) == 0:
+        acquisitions_manager = asset_events.get_acquisitions_manager(location)
+        if len(acquisitions_manager) == 0:
             return False
 
         remaining_amount = amount
-        for acquisition_event in asset_events.acquisitions_manager.processing_iterator():
+        for acquisition_event in acquisitions_manager.processing_iterator():
             if remaining_amount < acquisition_event.remaining_amount:
-                asset_events.acquisitions_manager.consume_result(
+                acquisitions_manager.consume_result(
                     used_amount=remaining_amount,
                     asset=asset,
                 )
@@ -629,7 +679,7 @@ class CostBasisCalculator(CustomizableDateMixin):
                 break
 
             remaining_amount -= acquisition_event.remaining_amount
-            asset_events.acquisitions_manager.consume_result(
+            acquisitions_manager.consume_result(
                 used_amount=acquisition_event.remaining_amount,
                 asset=asset,
             )
@@ -660,14 +710,15 @@ class CostBasisCalculator(CustomizableDateMixin):
             event=event, price=price, index=index,
         )
         asset_events = self.get_events(event.asset)
-        asset_events.acquisitions_manager.add_in_event(asset_event)
+        acquisitions_manager = asset_events.get_acquisitions_manager(event.location)
+        acquisitions_manager.add_in_event(asset_event)
 
     @overload
     def spend_asset(
             self,
             originating_event_id: int | None,
             location: Location,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
             asset: Asset,
             amount: FVal,
             rate: FVal,
@@ -680,7 +731,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             self,
             originating_event_id: int | None,
             location: Location,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
             asset: Asset,
             amount: FVal,
             rate: FVal,
@@ -693,7 +744,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             self,
             originating_event_id: int | None,
             location: Location,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
             asset: Asset,
             amount: FVal,
             rate: FVal,
@@ -705,7 +756,7 @@ class CostBasisCalculator(CustomizableDateMixin):
             self,
             originating_event_id: int | None,
             location: Location,
-            timestamp: Timestamp,
+            timestamp: TimestampMS,
             asset: Asset,
             amount: FVal,
             rate: FVal,
@@ -728,7 +779,8 @@ class CostBasisCalculator(CustomizableDateMixin):
         asset_events = self.get_events(asset)
         asset_events.spends.append(event)
         if not asset.is_fiat() and taxable_spend:
-            return asset_events.acquisitions_manager.calculate_spend_cost_basis(
+            acquisitions_manager = asset_events.get_acquisitions_manager(location)
+            return acquisitions_manager.calculate_spend_cost_basis(
                 spending_amount=amount,
                 spending_asset=asset,
                 timestamp=timestamp,
@@ -744,5 +796,6 @@ class CostBasisCalculator(CustomizableDateMixin):
             asset=asset,
             amount=amount,
             timestamp=timestamp,
+            location=location,
         )
         return None

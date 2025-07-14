@@ -59,6 +59,7 @@ DEFAULT_TREAT_ETH2_AS_ETH = True
 DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED = True
 DEFAULT_INCLUDE_FEES_IN_COST_BASIS = True
 DEFAULT_INFER_ZERO_TIMED_BALANCES = False  # If True the asset amount and value chart shows the 0 balance periods for an asset  # noqa: E501
+DEFAULT_COST_BASIS_BY_LOCATION = False
 DEFAULT_QUERY_RETRY_LIMIT = 5
 DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_READ_TIMEOUT = 30
@@ -90,6 +91,7 @@ BOOLEAN_KEYS = (
     'eth_staking_taxable_after_withdrawal_enabled',
     'include_fees_in_cost_basis',
     'infer_zero_timed_balances',
+    'cost_basis_by_location',
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
     'ask_user_upon_size_discrepancy',
@@ -213,6 +215,7 @@ class DBSettings:
     address_name_priority: Sequence[AddressNameSource] = DEFAULT_ADDRESS_NAME_PRIORITY
     include_fees_in_cost_basis: bool = DEFAULT_INCLUDE_FEES_IN_COST_BASIS
     infer_zero_timed_balances: bool = DEFAULT_INFER_ZERO_TIMED_BALANCES
+    cost_basis_by_location: bool = DEFAULT_COST_BASIS_BY_LOCATION
     query_retry_limit: int = DEFAULT_QUERY_RETRY_LIMIT
     connect_timeout: int = DEFAULT_CONNECT_TIMEOUT
     read_timeout: int = DEFAULT_READ_TIMEOUT
@@ -273,6 +276,7 @@ class ModifiableDBSettings(NamedTuple):
     address_name_priority: list[AddressNameSource] | None = None
     include_fees_in_cost_basis: bool | None = None
     infer_zero_timed_balances: bool | None = None
+    cost_basis_by_location: bool | None = None
     query_retry_limit: int | None = None
     connect_timeout: int | None = None
     read_timeout: int | None = None

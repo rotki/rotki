@@ -738,6 +738,12 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
 ]
 
 
+def serialized_location_to_key(db_serialized_location: str, location_label: str | None):
+    """
+    Turns the serialized for db location into a location key for the in-memory mappings (balances and more)
+    """
+    return db_serialized_location if not location_label else f'{db_serialized_location}{location_label}'  # noqa: E501
+
 class Location(DBCharEnumMixIn):
     """Supported Locations"""
     EXTERNAL = 1
@@ -868,6 +874,10 @@ class Location(DBCharEnumMixIn):
                 return Location.ZKSYNC_LITE
             case _:  # should never happen
                 raise AssertionError(f'Got in Location.from_chain for {chain}')
+
+    def to_location_key(self, location_label: str | None) -> str:
+        """Turns the location into a location key for the in-memory mappings (balances and more)"""
+        return serialized_location_to_key(self.serialize_for_db(), location_label)
 
 
 EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC]  # noqa: E501

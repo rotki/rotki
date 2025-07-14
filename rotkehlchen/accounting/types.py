@@ -7,7 +7,7 @@ import jsonschema
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
@@ -123,7 +123,7 @@ class MissingAcquisition(NamedTuple):
     """
     originating_event_id: int | None
     asset: Asset
-    time: Timestamp
+    time: TimestampMS
     found_amount: FVal
     missing_amount: FVal
 

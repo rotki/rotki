@@ -254,6 +254,10 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         - UnknownAsset
         """
 
+    def get_location_key(self) -> str:
+        """The location key for the in-memory mappings (balances and more)"""
+        return self.location.to_location_key(location_label=self.location_label)
+
     @property
     @abstractmethod
     def entry_type(self) -> HistoryBaseEntryType:
