@@ -707,7 +707,7 @@ def test_query_transactions_check_decoded_events(
 
     Also test that if an event is edited or added to a transaction that transaction and
     event are not purged when the ethereum transactions are purged. And if transactions
-    are requeried the edited events are there.
+    are required the edited events are there.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     start_ts = Timestamp(0)

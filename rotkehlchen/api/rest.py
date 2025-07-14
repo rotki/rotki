@@ -5213,7 +5213,7 @@ class RestAPI:
                 AssetResolver.clean_memory_cache(token.identifier)
 
                 # Finally if the token was in any cached balances, that cache is cleared,
-                # so it can be requeried later without the ignored token.
+                # so it can be required later without the ignored token.
                 for balances in self.rotkehlchen.chains_aggregator.balances.get(
                     chain=(blockchain := token.chain_id.to_blockchain()),
                 ).values():
