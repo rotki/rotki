@@ -1,6 +1,6 @@
 import type { PiniaPluginContext, StoreGeneric } from 'pinia';
-import { logger } from '@/utils/logging';
 import { cloneDeep } from 'es-toolkit';
+import { logger } from '@/utils/logging';
 
 export function StoreResetPlugin({ store }: PiniaPluginContext): void {
   const initialState = cloneDeep(store.$state);

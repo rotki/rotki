@@ -1,5 +1,7 @@
 import type { Eth2Validator } from '@/types/balances';
 import type { PendingTask } from '@/types/task';
+import { type ActionResult, assert, type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -21,8 +23,6 @@ import {
 } from '@/types/blockchain/accounts';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { nonEmptyProperties } from '@/utils/data';
-import { type ActionResult, assert, type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
-import { omit } from 'es-toolkit';
 
 async function performAsyncQuery(url: string, payload: any): Promise<PendingTask> {
   const response = await api.instance.put<ActionResult<PendingTask>>(

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
@@ -8,8 +10,6 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { useSettingsStore } from '@/store/settings';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

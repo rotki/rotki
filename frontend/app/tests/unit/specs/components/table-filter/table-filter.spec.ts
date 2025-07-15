@@ -1,9 +1,9 @@
 import type { StringSuggestionMatcher } from '@/types/filtering';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it } from 'vitest';
+import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 describe('table-filter/TableFilter.vue', () => {

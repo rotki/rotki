@@ -1,3 +1,4 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type {
   AddressBookEntries,
@@ -9,7 +10,7 @@ import type {
   EthNames,
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
+import { Blockchain, isValidBtcAddress, isValidEthAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useItemCache } from '@/composables/item-cache';
@@ -22,7 +23,6 @@ import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { Blockchain, isValidBtcAddress, isValidEthAddress } from '@rotki/common';
 
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());

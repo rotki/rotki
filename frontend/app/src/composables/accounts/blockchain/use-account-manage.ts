@@ -1,3 +1,4 @@
+import type { Ref } from 'vue';
 import type { Eth2Validator } from '@/types/balances';
 import type {
   AccountPayload,
@@ -5,7 +6,8 @@ import type {
   XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
-import type { Ref } from 'vue';
+import { assert, bigNumberify, Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useBlockchains } from '@/composables/blockchain';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
@@ -16,8 +18,6 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix } from '@/utils/xpub';
-import { assert, bigNumberify, Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface AccountManageMode {
   readonly mode: 'edit' | 'add';

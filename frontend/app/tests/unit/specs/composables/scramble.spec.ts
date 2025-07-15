@@ -1,7 +1,7 @@
-import { useScramble } from '@/composables/scramble';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { consistOfNumbers, isValidEthAddress } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { useScramble } from '@/composables/scramble';
+import { useSessionSettingsStore } from '@/store/settings/session';
 
 describe('composables::message-handling', () => {
   let store: ReturnType<typeof useSessionSettingsStore>;

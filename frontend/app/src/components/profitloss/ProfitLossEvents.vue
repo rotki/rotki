@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { DataTableColumn } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/types/reports';
-import type { DataTableColumn } from '@rotki/ui-library';
+import { some } from 'es-toolkit/compat';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -18,7 +19,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useReportsStore } from '@/store/reports';
 import { getCollectionData } from '@/utils/collection';
 import { isTransactionEvent } from '@/utils/report';
-import { some } from 'es-toolkit/compat';
 
 interface GroupLine {
   top: boolean;

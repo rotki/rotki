@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import { Zero } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { CURRENCY_USD } from '@/types/currencies';
-import { Zero } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;

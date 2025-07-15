@@ -1,5 +1,6 @@
 import type { TaskMeta } from '@/types/task';
 import type { StatsPriceQueryData } from '@/types/websocket-messages';
+import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useItemCache } from '@/composables/item-cache';
 import { useNotificationsStore } from '@/store/notifications';
@@ -8,7 +9,6 @@ import { useTaskStore } from '@/store/tasks';
 import { HistoricPrices } from '@/types/prices';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
   const statsPriceQueryStatus = ref<Record<string, StatsPriceQueryData>>({});

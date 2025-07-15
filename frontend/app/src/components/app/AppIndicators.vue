@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { checkIfDevelopment } from '@shared/utils';
 import CurrencyDropdown from '@/components/CurrencyDropdown.vue';
 import HelpIndicator from '@/components/help/HelpIndicator.vue';
 import BackButton from '@/components/helper/BackButton.vue';
@@ -12,7 +13,6 @@ import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
 import ThemeControl from '@/modules/theme/ThemeControl.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { checkIfDevelopment } from '@shared/utils';
 import EvmQueryIndicatorToggle from './EvmQueryIndicatorToggle.vue';
 
 const isDevelopment = checkIfDevelopment();

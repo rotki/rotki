@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { RepullingTransactionPayload } from '@/types/history/events';
+import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
@@ -8,7 +9,6 @@ import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<RepullingTransactionPayload | undefined>({ required: true });
 

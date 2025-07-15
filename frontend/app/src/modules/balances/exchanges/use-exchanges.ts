@@ -1,6 +1,8 @@
 import type { ExchangeBalancePayload } from '@/types/blockchain/accounts';
 import type { EditExchange, Exchange, ExchangeFormData } from '@/types/exchanges';
 import type { ExchangeMeta } from '@/types/task';
+import { assert, toSentenceCase } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
 import { useUsdValueThreshold } from '@/composables/usd-value-threshold';
@@ -14,8 +16,6 @@ import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { assert, toSentenceCase } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;

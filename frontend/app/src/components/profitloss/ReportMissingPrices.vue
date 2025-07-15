@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
-import type { BigNumber } from '@rotki/common';
+import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
+import { useTemplateRef } from 'vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -10,8 +12,6 @@ import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
-import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
-import { useTemplateRef } from 'vue';
 
 const props = defineProps<{
   items: MissingPrice[];

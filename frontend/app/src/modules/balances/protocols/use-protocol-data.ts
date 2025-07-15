@@ -1,9 +1,9 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import { toSentenceCase } from '@rotki/common';
 import { useDefiMetadata } from '@/composables/defi/metadata';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useLocations } from '@/composables/locations';
-import { toSentenceCase } from '@rotki/common';
 
 export interface ImageProtocol { image: string; type: 'image'; name: string }
 

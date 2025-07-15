@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 import type { ProfitLossEvent } from '@/types/reports';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
@@ -9,8 +11,6 @@ import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const props = defineProps<{
   event: ProfitLossEvent;

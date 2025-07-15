@@ -1,7 +1,8 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
+import { isEqual } from 'es-toolkit';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
@@ -14,7 +15,6 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
-import { isEqual } from 'es-toolkit';
 
 function noTokens(): EthDetectedTokensInfo {
   return {

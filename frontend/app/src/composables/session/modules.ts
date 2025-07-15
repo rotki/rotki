@@ -1,5 +1,5 @@
-import type { Module } from '@/types/modules';
 import type { ComputedRef } from 'vue';
+import type { Module } from '@/types/modules';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseModulesReturn {

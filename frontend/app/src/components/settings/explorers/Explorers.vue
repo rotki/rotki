@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
@@ -7,7 +8,6 @@ import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
-import { Blockchain } from '@rotki/common';
 
 const extraExplorers = ['ETC'] as const;
 

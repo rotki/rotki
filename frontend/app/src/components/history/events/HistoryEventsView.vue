@@ -17,6 +17,9 @@ import type {
 } from '@/types/history/events';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { flatten, isEqual } from 'es-toolkit';
 import MissingRulesDialog from '@/components/dialogs/MissingRulesDialog.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import HistoryEventFormDialog from '@/components/history/events/HistoryEventFormDialog.vue';
@@ -52,9 +55,6 @@ import {
   isEvmEventType,
   isOnlineHistoryEventType,
 } from '@/utils/history/events';
-import { type Account, type Blockchain, HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { flatten, isEqual } from 'es-toolkit';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 

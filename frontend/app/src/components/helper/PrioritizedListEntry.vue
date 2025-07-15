@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
+import { toSentenceCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { toSentenceCase } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

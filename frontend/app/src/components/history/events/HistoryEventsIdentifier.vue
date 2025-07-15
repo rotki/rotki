@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import { Blockchain, HistoryEventEntryType, toSentenceCase, toSnakeCase } from '@rotki/common';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import {
   isAssetMovementEventRef,
   isEthBlockEventRef,
   isWithdrawalEventRef,
 } from '@/utils/history/events';
-import { Blockchain, HistoryEventEntryType, toSentenceCase, toSnakeCase } from '@rotki/common';
 
 const props = defineProps<{
   event: HistoryEventEntry;

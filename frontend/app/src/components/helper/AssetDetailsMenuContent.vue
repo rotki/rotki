@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
+import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
@@ -7,7 +8,6 @@ import { useRefMap } from '@/composables/utils/useRefMap';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { EVM_TOKEN } from '@/types/asset';
-import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
 
 const props = defineProps<{
   asset: NftAsset;

@@ -1,12 +1,12 @@
-import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain/types';
-import type { BlockchainAssetBalances, EthBalance, ProtocolBalances } from '@/types/blockchain/balances';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain/types';
+import type { BlockchainAssetBalances, EthBalance, ProtocolBalances } from '@/types/blockchain/balances';
+import { Zero } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { sortDesc } from '@/utils/bignumbers';
-import { Zero } from '@rotki/common';
 import { useWalletStore } from './use-wallet-store';
 
 interface UseTradableAssetReturn {

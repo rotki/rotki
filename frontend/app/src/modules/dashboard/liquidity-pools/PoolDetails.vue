@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset } from './types';
+import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
@@ -10,7 +11,6 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortAssetBalances } from '@/utils/balances';
-import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
 
 interface PoolDetailsProps {
   assets: PoolAsset[];

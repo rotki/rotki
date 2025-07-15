@@ -1,5 +1,6 @@
-import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { ComputedRef, Ref } from 'vue';
+import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import { NotificationCategory, type NotificationPayload, One, Severity, Zero } from '@rotki/common';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useBalances } from '@/composables/balances';
 import { useStatusUpdater } from '@/composables/status';
@@ -9,7 +10,6 @@ import { useNotificationsStore } from '@/store/notifications';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
 import { isNft } from '@/utils/nft';
-import { NotificationCategory, type NotificationPayload, One, Severity, Zero } from '@rotki/common';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { getTextToken, toHumanReadable } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
 const search = defineModel<string>('search', { required: true });

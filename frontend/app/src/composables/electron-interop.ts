@@ -1,9 +1,9 @@
-import type { WebVersion } from '@/types';
 import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
-import { getBackendUrl } from '@/utils/account-management';
+import type { WebVersion } from '@/types';
 import { assert, type Theme } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { getBackendUrl } from '@/utils/account-management';
 
 interface UseInteropReturn {
   readonly isPackaged: boolean;

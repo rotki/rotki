@@ -6,13 +6,13 @@ import type {
   SearchMatcher,
   Suggestion,
 } from '@/types/filtering';
+import { assert, type AssetInfo, getTextToken } from '@rotki/common';
 import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import SavedFilterManagement from '@/components/table-filter/SavedFilterManagement.vue';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { compareTextByKeyword } from '@/utils/assets';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
-import { assert, type AssetInfo, getTextToken } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

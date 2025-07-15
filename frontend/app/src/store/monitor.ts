@@ -1,3 +1,5 @@
+import { startPromise } from '@shared/utils';
+import { isEqual } from 'es-toolkit';
 import { useBalances } from '@/composables/balances';
 import { useMessageHandling } from '@/composables/message-handling';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
@@ -14,8 +16,6 @@ import { useTaskStore } from '@/store/tasks';
 import { useWebsocketStore } from '@/store/websocket';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { startPromise } from '@shared/utils';
-import { isEqual } from 'es-toolkit';
 
 const PERIODIC = 'periodic';
 const TASK = 'task';

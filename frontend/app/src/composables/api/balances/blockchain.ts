@@ -1,6 +1,6 @@
+import type { ActionResult, Nullable } from '@rotki/common';
 import type { PurgeableModule } from '@/types/modules';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult, Nullable } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {

@@ -2,6 +2,8 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { RepullingTransactionPayload } from '@/types/history/events';
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useFormStateWatcher } from '@/composables/form';
@@ -11,8 +13,6 @@ import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
 
 const modelValue = defineModel<RepullingTransactionPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

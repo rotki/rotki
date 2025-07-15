@@ -4,12 +4,12 @@ import type {
   SearchMatcher,
 
 } from '@/types/filtering';
+import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { isValidStatus, validStatuses } from '@/composables/filters/eth-validator';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
 import { getDateInputISOFormat } from '@/utils/date';
-import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 

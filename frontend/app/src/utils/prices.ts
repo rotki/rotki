@@ -1,10 +1,10 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
 } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
-import type { MaybeRef } from '@vueuse/core';
 import { cloneDeep } from 'es-toolkit';
 
 export function updateBalancesPrices(balances: AssetProtocolBalances, prices: MaybeRef<AssetPrices>): AssetProtocolBalances {

@@ -1,5 +1,6 @@
 import type { TaskMeta } from '@/types/task';
 import type { DbUploadResult } from '@/types/websocket-messages';
+import { Severity } from '@rotki/common';
 import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';
 import { api } from '@/services/rotkehlchen-api';
@@ -8,7 +9,6 @@ import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { Severity } from '@rotki/common';
 
 export const useSync = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();

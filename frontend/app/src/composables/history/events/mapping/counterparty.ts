@@ -1,10 +1,10 @@
-import type { ActionDataEntry } from '@/types/action';
 import type { MaybeRef } from '@vueuse/core';
+import type { ActionDataEntry } from '@/types/action';
+import { isValidEthAddress, toHumanReadable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useScramble } from '@/composables/scramble';
 import { useNotificationsStore } from '@/store/notifications';
-import { isValidEthAddress, toHumanReadable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface Counterparty {
   image: string;

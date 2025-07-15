@@ -1,9 +1,9 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import { useSupportedChains } from '@/composables/info/chains';
-import { arrayify } from '@/utils/array';
 import { isValidEthAddress } from '@rotki/common';
 import { z } from 'zod/v4';
+import { useSupportedChains } from '@/composables/info/chains';
+import { arrayify } from '@/utils/array';
 
 enum AssetFilterKeys {
   IDENTIFIER = 'identifier',

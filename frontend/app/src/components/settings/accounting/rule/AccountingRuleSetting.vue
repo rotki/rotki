@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/settings/accounting';
+import { toSentenceCase } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
@@ -23,8 +25,6 @@ import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getPlaceholderRule } from '@/utils/settings';
-import { toSentenceCase } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();

@@ -3,13 +3,13 @@ import type {
   BlockchainAccount,
   BlockchainAccountBalance,
 } from '@/types/blockchain/accounts';
+import { consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useScramble } from '@/composables/scramble';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
-import { consistOfNumbers } from '@rotki/common';
 
 const props = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;

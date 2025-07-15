@@ -1,9 +1,9 @@
-import type { AssetMap } from '@/types/asset';
 import type { AssetInfo } from '@rotki/common';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import type { AssetMap } from '@/types/asset';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 describe('store::assets/cache', () => {
   let store: ReturnType<typeof useAssetCacheStore>;

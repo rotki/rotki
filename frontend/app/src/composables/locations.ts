@@ -1,5 +1,5 @@
-import type { TradeLocationData } from '@/types/history/trade/location';
 import type { MaybeRef } from '@vueuse/core';
+import type { TradeLocationData } from '@/types/history/trade/location';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocationStore } from '@/store/locations';
 import { isBlockchain } from '@/types/blockchain/chains';

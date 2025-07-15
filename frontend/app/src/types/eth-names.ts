@@ -1,7 +1,7 @@
 import type { PaginationRequestPayload } from '@/types/common';
-import { CollectionCommonFields } from '@/types/collection';
 import { Blockchain } from '@rotki/common';
 import { z } from 'zod/v4';
+import { CollectionCommonFields } from '@/types/collection';
 
 export const EthNames = z.record(z.string(), z.string().nullable());
 

@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { HistoryEventsTableEmits } from '../composables/types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
 import type {
   HistoryEventEntry,
   HistoryEventRow,
 } from '@/types/history/events/schemas';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { HistoryEventsTableEmits } from '../composables/types';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';

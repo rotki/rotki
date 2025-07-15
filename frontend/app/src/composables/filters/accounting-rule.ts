@@ -1,9 +1,9 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
+import { z } from 'zod/v4';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { arrayify } from '@/utils/array';
-import { z } from 'zod/v4';
 
 enum AccountingRuleFilterKeys {
   EVENT_TYPE = 'event_type',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import type { Writeable } from '@rotki/common';
+import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import { startPromise } from '@shared/utils';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
@@ -14,7 +15,6 @@ import { useMessageStore } from '@/store/message';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
-import { startPromise } from '@shared/utils';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);

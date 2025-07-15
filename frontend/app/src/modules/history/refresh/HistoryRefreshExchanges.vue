@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { Exchange } from '@/types/exchanges';
+import { isEqual, sortBy } from 'es-toolkit';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { isEqual, sortBy } from 'es-toolkit';
 
 const modelValue = defineModel<Exchange[]>({ required: true });
 const search = defineModel<string>('search', { required: true });

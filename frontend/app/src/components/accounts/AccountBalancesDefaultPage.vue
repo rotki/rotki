@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import { useTemplateRef } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
@@ -8,7 +9,6 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import { useTemplateRef } from 'vue';
 
 const props = defineProps<{
   category: string;

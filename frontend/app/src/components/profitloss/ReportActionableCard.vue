@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { Component } from 'vue';
 import type { DialogType } from '@/types/dialogs';
 import type { EditableMissingPrice, MissingAcquisition, MissingPrice, Report } from '@/types/reports';
 import type { Pinned } from '@/types/session';
-import type { Component } from 'vue';
+import { type Nullable, toSentenceCase } from '@rotki/common';
 import { useConfirmStore } from '@/store/confirm';
 import { useReportsStore } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { type Nullable, toSentenceCase } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

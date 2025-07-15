@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import type { CalendarEvent } from '@/types/history/calendar';
+import dayjs, { type Dayjs } from 'dayjs';
 import CalendarMonthDayItem from '@/components/calendar/CalendarMonthDayItem.vue';
 import CalendarWeekdays from '@/components/calendar/CalendarWeekdays.vue';
-import dayjs, { type Dayjs } from 'dayjs';
 
 const props = defineProps<{
   today: Dayjs;

@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -24,7 +25,6 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
-import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 

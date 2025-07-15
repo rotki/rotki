@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type NotificationData, Priority, Severity } from '@rotki/common';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
 import Notification from '@/components/status/notifications/Notification.vue';
 import PendingTasks from '@/components/status/notifications/PendingTasks.vue';
@@ -6,7 +7,6 @@ import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
-import { type NotificationData, Priority, Severity } from '@rotki/common';
 
 const display = defineModel<boolean>({ required: true });
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
+import { omit } from 'es-toolkit';
 import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/components/asset-manager/cex-mapping/ManageCexMappingTable.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
@@ -7,7 +8,6 @@ import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { omit } from 'es-toolkit';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();

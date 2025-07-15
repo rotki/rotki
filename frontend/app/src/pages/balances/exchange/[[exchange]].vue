@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -17,7 +18,6 @@ import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { TaskType } from '@/types/task-type';
 import { uniqueStrings } from '@/utils/data';
-import { type AssetBalanceWithPrice, type BigNumber, Zero } from '@rotki/common';
 
 definePage({
   meta: {

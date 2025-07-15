@@ -1,8 +1,8 @@
 import type { AssetPrices } from '@/types/prices';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { cloneDeep } from 'es-toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 
 describe('useBalancesStore', () => {
   let store: ReturnType<typeof useBalancesStore>;

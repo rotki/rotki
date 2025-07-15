@@ -1,7 +1,8 @@
+import type { ComputedRef } from 'vue';
 import type { Accounts, AssetBreakdown, Balances } from '@/types/blockchain/accounts';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import type { ComputedRef } from 'vue';
+import { Zero } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -9,7 +10,6 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { perProtocolBalanceSum } from '@/utils/calculation';
-import { Zero } from '@rotki/common';
 
 interface BreakdownFilters {
   chains?: string[];

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -13,7 +14,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { calculatePercentage } from '@/utils/calculation';
-import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 
 const props = withDefaults(defineProps<{
   identifier: string;

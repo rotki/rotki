@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import dayjs from 'dayjs';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import AppImage from '@/components/common/AppImage.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
@@ -22,7 +23,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { sortDesc } from '@/utils/bignumbers';
 import { logger } from '@/utils/logging';
-import dayjs from 'dayjs';
 
 const props = defineProps<{
   highlightedYear?: number;

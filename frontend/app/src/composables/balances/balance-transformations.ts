@@ -6,8 +6,6 @@ import type {
   ProtocolBalances,
 } from '@/types/blockchain/balances';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import { zeroBalance } from '@/utils/bignumbers';
-import { balanceSum, perProtocolBalanceSum } from '@/utils/calculation';
 import {
   type AssetBalanceWithPrice,
   type Balance,
@@ -16,6 +14,8 @@ import {
   Zero,
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
+import { zeroBalance } from '@/utils/bignumbers';
+import { balanceSum, perProtocolBalanceSum } from '@/utils/calculation';
 
 type BalanceWithManual = Balance & { containsManual?: boolean };
 

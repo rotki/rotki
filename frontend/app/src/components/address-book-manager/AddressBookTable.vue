@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -9,7 +10,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 

@@ -1,8 +1,8 @@
 import type { Nullable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useMessageHandling } from '@/composables/message-handling';
 import { api } from '@/services/rotkehlchen-api';
 import { logger } from '@/utils/logging';
-import { startPromise } from '@shared/utils';
 
 export const useWebsocketStore = defineStore('websocket', () => {
   const connection = ref<Nullable<WebSocket>>(null);

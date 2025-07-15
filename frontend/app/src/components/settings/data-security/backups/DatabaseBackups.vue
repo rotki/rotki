@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useBackupApi } from '@/composables/api/backup';

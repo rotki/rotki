@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { LoginCredentials } from '@/types/login';
-import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
+import { toMessages } from '@/utils/validation';
 
 const props = withDefaults(
   defineProps<{

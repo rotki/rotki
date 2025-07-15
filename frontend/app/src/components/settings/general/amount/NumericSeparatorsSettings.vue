@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, not, numeric, required, sameAs } from '@vuelidate/validators';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');

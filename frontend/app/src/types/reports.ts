@@ -1,9 +1,9 @@
 import type { PaginationRequestPayload } from '@/types/common';
 import type { Quarter } from '@/types/settings/frontend-settings';
-import { CollectionCommonFields } from '@/types/collection';
-import { BaseAccountingSettings } from '@/types/user';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
+import { CollectionCommonFields } from '@/types/collection';
+import { BaseAccountingSettings } from '@/types/user';
 
 export const ProfitLossOverviewItem = z.object({
   free: NumericString,

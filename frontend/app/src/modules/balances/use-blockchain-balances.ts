@@ -1,5 +1,6 @@
 import type { BlockchainAccount, BlockchainBalancePayload } from '@/types/blockchain/accounts';
 import type { BlockchainMetadata, TaskMeta } from '@/types/task';
+import { Blockchain } from '@rotki/common';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -27,7 +28,6 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { convertBtcBalances } from '@/utils/blockchain/accounts';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
-import { Blockchain } from '@rotki/common';
 
 function isBtcBalances(data?: BtcBalances | AssetBalances): data is BtcBalances {
   return !!data && (!!data.standalone || !!data.xpubs);

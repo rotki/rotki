@@ -1,9 +1,9 @@
-import { usePriceApi } from '@/composables/api/balances/price';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useTaskStore } from '@/store/tasks';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { usePriceApi } from '@/composables/api/balances/price';
+import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useTaskStore } from '@/store/tasks';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({

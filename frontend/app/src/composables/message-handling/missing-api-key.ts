@@ -1,8 +1,8 @@
 import type { CommonMessageHandler, MissingApiKey } from '@/types/websocket-messages';
-import { useInterop } from '@/composables/electron-interop';
-import { getServiceRegisterUrl } from '@/utils/url';
 import { type Notification, type NotificationAction, NotificationCategory, Priority, Severity, toHumanReadable } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { useInterop } from '@/composables/electron-interop';
+import { getServiceRegisterUrl } from '@/utils/url';
 
 export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<MissingApiKey> {
   const router = useRouter();

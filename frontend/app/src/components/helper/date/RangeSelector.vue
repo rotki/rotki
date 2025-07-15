@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf } from '@vuelidate/validators';
+import dayjs from 'dayjs';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf } from '@vuelidate/validators';
-import dayjs from 'dayjs';
 
 const modelValue = defineModel<{ start: number; end: number }>({ required: true });
 

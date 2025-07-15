@@ -4,6 +4,8 @@ import type {
   KrakenStakingPagination,
 } from '@/types/staking';
 import type { TaskMeta } from '@/types/task';
+import { type AssetBalance, Zero } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { useKrakenApi } from '@/composables/api/staking/kraken';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useStatusUpdater } from '@/composables/status';
@@ -14,8 +16,6 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
-import { type AssetBalance, Zero } from '@rotki/common';
-import { omit } from 'es-toolkit';
 
 function defaultPagination(): KrakenStakingPagination {
   return {

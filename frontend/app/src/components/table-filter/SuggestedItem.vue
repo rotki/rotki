@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Suggestion } from '@/types/filtering';
+import { useTemplateRef } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { truncateAddress } from '@/utils/truncate';
-import { useTemplateRef } from 'vue';
 
 const props = withDefaults(
   defineProps<{

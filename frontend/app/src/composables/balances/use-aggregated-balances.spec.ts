@@ -1,12 +1,4 @@
 import type { ExchangeData } from '@/types/exchanges';
-import { TRADE_LOCATION_BANKS } from '@/data/defaults';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { BalanceType } from '@/types/balances';
 import { type AssetBalanceWithPrice, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import {
   createProtocolTestBalance,
@@ -24,6 +16,14 @@ import {
 } from '@test/utils/test-data';
 import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TRADE_LOCATION_BANKS } from '@/data/defaults';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { BalanceType } from '@/types/balances';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 

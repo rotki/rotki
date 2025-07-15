@@ -1,5 +1,6 @@
-import type { Exchange } from '@/types/exchanges';
 import type { RefreshTransactionsParams, TransactionSyncParams } from './types';
+import type { Exchange } from '@/types/exchanges';
+import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
@@ -28,7 +29,6 @@ import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
-import { groupBy, omit } from 'es-toolkit';
 
 interface UseRefreshTransactionsReturn {
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;

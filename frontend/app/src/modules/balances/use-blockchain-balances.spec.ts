@@ -1,4 +1,8 @@
 import type { EvmChainInfo, SupportedChains } from '@/types/api/chains';
+import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { createTestBalance, createTestBalanceResponse } from '@test/utils/create-data';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -7,10 +11,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { createAccount } from '@/utils/blockchain/accounts/create';
-import { Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { createTestBalance, createTestBalanceResponse } from '@test/utils/create-data';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/settings/general', async () => {
   const { ref } = await import('vue');

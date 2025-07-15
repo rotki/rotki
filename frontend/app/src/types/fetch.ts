@@ -1,8 +1,8 @@
+import type { Ref } from 'vue';
 import type { Module } from '@/types/modules';
 import type { Section } from '@/types/status';
 import type { PendingTask, TaskMeta } from '@/types/task';
 import type { TaskType } from '@/types/task-type';
-import type { Ref } from 'vue';
 
 export interface OnError {
   readonly title: string;

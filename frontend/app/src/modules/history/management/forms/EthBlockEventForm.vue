@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { EthBlockEvent, NewEthBlockEventPayload } from '@/types/history/events/schemas';
+import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import dayjs from 'dayjs';
+import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useFormStateWatcher } from '@/composables/form';
@@ -11,10 +15,6 @@ import HistoryEventAssetPriceForm from '@/modules/history/management/forms/Histo
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
-import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface EthBlockEventFormProps {
   data: StandaloneEventData<EthBlockEvent>;

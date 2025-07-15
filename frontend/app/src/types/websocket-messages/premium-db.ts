@@ -1,5 +1,5 @@
-import { EvmChainLikeAddress } from '@/types/history/events';
 import { z } from 'zod/v4';
+import { EvmChainLikeAddress } from '@/types/history/events';
 
 export const PremiumStatusUpdateData = z.object({
   expired: z.boolean(),

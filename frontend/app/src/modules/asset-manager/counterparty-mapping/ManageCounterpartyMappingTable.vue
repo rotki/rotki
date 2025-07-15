@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import CollectionHandler from '@/components/helper/CollectionHandler.vue';
 import RowActions from '@/components/helper/RowActions.vue';

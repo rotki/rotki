@@ -1,6 +1,6 @@
+import type { ShallowRef } from 'vue';
 import type HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events/schemas';
-import type { ShallowRef } from 'vue';
 import { useHistoryEvents } from '@/composables/history/events/index';
 import { useMessageStore } from '@/store/message';
 

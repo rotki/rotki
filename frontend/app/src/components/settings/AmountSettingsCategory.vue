@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { bigNumberify } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import AbbreviateNumberSetting from '@/components/settings/general/amount/AbbreviateNumberSetting.vue';
@@ -8,7 +9,6 @@ import NumericSeparatorsSettings from '@/components/settings/general/amount/Nume
 import RoundingSettings from '@/components/settings/general/amount/RoundingSettings.vue';
 import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { bigNumberify } from '@rotki/common';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
 const { t } = useI18n({ useScope: 'global' });

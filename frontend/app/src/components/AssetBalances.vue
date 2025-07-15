@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { some } from 'es-toolkit/compat';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -16,7 +17,6 @@ import { TableColumn } from '@/types/table-column';
 import { assetFilterByKeyword } from '@/utils/assets';
 import { sortAssetBalances } from '@/utils/balances';
 import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
-import { some } from 'es-toolkit/compat';
 
 defineOptions({
   name: 'AssetBalances',

@@ -1,4 +1,5 @@
 import type { MaybeRef } from '@vueuse/core';
+import { Blockchain } from '@rotki/common';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
@@ -8,7 +9,6 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { Blockchain } from '@rotki/common';
 
 export const useRefresh = createSharedComposable(() => {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();

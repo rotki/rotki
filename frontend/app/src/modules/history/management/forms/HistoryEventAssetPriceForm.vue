@@ -1,8 +1,9 @@
 <script setup lang="ts">
+import type { Validation } from '@vuelidate/core';
 import type { ActionStatus } from '@/types/action';
 import type { NewHistoryEventPayload } from '@/types/history/events/schemas';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
-import type { Validation } from '@vuelidate/core';
+import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
@@ -16,7 +17,6 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
-import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
 
 interface HistoryEventAssetPriceFormProps {
   timestamp: number;

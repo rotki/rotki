@@ -1,6 +1,6 @@
+import axios, { type AxiosInstance } from 'axios';
 import { defaultApiUrls } from '@/services/api-urls';
 import { basicAxiosTransformer } from '@/services/axios-transformers';
-import axios, { type AxiosInstance } from 'axios';
 
 export class RotkehlchenApi {
   private axios: AxiosInstance;

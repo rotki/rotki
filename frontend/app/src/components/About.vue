@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { WebVersion } from '@/types';
 import type { SystemVersion } from '@shared/ipc';
+import type { WebVersion } from '@/types';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';

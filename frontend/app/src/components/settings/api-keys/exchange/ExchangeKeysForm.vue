@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { toSentenceCase } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import BinancePairsSelector from '@/components/helper/BinancePairsSelector.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
@@ -10,9 +13,6 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ExchangeFormData, KrakenAccountType } from '@/types/exchanges';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { toSentenceCase } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 

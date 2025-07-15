@@ -1,4 +1,6 @@
 import type { TaskMeta } from '@/types/task';
+import { type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
+import dayjs from 'dayjs';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
@@ -16,8 +18,6 @@ import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
-import { type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
-import dayjs from 'dayjs';
 
 function defaultNetValue(): NetValue {
   return {

@@ -1,3 +1,4 @@
+import type { Eth2ValidatorEntry } from '@rotki/common';
 import type {
   AccountExtraParams,
   AddressData,
@@ -7,7 +8,6 @@ import type {
   ValidatorData,
   XpubData,
 } from '@/types/blockchain/accounts';
-import type { Eth2ValidatorEntry } from '@rotki/common';
 
 export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
   return {

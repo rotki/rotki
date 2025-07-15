@@ -1,9 +1,9 @@
 import type { Component } from 'vue';
+import { checkIfDevelopment } from '@shared/utils';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { app } from '@/main';
 import { setupPremium } from '@/premium/setup-premium';
 import { logger } from '@/utils/logging';
-import { checkIfDevelopment } from '@shared/utils';
 
 class AsyncLock {
   promise: Promise<void>;

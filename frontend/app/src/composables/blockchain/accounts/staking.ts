@@ -1,8 +1,9 @@
+import type { ComputedRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Eth2Validator } from '@/types/balances';
 import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
-import type { ComputedRef } from 'vue';
+import { type BigNumber, bigNumberify, Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
@@ -18,7 +19,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
-import { type BigNumber, bigNumberify, Blockchain } from '@rotki/common';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: ComputedRef<{ showWarning: boolean; limit: number; total: number }>;

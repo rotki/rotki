@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import { type Account, Blockchain, getTextToken } from '@rotki/common';
+import { omit, uniqBy } from 'es-toolkit';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -8,8 +10,6 @@ import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
-import { type Account, Blockchain, getTextToken } from '@rotki/common';
-import { omit, uniqBy } from 'es-toolkit';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
 

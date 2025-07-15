@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import type { SessionTypes } from '@walletconnect/types';
 import type { TransactionRequest, TransactionResponse } from 'ethers';
-import AppImage from '@/components/common/AppImage.vue';
-import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
-import { EIP155, ROTKI_DAPP_METADATA, useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
 import { type IWalletKit, WalletKit, type WalletKitTypes } from '@reown/walletkit';
 import { assert } from '@rotki/common';
 import { get, set } from '@vueuse/core';
@@ -13,6 +8,11 @@ import { Core } from '@walletconnect/core';
 import { formatJsonRpcError } from '@walletconnect/jsonrpc-utils';
 import { buildApprovedNamespaces, getSdkError } from '@walletconnect/utils';
 import { ref } from 'vue';
+import AppImage from '@/components/common/AppImage.vue';
+import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
+import { EIP155, ROTKI_DAPP_METADATA, useWalletStore } from '@/modules/onchain/use-wallet-store';
+import { uniqueStrings } from '@/utils/data';
+import { logger } from '@/utils/logging';
 
 const props = defineProps<{
   connected?: boolean;

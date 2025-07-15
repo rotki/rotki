@@ -1,7 +1,7 @@
 import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import { get } from '@vueuse/core';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { get } from '@vueuse/core';
 
 interface UseHistoryTransactionAccountsReturn {
   getEvmAccounts: (chains?: string[]) => EvmChainAddress[];

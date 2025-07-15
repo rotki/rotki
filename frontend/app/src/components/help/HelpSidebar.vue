@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
+import { externalLinks, TWITTER_URL } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { useNotificationsStore } from '@/store/notifications';
 import { downloadFileByTextContent } from '@/utils/download';
 import { IndexedDb } from '@/utils/indexed-db';
-import { externalLinks, TWITTER_URL } from '@shared/external-links';
 
 const display = defineModel<boolean>({ required: true });
 

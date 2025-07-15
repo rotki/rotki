@@ -1,3 +1,6 @@
+import { assert, BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
+import { createPinia, type Pinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -14,9 +17,6 @@ import {
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-import { assert, BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
-import { createPinia, type Pinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({

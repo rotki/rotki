@@ -1,11 +1,11 @@
 import type { Ref } from 'vue';
-import { useDarkMode } from '@/composables/dark-mode';
 import { type BigNumber, type GradientArea, type NewGraphApi, Zero } from '@rotki/common';
 import { LineChart, PieChart } from 'echarts/charts';
 import { DataZoomComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { THEME_KEY } from 'vue-echarts';
+import { useDarkMode } from '@/composables/dark-mode';
 
 export function initGraph(): void {
   use([

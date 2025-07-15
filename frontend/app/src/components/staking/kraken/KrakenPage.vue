@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { KrakenStakingDateFilter } from '@/types/staking';
 import type { RouteLocationRaw } from 'vue-router';
+import type { KrakenStakingDateFilter } from '@/types/staking';
 import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';

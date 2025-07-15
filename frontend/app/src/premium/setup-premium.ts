@@ -1,4 +1,3 @@
-import { app } from '@/main';
 import * as VueUse from '@vueuse/core';
 import * as VueUseShared from '@vueuse/shared';
 import * as BigNumber from 'bignumber.js';
@@ -7,6 +6,7 @@ import * as Vue from 'vue';
 import VChart from 'vue-echarts';
 import * as VueRouter from 'vue-router';
 import * as zod from 'zod/v4';
+import { app } from '@/main';
 
 export async function setupPremium(): Promise<void> {
   /**

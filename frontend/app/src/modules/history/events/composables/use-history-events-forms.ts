@@ -1,8 +1,8 @@
+import type { HistoryEventsTableEmitFn } from './types';
 import type {
   HistoryEventEntry,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
-import type { HistoryEventsTableEmitFn } from './types';
 
 interface UseHistoryEventsFormsReturn {
   addEvent: (group: StandaloneEditableEvents, row: HistoryEventEntry) => void;

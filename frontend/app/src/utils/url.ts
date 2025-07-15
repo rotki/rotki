@@ -1,8 +1,8 @@
 import type { RouteLocationRaw } from 'vue-router';
+import { etherscanLink, externalLinks } from '@shared/external-links';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
 import { logger } from '@/utils/logging';
-import { etherscanLink, externalLinks } from '@shared/external-links';
 
 export function getDomain(str: string): string {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;

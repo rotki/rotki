@@ -1,6 +1,6 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import type { MaybeRef } from '@vueuse/core';
 import { z } from 'zod/v4';
 
 enum CustomAssetFilterKeys {

@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
+import { Severity } from '@rotki/common';
+import { get, set } from '@vueuse/core';
+import { storeToRefs } from 'pinia';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
 import { useInterop } from '@/composables/electron-interop';
@@ -7,11 +12,6 @@ import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { logger } from '@/utils/logging';
-import { Severity } from '@rotki/common';
-import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { onMounted, onUnmounted, ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n({ useScope: 'global' });
 

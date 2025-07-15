@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { AddressBookEntry } from '@/types/eth-names';
+import { isValidEthAddress } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { useTemplateRef } from 'vue';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import TradeAddressDisplay from '@/modules/onchain/send/TradeAddressDisplay.vue';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { uniqueObjects } from '@/utils/data';
-import { isValidEthAddress } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { useTemplateRef } from 'vue';
 
 const model = defineModel<string>({ required: true });
 

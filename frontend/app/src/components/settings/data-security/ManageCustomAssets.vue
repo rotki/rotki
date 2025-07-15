@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { assert } from '@rotki/common';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useAssets } from '@/composables/assets';
-import { assert } from '@rotki/common';
 
 const zip = ref<File>();
 const importError = ref('');

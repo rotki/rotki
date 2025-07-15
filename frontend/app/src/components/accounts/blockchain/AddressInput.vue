@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
-import WalletAddressesImport from '@/components/accounts/blockchain/WalletAddressesImport.vue';
-import { trimOnPaste } from '@/utils/event';
-import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';
+import WalletAddressesImport from '@/components/accounts/blockchain/WalletAddressesImport.vue';
+import { trimOnPaste } from '@/utils/event';
+import { toMessages } from '@/utils/validation';
 
 const props = defineProps<{
   addresses: string[];

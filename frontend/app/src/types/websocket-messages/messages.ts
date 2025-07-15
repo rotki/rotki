@@ -1,6 +1,6 @@
 import type { MaybePromise, Notification } from '@rotki/common';
-import { CalendarEventWithReminder } from '@/types/history/calendar';
 import { z } from 'zod/v4';
+import { CalendarEventWithReminder } from '@/types/history/calendar';
 import { BalanceSnapshotError, LegacyMessageData, SocketMessageType } from './base';
 import { HistoryEventsQueryData } from './history';
 import {

@@ -1,6 +1,9 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { EthBalance } from '@/types/blockchain/balances';
 import type { AssetPriceInfo } from '@/types/prices';
-import type { MaybeRef } from '@vueuse/core';
+import { type AssetBalanceWithPrice, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
+import { storeToRefs } from 'pinia';
+import { computed, type ComputedRef, ref } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
@@ -14,9 +17,6 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { samePriceAssets } from '@/types/blockchain';
 import { bigNumberSum } from '@/utils/calculation';
-import { type AssetBalanceWithPrice, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
-import { storeToRefs } from 'pinia';
-import { computed, type ComputedRef, ref } from 'vue';
 
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPrice[]>;

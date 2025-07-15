@@ -1,11 +1,11 @@
-import type { ProtocolMetadata } from '@/types/defi';
 import type { MaybeRef } from '@vueuse/core';
+import type { ProtocolMetadata } from '@/types/defi';
+import { transformCase } from '@rotki/common';
+import { camelCase } from 'es-toolkit';
 import { useDefiApi } from '@/composables/api/defi';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useMainStore } from '@/store/main';
-import { transformCase } from '@rotki/common';
-import { camelCase } from 'es-toolkit';
 
 export const useAirdropsMetadata = createSharedComposable(() => {
   const { fetchAirdropsMetadata } = useDefiApi();

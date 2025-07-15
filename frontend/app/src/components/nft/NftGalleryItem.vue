@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { GalleryNft } from '@/types/nfts';
 import type { StyleValue } from 'vue';
+import type { GalleryNft } from '@/types/nfts';
 import IconLink from '@/components/base/IconLink.vue';
 import AppImage from '@/components/common/AppImage.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';

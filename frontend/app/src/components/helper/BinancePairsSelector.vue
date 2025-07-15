@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { Severity } from '@rotki/common';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useNotificationsStore } from '@/store/notifications';
-import { Severity } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

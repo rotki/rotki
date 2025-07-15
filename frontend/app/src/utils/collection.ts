@@ -1,7 +1,7 @@
-import type { Collection, CollectionResponse } from '@/types/collection';
 import type { ComputedRef, Ref } from 'vue';
-import { usePremium } from '@/composables/premium';
+import type { Collection, CollectionResponse } from '@/types/collection';
 import { type BigNumber, Zero } from '@rotki/common';
+import { usePremium } from '@/composables/premium';
 
 type Entries = 'entries' | 'entriesFound' | 'entriesLimit' | 'entriesTotal';
 
@@ -61,9 +61,9 @@ export function setupEntryLimit(
   total: Ref<number>,
   entryFoundTotal?: Ref<number | undefined>,
 ): {
-    itemLength: ComputedRef<number>;
-    showUpgradeRow: ComputedRef<boolean>;
-  } {
+  itemLength: ComputedRef<number>;
+  showUpgradeRow: ComputedRef<boolean>;
+} {
   const premium = usePremium();
 
   const itemLength = computed<number>(() => {

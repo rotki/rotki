@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
+import dayjs from 'dayjs';
 import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -12,8 +14,6 @@ import { useStatisticsStore } from '@/store/statistics';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
-import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
-import dayjs from 'dayjs';
 
 const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

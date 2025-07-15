@@ -1,8 +1,8 @@
 import type { NftResponse } from '@/types/nfts';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useNfts } from '@/composables/assets/nft';
 import { useTaskStore } from '@/store/tasks';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({

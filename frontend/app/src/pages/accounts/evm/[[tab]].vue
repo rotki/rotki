@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { RouteLocationRaw } from 'vue-router';
+import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import { Blockchain } from '@rotki/common';
+import { useTemplateRef } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
@@ -17,8 +19,6 @@ import { useAccountImportProgressStore } from '@/store/use-account-import-progre
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 import { Section } from '@/types/status';
-import { Blockchain } from '@rotki/common';
-import { useTemplateRef } from 'vue';
 
 definePage({
   meta: {

@@ -1,13 +1,13 @@
-import type { EthDetectedTokensInfo } from '@/types/balances';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { EthDetectedTokensInfo } from '@/types/balances';
+import { assert } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { assert } from '@rotki/common';
 
 interface UseTokenDetectionReturn {
   detectingTokens: ComputedRef<boolean>;

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
+import { isEqual, omit } from 'es-toolkit';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -21,7 +22,6 @@ import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
-import { isEqual, omit } from 'es-toolkit';
 
 const props = defineProps<{
   title: string;

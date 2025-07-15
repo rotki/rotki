@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { Writeable } from '@rotki/common';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
-import type { Writeable } from '@rotki/common';
+import dayjs, { type Dayjs } from 'dayjs';
+import { isEqual, omit } from 'es-toolkit';
 import CalendarDateNavigator from '@/components/calendar/CalendarDateNavigator.vue';
 import CalendarEventList from '@/components/calendar/CalendarEventList.vue';
 import CalendarFormDialog from '@/components/calendar/CalendarFormDialog.vue';
@@ -22,8 +24,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { RouterAccountsSchema } from '@/types/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import dayjs, { type Dayjs } from 'dayjs';
-import { isEqual, omit } from 'es-toolkit';
 
 const { t } = useI18n({ useScope: 'global' });
 

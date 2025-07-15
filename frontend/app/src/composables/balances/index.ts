@@ -1,6 +1,7 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';
-import type { MaybeRef } from '@vueuse/core';
+import { startPromise } from '@shared/utils';
 import { useBalancesApi } from '@/composables/api/balances';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useBlockchains } from '@/composables/blockchain';
@@ -19,7 +20,6 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { uniqueStrings } from '@/utils/data';
-import { startPromise } from '@shared/utils';
 
 export const useBalances = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();

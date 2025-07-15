@@ -1,5 +1,3 @@
-import type { DateFormat } from '@/types/date-format';
-import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type {
   DataUtilities,
   DateUtilities,
@@ -10,13 +8,15 @@ import type {
   Themes,
   TimeUnit,
 } from '@rotki/common';
+import type { DateFormat } from '@/types/date-format';
+import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
+import dayjs from 'dayjs';
 import { useGraph } from '@/composables/graphs';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/premium/premium-apis';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { convertToTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
-import dayjs from 'dayjs';
 
 const date: DateUtilities = {
   convertToTimestamp(date: string, dateFormat?: string): number {

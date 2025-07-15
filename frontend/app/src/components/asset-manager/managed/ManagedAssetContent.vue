@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Nullable, SupportedAsset } from '@rotki/common';
+import { isEqual, keyBy } from 'es-toolkit';
 import ManagedAssetFormDialog from '@/components/asset-manager/managed/ManagedAssetFormDialog.vue';
 import ManagedAssetTable from '@/components/asset-manager/managed/ManagedAssetTable.vue';
 import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
@@ -14,7 +15,6 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/types/asset';
-import { isEqual, keyBy } from 'es-toolkit';
 
 const props = withDefaults(
   defineProps<{

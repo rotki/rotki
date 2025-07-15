@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
-import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
+import { Blockchain, One, Zero } from '@rotki/common';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -23,7 +24,6 @@ import { useTaskStore } from '@/store/tasks';
 import { SavedFilterLocation } from '@/types/filtering';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import { Blockchain, One, Zero } from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'edit', value: StakingValidatorManage): void;

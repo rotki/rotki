@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CamelCase } from '@/types/common';
+import { assert, Blockchain, transformCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
@@ -12,7 +13,6 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { assert, Blockchain, transformCase } from '@rotki/common';
 
 const props = defineProps<{ module: Module }>();
 

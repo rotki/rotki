@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, sameAs } from '@vuelidate/validators';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useChangePassword } from '@/modules/account/use-change-password';
 import { usePremiumStore } from '@/store/session/premium';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, sameAs } from '@vuelidate/validators';
 
 const currentPassword = ref('');
 const newPassword = ref('');

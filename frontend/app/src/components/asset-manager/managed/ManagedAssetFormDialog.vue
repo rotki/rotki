@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { SupportedAsset } from '@rotki/common';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError } from '@/types/api/errors';
-import { omit } from 'es-toolkit';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 

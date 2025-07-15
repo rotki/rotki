@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
+import { externalLinks } from '@shared/external-links';
 import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
@@ -21,7 +22,6 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
-import { externalLinks } from '@shared/external-links';
 
 definePage({
   meta: {

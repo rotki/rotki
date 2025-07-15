@@ -21,8 +21,7 @@ export default rotki({
   },
   imports: {
     overrides: {
-      'import/no-cycle': 'off',
-      'import/max-dependencies': ['warn', { max: 20 }],
+      '@rotki/max-dependencies': ['warn', { max: 20 }],
     },
   },
   vueI18n: {
@@ -40,6 +39,7 @@ export default rotki({
       '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
       '@intlify/vue-i18n/no-deprecated-i18n-component': 'error',
     },
+    enableNoUnusedKeys: 'ci',
   },
 }, {
   files: ['**/src/**/*.@(ts|vue|js)'],
@@ -50,11 +50,6 @@ export default rotki({
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
-  },
-}, {
-  files: ['**/*'],
-  rules: {
-    'import/no-cycle': 'off',
   },
 }, {
   files: ['**/locales/**/*.json'],

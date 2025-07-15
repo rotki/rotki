@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/utils/settings';
-import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 
 const props = defineProps<{
   message: { error: string; success: string };

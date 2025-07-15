@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { AccountAgnosticManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
+import { assert } from '@rotki/common';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
-import { assert } from '@rotki/common';
 
 const modelValue = defineModel<AccountAgnosticManage>({ required: true });
 

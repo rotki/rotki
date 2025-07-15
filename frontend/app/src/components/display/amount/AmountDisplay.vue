@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { RoundingMode } from '@/types/settings/frontend-settings';
+import { BigNumber, bigNumberify, One, Zero } from '@rotki/common';
+import { or } from '@vueuse/math';
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
@@ -11,8 +13,6 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type Currency, CURRENCY_USD, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { BigNumber, bigNumberify, One, Zero } from '@rotki/common';
-import { or } from '@vueuse/math';
 
 export interface AmountInputProps {
   value: BigNumber | undefined;

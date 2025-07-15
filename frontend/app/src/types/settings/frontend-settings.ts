@@ -1,11 +1,3 @@
-import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
-import { Defaults } from '@/data/defaults';
-import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import { camelCaseTransformer } from '@/services/axios-transformers';
-import { CurrencyLocationEnum } from '@/types/currency-location';
-import { DateFormatEnum } from '@/types/date-format';
-import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
-import { TableColumnEnum } from '@/types/table-column';
 import {
   BigNumber,
   Theme,
@@ -18,6 +10,14 @@ import {
 } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
 import { z } from 'zod/v4';
+import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
+import { Defaults } from '@/data/defaults';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import { camelCaseTransformer } from '@/services/axios-transformers';
+import { CurrencyLocationEnum } from '@/types/currency-location';
+import { DateFormatEnum } from '@/types/date-format';
+import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
+import { TableColumnEnum } from '@/types/table-column';
 
 export const FRONTEND_SETTINGS_SCHEMA_VERSION = 1;
 

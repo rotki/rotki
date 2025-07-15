@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+import { describe, expect, it } from 'vitest';
 import { DateFormat } from '@/types/date-format';
 import {
   convertFromTimestamp,
@@ -5,8 +7,6 @@ import {
   getDayNames,
   setupDayjs,
 } from '@/utils/date';
-import dayjs from 'dayjs';
-import { describe, expect, it } from 'vitest';
 
 describe('utils/date', () => {
   setupDayjs();

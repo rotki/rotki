@@ -1,4 +1,5 @@
 import type { ActionStatus } from '@/types/action';
+import { promiseTimeout } from '@vueuse/core';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
@@ -6,7 +7,6 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { logger } from '@/utils/logging';
-import { promiseTimeout } from '@vueuse/core';
 
 interface UseLogoutReturn {
   logout: (navigate?: boolean) => Promise<void>;

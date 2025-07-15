@@ -2,15 +2,15 @@
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
-import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
-import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
-import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
-
-import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import { useSupportedChains } from '@/composables/info/chains';
 import { HistoryEventEntryType } from '@rotki/common';
 import { pick } from 'es-toolkit';
+import LazyLoader from '@/components/helper/LazyLoader.vue';
+import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
+
+import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
+import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
+import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { useSupportedChains } from '@/composables/info/chains';
 
 const props = defineProps<{
   item: HistoryEventEntry;

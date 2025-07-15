@@ -2,12 +2,12 @@
 import type { ActionStatus } from '@/types/action';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { SwapSubEventModel } from '@/types/history/events/schemas';
+import useVuelidate from '@vuelidate/core';
+import { isEqual, pick } from 'es-toolkit';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { isEqual, pick } from 'es-toolkit';
 
 const modelValue = defineModel<SwapSubEventModel>({ required: true });
 

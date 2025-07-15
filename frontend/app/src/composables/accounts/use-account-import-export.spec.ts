@@ -1,5 +1,8 @@
 import type { AccountPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { Tag } from '@/types/tags';
+import { Blockchain } from '@rotki/common';
+import { createMockCSV } from '@test/mocks/file';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
 import { useTagsApi } from '@/composables/api/tags';
@@ -8,9 +11,6 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useNotificationsStore } from '@/store/notifications/index';
 import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { downloadFileByTextContent } from '@/utils/download';
-import { Blockchain } from '@rotki/common';
-import { createMockCSV } from '@test/mocks/file';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
 const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641';

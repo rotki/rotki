@@ -41,8 +41,8 @@
   "devDependencies": {
     "@clack/prompts": "0.11.0",
     "@intlify/eslint-plugin-vue-i18n": "4.0.1",
-    "@rotki/eslint-config": "4.1.0",
-    "@rotki/eslint-plugin": "1.0.0",
+    "@rotki/eslint-config": "4.3.0",
+    "@rotki/eslint-plugin": "1.1.0",
     "argparse": "2.0.1",
     "cac": "6.7.14",
     "consola": "3.4.2",

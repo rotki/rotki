@@ -1,10 +1,10 @@
 <script lang="ts" setup>
+import { type ProtocolBalance, toSentenceCase } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { type ProtocolBalance, toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{
   protocolBalance: ProtocolBalance;

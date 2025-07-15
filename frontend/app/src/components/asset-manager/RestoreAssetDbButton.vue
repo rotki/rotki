@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Severity } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
@@ -9,7 +10,6 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { DialogType } from '@/types/dialogs';
 import { TaskType } from '@/types/task-type';
-import { Severity } from '@rotki/common';
 
 withDefaults(
   defineProps<{

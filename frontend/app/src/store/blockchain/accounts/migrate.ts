@@ -1,13 +1,13 @@
 import type { MigratedAddresses } from '@/types/websocket-messages';
+import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useBlockchains } from '@/composables/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
   return useSessionStorage(`rotki.migrated_addresses.${identifier}`, []);

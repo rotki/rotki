@@ -1,12 +1,12 @@
+import { bigNumberify, Blockchain } from '@rotki/common';
+import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
+import { updateGeneralSettings } from '@test/utils/general-settings';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useCurrencies } from '@/types/currencies';
-import { bigNumberify, Blockchain } from '@rotki/common';
-import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
-import { updateGeneralSettings } from '@test/utils/general-settings';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalances } from './index';
 import '@test/i18n';
 
