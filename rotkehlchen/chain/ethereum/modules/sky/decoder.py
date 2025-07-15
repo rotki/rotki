@@ -5,18 +5,15 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.evm.decoding.constants import SDAI_REDEEM
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    ActionItem,
     DecoderContext,
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.constants.assets import A_DAI, A_MKR, A_SDAI
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.assets import A_DAI, A_MKR
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -26,16 +23,13 @@ from .constants import (
     CPT_SKY,
     DAI_TO_USDS,
     DAI_TO_USDS_CONTRACT,
-    DEPOSIT_USDS,
     EXIT,
     MIGRATION_ACTIONS_CONTRACT,
     MKR_TO_SKY,
     MKR_TO_SKY_CONTRACT,
     SKY_ASSET,
-    SUSDS_ASSET,
     USDS_ASSET,
     USDS_JOIN_ADDRESS,
-    WITHDRAW_USDS,
 )
 
 logger = logging.getLogger(__name__)
@@ -121,91 +115,6 @@ class SkyDecoder(DecoderInterface):
         maybe_reshuffle_events([mkr_event, sky_event], context.decoded_events)
         return DEFAULT_DECODING_OUTPUT
 
-    def _migrate_susds(self, context: DecoderContext) -> DecodingOutput:
-        if not (
-            (is_deposit := context.tx_log.topics[0] == DEPOSIT_USDS) or
-            context.tx_log.topics[0] == WITHDRAW_USDS
-        ):
-            return DEFAULT_DECODING_OUTPUT
-
-        # Only handle migration cases - regular deposit/withdrawal handled by SparksavingsCommonDecoder  # noqa: E501
-        is_migration = bytes_to_address(context.tx_log.topics[1]) == MIGRATION_ACTIONS_CONTRACT
-        if not is_migration:
-            return DEFAULT_DECODING_OUTPUT
-
-        if (assets_amount := token_normalized_value_decimals(
-            token_amount=int.from_bytes(context.tx_log.data[0:32]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
-        )) == ZERO:
-            return DEFAULT_DECODING_OUTPUT
-
-        shares_amount = token_normalized_value_decimals(
-            token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
-        )
-        assets_amount = token_normalized_value_decimals(
-            token_amount=int.from_bytes(context.tx_log.data[:32]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
-        )
-        received_address = bytes_to_address(context.tx_log.topics[2])
-        action_items = []
-        if is_deposit:
-            action_items.append(ActionItem(
-                action='transform',
-                from_event_type=HistoryEventType.RECEIVE,
-                from_event_subtype=HistoryEventSubType.NONE,
-                asset=SUSDS_ASSET,
-                amount=shares_amount,
-                to_event_type=HistoryEventType.MIGRATE,
-                to_event_subtype=HistoryEventSubType.RECEIVE,
-                to_counterparty=CPT_SKY,
-                to_notes=f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from sDAI to sUSDS migration',  # noqa: E501
-                extra_data={'underlying_amount': str(assets_amount)},
-                to_address=MIGRATION_ACTIONS_CONTRACT,
-            ))
-
-        for event in context.decoded_events:
-            if (
-                    event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
-                    event.asset == A_SDAI and
-                    event.location_label == received_address
-            ):  # sDAI -> sUSDS
-                event.event_type = HistoryEventType.MIGRATE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.address = MIGRATION_ACTIONS_CONTRACT
-                for tx_log in context.all_logs:  # find the sDAI withdraw/redeem log and get the assets (DAI) amount  # noqa: E501
-                    if tx_log.topics[0] == SDAI_REDEEM and bytes_to_address(tx_log.topics[1]) == MIGRATION_ACTIONS_CONTRACT and bytes_to_address(tx_log.topics[3]) == received_address:  # noqa: E501
-                        event.notes = f'Migrate {event.amount} sDAI ({(underlying_amount := token_normalized_value_decimals(token_amount=int.from_bytes(context.tx_log.data[:32]), token_decimals=DEFAULT_TOKEN_DECIMALS))} DAI) to sUSDS'  # noqa: E501
-                        event.extra_data = {'underlying_amount': str(underlying_amount)}
-                        event.counterparty = CPT_SKY
-                        break  # found the log
-                else:
-                    log.error(f'Could not find the log of the sDAI Withdraw in {context.transaction}')  # noqa: E501
-                    event.notes = f'Migrate {event.amount} sDAI to sUSDS'
-
-                break  # found the event
-
-            elif (
-                    event.event_type == HistoryEventType.SPEND and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset == A_DAI and
-                    event.location_label == received_address
-            ):  # DAI -> sUSDS
-                action_items[0].to_notes = f'Receive {shares_amount} sUSDS ({assets_amount} USDS) from DAI to sUSDS migration'  # noqa: E501  # fix the notes of the receival to be DAI
-                event.event_type = HistoryEventType.MIGRATE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.address = MIGRATION_ACTIONS_CONTRACT
-                event.notes = f'Migrate {event.amount} DAI to sUSDS'
-                event.counterparty = CPT_SKY
-                break  # found the event
-
-        else:
-            log.error(f'Could not find the deposit sDAI event in {context.transaction}')
-            return DEFAULT_DECODING_OUTPUT
-
-        return DecodingOutput(action_items=action_items)
-
     def _decode_maybe_migrate_dai(self, context: DecoderContext) -> DecodingOutput:
         """Similar to _decode_maybe_downgrade_usds in makerdao decoder, There is no useful log
         event for migrating dai to usds via the migration actions contract. But there is an Exit
@@ -257,7 +166,6 @@ class SkyDecoder(DecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             DAI_TO_USDS_CONTRACT: (self._decode_migrate_dai,),
-            MIGRATION_ACTIONS_CONTRACT: (self._migrate_susds,),
             MKR_TO_SKY_CONTRACT: (self._decode_migrate_mkr,),
             USDS_JOIN_ADDRESS: (self._decode_maybe_migrate_dai,),
         }
