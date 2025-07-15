@@ -207,7 +207,6 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'diva',
         'arbitrum_one',
         'base',
-        'sDAI',
         'thegraph',
         'octant',
         'monerium',

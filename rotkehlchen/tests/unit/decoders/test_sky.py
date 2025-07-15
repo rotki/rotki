@@ -68,7 +68,7 @@ def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xAe289D2618CcFA247645Dd8e89326c91acEF62e0']])
 def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5d4d8d4c9480ad603c91cd7a7e90fdf6faa2327728602e10b55620b18e642a91')  # noqa: E501
@@ -117,7 +117,7 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x11365778D2cC21aD47286073e6f764d862CA0cb1']])
 def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd29f7d1aa194dae5fa2dcccaeef0acf37390bc847f51a6eb2e8bdcf4df32dc45')  # noqa: E501

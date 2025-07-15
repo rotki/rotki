@@ -37,6 +37,14 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class SkyDecoder(DecoderInterface):
+    """Decoder for Sky ecosystem migration events.
+
+    This decoder handles the migration of MakerDAO assets to the Sky ecosystem:
+
+    • DAI to USDS migrations - Direct migrations using the DAI_TO_USDS_CONTRACT
+    • MKR to SKY migrations - Token migrations using the MKR_TO_SKY_CONTRACT
+    • Indirect DAI to USDS migrations - Via the MIGRATION_ACTIONS_CONTRACT using USDS join exit events
+    """  # noqa: E501
 
     def _decode_migrate_dai(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != DAI_TO_USDS:
