@@ -114,7 +114,6 @@ def test_migrate_sdai_susds(ethereum_inquirer, ethereum_accounts):
         address=MIGRATION_ACTIONS_CONTRACT,
         extra_data={'underlying_amount': underlying_usds},
     )]
-    breakpoint()
     assert expected_events == events
 
 
@@ -163,7 +162,6 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
         address=MIGRATION_ACTIONS_CONTRACT,
         extra_data={'underlying_amount': underlying_usds},
     )]
-    breakpoint()
     assert expected_events == events
 
 
