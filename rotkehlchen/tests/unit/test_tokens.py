@@ -1,14 +1,14 @@
 import datetime
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, get_args
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import gevent
 import pytest
 
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
-from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
+from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies, generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE
@@ -86,29 +86,47 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
     Inquirer.find_usd_prices = MagicMock(side_effect=Inquirer.find_usd_prices)
-    with patch(
-        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
-        side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
-            EvmTokenDetectionData(
-                identifier=A_WETH.identifier,
-                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                decimals=18,
-            ), EvmTokenDetectionData(
-                identifier=A_LPT.identifier,
-                address=string_to_evm_address('0x58b6A8A3302369DAEc383334672404Ee733aB239'),
-                decimals=18,
-            ), EvmTokenDetectionData(
-                identifier=A_OMG.identifier,
-                address=string_to_evm_address('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
-                decimals=18,
-            ), EvmTokenDetectionData(
-                identifier=A_DAI.identifier,
-                address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-                decimals=18,
-            ),
-        ], []),
+    with (
+        patch(
+            target='rotkehlchen.chain.evm.tokens.EvmTokens._query_new_tokens',
+            wraps=super(EvmTokensWithProxies, tokens)._query_new_tokens,
+        ) as query_new_tokens_patch,
+        patch(
+            target='rotkehlchen.chain.ethereum.tokens.EthereumTokens.maybe_detect_proxies_tokens',
+            wraps=tokens.maybe_detect_proxies_tokens,
+        ) as maybe_detect_proxies_tokens_patch,
+        patch(
+            target='rotkehlchen.globaldb.handler.GlobalDBHandler.get_token_detection_data',
+            side_effect=lambda *args, **kwargs: ([  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
+                EvmTokenDetectionData(
+                    identifier=A_WETH.identifier,
+                    address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+                    decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=A_LPT.identifier,
+                    address=string_to_evm_address('0x58b6A8A3302369DAEc383334672404Ee733aB239'),
+                    decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=A_OMG.identifier,
+                    address=string_to_evm_address('0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'),
+                    decimals=18,
+                ), EvmTokenDetectionData(
+                    identifier=A_DAI.identifier,
+                    address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+                    decimals=18,
+                ),
+            ], []),
+        ),
     ):
         detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
+
+    assert query_new_tokens_patch.call_count == 2  # once for normal addresses, once for the proxy
+    assert query_new_tokens_patch.call_args_list == [
+        call([addr1, addr2, addr3]),  # first called for normal addresses (uses positional arg)
+        call(addresses=[addr3_proxy]),  # then called for the proxy address
+    ]
+    assert maybe_detect_proxies_tokens_patch.call_count == 1  # ensure this isn't called again when detecting tokens for the proxy.  # noqa: E501
+
     assert A_WETH in detection_result[addr3][0], 'WETH is owned by the proxy, but should be returned in the proxy owner address'  # noqa: E501
     assert tokens.evm_inquirer.multicall.call_count == 0, 'multicall should not be used for tokens detection'  # noqa: E501
 

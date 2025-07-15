@@ -34,7 +34,7 @@ class EthereumManager(EvmManager, CurveManagerMixin):
             transactions=transactions,
             tokens=EthereumTokens(
                 database=node_inquirer.database,
-                ethereum_inquirer=node_inquirer,
+                evm_inquirer=node_inquirer,
             ),
             transactions_decoder=EthereumTransactionDecoder(
                 database=node_inquirer.database,

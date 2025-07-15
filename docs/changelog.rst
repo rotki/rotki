@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Spark balances on proxy addresses will now be properly detected.
 * :feature:`-` Monerium and Gnosis Pay events will be properly updated when decoding new transactions or redecoding existing events.
 * :feature:`2880` rotki will now show bitcoin transactions in history events page.
 * :feature:`4455` Users will now be able to see detailed information about which protocols their balances are in.

@@ -936,12 +936,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     usd_value=token_balance * token_usd_price[token],
                 )
                 protocol = token.protocol or balance_label
-                if dsr_proxy_append is True:
-                    balances[account].assets[token][protocol] += balance
-                elif token.is_liability():
-                    balances[account].liabilities[token][protocol] = balance
+                assets_or_liabilities = balances[account].liabilities if token.is_liability() else balances[account].assets  # noqa: E501
+                if dsr_proxy_append:
+                    assets_or_liabilities[token][protocol] += balance
                 else:
-                    balances[account].assets[token][protocol] = balance
+                    assets_or_liabilities[token][protocol] = balance
 
     def query_evm_tokens(
             self,
