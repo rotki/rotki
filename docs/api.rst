@@ -2010,7 +2010,7 @@ Deleting locally saved blockchain transactions
 
 .. http:delete:: /api/(version)/blockchains/transactions
 
-   Doing a DELETE on the blockchain transactions endpoint will delete locally saved transaction data. If nothing is given all transaction data will be deleted. Can specify the chain to only delete all transactions of that chain. Or even further chain and tx_hash to delete only a specific transaction's data (although this is only supported for EVM and EVM-like chains). If chain is Bitcoin, the cached last queried block will also be deleted to allow all txs to be requeried.
+   Doing a DELETE on the blockchain transactions endpoint will delete locally saved transaction data. If nothing is given all transaction data will be deleted. Can specify the chain to only delete all transactions of that chain. Or even further chain and tx_hash to delete only a specific transaction's data (although this is only supported for EVM and EVM-like chains). If chain is Bitcoin or Bitcoin Cash, the cached last queried block will also be deleted to allow all txs to be requeried.
 
    **Example Request**:
 

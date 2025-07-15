@@ -8,6 +8,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -258,7 +259,7 @@ class DBHistoryEvents:
         join_or_where = (
             'INNER JOIN evm_events_info E ON H.identifier=E.identifier '
             'AND E.tx_hash IN (SELECT tx_hash FROM evm_transactions) AND'
-        ) if location != Location.BITCOIN else 'WHERE'
+        ) if not location.is_bitcoin() else 'WHERE'
         querystr = (
             'DELETE FROM history_events WHERE identifier IN ('
             f'SELECT H.identifier from history_events H {join_or_where} H.location = ?)'
@@ -269,10 +270,10 @@ class DBHistoryEvents:
             bindings += (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
 
         write_cursor.execute(querystr, bindings)
-        if location not in (
-            Location.ZKSYNC_LITE,  # the decode status is stored in zksynclite_transactions.is_decoded  # noqa: E501
-            Location.BITCOIN,  # doesn't have the individual txs or decoded status in the db
-        ):
+
+        # zksynclite's decode status is stored in zksynclite_transactions.is_decoded
+        # and btc/bch don't have the individual txs or decoded status in the db
+        if location.is_evm():  # so only delete mappings here for evm locations
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
                 (EVMTX_DECODED,),
@@ -294,9 +295,10 @@ class DBHistoryEvents:
         and won't potentially raise a too many sql variables error
         """
         placeholders = ', '.join(['?'] * len(tx_hashes))
-        if location == Location.BITCOIN:
+        if location.is_bitcoin():
             where_str = f'WHERE event_identifier IN ({placeholders})'
-            bindings = [f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_hash}' for tx_hash in tx_hashes]  # type: ignore  # tx_hashes will be strings for bitcoin
+            id_prefix = BTC_EVENT_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_EVENT_IDENTIFIER_PREFIX  # noqa: E501
+            bindings = [f'{id_prefix}{tx_hash}' for tx_hash in tx_hashes]  # type: ignore  # tx_hashes will be strings for bitcoin
         else:
             where_str = (
                 f'WHERE identifier IN (SELECT identifier FROM evm_events_info '

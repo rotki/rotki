@@ -45,7 +45,7 @@ from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
     is_valid_substrate_address,
 )
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_ETH2
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
@@ -806,9 +806,13 @@ class CreateHistoryEventSchema(Schema):
                 data: dict[str, Any],
                 **_kwargs: Any,
         ) -> dict[str, Any]:
-            if data['location'] == Location.BITCOIN and data['asset'] != A_BTC:
+            if (
+                ((location := data['location']) == Location.BITCOIN and data['asset'] != A_BTC) or
+                (location == Location.BITCOIN_CASH and data['asset'] != A_BCH)
+            ):
+                expected_asset = 'BTC' if location == Location.BITCOIN else 'BCH'
                 raise ValidationError(
-                    message='Bitcoin events must use BTC as the asset',
+                    message=f'{location.name.lower()} events must use {expected_asset} as the asset',  # noqa: E501
                     field_name='asset',
                 )
 

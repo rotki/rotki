@@ -762,7 +762,7 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_BLOCK],
+            name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             **kwargs: Unpack[AddressArgType],
     ) -> int | None:
         ...
@@ -898,7 +898,7 @@ class DBHandler:
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
-            name: Literal[DBCacheDynamic.LAST_BITCOIN_TX_BLOCK],
+            name: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             value: int,
             **kwargs: Unpack[AddressArgType],
     ) -> None:

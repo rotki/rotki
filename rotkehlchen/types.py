@@ -845,6 +845,18 @@ class Location(DBCharEnumMixIn):
             case _:  # should never happen
                 raise AssertionError(f'Got in Location.from_chain for {chain}')
 
+    def is_evm(self) -> bool:
+        return self in EVM_LOCATIONS
+
+    def is_evmlike(self) -> bool:
+        return self in EVMLIKE_LOCATIONS
+
+    def is_evm_or_evmlike(self) -> bool:
+        return self in EVM_EVMLIKE_LOCATIONS
+
+    def is_bitcoin(self) -> bool:
+        return self in BITCOIN_LOCATIONS
+
 
 EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
@@ -852,8 +864,10 @@ EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
 EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
 EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
-
-BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE | Literal[Location.BITCOIN, Location.BITCOIN_CASH]  # noqa: E501
+BITCOIN_LOCATIONS_TYPE = Literal[Location.BITCOIN, Location.BITCOIN_CASH]
+BITCOIN_LOCATIONS: tuple[BITCOIN_LOCATIONS_TYPE, ...] = typing.get_args(BITCOIN_LOCATIONS_TYPE)
+BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE | BITCOIN_LOCATIONS_TYPE
+BLOCKCHAIN_LOCATIONS: tuple[BLOCKCHAIN_LOCATIONS_TYPE, ...] = EVM_EVMLIKE_LOCATIONS + BITCOIN_LOCATIONS  # noqa: E501
 
 
 class ExchangeAuthCredentials(NamedTuple):
