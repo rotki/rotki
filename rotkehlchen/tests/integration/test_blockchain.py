@@ -72,7 +72,7 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
             accounts=[addr1, addr2],
             append_or_remove='append',
         )
-        ethtokens = EthereumTokens(database=blockchain.database, ethereum_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
+        ethtokens = EthereumTokens(database=blockchain.database, evm_inquirer=blockchain.ethereum.node_inquirer)  # noqa: E501
         ethtokens.detect_tokens(
             only_cache=False,
             addresses=[addr1, addr2],

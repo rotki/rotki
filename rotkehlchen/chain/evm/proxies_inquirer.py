@@ -119,7 +119,6 @@ class EvmProxiesInquirer:
                 arguments=[address],
             )[0]
             try:
-                proxy_address = deserialize_evm_address(result)
                 if (proxy_address := deserialize_evm_address(result)) != ZERO_ADDRESS:
                     mapping[address] = proxy_address
             except DeserializationError as e:
