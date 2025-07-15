@@ -2695,11 +2695,15 @@ class RestAPI:
 
         write_cursor.execute(querystr, bindings)
 
-    def _delete_bitcoin_tx_data(self, write_cursor: 'DBCursor') -> None:
+    def _delete_bitcoin_tx_data(
+            self,
+            write_cursor: 'DBCursor',
+            cache_key: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
+    ) -> None:
         """Purge last queried bitcoin tx block from the cache."""
         self.rotkehlchen.data.db.delete_dynamic_caches(
             write_cursor=write_cursor,
-            key_parts=[DBCacheDynamic.LAST_BITCOIN_TX_BLOCK.value[0].removesuffix('{address}')],
+            key_parts=[cache_key.value[0].removesuffix('{address}')],
         )
 
     @overload
@@ -2743,7 +2747,8 @@ class RestAPI:
             if not chain:  # no chain specified, delete data for all supported types.
                 DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(write_cursor=write_cursor)
                 self._delete_zksync_tx_data(write_cursor=write_cursor)
-                self._delete_bitcoin_tx_data(write_cursor=write_cursor)
+                for cache_key in (DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK):  # noqa: E501
+                    self._delete_bitcoin_tx_data(write_cursor=write_cursor, cache_key=cache_key)
             elif chain.is_evm():
                 DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(
                     write_cursor=write_cursor,
@@ -2752,9 +2757,12 @@ class RestAPI:
                 )
             elif chain == SupportedBlockchain.ZKSYNC_LITE:
                 self._delete_zksync_tx_data(write_cursor=write_cursor, tx_hash=tx_hash)  # type: ignore[arg-type] # will be EVMTxHash
-            elif chain == SupportedBlockchain.BITCOIN and tx_hash is None:
-                # only delete cached btc last tx block if we're deleting all events.
-                self._delete_bitcoin_tx_data(write_cursor=write_cursor)
+            elif chain.is_bitcoin() and tx_hash is None:
+                # only delete cached btc/bch last tx block if we're deleting all events.
+                self._delete_bitcoin_tx_data(
+                    write_cursor=write_cursor,
+                    cache_key=DBCacheDynamic.LAST_BTC_TX_BLOCK if chain == SupportedBlockchain.BITCOIN else DBCacheDynamic.LAST_BCH_TX_BLOCK,  # noqa: E501
+                )
 
             # Then delete events related to the deleted transaction data
             if tx_hash is not None:

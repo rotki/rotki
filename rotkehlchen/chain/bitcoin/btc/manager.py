@@ -16,6 +16,7 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
 from rotkehlchen.constants.assets import A_BTC
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -43,6 +44,7 @@ class BitcoinManager(BitcoinCommonManager):
             blockchain=SupportedBlockchain.BITCOIN,
             asset=A_BTC,
             event_identifier_prefix=BTC_EVENT_IDENTIFIER_PREFIX,
+            cache_key=DBCacheDynamic.LAST_BTC_TX_BLOCK,
             api_callbacks=[BtcApiCallback(
                 name='blockchain.info',
                 balances_fn=self._query_blockchain_info_balances,

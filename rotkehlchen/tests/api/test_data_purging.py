@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.bitcoin.bch.constants import BCH_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_EVENT_IDENTIFIER_PREFIX
 from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteSwapData,
@@ -12,7 +13,7 @@ from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteTXType,
 )
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -211,72 +212,83 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
     with rotki.data.db.conn.read_ctx() as cursor:
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
 
-    # check that removing bitcoin events works
+    # Check that removing btc/bch events works.
+    # For each chain add three events with one customized.
     events_db = DBHistoryEvents(rotki.data.db)
-    btc_tx_hash1, btc_tx_hash2, btc_tx_hash3 = (
+    btc_tx_hash1, btc_tx_hash2, btc_tx_hash3, bch_tx_hash1, bch_tx_hash2, bch_tx_hash3 = (
         'e47f43692083b6b4bb3d4d6150acd3c016b09fb841e4055e1f5bb8ad44858bc6',
         '450c309b70fb3f71b63b10ce60af17499bd21b1db39aa47b19bf22166ee67144',
         'eb4d2def800c4993928a6f8cc3dd350933a1fb71e6706902025f29a061e5547f',
+        '9f7685e8499de98433c805038281412b0a2f41cd8e2cde76ebe3032aeac2329f',
+        '8eea0096cba9765b10b6053cf72b57f3c332d89f569358c26045985bbbd204da',
+        'a8cc486127d9c787219f08dac7abe497a95a3f0fd8d55755882caa27c3356453',
     )
     with rotki.data.db.user_write() as write_cursor:
         for event in [HistoryEvent(
-            event_identifier=f'{BTC_EVENT_IDENTIFIER_PREFIX}{tx_hash}',
+            event_identifier=f'{prefix}{tx_hash}',
             sequence_index=0,
             timestamp=TimestampMS(1600000000000),
-            location=Location.BITCOIN,
+            location=location,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
-            asset=A_BTC,
+            asset=asset,
             amount=FVal('0.0001'),
-        ) for tx_hash in (btc_tx_hash1, btc_tx_hash2, btc_tx_hash3)]:
+        ) for prefix, hashes, location, asset in (
+            (BTC_EVENT_IDENTIFIER_PREFIX, (btc_tx_hash1, btc_tx_hash2, btc_tx_hash3), Location.BITCOIN, A_BTC),  # noqa: E501
+            (BCH_EVENT_IDENTIFIER_PREFIX, (bch_tx_hash1, bch_tx_hash2, bch_tx_hash3), Location.BITCOIN_CASH, A_BCH),  # noqa: E501
+        ) for tx_hash in hashes]:
             events_db.add_history_event(
                 write_cursor=write_cursor,
                 event=event,
                 mapping_values=(  # Mark the first event as customized
                     {HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED}
-                    if btc_tx_hash1 in event.event_identifier else {}
+                    if btc_tx_hash1 in event.event_identifier or bch_tx_hash1 in event.event_identifier else {}  # noqa: E501
                 ),
             )
-        rotki.data.db.set_dynamic_cache(  # also add a cache entry that should get deleted in purge
-            write_cursor=write_cursor,
-            name=DBCacheDynamic.LAST_BITCOIN_TX_BLOCK,
-            value=12345,
-            address=BTCAddress('bc1xxxxxxxxxx'),
+        for cache_key in (DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK):
+            rotki.data.db.set_dynamic_cache(  # also add a cache entry that should get deleted in purge  # noqa: E501
+                write_cursor=write_cursor,
+                name=cache_key,
+                value=12345,
+                address=BTCAddress('xxxxxxxxxx'),
+            )
+
+    for chain, location, tx_hash, customized_tx_hash, cache_key in (
+        ('btc', Location.BITCOIN, btc_tx_hash2, btc_tx_hash1, DBCacheDynamic.LAST_BTC_TX_BLOCK),
+        ('bch', Location.BITCOIN_CASH, bch_tx_hash2, bch_tx_hash1, DBCacheDynamic.LAST_BCH_TX_BLOCK),  # noqa: E501
+    ):
+        # check deleting by hash
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json={'chain': chain, 'tx_hash': tx_hash},
         )
+        assert_simple_ok_response(response)
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert len(events := events_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(location=location),
+                has_premium=True,
+            )) == 2  # only deleted the one event for the specified hash
+            assert all(tx_hash not in x.event_identifier for x in events)
 
-    # check deleting by hash
-    response = requests.delete(
-        api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
-        json={'chain': 'btc', 'tx_hash': btc_tx_hash2},
-    )
-    assert_simple_ok_response(response)
-    with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(events := events_db.get_history_events(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
-            has_premium=True,
-        )) == 2  # only deleted the one event for the specified hash
-        assert all(btc_tx_hash2 not in x.event_identifier for x in events)
-
-    # check deleting all
-    response = requests.delete(
-        api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
-        json={'chain': 'btc'},
-    )
-    assert_simple_ok_response(response)
-    with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(events := events_db.get_history_events(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(location=Location.BITCOIN),
-            has_premium=True,
-        )) == 1  # Only the customized event remains
-        assert btc_tx_hash1 in events[0].event_identifier
-
-        # also check that the cached tx block is removed
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?;',
-            (f"{DBCacheDynamic.LAST_BITCOIN_TX_BLOCK.value[0].format(address='')}%",),
-        ).fetchone()[0] == 0
+        # then delete all for this chain
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json={'chain': chain},
+        )
+        assert_simple_ok_response(response)
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert len(events := events_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(location=location),
+                has_premium=True,
+            )) == 1  # Only the customized event remains
+            assert customized_tx_hash in events[0].event_identifier
+            # also check that the cached tx block is removed
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ?;',
+                (f"{cache_key.value[0].format(address='')}%",),
+            ).fetchone()[0] == 0
 
 
 def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:

@@ -46,6 +46,7 @@ class BitcoinCommonManager:
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
             asset: Asset,
             event_identifier_prefix: str,
+            cache_key: Literal[DBCacheDynamic.LAST_BTC_TX_BLOCK, DBCacheDynamic.LAST_BCH_TX_BLOCK],
             api_callbacks: list[BtcApiCallback],
     ) -> None:
         """Common class for the bitcoin and bitcoin cash managers."""
@@ -55,6 +56,7 @@ class BitcoinCommonManager:
         self.location = Location.from_chain(self.blockchain)
         self.asset = asset
         self.event_identifier_prefix = event_identifier_prefix
+        self.cache_key = cache_key
         self.api_callbacks = api_callbacks
 
     def refresh_tracked_accounts(self) -> None:
@@ -190,7 +192,7 @@ class BitcoinCommonManager:
             for address in addresses:
                 block_height = self.database.get_dynamic_cache(
                     cursor=cursor,
-                    name=DBCacheDynamic.LAST_BITCOIN_TX_BLOCK,
+                    name=self.cache_key,
                     address=address,
                 ) or 0
                 accounts_by_latest_query[block_height].append(address)
@@ -230,7 +232,7 @@ class BitcoinCommonManager:
             for address in addresses:
                 self.database.set_dynamic_cache(
                     write_cursor=write_cursor,
-                    name=DBCacheDynamic.LAST_BITCOIN_TX_BLOCK,
+                    name=self.cache_key,
                     value=new_block_height,
                     address=address,
                 )

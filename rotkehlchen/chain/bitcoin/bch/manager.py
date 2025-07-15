@@ -14,6 +14,7 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
 )
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -42,6 +43,7 @@ class BitcoinCashManager(BitcoinCommonManager):
             blockchain=SupportedBlockchain.BITCOIN_CASH,
             asset=A_BCH,
             event_identifier_prefix=BCH_EVENT_IDENTIFIER_PREFIX,
+            cache_key=DBCacheDynamic.LAST_BCH_TX_BLOCK,
             api_callbacks=[BtcApiCallback(
                 name='haskoin',
                 balances_fn=self._query_haskoin_balances,

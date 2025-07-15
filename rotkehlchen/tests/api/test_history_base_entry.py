@@ -280,16 +280,20 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer') -> None:
     # test setting asset to something other than BTC fails for bitcoin history events
     assert isinstance((history_event_entry := entries[5]), HistoryEvent)
     json_data = entries_to_input_dict(entries=[history_event_entry], include_identifier=True)
-    json_data['location'] = Location.BITCOIN.serialize()
     json_data['asset'] = A_ETH.identifier
-    assert_error_response(
-        response=requests.patch(
-            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-            json=json_data,
-        ),
-        contained_in_msg='Bitcoin events must use BTC as the asset',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
+    for location, error_msg in (
+        (Location.BITCOIN, 'bitcoin events must use BTC as the asset'),
+        (Location.BITCOIN_CASH, 'bitcoin_cash events must use BCH as the asset'),
+    ):
+        json_data['location'] = location.serialize()
+        assert_error_response(
+            response=requests.patch(
+                api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+                json=json_data,
+            ),
+            contained_in_msg=error_msg,
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
     # Test that editing works for the various event types
     assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=True)  # evm event
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
