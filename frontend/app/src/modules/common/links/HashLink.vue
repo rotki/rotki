@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RuiTooltip } from '@rotki/ui-library';
+import { Blockchain, consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -10,7 +11,6 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { truncateAddress } from '@/utils/truncate';
-import { Blockchain, consistOfNumbers } from '@rotki/common';
 import AddressEditButton from './AddressEditButton.vue';
 import CopyButton from './CopyButton.vue';
 import LinkButton from './LinkButton.vue';

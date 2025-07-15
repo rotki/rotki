@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import HistoryRedecodeSelection from '@/modules/history/redecode/HistoryRedecodeSelection.vue';
 import { checkIfDevelopment } from '@shared/utils';
+import HistoryRedecodeSelection from '@/modules/history/redecode/HistoryRedecodeSelection.vue';
 
 defineProps<{
   processing: boolean;

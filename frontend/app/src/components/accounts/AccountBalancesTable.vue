@@ -1,7 +1,9 @@
 <script setup lang="ts" generic="T extends BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import { type BigNumber, toSentenceCase } from '@rotki/common';
+import { isEmpty } from 'es-toolkit/compat';
 import AccountChains from '@/components/accounts/AccountChains.vue';
 import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
 import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
@@ -22,8 +24,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { sum } from '@/utils/balances';
 import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
-import { type BigNumber, toSentenceCase } from '@rotki/common';
-import { isEmpty } from 'es-toolkit/compat';
 
 type DataRow = T & { id: string };
 

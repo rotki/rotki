@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
+import { some } from 'es-toolkit/compat';
 import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
 import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
 import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
@@ -27,8 +29,6 @@ import {
   type IgnoredAssetsHandlingType,
 } from '@/types/asset';
 import { uniqueStrings } from '@/utils/data';
-import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
-import { some } from 'es-toolkit/compat';
 
 interface IgnoredFilter {
   onlyShowOwned: boolean;

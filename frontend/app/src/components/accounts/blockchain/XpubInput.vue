@@ -2,13 +2,13 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
 import type { BtcChains } from '@/types/blockchain/chains';
-import { trimOnPaste } from '@/utils/event';
-import { toMessages } from '@/utils/validation';
-import { getKeyType, getPrefix, isPrefixed, keyType, XpubPrefix, type XpubType } from '@/utils/xpub';
 import { Blockchain } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';
+import { trimOnPaste } from '@/utils/event';
+import { toMessages } from '@/utils/validation';
+import { getKeyType, getPrefix, isPrefixed, keyType, XpubPrefix, type XpubType } from '@/utils/xpub';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 

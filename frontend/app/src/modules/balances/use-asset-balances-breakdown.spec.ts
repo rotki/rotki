@@ -1,16 +1,16 @@
 import type { EvmChainInfo } from '@/types/api/chains';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import { bigNumberify, type Blockchain } from '@rotki/common';
+import { createTestManualBalance } from '@test/utils/create-data';
+import { updateGeneralSettings } from '@test/utils/general-settings';
+import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { BalanceType } from '@/types/balances';
-import { bigNumberify, type Blockchain } from '@rotki/common';
-import { createTestManualBalance } from '@test/utils/create-data';
-import { updateGeneralSettings } from '@test/utils/general-settings';
-import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/info/chains', async () => {
   const { computed } = await import('vue');

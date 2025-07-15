@@ -1,6 +1,6 @@
 import type { StatusPayload } from '@/types/action';
-import { Section, Status } from '@/types/status';
 import { isEmpty } from 'es-toolkit/compat';
+import { Section, Status } from '@/types/status';
 
 type SectionStatus = Record<string, Status>;
 

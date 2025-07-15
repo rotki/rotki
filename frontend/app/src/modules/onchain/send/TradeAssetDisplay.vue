@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { TradableAsset } from '@/modules/onchain/types';
 import type { BigNumber } from '@rotki/common';
+import type { TradableAsset } from '@/modules/onchain/types';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';

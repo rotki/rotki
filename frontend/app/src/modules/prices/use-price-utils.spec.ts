@@ -1,9 +1,9 @@
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useCurrencies } from '@/types/currencies';
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useBalancePricesStore } from '@/store/balances/prices';
+import { useCurrencies } from '@/types/currencies';
 
 describe('usePriceUtils', () => {
   let store: ReturnType<typeof useBalancePricesStore>;

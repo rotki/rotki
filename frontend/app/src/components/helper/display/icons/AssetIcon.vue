@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
@@ -8,7 +9,6 @@ import { useAssetIconStore } from '@/store/assets/icon';
 import { SOLANA_TOKEN } from '@/types/asset';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useCurrencies } from '@/types/currencies';
-import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifier } from '@rotki/common';
 
 interface AssetIconProps {
   identifier: string;

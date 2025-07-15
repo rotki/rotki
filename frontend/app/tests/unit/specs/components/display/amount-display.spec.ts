@@ -1,4 +1,8 @@
 import type { Pinia } from 'pinia';
+import { BigNumber, bigNumberify, Zero } from '@rotki/common';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import flushPromises from 'flush-promises';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AmountDisplay, { type AmountInputProps } from '@/components/display/amount/AmountDisplay.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -7,10 +11,6 @@ import { useSessionSettingsStore } from '@/store/settings/session';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
-import { BigNumber, bigNumberify, Zero } from '@rotki/common';
-import { mount, type VueWrapper } from '@vue/test-utils';
-import flushPromises from 'flush-promises';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 

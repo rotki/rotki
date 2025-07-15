@@ -1,6 +1,6 @@
+import type { Blockchain } from '@rotki/common';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { BitcoinChainAddress, EvmChainAddress, TransactionChainType } from '@/types/history/events';
-import type { Blockchain } from '@rotki/common';
 
 export interface RefreshTransactionsParams {
   chains?: Blockchain[];

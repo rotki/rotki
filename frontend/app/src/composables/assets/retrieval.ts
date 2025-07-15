@@ -1,8 +1,10 @@
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier, NotificationGroup, Severity } from '@rotki/common';
+import { isCancel } from 'axios';
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
@@ -12,8 +14,6 @@ import { useTaskStore } from '@/store/tasks';
 import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier, NotificationGroup, Severity } from '@rotki/common';
-import { isCancel } from 'axios';
 
 export interface AssetResolutionOptions {
   associate?: boolean;

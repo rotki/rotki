@@ -1,6 +1,7 @@
-import type { Collection } from '@/types/collection';
 import type { ActionResult } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
+import type { Collection } from '@/types/collection';
+import { omit } from 'es-toolkit';
 import {
   type CounterpartyMapping,
   CounterpartyMappingCollectionResponse,
@@ -11,7 +12,6 @@ import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { mapCollectionResponse } from '@/utils/collection';
-import { omit } from 'es-toolkit';
 
 interface UseCounterpartyMappingApiReturn {
   fetchAllCounterpartyMapping: (payload: MaybeRef<CounterpartyMappingRequestPayload>) => Promise<Collection<CounterpartyMapping>>;

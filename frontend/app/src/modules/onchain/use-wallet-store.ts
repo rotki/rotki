@@ -1,3 +1,4 @@
+import type UniversalProvider from '@walletconnect/universal-provider';
 import type {
   GasFeeEstimation,
   PrepareERC20TransferResponse,
@@ -5,18 +6,17 @@ import type {
   RecentTransaction,
   TransactionParams,
 } from '@/modules/onchain/types';
-import type UniversalProvider from '@walletconnect/universal-provider';
-import { useInterop } from '@/composables/electron-interop';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { logger } from '@/utils/logging';
 import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
 import { type AppKit, createAppKit } from '@reown/appkit/vue';
 import { bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { BrowserProvider, formatUnits, getAddress, type TransactionResponse } from 'ethers';
+import { useInterop } from '@/composables/electron-interop';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
+import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { logger } from '@/utils/logging';
 import { useTradeApi } from './send/use-trade-api';
 import {
   handleTransactionError,
@@ -230,13 +230,13 @@ export const useWalletStore = defineStore('wallet', () => {
     const asset = params.native || !id
       ? id
       : await (async (): Promise<string | undefined> => {
-        const mapping = await getAssetMappingHandler([id]);
-        const assetMapping = mapping?.assets;
-        if (!assetMapping) {
-          return id;
-        }
-        return assetMapping[id]?.symbol ?? id;
-      })();
+          const mapping = await getAssetMappingHandler([id]);
+          const assetMapping = mapping?.assets;
+          if (!assetMapping) {
+            return id;
+          }
+          return assetMapping[id]?.symbol ?? id;
+        })();
 
     return `Send ${amount} ${asset ?? params.assetIdentifier} from ${fromAddress} to ${params.to}`;
   };

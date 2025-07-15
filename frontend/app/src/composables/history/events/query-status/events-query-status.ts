@@ -1,6 +1,6 @@
-import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 import { useQueryStatus } from '@/composables/history/events/query-status/index';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 

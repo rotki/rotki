@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { Blockchain } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import AdaptiveWrapper from '@/components/display/AdaptiveWrapper.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { Blockchain } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

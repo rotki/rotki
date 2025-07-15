@@ -1,9 +1,9 @@
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import { bigNumberify } from '@rotki/common';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { bigNumberify } from '@rotki/common';
-import { beforeAll, describe, expect, it } from 'vitest';
 
 describe('useAccountDelete', () => {
   beforeAll(() => {

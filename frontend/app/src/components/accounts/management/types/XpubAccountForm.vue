@@ -2,10 +2,10 @@
 import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
-import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
-import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import { assert } from '@rotki/common';
 import { omit } from 'es-toolkit';
+import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
+import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 
 const modelValue = defineModel<XpubManage>({ required: true });
 

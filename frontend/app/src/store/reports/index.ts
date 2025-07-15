@@ -10,6 +10,8 @@ import type {
   Reports,
 } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
+import { Blockchain, type Message } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { useReportsApi } from '@/composables/api/reports';
 import { jsonTransformer } from '@/services/axios-transformers';
@@ -24,8 +26,6 @@ import { mapCollectionResponse } from '@/utils/collection';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 import { isTransactionEvent } from '@/utils/report';
-import { Blockchain, type Message } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 function emptyError(): ReportError {
   return {

@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events/schemas';
+import { HistoryEventEntryType, Zero } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { requiredIf } from '@vuelidate/validators';
+import dayjs from 'dayjs';
+import { isEqual } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
@@ -15,12 +21,6 @@ import { useEventFormValidation } from '@/modules/history/management/forms/use-e
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
-import { HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import { requiredIf } from '@vuelidate/validators';
-import dayjs from 'dayjs';
-import { isEqual } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface AssetMovementEventFormProps {
   data: GroupEventData<AssetMovementEvent>;

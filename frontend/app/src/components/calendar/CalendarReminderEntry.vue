@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { CalendarReminderTemporaryPayload } from '@/types/history/calendar/reminder';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import { toMessages } from '@/utils/validation';
 import useVuelidate from '@vuelidate/core';
 import { helpers, maxValue, minValue, required } from '@vuelidate/validators';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<CalendarReminderTemporaryPayload>({ required: true });
 

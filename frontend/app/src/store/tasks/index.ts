@@ -1,3 +1,8 @@
+import { type ActionResult, assert } from '@rotki/common';
+import { checkIfDevelopment } from '@shared/utils';
+import { AxiosError } from 'axios';
+import dayjs from 'dayjs';
+import { find, toArray } from 'es-toolkit/compat';
 import { useTaskApi } from '@/composables/api/task';
 import {
   BackendCancelledTaskError,
@@ -11,11 +16,6 @@ import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
 import { removeKey } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { type ActionResult, assert } from '@rotki/common';
-import { checkIfDevelopment } from '@shared/utils';
-import { AxiosError } from 'axios';
-import dayjs from 'dayjs';
-import { find, toArray } from 'es-toolkit/compat';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 const TIMEOUT_THRESHOLD = 3;

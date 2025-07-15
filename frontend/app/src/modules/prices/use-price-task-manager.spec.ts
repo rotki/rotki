@@ -1,11 +1,11 @@
+import { bigNumberify } from '@rotki/common';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { bigNumberify } from '@rotki/common';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({

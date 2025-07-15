@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
+import { toSentenceCase } from '@rotki/common';
 import { useTransactionQueryStatus } from '@/composables/history/events/query-status/tx-query-status';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
-import { toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{ item: TxQueryStatusData }>();
 

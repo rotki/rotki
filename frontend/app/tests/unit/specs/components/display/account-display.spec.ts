@@ -1,10 +1,10 @@
-import AccountDisplay from '@/components/display/AccountDisplay.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { PrivacyMode } from '@/types/session';
 import { type Account, Blockchain } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import AccountDisplay from '@/components/display/AccountDisplay.vue';
+import { useSessionSettingsStore } from '@/store/settings/session';
+import { PrivacyMode } from '@/types/session';
 
 vi.mock('@/composables/api/assets/icon', () => ({
   useAssetIconApi: () => ({

@@ -1,7 +1,7 @@
-import type { AssetProtocolBalances } from '@/types/blockchain/balances';
-import type { ExchangeInfo } from '@/types/exchanges';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { AssetProtocolBalances } from '@/types/blockchain/balances';
+import type { ExchangeInfo } from '@/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum, exchangeAssetSum } from '@/utils/calculation';

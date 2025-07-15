@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import type { BackendConfiguration } from '@/types/backend';
 import type { Writeable } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { BackendOptions } from '@shared/ipc';
+import type { BackendConfiguration } from '@/types/backend';
+import { LogLevel } from '@shared/log-level';
+import useVuelidate from '@vuelidate/core';
+import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
+import { isEqual } from 'es-toolkit';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import LanguageSetting from '@/components/settings/general/language/LanguageSetting.vue';
 import SettingResetButton from '@/components/settings/SettingResetButton.vue';
@@ -12,10 +16,6 @@ import { useInterop } from '@/composables/electron-interop';
 import { useConfirmStore } from '@/store/confirm';
 import { useMainStore } from '@/store/main';
 import { toMessages } from '@/utils/validation';
-import { LogLevel } from '@shared/log-level';
-import useVuelidate from '@vuelidate/core';
-import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
-import { isEqual } from 'es-toolkit';
 
 const emit = defineEmits<{
   (e: 'dismiss'): void;

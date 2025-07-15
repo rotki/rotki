@@ -1,5 +1,5 @@
-import { splitSearch } from '@/utils/search';
 import { describe, expect, it } from 'vitest';
+import { splitSearch } from '@/utils/search';
 
 describe('utils/search', () => {
   it('splitSearch return correct result', () => {

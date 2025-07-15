@@ -1,11 +1,11 @@
-import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 import type { Ref } from 'vue';
+import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface UseHistoricPricesReturn {
   items: Ref<HistoricalPrice[]>;

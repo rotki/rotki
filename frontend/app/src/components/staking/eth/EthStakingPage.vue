@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { type BigNumber, Blockchain, type Eth2ValidatorEntry, type Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import dayjs from 'dayjs';
+import { omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
@@ -25,11 +30,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { nonEmptyProperties } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { type BigNumber, Blockchain, type Eth2ValidatorEntry, type Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import dayjs from 'dayjs';
-import { omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;

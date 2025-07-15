@@ -1,11 +1,11 @@
 import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
 import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
+import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
-import { beforeEach, describe, expect, it } from 'vitest';
 import { useBlockchainAccountData } from './use-blockchain-account-data';
 import '@test/i18n';
 

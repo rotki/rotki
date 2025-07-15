@@ -1,4 +1,5 @@
 import type { ActionStatus } from '@/types/action';
+import { assert, BigNumber } from '@rotki/common';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
@@ -10,7 +11,6 @@ import {
   getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
-import { assert, BigNumber } from '@rotki/common';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));

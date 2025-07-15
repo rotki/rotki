@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
 import type { Nullable } from '@rotki/common';
+import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';
 import CustomAssetFormDialog from '@/components/asset-manager/custom/CustomAssetFormDialog.vue';
 import CustomAssetTable from '@/components/asset-manager/custom/CustomAssetTable.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';

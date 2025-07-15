@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { transformCase } from '@rotki/common';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import BlockscoutApiKey from '@/components/settings/api-keys/external/BlockscoutApiKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import { transformCase } from '@rotki/common';
 
 const { t } = useI18n({ useScope: 'global' });
 const { keys } = useExternalApiKeys(t);

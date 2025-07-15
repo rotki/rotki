@@ -5,6 +5,8 @@ import type {
   RepullingTransactionResponse,
 } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';
+import { Severity, toHumanReadable } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefreshTransactions } from '@/composables/history/events/tx/use-refresh-transactions';
 import { displayDateFormatter } from '@/data/date-formatter';
@@ -15,8 +17,6 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
-import { Severity, toHumanReadable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });

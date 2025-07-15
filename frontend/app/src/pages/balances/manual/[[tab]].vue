@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import { Zero } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import ManualBalancesDialog from '@/components/accounts/manual-balances/ManualBalancesDialog.vue';
 import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
@@ -11,8 +13,6 @@ import { useHistoryStore } from '@/store/history';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
-import { Zero } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 definePage({
   meta: {

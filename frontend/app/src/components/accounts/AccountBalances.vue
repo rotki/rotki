@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
 } from '@/types/blockchain/accounts';
 import type { LocationQuery } from '@/types/route';
-import type { ComponentExposed } from 'vue-component-type-helpers';
+import { toSentenceCase } from '@rotki/common';
 import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalanceAggregatedAssets.vue';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
@@ -26,7 +27,6 @@ import { useConfirmStore } from '@/store/confirm';
 import { SavedFilterLocation } from '@/types/filtering';
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
 import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
-import { toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{
   category: string;

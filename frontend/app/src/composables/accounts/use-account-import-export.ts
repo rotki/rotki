@@ -1,5 +1,7 @@
 import type { Eth2Validator } from '@/types/balances';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
+import { Blockchain, Severity } from '@rotki/common';
+import { z } from 'zod/v4';
 import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useBlockchains } from '@/composables/blockchain/index';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
@@ -16,8 +18,6 @@ import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils'
 import { downloadFileByTextContent } from '@/utils/download';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
-import { Blockchain, Severity } from '@rotki/common';
-import { z } from 'zod/v4';
 
 const CSVRow = z.object({
   address: z.string(),

@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { bigNumberify } from '@rotki/common';
+import { RuiIcon } from '@rotki/ui-library';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { bigNumberify } from '@rotki/common';
-import { RuiIcon } from '@rotki/ui-library';
 import SettingsOption from '../../controls/SettingsOption.vue';
 
 const { t } = useI18n({ useScope: 'global' });

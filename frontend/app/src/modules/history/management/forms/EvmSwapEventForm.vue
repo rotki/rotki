@@ -3,6 +3,10 @@ import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swa
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
+import { assert, HistoryEventEntryType } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import dayjs from 'dayjs';
+import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
@@ -15,10 +19,6 @@ import { toSubEvent } from '@/modules/history/management/forms/utils';
 import { useMessageStore } from '@/store/message';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { assert, HistoryEventEntryType } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
@@ -150,11 +150,11 @@ async function save(): Promise<boolean> {
 
   const result = isEditMode
     ? await editHistoryEvent({
-      ...payload,
-      ...{
-        identifiers: get(identifiers),
-      },
-    })
+        ...payload,
+        ...{
+          identifiers: get(identifiers),
+        },
+      })
     : await addHistoryEvent(payload);
 
   if (result.success) {

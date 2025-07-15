@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import type { Exchange } from '@/types/exchanges';
-import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
+import type { Exchange } from '@/types/exchanges';
+import type { TradeLocationData } from '@/types/history/trade/location';
+import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -15,7 +16,6 @@ import { useLocations } from '@/composables/locations';
 import { useAppRoutes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { startPromise } from '@shared/utils';
 
 withDefaults(
   defineProps<{

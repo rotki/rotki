@@ -1,7 +1,7 @@
-import { useBlockie } from '@/composables/accounts/blockie';
 import { createBlockie } from '@rotki/ui-library';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useBlockie } from '@/composables/accounts/blockie';
 
 describe('composables::accounts/blockie', () => {
   setActivePinia(createPinia());

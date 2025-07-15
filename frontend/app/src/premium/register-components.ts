@@ -1,5 +1,25 @@
-/* eslint-disable import/max-dependencies */
+/* eslint-disable @rotki/max-dependencies */
 import type { App } from 'vue';
+import {
+  RuiAccordion,
+  RuiAccordions,
+  RuiAlert,
+  RuiButton,
+  RuiButtonGroup,
+  RuiCard,
+  RuiChip,
+  RuiColorPicker,
+  RuiDataTable,
+  RuiDateTimePicker,
+  RuiDialog,
+  RuiDivider,
+  RuiIcon,
+  RuiMenu,
+  RuiProgress,
+  RuiSlider,
+  RuiTextField,
+  RuiTooltip,
+} from '@rotki/ui-library';
 import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
@@ -29,26 +49,6 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { logger } from '@/utils/logging';
-import {
-  RuiAccordion,
-  RuiAccordions,
-  RuiAlert,
-  RuiButton,
-  RuiButtonGroup,
-  RuiCard,
-  RuiChip,
-  RuiColorPicker,
-  RuiDataTable,
-  RuiDateTimePicker,
-  RuiDialog,
-  RuiDivider,
-  RuiIcon,
-  RuiMenu,
-  RuiProgress,
-  RuiSlider,
-  RuiTextField,
-  RuiTooltip,
-} from '@rotki/ui-library';
 
 function ruiRegister(app: App): void {
   app.component('RuiAlert', RuiAlert);

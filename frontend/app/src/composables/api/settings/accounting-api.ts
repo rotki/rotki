@@ -1,6 +1,7 @@
+import type { ActionResult } from '@rotki/common';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
@@ -14,7 +15,6 @@ import {
   AccountingRuleEntryCollectionResponse,
   type AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
-import { omit } from 'es-toolkit';
 
 interface UseAccountingApiReturn {
   fetchAccountingRule: (payload: AccountingRuleRequestPayload, counterparty: string | null) => Promise<AccountingRuleEntry | null>;

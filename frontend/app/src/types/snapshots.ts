@@ -1,6 +1,6 @@
-import { BalanceType } from '@/types/balances';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
+import { BalanceType } from '@/types/balances';
 
 export const BalanceSnapshot = z.object({
   amount: NumericString,

@@ -1,3 +1,5 @@
+import { BigNumber, DARK_THEME, LIGHT_THEME, SELECTED_THEME, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -7,8 +9,6 @@ import {
   Quarter,
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
-import { BigNumber, DARK_THEME, LIGHT_THEME, SELECTED_THEME, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('settings:utils', () => {
   beforeEach(() => {

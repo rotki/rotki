@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { BalanceSnapshotPayload } from '@/types/snapshots';
 import type { BigNumber } from '@rotki/common';
+import type { BalanceSnapshotPayload } from '@/types/snapshots';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
 import EditBalancesSnapshotAssetPriceForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
@@ -8,8 +10,6 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useRefPropVModel } from '@/utils/model';
 import { isNft } from '@/utils/nft';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<BalanceSnapshotPayloadAndLocation>({ required: true });

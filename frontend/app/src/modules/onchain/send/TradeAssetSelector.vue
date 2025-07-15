@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TradableAsset } from '@/modules/onchain/types';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import TradeAssetDisplay from '@/modules/onchain/send/TradeAssetDisplay.vue';
@@ -8,7 +9,6 @@ import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
-import { type BigNumber, Blockchain } from '@rotki/common';
 
 const asset = defineModel<string>({ required: true });
 const chain = defineModel<string>('chain', { required: true });

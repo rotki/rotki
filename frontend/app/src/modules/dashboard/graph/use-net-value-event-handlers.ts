@@ -1,8 +1,8 @@
 import type { EChartsType } from 'echarts/core';
 import type { Ref } from 'vue';
 import type VChart from 'vue-echarts';
-import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 import { assert, type BigNumber, type NetValue } from '@rotki/common';
+import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 
 interface UseNetValueEventHandlersParams {
   chartInstance: Ref<InstanceType<typeof VChart> | undefined>;

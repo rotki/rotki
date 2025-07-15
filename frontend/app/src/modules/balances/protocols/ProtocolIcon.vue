@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { toSentenceCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
-import { toSentenceCase } from '@rotki/common';
 
 const props = defineProps<{
   protocol: string;

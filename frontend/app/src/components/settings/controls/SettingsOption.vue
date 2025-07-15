@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { MaybeRef } from '@vueuse/core';
 import type { SessionSettings } from '@/types/session';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { SettingsUpdate } from '@/types/user';
-import type { MaybeRef } from '@vueuse/core';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { SettingLocation, useClearableMessages, useSettings } from '@/composables/settings';
 

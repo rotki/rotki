@@ -1,6 +1,6 @@
 import type { ProtocolBalances } from '@/types/blockchain/balances';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 export function assetSum(balances: Record<string, ProtocolBalances>): BigNumber {
   const { useIsAssetIgnored } = useIgnoredAssetsStore();

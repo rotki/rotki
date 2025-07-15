@@ -1,7 +1,7 @@
+import { Theme } from '@rotki/common';
 import { useDarkMode } from '@/composables/dark-mode';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { Theme } from '@rotki/common';
 
 export const useThemeChecker = createSharedComposable(() => {
   const { selectedTheme } = storeToRefs(useFrontendSettingsStore());

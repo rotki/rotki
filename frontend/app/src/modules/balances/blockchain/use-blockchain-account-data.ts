@@ -1,3 +1,5 @@
+import type { MaybeRef } from '@vueuse/core';
+import type { ComputedRef } from 'vue';
 import type {
   Accounts,
   Balances,
@@ -8,8 +10,9 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { ProtocolBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
+import { omit } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
@@ -21,9 +24,6 @@ import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-acc
 import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
-import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
-import { omit } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface AccountBalances {
   assets: AssetBalance[];

@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { LogLevel } from '@shared/log-level';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { api } from '@/services/rotkehlchen-api';
 import { useMainStore } from '@/store/main';
-import { LogLevel } from '@shared/log-level';
 
 const restarting = ref(false);
 

@@ -1,7 +1,7 @@
-import { CollectionCommonFields } from '@/types/collection';
-import { EntryMeta } from '@/types/history/meta';
 import { type BigNumber, HistoryEventEntryType, NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
+import { CollectionCommonFields } from '@/types/collection';
+import { EntryMeta } from '@/types/history/meta';
 
 export const CommonHistoryEvent = z.object({
   amount: NumericString,

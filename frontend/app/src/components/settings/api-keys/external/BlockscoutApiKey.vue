@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { blockscoutLinks } from '@shared/external-links';
+import { camelCase } from 'es-toolkit';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useNotificationsStore } from '@/store/notifications';
 import { isBlockscoutKey } from '@/types/external';
-import { blockscoutLinks } from '@shared/external-links';
-import { camelCase } from 'es-toolkit';
 
 const props = defineProps<{ evmChain: string; chainName: string }>();
 const { evmChain } = toRefs(props);

@@ -1,3 +1,5 @@
+import { Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useBalances } from '@/composables/balances';
 import { useStatusUpdater } from '@/composables/status';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -8,8 +10,6 @@ import { useTagStore } from '@/store/session/tags';
 import { useStatisticsStore } from '@/store/statistics';
 import { Section, Status } from '@/types/status';
 import { logger } from '@/utils/logging';
-import { Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface UseDataLoaderReturn { load: () => void }
 

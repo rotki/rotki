@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import type { ChainData, RefreshChainAddress } from '@/modules/history/refresh/types';
 import type { BitcoinChainAddress, EvmChainAddress } from '@/types/history/events';
+import { getTextToken } from '@rotki/common';
+import { cloneDeep, isEqual } from 'es-toolkit';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
 import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';
-import { getTextToken } from '@rotki/common';
-import { cloneDeep, isEqual } from 'es-toolkit';
 
 const modelValue = defineModel<RefreshChainAddress[]>({ required: true });
 const selectedChain = defineModel<string | undefined>('chain', { required: true });

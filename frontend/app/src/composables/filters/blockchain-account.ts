@@ -1,10 +1,10 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
-import type { MaybeRef } from '@vueuse/core';
+import { z } from 'zod/v4';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import { arrayify } from '@/utils/array';
-import { z } from 'zod/v4';
 
 enum BlockchainAccountFilterKeys {
   ADDRESS = 'address',

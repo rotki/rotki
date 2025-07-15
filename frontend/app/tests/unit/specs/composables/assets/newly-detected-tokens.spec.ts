@@ -1,7 +1,7 @@
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import flushPromises from 'flush-promises';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 describe('composables::/assets/newly-detected-tokens', () => {
   let composable: ReturnType<typeof useNewlyDetectedTokens>;

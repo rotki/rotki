@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { MissingAcquisition } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { MissingAcquisition } from '@/types/reports';
+import { assert, type BigNumber } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
@@ -9,7 +10,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { bigNumberSum } from '@/utils/calculation';
-import { assert, type BigNumber } from '@rotki/common';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 

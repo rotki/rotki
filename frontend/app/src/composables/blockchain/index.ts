@@ -1,8 +1,10 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type { Module } from '@/types/modules';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
+import { type Account, assert, Blockchain, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useAccountAdditionNotifications } from '@/composables/blockchain/use-account-addition-notifications';
@@ -22,8 +24,6 @@ import { isTaskCancelled } from '@/utils';
 import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
-import { type Account, assert, Blockchain, Severity } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 
 interface EvmAccountAdditionSuccess {
   type: 'success';

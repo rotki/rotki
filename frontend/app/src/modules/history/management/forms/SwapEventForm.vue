@@ -2,6 +2,11 @@
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddSwapEventPayload, SwapEvent } from '@/types/history/events/schemas';
+import { assert, HistoryEventEntryType } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import dayjs from 'dayjs';
+import { omit, pick } from 'es-toolkit';
+import { isEmpty } from 'es-toolkit/compat';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
@@ -12,11 +17,6 @@ import { useEventFormValidation } from '@/modules/history/management/forms/use-e
 import { useMessageStore } from '@/store/message';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import { assert, HistoryEventEntryType } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { omit, pick } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 
 type FormData = Required<AddSwapEventPayload>;
 
@@ -143,9 +143,9 @@ async function save(): Promise<boolean> {
 
   const result = isEditMode
     ? await editHistoryEvent({
-      ...omit(payload, ['uniqueId']),
-      ...get(identifiers),
-    })
+        ...omit(payload, ['uniqueId']),
+        ...get(identifiers),
+      })
     : await addHistoryEvent(payload);
 
   if (result.success) {

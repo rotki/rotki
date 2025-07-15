@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { OracleCacheMeta } from '@/types/prices';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import { Severity } from '@rotki/common';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
@@ -17,7 +18,6 @@ import { useTaskStore } from '@/store/tasks';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
-import { Severity } from '@rotki/common';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 

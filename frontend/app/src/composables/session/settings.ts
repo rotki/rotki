@@ -1,5 +1,6 @@
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';
+import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
 import { getBnFormat } from '@/data/amount-formatter';
 import { usePremiumStore } from '@/store/session/premium';
@@ -7,7 +8,6 @@ import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { BigNumber, TimeFramePersist } from '@rotki/common';
 
 interface UseSessionSettingsReturn {
   initialize: (model: UserSettingsModel, exchanges: Exchange[]) => void;

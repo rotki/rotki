@@ -1,5 +1,5 @@
-import type { ActionDataEntry } from '@/types/action';
 import type { ComputedRef } from 'vue';
+import type { ActionDataEntry } from '@/types/action';
 import { CostBasisMethod } from '@/types/user';
 
 type CostBasicRef = ComputedRef<ActionDataEntry<CostBasisMethod>[]>;

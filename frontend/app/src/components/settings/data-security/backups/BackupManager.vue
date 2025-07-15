@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
+import { Severity } from '@rotki/common';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useBackupApi } from '@/composables/api/backup';
@@ -8,7 +9,6 @@ import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { getFilepath } from '@/utils/file';
 import { logger } from '@/utils/logging';
-import { Severity } from '@rotki/common';
 
 const { t } = useI18n({ useScope: 'global' });
 

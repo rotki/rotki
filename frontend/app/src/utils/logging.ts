@@ -1,8 +1,8 @@
-import { useInterop } from '@/composables/electron-interop';
-import { IndexedDb } from '@/utils/indexed-db';
 import { LogLevel } from '@shared/log-level';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import consola, { type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } from 'consola';
+import { useInterop } from '@/composables/electron-interop';
+import { IndexedDb } from '@/utils/indexed-db';
 
 const isDevelopment = checkIfDevelopment();
 

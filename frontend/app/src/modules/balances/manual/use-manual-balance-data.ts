@@ -1,6 +1,6 @@
-import type { BalanceByLocation, LocationBalance } from '@/types/balances';
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
+import type { BalanceByLocation, LocationBalance } from '@/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';

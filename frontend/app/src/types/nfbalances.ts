@@ -1,8 +1,8 @@
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { PaginationRequestPayload } from '@/types/common';
+import { z } from 'zod/v4';
 import { CollectionCommonFields } from '@/types/collection';
 import { PriceInformation } from '@/types/prices';
-import { z } from 'zod/v4';
 
 export const NonFungibleBalance = z.object({
   ...PriceInformation.shape,

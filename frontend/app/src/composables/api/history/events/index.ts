@@ -1,9 +1,10 @@
+import type { ActionResult } from '@rotki/common';
+import type { AxiosRequestConfig } from 'axios';
 import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { ActionDataEntry, ActionStatus } from '@/types/action';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common';
-import type { AxiosRequestConfig } from 'axios';
+import { omit } from 'es-toolkit';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -33,7 +34,6 @@ import {
 import { nonEmptyProperties } from '@/utils/data';
 import { downloadFileByUrl } from '@/utils/download';
 import { getFilename } from '@/utils/file';
-import { omit } from 'es-toolkit';
 
 interface QueryExchangePayload { name: string; location: string }
 

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import type { LoginCredentials, SyncApproval } from '@/types/login';
+import { isValidUrl } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, requiredIf } from '@vuelidate/validators';
 import IncompleteUpgradeAlert from '@/components/account-management/login/IncompleteUpgradeAlert.vue';
 import PremiumSyncConflictAlert from '@/components/account-management/login/PremiumSyncConflictAlert.vue';
 import WelcomeMessageDisplay from '@/components/account-management/login/WelcomeMessageDisplay.vue';
@@ -12,10 +16,6 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
 import { compareTextByKeyword } from '@/utils/assets';
 import { toMessages } from '@/utils/validation';
-import { isValidUrl } from '@rotki/common';
-import { externalLinks } from '@shared/external-links';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
 
 const props = withDefaults(
   defineProps<{

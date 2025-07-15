@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 import type { AssetBalance } from '@rotki/common';
+import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';

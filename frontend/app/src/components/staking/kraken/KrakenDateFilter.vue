@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import type { KrakenStakingDateFilter } from '@/types/staking';
+import { assert } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
 import { getDateInputISOFormat } from '@/utils/date';
-import { assert } from '@rotki/common';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 

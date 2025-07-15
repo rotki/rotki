@@ -1,11 +1,11 @@
-import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
-import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { createMockExchangeBalances } from '@test/utils/test-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
 
 describe('useExchangeData', () => {
   setActivePinia(createPinia());

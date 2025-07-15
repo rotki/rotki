@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events/schemas';
+import { HistoryEventEntryType, Zero } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import dayjs from 'dayjs';
+import { isEmpty } from 'es-toolkit/compat';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
@@ -18,10 +22,6 @@ import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEven
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
-import { HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
-import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
 
 interface HistoryEventFormProps {
   data: StandaloneEventData<EvmHistoryEvent>;

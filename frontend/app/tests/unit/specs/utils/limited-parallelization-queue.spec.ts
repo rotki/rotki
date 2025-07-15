@@ -1,7 +1,7 @@
-import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { wait } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, vitest } from 'vitest';
+import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 
 describe('limitedParallelizationQueue', () => {
   let queue: LimitedParallelizationQueue;

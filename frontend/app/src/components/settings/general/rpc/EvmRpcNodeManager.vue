@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Blockchain } from '@rotki/common';
+import { camelCase } from 'es-toolkit';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
@@ -16,7 +17,6 @@ import {
   type EvmRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
-import { camelCase } from 'es-toolkit';
 
 const props = defineProps<{
   chain: Blockchain;

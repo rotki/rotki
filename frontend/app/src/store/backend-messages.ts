@@ -1,11 +1,11 @@
+import { BackendCode, type OAuthResult } from '@shared/ipc';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { logger } from '@/utils/logging';
-import { BackendCode, type OAuthResult } from '@shared/ipc';
-import { checkIfDevelopment, startPromise } from '@shared/utils';
 
 type OAuthCallback = (oAuthResult: OAuthResult) => void;
 

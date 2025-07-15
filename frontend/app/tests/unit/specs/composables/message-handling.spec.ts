@@ -1,12 +1,12 @@
 import type { EvmChainInfo } from '@/types/api/chains';
+import { assert, Blockchain } from '@rotki/common';
+import { mount } from '@vue/test-utils';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useMessageHandling } from '@/composables/message-handling';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { SocketMessageType } from '@/types/websocket-messages';
-import { assert, Blockchain } from '@rotki/common';
-import { mount } from '@vue/test-utils';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),

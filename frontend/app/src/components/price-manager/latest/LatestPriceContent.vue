@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import { omit } from 'es-toolkit';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
@@ -14,7 +15,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { isNft } from '@/utils/nft';
-import { omit } from 'es-toolkit';
 
 const { t } = useI18n({ useScope: 'global' });
 

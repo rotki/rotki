@@ -1,6 +1,6 @@
+import type { TimeFramePeriod } from '@rotki/common';
 import type { CamelCase } from '@/types/common';
 import type { Module } from '@/types/modules';
-import type { TimeFramePeriod } from '@rotki/common';
 import { z } from 'zod/v4';
 
 export const PeriodicClientQueryResult = z.object({

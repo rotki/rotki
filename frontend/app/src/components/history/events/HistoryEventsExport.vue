@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { TaskMeta } from '@/types/task';
+import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
+import { omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useInterop } from '@/composables/electron-interop';
 import { useConfirmStore } from '@/store/confirm';
@@ -8,8 +10,6 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
-import { omit } from 'es-toolkit';
 
 const props = defineProps<{
   matchExactEvents: boolean;

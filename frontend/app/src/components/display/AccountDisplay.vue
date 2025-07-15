@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { type Account, Blockchain } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useScramble } from '@/composables/scramble';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { truncateAddress } from '@/utils/truncate';
-import { type Account, Blockchain } from '@rotki/common';
 
 const props = withDefaults(defineProps<{
   account: Account;

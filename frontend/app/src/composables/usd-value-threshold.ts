@@ -1,10 +1,10 @@
-import type { BalanceSource } from '@/types/settings/frontend-settings';
 import type { ComputedRef } from 'vue';
+import type { BalanceSource } from '@/types/settings/frontend-settings';
+import { bigNumberify, One } from '@rotki/common';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
-import { bigNumberify, One } from '@rotki/common';
 
 export function useUsdValueThreshold(balanceSource: BalanceSource): ComputedRef<string | undefined> {
   const { balanceUsdValueThreshold } = storeToRefs(useFrontendSettingsStore());

@@ -1,14 +1,14 @@
+import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventsTableEmitFn } from './types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventsTableEmitFn } from './types';
+import { flatten } from 'es-toolkit';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { flatten } from 'es-toolkit';
 
 interface UseHistoryEventsDataOptions {
   groups: Ref<Collection<HistoryEventRow>>;

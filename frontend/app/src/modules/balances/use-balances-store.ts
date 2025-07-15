@@ -1,12 +1,12 @@
+import type { MaybeRef } from '@vueuse/core';
 import type { Balances } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances, BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
-import type { MaybeRef } from '@vueuse/core';
-import { updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/utils/prices';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
+import { updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/utils/prices';
 
 function updatePriceData(data: ManualBalanceWithValue[], prices: MaybeRef<AssetPrices>): ManualBalanceWithValue[] {
   return data.map((item) => {

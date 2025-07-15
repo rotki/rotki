@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { ActionDataEntry } from '@/types/action';
 import type { RouteLocationRaw } from 'vue-router';
+import type { ActionDataEntry } from '@/types/action';
+import { Blockchain, toSentenceCase } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import ListItem from '@/components/common/ListItem.vue';
 import BlockchainBalanceCardDetails from '@/components/dashboard/blockchain-balance/BlockchainBalanceCardDetails.vue';
@@ -9,7 +10,6 @@ import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
-import { Blockchain, toSentenceCase } from '@rotki/common';
 
 interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;

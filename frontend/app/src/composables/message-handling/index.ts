@@ -1,3 +1,5 @@
+import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
+import { backoff, startPromise } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
 import {
   useAccountingRuleConflictMessageHandler,
@@ -39,8 +41,6 @@ import {
 } from '@/types/websocket-messages';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
-import { type Notification, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { backoff, startPromise } from '@shared/utils';
 
 interface UseMessageHandling {
   handleMessage: (data: string) => Promise<void>;

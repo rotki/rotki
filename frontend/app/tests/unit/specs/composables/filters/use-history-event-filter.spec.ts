@@ -1,13 +1,13 @@
-import { useHistoryEventFilter } from '@/composables/filters/events';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useMainStore } from '@/store/main';
-import { assetSuggestions } from '@/utils/assets';
 import { HistoryEventEntryType } from '@rotki/common';
 import { get } from '@vueuse/core';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
+import { useHistoryEventFilter } from '@/composables/filters/events';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useMainStore } from '@/store/main';
+import { assetSuggestions } from '@/utils/assets';
 
 vi.mock('@/utils/assets', async () => {
   const mod = await vi.importActual<typeof import('@/utils/assets')>(

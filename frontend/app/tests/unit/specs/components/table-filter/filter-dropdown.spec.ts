@@ -1,8 +1,8 @@
 import type { StringSuggestionMatcher } from '@/types/filtering';
-import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it } from 'vitest';
+import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 describe('table-filter/FilterDropdown.vue', () => {

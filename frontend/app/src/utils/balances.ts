@@ -1,6 +1,3 @@
-import type { AssetInfoReturn } from '@/composables/assets/retrieval';
-import type { AssetBalances } from '@/types/balances';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type {
   AssetBalance,
   AssetBalanceWithPrice,
@@ -10,6 +7,9 @@ import type {
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { AssetInfoReturn } from '@/composables/assets/retrieval';
+import type { AssetBalances } from '@/types/balances';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import { getSortItems } from '@/utils/assets';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, bigNumberSum } from '@/utils/calculation';

@@ -1,9 +1,9 @@
 import type { PendingTask } from '@/types/task';
+import { type ActionResult, Eth2DailyStats, type Eth2DailyStatsPayload, type EthStakingPayload, EthStakingPerformanceResponse, transformCase } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
 import { nonEmptyProperties } from '@/utils/data';
-import { type ActionResult, Eth2DailyStats, type Eth2DailyStatsPayload, type EthStakingPayload, EthStakingPerformanceResponse, transformCase } from '@rotki/common';
 
 interface UseEth2ApiReturn {
   fetchStakingPerformance: (payload: EthStakingPayload) => Promise<EthStakingPerformanceResponse>;

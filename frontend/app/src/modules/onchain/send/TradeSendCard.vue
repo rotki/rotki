@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { GasFeeEstimation, GetAssetBalancePayload } from '@/modules/onchain/types';
+import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import TradeAmountInput from '@/modules/onchain/send/TradeAmountInput.vue';
@@ -12,7 +13,6 @@ import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { logger } from '@/utils/logging';
-import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
 import { useTradeApi } from './use-trade-api';
 
 const { t } = useI18n({ useScope: 'global' });

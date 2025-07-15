@@ -1,5 +1,5 @@
-import type { TaskMeta } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
+import type { TaskMeta } from '@/types/task';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';

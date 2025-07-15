@@ -3,6 +3,9 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type { Module } from '@/types/modules';
 import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
 import type { NftPrice } from '@/types/prices';
+import { assert, BigNumber, Blockchain } from '@rotki/common';
+import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
+import { keyBy } from 'es-toolkit';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
@@ -21,9 +24,6 @@ import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';
-import { assert, BigNumber, Blockchain } from '@rotki/common';
-import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
-import { keyBy } from 'es-toolkit';
 
 defineProps<{ modules: Module[] }>();
 

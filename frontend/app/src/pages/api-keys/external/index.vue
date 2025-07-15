@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { getTextToken } from '@rotki/common';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import { getTextToken } from '@rotki/common';
 
 const { t } = useI18n({ useScope: 'global' });
 

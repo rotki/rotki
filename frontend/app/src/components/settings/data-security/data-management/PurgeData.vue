@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toSentenceCase } from '@rotki/common';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import DefiModuleSelector from '@/components/defi/DefiModuleSelector.vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
@@ -13,7 +14,6 @@ import { useSessionPurge } from '@/composables/session/purge';
 import { useLocationStore } from '@/store/locations';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
-import { toSentenceCase } from '@rotki/common';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

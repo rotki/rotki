@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Report } from '@/types/reports';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
+import type { Report } from '@/types/reports';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';

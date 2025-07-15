@@ -1,12 +1,12 @@
 <script lang="ts" setup>
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AccountingRuleForm from '@/components/settings/accounting/rule/AccountingRuleForm.vue';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError } from '@/types/api/errors';
-import { omit } from 'es-toolkit';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<AccountingRuleEntry | undefined>({ required: true });
 

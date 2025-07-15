@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { isSolanaTokenIdentifier } from '@rotki/common';
+import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useSolanaTokenMigrationApi } from '@/modules/asset-manager/solana-token-migration/solana-token-migration';
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { isSolanaTokenIdentifier } from '@rotki/common';
-import { useTemplateRef } from 'vue';
 import SolanaTokenMigrationForm from './SolanaTokenMigrationForm.vue';
 
 interface SolanaTokenMigrationData {

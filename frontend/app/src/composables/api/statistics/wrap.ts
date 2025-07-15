@@ -1,8 +1,8 @@
+import { type ActionResult, NumericString } from '@rotki/common';
+import { z } from 'zod/v4';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { nonEmptyProperties } from '@/utils/data';
-import { type ActionResult, NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
 
 export const WrapStatisticsSchema = z.object({
   ethOnGas: NumericString,

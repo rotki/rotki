@@ -1,10 +1,10 @@
+import type { MaybeRef } from '@vueuse/core';
 import type {
   ExchangeSavingsCollection,
   ExchangeSavingsCollectionResponse,
   ExchangeSavingsRequestPayload,
 } from '@/types/exchanges';
 import type { TaskMeta } from '@/types/task';
-import type { MaybeRef } from '@vueuse/core';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
 import { useNotificationsStore } from '@/store/notifications';

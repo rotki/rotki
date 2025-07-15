@@ -1,10 +1,10 @@
-import type { ExchangeRates } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef } from 'vue';
+import type { ExchangeRates } from '@/types/user';
+import { type BigNumber, One } from '@rotki/common';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { type BigNumber, One } from '@rotki/common';
 
 interface UsePriceUtilsReturn {
   /**

@@ -1,5 +1,5 @@
-import type { ActionStatus } from '@/types/action';
 import type { ActionResult } from '@rotki/common';
+import type { ActionStatus } from '@/types/action';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';

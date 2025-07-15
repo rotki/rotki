@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber, Message } from '@rotki/common';
+import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/edit-snapshot/EditSnapshotDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -10,7 +11,6 @@ import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { downloadFileByBlobResponse } from '@/utils/download';
-import dayjs from 'dayjs';
 
 const display = defineModel<boolean>({ default: false, required: true });
 

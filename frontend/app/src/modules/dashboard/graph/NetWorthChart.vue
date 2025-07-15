@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { type BigNumber, type NetValue, Zero } from '@rotki/common';
+import VChart from 'vue-echarts';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -6,8 +8,6 @@ import NewGraphTooltipWrapper from '@/components/graphs/NewGraphTooltipWrapper.v
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type BigNumber, type NetValue, Zero } from '@rotki/common';
-import VChart from 'vue-echarts';
 
 const props = defineProps<{
   chartData: NetValue;

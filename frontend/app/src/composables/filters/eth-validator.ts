@@ -1,7 +1,7 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
-import { arrayify } from '@/utils/array';
 import { z } from 'zod/v4';
+import { arrayify } from '@/utils/array';
 
 enum EthValidatorAccountFilterKeys {
   INDEX = 'validator_index',

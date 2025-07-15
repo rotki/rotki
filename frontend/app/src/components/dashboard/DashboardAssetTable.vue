@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import { type AssetBalance, type AssetBalanceWithPrice, type BigNumber, type Nullable, One } from '@rotki/common';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
@@ -25,7 +26,6 @@ import { TableColumn } from '@/types/table-column';
 import { assetFilterByKeyword } from '@/utils/assets';
 import { sortAssetBalances } from '@/utils/balances';
 import { aggregateTotal, calculatePercentage } from '@/utils/calculation';
-import { type AssetBalance, type AssetBalanceWithPrice, type BigNumber, type Nullable, One } from '@rotki/common';
 
 const props = withDefaults(defineProps<{
   title: string;

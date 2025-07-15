@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { ExchangeFormData } from '@/types/exchanges';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { ExchangeFormData } from '@/types/exchanges';
+import { assert } from '@rotki/common';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
-import { assert } from '@rotki/common';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 

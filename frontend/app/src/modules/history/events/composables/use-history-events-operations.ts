@@ -1,3 +1,5 @@
+import type { ComputedRef, Ref } from 'vue';
+import type { HistoryEventsTableEmitFn } from './types';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type {
   EvmChainAndTxHash,
@@ -7,16 +9,14 @@ import type {
   HistoryEventEntry,
   HistoryEventRow,
 } from '@/types/history/events/schemas';
-import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventsTableEmitFn } from './types';
+import { HistoryEventEntryType } from '@rotki/common';
+import { flatten } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { isTaskCancelled } from '@/utils';
-import { HistoryEventEntryType } from '@rotki/common';
-import { flatten } from 'es-toolkit';
 
 interface UseHistoryEventsOperationsOptions {
   eventsGroupedByEventIdentifier: ComputedRef<Record<string, HistoryEventRow[]>>;

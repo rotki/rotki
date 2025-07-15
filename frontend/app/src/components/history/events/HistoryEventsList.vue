@@ -2,12 +2,12 @@
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
-import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { get, set } from '@vueuse/core';
 import { flatten } from 'es-toolkit';
 import { computed, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
+import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 
 const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;

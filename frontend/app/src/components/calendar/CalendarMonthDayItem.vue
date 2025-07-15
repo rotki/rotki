@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { CalendarEvent } from '@/types/history/calendar';
 import type { Dayjs } from 'dayjs';
+import type { CalendarEvent } from '@/types/history/calendar';
 
 const props = defineProps<{
   day: {

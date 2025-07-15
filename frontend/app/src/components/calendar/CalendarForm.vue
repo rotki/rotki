@@ -2,6 +2,9 @@
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CalendarEvent } from '@/types/history/calendar';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import { useTemplateRef } from 'vue';
 import CalendarColorInput from '@/components/calendar/CalendarColorInput.vue';
 import CalendarReminder from '@/components/calendar/CalendarReminder.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
@@ -13,9 +16,6 @@ import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

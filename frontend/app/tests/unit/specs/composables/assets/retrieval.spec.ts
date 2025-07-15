@@ -1,11 +1,11 @@
 import type { ERC20Token } from '@/types/blockchain/accounts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { CUSTOM_ASSET } from '@/types/asset';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 vi.mock('@/composables/api/assets/info', () => ({

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import { HistoryEventEntryType } from '@rotki/common';
+import { kebabCase } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
 import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEventForm.vue';
@@ -9,9 +12,6 @@ import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventFor
 import { EVM_EVENTS, isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
-import { HistoryEventEntryType } from '@rotki/common';
-import { kebabCase } from 'es-toolkit';
-import { useTemplateRef } from 'vue';
 
 interface FormComponent {
   save: () => Promise<boolean>;

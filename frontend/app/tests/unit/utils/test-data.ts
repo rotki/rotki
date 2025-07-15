@@ -2,9 +2,9 @@ import type { BlockchainAccount } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import { BalanceType } from '@/types/balances';
 import { bigNumberify } from '@rotki/common';
 import { createTestBalance } from '@test/utils/create-data';
+import { BalanceType } from '@/types/balances';
 
 export const testManualBalances: ManualBalanceWithValue[] = [{
   amount: bigNumberify(500),

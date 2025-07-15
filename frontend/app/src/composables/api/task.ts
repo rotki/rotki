@@ -1,12 +1,12 @@
 import type { ActionResult } from '@rotki/common';
 import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
+import { isEmpty } from 'es-toolkit/compat';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validTaskStatus } from '@/services/utils';
 import { withRetry } from '@/services/with-retry';
 import { ApiValidationError } from '@/types/api/errors';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
 import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
-import { isEmpty } from 'es-toolkit/compat';
 
 const TASKS_TIMEOUT = 90_000;
 

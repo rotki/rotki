@@ -1,6 +1,12 @@
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events/schemas';
 import type { TradeLocationData } from '@/types/history/trade/location';
+import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
+import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
+import dayjs from 'dayjs';
+import { createPinia, type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
@@ -9,12 +15,6 @@ import { useLocations } from '@/composables/locations';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { setupDayjs } from '@/utils/date';
-import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
-import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
-import dayjs from 'dayjs';
-import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { nextTick } from 'vue';
 
 vi.mock('@/modules/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({

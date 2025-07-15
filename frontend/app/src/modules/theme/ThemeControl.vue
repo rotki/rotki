@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { Theme } from '@rotki/common';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { Theme } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

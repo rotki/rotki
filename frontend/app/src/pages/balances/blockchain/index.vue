@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import BlockchainBalanceRefreshBehaviourMenu
@@ -20,7 +21,6 @@ import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefre
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource, DashboardTableType } from '@/types/settings/frontend-settings';
-import { startPromise } from '@shared/utils';
 
 definePage({
   meta: {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/types/reports';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';

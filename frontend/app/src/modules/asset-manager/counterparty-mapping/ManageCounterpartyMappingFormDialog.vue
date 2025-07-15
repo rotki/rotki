@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
+import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ManageCounterpartyMappingForm from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
 import { useMessageStore } from '@/store/message';
-import { useTemplateRef } from 'vue';
 
 const modelValue = defineModel<CounterpartyMapping | undefined>({ required: true });
 
