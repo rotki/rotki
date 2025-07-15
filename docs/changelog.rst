@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix Spark protocol savings transactions decoding across all supported EVM chains.
 * :bug:`-` Fix the Kraken earned asset that is not reflecting in the selected tab.
 * :bug:`-` Fix the notification error where it can't query alias names for the xpub address.
 * :bug:`-` Fix the asset name appearing as "undefined" in the on-chain transaction history.

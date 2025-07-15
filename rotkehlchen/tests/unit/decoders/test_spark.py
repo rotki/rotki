@@ -6,7 +6,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_XDAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SDAI, A_WXDAI, A_XDAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -367,7 +367,7 @@ def test_susdc_ethereum_redeem(ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xaE6396d2fB733e124f9b1C3BF922cF17fE1CC75A']])
 def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2e5bac2cb234a4388d45754656bad35cc03c7dde7745de10b5b605ff28187d52')  # noqa: E501
@@ -415,7 +415,7 @@ def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
     )]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2618d8078253b4765fd4ea56b3840c212830E9a3']])
 def test_deposit_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe9ca86a0ce9c0226d65203805b77d13697ad5e579989505562638095dc45cac4')  # noqa: E501
@@ -461,3 +461,311 @@ def test_deposit_susds(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_SPARK,
         address=ZERO_ADDRESS,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])
+def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x6b2a1f836cfc7c28002e4ac60297daa6d79fcde892d9c3b9ca723dea2f21af5c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1695854591000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.001301015216220134'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_SDAI,
+            amount=FVal(return_amount := '16.020774067834506624'),
+            location_label=user_address,
+            notes=f'Return {return_amount} sDAI to Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0x83F20F44975D03b1b09e64809B757c47f942BEeA'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_DAI,
+            amount=FVal(receive_amount := '16.601085935411927527'),
+            location_label=user_address,
+            notes=f'Remove {receive_amount} DAI from Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])
+def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x27bd72a2ccd999a44c2a7aaed9090572f34045d62e153362a34715a70ca7a6a7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1695089927000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.00152049387145495'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_DAI,
+            amount=FVal(deposit_amount := '16.58145794'),
+            location_label=user_address,
+            notes=f'Deposit {deposit_amount} DAI in Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0x83F20F44975D03b1b09e64809B757c47f942BEeA'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_SDAI,
+            amount=FVal(receive_amount := '16.020774067834506624'),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} sDAI from depositing into Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0x83F20F44975D03b1b09e64809B757c47f942BEeA'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x78E87757861185Ec5e8C0EF6BF0C69Fa7832df6C']])
+def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x1342646cab122d58f0b7dfae404dad5235d42224de881099dc05e59477bb93aa')  # noqa: E501
+    actual_events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+    gas_amount, deposit_amount, receive_amount = '0.000367251244452481', '315', '303.052244055946806232'  # noqa: E501
+    assert actual_events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1707169525000)),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes=f'Burn {gas_amount} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_XDAI,
+            amount=FVal(deposit_amount),
+            location_label=user_address,
+            notes=f'Deposit {deposit_amount} XDAI in Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0xD499b51fcFc66bd31248ef4b28d656d67E591A94'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            amount=FVal(receive_amount),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} sDAI from depositing into Spark Savings',
+            tx_hash=tx_hash,
+            address=ZERO_ADDRESS,
+            counterparty=CPT_SPARK,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120']])
+def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xe23ee1ac52b8981723c737b01781691b965c5819cccccdb98e7c8cb5894dddbb')  # noqa: E501
+    actual_events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+    gas_amount, received_amount, sent_amount = '0.0003018867380459', '36546.085557613238621948', '35168.419304792460265156'  # noqa: E501
+    assert actual_events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1707070975000)),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes=f'Burn {gas_amount} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            amount=FVal(sent_amount),
+            location_label=user_address,
+            notes=f'Return {sent_amount} sDAI to Spark Savings',
+            tx_hash=tx_hash,
+            address=ZERO_ADDRESS,
+            counterparty=CPT_SPARK,
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_XDAI,
+            amount=FVal(received_amount),
+            location_label=user_address,
+            notes=f'Remove {received_amount} XDAI from Spark Savings',
+            counterparty=CPT_SPARK,
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0xD499b51fcFc66bd31248ef4b28d656d67E591A94'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x5938852FE18Ad6963322FB98D1fDDA5c24DD8a0E']])
+def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0xd406f40ecd2538d41adb2e645c8fb6d32cec5485510798bfed5d991c258d4b1d')  # noqa: E501
+    actual_events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1706794335000)
+    withdraw_amount, deposit_amount, gas_amount = '319.006747127200240848', '331.313258668881367296', '0.0006162151'  # noqa: E501
+    assert actual_events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_WXDAI,
+            amount=FVal(deposit_amount),
+            location_label=user_address,
+            notes=f'Deposit {deposit_amount} WXDAI in Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=string_to_evm_address('0xD499b51fcFc66bd31248ef4b28d656d67E591A94'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            amount=FVal(withdraw_amount),
+            location_label=user_address,
+            notes=f'Receive {withdraw_amount} sDAI from depositing into Spark Savings',
+            tx_hash=tx_hash,
+            counterparty=CPT_SPARK,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x23727b54163F63CffdD8B7769e0eCb13Df253b4e']])
+def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0xd7e2123adc6c8f4fd8ced74733010cf47dba2bd4e0e5c468d63d53942b9e2dd3')  # noqa: E501
+    actual_events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1706699405000)
+    gas_amount, redeem_amount, received_amount = '0.0002100203', '66725.257159368617313463', '69285.250334740811647229'  # noqa: E501
+    assert actual_events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            amount=FVal(redeem_amount),
+            location_label=user_address,
+            notes=f'Return {redeem_amount} sDAI to Spark Savings',
+            tx_hash=tx_hash,
+            address=ZERO_ADDRESS,
+            counterparty=CPT_SPARK,
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_WXDAI,
+            amount=FVal(received_amount),
+            location_label=user_address,
+            notes=f'Remove {received_amount} WXDAI from Spark Savings',
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0xaf204776c7245bF4147c2612BF6e5972Ee483701'),
+            counterparty=CPT_SPARK,
+        ),
+    ]
