@@ -10,7 +10,7 @@ from rotkehlchen.types import BTCAddress
 
 # CashAddr format main net prefix.
 # See https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/cashaddr.md
-_PREFIX: Final = 'bitcoincash'
+CASHADDR_PREFIX: Final = 'bitcoincash'
 
 
 def is_valid_bitcoin_cash_address(address: str) -> bool:
@@ -22,12 +22,12 @@ def is_valid_bitcoin_cash_address(address: str) -> bool:
     address = address.lower()
     colon_count = address.count(':')
     if colon_count == 0:
-        address = _PREFIX + ':' + address
+        address = CASHADDR_PREFIX + ':' + address
     elif colon_count > 1:
         return False
 
     try:
-        BchBech32Decoder.Decode(hrp=_PREFIX, addr=address)
+        BchBech32Decoder.Decode(hrp=CASHADDR_PREFIX, addr=address)
     except ValueError:
         return False
 
@@ -54,10 +54,10 @@ def cash_to_legacy_address(address: str) -> BTCAddress | None:
     try:
         if not is_valid_bitcoin_cash_address(address):
             return None
-        if not address.startswith(_PREFIX):
-            address = _PREFIX + ':' + address
+        if not address.startswith(CASHADDR_PREFIX):
+            address = CASHADDR_PREFIX + ':' + address
 
-        version, data = BchBech32Decoder.Decode(hrp=_PREFIX, addr=address)
+        version, data = BchBech32Decoder.Decode(hrp=CASHADDR_PREFIX, addr=address)
         legacy_version = convert_version(
             version=int.from_bytes(version),
             target_type='legacy',
@@ -95,7 +95,7 @@ def legacy_to_cash_address(address: str) -> BTCAddress | None:
         decoded = b58decode_check(address)
         cash_version = convert_version(version=decoded[0], target_type='cash')
         return BTCAddress(BchBech32Encoder.Encode(
-            hrp=_PREFIX,
+            hrp=CASHADDR_PREFIX,
             net_ver=bytes([cash_version]),
             data=decoded[1:],
         ))

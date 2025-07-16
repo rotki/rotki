@@ -27,12 +27,12 @@ from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
+from rotkehlchen.chain.bitcoin import is_valid_bitcoin_address, is_valid_btc_address
 from rotkehlchen.chain.bitcoin.bch.utils import (
-    is_valid_bitcoin_cash_address,
     validate_bch_address_input,
 )
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
-from rotkehlchen.chain.bitcoin.utils import is_valid_btc_address, scriptpubkey_to_btc_address
+from rotkehlchen.chain.bitcoin.utils import scriptpubkey_to_btc_address
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
@@ -306,7 +306,7 @@ class RequiredAddressOptionalChainSchema(Schema):
                 chain=account.chain,  # type: ignore[arg-type]  # just checked `is_substrate()`
                 value=account.address,
             )) or
-            (account.chain.is_bitcoin() and not (is_valid_btc_address(account.address) or is_valid_bitcoin_cash_address(account.address)))  # noqa: E501
+            (not is_valid_bitcoin_address(chain=account.chain, value=account.address))
         )):
             raise ValidationError(
                 message=f'The address {account.address} is not a valid {account.chain} address.',
@@ -1979,8 +1979,7 @@ def _validate_blockchain_account_schemas(
             # ENS domain will be checked in the transformation step
             if not (
                 is_potential_ens_name(address) or
-                is_valid_btc_address(address) or
-                is_valid_bitcoin_cash_address(address)
+                is_valid_btc_address(address)
             ):
                 raise ValidationError(
                     f'Given value {address} is not a valid bitcoin address',
@@ -3183,16 +3182,12 @@ class AddressWithOptionalBlockchainSchema(Schema):
             return
 
         blockchain = cast('SupportedBlockchain', data['blockchain'])
-        if ((
-            blockchain == SupportedBlockchain.BITCOIN and
-            is_valid_btc_address(data['address']) is False
-        ) or (
-            blockchain == SupportedBlockchain.BITCOIN_CASH and
-            is_valid_bitcoin_cash_address(data['address']) is False
+        if (
+            is_valid_bitcoin_address(chain=blockchain, value=data['address']) is False
         ) or (
             blockchain.get_chain_type() == ChainType.SUBSTRATE and
             is_valid_substrate_address(chain=blockchain, value=data['address']) is False  # type: ignore  # expects polkadot or kusama
-        )):
+        ):
             raise ValidationError(
                 f'Given value {data["address"]} is not a {blockchain} address',
                 field_name='address',
@@ -3874,11 +3869,8 @@ def _validate_address_with_blockchain(
 ) -> None:
     """Validate the provided address using the format in the given blockchain"""
     if ((
-        blockchain == SupportedBlockchain.BITCOIN and
-        not is_valid_btc_address(address)
-    ) or (
-        blockchain == SupportedBlockchain.BITCOIN_CASH and
-        not is_valid_bitcoin_cash_address(address)
+        blockchain.is_bitcoin() and
+        not is_valid_bitcoin_address(chain=blockchain, value=address)
     ) or (
         blockchain.get_chain_type() == ChainType.SUBSTRATE and
         not is_valid_substrate_address(chain=blockchain, value=address)  # type: ignore  # expects polkadot or kusama

@@ -8,6 +8,7 @@ from rotkehlchen.chain.bitcoin.bch.constants import (
     HASKOIN_BATCH_SIZE,
 )
 from rotkehlchen.chain.bitcoin.bch.utils import (
+    CASHADDR_PREFIX,
     cash_to_legacy_address,
     is_valid_bitcoin_cash_address,
     legacy_to_cash_address,
@@ -58,10 +59,15 @@ class BitcoinCashManager(BitcoinCommonManager):
         super().refresh_tracked_accounts()
         self.converted_addresses.clear()
         for idx, account in enumerate(self.tracked_accounts):
-            if (
-                not is_valid_bitcoin_cash_address(account) and
-                (cash_addr := legacy_to_cash_address(account)) is not None
-            ):
+            cash_addr, is_valid_cashaddr = None, is_valid_bitcoin_cash_address(account)
+            # for valid bch addresses without prefix, add the prefix
+            if is_valid_cashaddr and ':' not in account:
+                cash_addr = BTCAddress(f'{CASHADDR_PREFIX}:{account}')
+            # for legacy addresses, convert to cashaddr format
+            elif not is_valid_cashaddr:
+                cash_addr = legacy_to_cash_address(account)
+
+            if cash_addr is not None:
                 self.converted_addresses[cash_addr] = account
                 self.tracked_accounts[idx] = cash_addr
 
