@@ -306,7 +306,7 @@ class RequiredAddressOptionalChainSchema(Schema):
                 chain=account.chain,  # type: ignore[arg-type]  # just checked `is_substrate()`
                 value=account.address,
             )) or
-            (account.chain.is_bitcoin() and not is_valid_btc_address(account.address))
+            (account.chain.is_bitcoin() and not (is_valid_btc_address(account.address) or is_valid_bitcoin_cash_address(account.address)))  # noqa: E501
         )):
             raise ValidationError(
                 message=f'The address {account.address} is not a valid {account.chain} address.',

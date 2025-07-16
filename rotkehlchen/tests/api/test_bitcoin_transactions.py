@@ -173,7 +173,7 @@ def test_query_bch_transactions(
     async_query = random.choice([False, True])
     for json, expected_len in (
         ({'async_query': async_query, 'to_timestamp': 1700000000}, 79),  # query partial range first  # noqa: E501
-        ({'async_query': async_query}, 82),  # then query the rest
+        ({'async_query': async_query, 'accounts': [{'address': account, 'blockchain': 'bch'} for account in bch_accounts]}, 82),  # then query the rest  # noqa: E501
     ):
         events = do_tx_query_and_get_events(
             rotkehlchen_api_server=rotkehlchen_api_server,
