@@ -160,6 +160,7 @@ def test_query_btc_transactions(
 @pytest.mark.parametrize('bch_accounts', [[
     '1Mnwij9Zkk6HtmdNzyEUFgp6ojoLaZekP8',
     'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
+    'qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z',
 ]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_query_bch_transactions(
@@ -173,7 +174,7 @@ def test_query_bch_transactions(
     async_query = random.choice([False, True])
     for json, expected_len in (
         ({'async_query': async_query, 'to_timestamp': 1700000000}, 79),  # query partial range first  # noqa: E501
-        ({'async_query': async_query}, 82),  # then query the rest
+        ({'async_query': async_query, 'accounts': [{'address': account, 'blockchain': 'bch'} for account in bch_accounts]}, 104),  # then query the rest  # noqa: E501
     ):
         events = do_tx_query_and_get_events(
             rotkehlchen_api_server=rotkehlchen_api_server,
@@ -185,7 +186,41 @@ def test_query_bch_transactions(
             chain=SupportedBlockchain.BITCOIN_CASH,
         )
 
-    assert events[80:] == [HistoryEvent(
+    assert events[100:] == [HistoryEvent(
+        identifier=83,
+        event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}cc39c599f9684909efbec9a86a37bbe583fd9865f61e90c684b290b092b818f2',
+        sequence_index=0,
+        timestamp=TimestampMS(1703868928000),
+        location=Location.BITCOIN_CASH,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BCH,
+        amount=FVal('1173.95659108'),
+        location_label=bch_accounts[2],
+        notes=(
+            'Receive 1173.95659108 BCH from bitcoincash:qrp0wxt3drg0ucftdw7nuyrf6ptkj53anc3sqggkcr, bitcoincash:qq8rxh3ppnd7nz5nygax9shukgyqqeugruc6qvepp0, '  # noqa: E501
+            'bitcoincash:qq6xsy8z0tck5cd3k9y86dnwys60lz6chcaxk3htdc, bitcoincash:qq9rz577fz59sr72czd30am4c46quflexvnwzvs0fm, bitcoincash:qqdm2sagzmlkady4mvpvh8k5nyqydx93wsvsffaar4, '  # noqa: E501
+            'bitcoincash:qq02rp4krqc5nxflczac00m3j0s45tqynvye8d6x49, bitcoincash:qqejgx2wrd63hgmf4h8ucalm9sv4v6ex25q9xledjx, bitcoincash:qzkdjrx335cd8rkn9mem6u7m3xk8ejjed5zht3a55c, '  # noqa: E501
+            'bitcoincash:qq3cuezq752gl0kh8hc0c8ex64ltk9z5qcnvhk96mh, bitcoincash:qp2q7366pj0ssk84epxnahukylrcjajnjukllvf9wa, bitcoincash:qzl5peg8n9wn6x3knlcagwzu9cr45736ggw8g52pgw, '  # noqa: E501
+            'bitcoincash:qzntyrhgytunwalm3668gs572h46vtc3ncqq77fcae, bitcoincash:qrxjnws6nhenl57zz9m9hm5jy004mv9w4gk464qsdx, bitcoincash:qpm2l64983f4j5dx5s5c6ksxkvg44vd4qgpp6uar28, '  # noqa: E501
+            'bitcoincash:qruyvm7cn5zqztd53cfqfx4xrxthepq0dycj5ptlk0, bitcoincash:qztd76nqpal6mldcydqpf2qre7ds8ancsg82zecdh2, bitcoincash:qpc0wdxghr2upqkqwfzmtn9h0xvygq59my0zn5keae, '  # noqa: E501
+            'bitcoincash:qqg654fzs8cphugjmkl3yx3rs9n6gjv9wun3qp2d5c, bitcoincash:qpa0qpxh8gec4g7xlw88xrmke0tmgsa3mcz7qqm4k9, bitcoincash:qzduv0x5m3uljfqv08p7lma66qrtlj23jc0rkyk5gs, '  # noqa: E501
+            'bitcoincash:qzp6f39tzqpldjcugszpuhhysvahtc5rzgha66g79r, bitcoincash:qq3xtnu9vlkt9dsj8us75xayyvww2vx6hyusu2pwkr, bitcoincash:qqhknunxuc60zhcm7lqwd52gewvq0drq0s6vr082gt, '  # noqa: E501
+            'bitcoincash:qqa0h85huwpyqumpj8tmp6lc45ksxgv3dsvqrxwgmy'
+        ),
+    ), HistoryEvent(
+        identifier=82,
+        event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}dcc1e78d9a48643553f4cd9b71564fb8032f6fd48ede977f8806be15ac29b917',
+        sequence_index=0,
+        timestamp=TimestampMS(1732270516000),
+        location=Location.BITCOIN_CASH,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BCH,
+        amount=(receive_amount_1 := FVal('0.01986791')),
+        location_label=(user_address := bch_accounts[1]),
+        notes=f'Receive {receive_amount_1} BCH from bitcoincash:qpx003lsm24lu7q2nf7zh640n52gdl2kucna02956q, bitcoincash:qpq4ajfp58lpj70r232pf7pt55s9vm8x4yxmd6c90w',  # noqa: E501
+    ), HistoryEvent(
         identifier=80,
         event_identifier=(event_identifier := f'{BCH_EVENT_IDENTIFIER_PREFIX}3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),  # noqa: E501
         sequence_index=0,
@@ -195,7 +230,7 @@ def test_query_bch_transactions(
         event_subtype=HistoryEventSubType.FEE,
         asset=A_BCH,
         amount=FVal(fee_amount := '0.00007592'),
-        location_label=(user_address := bch_accounts[1]),
+        location_label=user_address,
         notes=f'Spend {fee_amount} BCH for fees',
     ), HistoryEvent(
         identifier=81,
@@ -219,7 +254,7 @@ def test_query_bch_transactions(
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
         asset=A_BCH,
-        amount=FVal(receive_amount := '616.69939095'),
+        amount=FVal(receive_amount_2 := '616.69939095'),
         location_label=bch_accounts[0],
-        notes=f'Receive {receive_amount} BCH from bitcoincash:qq9h55edlyekfj46jej23ek3e5sydhqqaqs4s0tjz0',  # noqa: E501
+        notes=f'Receive {receive_amount_2} BCH from bitcoincash:qq9h55edlyekfj46jej23ek3e5sydhqqaqs4s0tjz0',  # noqa: E501
     )
