@@ -10,7 +10,7 @@ import type {
   EthNames,
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
-import { Blockchain, isValidBtcAddress, isValidEthAddress } from '@rotki/common';
+import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useItemCache } from '@/composables/item-cache';
@@ -159,7 +159,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
         .filter(chain => ['evm', 'evmlike'].includes(chain.type))
         .map(chain => chain.id);
     }
-    else if (isValidBtcAddress(address)) {
+    else if (isValidBtcAddress(address) || isValidBchAddress(address)) {
       // Bitcoin address - check Bitcoin chains only
       return get(supportedChains)
         .filter(chain => chain.type === 'bitcoin')
