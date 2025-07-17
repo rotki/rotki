@@ -5,6 +5,7 @@ import {
   bigNumberify,
   Blockchain,
   isEvmIdentifier,
+  isValidBchAddress,
   isValidBtcAddress,
   isValidEthAddress,
   isValidTxHash,
@@ -208,19 +209,12 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         });
       };
 
-      // Check if the word is ETH address
-      if (isValidEthAddress(word)) {
-        formats.push({
-          address: word,
-          showHashLink: true,
-          type: NoteType.ADDRESS,
-        });
-        return putBackPunctuation();
-      }
+      const isValidBch = isValidBchAddress(word);
 
-      if (isValidBtcAddress(word)) {
+      // Check if the word is ETH address
+      if (isValidEthAddress(word) || isValidBtcAddress(word) || isValidBch) {
         formats.push({
-          address: word,
+          address: isValidBch ? word.replace(/^bitcoincash:/, '') : word,
           showHashLink: true,
           type: NoteType.ADDRESS,
         });
