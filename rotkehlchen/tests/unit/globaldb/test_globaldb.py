@@ -1328,3 +1328,12 @@ def test_error_bad_underlying_token(globaldb: GlobalDBHandler):
             underlying_tokens=[UnderlyingToken(address=a_lusd.evm_address, token_kind=TokenKind.ERC20, weight=ONE)],  # noqa: E501
             chain_id=a_lusd.chain_id,
         )
+
+
+def test_solana_token_query_produces_no_deserialization_warnings(globaldb: GlobalDBHandler, caplog) -> None:  # noqa: E501
+    """Test that querying solana tokens by symbol doesn't log TokenKind deserialization warnings."""  # noqa: E501
+    globaldb.get_assets_with_symbol(
+       symbol='BONK',  # any solana token symbol works
+       asset_type=AssetType.SOLANA_TOKEN,
+    )
+    assert 'has wrong asset type. Failed to deserialize TokenKind DB value from non string value: None' not in caplog.text  # noqa: E501

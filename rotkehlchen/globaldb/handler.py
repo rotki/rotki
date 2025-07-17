@@ -1419,6 +1419,7 @@ class GlobalDBHandler:
         common_query_list: list[int | str] = [
             evm_token_type,
             AssetType.CUSTOM_ASSET.serialize_for_db(),
+            AssetType.SOLANA_TOKEN.serialize_for_db(),
             symbol,
         ]
         if asset_type is not None:
@@ -1430,7 +1431,7 @@ class GlobalDBHandler:
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.symbol = ? COLLATE NOCASE{extra_check_evm}
         UNION ALL
         SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null, null, null from assets as A JOIN common_asset_details as B
-        ON B.identifier = A.identifier WHERE A.type != ? AND A.type != ? AND B.symbol = ? COLLATE NOCASE{extra_check_common}
+        ON B.identifier = A.identifier WHERE A.type NOT IN (?, ?, ?) AND B.symbol = ? COLLATE NOCASE{extra_check_common}
         UNION ALL
         SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, null, B.token_kind, null, null from assets as A JOIN solana_tokens as B
         ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = ? AND C.symbol = ? COLLATE NOCASE
