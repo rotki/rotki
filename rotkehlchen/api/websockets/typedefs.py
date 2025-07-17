@@ -5,10 +5,10 @@ https://github.com/python/mypy/issues/10722
 https://github.com/python/mypy/issues/1876#issuecomment-782458452
 """
 
-from enum import Enum, auto
+from enum import StrEnum, auto
 
 
-class WSMessageType(Enum):
+class WSMessageType(StrEnum):
     LEGACY = auto()
     BALANCE_SNAPSHOT_ERROR = auto()
     TRANSACTION_STATUS = auto()
@@ -29,12 +29,10 @@ class WSMessageType(Enum):
     PROGRESS_UPDATES = auto()
     GNOSISPAY_SESSIONKEY_EXPIRED = auto()
     SOLANA_TOKENS_MIGRATION = auto()
-
-    def __str__(self) -> str:
-        return self.name.lower()  # pylint: disable=no-member
+    DATABASE_UPLOAD_PROGRESS = auto()
 
 
-class ProgressUpdateSubType(Enum):
+class ProgressUpdateSubType(StrEnum):
     EVM_UNDECODED_TRANSACTIONS = auto()
     PROTOCOL_CACHE_UPDATES = auto()
     CSV_IMPORT_RESULT = auto()
@@ -43,11 +41,8 @@ class ProgressUpdateSubType(Enum):
     STATS_PRICE_QUERY = auto()
     LIQUITY_STAKING_QUERY = auto()
 
-    def __str__(self) -> str:
-        return self.name.lower()  # pylint: disable=no-member
 
-
-class TransactionStatusStep(Enum):
+class TransactionStatusStep(StrEnum):
     QUERYING_TRANSACTIONS_STARTED = auto()
     QUERYING_TRANSACTIONS = auto()
     QUERYING_INTERNAL_TRANSACTIONS = auto()
@@ -56,29 +51,23 @@ class TransactionStatusStep(Enum):
     DECODING_TRANSACTIONS_STARTED = auto()
     DECODING_TRANSACTIONS_FINISHED = auto()
 
-    def __str__(self) -> str:
-        return self.name.lower()  # pylint: disable=no-member
 
-
-class TransactionStatusSubType(Enum):
+class TransactionStatusSubType(StrEnum):
     EVM = auto()
     BITCOIN = auto()
 
-    def __str__(self) -> str:
-        return self.name.lower()  # pylint: disable=no-member
 
-
-class HistoryEventsStep(Enum):
+class HistoryEventsStep(StrEnum):
     QUERYING_EVENTS_STARTED = auto()
     QUERYING_EVENTS_STATUS_UPDATE = auto()
     QUERYING_EVENTS_FINISHED = auto()
 
-    def __str__(self) -> str:
-        return self.name.lower()  # pylint: disable=no-member
 
-
-class HistoryEventsQueryType(Enum):
+class HistoryEventsQueryType(StrEnum):
     HISTORY_QUERY = auto()
 
-    def __str__(self) -> str:
-        return self.name.lower()  # pylint: disable=no-member
+
+class DBUploadStatusStep(StrEnum):
+    COMPRESSING = auto()
+    ENCRYPTING = auto()
+    UPLOADING = auto()

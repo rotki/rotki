@@ -4,11 +4,12 @@ from base64 import b64decode
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import gevent
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -30,6 +31,7 @@ from rotkehlchen.tests.utils.premium import (
     setup_starting_environment,
 )
 from rotkehlchen.types import ChainID
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -79,19 +81,33 @@ def test_upload_data_to_server(
             data,
             files,
             timeout,  # pylint: disable=unused-argument
+            headers,
     ):
-        # Can't compare data blobs as they are encrypted and as such can be
+        # Can't compare the data blob and its hash as it is encrypted and as such can be
         # different each time
-        assert data['original_hash'] == our_hash
+        assert 'file_hash' in data
+        assert 'total_size' in data
         assert data['last_modify_ts'] == last_write_ts
-        assert 'index' in data
-        assert len(files['db_file']) == data['length']
         assert 'nonce' in data
         assert data['compression'] == 'zlib'
 
-        return MockResponse(200, '{"success": true}')
+        # Parse Content-Range header (in format: `bytes 0-524287/25000000`)
+        content_range = headers['Content-Range']
+        assert content_range.startswith('bytes ')
+        range_info, total_size = content_range.replace('bytes ', '').split('/')
+        start, end = range_info.split('-')
+
+        expected_chunk_size = len(files['chunk_data'][1])  # chunk_data is a tuple (filename, data)
+        assert int(end) - int(start) + 1 == expected_chunk_size
+
+        if int(end) + 1 == int(total_size):  # last chunk, return ok
+            return MockResponse(HTTPStatus.OK, '{"success": true}')
+        else:  # intermediate chunk, return permanent redirect with upload_id
+            return MockResponse(HTTPStatus.PARTIAL_CONTENT, '{"upload_id": "12345678"}')
 
     assert rotkehlchen_instance.premium is not None
+    chunk_size_patch = patch('rotkehlchen.premium.premium.UPLOAD_CHUNK_SIZE', 300000)
+    ws_patch = patch.object(rotkehlchen_instance.msg_aggregator, 'add_message')
     patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
@@ -110,17 +126,29 @@ def test_upload_data_to_server(
         assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS) is None  # noqa: E501
 
     now = ts_now()
-    with patched_get, patched_post:
+    with patched_get, chunk_size_patch, patched_post as mocked_post, ws_patch as ws_mock:
         tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here
         if tasks is not None:
             gevent.wait(tasks)
 
         if db_settings['premium_should_sync'] is False:
+            assert mocked_post.call_count == 0
             with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
                 assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS) is None  # noqa: E501
             assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts == 0
             return
 
+        assert mocked_post.call_count == 3  # uploads in three chunks
+        # Check WS messages via mocking since the websocket_connection fixture doesn't work
+        # with the rotkehlchen_instance fixture
+        assert ws_mock.call_args_list == [
+            call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.COMPRESSING)}),  # noqa: E501
+            call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.ENCRYPTING)}),  # noqa: E501
+            call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.UPLOADING), 'current_chunk': 1, 'total_chunks': 3}),  # noqa: E501
+            call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.UPLOADING), 'current_chunk': 2, 'total_chunks': 3}),  # noqa: E501
+            call(message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS, data={'type': str(DBUploadStatusStep.UPLOADING), 'current_chunk': 3, 'total_chunks': 3}),  # noqa: E501
+            call(message_type=WSMessageType.DATABASE_UPLOAD_RESULT, data={'uploaded': True, 'actionable': False, 'message': None}),  # noqa: E501
+        ]
         with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
             last_ts = rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS)  # noqa: E501
         db_msg = 'The last data upload timestamp should have been saved in the db as now'
@@ -176,7 +204,11 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
         saved_data='foo',
     )
 
-    with patched_get, patched_post as post_mock:
+    with patched_get, patched_post as post_mock, patch.object(
+        target=rotkehlchen_instance.data,
+        attribute='compress_and_encrypt_db',
+        new=lambda *args: (None, our_hash),
+    ):
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
         # The upload mock should not have been called since the hash is the same
         assert not post_mock.called
@@ -492,7 +524,11 @@ def test_premium_toggle_chains_aggregator(blockchain, rotki_premium_credentials,
     for _, module in blockchain.iterate_modules():
         assert module.premium is None
 
-    premium_obj = Premium(credentials=rotki_premium_credentials, username=username)
+    premium_obj = Premium(
+        credentials=rotki_premium_credentials,
+        username=username,
+        msg_aggregator=MessagesAggregator(),
+    )
     blockchain.activate_premium_status(premium_obj)
     for _, module in blockchain.iterate_modules():
         assert module.premium == premium_obj
@@ -650,26 +686,13 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [{'premium_should_sync': True}])
-def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
-    """Test that we correctly handle the 413 error from nest server"""
-    def mock_error_upload_data_to_server(
-            url,
-            data,
-            files,
-            timeout,
-    ):  # pylint: disable=unused-argument
-        return MockResponse(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big')
-
+def test_upload_data_error(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    """Test that we correctly handle errors from the nest server"""
     assert rotkehlchen_instance.premium is not None
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
         tempdbpath = rotkehlchen_instance.data.db.export_unencrypted(tempdbfile)
         _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db(tempdbpath)
     remote_hash = get_different_hash(our_hash)
-    patched_post = patch.object(
-        rotkehlchen_instance.premium.session,
-        'post',
-        side_effect=mock_error_upload_data_to_server,
-    )
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
         metadata_last_modify_ts=0,
@@ -678,11 +701,20 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
         metadata_data_size=2,
         saved_data=b'foo',
     )
-    with patched_get, patched_post:
-        status, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
+    for (status_code, response_text, error_msg, expected_call_count) in (
+        (HTTPStatus.REQUEST_ENTITY_TOO_LARGE, 'Payload size is too big', 'Size limit reached', 1),
+        (HTTPStatus.BAD_REQUEST, 'XYZ', 'Could not upload database backup due to: XYZ', 2),
+    ):
+        with patched_get, patch.object(
+            rotkehlchen_instance.premium.session,
+            'post',
+            return_value=MockResponse(status_code, response_text),
+        ) as mock_post:
+            status, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
-    assert status is False
-    assert error == 'Size limit reached'
+        assert status is False
+        assert error == error_msg
+        assert mock_post.call_count == expected_call_count
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
