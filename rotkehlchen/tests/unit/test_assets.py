@@ -539,7 +539,50 @@ def test_cryptocompare_asset_support(cryptocompare):
         'EVAN',  # Evan but CC has Evanesco Network
         'HABIBI',  # Habibi (Sol) but CC has The Habibiz
         'HAT',  # Top Hat but CC has Hawala.Exchange
-
+        strethaddress_to_identifier('0x5888641e3e6cBeA6D84Ba81EDb217bD691d3bE38'),  # Bobo but BOBO in CC  # noqa: E501
+        strethaddress_to_identifier('0x8808434a831eFea81170A56a9ddc57Cc9E6De1d8'),  # Bork on Ethereum but Bork in CC  # noqa: E501
+        strethaddress_to_identifier('0xdBcD57cc74b180f928258F7B1a32F6f7e64BF12e'),  # Baby Pepe Token but Blast Pepe in CC  # noqa: E501
+        strethaddress_to_identifier('0x9CBf044bc535db4C93a9F11205A69631d9DCeF26'),  # Billy Token but Billy in CC  # noqa: E501
+        strethaddress_to_identifier('0x8fc17671D853341D9e8B001F5Fc3C892d09CB53A'),  # BlockGames but Blockasset in CC  # noqa: E501
+        evm_address_to_identifier(address='0x37DEfBC399e5737D53Dfb5533d9954572F5B19bf', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # BLAZE but StoryFire in CC  # noqa: E501
+        evm_address_to_identifier(address='0x3A4F0DB58D36A3362673a8ea7e2087fb2Ae68616', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # Black Rock but Bedrock in CC  # noqa: E501
+        evm_address_to_identifier(address='0x56cCEA18F8c7c23328Cdfd545c50c7c370f8d263', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # Lorenzo Governance Token but Float Protocol in CC  # noqa: E501
+        evm_address_to_identifier(address='0xBA5E66FB16944Da22A62Ea4FD70ad02008744460', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # Based Turbo but Turbo in CC  # noqa: E501
+        strethaddress_to_identifier('0xBB49A51Ee5a66ca3a8CbE529379bA44Ba67E6771'),  # Cryptosolartech but Crypto Samurai in CC  # noqa: E501
+        strethaddress_to_identifier('0x3108ccFd96816F9E663baA0E8c5951D229E8C6da'),  # DarkToken but Dark Eclipse in CC  # noqa: E501
+        evm_address_to_identifier(address='0xd327d36EB6E1f250D191cD62497d08b4aaa843Ce', chain_id=ChainID.BASE, token_type=TokenKind.ERC20),  # Father Of Meme: Origin but Fomo in CC  # noqa: E501
+        evm_address_to_identifier(address='0x324f76014C8a7C3b3C0c574bC331F950C5F8c6Fd', chain_id=ChainID.ZKSYNC_ERA, token_type=TokenKind.ERC20),  # Holdstation but Holdcoin in CC  # noqa: E501
+        strethaddress_to_identifier('0xD8E8438CF7bEEd13cFABC82F300Fb6573962c9e3'),  # Pepoclown but Honk in CC  # noqa: E501
+        strethaddress_to_identifier('0x8E4d27d772099e18900CAF5Dcc36Cb612DcEE886'),  # Architex but ARC Governance in CC  # noqa: E501
+        evm_address_to_identifier(address='0x27DCB425C7005DD7558F9583797edA39A8D70ABd', chain_id=ChainID.ARBITRUM_ONE, token_type=TokenKind.ERC20),  # MyMetaTrader Token but MeMusic in CC  # noqa: E501
+        strethaddress_to_identifier('0xA75AD62a1b6b78eEA6c54C22Eb697Ca0b125f97a'),  # meow but Zero Tech in CC  # noqa: E501
+        strethaddress_to_identifier('0x8B95Fe1C06E58C269f1267e0f0093b7b26b85481'),  # MOJO The Gorilla but Planet Mojo in CC  # noqa: E501
+        strethaddress_to_identifier('0x6E835aC221d5622bf65aE21a22eB7484d1898598'),  # Pepe2.0 but Pepe 2.0 in CC  # noqa: E501
+        strethaddress_to_identifier('0x9fBFed658919A896B5Dc7b00456Ce22D780f9B65'),  # PlutusDeFi but Poollotto.finance in CC  # noqa: E501
+        strethaddress_to_identifier('0xfcaF0e4498E78d65526a507360F755178b804Ba8'),  # NicCageWaluigiElmo42069Inu but Shiba Inu in CC  # noqa: E501
+        strethaddress_to_identifier('0x0AFf507aC29B8CEA2FB10d2ad14408c2d79A35AD'),  # CrypTalk but Talken in CC  # noqa: E501
+        strethaddress_to_identifier('0x86B69F38BEA3e02f68fF88534bc61EC60E772b19'),  # NEVER SURRENDER but OFFICIAL TRUMP in CC  # noqa: E501
+        strethaddress_to_identifier('0x31d4Eb09a216e181eC8a43ce79226A487D6F0BA9'),  # USDM but Mountain Protocol in CC  # noqa: E501
+        'solana/token:99ouK5YUK3JPGCPX9joNtHsMU7NPpU7w91JN4kdQ97po',  # AI Community but Sleepless in CC  # noqa: E501
+        'solana/token:9jaZhJM6nMHTo4hY9DGabQ1HNuUWhJtm7js1fmKMVpkN',  # AMC but AI Meta Coin in CC  # noqa: E501
+        'solana/token:DKu9kykSfbN5LBfFXtNNDPaX35o4Fv6vJ9FKk7pZpump',  # Ava AI but Travala in CC  # noqa: E501
+        'solana/token:FuQASH8ps9NPeDu4h3rVtMBygKYoSiSTZ4uSiA5tpump',  # Banana for Scale but Banana Gun in CC  # noqa: E501
+        'solana/token:FaUKsgcuqAd9sCaFz3if7ia1DasaxVoNPTXWFs2GScWN',  # DONALDCAT but Dogechain in CC  # noqa: E501
+        'solana/token:EXA537HSBVpsFijENbt6Muuy9AADUN8dUmYKD4oKbjJE',  # Eggdog but Goose Finance in CC  # noqa: E501
+        'solana/token:wo1zgt8rfrYpvdVi4nidoj1SYfcR4pQx69bmNv2JLhQ',  # JustAnEgg but Goose Finance in CC  # noqa: E501
+        'solana/token:3BgwJ8b7b9hHX4sgfZ2KJhv9496CoVfsMK2YePevsBRw',  # THE EPIK DUCK but EPIK Token in CC  # noqa: E501
+        'solana/token:6MAWnfagDCzqmHQh88FVt9F1zzLqXpwGJpaL7zUTpump',  # EYE Am Watching You but MEDIA EYE in CC  # noqa: E501
+        'solana/token:WARcU61sECeEK5DEbkY3wcjGxSGr4W8bVUpKbBNbgbu',  # This Is Fine but Refinable in CC  # noqa: E501
+        'solana/token:BgpZ9cXE2dRMTUPhroffbMQm3q8QTLpRorpHYeJspump',  # This Is Fine but Refinable in CC  # noqa: E501
+        'solana/token:AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB',  # Green Satoshi Token but CoinGhost in CC  # noqa: E501
+        'solana/token:864YJRb3JAVARC4FNuDtPKFxdEsYRbB39Nwxkzudxy46',  # Habibi (Sol) but The Habibiz in CC  # noqa: E501
+        'solana/token:CymqTrLSVZ97v87Z4W3dkF4ipZE1kYyeasmN2VckUL4J',  # i dont know but IDK in CC  # noqa: E501
+        'solana/token:H53UGEyBrB9easo9ego8yYk7o4Zq1G5cCtkxD3E3hZav',  # MixMob but Maximine in CC  # noqa: E501
+        'solana/token:H1aN3vcvB68eaFPbMkoAss3vnfi4AhP5C2dpnrZzdBc7',  # Myra but Mytheria in CC  # noqa: E501
+        'solana/token:7yZFFUhq9ac7DY4WobLL539pJEUbMnQ5AGQQuuEMpump',  # OBOT but Obortech in CC  # noqa: E501
+        'solana/token:SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa',  # Sendcoin but Suilend in CC  # noqa: E501
+        'solana/token:8XVXzmsMMw7ufa8RC21fHcDP6TGti5y3ZidQinnYurqr',  # Laughing shoe but ShoeFy in CC  # noqa: E501
+        'solana/token:8Nd3TZJfxt9yYKiPmYp6S5DhLftG3bwSqdW3KJwArb',  # Spodermen but Spoody Man in CC  # noqa: E501
     )
     for asset_data in GlobalDBHandler.get_all_asset_data(mapping=False):
         potential_support = (
