@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix the issue where the prices for the asset group are not displayed and keep loading.
 * :bug:`-` Spark balances on proxy addresses will now be properly detected.
 * :feature:`-` Monerium and Gnosis Pay events will be properly updated when decoding new transactions or redecoding existing events.
 * :feature:`2880` rotki will now show bitcoin transactions in history events page.
