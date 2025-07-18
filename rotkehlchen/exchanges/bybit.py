@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 import urllib.parse
@@ -24,6 +22,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -99,7 +98,7 @@ def bybit_symbol_to_base_quote(
     return base_asset, quote_asset
 
 
-class Bybit(ExchangeInterface):
+class Bybit(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -218,12 +217,7 @@ class Bybit(ExchangeInterface):
                         ],
                     )
 
-                signature_hash = hmac.new(
-                    key=self.secret,
-                    msg=param_str.encode('utf-8'),
-                    digestmod=hashlib.sha256,
-                )
-                signature = signature_hash.hexdigest()
+                signature = self.generate_hmac_signature(param_str)
                 headers = {
                     'X-BAPI-TIMESTAMP': str(timestamp),
                     'X-BAPI-SIGN': signature,

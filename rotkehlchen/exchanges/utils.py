@@ -1,6 +1,12 @@
+import base64
+import hashlib
+import hmac
 import logging
 from json.decoder import JSONDecodeError
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ApiSecret
 
 import requests
 from eth_utils.address import to_checksum_address
@@ -21,6 +27,98 @@ from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class SignatureGeneratorMixin:
+    """
+    Mixin providing common HMAC signature generation methods for exchanges.
+
+    This class assumes the implementing class has a 'secret' attribute containing
+    the API secret key as bytes.
+    """
+
+    # Type annotation for mypy - the implementing class must have this attribute
+    secret: 'ApiSecret'
+
+    def generate_hmac_signature(
+            self,
+            message: str | bytes,
+            digest_algorithm: Any = hashlib.sha256,
+            encoding: str = 'utf-8',
+    ) -> str:
+        """
+        Generate HMAC signature and return as hex string.
+
+        Args:
+            message: The message to sign (string or bytes)
+            digest_algorithm: Hash algorithm to use (default: hashlib.sha256)
+            encoding: String encoding to use if message is string (default: utf-8)
+
+        Returns:
+            Hex-encoded signature string
+        """
+        if isinstance(message, str):
+            message = message.encode(encoding)
+
+        return hmac.new(
+            self.secret,
+            message,
+            digest_algorithm,
+        ).hexdigest()
+
+    def generate_hmac_b64_signature(
+            self,
+            message: str | bytes,
+            digest_algorithm: Any = hashlib.sha256,
+            encoding: str = 'utf-8',
+    ) -> str:
+        """
+        Generate HMAC signature and return as base64 string.
+
+        Args:
+            message: The message to sign (string or bytes)
+            digest_algorithm: Hash algorithm to use (default: hashlib.sha256)
+            encoding: String encoding to use if message is string (default: utf-8)
+
+        Returns:
+            Base64-encoded signature string
+        """
+        if isinstance(message, str):
+            message = message.encode(encoding)
+
+        return base64.b64encode(
+            hmac.new(
+                self.secret,
+                message,
+                digest_algorithm,
+            ).digest(),
+        ).decode('utf-8')
+
+    def generate_hmac_digest(
+            self,
+            message: str | bytes,
+            digest_algorithm: Any = hashlib.sha256,
+            encoding: str = 'utf-8',
+    ) -> bytes:
+        """
+        Generate HMAC signature and return raw digest bytes.
+
+        Args:
+            message: The message to sign (string or bytes)
+            digest_algorithm: Hash algorithm to use (default: hashlib.sha256)
+            encoding: String encoding to use if message is string (default: utf-8)
+
+        Returns:
+            Raw digest bytes
+        """
+        if isinstance(message, str):
+            message = message.encode(encoding)
+
+        return hmac.new(
+            self.secret,
+            message,
+            digest_algorithm,
+        ).digest()
 
 
 def get_key_if_has_val(mapping: dict[str, Any], key: str) -> str | None:

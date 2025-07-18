@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 import time
@@ -19,6 +17,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
@@ -55,7 +54,7 @@ def bitcoinde_pair_to_world(pair: str) -> tuple[AssetWithOracles, AssetWithOracl
     return tx_asset, native_asset
 
 
-class Bitcoinde(ExchangeInterface):
+class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -82,12 +81,8 @@ class Bitcoinde(ExchangeInterface):
         return changed
 
     def _generate_signature(self, request_type: str, url: str, nonce: str) -> str:
-        signed_data = f'{request_type}#{url}#{self.api_key}#{nonce}#{MD5_EMPTY_STR}'.encode()
-        signature = hmac.new(
-            self.secret,
-            signed_data,
-            hashlib.sha256,
-        ).hexdigest()
+        signed_data = f'{request_type}#{url}#{self.api_key}#{nonce}#{MD5_EMPTY_STR}'
+        signature = self.generate_hmac_signature(signed_data)
         self.session.headers.update({
             'x-api-signature': signature,
         })

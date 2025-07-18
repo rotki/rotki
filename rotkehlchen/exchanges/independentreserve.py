@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 import time
@@ -23,6 +21,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -127,7 +126,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     )
 
 
-class Independentreserve(ExchangeInterface):
+class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -188,11 +187,7 @@ class Independentreserve(ExchangeInterface):
                 call_options.move_to_end('apiKey', last=False)
                 keys = [url] + [f'{k}={v}' for k, v in call_options.items()]
                 message = ','.join(keys)
-                signature = hmac.new(
-                    self.secret,
-                    msg=message.encode('utf-8'),
-                    digestmod=hashlib.sha256,
-                ).hexdigest().upper()
+                signature = self.generate_hmac_signature(message).upper()
                 # Make sure dict starts with apiKey, nonce, signature
                 call_options['signature'] = str(signature)
                 call_options.move_to_end('signature', last=False)

@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 from collections.abc import Sequence
@@ -23,7 +21,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.exchanges.utils import (
+    SignatureGeneratorMixin,
+    deserialize_asset_movement_address,
+    get_key_if_has_val,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
@@ -117,7 +119,7 @@ def margin_trade_from_bitmex(bitmex_trade: dict, decimals: dict[str, int]) -> Ma
     )
 
 
-class Bitmex(ExchangeInterface):
+class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -184,11 +186,8 @@ class Bitmex(ExchangeInterface):
         return True, ''
 
     def _generate_signature(self, verb: str, path: str, expires: int, data: str = '') -> str:
-        return hmac.new(
-            key=self.secret,
-            msg=(verb.upper() + path + str(expires) + data).encode(),
-            digestmod=hashlib.sha256,
-        ).hexdigest()
+        message = verb.upper() + path + str(expires) + data
+        return self.generate_hmac_signature(message)
 
     @overload
     def _api_query(

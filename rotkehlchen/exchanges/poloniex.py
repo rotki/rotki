@@ -1,6 +1,4 @@
 import base64
-import hashlib
-import hmac
 import json
 import logging
 import operator
@@ -23,7 +21,11 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.exchanges.utils import (
+    SignatureGeneratorMixin,
+    deserialize_asset_movement_address,
+    get_key_if_has_val,
+)
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -115,7 +117,7 @@ def trade_from_poloniex(poloniex_trade: dict[str, Any]) -> list[SwapEvent]:
     )
 
 
-class Poloniex(ExchangeInterface):
+class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
     PUBLIC_API_ENDPOINTS: Final = ('/currencies',)
     TRADES_LIMIT: Final = 100
     TRADES_MAX_INTERVAL: Final = DAY_IN_SECONDS * 180 * 1000
@@ -200,8 +202,7 @@ class Poloniex(ExchangeInterface):
             encode_params = f'requestBody={request_body}&signTimestamp={timestamp}'
         sign_params_first = [method, path, encode_params]
         sign_params_second = '\n'.join(sign_params_first)
-        sign_params = sign_params_second.encode(encoding='UTF8')
-        digest = hmac.new(self.secret, sign_params, digestmod=hashlib.sha256).digest()
+        digest = self.generate_hmac_digest(sign_params_second)
         signature = base64.b64encode(digest)
         return signature.decode()
 

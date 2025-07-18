@@ -1,5 +1,4 @@
 import hashlib
-import hmac
 import json
 import logging
 import operator
@@ -25,6 +24,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -114,7 +114,7 @@ class ErrorResponseData(NamedTuple):
     reason: str | None = None
 
 
-class Bitfinex(ExchangeInterface):
+class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
     """Bitfinex exchange api docs:
     https://docs.bitfinex.com/docs
     """
@@ -195,11 +195,10 @@ class Bitfinex(ExchangeInterface):
             if endpoint in {'movements', 'trades', 'wallets'}:
                 nonce = str(ts_now_in_ms())
                 message = f'/api/{api_path}{nonce}'
-                signature = hmac.new(
-                    self.secret,
-                    msg=message.encode('utf-8'),
-                    digestmod=hashlib.sha384,
-                ).hexdigest()
+                signature = self.generate_hmac_signature(
+                    message.encode('utf-8'),
+                    digest_algorithm=hashlib.sha384,
+                )
                 self.session.headers.update({
                     'Content-Type': 'application/json',
                     'bfx-nonce': nonce,

@@ -81,7 +81,7 @@ def _check_trade_history_events_order(db, expected):
 
 
 def test_name():
-    exchange = Kraken('kraken1', 'a', b'a', object(), object())
+    exchange = Kraken('kraken1', 'a', b'YQ==', object(), object())  # b'YQ==' is base64 for 'a'
     assert exchange.location == Location.KRAKEN
     assert exchange.name == 'kraken1'
 

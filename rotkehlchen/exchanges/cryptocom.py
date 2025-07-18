@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 import json
 import logging
 from collections import defaultdict
@@ -20,6 +18,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -78,7 +77,7 @@ class CryptocomResponse(NamedTuple):
     message: str | None = None
 
 
-class Cryptocom(ExchangeInterface):
+class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
     """Crypto.com exchange api docs:
     https://exchange-docs.crypto.com/exchange/v1/rest-ws/index.html
     """
@@ -115,12 +114,7 @@ class Cryptocom(ExchangeInterface):
             param_str = urlencode(sorted_params)
 
         sig_payload = f'{method}{self.api_key}{param_str}{nonce}'
-
-        return hmac.new(
-            self.secret,
-            msg=sig_payload.encode('utf-8'),
-            digestmod=hashlib.sha256,
-        ).hexdigest()
+        return self.generate_hmac_signature(sig_payload)
 
     def _api_query(
             self,

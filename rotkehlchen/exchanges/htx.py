@@ -1,7 +1,4 @@
-import base64
 import datetime
-import hashlib
-import hmac
 import logging
 import urllib.parse
 from collections.abc import Sequence
@@ -19,7 +16,7 @@ from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
-from rotkehlchen.exchanges.utils import get_key_if_has_val
+from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, get_key_if_has_val
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -76,7 +73,7 @@ def remove_fee_currency(symbol: str, fee_currency: str) -> str:
     return symbol.strip()
 
 
-class Htx(ExchangeInterface):
+class Htx(ExchangeInterface, SignatureGeneratorMixin):
     def __init__(
             self,
             name: str,
@@ -128,12 +125,7 @@ class Htx(ExchangeInterface):
         )
         # api describes that strings should be joined using '\n'
         payload = f'GET\n{host}\n{path}\n{param_str}'
-        dig = hmac.new(
-            key=self.secret,
-            msg=payload.encode('utf-8'),
-            digestmod=hashlib.sha256,
-        ).digest()
-        new_params['Signature'] = base64.b64encode(dig).decode()
+        new_params['Signature'] = self.generate_hmac_b64_signature(payload)
         return new_params
 
     def _query(self, absolute_path: str, options: dict[str, Any] | None = None) -> Any:
