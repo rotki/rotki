@@ -168,7 +168,7 @@ def test_setup_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
     # But check that same location different name works
-    data = {'location': 'kraken', 'name': 'my_other_kraken', 'api_key': 'aadddddd', 'api_secret': 'fffffff'}  # noqa: E501
+    data = {'location': 'kraken', 'name': 'my_other_kraken', 'api_key': 'aadddddd', 'api_secret': 'ZmZmZmZmZg=='}  # noqa: E501
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -257,7 +257,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
 
     Regression test for the second part of https://github.com/rotki/rotki/issues/943
     """
-    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='}  # noqa: E501
     with API_KEYPAIR_KRAKEN_VALIDATION_FAIL_PATCH:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -268,7 +268,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(
     )
 
     # Now try to register the exchange again
-    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'fffffff'}
+    data = {'location': 'kraken', 'name': 'my_kraken', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='}  # noqa: E501
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
@@ -289,7 +289,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'location': 'notexisting', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'},  # noqa: E501
+            json={'location': 'notexisting', 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -301,7 +301,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'fffffff'},
+            json={'location': 3434, 'name': 'foo', 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -313,7 +313,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'fffffff'},
+            json={'location': 'kraken', 'name': 55, 'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},  # noqa: E501
         )
     assert_error_response(
         response=response,
@@ -325,7 +325,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'api_key': 'ddddd', 'api_secret': 'fffffff'},
+            json={'api_key': 'ddddd', 'api_secret': 'ZmZmZmZmZg=='},
         )
     assert_error_response(
         response=response,
@@ -337,7 +337,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'name': 'kraken', 'api_key': True, 'api_secret': 'fffffff'},
+            json={'name': 'kraken', 'api_key': True, 'api_secret': 'ZmZmZmZmZg=='},
         )
     assert_error_response(
         response=response,
@@ -349,7 +349,7 @@ def test_setup_exchange_errors(rotkehlchen_api_server: 'APIServer') -> None:
     with mock_validate_api_key_success(Location.KRAKEN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'),
-            json={'name': 'kraken', 'api_secret': 'fffffff'},
+            json={'name': 'kraken', 'api_secret': 'ZmZmZmZmZg=='},
         )
     assert_error_response(
         response=response,
@@ -392,7 +392,7 @@ def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
         'location': 'coinbase',
         'name': 'Coinbase 1',
         'api_key': 'ddddd',
-        'api_secret': 'fffffff',
+        'api_secret': 'ZmZmZmZmZg==',
     }
     with mock_validate_api_key_success(Location.COINBASE):
         response = requests.put(
@@ -863,8 +863,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
 
     # Test that valid api key/secret is edited properly
-    new_key = 'new_key'
-    new_secret = 'new_secret'
+    new_key, new_secret, new_secret_kraken = 'new_key', 'new_secret', 'bmV3X3NlY3JldA=='  # last one is base65 for new_secret  # noqa: E501
     for location in SUPPORTED_EXCHANGES:
         exchange = try_get_first_exchange(rotki.exchange_manager, location)  # type: ignore[call-overload]  # mypy only sees the type as Location
         # change both passphrase and name -- kucoin
@@ -875,7 +874,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'api_key': new_key,
         }
         if location not in EXCHANGES_WITHOUT_API_SECRET:
-            data['api_secret'] = new_secret
+            data['api_secret'] = new_secret_kraken if location == Location.KRAKEN else new_secret
         if location in (Location.BINANCE, Location.BINANCEUS):
             data['binance_markets'] = ['ETHBTC']
         elif location == Location.KRAKEN:
@@ -901,7 +900,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
             'location': str(location),
             'new_name': f'my_{exchange.name}',
             'api_key': 'invalid',
-            'api_secret': 'invalid',
+            'api_secret': 'aW52YWxpZA==' if location == Location.KRAKEN else 'invalid',  # base64 for 'invalid'  # noqa: E501
         }
         with mock_validate_api_key_failure(location):
             response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)

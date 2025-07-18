@@ -1,5 +1,4 @@
 import hashlib
-import hmac
 import json
 import logging
 import operator
@@ -35,6 +34,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeWithExtras,
 )
 from rotkehlchen.exchanges.utils import (
+    SignatureGeneratorMixin,
     deserialize_asset_movement_address,
     get_key_if_has_val,
     query_binance_exchange_pairs,
@@ -179,7 +179,7 @@ def trade_from_binance(
     )
 
 
-class Binance(ExchangeInterface, ExchangeWithExtras):
+class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     """This class supports:
       - Binance: when instantiated with default uri, equals BINANCE_BASE_URL.
       - Binance US: when instantiated with uri equals BINANCEUS_BASE_URL.
@@ -325,11 +325,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 # Recommended recvWindows is 5000 but we get timeouts with it
                 call_options['recvWindow'] = 10000
                 call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
-                signature = hmac.new(
-                    self.secret,
-                    urlencode(call_options).encode('utf-8'),
-                    hashlib.sha256,
-                ).hexdigest()
+                signature = self.generate_hmac_signature(urlencode(call_options))
                 call_options['signature'] = signature
 
             api_subdomain = api_type if is_new_futures_api else 'api'

@@ -78,9 +78,9 @@ def test_associated_locations(database):
         )
 
     kraken_api_key1 = ApiKey('kraken_api_key')
-    kraken_api_secret1 = ApiSecret(b'kraken_api_secret')
+    kraken_api_secret1 = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQ=')
     kraken_api_key2 = ApiKey('kraken_api_key2')
-    kraken_api_secret2 = ApiSecret(b'kraken_api_secret2')
+    kraken_api_secret2 = ApiSecret(b'a3Jha2VuX2FwaV9zZWNyZXQy')
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
     # add mock kraken and binance
