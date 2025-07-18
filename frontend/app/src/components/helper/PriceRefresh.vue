@@ -1,28 +1,21 @@
 <script setup lang="ts">
 import { useBalances } from '@/composables/balances';
+import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 const emit = defineEmits<{
   (e: 'click'): void;
 }>();
 
-const { useIsTaskRunning } = useTaskStore();
 const { refreshPrices } = useBalances();
 const { isLoading } = useStatusStore();
 
 const refreshing = isLoading(Section.PRICES);
 const { t } = useI18n({ useScope: 'global' });
 
-const loadingData = logicOr(
-  useIsTaskRunning(TaskType.QUERY_BALANCES),
-  useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
-  useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES),
-  useIsTaskRunning(TaskType.MANUAL_BALANCES),
-);
+const { loadingBalances } = useBalancesLoading();
 
 const { assets } = useAggregatedBalances();
 
@@ -31,7 +24,7 @@ async function refresh() {
   await refreshPrices(true, get(assets));
 }
 
-const disabled = computed<boolean>(() => get(refreshing) || get(loadingData));
+const disabled = computed<boolean>(() => get(refreshing) || get(loadingBalances));
 </script>
 
 <template>

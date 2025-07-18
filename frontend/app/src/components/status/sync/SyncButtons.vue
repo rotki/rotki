@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { useBalancesLoading } from '@/composables/balances/loading';
 import { usePremium } from '@/composables/premium';
 import { useSync } from '@/composables/session/sync';
-import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
-import { TaskType } from '@/types/task-type';
 
 defineProps<{ pending: boolean }>();
 
@@ -22,22 +21,7 @@ function action(action: SyncAction) {
 }
 
 const { uploadStatus } = useSync();
-
-const { useIsTaskRunning } = useTaskStore();
-
-const isTokenDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
-const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
-const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
-const isExchangeBalancesLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-
-const loading = logicOr(
-  isTokenDetecting,
-  isQueryingBlockchain,
-  isLoopringLoading,
-  isManualBalancesLoading,
-  isExchangeBalancesLoading,
-);
+const { loadingBalancesAndDetection: loading } = useBalancesLoading();
 </script>
 
 <template>
