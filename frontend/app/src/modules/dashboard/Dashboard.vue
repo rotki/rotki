@@ -5,21 +5,19 @@ import EvmQueryIndicator from '@/components/dashboard/EvmQueryIndicator.vue';
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
+import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useModules } from '@/composables/session/modules';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { TaskType } from '@/types/task-type';
 import PoolTable from './liquidity-pools/PoolTable.vue';
 import Summary from './summary/Summary.vue';
 
 const Type = DashboardTableType;
 
 const { t } = useI18n({ useScope: 'global' });
-const { useIsTaskRunning } = useTaskStore();
 const { isModuleEnabled } = useModules();
 const { balances, liabilities } = useAggregatedBalances();
 const { activeDashboardMessages } = useDynamicMessages();
@@ -29,13 +27,7 @@ const aggregatedLiabilities = liabilities();
 
 const nftEnabled = isModuleEnabled(Module.NFTS);
 
-const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
-const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
-const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
-const isAllBalancesLoading = useIsTaskRunning(TaskType.QUERY_BALANCES);
-
-const isBlockchainLoading = logicOr(isQueryingBlockchain, isLoopringLoading);
-const isAnyLoading = logicOr(isBlockchainLoading, isExchangeLoading, isAllBalancesLoading);
+const { loadingBalancesAndDetection: isAnyLoading } = useBalancesLoading();
 const dismissedMessage = useSessionStorage('rotki.messages.dash.dismissed', false);
 
 const dashboardRef = ref<HTMLElement>();
