@@ -131,7 +131,7 @@ class DxdaomesaDecoder(DecoderInterface):
         return DecodingOutput(events=[event])
 
     def _decode_order_placement(self, context: DecoderContext) -> DecodingOutput:
-        """Some docs: https://docs.gnosis.io/protocol/docs/tutorial-limit-orders/"""
+        """Some docs: https://docs.cow.fi/cow-protocol/tutorials/cow-swap/limit"""
         topic_data, log_data = self.contract.decode_event(
             tx_log=context.tx_log,
             event_name='OrderPlacement',

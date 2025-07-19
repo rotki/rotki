@@ -131,7 +131,7 @@ class SubstrateManager:
 
         Official substrate chains documentation:
         https://substrate.dev/rustdocs/v2.0.0/sc_service/index.html
-        https://guide.kusama.network/docs/en/kusama-index
+        https://wiki.polkadot.network/kusama/kusama-getting-started/
         https://wiki.polkadot.network/en/
 
         External Address Format (SS58) documentation:
