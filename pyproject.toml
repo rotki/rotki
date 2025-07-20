@@ -105,7 +105,7 @@ lint = [
     "mypy-extensions==1.1.0",
     "pylint==3.3.7",
     "astroid==3.3.10",  # engine of pylint, upgrade them together
-    "ruff==0.12.3",
+    "ruff==0.12.4",
     "double-indent-rotki==0.1.7",  # our fork of double indent
     "pyright==1.1.403",
     # type packages used by mypy
@@ -118,7 +118,7 @@ lint = [
     "types-requests==2.32.4.20250611",
     "types-urllib3==1.26.25.14",
     "types-toml==0.10.8.20240310",
-    "types-python-dateutil==2.9.0.20250516",
+    "types-python-dateutil==2.9.0.20250708",
 ]
 
 docs = [
