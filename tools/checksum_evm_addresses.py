@@ -59,7 +59,7 @@ def fix_addresses_in_file(file_path: Path, violations: list[AddressViolation]) -
         return True
 
     try:
-        content = file_path.read_text()
+        content = file_path.read_text(encoding='utf-8')
 
         # Sort violations by position in reverse order to avoid offset issues
         sorted_violations = sorted(violations, key=lambda v: (v.line, v.column), reverse=True)
@@ -89,7 +89,7 @@ def fix_addresses_in_file(file_path: Path, violations: list[AddressViolation]) -
                 lines[line_idx] = line.replace(violation.address, violation.checksummed)
 
         # Write back the fixed content
-        file_path.write_text(''.join(lines))
+        file_path.write_text(''.join(lines), encoding='utf-8')
 
     except Exception as e:
         print(f'Error fixing {file_path}: {e}')
@@ -103,7 +103,7 @@ def check_python_file(file_path: Path) -> list[AddressViolation]:
     violations = []
 
     try:
-        content = file_path.read_text()
+        content = file_path.read_text(encoding='utf-8')
         lines = content.splitlines()
 
         # Parse the AST to find string literals
@@ -162,7 +162,7 @@ def check_json_file(file_path: Path) -> list[AddressViolation]:
     violations = []
 
     try:
-        content = file_path.read_text()
+        content = file_path.read_text(encoding='utf-8')
         lines = content.splitlines()
 
         for line_num, line in enumerate(lines, 1):
