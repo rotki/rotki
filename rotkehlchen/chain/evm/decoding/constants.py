@@ -31,6 +31,7 @@ DELEGATE_CHANGED: Final = b'14\xe8\xa2\xe6\xd9~\x92\x9a~T\x01\x1e\xa5H]}\x19m\xd
 STAKED: Final = b'\x9eq\xbc\x8e\xea\x02\xa69i\xf5\t\x81\x8f-\xaf\xb9%E2\x90C\x19\xf9\xdb\xday\xb6{\xd3J_='  # noqa: E501
 FUNDS_CLAIMED: Final = b'\xa4\xebP\x10;\x05\x91\xfe\xb0\xbc\x91?G\x9d\x92\xaf^\xb7\xea3\xe8\xc3\x97\xb4\x9b\xabR\xcej\xf2l\xb5'  # noqa: E501
 WITHDRAWN: Final = b'p\x84\xf5Gf\x18\xd8\xe6\x0b\x11\xef\r}?\x06\x91FU\xad\xb8y>(\xff\x7f\x01\x8dLv\xd5\x05\xd5'  # noqa: E501
+REWARD_CLAIMED: Final = b'\xf7\xa4\x00w\xffz\x04\xc7\xe6\x1fo&\xfb\x13wBY\xdd\xf1\xb6\xbc\xe9\xec\xf2j\x82v\xcd\xd3\x99&\x83'  # noqa: E501
 ERC4626_ABI: ABI = [{'inputs': [{'name': '', 'type': 'address'}], 'name': 'balanceOf', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'asset', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'pps', 'outputs': [{'name': 'pricePerShare', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 

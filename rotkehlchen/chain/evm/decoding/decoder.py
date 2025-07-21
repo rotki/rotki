@@ -84,6 +84,7 @@ from .constants import (
     ERC20_OR_ERC721_TRANSFER,
     OUTGOING_EVENT_TYPES,
 )
+from .merkl.decoder import MerklDecoder
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
@@ -274,6 +275,7 @@ class EVMTransactionDecoder(ABC):
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='OpenOcean', decoder_class=OpenOceanDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
+        self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
 
         # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
         # Also arb and scroll because they don't follow the weth9 design

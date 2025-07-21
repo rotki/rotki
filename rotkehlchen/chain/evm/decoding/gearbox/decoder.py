@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
-from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, REWARD_CLAIMED
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     GearboxPoolData,
     query_gearbox_data,
@@ -34,7 +34,6 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
-    ANGLE_PROTOCOL_CLAIMED_TOPIC,
     CLAIM_GEAR_WITHDRAWAL,
     CPT_GEARBOX,
     DEPOSIT,
@@ -302,7 +301,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 (
                     context.event.address in self.pools or
                     any((
-                        tx_log.topics[0] == ANGLE_PROTOCOL_CLAIMED_TOPIC and
+                        tx_log.topics[0] == REWARD_CLAIMED and
                         context.event.amount == token_normalized_value_decimals(token_amount=int.from_bytes(tx_log.data), token_decimals=DEFAULT_TOKEN_DECIMALS)  # noqa: E501
                     ) for tx_log in context.all_logs)
                 )
