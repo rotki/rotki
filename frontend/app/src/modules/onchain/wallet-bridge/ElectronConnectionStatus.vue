@@ -37,7 +37,7 @@ const { error, isConnected, isConnecting, onDisconnect, onRetryConnection } = to
       </span>
     </div>
 
-    <div class="mt-3 text-sm text-rui-text-secondary">
+    <div class="mt-1 text-sm text-rui-text-secondary">
       {{ isConnected
         ? t('trade.bridge.electron_ready_message')
         : isConnecting
@@ -47,21 +47,15 @@ const { error, isConnected, isConnecting, onDisconnect, onRetryConnection } = to
     </div>
 
     <!-- Error Display -->
-    <div
+    <RuiAlert
       v-if="error && !isConnected && !isConnecting"
-      class="mt-3 p-2 rounded-md bg-rui-error/10 border border-rui-error/20"
+      type="error"
+      class="mt-3"
     >
-      <div class="flex items-start gap-2">
-        <RuiIcon
-          name="alert-triangle-line"
-          class="text-rui-error mt-0.5"
-          size="14"
-        />
-        <p class="text-xs text-rui-error flex-1">
-          {{ error }}
-        </p>
+      <div class="mt-0.5">
+        {{ error }}
       </div>
-    </div>
+    </RuiAlert>
 
     <div class="mt-4 flex gap-2">
       <RuiButton
