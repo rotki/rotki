@@ -1,5 +1,6 @@
 import datetime
 import os
+from unittest.mock import patch
 
 import pytest
 
@@ -20,6 +21,7 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_USD,
 )
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.cryptocompare import (
     CRYPTOCOMPARE_SPECIAL_CASES_MAPPING,
     Cryptocompare,
@@ -367,3 +369,71 @@ def test_query_multiple_current_prices(cryptocompare: 'Cryptocompare'):
         ],
         to_asset=A_ETH.resolve_to_asset_with_oracles(),
     ) == {A_BTC: FVal(40.48), A_DAI: FVal(0.0004486), A_BSC_BNB: FVal(0.2673)}
+
+
+@pytest.mark.vcr
+def test_query_multiple_current_prices_handles_exceptions(cryptocompare: 'Cryptocompare'):
+    """
+    Regression test for query_multiple_current_prices to ensure it properly handles
+    exceptions without failing the entire batch. This prevents the issue where
+    a single problematic asset would cause all price queries to fail.
+    """
+    # Create enough assets to trigger chunking (MAX_FSYMS_CHARS = 300)
+    # Each asset symbol is ~4 chars + comma, so we need ~75 assets to exceed 300 chars
+    many_assets = [
+        A_BTC.resolve_to_asset_with_oracles(),
+        A_DAI.resolve_to_asset_with_oracles(),
+        A_ETH.resolve_to_asset_with_oracles(),
+    ] * 30  # This will create 90 assets, ensuring we exceed MAX_FSYMS_CHARS
+
+    # Mock _api_query to fail for the first chunk but succeed for others
+    original_api_query, call_count = cryptocompare._api_query, 0
+
+    def mock_api_query(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+
+        if call_count == 1:  # Fail the first chunk to simulate problematic assets
+            raise RemoteError('cccagg_or_exchange market does not exist for this coin pair')
+
+        # Succeed for subsequent chunks
+        return original_api_query(*args, **kwargs)
+
+    with patch.object(cryptocompare, '_api_query', side_effect=mock_api_query):
+        # This should not raise an exception despite the first chunk failing
+        # Instead, it should skip the failed chunk and return prices from successful chunks
+        assert len(cryptocompare.query_multiple_current_prices(
+            from_assets=many_assets,
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        )) == 3
+
+
+@pytest.mark.vcr
+def test_query_multiple_current_prices_handles_special_case_exceptions(cryptocompare: 'Cryptocompare'):  # noqa: E501
+    """Regression test for special case handling in query_multiple_current_prices."""
+    # Include a special case asset that might fail
+    from_assets = [
+        A_BTC.resolve_to_asset_with_oracles(),
+        A_DAI.resolve_to_asset_with_oracles(),
+        A_CDAI.resolve_to_asset_with_oracles(),  # This is a special case asset
+    ]
+
+    # Mock special case handling to fail for one asset
+    original_special_case = cryptocompare._special_case_handling
+
+    def mock_special_case(*args, **kwargs):
+        if 'from_asset' in kwargs and kwargs['from_asset'] == from_assets[-1]:
+            raise RemoteError('Special case handling failed')
+
+        return original_special_case(*args, **kwargs)
+
+    with patch.object(cryptocompare, '_special_case_handling', side_effect=mock_special_case):
+        # This should not raise an exception despite special case failure
+        prices = cryptocompare.query_multiple_current_prices(
+            from_assets=from_assets,
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        )
+
+        # CDAI should not be in results due to failure
+        assert A_CDAI not in prices
+        assert len(prices) == 2
