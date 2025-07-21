@@ -409,44 +409,35 @@ onBeforeMount(async () => {
     <template #activator="{ attrs }">
       <div
         class="transition-all"
-        :class="isMini ? 'pl-1' : 'px-3 pt-2 pb-4'"
+        :class="isMini ? 'pl-1' : 'px-3 py-2'"
       >
-        <RuiTextField
+        <div
           v-if="!isMini"
-          model-value=""
-          hide-details
-          dense
-          :label="t('common.actions.search')"
-          variant="outlined"
-          readonly
-          class="opacity-60 [&>div:first-child]:bg-rui-grey-100 [&>div:first-child]:dark:bg-rui-grey-800 [&_fieldset]:!rounded-lg [&_fieldset]:!opacity-50"
-          color="primary"
-          v-bind="attrs"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-search"
-              size="18"
-            />
-          </template>
-          <template #append>
-            <RuiIcon
-              name="lu-command"
-              size="14"
-            />
-            {{ key }}
-          </template>
-        </RuiTextField>
-        <RuiButton
-          v-else
-          variant="text"
-          class="p-2 w-full mb-4 border border-rui-grey-200 dark:border-rui-grey-700 !bg-rui-grey-100 hover:!bg-rui-grey-200 dark:!bg-rui-grey-800 hover:dark:!bg-rui-grey-700 rounded-lg"
+          class="flex items-center gap-2 justify-between rounded-lg px-3 py-2 bg-rui-grey-100 dark:bg-rui-grey-800 cursor-pointer border border-rui-grey-300 hover:border-rui-grey-400 dark:border-rui-grey-700 dark:hover:border-rui-grey-600 text-rui-text-secondary opacity-70"
+          role="button"
           v-bind="attrs"
         >
           <RuiIcon
             name="lu-search"
-            class="opacity-40"
-            size="20"
+            size="16"
+          />
+          <span class="flex-1 ml-1">{{ t('common.actions.search') }}</span>
+          <RuiIcon
+            name="lu-command"
+            size="14"
+          />
+          {{ key }}
+        </div>
+        <RuiButton
+          v-else
+          variant="text"
+          class="p-2 w-full mb-3 border border-rui-grey-200 dark:border-rui-grey-700 !bg-rui-grey-100 hover:!bg-rui-grey-200 dark:!bg-rui-grey-800 hover:dark:!bg-rui-grey-700 rounded-lg"
+          v-bind="attrs"
+        >
+          <RuiIcon
+            name="lu-search"
+            class="opacity-60"
+            size="18"
           />
         </RuiButton>
       </div>
