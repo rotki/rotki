@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki will now decode reward claims via Merkl, including Morpho rewards distributed through Merkl.
 * :feature:`-` The eth2 daily stats functionality has been removed as it was deprecated for over a year and there was no reliable source of query for them.
 * :bug:`-` Liquity debts now appear as liabilities in dashboard balances where it was previously missing.
 * :bug:`-` Fix the issue where the prices for the asset group are not displayed and keep loading.

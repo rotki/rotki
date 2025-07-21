@@ -83,6 +83,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Makerdao',
         'Magpie',
         'Makerdaosai',
+        'Merkl',
         'Metamask',
         'Monerium',
         'Morpho',
@@ -238,6 +239,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'poloniex',
         'uphold',
         'magpie',
+        'merkl',
     }
 
 
