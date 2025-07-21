@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Price queries for tokens should no longer fail when only one token query failed. This sometimes results in zero prices, making tokens look as if they disappeared.
 * :bug:`-` Fix Spark protocol savings transactions decoding across all supported EVM chains.
 * :bug:`-` Fix the Kraken earned asset that is not reflecting in the selected tab.
 * :bug:`-` Fix the notification error where it can't query alias names for the xpub address.

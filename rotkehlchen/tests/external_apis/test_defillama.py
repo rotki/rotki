@@ -1,6 +1,9 @@
+from unittest.mock import patch
+
 import pytest
 
-from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD
+from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_EUR, A_LINK, A_USD, A_USDC, A_USDT
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Price
@@ -95,3 +98,47 @@ def test_query_multiple_current_prices(session_defillama: 'Defillama', inquirer)
         ],
         to_asset=A_ETH.resolve_to_asset_with_oracles(),
     ) == {A_ARB: FVal(0.0001843520256), A_DAI: FVal(0.000443575764), A_LINK: FVal(0.007640514)}
+
+
+@pytest.mark.vcr
+def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_defillama: 'Defillama'):  # noqa: E501
+    """Regression test for query_multiple_current_prices to ensure it properly handles
+    exceptions and chunking without failing the entire batch. This prevents the issue where
+    large requests cause "413 content too large" errors or individual problematic chunks
+    cause all price queries to fail.
+    """
+    # Test with 6 assets and chunk size of 2 to trigger chunking
+    test_assets = [
+        A_ETH.resolve_to_asset_with_oracles(),
+        A_DAI.resolve_to_asset_with_oracles(),
+        A_ARB.resolve_to_asset_with_oracles(),
+        A_LINK.resolve_to_asset_with_oracles(),
+        A_USDC.resolve_to_asset_with_oracles(),
+        A_USDT.resolve_to_asset_with_oracles(),
+    ]
+
+    # Mock _query to fail for the first chunk but succeed for others
+    original_query, call_count = session_defillama._query, 0
+
+    def mock_query(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:  # Fail the first chunk to simulate "413 content too large"
+            raise RemoteError('413 content too large')
+
+        # Succeed for subsequent chunks
+        return original_query(*args, **kwargs)
+
+    with (
+        patch('rotkehlchen.externalapis.defillama.DEFILLAMA_CHUNK_SIZE', 2),
+        patch.object(session_defillama, '_query', side_effect=mock_query),
+    ):
+        # This should not raise an exception despite the first chunk failing
+        # Instead, it should skip the failed chunk and return prices from successful chunks
+        prices = session_defillama.query_multiple_current_prices(
+            from_assets=test_assets,
+            to_asset=A_USD.resolve_to_asset_with_oracles(),
+        )
+
+        # Should have 4 prices from the 2 successful chunks (chunks 2 and 3)
+        assert len(prices) == 4
