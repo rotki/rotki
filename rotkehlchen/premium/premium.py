@@ -353,6 +353,26 @@ class Premium:
 
         check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
 
+    def edit_device(self, device_id: str, device_name: str) -> None:
+        """Edit device name for the authenticated user
+        May raise:
+        - RemoteError
+        """
+        log.debug(f'Editing premium registered {device_id=} to name {device_name}')
+        try:
+            response = self.session.patch(
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                json=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                    device_name=device_name,
+                ),
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to edit device due to: {e}') from e
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
+
     def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
             return True

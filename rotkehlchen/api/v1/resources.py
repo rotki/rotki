@@ -74,6 +74,7 @@ from rotkehlchen.api.v1.schemas import (
     DetectTokensSchema,
     EditAccountingRuleSchema,
     EditHistoryEventSchema,
+    EditPremiumDeviceSchema,
     EditSettingsSchema,
     EnsAvatarsSchema,
     ERC20InfoSchema,
@@ -3479,11 +3480,20 @@ class SolanaTokenMigrationResource(BaseMethodView):
 
 class PremiumDevicesResource(BaseMethodView):
 
+    edit_schema = EditPremiumDeviceSchema()
     delete_schema = DeletePremiumDeviceSchema()
 
     @require_premium_user(active_check=False)
     def get(self) -> Response:
         return self.rest_api.get_premium_registered_devices()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(edit_schema, location='json')
+    def patch(self, device_identifier: str, device_name: str) -> Response:
+        return self.rest_api.edit_premium_registered_device(
+            device_identifier=device_identifier,
+            device_name=device_name,
+        )
 
     @require_premium_user(active_check=False)
     @use_kwargs(delete_schema, location='json')

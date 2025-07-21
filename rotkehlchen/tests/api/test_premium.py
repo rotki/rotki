@@ -226,3 +226,52 @@ def test_authenticate_device_race_condition(rotkehlchen_api_server: APIServer) -
     ):
         # This should complete successfully despite the 409 error (race condition handled)
         rotki.premium.authenticate_device()  # Should not raise an exception
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_edit_premium_device(rotkehlchen_api_server: APIServer) -> None:
+    """Test the PATCH /premium/devices endpoint with mocked external request."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+
+    with patch.object(
+        rotki.premium.session,
+        'patch',
+        return_value=MockResponse(200, '{}'),
+    ) as mock_patch:
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'premiumdevicesresource'),
+            json={
+                'device_identifier': 'device_abc',
+                'device_name': 'new name',
+            },
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result is True
+
+        mock_patch.assert_called_once()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_edit_premium_device_error(rotkehlchen_api_server: APIServer) -> None:
+    """Test the PATCH /premium/devices endpoint when external service fails."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+
+    with patch.object(
+        rotki.premium.session,
+        'patch',
+        side_effect=requests.exceptions.RequestException('Network issue'),
+    ):
+        response = requests.patch(
+            api_url_for(rotkehlchen_api_server, 'premiumdevicesresource'),
+            json={
+                'device_identifier': 'device_abc',
+                'device_name': 'new name',
+            },
+        )
+        assert_error_response(
+            response=response,
+            status_code=HTTPStatus.CONFLICT,
+            contained_in_msg='Network issue',
+        )

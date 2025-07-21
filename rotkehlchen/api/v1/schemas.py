@@ -4198,3 +4198,8 @@ class SolanaTokenMigrationSchema(AsyncQueryArgumentSchema):
 
 class DeletePremiumDeviceSchema(Schema):
     device_identifier = NonEmptyStringField(required=True)
+
+
+class EditPremiumDeviceSchema(Schema):
+    device_identifier = NonEmptyStringField(required=True)
+    device_name = NonEmptyStringField(required=True)

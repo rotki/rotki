@@ -5837,3 +5837,13 @@ class RestAPI:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT)
+
+    def edit_premium_registered_device(self, device_identifier: str, device_name: str) -> Response:
+        """Edit a device's name in the premium account by identifier."""
+        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
+        try:
+            self.rotkehlchen.premium.edit_device(device_identifier, device_name)
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT)

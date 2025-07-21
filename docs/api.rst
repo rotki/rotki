@@ -438,6 +438,46 @@ Querying premium devices
    :statuscode 403: Logged in user does not have premium.
    :statuscode 409: The external premium service could not be reached or returned unexpected response.
 
+Editing premium devices
+========================
+
+.. http:patch:: /api/(version)/premium/devices
+
+   By doing a ``PATCH`` at this endpoint you can edit the name of a particular device for your premium account, if your user has a premium subscription.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/premium/devices HTTP/1.1
+      Host: localhost:5042
+
+      {
+          "device_identifier": "device_123",
+          "device_name": "my laptop"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :reqjson string device_identifier: The unique identifier of the device to edit.
+   :reqjson string device_name: A new, user-friendly name for the device. Must be a non-empty string.
+   :resjson bool result: True if the device name was successfully updated.
+   :statuscode 200: Device name updated successfully.
+   :statuscode 400: Provided call is in some way malformed.
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
 Deleting premium devices
 ========================
 
