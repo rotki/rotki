@@ -53,6 +53,7 @@ from rotkehlchen.tests.utils.constants import (
     A_ADA,
     A_DAO,
     A_EUR,
+    TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
 )
 from rotkehlchen.tests.utils.exchanges import (
     get_exchange_asset_symbols,
@@ -211,10 +212,9 @@ def test_querying_rate_limit_exhaustion(kraken, database):
         kraken.query_history_events()
 
     with database.conn.read_ctx() as cursor:
-        assert len(DBHistoryEvents(database).get_history_events(
+        assert len(DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-            has_premium=True,
         )) == 3  # spend, receive, and fee
         from_ts, to_ts = database.get_used_query_range(cursor, 'kraken_history_events_mockkraken')
 
@@ -226,7 +226,7 @@ def test_querying_deposits_withdrawals(kraken):
     kraken.random_ledgers_data = False
     kraken.query_history_events()
     with kraken.db.conn.read_ctx() as cursor:
-        result = DBHistoryEvents(kraken.db).get_history_events(
+        result = DBHistoryEvents(kraken.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 location=Location.KRAKEN,
@@ -236,7 +236,6 @@ def test_querying_deposits_withdrawals(kraken):
                     values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
                 ),
             ),
-            has_premium=True,
         )
 
     assert len(result) == 8
@@ -316,10 +315,9 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
         kraken.query_history_events()
 
     with kraken.db.conn.read_ctx() as cursor:
-        movements = DBHistoryEvents(kraken.db).get_history_events(
+        movements = DBHistoryEvents(kraken.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-            has_premium=True,
         )
 
     # withdrawal and first normal deposit should have no problem
@@ -389,10 +387,9 @@ def test_kraken_trade_with_spend_receive(kraken):
         kraken.query_history_events()
 
     with kraken.db.conn.read_ctx() as cursor:
-        assert DBHistoryEvents(kraken.db).get_history_events(
+        assert DBHistoryEvents(kraken.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-            has_premium=True,
         ) == [SwapEvent(
             identifier=1,
             timestamp=TimestampMS(1636406000865),
@@ -474,10 +471,9 @@ def test_kraken_trade_with_adjustment(kraken):
         kraken.query_history_events()
 
         with kraken.db.conn.read_ctx() as cursor:
-            assert DBHistoryEvents(kraken.db).get_history_events(
+            assert DBHistoryEvents(kraken.db).get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-                has_premium=True,
             ) == [SwapEvent(
                 identifier=1,
                 timestamp=TimestampMS(1636406000855),
@@ -532,10 +528,9 @@ def test_kraken_adjustment(kraken):
         kraken.query_history_events()
 
     with kraken.db.conn.read_ctx() as cursor:
-        assert DBHistoryEvents(kraken.db).get_history_events(
+        assert DBHistoryEvents(kraken.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-            has_premium=True,
         ) == [HistoryEvent(
             identifier=1,
             event_identifier='xxxx',
@@ -590,10 +585,9 @@ def test_kraken_trade_no_counterpart(kraken):
         kraken.query_history_events()
 
         with kraken.db.conn.read_ctx() as cursor:
-            assert DBHistoryEvents(kraken.db).get_history_events(
+            assert DBHistoryEvents(kraken.db).get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-                has_premium=True,
             ) == [SwapEvent(
                 identifier=1,
                 timestamp=TimestampMS(1636406000855),
@@ -685,10 +679,9 @@ def test_kraken_failed_withdrawals(kraken):
     with patch(target, new=test_events):
         kraken.query_history_events()
     with kraken.db.conn.read_ctx() as cursor:
-        withdrawals = DBHistoryEvents(kraken.db).get_history_events(
+        withdrawals = DBHistoryEvents(kraken.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-            has_premium=True,
         )
     assert len(withdrawals) == 0
 
@@ -747,10 +740,9 @@ def test_trade_from_kraken_unexpected_data(kraken):
             kraken.query_history_events()
 
         with kraken.db.conn.read_ctx() as cursor:
-            events = DBHistoryEvents(kraken.db).get_history_events(
+            events = DBHistoryEvents(kraken.db).get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
-                has_premium=True,
             )
 
         if expected_warnings_num == 0 and expected_errors_num == 0:
@@ -957,7 +949,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
     assert events[1]['asset'] == 'ETH2'
     assert events[2]['asset'] == 'ETH'
     if start_with_valid_premium:
-        assert result['entries_limit'] == -1
+        assert result['entries_limit'] == TEST_PREMIUM_HISTORY_EVENTS_LIMIT
     else:
         assert result['entries_limit'] == FREE_HISTORY_EVENTS_LIMIT
     assert result['entries_total'] == 4
@@ -1126,10 +1118,9 @@ def test_kraken_informational_fees(rotkehlchen_api_server_with_exchanges: 'APISe
         kraken.query_history_events()
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
             group_by_event_ids=False,
         )
 

@@ -1057,12 +1057,11 @@ class EVMTransactionDecoder(ABC):
                     (tx_id, EVMTX_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
-                    events = self.dbevents.get_history_events(
+                    events = self.dbevents.get_history_events_internal(
                         cursor=cursor,
                         filter_query=EvmEventFilterQuery.make(
                             tx_hashes=[transaction.tx_hash],
                         ),
-                        has_premium=True,  # for this function we don't limit anything
                     )
                     return events, False, None
 

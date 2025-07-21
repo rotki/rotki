@@ -392,6 +392,91 @@ Handling user creation, sign-in, log-out and querying
    :statuscode 500: Internal rotki error
    :statuscode 502: The external premium service could not be reached or returned unexpected response.
 
+Querying premium devices
+========================
+
+.. http:get:: /api/(version)/premium/devices
+
+   By doing a ``GET`` at this endpoint you can query the list of registered devices for your premium account, if your user has a premium subscription.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/premium/devices HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "devices": [
+                  {
+                      "device_name": "MacOS",
+                      "user": "yabirgb",
+                      "device_identifier": "21312312"
+                  }
+              ],
+              "limit": 5
+          },
+          "message": ""
+      }
+
+   :resjson object result: Object containing devices list and limit information
+   :resjson list devices: List of registered devices for the premium account
+   :resjson string device_name: Name of the registered device
+   :resjson string user: User associated with the device
+   :resjson string device_identifier: Unique identifier for the device
+   :resjson int limit: Device limit for the premium account
+   :statuscode 200: Devices successfully queried
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
+Deleting premium devices
+========================
+
+.. http:delete:: /api/(version)/premium/devices
+
+   By doing a ``DELETE`` at this endpoint you can delete a specific registered device from your premium account.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/premium/devices HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "device_identifier": "device_123"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :reqjson string device_identifier: The unique identifier of the device to delete
+   :resjson bool result: Returns true if the device deletion was successful
+   :statuscode 200: Device successfully deleted
+   :statuscode 400: Provided call is in some way malformed.
+   :statuscode 401: User is not logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: The external premium service could not be reached or returned unexpected response.
+
 Modify user password
 ========================
 

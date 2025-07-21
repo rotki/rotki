@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_proper_response,
 )
-from rotkehlchen.tests.utils.constants import A_GBP
+from rotkehlchen.tests.utils.constants import A_GBP, TEST_PREMIUM_PNL_EVENTS_LIMIT
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
@@ -120,7 +120,7 @@ def test_get_report_data_with_premium(
     assert len(data['result']['entries']) == len(events)
     assert data['result']['entries_found'] == len(events)
     assert data['result']['entries_total'] == len(events)
-    assert data['result']['entries_limit'] == -1 if start_with_valid_premium else FREE_PNL_EVENTS_LIMIT  # noqa: E501
+    assert data['result']['entries_limit'] == TEST_PREMIUM_PNL_EVENTS_LIMIT if start_with_valid_premium else FREE_PNL_EVENTS_LIMIT  # noqa: E501
 
     # Test pagination limits
     response = requests.post(
@@ -132,7 +132,7 @@ def test_get_report_data_with_premium(
     assert len(data['result']['entries']) == 1
     assert data['result']['entries_found'] == len(events)
     assert data['result']['entries_total'] == len(events)
-    assert data['result']['entries_limit'] == -1 if start_with_valid_premium else FREE_PNL_EVENTS_LIMIT  # noqa: E501
+    assert data['result']['entries_limit'] == TEST_PREMIUM_PNL_EVENTS_LIMIT if start_with_valid_premium else FREE_PNL_EVENTS_LIMIT  # noqa: E501
 
 
 def test_get_report_data_invalid_report(

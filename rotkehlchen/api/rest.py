@@ -26,8 +26,6 @@ from rotkehlchen.accounting.constants import (
     EVENT_CATEGORY_DETAILS,
     EVENT_CATEGORY_MAPPINGS,
     EVENT_GROUPING_ORDER,
-    FREE_PNL_EVENTS_LIMIT,
-    FREE_REPORTS_LOOKUP_LIMIT,
 )
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
@@ -109,7 +107,6 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.limits import (
-    FREE_HISTORY_EVENTS_LIMIT,
     FREE_USER_NOTES_LIMIT,
 )
 from rotkehlchen.constants.misc import (
@@ -229,7 +226,12 @@ from rotkehlchen.icons import (
 )
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import PremiumCredentials, has_premium_check
+from rotkehlchen.premium.premium import (
+    PremiumCredentials,
+    UserLimitType,
+    get_user_limit,
+    has_premium_check,
+)
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.assets import (
@@ -1566,10 +1568,10 @@ class RestAPI:
         )
 
     def query_premium_components(self) -> Response:
+        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
         result_dict = {'result': None, 'message': ''}
         try:
-            # Here we ignore mypy error since we use @require_premium_user() decorator
-            result = self.rotkehlchen.premium.query_premium_components()  # type: ignore
+            result = self.rotkehlchen.premium.query_premium_components()
             result_dict['result'] = result
             status_code = HTTPStatus.OK
         except (RemoteError, PremiumAuthenticationError) as e:
@@ -2870,7 +2872,11 @@ class RestAPI:
 
         May raise RemoteError, DeserializationError.
         """
-        if not has_premium_check(self.rotkehlchen.premium):
+        limit, has_premium = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type=UserLimitType.HISTORY_EVENTS,
+        )
+        if has_premium is False:
             return
 
         decoding_given_events = True
@@ -2883,7 +2889,7 @@ class RestAPI:
                         counterparties=[CPT_MONERIUM, CPT_GNOSIS_PAY],
                         tx_hashes=tx_hashes,
                     ),
-                    has_premium=True,
+                    entries_limit=limit,
                 )
 
             if len(events) == 0:
@@ -3682,16 +3688,15 @@ class RestAPI:
             self,
             report_id: int | None,
     ) -> Response:
-        with_limit = False
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            with_limit = True
-            entries_limit = FREE_REPORTS_LOOKUP_LIMIT
+        entries_limit, _ = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type=UserLimitType.PNL_REPORTS_LOOKUP,
+        )
 
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         reports, entries_found = dbreports.get_reports(
             report_id=report_id,
-            with_limit=with_limit,
+            limit=entries_limit,
         )
 
         # success
@@ -3703,17 +3708,16 @@ class RestAPI:
         return api_response(process_result(result_dict), status_code=HTTPStatus.OK)
 
     def get_report_data(self, filter_query: ReportDataFilterQuery) -> Response:
-        with_limit = False
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            with_limit = True
-            entries_limit = FREE_PNL_EVENTS_LIMIT
+        entries_limit, _ = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type=UserLimitType.PNL_EVENTS,
+        )
 
         dbreports = DBAccountingReports(self.rotkehlchen.data.db)
         try:
             report_data, entries_found, entries_total = dbreports.get_report_data(
                 filter_=filter_query,
-                with_limit=with_limit,
+                limit=entries_limit,
             )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
@@ -3869,20 +3873,18 @@ class RestAPI:
             group_by_event_ids: bool,
     ) -> Response:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
-        has_premium = False
-        entries_limit = FREE_HISTORY_EVENTS_LIMIT
-        if has_premium_check(self.rotkehlchen.premium):
-            has_premium = True
-            entries_limit = - 1
+        entries_limit, has_premium = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type=UserLimitType.HISTORY_EVENTS,
+        )
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             events_result, entries_found, entries_with_limit = dbevents.get_history_events_and_limit_info(  # noqa: E501
                 cursor=cursor,
                 filter_query=filter_query,
-                has_premium=has_premium,
+                entries_limit=entries_limit,
                 group_by_event_ids=group_by_event_ids,
                 match_exact_events=True,  # set to True since the frontend requests the event_identifiers manually in their second call to this endpoint. https://github.com/orgs/rotki/projects/11?pane=issue&itemId=110464193  # noqa: E501
-                entries_limit=entries_limit if entries_limit != -1 else None,
             )
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
@@ -4472,10 +4474,10 @@ class RestAPI:
         )
 
         message = ''
-        entries_limit = -1
-        if self.rotkehlchen.premium is None:
-            entries_limit = FREE_HISTORY_EVENTS_LIMIT
-
+        entries_limit, _ = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type=UserLimitType.HISTORY_EVENTS,
+        )
         exchanges_list = self.rotkehlchen.exchange_manager.connected_exchanges.get(
             location,
         )
@@ -4512,6 +4514,7 @@ class RestAPI:
             entries_total, _ = history_events_db.get_history_events_count(
                 cursor=cursor,
                 query_filter=table_filter,
+                entries_limit=entries_limit,
             )
             value_query_filters, value_bindings = value_filter.prepare(with_pagination=False, with_order=False)  # noqa: E501
             asset_amounts_and_value, total_usd = history_events_db.get_amount_and_value_stats(
@@ -4921,13 +4924,16 @@ class RestAPI:
     ) -> dict[str, Any] | Response:
         """Export history events data to a CSV file."""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        entries_limit, _ = get_user_limit(
+            premium=self.rotkehlchen.premium,
+            limit_type=UserLimitType.HISTORY_EVENTS,
+        )
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             history_events, _, _ = dbevents.get_history_events_and_limit_info(
                 cursor=cursor,
                 filter_query=filter_query,
-                has_premium=has_premium_check(self.rotkehlchen.premium),
                 match_exact_events=match_exact_events,
-                entries_limit=None,
+                entries_limit=entries_limit,
             )
 
         if len(history_events) == 0:
@@ -5811,3 +5817,23 @@ class RestAPI:
                     write_cursor.execute('DROP TABLE user_added_solana_tokens')
 
         return OK_RESULT
+
+    def get_premium_registered_devices(self) -> Response:
+        """Get list of devices registered to the premium account."""
+        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
+        try:
+            result = self.rotkehlchen.premium.get_remote_devices_information()
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(result))
+
+    def delete_premium_registered_device(self, device_identifier: str) -> Response:
+        """Delete a device from the premium account by identifier."""
+        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
+        try:
+            self.rotkehlchen.premium.delete_device(device_identifier)
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+
+        return api_response(OK_RESULT)

@@ -120,12 +120,11 @@ def test_gnosispay_periodic_task(task_manager, database, gnosispay_credentials):
     event.notes = 'Withdraw 3500 RSD (25.9 EUR) from ATM OTP TRG N PASICA 5 in BEOGRAD :country:RS:'  # noqa: E501
     event.identifier = 1
     with database.conn.read_ctx() as cursor:
-        new_events = dbevents.get_history_events(
+        new_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[tx_hash],
             ),
-            has_premium=True,
         )
     assert new_events == [event]
 

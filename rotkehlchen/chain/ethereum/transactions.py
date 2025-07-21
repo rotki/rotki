@@ -88,10 +88,9 @@ class EthereumTransactions(EvmTransactions):
             order_by_rules=[('timestamp', True)],  # order by timestamp in ascending order
         )
         with dbevents.db.conn.read_ctx() as cursor:
-            events = dbevents.get_history_events(
+            events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=db_filter,
-                has_premium=True,
             )
         if len(events) == 0:
             log.debug('No thegraph approvals found. Stopping thegraph delegations query task')

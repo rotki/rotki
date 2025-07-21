@@ -272,10 +272,9 @@ def test_genesis_remove_address(
 
     def get_genesis_events() -> list[EvmEvent]:
         with database.conn.read_ctx() as cursor:
-            return dbevents.get_history_events(
+            return dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(tx_hashes=[GENESIS_HASH]),
-                has_premium=True,
             )
 
     def delete_transactions_for_address(address: ChecksumEvmAddress) -> None:

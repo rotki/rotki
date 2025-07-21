@@ -22,6 +22,13 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
+from rotkehlchen.tests.utils.constants import (
+    TEST_PREMIUM_DB_SIZE_LIMIT,
+    TEST_PREMIUM_DEVICE_LIMIT,
+    TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
+    TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+)
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
     add_blockchain_accounts_to_db,
@@ -86,6 +93,13 @@ def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium
     """Create an active rotki premium object with valid credentials"""
     premium = Premium(credentials=rotki_premium_credentials, username=username)
     premium.status = SubscriptionStatus.ACTIVE
+    premium._cached_limits = {
+        'limit_of_devices': TEST_PREMIUM_DEVICE_LIMIT,
+        'max_backup_size_mb': TEST_PREMIUM_DB_SIZE_LIMIT,
+        'pnl_events_limit': TEST_PREMIUM_PNL_EVENTS_LIMIT,
+        'history_events_limit': TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
+        'reports_lookup_limit': TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+    }
     return premium
 
 

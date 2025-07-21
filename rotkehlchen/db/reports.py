@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.db.settings import DBSettings
@@ -30,7 +29,7 @@ def _get_reports_or_events_maybe_limit(
         entries_found: int,
         entries_total: int,
         entries: list[ProcessedAccountingEvent],
-        with_limit: bool,
+        limit: int,
 ) -> tuple[list[ProcessedAccountingEvent], int, int]:
     ...
 
@@ -41,7 +40,7 @@ def _get_reports_or_events_maybe_limit(
         entries_found: int,
         entries_total: None,
         entries: list[ProcessedAccountingEvent],
-        with_limit: bool,
+        limit: int,
 ) -> tuple[list[ProcessedAccountingEvent], int, None]:
     ...
 
@@ -52,7 +51,7 @@ def _get_reports_or_events_maybe_limit(
         entries_found: int,
         entries_total: int,
         entries: list[dict[str, Any]],
-        with_limit: bool,
+        limit: int,
 ) -> tuple[list[dict[str, Any]], int, int]:
     ...
 
@@ -63,7 +62,7 @@ def _get_reports_or_events_maybe_limit(
         entries_found: int,
         entries_total: None,
         entries: list[dict[str, Any]],
-        with_limit: bool,
+        limit: int,
 ) -> tuple[list[dict[str, Any]], int, None]:
     ...
 
@@ -73,18 +72,9 @@ def _get_reports_or_events_maybe_limit(
         entries_found: int,
         entries_total: int | None,
         entries: list[dict[str, Any]] | list[ProcessedAccountingEvent],
-        with_limit: bool,
+        limit: int,
 ) -> tuple[list[dict[str, Any]] | list[ProcessedAccountingEvent], int, int | None]:
-    if with_limit is False:
-        return entries, entries_found, entries_total
-
-    if entry_type == 'events':
-        limit = FREE_PNL_EVENTS_LIMIT
-    elif entry_type == 'reports':
-        limit = FREE_REPORTS_LOOKUP_LIMIT
-
     returning_entries_length = min(limit, len(entries))
-
     return entries[:returning_entries_length], entries_found, entries_total
 
 
@@ -167,7 +157,7 @@ class DBAccountingReports:
     def get_reports(
             self,
             report_id: int | None,
-            with_limit: bool,
+            limit: int,
     ) -> tuple[list[dict[str, Any]], int]:
         """Queries all historical saved PnL reports.
 
@@ -226,7 +216,7 @@ class DBAccountingReports:
             entries=reports,
             entries_found=total_filter_count,
             entries_total=None,
-            with_limit=with_limit,
+            limit=limit,
         )
 
         return entries, entries_found
@@ -289,7 +279,7 @@ class DBAccountingReports:
     def get_report_data(
             self,
             filter_: 'ReportDataFilterQuery',
-            with_limit: bool,
+            limit: int,
     ) -> tuple[list[ProcessedAccountingEvent], int, int]:
         """Retrieve the event data of a PnL report depending on the given filter
 
@@ -336,5 +326,5 @@ class DBAccountingReports:
             entries_found=entries_found,
             entries_total=cursor.execute('SELECT COUNT(*) FROM pnl_events').fetchone()[0],
             entries=records,
-            with_limit=with_limit,
+            limit=limit,
         )

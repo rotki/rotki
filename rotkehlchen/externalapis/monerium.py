@@ -174,14 +174,13 @@ class Monerium:
 
             # now get the corresponding event
             with self.database.conn.read_ctx() as cursor:
-                events = dbevents.get_history_events(
+                events = dbevents.get_history_events_internal(
                     cursor=cursor,
                     filter_query=EvmEventFilterQuery.make(
                         tx_hashes=[tx_hash],
                         counterparties=[CPT_MONERIUM],
                         location=location,
                     ),
-                    has_premium=True,  # for this function we don't limit anything
                 )
 
             if len(events) != 1:

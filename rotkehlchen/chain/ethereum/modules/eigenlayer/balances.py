@@ -135,10 +135,9 @@ class EigenlayerBalances(ProtocolWithBalance):
             event_subtypes=[HistoryEventSubType.NONE],
         )
         with self.event_db.db.conn.read_ctx() as cursor:
-            completed_withdrawal_events = self.event_db.get_history_events(
+            completed_withdrawal_events = self.event_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=db_filter,
-                has_premium=True,
             )
 
         for completed_withdrawal in completed_withdrawal_events:

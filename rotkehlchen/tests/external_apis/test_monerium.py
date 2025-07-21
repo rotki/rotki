@@ -71,12 +71,11 @@ def test_send_bank_transfer(task_manager, database, monerium_credentials):  # py
     event.notes = 'Send 1500 EURe via bank transfer to Finanzamt Charlottenburg (DE94 1005 0000 6600 0464 63) with memo "LohnsteuerQ1"'  # noqa: E501
     event.identifier = 1
     with database.conn.read_ctx() as cursor:
-        new_events = dbevents.get_history_events(
+        new_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[evmhash],
             ),
-            has_premium=True,
         )
     assert new_events == [event]
 
@@ -115,12 +114,11 @@ def test_receive_bank_transfer(task_manager, database, monerium_credentials):  #
     event.notes = 'Receive 1500 EURe via bank transfer from Payward Ltd (GB60 CLJU 0099 7129 9001 60) with memo "Kraken Tx AAA-BBB"'  # noqa: E501
     event.identifier = 1
     with database.conn.read_ctx() as cursor:
-        new_events = dbevents.get_history_events(
+        new_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 tx_hashes=[evmhash],
             ),
-            has_premium=True,
         )
     assert new_events == [event]
 
@@ -180,12 +178,11 @@ def test_bridge_via_monerium(task_manager, database, monerium_credentials):  # p
     gnosis_event.event_type = HistoryEventType.WITHDRAWAL
     gnosis_event.event_subtype = HistoryEventSubType.BRIDGE
     with database.conn.read_ctx() as cursor:
-        new_events = dbevents.get_history_events(
+        new_events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=EvmEventFilterQuery.make(
                 counterparties=[CPT_MONERIUM],
             ),
-            has_premium=True,
         )
     assert new_events == [gnosis_event, eth_event]
 
@@ -240,10 +237,9 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
         assert_proper_response(response)
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )
 
     assert events[0].notes == 'Send 2353.57 EURe via bank transfer to Yabir Benchakhtir (ESXX KKKK OOOO IIII KKKK LLLL) with memo "Venta inversion"'  # noqa: E501

@@ -20,6 +20,10 @@ from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
+from rotkehlchen.tests.utils.constants import (
+    TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+)
 from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -86,10 +90,13 @@ def _get_pnl_report_after_processing(
         database: 'DBHandler',
 ) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     dbpnl = DBAccountingReports(database)
-    report = dbpnl.get_reports(report_id=report_id, with_limit=False)[0][0]
+    report = dbpnl.get_reports(
+        report_id=report_id,
+        limit=TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+    )[0][0]
     events = dbpnl.get_report_data(
         filter_=ReportDataFilterQuery.make(report_id=1),
-        with_limit=False,
+        limit=TEST_PREMIUM_PNL_EVENTS_LIMIT,
     )[0]
     return report, events
 

@@ -1,3 +1,5 @@
+from typing import Final
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_EUR
@@ -103,3 +105,9 @@ TXHASH_HEX_TO_BYTES = {
     '0x6c94a0c25739863fd4cfc40cacf32b5a74d9d4a04b675e72c01dd71e4b3113d1': deserialize_evm_tx_hash('0x6c94a0c25739863fd4cfc40cacf32b5a74d9d4a04b675e72c01dd71e4b3113d1'),  # noqa: E501
     '0x0007999335475071899b18de7226d32b5ff83a182d37485faac0e8050e2fec14': deserialize_evm_tx_hash('0x0007999335475071899b18de7226d32b5ff83a182d37485faac0e8050e2fec14'),  # noqa: E501
 }
+
+TEST_PREMIUM_DEVICE_LIMIT: Final = 100
+TEST_PREMIUM_DB_SIZE_LIMIT: Final = 1024
+TEST_PREMIUM_PNL_EVENTS_LIMIT: Final = 50_000
+TEST_PREMIUM_HISTORY_EVENTS_LIMIT: Final = 500_000
+TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT: Final = 50_000

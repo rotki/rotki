@@ -41,12 +41,11 @@ def do_tx_query_and_get_events(
     )
     assert assert_proper_response_with_result(response, rotkehlchen_api_server, async_query)
     with rotki.data.db.conn.read_ctx() as cursor:
-        events = DBHistoryEvents(rotki.data.db).get_history_events(
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 order_by_rules=[('timestamp', True), ('event_identifier', True), ('sequence_index', True)],  # noqa: E501
             ),
-            has_premium=True,
         )
     assert len(events) == expected_len
 

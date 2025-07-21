@@ -264,10 +264,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         )
         assert_simple_ok_response(response)
         with rotki.data.db.conn.read_ctx() as cursor:
-            assert len(events := events_db.get_history_events(
+            assert len(events := events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=location),
-                has_premium=True,
             )) == 2  # only deleted the one event for the specified hash
             assert all(tx_hash not in x.event_identifier for x in events)
 
@@ -278,10 +277,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') 
         )
         assert_simple_ok_response(response)
         with rotki.data.db.conn.read_ctx() as cursor:
-            assert len(events := events_db.get_history_events(
+            assert len(events := events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(location=location),
-                has_premium=True,
             )) == 1  # Only the customized event remains
             assert customized_tx_hash in events[0].event_identifier
             # also check that the cached tx block is removed

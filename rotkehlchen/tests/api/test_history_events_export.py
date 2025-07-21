@@ -295,7 +295,7 @@ def test_history_export_csv_free_limit(
         )
 
     csv_dir = Path(tmpdir_factory.mktemp('test_csv_dir'))
-    with patch(target='rotkehlchen.db.history_events.FREE_HISTORY_EVENTS_LIMIT', new=1):
+    with patch(target='rotkehlchen.premium.premium.FREE_HISTORY_EVENTS_LIMIT', new=1):
         response = requests.post(api_url_for(
             rotkehlchen_api_server_with_exchanges,
             'exporthistoryeventresource',

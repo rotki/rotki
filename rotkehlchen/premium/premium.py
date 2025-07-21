@@ -11,13 +11,16 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Final, Literal, NamedTuple, cast
+from typing import Any, Final, Literal, NamedTuple, TypedDict, cast
 from urllib.parse import urlencode
+from uuid import uuid4
 
 import machineid
 import requests
 
+from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
+from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
 from rotkehlchen.errors.api import (
     IncorrectApiKeyFormat,
@@ -46,9 +49,50 @@ class RemoteMetadata(NamedTuple):
     data_size: int
 
 
+class UserLimits(TypedDict):
+    """User limits for rotki premium subscription."""
+    # Maximum number of devices that can be registered with the premium account
+    limit_of_devices: int
+    # Maximum number of profit and loss events that can be processed
+    pnl_events_limit: int
+    # Maximum size in megabytes for database backups stored on rotki servers
+    max_backup_size_mb: int
+    # Maximum number of history events that can be stored and processed
+    history_events_limit: int
+    # Maximum number of report lookups that can be performed
+    reports_lookup_limit: int
+
+
+class UserLimitType(Enum):
+    """Enum of the different limits enforced by tiers"""
+    HISTORY_EVENTS = 'history_events_limit'
+    PNL_EVENTS = 'pnl_events_limit'
+    PNL_REPORTS_LOOKUP = 'reports_lookup_limit'
+
+    def get_free_limit(self) -> int:
+        """Get the free limit for a specific limit type
+        May raise:
+        - NotImplementedError if the type is not yet supported.
+        """
+        if self == UserLimitType.HISTORY_EVENTS:
+            return FREE_HISTORY_EVENTS_LIMIT
+        if self == UserLimitType.PNL_EVENTS:
+            return FREE_PNL_EVENTS_LIMIT
+        if self == UserLimitType.PNL_REPORTS_LOOKUP:
+            return FREE_REPORTS_LOOKUP_LIMIT
+
+        raise NotImplementedError(f'Unknown limit type: {self}. This indicates a bug in the code.')
+
+
 COMPONENTS_VERSION: Final = 14
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
-DEFAULT_OK_CODES: Final = (HTTPStatus.OK, HTTPStatus.UNAUTHORIZED, HTTPStatus.BAD_REQUEST)
+KNOWN_STATUS_CODES: Final = (
+    HTTPStatus.OK,
+    HTTPStatus.UNAUTHORIZED,
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.CREATED,
+)
+NEST_API_ENDPOINTS: Final = ('backup', 'devices', 'limits')
 
 
 def check_response_status_code(
@@ -70,7 +114,7 @@ def check_response_status_code(
 
 def _process_dict_response(
         response: requests.Response,
-        status_codes: Sequence[HTTPStatus] = DEFAULT_OK_CODES,
+        status_codes: Sequence[HTTPStatus] = KNOWN_STATUS_CODES,
         user_msg: str = DEFAULT_ERROR_MSG,
 ) -> dict:
     """Processes a dict response returned from the Rotkehlchen server and returns
@@ -179,11 +223,15 @@ class Premium:
         self.rotki_nest = f'https://{rotki_base_url}/nest/{self.apiversion}/'
         self.reset_credentials(credentials)
         self.username = username
+        # Cache user limits to avoid repeated API calls during the session
+        self._cached_limits: UserLimits | None = None
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
         self.session.headers.update({'API-KEY': self.credentials.serialize_key()})
         set_user_agent(self.session)
+        # Clear cached limits when credentials change
+        self._cached_limits = None
 
     def set_credentials(self, credentials: PremiumCredentials) -> None:
         """Try to set the credentials for a premium rotkehlchen subscription
@@ -208,16 +256,10 @@ class Premium:
 
     def get_remote_devices_information(self) -> dict:
         """Get the list of devices for the current user"""
-        method = 'manage/premium/devices'
-        data = self.sign(
-            method=method,
-            api_endpoint='webapi',
-        )
-
         try:
             response = self.session.get(
-                f'{self.rotki_web}{method}',
-                data=data,
+                f'{self.rotki_nest}{(method := "devices")}',
+                params=self.sign(method=method),
                 timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
@@ -234,33 +276,36 @@ class Premium:
         - RemoteError
         - PremiumAuthenticationError: when the device can't be registered
         """
-        device_data = self.get_remote_devices_information()
-        try:
-            num_devices, devices_limit = len(device_data['devices']), device_data['limit']
-        except KeyError as e:
-            raise RemoteError(
-                f'Could not fetch the list of devices due to missing key {e}',
-            ) from e
-
         device_id = machineid.hashed_id(self.username)
 
-        for device in device_data['devices']:
-            device = cast('dict[str, str]', device)
-            if (remote_id := device.get('device_identifier')) == device_id:
-                break
-            if remote_id is None:
-                log.error(f'Remote device {device} has no identifier in the server response')
-        else:  # device not found
-            if num_devices < devices_limit:
-                # try to register the device
-                self._register_new_device(device_id)
-            else:
-                # user has to edit his devices
-                raise PremiumAuthenticationError(
-                    f'The limit of {devices_limit} devices has been reached',
+        # Check if device is already registered
+        try:
+            response = self.session.post(
+                url=f'{self.rotki_nest}devices/check',
+                json=self.sign(
+                    method='devices',
+                    device_identifier=device_id,
+                ),
+                headers={'Content-Type': 'application/json'},
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to check device registration due to: {e}') from e
+
+        match response.status_code:
+            case HTTPStatus.OK:
+                return None  # Device is already registered
+            case HTTPStatus.FORBIDDEN:
+                raise PremiumAuthenticationError('Premium credentials not valid')
+            case HTTPStatus.NOT_FOUND:
+                # Device is not registered, try to register it
+                return self._register_new_device(device_id)
+            case _:
+                return check_response_status_code(
+                    response=response,
+                    status_codes=[HTTPStatus.OK],
                 )
 
-    def _register_new_device(self, device_id: str) -> dict:
+    def _register_new_device(self, device_id: str) -> None:
         """
         Register a new device at the rotki server using the provided id.
         May raise:
@@ -268,23 +313,45 @@ class Premium:
         - PremiumAuthenticationError: if the queried API returns a 401 error
         """
         log.debug(f'Registering new device {device_id}')
-        method = 'devices'
-        device_name = platform.system()
-        data = self.sign(
-            method=method,
-            device_identifier=device_id,
-            device_name=device_name,
-        )
-
         try:
             response = self.session.put(
-                url=f'{self.rotki_api}{method}',
-                data=data,
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                json=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                    device_name=str(uuid4()),  # can be edited later.
+                    platform=platform.system(),
+                ),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
 
-        return _process_dict_response(response)
+        if response.status_code in (HTTPStatus.CREATED, HTTPStatus.CONFLICT):
+            return None  # device was created or it already exists
+
+        check_response_status_code(
+            response=response,
+            status_codes=[HTTPStatus.CREATED],
+        )
+
+    def delete_device(self, device_id: str) -> None:
+        """Deletes a device for the user from the rotki server
+        May raise:
+        - RemoteError
+        """
+        log.debug(f'Deleting premium registered {device_id=}')
+        try:
+            response = self.session.delete(
+                url=f'{self.rotki_nest}{(method := "devices")}',
+                json=self.sign(
+                    method=method,
+                    device_identifier=device_id,
+                ),
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'Failed to delete device due to: {e}') from e
+
+        check_response_status_code(response=response, status_codes=[HTTPStatus.OK])
 
     def is_active(self) -> bool:
         if self.status == SubscriptionStatus.ACTIVE:
@@ -305,14 +372,13 @@ class Premium:
     def sign(
             self,
             method: str,
-            api_endpoint: str = '/api/',
             **kwargs: Any,
     ) -> dict:
         """
         Create payload for signed requests. It sets the signature headers
         for the current session
         """
-        urlpath = f'{api_endpoint}{self.apiversion}/{method}'
+        urlpath = f'/api/{self.apiversion}/{method}'
 
         req = kwargs
         if method != 'watchers':
@@ -321,7 +387,7 @@ class Premium:
             req['nonce'] = int(1000 * time.time())
         post_data = urlencode(req)
         hashable = post_data.encode()
-        if method == 'backup':
+        if method in NEST_API_ENDPOINTS:
             # nest uses hex for generating the signature since digest returns a string with the \x
             # format in python.
             message = urlpath.encode() + hashlib.sha256(hashable).hexdigest().encode()
@@ -476,6 +542,34 @@ class Premium:
 
         return result['data']
 
+    def fetch_limits(self) -> UserLimits:
+        """Fetch user limits from the rotki server.
+
+        Retrieves the current limits for the premium subscription from the server.
+        The limits are cached during the session to avoid repeated API calls.
+
+        May raise:
+        - RemoteError: If there are problems connecting to the server
+        - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
+        """
+        if self._cached_limits is not None:
+            return self._cached_limits
+
+        try:
+            response = self.session.get(
+                f'{self.rotki_nest}{(method := "limits")}',
+                params=self.sign(method=method),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+            )
+        except requests.exceptions.RequestException as e:
+            msg = f'Could not connect to rotki server due to {e!s}'
+            log.error(msg)
+            raise RemoteError(msg) from e
+
+        self._cached_limits = cast('UserLimits', _process_dict_response(response))
+        log.debug(f'Fetched user limits from server: {self._cached_limits}')
+        return self._cached_limits
+
     def watcher_query(
             self,
             method: Literal['GET', 'PUT', 'PATCH', 'DELETE'],
@@ -514,10 +608,28 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     - RemoteError if there are problems reaching the server
     """
     premium = Premium(credentials=credentials, username=username)
-    premium.query_last_data_metadata()
+    premium.authenticate_device()
     return premium
 
 
 def has_premium_check(premium: Premium | None) -> bool:
     """Helper function to check if we have premium"""
     return premium is not None and premium.is_active()
+
+
+def get_user_limit(premium: Premium | None, limit_type: UserLimitType) -> tuple[int, bool]:
+    """Helper function to get a specific user limit and premium status
+
+    Returns:
+        tuple[int, bool]: (limit_value, has_premium)
+    """
+    if premium is None or premium.is_active() is False:
+        log.debug(f'No premium subscription or inactive, returning free limit for {limit_type}')
+        return limit_type.get_free_limit(), False
+
+    try:
+        limits = premium.fetch_limits()
+        return limits[limit_type.value], True
+    except (RemoteError, PremiumAuthenticationError) as e:
+        log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
+        return limit_type.get_free_limit(), False

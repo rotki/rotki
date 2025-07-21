@@ -636,10 +636,9 @@ def test_delete_external_exchange_data_works(
     with rotki.data.db.user_write() as write_cursor:
         history_db.add_history_events(write_cursor=write_cursor, history=events)
 
-        assert len(history_db.get_history_events(
+        assert len(history_db.get_history_events_internal(
             cursor=write_cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )) == 2
     response = requests.delete(
         api_url_for(
@@ -651,10 +650,9 @@ def test_delete_external_exchange_data_works(
     result = assert_proper_sync_response_with_result(response)  # check no validation error happens
     assert result is True
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert len(history_db.get_history_events(
+        assert len(history_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
         )) == 1
 
 

@@ -1148,11 +1148,10 @@ def test_combine_block_with_tx_events(eth2, database):
     eth2.combine_block_with_tx_events()
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        events = dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
-            has_premium=True,
-            group_by_event_ids=False,
+                        group_by_event_ids=False,
         )
 
     modified_event = EvmEvent(
@@ -1236,7 +1235,10 @@ def test_refresh_activated_validators_deposits(eth2, database):
     eth2.refresh_activated_validators_deposits()
 
     with database.conn.read_ctx() as cursor:
-        new_events = dbevents.get_history_events(cursor, HistoryEventFilterQuery.make(), True)
+        new_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
 
     # make sure validator indices have been detected for the deposits
     assert isinstance(new_events, list)

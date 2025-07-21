@@ -457,10 +457,9 @@ def test_history_events(function_scope_coinbaseprime: Coinbaseprime):
 
     history_events_db = DBHistoryEvents(function_scope_coinbaseprime.db)
     with history_events_db.db.conn.read_ctx() as cursor:
-        new_events = history_events_db.get_history_events(
+        new_events = history_events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(location=function_scope_coinbaseprime.location),
-            has_premium=True,
         )
 
     assert new_events == [

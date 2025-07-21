@@ -707,20 +707,28 @@ def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -
 
     def mock_devices_list(url, data, **kwargs):  # pylint: disable=unused-argument
         nonlocal devices
-        if 'webapi/1/manage/premium/devices' in url:
+        if 'nest/1/devices' in url:
             return MockResponse(HTTPStatus.OK, json.dumps(devices))
         raise NotImplementedError('unexpected url')
 
-    def mock_device_registration(url, data, **kwargs):  # pylint: disable=unused-argument
+    def mock_device_registration(url, **kwargs):  # pylint: disable=unused-argument
         nonlocal device_registered
         device_registered = True
-        return MockResponse(HTTPStatus.OK, json.dumps({'registered': True}))
+        return MockResponse(HTTPStatus.CREATED, json.dumps({'registered': True}))
+
+    def mock_device_check(url, **kwargs):  # pylint: disable=unused-argument
+        if device_limit_reached:
+            return MockResponse(HTTPStatus.FORBIDDEN, '')
+
+        status_code = HTTPStatus.OK if device_registered else HTTPStatus.NOT_FOUND
+        return MockResponse(status_code, '')
 
     premium = rotkehlchen_instance.premium
     assert premium is not None
 
     with (
         patch.object(premium.session, 'get', side_effect=mock_devices_list),
+        patch.object(premium.session, 'post', side_effect=mock_device_check),
         patch.object(premium.session, 'put', side_effect=mock_device_registration),
     ):
         if device_limit_reached is True:
@@ -731,3 +739,54 @@ def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -
 
     # check that the request to register the device was made when it is possible to register it
     assert device_registered != device_limit_reached
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    """Test that user limits are cached properly to avoid repeated API calls."""
+    premium = rotkehlchen_instance.premium
+    assert premium is not None
+
+    premium._cached_limits = None
+    assert premium._cached_limits is None
+
+    limits_data = {  # mock limits response
+        'history_events': 10000,
+        'pnl_reports': 50,
+        'devices': 3,
+    }
+    with patch.object(  # mock the external request
+        premium.session,
+        'get',
+        return_value=MockResponse(200, json.dumps(limits_data)),
+    ) as mock_get:
+        # First call should hit the API
+        limits1 = premium.fetch_limits()
+        assert limits1 == limits_data
+        assert premium._cached_limits == limits_data
+        assert mock_get.call_count == 1
+
+        # Second call should use cache, not hit API
+        limits2 = premium.fetch_limits()
+        assert limits2 == limits_data
+        assert premium._cached_limits == limits_data
+        assert mock_get.call_count == 1  # Should still be 1, not 2
+
+        # Third call should also use cache
+        limits3 = premium.fetch_limits()
+        assert limits3 == limits_data
+        assert mock_get.call_count == 1  # Should still be 1, not 2
+
+    # check that cache is cleared when credentials are reset
+    premium.reset_credentials(premium.credentials)
+    assert premium._cached_limits is None
+
+    with patch.object(  # after reset, next call should hit API again
+        premium.session,
+        'get',
+        return_value=MockResponse(200, json.dumps(limits_data)),
+    ) as mock_get:
+        limits4 = premium.fetch_limits()
+        assert limits4 == limits_data
+        assert premium._cached_limits == limits_data
+        assert mock_get.call_count == 1

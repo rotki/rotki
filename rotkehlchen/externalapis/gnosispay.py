@@ -423,14 +423,13 @@ class GnosisPay:
         """Try to find the history event for the given Gnosis Pay merchant data and update it"""
         dbevents = DBHistoryEvents(self.database)
         with self.database.conn.read_ctx() as cursor:
-            events = dbevents.get_history_events(
+            events = dbevents.get_history_events_internal(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     tx_hashes=[transaction.tx_hash],
                     counterparties=[CPT_GNOSIS_PAY],
                     location=Location.GNOSIS,
                 ),
-                has_premium=True,
             )
 
         if len(events) != 1:

@@ -262,10 +262,9 @@ def test_asset_movements(database, mock_bitpanda):
         mock_bitpanda.query_history_events()
 
     with database.conn.read_ctx() as cursor:
-        movements = DBHistoryEvents(database).get_history_events(
+        movements = DBHistoryEvents(database).get_history_events_internal(
             cursor,
             filter_query=HistoryEventFilterQuery.make(location=Location.BITPANDA),
-            has_premium=True,
         )
 
     warnings = mock_bitpanda.msg_aggregator.consume_warnings()

@@ -283,14 +283,14 @@ def test_check_premium_status(rotkehlchen_api_server, username):
         assert premium.is_active() is True
         assert rotki.premium is not None
 
-        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(side_effect=PremiumAuthenticationError())):  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(side_effect=PremiumAuthenticationError())):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is None, (
                 'Premium object is not None and should be'
                 'deactivated after invalid premium credentials'
             )
 
-        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is not None, (
                 'Premium object is None and Periodic check'
@@ -298,7 +298,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             )
 
         with patch(
-            'rotkehlchen.premium.premium.Premium.query_last_data_metadata',
+            'rotkehlchen.premium.premium.Premium.authenticate_device',
             MagicMock(side_effect=RemoteError()),
         ):
             for check_trial in range(3):
@@ -308,7 +308,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
             mock_check_premium_status()
             assert rotki.premium is None, 'Premium object is not None and should be deactivated after the 4th periodic check'  # noqa: E501
 
-        with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
+        with patch('rotkehlchen.premium.premium.Premium.authenticate_device', MagicMock(return_value=mock_remote_metadata)):  # noqa: E501
             mock_check_premium_status()
             assert rotki.premium is not None, "Premium object is None and Periodic check didn't reactivate the premium status"  # noqa: E501
 
@@ -332,7 +332,7 @@ def test_premium_status_error_conditions(
     """
     task_manager.database.set_rotkehlchen_premium(rotki_premium_credentials)
     task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
-    with patch('rotkehlchen.premium.premium.Premium.query_last_data_metadata', side_effect=error_case[0]):  # noqa: E501
+    with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=error_case[0]):  # noqa: E501
         task_manager.premium_check_retries = 3
         task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
         task_manager.schedule()
