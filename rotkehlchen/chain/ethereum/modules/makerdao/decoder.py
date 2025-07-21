@@ -14,11 +14,7 @@ from rotkehlchen.chain.ethereum.utils import (
 )
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import (
-    CPT_SDAI,
     ERC20_OR_ERC721_TRANSFER,
-    SDAI_CPT_DETAILS,
-    SDAI_DEPOSIT,
-    SDAI_REDEEM,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -28,7 +24,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -49,7 +44,6 @@ from rotkehlchen.constants.assets import (
     A_PAX,
     A_RENBTC,
     A_SAI,
-    A_SDAI,
     A_TUSD,
     A_UNI,
     A_USDC,
@@ -112,7 +106,6 @@ class MakerdaoDecoder(DecoderInterface):
         self.base = base_tools
         self.dai = A_DAI.resolve_to_evm_token()
         self.sai = A_SAI.resolve_to_evm_token()
-        self.sdai = A_SDAI.resolve_to_evm_token()
         self.makerdao_cdp_manager = self.evm_inquirer.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
         self.makerdao_dai_join = self.evm_inquirer.contracts.contract(DAI_JOIN_ADDRESS)
 
@@ -529,66 +522,6 @@ class MakerdaoDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def decode_sdai_events(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] == SDAI_DEPOSIT:  # DAI -> SDAI: owner receives sdai
-            owner_address = self._get_address_or_proxy(bytes_to_address(context.tx_log.topics[2]))
-            to_address = owner_address
-            from_address: ChecksumEvmAddress | None = self.sdai.evm_address
-        elif context.tx_log.topics[0] == SDAI_REDEEM:  # SDAI -> DAI: owner deposits sdai
-            owner_address = self._get_address_or_proxy(bytes_to_address(context.tx_log.topics[3]))
-            from_address = owner_address
-            to_address = self.sdai.evm_address
-        else:
-            return DEFAULT_DECODING_OUTPUT
-
-        if from_address is None or to_address is None:
-            return DEFAULT_DECODING_OUTPUT
-
-        amount = asset_normalized_value(
-            amount=int.from_bytes(context.tx_log.data[32:64]),
-            asset=self.sdai,
-        )
-        if amount == ZERO:
-            return DEFAULT_DECODING_OUTPUT
-
-        if owner_address == from_address:
-            event_type = HistoryEventType.DEPOSIT
-            event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            notes = f'Return {amount} sDAI to sDAI contract'
-        else:
-            event_type = HistoryEventType.WITHDRAWAL
-            event_subtype = HistoryEventSubType.REMOVE_ASSET
-            notes = f'Withdraw {amount} sDAI from sDAI contract'
-
-        transfer = self.base.make_event_from_transaction(
-            transaction=context.transaction,
-            tx_log=context.tx_log,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            asset=self.sdai,
-            amount=amount,
-            location_label=owner_address,
-            notes=notes,
-            address=self.sdai.evm_address,
-            counterparty=CPT_SDAI,
-        )
-
-        for event in context.decoded_events:
-            if event.event_subtype == HistoryEventSubType.NONE:
-                incoming_event = event.event_type == HistoryEventType.RECEIVE
-                event.event_type = HistoryEventType.WITHDRAWAL if incoming_event else HistoryEventType.DEPOSIT  # noqa: E501
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET if incoming_event else HistoryEventSubType.DEPOSIT_ASSET  # noqa: E501
-                verb, preposition = ('Withdraw', 'from') if incoming_event else ('Deposit', 'to')
-                event.notes = f'{verb} {event.amount} DAI {preposition} sDAI contract'
-                event.address = self.sdai.evm_address
-                event.counterparty = CPT_SDAI
-                deposit_event, receive_event = (transfer, event) if incoming_event else (event, transfer)  # noqa: E501
-                maybe_reshuffle_events(
-                    ordered_events=[deposit_event, receive_event],
-                    events_list=context.decoded_events,
-                )
-        return DecodingOutput(events=[transfer], action_items=[])
-
     def decode_saidai_migration(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
             to_address = bytes_to_address(context.tx_log.topics[2])
@@ -685,7 +618,6 @@ class MakerdaoDecoder(DecoderInterface):
             string_to_evm_address('0xA26e15C895EFc0616177B7c1e7270A4C7D51C997'): (self.decode_proxy_creation,),  # noqa: E501
             string_to_evm_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'): (self.decode_saidai_migration,),  # noqa: E501
             self.makerdao_cdp_manager.address: (self.decode_cdp_manager_events,),
-            self.sdai.evm_address: (self.decode_sdai_events,),
             MKR_ADDRESS: (self._decode_burn_event,),
 
         }
@@ -705,5 +637,5 @@ class MakerdaoDecoder(DecoderInterface):
                 identifier=CPT_MAKERDAO_MIGRATION,
                 label=f'{MAKERDAO_LABEL} migration',
                 image=MAKERDAO_ICON,
-            ), SDAI_CPT_DETAILS,
+            ),
         )

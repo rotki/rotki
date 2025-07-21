@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` Fix the issue where the prices for the asset group are not displayed and keep loading.
 * :bug:`-` Spark balances on proxy addresses will now be properly detected.
+* :bug:`-` Fix Spark protocol savings transactions decoding across all supported EVM chains.
 * :feature:`-` Monerium and Gnosis Pay events will be properly updated when decoding new transactions or redecoding existing events.
 * :feature:`2880` rotki will now show bitcoin transactions in history events page.
 * :feature:`4455` Users will now be able to see detailed information about which protocols their balances are in.
@@ -14,7 +15,6 @@ Changelog
 * :feature:`10169` rotki will now properly decode spark airdrop claim and staking.
 * :feature:`9913` History events can now be filtered by description.
 * :feature:`7768` Experimental version of crypto.com exchange integration. Test it and give us feedback.
-
 * :bug:`-` Fix the Kraken earned asset that is not reflecting in the selected tab.
 * :bug:`-` Fix the notification error where it can't query alias names for the xpub address.
 * :bug:`-` Fix the asset name appearing as "undefined" in the on-chain transaction history.

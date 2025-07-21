@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.spark.decoder import SparkL1AndGnosisCommonDecoder
+from rotkehlchen.chain.evm.decoding.spark.lend.decoder import SparklendCommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class SparkDecoder(SparkL1AndGnosisCommonDecoder):
+class SparklendDecoder(SparklendCommonDecoder):
     def __init__(
             self,
             evm_inquirer: 'GnosisInquirer',
