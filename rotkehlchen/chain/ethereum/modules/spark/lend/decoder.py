@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
-from rotkehlchen.chain.evm.decoding.spark.decoder import SparkL1AndGnosisCommonDecoder
+from rotkehlchen.chain.evm.decoding.spark.lend.decoder import SparklendCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     ActionItem,
@@ -33,7 +33,7 @@ SPARK_STAKE_SIGNATURE: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\
 SPARK_ASSET_ID: Final = 'eip155:1/erc20:0xc20059e0317DE91738d13af027DfC4a50781b066'
 
 
-class SparkDecoder(SparkL1AndGnosisCommonDecoder, MerkleClaimDecoderInterface):
+class SparklendDecoder(SparklendCommonDecoder, MerkleClaimDecoderInterface):
     def __init__(
             self,
             evm_inquirer: 'EthereumInquirer',
