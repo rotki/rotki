@@ -1,3 +1,4 @@
+import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { get, set } from '@vueuse/core';
 import { computed, type ComputedRef, ref, type Ref } from 'vue';
 import { logger } from '@/utils/logging';
@@ -33,6 +34,9 @@ export interface WalletBridgeWebSocketComposable {
   removeNotificationHandler: () => void;
   removeConnectionHandler: () => void;
   sendResponse: (response: WalletBridgeResponse) => void;
+  sendWalletEvent: (eventName: string, eventData: unknown) => void;
+  setupWalletEventListeners: () => void;
+  cleanupWalletEventListeners: () => void;
 }
 
 export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
@@ -47,6 +51,9 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
   const preventReconnect = ref<boolean>(false);
 
   const messageHandlers = new Map<WalletBridgeEventName, (...args: any[]) => void>();
+
+  // Store references to provider event listeners for cleanup
+  const providerEventListeners = new Map<string, (...args: any[]) => void>();
 
   const sendResponse = (response: WalletBridgeResponse): void => {
     const wsInstance = get(ws);
@@ -269,14 +276,96 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
   const isReady = computed<boolean>(() => get(isConnected));
   const isConnectingComputed = computed<boolean>(() => get(isConnecting));
 
+  // Function to send wallet events via WebSocket notification
+  const sendWalletEvent = (eventName: string, eventData: unknown): void => {
+    if (get(isConnected)) {
+      const message = {
+        eventData,
+        eventName,
+        type: 'wallet_event' as const,
+      };
+
+      const wsInstance = get(ws);
+      if (wsInstance?.readyState === WebSocket.OPEN) {
+        wsInstance.send(JSON.stringify(message));
+        logger.debug(`Sent wallet event: ${eventName}`, eventData);
+      }
+    }
+  };
+
+  // Setup wallet provider event listeners
+  const setupWalletEventListeners = (): void => {
+    const provider: EIP1193Provider | undefined = window.ethereum;
+
+    if (!provider || !provider.on) {
+      logger.warn('No wallet provider found or provider does not support event listeners');
+      return;
+    }
+
+    // Skip if listeners are already set up
+    if (providerEventListeners.size > 0) {
+      return;
+    }
+
+    // Define event listeners
+    const accountsChangedListener = (accounts: string[]): void => {
+      logger.debug('Wallet accounts changed:', accounts);
+      sendWalletEvent('accountsChanged', accounts);
+    };
+
+    const chainChangedListener = (chainId: string): void => {
+      logger.debug('Wallet chain changed:', chainId);
+      sendWalletEvent('chainChanged', chainId);
+    };
+
+    const connectListener = (connectInfo: { chainId: string }): void => {
+      logger.debug('Wallet connected:', connectInfo);
+      sendWalletEvent('connect', connectInfo);
+    };
+
+    const disconnectListener = (error: { code: number; message: string }): void => {
+      logger.debug('Wallet disconnected:', error);
+      sendWalletEvent('disconnect', error);
+    };
+
+    // Add event listeners
+    provider.on('accountsChanged', accountsChangedListener);
+    provider.on('chainChanged', chainChangedListener);
+    provider.on('connect', connectListener);
+    provider.on('disconnect', disconnectListener);
+
+    // Store listeners for cleanup
+    providerEventListeners.set('accountsChanged', accountsChangedListener);
+    providerEventListeners.set('chainChanged', chainChangedListener);
+    providerEventListeners.set('connect', connectListener);
+    providerEventListeners.set('disconnect', disconnectListener);
+
+    logger.info('Wallet provider event listeners set up');
+  };
+
+  // Cleanup wallet event listeners
+  const cleanupWalletEventListeners = (): void => {
+    const provider: EIP1193Provider | undefined = window.ethereum;
+
+    if (provider?.removeListener) {
+      for (const [eventName, listener] of providerEventListeners) {
+        provider.removeListener(eventName as keyof EIP1193ProviderEvents, listener);
+      }
+      providerEventListeners.clear();
+      logger.info('Wallet provider event listeners cleaned up');
+    }
+  };
+
   // Cleanup on unmount
   const cleanup = (): void => {
+    cleanupWalletEventListeners();
     disconnect();
     messageHandlers.clear();
   };
 
   return {
     cleanup,
+    cleanupWalletEventListeners,
     connect,
     connectionAttempts,
     disconnect,
@@ -290,5 +379,7 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     removeNotificationHandler,
     removeRequestHandler,
     sendResponse,
+    sendWalletEvent,
+    setupWalletEventListeners,
   };
 }

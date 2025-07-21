@@ -157,6 +157,18 @@ export class WalletBridgeWebSocketServer {
           }
         }
       }
+      // Handle wallet event notifications
+      else if ('type' in data && data.type === 'wallet_event' && 'eventName' in data) {
+        this.logger.debug(`Received wallet event: ${data.eventName}`, data.eventData);
+
+        // Forward wallet event via IPC using single channel
+        if (this.ipcCallbacks) {
+          this.ipcCallbacks.sendIpcMessage('WALLET_BRIDGE_EVENT', {
+            eventName: data.eventName,
+            eventData: data.eventData,
+          });
+        }
+      }
     }
     catch (error) {
       this.logger.error('Invalid WebSocket message:', error);

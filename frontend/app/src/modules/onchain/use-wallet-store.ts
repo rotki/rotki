@@ -34,9 +34,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
   // Initialize composables for both wallet modes
   const walletConnect = useWalletConnect();
-  const injectedWallet = useInjectedWallet((isLoading: boolean) => {
-    set(preparing, isLoading);
-  });
+  const injectedWallet = useInjectedWallet();
 
   const { getAssetMappingHandler } = useAssetCacheStore();
   const { getChainFromChainId, updateStatePostTransaction } = useWalletHelper();
@@ -75,7 +73,9 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const open = async (): Promise<void> => {
     if (get(walletMode) === 'local-bridge') {
-      await injectedWallet.open();
+      await injectedWallet.open((isLoading: boolean) => {
+        set(preparing, isLoading);
+      });
     }
     else {
       await walletConnect.open();
