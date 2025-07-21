@@ -146,19 +146,18 @@ onBeforeMount(() => {
       v-if="showTakeoverMessage"
       class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50"
     >
-      <div class="bg-rui-grey-100 dark:bg-rui-grey-800 p-8 rounded-lg shadow-2xl max-w-md mx-4 text-center border border-rui-grey-300 dark:border-rui-grey-600">
-        <div>
-          <RuiIcon
-            name="lu-triangle-alert"
-            class="text-rui-warning text-6xl mb-4"
-          />
-          <h2 class="text-h4 mb-2 text-rui-grey-900 dark:text-rui-grey-100 font-semibold">
-            {{ t('trade.bridge.takeover.title') }}
-          </h2>
-          <p class="text-rui-grey-700 dark:text-rui-grey-300">
-            {{ t('trade.bridge.takeover.description') }}
-          </p>
-        </div>
+      <div class="bg-rui-grey-100 dark:bg-rui-grey-800 p-8 rounded-lg shadow-2xl max-w-md mx-4 flex flex-col items-center text-center">
+        <RuiIcon
+          name="lu-triangle-alert"
+          size="40"
+          class="text-rui-warning mb-4"
+        />
+        <h2 class="text-h4 mb-2 font-semibold">
+          {{ t('trade.bridge.takeover.title') }}
+        </h2>
+        <p class="text-rui-text-secondary">
+          {{ t('trade.bridge.takeover.description') }}
+        </p>
       </div>
     </div>
 

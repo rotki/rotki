@@ -15,6 +15,13 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { logger } from '@/utils/logging';
 import { useTradeApi } from './use-trade-api';
 
+const REJECTED_KEYWORDS = [
+  'ACTION_REJECTED',
+  'User cancelled',
+  'User canceled',
+  'User rejected',
+];
+
 const { t } = useI18n({ useScope: 'global' });
 
 const amount = ref<string>('');
@@ -176,7 +183,7 @@ async function send() {
   }
   catch (error: any) {
     const errorString = error.toString();
-    if (errorString.includes('ACTION_REJECTED') || errorString.includes('User canceled')) {
+    if (REJECTED_KEYWORDS.some(keyword => errorString.includes(keyword))) {
       set(errorMessage, 'Request is rejected by user');
     }
     else {
@@ -332,32 +339,30 @@ watch([estimatedGasFee, assetBalance], () => {
         {{ t('trade.warning.query_on_progress') }}
       </RuiAlert>
       <!-- Wallet Mode Selector -->
-      <div
-        v-if="isPackaged && !connected"
-        class="flex items-center gap-4 mb-4"
-      >
-        <div class="grow" />
-        <div class="text-rui-text-secondary">
-          {{ t('trade.wallet_mode.label') }}
-        </div>
-        <RuiButtonGroup
-          :model-value="walletMode"
-          variant="outlined"
-          color="primary"
-          required
-          size="sm"
-          @update:model-value="setWalletMode($event)"
-        >
-          <RuiButton model-value="walletconnect">
-            {{ t('trade.wallet_mode.wallet_connect') }}
-          </RuiButton>
-          <RuiButton model-value="local-bridge">
-            {{ t('trade.wallet_mode.local_bridge') }}
-          </RuiButton>
-        </RuiButtonGroup>
-      </div>
 
-      <div class="flex justify-end items-center">
+      <div class="flex items-center">
+        <div class="grow">
+          <template v-if="isPackaged && !connected">
+            <div class="text-rui-text-secondary text-caption uppercase mb-1">
+              {{ t('trade.wallet_mode.label') }}
+            </div>
+            <RuiButtonGroup
+              :model-value="walletMode"
+              variant="outlined"
+              color="primary"
+              required
+              size="sm"
+              @update:model-value="setWalletMode($event)"
+            >
+              <RuiButton model-value="walletconnect">
+                {{ t('trade.wallet_mode.wallet_connect') }}
+              </RuiButton>
+              <RuiButton model-value="local-bridge">
+                {{ t('trade.wallet_mode.local_bridge') }}
+              </RuiButton>
+            </RuiButtonGroup>
+          </template>
+        </div>
         <div class="flex gap-2">
           <TradeConnectedAddressBadge :loading="preparing" />
           <TradeHistoryView />
