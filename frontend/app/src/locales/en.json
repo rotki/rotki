@@ -4417,6 +4417,7 @@
       "connecting_to_electron": "Connecting to Rotki",
       "connection_failed": "Connection Failed",
       "connection_logs": "Connection Logs",
+      "disconnect": "Disconnect",
       "disconnect_electron": "Disconnect",
       "disconnected_from_electron": "Disconnected from rotki",
       "electron_connecting_message": "Connecting to rotki, please wait...",

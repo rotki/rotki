@@ -92,6 +92,56 @@ async function connectWallet(): Promise<void> {
   }
 }
 
+async function disconnectProvider() {
+  const provider: EIP1193Provider | undefined = window.ethereum;
+
+  if (provider) {
+    // Some wallets support disconnect method
+    if (provider.disconnect) {
+      try {
+        await provider.disconnect();
+      }
+      catch (error) {
+        // Some wallets don't support disconnect, which is fine
+        logger.debug('Wallet disconnect method not supported or failed:', error);
+      }
+    }
+
+    // For wallets that don't support disconnect, we can request permissions revocation
+    // This is not universally supported but works for some wallets
+    try {
+      await provider.request({
+        method: 'wallet_revokePermissions',
+        params: [{ eth_accounts: {} }],
+      });
+    }
+    catch (error) {
+      // This method is not supported by all wallets
+      logger.debug('wallet_revokePermissions not supported:', error);
+    }
+  }
+}
+
+async function disconnectWallet(): Promise<void> {
+  try {
+    await disconnectProvider();
+
+    // Clear the connected state
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+    set(connectionError, undefined);
+
+    logger.info('Wallet disconnected');
+  }
+  catch (error) {
+    logger.error('Error disconnecting wallet:', error);
+    // Still clear the state even if disconnect fails
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+    set(connectionError, undefined);
+  }
+}
+
 function resetError(): void {
   set(connectionError, undefined);
 }
@@ -149,11 +199,19 @@ onMounted(() => {
         />
         <HashLink
           v-if="connectedAddress"
-          class="!pl-0"
+          class="!pl-0 flex-1"
           :location="chain"
           :text="connectedAddress"
           copy-only
         />
+        <RuiButton
+          variant="outlined"
+          color="error"
+          size="sm"
+          @click="disconnectWallet()"
+        >
+          {{ t('trade.bridge.disconnect') }}
+        </RuiButton>
       </template>
       <template v-else>
         <div class="p-0.5 rounded-full size-3 border border-rui-grey-400/40">
@@ -196,7 +254,7 @@ onMounted(() => {
         <RuiButton
           variant="text"
           size="sm"
-          icon
+          :icon="true"
           @click="resetError()"
         >
           <RuiIcon

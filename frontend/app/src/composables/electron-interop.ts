@@ -18,10 +18,6 @@ interface UseInteropReturn {
   premiumUserLoggedIn: (premiumUser: boolean) => void;
   closeApp: () => Promise<void>;
   metamaskImport: () => Promise<string[]>;
-  openWalletConnectBridge: () => Promise<void>;
-  walletBridgeConnect: () => Promise<boolean>;
-  walletBridgeHttpListening: () => Promise<boolean>;
-  walletBridgeWebSocketListening: () => Promise<boolean>;
   restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   version: () => Promise<SystemVersion | WebVersion>;
@@ -150,10 +146,6 @@ const interop: UseInteropReturn = {
     }
   },
 
-  openWalletConnectBridge: async (): Promise<void> => {
-    await window.interop?.openWalletConnectBridge();
-  },
-
   premiumUserLoggedIn: (premiumUser: boolean): void => {
     window.interop?.premiumUserLoggedIn(premiumUser);
   },
@@ -192,24 +184,6 @@ const interop: UseInteropReturn = {
       });
     }
     return window.interop?.version();
-  },
-
-  walletBridgeConnect: async (): Promise<boolean> => {
-    if (!window.interop)
-      return false;
-    return (await window.interop.walletBridgeConnect()) ?? false;
-  },
-
-  walletBridgeHttpListening: async (): Promise<boolean> => {
-    if (!window.interop)
-      return false;
-    return (await window.interop.walletBridgeHttpListening()) ?? false;
-  },
-
-  walletBridgeWebSocketListening: async (): Promise<boolean> => {
-    if (!window.interop)
-      return false;
-    return (await window.interop.walletBridgeWebSocketListening()) ?? false;
   },
 };
 

@@ -32,6 +32,7 @@ const { t } = useI18n({ useScope: 'global' });
 // WebSocket integration
 const {
   cleanup,
+  cleanupWalletEventListeners,
   connect: connectToElectron,
   disconnect: disconnectFromElectron,
   isConnected: isElectronConnected,
@@ -40,6 +41,7 @@ const {
   onNotification,
   onRequest,
   sendResponse,
+  setupWalletEventListeners,
 } = useWalletBridgeWebSocket();
 
 function addLog(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
@@ -121,9 +123,13 @@ watch(isElectronConnecting, (newValue, oldValue) => {
 watch(isElectronConnected, (newValue, oldValue) => {
   if (newValue && !oldValue) {
     addLog('Successfully connected to Electron app!', 'success');
+    // Setup wallet event listeners when connected
+    setupWalletEventListeners();
   }
   else if (!newValue && oldValue) {
     addLog('WebSocket connection to Electron app lost', 'error');
+    // Cleanup wallet event listeners when disconnected
+    cleanupWalletEventListeners();
   }
 });
 

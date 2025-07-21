@@ -47,10 +47,12 @@ export const WalletBridgeResponseSchema = JsonRpcBaseSchema.extend({
 export type WalletBridgeResponse = z.infer<typeof WalletBridgeResponseSchema>;
 
 // Notification Types
-export const NotificationTypeSchema = z.enum(['close_tab', 'reconnected']);
+export const NotificationTypeSchema = z.enum(['close_tab', 'reconnected', 'wallet_event']);
 
 export const WalletBridgeNotificationSchema = z.object({
   data: z.unknown().optional(),
+  eventData: z.unknown().optional(),
+  eventName: z.string().optional(),
   type: NotificationTypeSchema,
 });
 

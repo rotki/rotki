@@ -108,7 +108,6 @@ export interface Interop {
   debugSettings?: () => DebugSettings | undefined;
   apiUrls: () => ApiUrls;
   metamaskImport: () => Promise<MetamaskImport>;
-  openWalletConnectBridge: () => Promise<void>;
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;
@@ -122,10 +121,6 @@ export interface Interop {
   storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;
-  walletBridgeRequest: (request: WalletBridgeRequest) => Promise<WalletBridgeResponse>;
-  walletBridgeConnect: () => Promise<boolean>;
-  walletBridgeDisconnect: () => Promise<void>;
-  walletBridgeHttpListening: () => Promise<boolean>;
-  walletBridgeWebSocketListening: () => Promise<boolean>;
+  openWalletConnectBridge: () => Promise<void>;
   notifyUserLogout: () => void;
 }

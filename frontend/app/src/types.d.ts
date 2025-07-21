@@ -1,9 +1,24 @@
 import type { Interop } from '@shared/ipc';
 
 interface WalletBridgeApi {
+  // Connection management
   isEnabled: () => boolean;
+  isConnected: () => boolean;
   enable: () => Promise<void>;
   disable: () => Promise<void>;
+
+  // Bridge server management
+  openWalletBridge: () => Promise<void>;
+  walletBridgeConnect: () => Promise<boolean>;
+  walletBridgeHttpListening: () => Promise<boolean>;
+  walletBridgeWebSocketListening: () => Promise<boolean>;
+
+  // RPC requests
+  request: (request: RpcRequest) => Promise<any>;
+
+  // Event management
+  addEventListener: (eventName: string, callback: (data: any) => void) => void;
+  removeEventListener: (eventName: string) => void;
 }
 
 interface Request {
@@ -88,6 +103,7 @@ export interface EIP1193Provider {
     event: K,
     callback: (...args: EIP1193ProviderEvents[K]) => void
   ) => void;
+  disconnect?: () => Promise<void>;
 }
 
 export interface WebVersion {

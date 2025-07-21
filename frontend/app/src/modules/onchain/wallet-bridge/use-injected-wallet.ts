@@ -1,5 +1,6 @@
 import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
+import { createSharedComposable } from '@vueuse/core';
 import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
 import { logger } from '@/utils/logging';
@@ -10,30 +11,77 @@ interface UseInjectedWalletReturn {
   connected: Ref<boolean>;
   connectedAddress: Ref<string | undefined>;
   connectedChainId: Ref<number | undefined>;
-  open: () => Promise<void>;
+  open: (setPreparing?: (preparing: boolean) => void) => Promise<void>;
   disconnect: () => Promise<void>;
   getBrowserProvider: () => BrowserProvider;
   switchNetwork: (chainId: bigint) => Promise<void>;
 }
 
-export function useInjectedWallet(setPreparing?: (preparing: boolean) => void): UseInjectedWalletReturn {
+function _useInjectedWallet(): UseInjectedWalletReturn {
   const connected = ref<boolean>(false);
   const connectedAddress = ref<string>();
   const connectedChainId = ref<number>();
 
   let injectedProvider: EIP1193Provider | undefined;
 
-  // Store event handler references for proper cleanup
-  const providerEventHandlers: {
-    accountsChanged?: (accounts: string[]) => void;
-    chainChanged?: (chainId: string) => void;
-    connect?: (connectInfo: { chainId: string }) => void;
-    disconnect?: () => void;
-    error?: (error: any) => void;
-  } = {};
+  // Define event handlers as part of the composable scope (maintain same references)
+  const handleAccountsChanged = (accounts: string[]): void => {
+    logger.debug(`Injected provider accounts changed: ${accounts.length} account(s)`);
+    if (accounts.length > 0) {
+      set(connectedAddress, getAddress(accounts[0]));
+      set(connected, true);
+    }
+    else {
+      set(connected, false);
+      set(connectedAddress, undefined);
+    }
+  };
+
+  const handleChainChanged = (chainId: string): void => {
+    const newChainId = parseInt(chainId, 16);
+    logger.debug('Injected provider changed chain to', newChainId);
+    set(connectedChainId, newChainId);
+  };
+
+  const handleConnect = (connectInfo: { chainId: string }): void => {
+    const newChainId = parseInt(connectInfo.chainId, 16);
+    logger.debug(`Injected provider connected to chain: ${newChainId}`);
+    set(connected, true);
+    set(connectedChainId, newChainId);
+  };
+
+  const handleDisconnect = (): void => {
+    logger.debug('Injected provider disconnected');
+    set(connected, false);
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+  };
+
+  const handleError = (error: any): void => {
+    logger.error('Injected provider error:', error);
+    // On WebSocket errors, disconnect the wallet
+    set(connected, false);
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+  };
 
   const { isPackaged } = useInterop();
   const { disconnectBridge, setupBridge, startConnectionHealthCheck, stopConnectionHealthCheck } = useBridgedWallet();
+
+  // Remove event listeners from the injected provider
+  const removeProviderEventListeners = (provider: EIP1193Provider): void => {
+    logger.debug('Removing injected wallet event listeners from provider');
+    if (provider.removeListener) {
+      provider.removeListener('accountsChanged', handleAccountsChanged);
+      provider.removeListener('chainChanged', handleChainChanged);
+      provider.removeListener('connect', handleConnect);
+      provider.removeListener('disconnect', handleDisconnect);
+      provider.removeListener('error', handleError);
+    }
+    else {
+      logger.warn('Provider has no removeListener method');
+    }
+  };
 
   // Connect to injected provider (request accounts)
   const connectInjectedProvider = async (): Promise<void> => {
@@ -60,66 +108,15 @@ export function useInjectedWallet(setPreparing?: (preparing: boolean) => void): 
     }
   };
 
-  // Setup event handlers for the injected provider
-  const setupProviderEventHandlers = (): void => {
-    providerEventHandlers.accountsChanged = (accounts: string[]): void => {
-      logger.debug(`Injected provider accounts changed: ${accounts.length} account(s)`);
-      if (accounts.length > 0) {
-        set(connectedAddress, getAddress(accounts[0]));
-        set(connected, true);
-      }
-      else {
-        set(connected, false);
-        set(connectedAddress, undefined);
-      }
-    };
-
-    providerEventHandlers.chainChanged = (chainId: string): void => {
-      const newChainId = parseInt(chainId, 16);
-      logger.debug('Injected provider changed chain to', newChainId);
-      set(connectedChainId, newChainId);
-    };
-
-    providerEventHandlers.connect = (connectInfo: { chainId: string }): void => {
-      const newChainId = parseInt(connectInfo.chainId, 16);
-      logger.debug(`Injected provider connected to chain: ${newChainId}`);
-      set(connected, true);
-      set(connectedChainId, newChainId);
-    };
-
-    providerEventHandlers.disconnect = (): void => {
-      logger.debug('Injected provider disconnected');
-      set(connected, false);
-      set(connectedAddress, undefined);
-      set(connectedChainId, undefined);
-    };
-
-    providerEventHandlers.error = (error: any): void => {
-      logger.error('Injected provider error:', error);
-      // On WebSocket errors, disconnect the wallet
-      set(connected, false);
-      set(connectedAddress, undefined);
-      set(connectedChainId, undefined);
-    };
-  };
-
   // Add event listeners to the injected provider
   const addProviderEventListeners = (provider: EIP1193Provider): void => {
-    if (providerEventHandlers.accountsChanged) {
-      provider.on?.('accountsChanged', providerEventHandlers.accountsChanged);
-    }
-    if (providerEventHandlers.chainChanged) {
-      provider.on?.('chainChanged', providerEventHandlers.chainChanged);
-    }
-    if (providerEventHandlers.connect) {
-      provider.on?.('connect', providerEventHandlers.connect);
-    }
-    if (providerEventHandlers.disconnect) {
-      provider.on?.('disconnect', providerEventHandlers.disconnect);
-    }
-    if (providerEventHandlers.error) {
-      provider.on?.('error', providerEventHandlers.error);
-    }
+    logger.debug('Adding injected wallet event listeners to provider');
+
+    provider.on?.('accountsChanged', handleAccountsChanged);
+    provider.on?.('chainChanged', handleChainChanged);
+    provider.on?.('connect', handleConnect);
+    provider.on?.('disconnect', handleDisconnect);
+    provider.on?.('error', handleError);
   };
 
   // Get initial state from provider with retry logic
@@ -160,14 +157,23 @@ export function useInjectedWallet(setPreparing?: (preparing: boolean) => void): 
       }
 
       // Get the ethereum provider (either through bridge or directly injected)
-      injectedProvider = window.ethereum;
+      const newProvider = window.ethereum;
 
-      if (!injectedProvider) {
+      if (!newProvider) {
         throw new Error('No injected provider found');
       }
 
-      // Setup event handlers
-      setupProviderEventHandlers();
+      // Clean up previous provider if it exists and is different
+      if (injectedProvider && injectedProvider !== newProvider) {
+        removeProviderEventListeners(injectedProvider);
+      }
+
+      injectedProvider = newProvider;
+
+      // Always remove existing listeners first to prevent duplicates
+      if (injectedProvider) {
+        removeProviderEventListeners(injectedProvider);
+      }
 
       // Add event listeners
       addProviderEventListeners(injectedProvider);
@@ -193,35 +199,7 @@ export function useInjectedWallet(setPreparing?: (preparing: boolean) => void): 
     }
   };
 
-  // Remove event listeners from the injected provider
-  const removeProviderEventListeners = (provider: EIP1193Provider): void => {
-    if (providerEventHandlers.accountsChanged && provider.removeListener) {
-      provider.removeListener('accountsChanged', providerEventHandlers.accountsChanged);
-    }
-    if (providerEventHandlers.chainChanged && provider.removeListener) {
-      provider.removeListener('chainChanged', providerEventHandlers.chainChanged);
-    }
-    if (providerEventHandlers.connect && provider.removeListener) {
-      provider.removeListener('connect', providerEventHandlers.connect);
-    }
-    if (providerEventHandlers.disconnect && provider.removeListener) {
-      provider.removeListener('disconnect', providerEventHandlers.disconnect);
-    }
-    if (providerEventHandlers.error && provider.removeListener) {
-      provider.removeListener('error', providerEventHandlers.error);
-    }
-  };
-
-  // Clear all provider event handler references
-  const clearProviderEventHandlers = (): void => {
-    providerEventHandlers.accountsChanged = undefined;
-    providerEventHandlers.chainChanged = undefined;
-    providerEventHandlers.connect = undefined;
-    providerEventHandlers.disconnect = undefined;
-    providerEventHandlers.error = undefined;
-  };
-
-  const open = async (): Promise<void> => {
+  const open = async (setPreparing?: (preparing: boolean) => void): Promise<void> => {
     try {
       // Set loading state when bridge setup starts
       setPreparing?.(true);
@@ -245,9 +223,6 @@ export function useInjectedWallet(setPreparing?: (preparing: boolean) => void): 
       try {
         // Remove event listeners to prevent memory leaks
         removeProviderEventListeners(injectedProvider);
-
-        // Clear handler references
-        clearProviderEventHandlers();
 
         // Only disable wallet bridge if packaged
         if (isPackaged) {
@@ -318,3 +293,6 @@ export function useInjectedWallet(setPreparing?: (preparing: boolean) => void): 
     switchNetwork,
   };
 }
+
+// Export as shared composable to ensure single instance across app
+export const useInjectedWallet = createSharedComposable(_useInjectedWallet);

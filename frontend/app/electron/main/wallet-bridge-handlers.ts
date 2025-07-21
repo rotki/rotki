@@ -27,8 +27,6 @@ export class WalletBridgeHandlers {
 
       const result = await this.wsServer.sendToWalletBridge(request);
 
-      this.logger.debug(`Wallet bridge response: ${JSON.stringify(result)}`);
-
       return {
         result,
       };

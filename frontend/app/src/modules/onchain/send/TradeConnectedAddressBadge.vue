@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { useWalletBridge } from '@/composables/wallet-bridge';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
@@ -18,7 +19,8 @@ const { connected, connectedAddress, connectedChainId } = storeToRefs(walletStor
 const { disconnect, open } = walletStore;
 
 const { getChainFromChainId } = useWalletHelper();
-const { isPackaged, openWalletConnectBridge } = useInterop();
+const { isPackaged } = useInterop();
+const { openWalletBridge } = useWalletBridge();
 
 const chain = computed(() => {
   const chainId = get(connectedChainId);
@@ -88,7 +90,7 @@ const chain = computed(() => {
           v-if="isPackaged"
           variant="list"
           size="sm"
-          @click="openWalletConnectBridge()"
+          @click="openWalletBridge()"
         >
           {{ t('trade.bridge.connect_browser_wallet') }}
           <template #append>

@@ -1,4 +1,4 @@
-import { useInterop } from '@/composables/electron-interop';
+import { useWalletBridge } from '@/composables/wallet-bridge';
 import { useHealthCheck } from '@/modules/onchain/wallet-bridge/use-health-check';
 import { AsyncUtilityError, TimeoutError, waitForCondition } from '@/utils/async-utilities';
 import { logger } from '@/utils/logging';
@@ -9,6 +9,7 @@ import {
   BridgeTimeoutError,
 } from './bridge-errors';
 import { createResourceManager } from './resource-management';
+import { setupWalletBridgeProvider } from './use-wallet-bridge-provider';
 
 const BRIDGE_CONFIG = {
   BRIDGE_PAGE_DELAY: 250,
@@ -26,7 +27,7 @@ interface UseBridgedWalletReturn {
 }
 
 export function useBridgedWallet(): UseBridgedWalletReturn {
-  const { openWalletConnectBridge, walletBridgeConnect, walletBridgeHttpListening, walletBridgeWebSocketListening } = useInterop();
+  const { openWalletBridge, walletBridgeConnect, walletBridgeHttpListening, walletBridgeWebSocketListening } = useWalletBridge();
 
   // Track active resources for cleanup
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
@@ -169,7 +170,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
 
     try {
       // Step 1: Start the bridge servers
-      await openWalletConnectBridge();
+      await openWalletBridge();
       logger.debug('Bridge servers startup initiated');
 
       // Step 2: Wait for both servers to be ready (parallel check)
@@ -206,7 +207,10 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     activeResources.isSetupInProgress = true;
 
     try {
-      // Step 1: Initialize the wallet bridge
+      // Step 1: Set up the wallet bridge provider in renderer context
+      setupWalletBridgeProvider();
+
+      // Step 2: Initialize the wallet bridge
       await initializeWalletBridge();
 
       // Step 2: Check current state
@@ -217,7 +221,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
 
       if (isFullyConnected) {
         logger.debug('Bridge is already fully operational, opening bridge page');
-        await openWalletConnectBridge();
+        await openWalletBridge();
         return;
       }
 

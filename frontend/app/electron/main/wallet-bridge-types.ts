@@ -6,7 +6,9 @@ import { z } from 'zod/v4';
 
 // Notification schema
 export const WalletBridgeNotificationSchema = z.object({
-  type: z.enum(['close_tab', 'reconnected']),
+  type: z.enum(['close_tab', 'reconnected', 'wallet_event']),
+  eventName: z.string().optional(),
+  eventData: z.unknown().optional(),
 });
 
 export type WalletBridgeNotification = z.infer<typeof WalletBridgeNotificationSchema>;
