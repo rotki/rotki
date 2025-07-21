@@ -229,49 +229,35 @@ def test_authenticate_device_race_condition(rotkehlchen_api_server: APIServer) -
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_edit_premium_device(rotkehlchen_api_server: APIServer) -> None:
-    """Test the PATCH /premium/devices endpoint with mocked external request."""
+def test_edit_premium_device(rotkehlchen_api_server: APIServer, caplog: pytest.LogCaptureFixture) -> None:  # noqa: E501
+    """Test the PATCH /premium/devices endpoint with both success and error cases."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert rotki.premium is not None
 
-    with patch.object(
-        rotki.premium.session,
-        'patch',
-        return_value=MockResponse(200, '{}'),
-    ) as mock_patch:
-        response = requests.patch(
-            api_url_for(rotkehlchen_api_server, 'premiumdevicesresource'),
-            json={
-                'device_identifier': 'device_abc',
-                'device_name': 'new name',
-            },
-        )
-        result = assert_proper_sync_response_with_result(response)
-        assert result is True
+    for patch_response, is_error in [
+        (MockResponse(200, '{}'), False),
+        (MockResponse(409, 'Network issue'), True),
+    ]:
+        with patch.object(
+            rotki.premium.session,
+            'patch',
+            return_value=patch_response,
+        ) as mock_patch:
+            response = requests.patch(
+                api_url_for(rotkehlchen_api_server, 'premiumdevicesresource'),
+                json={
+                    'device_identifier': 'device_abc',
+                    'device_name': 'new name',
+                },
+            )
+            if is_error:
+                assert_error_response(
+                    response=response,
+                    status_code=HTTPStatus.CONFLICT,
+                    contained_in_msg='Failed to contact rotki server.',
+                )
+                assert 'Network issue' in caplog.text
+            else:
+                assert assert_proper_sync_response_with_result(response)
 
-        mock_patch.assert_called_once()
-
-
-@pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_edit_premium_device_error(rotkehlchen_api_server: APIServer) -> None:
-    """Test the PATCH /premium/devices endpoint when external service fails."""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    assert rotki.premium is not None
-
-    with patch.object(
-        rotki.premium.session,
-        'patch',
-        side_effect=requests.exceptions.RequestException('Network issue'),
-    ):
-        response = requests.patch(
-            api_url_for(rotkehlchen_api_server, 'premiumdevicesresource'),
-            json={
-                'device_identifier': 'device_abc',
-                'device_name': 'new name',
-            },
-        )
-        assert_error_response(
-            response=response,
-            status_code=HTTPStatus.CONFLICT,
-            contained_in_msg='Network issue',
-        )
+            mock_patch.assert_called_once()

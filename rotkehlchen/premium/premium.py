@@ -286,7 +286,7 @@ class Premium:
                     method='devices',
                     device_identifier=device_id,
                 ),
-                headers={'Content-Type': 'application/json'},
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to check device registration due to: {e}') from e
@@ -322,6 +322,7 @@ class Premium:
                     device_name=str(uuid4()),  # can be edited later.
                     platform=platform.system(),
                 ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to register device due to: {e}') from e
@@ -347,6 +348,7 @@ class Premium:
                     method=method,
                     device_identifier=device_id,
                 ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to delete device due to: {e}') from e
@@ -367,6 +369,7 @@ class Premium:
                     device_identifier=device_id,
                     device_name=device_name,
                 ),
+                timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Failed to edit device due to: {e}') from e
