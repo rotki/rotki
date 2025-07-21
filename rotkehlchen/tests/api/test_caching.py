@@ -126,7 +126,18 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
     ))
     result = assert_proper_sync_response_with_result(response)
     assert {
-        'curve', 'velodrome', 'convex', 'aerodrome', 'gearbox', 'yearn', 'maker', 'eth withdrawals', 'eth blocks',  # noqa: E501
+        'curve',
+        'velodrome',
+        'convex',
+        'aerodrome',
+        'gearbox',
+        'yearn',
+        'maker',
+        'eth withdrawals',
+        'eth blocks',
+        'spark',
+        'balancer v1',
+        'balancer v2',
     }.issubset(set(result))
 
     with ExitStack() as stack:
@@ -171,20 +182,27 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             'delete_dynamic_caches',
             new=MagicMock(),
         ))
+        patched_balancer_query = stack.enter_context(patch(
+            'rotkehlchen.api.rest.query_balancer_data',
+            new=MagicMock(),
+        ))
 
         for protocol, patched_obj, expected_calls in (
             (ProtocolsWithCache.CURVE, patched_curve_query, 6),
             (ProtocolsWithCache.CONVEX, patched_convex_query, 1),
             (ProtocolsWithCache.GEARBOX, patched_gearbox_query, 1),
             (ProtocolsWithCache.VELODROME, patched_velodrome_query, 1),
-            (ProtocolsWithCache.AERODROME, patched_velodrome_query, 2),  # 1 for velo and 1 for aerodrome  # noqa: E501
+            (ProtocolsWithCache.AERODROME, patched_velodrome_query, 1),
             (ProtocolsWithCache.YEARN, patched_query_yearn_vaults, 1),
             (ProtocolsWithCache.MAKER, patched_ilk_registry, 1),
             (ProtocolsWithCache.AAVE, patched_aave_v3_assets, 1),
             (ProtocolsWithCache.SPARK, patched_spark_assets, 1),
             (ProtocolsWithCache.ETH_WITHDRAWALS, patched_eth_withdrawals_cache, 1),
-            (ProtocolsWithCache.ETH_BLOCKS, patched_eth_withdrawals_cache, 2),  # same method is called as above  # noqa: E501
+            (ProtocolsWithCache.ETH_BLOCKS, patched_eth_withdrawals_cache, 1),
+            (ProtocolsWithCache.BALANCER_V1, patched_balancer_query, 3),  # supported on 3 chains
+            (ProtocolsWithCache.BALANCER_V2, patched_balancer_query, 6),  # supported on 6 chains
         ):
+            patched_obj.reset_mock()
             response = requests.post(api_url_for(
                 rotkehlchen_api_server,
                 'protocoldatarefreshresource',
