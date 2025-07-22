@@ -616,6 +616,7 @@ class Rotkehlchen:
                 self.premium = premium_create_and_verify(
                     credentials=credentials,
                     username=self.data.username,
+                    msg_aggregator=self.msg_aggregator,
                 )
             except RemoteError as e:
                 raise PremiumAuthenticationError(str(e)) from e

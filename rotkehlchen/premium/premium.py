@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import hmac
+import json
 import logging
 import os
 import platform
@@ -11,7 +12,7 @@ from collections.abc import Sequence
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
-from typing import Any, Final, Literal, NamedTuple, TypedDict, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypedDict, cast
 from urllib.parse import urlencode
 from uuid import uuid4
 
@@ -19,6 +20,7 @@ import machineid
 import requests
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
+from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.timing import ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT
@@ -33,6 +35,9 @@ from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import is_production, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
+
+if TYPE_CHECKING:
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -92,7 +97,9 @@ KNOWN_STATUS_CODES: Final = (
     HTTPStatus.BAD_REQUEST,
     HTTPStatus.CREATED,
 )
-NEST_API_ENDPOINTS: Final = ('backup', 'devices', 'limits')
+NEST_API_ENDPOINTS: Final = ('backup', 'backup/range', 'devices', 'limits')
+UPLOAD_CHUNK_SIZE: Final = 10_000_000  # 10 MB
+MAX_UPLOAD_CHUNK_RETRIES: Final = 1
 
 
 def check_response_status_code(
@@ -209,7 +216,12 @@ def _decode_premium_json(response: requests.Response) -> Any:
 
 class Premium:
 
-    def __init__(self, credentials: PremiumCredentials, username: str):
+    def __init__(
+            self,
+            credentials: PremiumCredentials,
+            username: str,
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = create_session()
         self.apiversion = '1'
@@ -225,6 +237,7 @@ class Premium:
         self.username = username
         # Cache user limits to avoid repeated API calls during the session
         self._cached_limits: UserLimits | None = None
+        self.msg_aggregator = msg_aggregator
 
     def reset_credentials(self, credentials: PremiumCredentials) -> None:
         self.credentials = credentials
@@ -430,41 +443,71 @@ class Premium:
             our_hash: str,
             last_modify_ts: Timestamp,
             compression_type: Literal['zlib'],
-    ) -> dict:
-        """Uploads data to the server and returns the response dict. We upload the encrypted
-        database as a file in an http form.
+    ) -> None:
+        """Uploads data to the server. We upload the encrypted database in chunks via an http form.
 
         May raise:
         - RemoteError if there are problems reaching the server or if
         there is an error returned by the server
         - PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        data = self.sign(
-            'backup',
-            original_hash=our_hash,
-            last_modify_ts=last_modify_ts,
-            index=0,
-            length=len(data_blob),
-            compression=compression_type,
-        )
-
-        try:
-            response = self.session.post(
-                self.rotki_nest + 'backup',
-                data=data,
-                files={'db_file': data_blob},
-                timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
+        total_size, upload_id = len(data_blob), None
+        chunk_count = (total_size + UPLOAD_CHUNK_SIZE - 1) // UPLOAD_CHUNK_SIZE
+        for chunk_idx, offset in enumerate(range(0, total_size, UPLOAD_CHUNK_SIZE)):
+            chunk_end = min(offset + UPLOAD_CHUNK_SIZE, total_size)
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_PROGRESS,
+                data={
+                    'type': str(DBUploadStatusStep.UPLOADING),
+                    'current_chunk': chunk_idx + 1,
+                    'total_chunks': chunk_count,
+                },
             )
-        except requests.exceptions.RequestException as e:
-            msg = f'Could not connect to rotki server due to {e!s}'
-            log.error(msg)
-            raise RemoteError(msg) from e
 
-        return _process_dict_response(
-            response=response,
-            status_codes=(HTTPStatus.OK,),
-            user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
-        )
+            form_kwargs: Any = {
+                'file_hash': our_hash,
+                'last_modify_ts': last_modify_ts,
+                'compression': compression_type,
+                'total_size': total_size,
+            }
+            if upload_id is not None:  # add upload_id if present
+                form_kwargs['upload_id'] = upload_id
+
+            retry_count, is_last_chunk = 0, (chunk_end == total_size)
+            while True:
+                try:
+                    response = self.session.post(
+                        self.rotki_nest + 'backup/range',
+                        files={'chunk_data': ('chunk', data_blob[offset:chunk_end])},
+                        data=self.sign(method='backup/range', **form_kwargs),
+                        headers={'Content-Range': f'bytes {offset}-{chunk_end - 1}/{total_size}'},
+                        timeout=ROTKEHLCHEN_SERVER_BACKUP_TIMEOUT,
+                    )
+                except requests.exceptions.RequestException as e:
+                    log.error(msg := f'Could not connect to rotki server due to {e!s}')
+                    raise RemoteError(msg) from e
+
+                expected_status = HTTPStatus.OK if is_last_chunk else HTTPStatus.PARTIAL_CONTENT
+                if response.status_code != expected_status:
+                    if response.status_code != HTTPStatus.REQUEST_ENTITY_TOO_LARGE and retry_count < MAX_UPLOAD_CHUNK_RETRIES:  # noqa: E501
+                        retry_count += 1
+                        continue  # retry chunk upload
+
+                    _process_dict_response(
+                        response=response,
+                        status_codes=(expected_status,),
+                        user_msg='Size limit reached' if response.status_code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE else f'Could not upload database backup due to: {response.text}',  # noqa: E501
+                    )
+                    return
+
+                break  # chunk upload was successful, leave retry loop.
+
+            if not is_last_chunk and upload_id is None:
+                try:  # Get upload_id from response for subsequent chunks
+                    upload_id = response.json()['upload_id']
+                except (json.JSONDecodeError, KeyError) as e:
+                    log.error(msg := f'Invalid response from server during chunked upload: {e!s}')
+                    raise RemoteError(msg) from e
 
     def pull_data(self) -> bytes | None:
         """Pulls data from the server and returns the binary file with the database encrypted
@@ -621,7 +664,11 @@ class Premium:
         return _decode_premium_json(response)
 
 
-def premium_create_and_verify(credentials: PremiumCredentials, username: str) -> Premium:
+def premium_create_and_verify(
+        credentials: PremiumCredentials,
+        username: str,
+        msg_aggregator: 'MessagesAggregator',
+) -> Premium:
     """Create a Premium object with the key pairs and verify them.
 
     Returns the created premium object
@@ -630,7 +677,7 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
     - PremiumAuthenticationError if the given key is rejected by the server
     - RemoteError if there are problems reaching the server
     """
-    premium = Premium(credentials=credentials, username=username)
+    premium = Premium(credentials=credentials, username=username, msg_aggregator=msg_aggregator)
     premium.authenticate_device()
     return premium
 

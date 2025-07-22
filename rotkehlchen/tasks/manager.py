@@ -487,6 +487,7 @@ class TaskManager:
             premium = premium_create_and_verify(
                 credentials=db_credentials,
                 username=self.username,
+                msg_aggregator=self.msg_aggregator,
             )
         except RemoteError:
             if self.premium_check_retries < PREMIUM_CHECK_RETRY_LIMIT:

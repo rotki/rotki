@@ -320,6 +320,28 @@ If at some point backend detects that balances need to be refreshed, it will sen
 - ``blockchain``: Returned only for section: ``blockchain_balances``. The blockchain for which balances need to be refreshed. Valid values are: ``optimism``, ``eth``.
 
 
+Premium Database Upload Progress
+========================================
+
+When the backend uploads a premium user DB messages of this type are sent to notify the frontend of the progress.
+
+::
+
+    {
+        "type": "database_upload_progress",
+        "data": {
+            "type": "uploading",
+            "current_chunk": 1,
+            "total_chunks": 4,
+        }
+    }
+
+
+- ``type``: Which part of the upload process is currently in progress. Valid values are: ``compressing``, ``encrypting``, and ``uploading``. Only ``uploading`` has any other data included.
+- ``current_chunk``: The index of the current chunk being uploaded.
+- ``total_chunks``: The total number of chunks to be uploaded.
+
+
 Premium Database Upload result
 ========================================
 

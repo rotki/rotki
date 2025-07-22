@@ -13,6 +13,7 @@ from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp
+from rotkehlchen.user_messages import MessagesAggregator
 
 # Valid format but not "real" premium api key and secret
 VALID_PREMIUM_KEY = (
@@ -98,7 +99,11 @@ def create_patched_premium(
         saved_data: bytes | None = None,
         consider_authentication_invalid: bool = False,
 ):
-    premium = Premium(credentials=premium_credentials, username=username)
+    premium = Premium(
+        credentials=premium_credentials,
+        username=username,
+        msg_aggregator=MessagesAggregator(),
+    )
     patched_get = None
     if patch_get:
         patched_get = create_patched_requests_get_for_premium(
