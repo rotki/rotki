@@ -28,11 +28,12 @@ export function createProtocolTestBalance(protocol: string, amount: number, usdV
   };
 }
 
-export function createTestPriceInfo(value: number, oracle = 'coingecko', isManual = false): AssetPrice {
+export function createTestPriceInfo(value: number, oracle = 'coingecko', isManual = false, usdPrice?: number): AssetPrice {
   return {
     isManualPrice: isManual,
     oracle,
     value: bigNumberify(value),
+    ...(usdPrice !== undefined ? { usdPrice: bigNumberify(usdPrice) } : {}),
   };
 }
 
