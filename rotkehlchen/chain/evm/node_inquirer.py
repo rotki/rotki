@@ -582,6 +582,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     Web3Exception,
                     TypeError,  # happened at the web3 level calling `apply_result_formatters` when the RPC node returned `None` in the response's result # noqa: E501
                     ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
+                    AttributeError,  # happened at the web3 level when response is a string instead of dict # noqa: E501
             ) as e:
                 log.warning(
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
