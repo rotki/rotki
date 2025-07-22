@@ -815,10 +815,16 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             tx_receipt = self.get_transaction_receipt(tx.chain_id, tx.tx_hash)  # type: ignore
             l1_fee = 0
             if tx_receipt is not None:
-                if 'l1Fee' in tx_receipt:
+                if (raw_l1_fee := tx_receipt.get('l1Fee')) is not None:
                     # system tx like deposits don't have the l1fee attribute
                     # https://github.com/ethereum-optimism/optimism/blob/84ead32601fb825a060cde5a6635be2e8aea1a95/specs/deposits.md  # noqa: E501
-                    l1_fee = int(tx_receipt['l1Fee'], 16)
+                    try:
+                        l1_fee = int(tx_receipt['l1Fee'], 16)
+                    except TypeError:
+                        log.error(
+                            f'Could not convert l1 Fee "{raw_l1_fee}" of {tx.tx_hash.hex()} '
+                            f'in {tx.chain_id.to_name()} to a valid integer. Using 0 as L1 fee',
+                        )
             else:
                 log.error(f'Could not query receipt for {tx.chain_id.to_name()} transaction {tx.tx_hash.hex()}. Using 0 l1 fee')  # noqa: E501
 
