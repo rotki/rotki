@@ -3881,6 +3881,54 @@
       "non_empty_secret": "The API secret cannot be empty"
     }
   },
+  "premium_devices": {
+    "delete": {
+      "error": {
+        "title": "Delete Failed"
+      },
+      "message": "Are you sure you want to delete the device \"{device}\"?",
+      "title": "Delete Device"
+    },
+    "fetch": {
+      "error": {
+        "title": "Failed to Load Devices"
+      }
+    },
+    "form": {
+      "device_name": {
+        "error": {
+          "required": "Device name is required"
+        },
+        "hint": "Enter a descriptive name for this device",
+        "label": "Device Name"
+      },
+      "edit_title": "Edit Device",
+      "error": {
+        "title": "Save Failed"
+      },
+      "info": {
+        "last_seen": "Last Seen",
+        "platform": "Platform",
+        "title": "Device Information",
+        "user": "User"
+      }
+    },
+    "limit": "Limit ({current}/{limit})",
+    "refresh": "Refresh devices",
+    "table": {
+      "actions": {
+        "delete_tooltip": "Delete device",
+        "edit_tooltip": "Edit device"
+      },
+      "headers": {
+        "device_name": "Device Name",
+        "last_seen": "Last Seen",
+        "platform": "Platform",
+        "user": "User"
+      }
+    },
+    "title": "Premium Devices"
+  },
   "premium_loading_failed": {
     "description": "This might indicate a problem with the premium component service.",
     "open_issue": "If the problem persists open an issue in our issue tracker.",

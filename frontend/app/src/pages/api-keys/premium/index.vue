@@ -4,6 +4,7 @@ import { required } from '@vuelidate/validators';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import PremiumDeviceList from '@/components/premium/PremiumDeviceList.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -138,7 +139,12 @@ function showDeleteConfirmation() {
 </script>
 
 <template>
-  <TablePageLayout :title="[t('navigation_menu.api_keys'), t('navigation_menu.api_keys_sub.premium')]">
+  <TablePageLayout
+    :title="[
+      t('navigation_menu.api_keys'),
+      t('navigation_menu.api_keys_sub.premium'),
+    ]"
+  >
     <RuiCard>
       <div class="flex flex-col gap-2">
         <div class="flex flex-row-reverse">
@@ -235,6 +241,7 @@ function showDeleteConfirmation() {
         </div>
       </template>
     </RuiCard>
+    <PremiumDeviceList v-if="premium" />
   </TablePageLayout>
 </template>
 
