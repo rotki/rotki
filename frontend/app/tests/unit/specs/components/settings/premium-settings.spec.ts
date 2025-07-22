@@ -1,3 +1,4 @@
+import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,6 +33,7 @@ describe('premiumSettings.vue', () => {
       global: {
         plugins: [pinia],
         stubs: ['i18n-t', 'card-title'],
+        provide: libraryDefaults,
       },
     });
   }
@@ -72,6 +74,7 @@ describe('premiumSettings.vue', () => {
 
     await wrapper.find('[data-cy=premium__delete]').trigger('click');
     await nextTick();
+    await flushPromises();
     await flushPromises();
 
     const { confirm } = useConfirmStore();

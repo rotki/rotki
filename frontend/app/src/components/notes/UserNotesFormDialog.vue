@@ -41,6 +41,7 @@ async function save() {
   let success;
   const editMode = props.editMode;
 
+  set(loading, true);
   try {
     if (editMode)
       success = await updateUserNote(data);
