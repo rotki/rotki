@@ -53,14 +53,16 @@ export class AssetsManagerPage {
 
   searchAsset(asset: string) {
     this.focusOnTableFilter();
-    cy.get('[data-cy=table-filter] input').type(`symbol: ${asset}{enter}{esc}`);
+    cy.get('[data-cy=table-filter] input').type(`symbol: ${asset}`);
+    cy.get('[data-cy=table-filter] input').type(`{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
 
   searchAssetByAddress(address: string) {
     this.focusOnTableFilter();
-    cy.get('[data-cy=table-filter] input').type(`address: ${address}{enter}{esc}`);
+    cy.get('[data-cy=table-filter] input').type(`address: ${address}`);
+    cy.get('[data-cy=table-filter] input').type(`{enter}{esc}`);
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }

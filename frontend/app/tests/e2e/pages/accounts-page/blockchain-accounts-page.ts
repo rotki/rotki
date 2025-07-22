@@ -44,7 +44,10 @@ export class BlockchainAccountsPage {
     cy.get('[data-cy=account-address-field]').type(balance.address);
     cy.get('[data-cy=account-label-field]').type(balance.label);
 
-    for (const tag of balance.tags) cy.get('[data-cy=account-tag-field]').type(`${tag}{enter}`);
+    for (const tag of balance.tags) {
+      cy.get('[data-cy=account-tag-field]').type(`${tag}`);
+      cy.get('[data-cy=account-tag-field]').type('{enter}');
+    }
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
 

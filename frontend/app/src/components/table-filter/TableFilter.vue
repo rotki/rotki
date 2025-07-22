@@ -420,6 +420,7 @@ const { t } = useI18n({ useScope: 'global' });
           clearable
           hide-details
           custom-value
+          hide-custom-value
           :options="[]"
           return-object
           disable-interaction
