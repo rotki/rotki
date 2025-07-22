@@ -106,7 +106,7 @@ def test_binanceus_trades_location(function_scope_binance):
 
 @pytest.mark.parametrize('binance_location', [Location.BINANCEUS])
 def test_binanceus_deposits_withdrawals_location(function_scope_binance):
-    """Test deposits/withdrawls of binance US have the right location.
+    """Test deposits/withdrawals of binance US have the right location.
 
     Regression test for https://github.com/rotki/rotki/issues/2837
     """

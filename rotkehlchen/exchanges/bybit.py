@@ -480,7 +480,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         Query balances in wallet. It queries the unified and spot accounts.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns the a tuple of balances and None if there wasn't any error or a string
+        Returns a tuple of balances and None if there wasn't any error or a string
         message with a description of what went wrong.
         """
         asset_balances = {}
@@ -509,7 +509,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         Query balances in the funding wallet.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns the a tuple of balances and None if there wasn't any error or a string
+        Returns a tuple of balances and None if there wasn't any error or a string
         message with a description of what went wrong.
         """
         asset_balances: dict[AssetWithOracles, Balance] = {}
