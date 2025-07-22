@@ -1,5 +1,6 @@
 import json
 import os
+from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 
 import pytest
@@ -26,6 +27,9 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 
 
 @pytest.fixture(name='temp_etherscan')
@@ -247,3 +251,25 @@ def test_has_activity(temp_etherscan: 'Etherscan') -> None:
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE')) == HasChainActivity.BALANCE  # noqa: E501
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x014cd0535b2Ea668150a681524392B7633c8681c')) == HasChainActivity.TOKENS  # noqa: E501
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B')) == HasChainActivity.NONE  # noqa: E501
+
+
+def test_l1_fee_error_handling(temp_etherscan: 'Etherscan') -> None:
+    """Test that l1 fee being None is correctly handled in the etherscan logic"""
+    with patch.object(temp_etherscan, 'get_transaction_receipt') as mocked_receipt:
+        mocked_receipt.return_value = json.loads("""{"jsonrpc":"2.0","id":1,"result":{"blockHash":"0x5e6f2a7cfd7f57bf7b8f8a9059ee6f2ae0617e24cfe9d919fa59c587d7a2122e","blockNumber":"0x67a933","contractAddress":null,"cumulativeGasUsed":"0xd09b","effectiveGasPrice":"0xf4240","from":"0xc37b40abdb939635068d3c5f13e7faf686f03b65","gasUsed":"0xd09b","l1Fee":null,"l1GasPrice":null,"l1GasUsed":null,"logs":[{"address":"0x7f5c764cbc14f9669b88837ca1490cca17c31607","topics":["0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925","0x000000000000000000000000c37b40abdb939635068d3c5f13e7faf686f03b65","0x0000000000000000000000001111111254760f7ab3f16433eea9304126dcd199"],"data":"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","blockNumber":"0x67a933","transactionHash":"0x92ae5e1c4b4a2d5e2af9c4abc415a9dc0b826ba1fa158c57219fc1b6e852a061","transactionIndex":"0x0","blockHash":"0x5e6f2a7cfd7f57bf7b8f8a9059ee6f2ae0617e24cfe9d919fa59c587d7a2122e","logIndex":"0x0","removed":false}],"logsBloom":"0x00000000000000000100008000000000000000000000000010000000000000000000000000000000000000000000000000000040000000000000400000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000200000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000080000000000000000010000","status":"0x1","to":"0x7f5c764cbc14f9669b88837ca1490cca17c31607","transactionHash":"0x92ae5e1c4b4a2d5e2af9c4abc415a9dc0b826ba1fa158c57219fc1b6e852a061","transactionIndex":"0x0","type":"0x0"}}""")  # noqa: E501
+        updated_tx = temp_etherscan._additional_transaction_processing(EvmTransaction(
+            tx_hash=deserialize_evm_tx_hash('0x92ae5e1c4b4a2d5e2af9c4abc415a9dc0b826ba1fa158c57219fc1b6e852a061'),
+            chain_id=ChainID.OPTIMISM,
+            timestamp=Timestamp(1651314465),
+            block_number=6793523,
+            from_address=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
+            to_address=string_to_evm_address('0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            value=0,
+            gas=53403,
+            gas_price=0,
+            gas_used=0,
+            input_data=b'',
+            nonce=0,
+        ))
+
+    assert cast('L2WithL1FeesTransaction', updated_tx).l1_fee == 0

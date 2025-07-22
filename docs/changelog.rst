@@ -5,6 +5,7 @@ Changelog
 * :bug:`-` Fix the issue where the prices for the asset group are not displayed and keep loading.
 * :bug:`-` Spark balances on proxy addresses will now be properly detected.
 * :bug:`-` Fix Spark protocol savings transactions decoding across all supported EVM chains.
+* :bug:`-` Fix crash when processing certain L2 transactions with missing or invalid fees.
 * :feature:`-` Monerium and Gnosis Pay events will be properly updated when decoding new transactions or redecoding existing events.
 * :feature:`2880` rotki will now show bitcoin transactions in history events page.
 * :feature:`4455` Users will now be able to see detailed information about which protocols their balances are in.
