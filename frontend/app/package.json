@@ -44,7 +44,7 @@
     "@reown/appkit": "1.7.15",
     "@reown/appkit-adapter-ethers": "1.7.15",
     "@rotki/common": "workspace:*",
-    "@rotki/ui-library": "2.5.0",
+    "@rotki/ui-library": "2.6.0",
     "@types/jsdom": "21.1.7",
     "@types/ws": "8.18.1",
     "@vuelidate/core": "2.0.3",

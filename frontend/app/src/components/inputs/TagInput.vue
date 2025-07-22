@@ -97,6 +97,7 @@ watch(tags, () => {
       return-object
       custom-value
       clearable
+      hide-custom-value
       :item-height="54"
       @update:model-value="onUpdateModelValue($event)"
     >

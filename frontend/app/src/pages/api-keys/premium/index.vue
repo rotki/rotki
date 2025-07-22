@@ -4,12 +4,12 @@ import { required } from '@vuelidate/validators';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
+import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.vue';
 import { useInterop } from '@/composables/electron-interop';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
-import { useSettingsStore } from '@/store/settings';
 import { toMessages } from '@/utils/validation';
 
 defineOptions({
@@ -17,9 +17,8 @@ defineOptions({
 });
 
 const { username } = storeToRefs(useSessionAuthStore());
-const { update } = useSettingsStore();
 const store = usePremiumStore();
-const { premium, premiumSync } = storeToRefs(store);
+const { premium } = storeToRefs(store);
 const { deletePremium, setup } = store;
 
 const { t } = useI18n({ useScope: 'global' });
@@ -28,7 +27,6 @@ const { premiumUserLoggedIn } = useInterop();
 
 const apiKey = ref<string>('');
 const apiSecret = ref<string>('');
-const sync = ref<boolean>(false);
 const edit = ref<boolean>(true);
 const $externalResults = ref<Record<string, string[]>>({});
 
@@ -54,10 +52,6 @@ const v$ = useVuelidate(
   },
   { $autoDirty: true, $externalResults },
 );
-
-async function onSyncChange() {
-  await update({ premiumShouldSync: get(sync) });
-}
 
 function cancelEdit() {
   set(edit, false);
@@ -123,7 +117,6 @@ async function remove() {
 }
 
 onMounted(() => {
-  set(sync, get(premiumSync));
   set(edit, !get(premium) && !get(edit));
 });
 
@@ -197,19 +190,14 @@ function showDeleteConfirmation() {
         {{ t('premium_settings.premium_active') }}
       </RuiAlert>
 
-      <RuiSwitch
-        v-model="sync"
+      <AutomaticSyncSetting
         class="mt-6"
-        color="primary"
         :disabled="!premium || edit"
-        hide-details
-        :label="t('premium_settings.actions.sync')"
-        @update:model-value="onSyncChange()"
       />
 
       <template #footer>
         <div
-          class="flex flex-row gap-2 pt-4"
+          class="flex flex-row gap-2"
           :class="$style.buttons"
         >
           <template v-if="premium">

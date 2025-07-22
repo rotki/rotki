@@ -121,13 +121,13 @@ const syncSettingMenuOpen = ref<boolean>(false);
               color="warning"
             />
             <RuiIcon
-              v-else-if="!premiumSync"
-              name="lu-cloud-off-fill"
-            />
-            <RuiIcon
               v-else-if="isSyncing"
               :name="icon"
               color="primary"
+            />
+            <RuiIcon
+              v-else-if="premiumSync"
+              name="lu-cloud-sync-fill"
             />
             <RuiIcon
               v-else
