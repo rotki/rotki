@@ -2,7 +2,7 @@ import type { ActionResult } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-transformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import { type PremiumDevicePayload, PremiumDevicesResponse } from '@/types/api/premium';
+import { type PremiumDevicePayload, PremiumDevicesResponse } from './premium';
 
 interface UsePremiumDevicesApiReturn {
   fetchPremiumDevices: () => Promise<PremiumDevicesResponse>;

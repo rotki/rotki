@@ -4,13 +4,17 @@ import { required } from '@vuelidate/validators';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import PremiumDeviceList from '@/components/premium/PremiumDeviceList.vue';
 import { useInterop } from '@/composables/electron-interop';
+import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { useSettingsStore } from '@/store/settings';
 import { toMessages } from '@/utils/validation';
+
+defineOptions({
+  name: 'PremiumApiKeys',
+});
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();

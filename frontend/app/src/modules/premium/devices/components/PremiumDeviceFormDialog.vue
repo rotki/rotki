@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { PremiumDevice, PremiumDevicePayload } from '@/types/api/premium';
+import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import PremiumDeviceForm from '@/components/premium/PremiumDeviceForm.vue';
-import { usePremiumDevicesApi } from '@/composables/api/premium/devices';
+import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
+import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError } from '@/types/api/errors';
 
@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const formData = ref<PremiumDevicePayload>({ deviceIdentifier: '', deviceName: '' });
+const newDeviceName = ref<string>('');
 const errorMessages = ref<Record<string, string[]>>({});
 const loading = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
@@ -25,25 +25,17 @@ const form = useTemplateRef<InstanceType<typeof PremiumDeviceForm>>('form');
 const { updatePremiumDevice } = usePremiumDevicesApi();
 const { setMessage } = useMessageStore();
 
-// Initialize form data when device changes
-watchImmediate(modelValue, (device) => {
-  if (device) {
-    set(formData, {
-      deviceIdentifier: device.deviceIdentifier,
-      deviceName: device.deviceName,
-    });
-  }
-});
-
 async function save(): Promise<boolean> {
   const formRef = get(form);
   const valid = await formRef?.validate();
-  if (!valid)
+  const deviceName = get(newDeviceName);
+  if (!valid || !isDefined(modelValue))
     return false;
 
   let success = false;
   set(loading, true);
-  const payload = get(formData);
+  const { deviceIdentifier } = get(modelValue);
+  const payload = { deviceIdentifier, deviceName };
   try {
     set(errorMessages, {});
 
@@ -76,6 +68,15 @@ async function save(): Promise<boolean> {
 
   return success;
 }
+
+watchImmediate(modelValue, (modelValue) => {
+  if (isDefined(modelValue)) {
+    set(newDeviceName, get(modelValue, 'deviceName'));
+  }
+  else {
+    set(newDeviceName, '');
+  }
+});
 </script>
 
 <template>
@@ -91,7 +92,7 @@ async function save(): Promise<boolean> {
     <PremiumDeviceForm
       v-if="modelValue"
       ref="form"
-      v-model="formData"
+      v-model="newDeviceName"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
       :device="modelValue"
