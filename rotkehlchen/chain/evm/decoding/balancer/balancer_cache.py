@@ -50,8 +50,7 @@ def query_balancer_data(
         chain=inquirer.chain_id,
         version=version,
     )
-    gauge_key_parts = ((str_chain_id := str(inquirer.chain_id.value)), str(version))
-    pool_key_parts = (str_chain_id,)
+    pool_key_parts = ((str_chain_id := str(inquirer.chain_id.value)),)
     if reload_all is False:
         with globaldb.conn.read_ctx() as cursor:
             existing_pools = {
@@ -61,11 +60,12 @@ def query_balancer_data(
                     key_parts=(cache_type, *pool_key_parts),
                 )
             }
+            gauge_cache_type: Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES] = CacheType.BALANCER_V1_GAUGES if version == 1 else CacheType.BALANCER_V2_GAUGES  # noqa: E501
             existing_gauges = {
                 string_to_evm_address(address)
                 for address in globaldb_get_general_cache_values(
                     cursor=cursor,
-                    key_parts=(CacheType.BALANCER_GAUGES, *gauge_key_parts),
+                    key_parts=(gauge_cache_type, str_chain_id),
                 )
             }
 
@@ -136,9 +136,10 @@ def query_balancer_data(
             values=pools,
         )
         if len(gauges) > 0:
+            gauge_cache_type = CacheType.BALANCER_V1_GAUGES if version == 1 else CacheType.BALANCER_V2_GAUGES  # noqa: E501
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
-                key_parts=(CacheType.BALANCER_GAUGES, *gauge_key_parts),
+                key_parts=(gauge_cache_type, str_chain_id),
                 values=gauges,
             )
 
@@ -171,11 +172,12 @@ def read_balancer_pools_and_gauges_from_cache(
             )
         }
 
+        gauge_cache_type: Literal[CacheType.BALANCER_V1_GAUGES, CacheType.BALANCER_V2_GAUGES] = CacheType.BALANCER_V1_GAUGES if version == '1' else CacheType.BALANCER_V2_GAUGES  # noqa: E501
         gauge_addresses = {
             string_to_evm_address(gauge_address)
             for gauge_address in globaldb_get_general_cache_values(
                 cursor=cursor,
-                key_parts=(CacheType.BALANCER_GAUGES, str(chain_id.value), version),
+                key_parts=(gauge_cache_type, str(chain_id.value)),
             )
         }
 

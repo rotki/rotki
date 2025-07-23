@@ -4731,7 +4731,7 @@ class RestAPI:
         arbitrum_inquirer = self.rotkehlchen.chains_aggregator.arbitrum_one.node_inquirer
         gnosis_inquirer = self.rotkehlchen.chains_aggregator.gnosis.node_inquirer
         polygon_inquirer = self.rotkehlchen.chains_aggregator.polygon_pos.node_inquirer
-        cache_rules: list[tuple[str, CacheType, Callable, ChainID | None, EvmNodeInquirer, tuple[str, ...] | None]] = []  # noqa: E501
+        cache_rules: list[tuple[str, CacheType, Callable, ChainID | None, EvmNodeInquirer]] = []
 
         match cache_protocol:
             case ProtocolsWithCache.CURVE:
@@ -4742,7 +4742,6 @@ class RestAPI:
                         query_curve_data,
                         chain_id,
                         node_inquirer,
-                        (str(chain_id.serialize_for_db()),),
                     )
                     for chain_id, node_inquirer in (
                         (ChainID.ETHEREUM, eth_node_inquirer),
@@ -4760,7 +4759,6 @@ class RestAPI:
                     query_velodrome_like_data,
                     None,
                     optimism_inquirer,
-                    None,
                 ))
             case ProtocolsWithCache.AERODROME:
                 cache_rules.append((
@@ -4769,7 +4767,6 @@ class RestAPI:
                     query_velodrome_like_data,
                     None,
                     base_inquirer,
-                    None,
                 ))
             case ProtocolsWithCache.CONVEX:
                 cache_rules.append((
@@ -4778,7 +4775,6 @@ class RestAPI:
                     query_convex_data,
                     None,
                     eth_node_inquirer,
-                    None,
                 ))
             case ProtocolsWithCache.GEARBOX:
                 cache_rules.append((
@@ -4787,7 +4783,6 @@ class RestAPI:
                     query_gearbox_data,
                     ChainID.ETHEREUM,
                     eth_node_inquirer,
-                    (str(ChainID.ETHEREUM.serialize_for_db()),),
                 ))
             case ProtocolsWithCache.YEARN:
                 try:
@@ -4829,7 +4824,6 @@ class RestAPI:
                         query_balancer_data,
                         chain_id,
                         node_inquirer,
-                        (str(chain_id.serialize_for_db()), '1'),
                     )
                     for chain_id, node_inquirer in (
                         (ChainID.GNOSIS, gnosis_inquirer),
@@ -4845,7 +4839,6 @@ class RestAPI:
                         query_balancer_data,
                         chain_id,
                         node_inquirer,
-                        (str(chain_id.serialize_for_db()), '2'),
                     )
                     for chain_id, node_inquirer in (
                         (ChainID.BASE, base_inquirer),
@@ -4873,12 +4866,12 @@ class RestAPI:
                     )
 
         failed_to_update = []
-        for (cache, cache_type, query_method, chain_id, inquirer, key_parts) in cache_rules:
+        for (cache, cache_type, query_method, chain_id, inquirer) in cache_rules:
             if inquirer.ensure_cache_data_is_updated(
                 cache_type=cache_type,
                 query_method=query_method,
                 chain_id=chain_id,
-                cache_key_parts=key_parts,
+                cache_key_parts=None if chain_id is None else (str(chain_id.serialize_for_db()),),
                 force_refresh=True,
             ) == RemoteDataQueryStatus.FAILED:
                 failed_to_update.append(cache)
