@@ -5866,8 +5866,10 @@ class RestAPI:
         assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
         try:
             self.rotkehlchen.premium.delete_device(device_identifier)
-        except RemoteError as e:
+        except InputError as e:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
+        except RemoteError as e:
+            return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.BAD_GATEWAY)
 
         return api_response(OK_RESULT)
 

@@ -29,7 +29,7 @@ from rotkehlchen.errors.api import (
     PremiumApiError,
     PremiumAuthenticationError,
 )
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import is_production, set_user_agent
@@ -280,7 +280,9 @@ class Premium:
             log.error(msg)
             raise RemoteError(msg) from e
 
-        return _process_dict_response(response)
+        result = _process_dict_response(response)
+        result['current_device_id'] = machineid.hashed_id(self.username)
+        return result
 
     def authenticate_device(self) -> None:
         """
@@ -351,8 +353,12 @@ class Premium:
     def delete_device(self, device_id: str) -> None:
         """Deletes a device for the user from the rotki server
         May raise:
+        - InputError
         - RemoteError
         """
+        if device_id == machineid.hashed_id(self.username):
+            raise InputError('Cannot delete the current device')
+
         log.debug(f'Deleting premium registered {device_id=}')
         try:
             response = self.session.delete(

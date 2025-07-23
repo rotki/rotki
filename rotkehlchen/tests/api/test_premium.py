@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from http import HTTPStatus
 from unittest.mock import patch
 
+import machineid
 import pytest
 import requests
 
@@ -16,6 +17,8 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_premium
+
+CURRENT_DEVICE_ID = machineid.hashed_id('yabirgb')
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -98,6 +101,7 @@ def test_pull_db(rotkehlchen_api_server: APIServer) -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('username', ['yabirgb'])
 def test_get_premium_devices(rotkehlchen_api_server: APIServer) -> None:
     """Test the GET /premium/devices endpoint with mocked external requests."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -113,9 +117,10 @@ def test_get_premium_devices(rotkehlchen_api_server: APIServer) -> None:
             {
                 'device_name': 'desktop',
                 'user': 'yabirgb',
-                'device_identifier': '43434343',
+                'device_identifier': CURRENT_DEVICE_ID,
             },
         ],
+        'current_device_id': CURRENT_DEVICE_ID,
         'limit': 3,
     }
 
@@ -197,7 +202,7 @@ def test_delete_premium_device_error(rotkehlchen_api_server: APIServer) -> None:
         )
         assert_error_response(
             response=response,
-            status_code=HTTPStatus.CONFLICT,
+            status_code=HTTPStatus.BAD_GATEWAY,
             contained_in_msg='Network error',
         )
 
@@ -261,3 +266,29 @@ def test_edit_premium_device(rotkehlchen_api_server: APIServer, caplog: pytest.L
                 assert assert_proper_sync_response_with_result(response)
 
             mock_patch.assert_called_once()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('username', ['yabirgb'])
+def test_delete_current_device_fails(rotkehlchen_api_server: APIServer) -> None:
+    """Test that deleting the current device returns an error."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.premium is not None
+
+    with patch.object(
+        target=rotki.premium.session,
+        attribute='delete',
+        return_value=MockResponse(200, '{}'),
+    ) as mock_delete:
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'premiumdevicesresource'),
+            json={'device_identifier': CURRENT_DEVICE_ID},
+        )
+        assert_error_response(
+            response=response,
+            status_code=HTTPStatus.CONFLICT,
+            contained_in_msg='Cannot delete the current device',
+        )
+
+        # The external request should not be made because validation fails first
+        mock_delete.assert_not_called()
