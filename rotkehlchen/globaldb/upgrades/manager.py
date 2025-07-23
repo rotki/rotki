@@ -12,7 +12,7 @@ from rotkehlchen.globaldb.migrations.manager import (
 )
 from rotkehlchen.globaldb.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.globaldb.utils import (
-    GLOBAL_DB_SCHEMA_BREAKING_CHANGES,
+    GLOBAL_DB_ASSETS_BREAKING_VERSIONS,
     GLOBAL_DB_VERSION,
     MIN_SUPPORTED_GLOBAL_DB_VERSION,
     globaldb_get_setting_value,
@@ -132,7 +132,7 @@ def maybe_upgrade_globaldb(
             target_version=GLOBAL_DB_VERSION,
         )
         for upgrade in UPGRADES_LIST:
-            if globaldb is not None and upgrade.from_version in GLOBAL_DB_SCHEMA_BREAKING_CHANGES:
+            if globaldb is not None and upgrade.from_version in GLOBAL_DB_ASSETS_BREAKING_VERSIONS:
                 AssetsUpdater(
                     globaldb=globaldb,
                     msg_aggregator=msg_aggregator,

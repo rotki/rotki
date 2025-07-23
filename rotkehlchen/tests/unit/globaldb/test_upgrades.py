@@ -1069,6 +1069,7 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         assert table_exists(cursor=cursor, name='solana_tokens') is False
         assert index_exists(cursor=cursor, name='idx_solana_tokens_identifier') is False
         assert cursor.execute("SELECT COUNT(*) FROM token_kinds WHERE token_kind IN ('D', 'E')").fetchone()[0] == 0  # noqa: E501
+        assert (solana_tokens_count := cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y'").fetchone()[0]) == 431  # noqa: E501
         assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' LIMIT 10").fetchall() == [  # noqa: E501
             ('COPE', 'Cope'),
             ('FIDA', 'Bonfida'),
@@ -1174,9 +1175,15 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             ('solana/token:ATLASXmbPQxBUYbxPsV97usA3fPQYEqzQBUHgiFCUsXx', 'Star Atlas'),
         ]
         assert cursor.execute("SELECT COUNT(*) FROM assets WHERE identifier IN ('HODLSOL','TRISIG')").fetchone()[0] == 0  # noqa: E501
-        # token count reduced by 2 due to removal duplicate HODLSOL and TRISIG duplicate entries
+        # solana_tokens count reduced by 5: 2 duplicates removed + 3 user-added tokens migrated to AssetType.OTHER i.e. 'W'  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM solana_tokens').fetchone()[0] == solana_tokens_count - 5  # noqa: E501
+        # token count reduced by 2 due to removal of duplicate HODLSOL and TRISIG entries
         assert cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0] == tokens_before - 2
         assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before - 2  # noqa: E501
+        # Ensure all solana tokens have corresponding entries in the assets table
+        assert cursor.execute('SELECT COUNT(*) FROM solana_tokens s LEFT JOIN assets a ON s.identifier = a.identifier WHERE a.identifier IS NULL').fetchone()[0] == 0  # noqa: E501
+        # Ensure all solana tokens have corresponding entries in the common_asset_details table
+        assert cursor.execute('SELECT COUNT(*) FROM solana_tokens s LEFT JOIN common_asset_details c ON s.identifier = c.identifier WHERE c.identifier IS NULL').fetchone()[0] == 0  # noqa: E501
         assert cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y' AND identifier NOT LIKE 'solana%'").fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
             (cope_identifier,),

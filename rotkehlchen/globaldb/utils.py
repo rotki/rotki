@@ -17,11 +17,15 @@ if TYPE_CHECKING:
 # Whenever you upgrade the global DB make sure to:
 # 1. Go to assets repo and tweak the min/max schema of the updates
 # 2. Tweak ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
+# 3. Add the previous version to GLOBAL_DB_ASSETS_BREAKING_VERSIONS if it breaks asset updates compatibility  # noqa: E501
 GLOBAL_DB_VERSION = 13
 ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS = (3, GLOBAL_DB_VERSION)
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
-GLOBAL_DB_SCHEMA_BREAKING_CHANGES = {
+# Global DB versions that break compatibility with existing asset updates.
+# Used by apply_pending_compatible_updates() to determine the maximum safe version to update to.
+GLOBAL_DB_ASSETS_BREAKING_VERSIONS = {
     9,  # v9 to v10 breaks asset collections schema
+    12,  # v12 to v13 introduces solana tokens.
 }
 # Some functions that split the logic out of some GlobalDB query functions that are
 # complicated enough to be abstracted and are used in multiple places. The main reason
