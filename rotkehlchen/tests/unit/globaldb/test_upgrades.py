@@ -1147,6 +1147,29 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             tuple(protocol_mapping),
         ).fetchone()[0]) > 0
 
+        balancer_cache_mapping = {  # define before/after mapping for cache keys
+            'BALANCER_GAUGES11': 'BALANCER_V1_GAUGES1',
+            'BALANCER_GAUGES12': 'BALANCER_V2_GAUGES1',
+            'BALANCER_GAUGES1001': 'BALANCER_V1_GAUGES100',
+            'BALANCER_GAUGES1002': 'BALANCER_V2_GAUGES100',
+            'BALANCER_GAUGES421611': 'BALANCER_V1_GAUGES42161',
+            'BALANCER_GAUGES1372': 'BALANCER_V2_GAUGES137',
+            'BALANCER_GAUGES84532': 'BALANCER_V2_GAUGES8453',
+        }
+        # Count existing balancer cache entries before upgrade
+        assert (balancer_gauges := cursor.execute("SELECT key FROM general_cache WHERE key LIKE 'BALANCER_GAUGES%'").fetchall()) == [  # noqa: E501
+            ('BALANCER_GAUGES1001',),
+            ('BALANCER_GAUGES1002',),
+            ('BALANCER_GAUGES11',),
+            ('BALANCER_GAUGES11',),
+            ('BALANCER_GAUGES12',),
+            ('BALANCER_GAUGES12',),
+            ('BALANCER_GAUGES1372',),
+            ('BALANCER_GAUGES1462',),  # this is a malformed/invalid cache entry(balancer v2 is not on sonic chain)  # noqa: E501
+            ('BALANCER_GAUGES421611',),
+            ('BALANCER_GAUGES84532',),
+        ]
+
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 13)
         maybe_upgrade_globaldb(
@@ -1227,6 +1250,11 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
                 f"SELECT COUNT(*) FROM evm_tokens WHERE protocol IN ({','.join(['?' for _ in protocols])})",  # noqa: E501
                 tuple(protocols),
             ).fetchone()[0] == expected_count
+
+        # Verify balancer cache migration: old keys gone, new keys exist with same count
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "BALANCER_GAUGES%"').fetchone()[0] == 0  # noqa: E501
+        # `balancer_gauges_count - 1` because a malformed/unexpected balancer gauge cache entry got deleted  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key IN (?, ?, ?, ?, ?, ?, ?)', list(balancer_cache_mapping.values())).fetchone()[0] == len(balancer_gauges) - 1  # noqa: E501
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

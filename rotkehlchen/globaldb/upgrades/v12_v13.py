@@ -19,8 +19,9 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
     - Add new token kinds (SPL Tokens & NFTs) for the solana ecosystem.
     - Add solana_tokens table and migrate solana tokens to that.
     - Convert legacy protocol names in evm_tokens to standardized counterparty identifiers.
+    - Migrate BALANCER_GAUGES cache entries to version-specific BALANCER_V1_GAUGES and BALANCER_V2_GAUGES.
 
-    This upgrade takes place in v1.40.0"""
+    This upgrade takes place in v1.40.0"""  # noqa: E501
     @progress_step('Add new token kinds for Solana')
     def _update_token_kinds_to_include_solana(write_cursor: 'DBCursor') -> None:
         write_cursor.executescript("""
@@ -124,5 +125,32 @@ def migrate_to_v13(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
                 'curve_lending_vaults', 'pendle', 'hop_lp', 'morpho_vaults'
             )
         """)
+
+    @progress_step('Migrate balancer gauge cache entries to version-specific keys')
+    def _migrate_balancer_gauges_cache_entries(write_cursor: 'DBCursor') -> None:
+        """Migrate BALANCER_GAUGES cache entries to separate V1/V2 cache types.
+
+        Old format: BALANCER_GAUGES<chain_id><version>
+        New format: BALANCER_V1_GAUGES<chain_id> or BALANCER_V2_GAUGES<chain_id>
+        """
+        write_cursor.execute("""
+            UPDATE general_cache
+            SET key = CASE
+                -- Balancer V1 chains
+                WHEN key = 'BALANCER_GAUGES1001' THEN 'BALANCER_V1_GAUGES100'    -- Gnosis V1
+                WHEN key = 'BALANCER_GAUGES11' THEN 'BALANCER_V1_GAUGES1'        -- Ethereum V1
+                WHEN key = 'BALANCER_GAUGES421611' THEN 'BALANCER_V1_GAUGES42161' -- Arbitrum V1
+                -- Balancer V2 chains
+                WHEN key = 'BALANCER_GAUGES84532' THEN 'BALANCER_V2_GAUGES8453'   -- Base V2
+                WHEN key = 'BALANCER_GAUGES1002' THEN 'BALANCER_V2_GAUGES100'     -- Gnosis V2
+                WHEN key = 'BALANCER_GAUGES12' THEN 'BALANCER_V2_GAUGES1'         -- Ethereum V2
+                WHEN key = 'BALANCER_GAUGES102' THEN 'BALANCER_V2_GAUGES10'       -- Optimism V2
+                WHEN key = 'BALANCER_GAUGES1372' THEN 'BALANCER_V2_GAUGES137'     -- Polygon V2
+                WHEN key = 'BALANCER_GAUGES421612' THEN 'BALANCER_V2_GAUGES42161' -- Arbitrum V2
+                ELSE key
+            END
+            WHERE key LIKE 'BALANCER_GAUGES%'
+        """)
+        write_cursor.execute("DELETE FROM general_cache WHERE key LIKE 'BALANCER_GAUGES%'")
 
     perform_globaldb_upgrade_steps(connection, progress_handler)

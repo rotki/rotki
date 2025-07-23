@@ -943,7 +943,7 @@ def test_balancer_v2_join_with_gauge_deposit(
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=(CacheType.BALANCER_GAUGES, str(optimism_inquirer.chain_id.value), '2'),
+            key_parts=(CacheType.BALANCER_V2_GAUGES, str(optimism_inquirer.chain_id.value)),
             values=['0xCc2E1CB5d8DeA77F08D19f875F381f34f997d96c'],
         )
     tx_hash = deserialize_evm_tx_hash('0x1e8d94f4d4bb05b8d868bc558293782f4e7ce2eaa87f3f1f6d1377a15ab1a6f0')  # noqa: E501
@@ -1065,7 +1065,7 @@ def test_balancer_gauge_withdrawal(
         )
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
-            key_parts=(CacheType.BALANCER_GAUGES, str(ethereum_inquirer.chain_id.value), '2'),
+            key_parts=(CacheType.BALANCER_V2_GAUGES, str(ethereum_inquirer.chain_id.value)),
             values=['0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C'],
         )
     tx_hash = deserialize_evm_tx_hash('0xcbb4179ac94618cd419d4185b5137ce02f5ffaef810a1c209dedab79e837b3af')  # noqa: E501
