@@ -1,13 +1,22 @@
 import type { StringSuggestionMatcher } from '@/types/filtering';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
-import flushPromises from 'flush-promises';
 import { setActivePinia } from 'pinia';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
 describe('table-filter/TableFilter.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof TableFilter>>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
+
   const createWrapper = (options: ComponentMountingOptions<typeof TableFilter> = {}) => {
     const pinia = createCustomPinia();
     setActivePinia(pinia);
@@ -56,10 +65,6 @@ describe('table-filter/TableFilter.vue', () => {
     },
   ];
 
-  afterEach(() => {
-    wrapper.unmount();
-  });
-
   it('filter matchers', async () => {
     wrapper = createWrapper({
       props: {
@@ -67,18 +72,15 @@ describe('table-filter/TableFilter.vue', () => {
         matches: {},
       },
     });
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-id=activator]').trigger('click');
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(matchers.length);
 
     await wrapper.find('input').setValue('ty');
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
     expect(wrapper.find('[data-cy=suggestions] > button:first-child').text()).toBe(
@@ -86,7 +88,7 @@ describe('table-filter/TableFilter.vue', () => {
     );
 
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(`${matchers[1].key}=`);
   });
 
@@ -97,23 +99,21 @@ describe('table-filter/TableFilter.vue', () => {
         matches: {},
       },
     });
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-id=activator]').trigger('click');
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     // Set matcher to `type`
     await wrapper.find('input').setValue('type');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     // When no symbol, then we don't show the suggestions yet
     expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
 
     // Suggestions for `type`
     await wrapper.find('input').setValue('type=');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
     const suggestions = matchers[1].suggestions();
     expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(suggestions.length);
 
@@ -123,7 +123,7 @@ describe('table-filter/TableFilter.vue', () => {
 
     // Choose first suggestions (type 1)
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button]> span').text()).toBe('type=type 1');
 
@@ -131,10 +131,10 @@ describe('table-filter/TableFilter.vue', () => {
 
     // Choose second suggestion (type 2)
     await wrapper.find('input').setValue('type = type 2');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
 
@@ -143,14 +143,14 @@ describe('table-filter/TableFilter.vue', () => {
     // Remove first selected item (type 1)
     await wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > button').trigger('click');
 
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 2'] }]);
 
     // Click selected item remains (type 2), set it to text field
     await wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button]').trigger('click');
 
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect((wrapper.find('input.edit-input').element as HTMLInputElement).value).toBe('');
     expect((wrapper.find('input:not(.edit-input)').element as HTMLInputElement).value).toBe('type=');
@@ -164,16 +164,14 @@ describe('table-filter/TableFilter.vue', () => {
       },
     });
 
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     await wrapper.find('[data-id=activator]').trigger('click');
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     // Set matcher to `type`
     await wrapper.find('input').setValue('type !=');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -185,7 +183,7 @@ describe('table-filter/TableFilter.vue', () => {
 
     // Choose first suggestions with exclusion (type 1)
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
-    await nextTick();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
 
@@ -202,8 +200,7 @@ describe('table-filter/TableFilter.vue', () => {
       },
     });
 
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type=type 1');
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
@@ -219,8 +216,7 @@ describe('table-filter/TableFilter.vue', () => {
       },
     });
 
-    await nextTick();
-    await flushPromises();
+    await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
   });

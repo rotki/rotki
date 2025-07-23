@@ -111,14 +111,6 @@ afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
 
-async function delay(ms: number = 200): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-vi.delay = delay;
-
 // Global stub components
 config.global.stubs.RuiIcon = RuiIconStub;
 config.global.stubs.RuiTooltip = RuiTooltipStub;
