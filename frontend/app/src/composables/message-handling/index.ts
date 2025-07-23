@@ -29,6 +29,7 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import {
   type BalanceSnapshotError,
+  type DatabaseUploadProgress,
   type DbUploadResult,
   type GnosisPaySessionKeyExpiredData,
   MESSAGE_WARNING,
@@ -58,7 +59,7 @@ export function useMessageHandling(): UseMessageHandling {
   const { notify } = notificationsStore;
   const { t } = useI18n({ useScope: 'global' });
   const { consumeMessages } = useSessionApi();
-  const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
+  const { uploadProgress, uploadStatus, uploadStatusAlreadyHandled } = useSync();
   const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
   const { setStakingQueryStatus: setLiquityStakingQueryStatus } = useLiquityStore();
   const solanaTokenMigrationStore = useSolanaTokenMigrationStore();
@@ -128,6 +129,7 @@ export function useMessageHandling(): UseMessageHandling {
     if (uploaded) {
       set(uploadStatus, undefined);
       set(uploadStatusAlreadyHandled, false);
+      set(uploadProgress, undefined);
     }
     else {
       if (get(uploadStatusAlreadyHandled))
@@ -136,6 +138,10 @@ export function useMessageHandling(): UseMessageHandling {
       set(uploadStatus, data);
       set(uploadStatusAlreadyHandled, true);
     }
+  };
+
+  const handleDatabaseUploadProgress = (data: DatabaseUploadProgress): void => {
+    set(uploadProgress, data);
   };
 
   const router = useRouter();
@@ -267,6 +273,9 @@ export function useMessageHandling(): UseMessageHandling {
     else if (type === SocketMessageType.SOLANA_TOKENS_MIGRATION) {
       solanaTokenMigrationStore.setIdentifiers(message.data.identifiers);
       addNotification(await handleSolanaTokensMigration(message.data));
+    }
+    else if (type === SocketMessageType.DATABASE_UPLOAD_PROGRESS) {
+      handleDatabaseUploadProgress(message.data);
     }
     else {
       logger.warn(`Unsupported socket message received: '${type.toString()}'`);
