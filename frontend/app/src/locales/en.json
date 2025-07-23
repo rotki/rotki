@@ -3897,6 +3897,7 @@
     "form": {
       "device_name": {
         "error": {
+          "not_equal": "The new device name must be different than the old one",
           "required": "Device name is required"
         },
         "hint": "Enter a descriptive name for this device",

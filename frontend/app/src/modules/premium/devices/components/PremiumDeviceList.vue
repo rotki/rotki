@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { PremiumDevice } from '@/types/api/premium';
+import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import PremiumDeviceFormDialog from '@/components/premium/PremiumDeviceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { usePremiumDevicesApi } from '@/composables/api/premium/devices';
+import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';
+import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
@@ -16,13 +16,38 @@ const { t } = useI18n({ useScope: 'global' });
 const devices = ref<PremiumDevice[]>([]);
 const devicesLimit = ref<number>(0);
 const loading = ref<boolean>(false);
-const editingDevice = ref<PremiumDevice | undefined>();
+const editingDevice = ref<PremiumDevice>();
 
 const { premium } = storeToRefs(usePremiumStore());
 
 const { deletePremiumDevice, fetchPremiumDevices } = usePremiumDevicesApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
+
+const cols = computed<DataTableColumn<PremiumDevice>[]>(() => [{
+  key: 'user',
+  label: t('premium_devices.table.headers.user'),
+  sortable: true,
+}, {
+  key: 'deviceName',
+  label: t('premium_devices.table.headers.device_name'),
+  sortable: true,
+}, {
+  key: 'platform',
+  label: t('premium_devices.table.headers.platform'),
+  sortable: true,
+}, {
+  key: 'lastSeenAt',
+  label: t('premium_devices.table.headers.last_seen'),
+  sortable: true,
+}, {
+  align: 'end',
+  cellClass: 'w-[120px]',
+  class: 'w-[120px]',
+  key: 'actions',
+  label: t('common.actions_text'),
+  sortable: false,
+}]);
 
 async function fetchDevices(): Promise<void> {
   set(loading, true);
@@ -41,43 +66,6 @@ async function fetchDevices(): Promise<void> {
     set(loading, false);
   }
 }
-
-onMounted(async () => {
-  if (get(premium)) {
-    await fetchDevices();
-  }
-});
-
-const cols = computed<DataTableColumn<PremiumDevice>[]>(() => [
-  {
-    key: 'user',
-    label: t('premium_devices.table.headers.user'),
-    sortable: true,
-  },
-  {
-    key: 'deviceName',
-    label: t('premium_devices.table.headers.device_name'),
-    sortable: true,
-  },
-  {
-    key: 'platform',
-    label: t('premium_devices.table.headers.platform'),
-    sortable: true,
-  },
-  {
-    key: 'lastSeenAt',
-    label: t('premium_devices.table.headers.last_seen'),
-    sortable: true,
-  },
-  {
-    align: 'end',
-    cellClass: 'w-[120px]',
-    class: 'w-[120px]',
-    key: 'actions',
-    label: t('common.actions_text'),
-    sortable: false,
-  },
-]);
 
 function edit(device: PremiumDevice): void {
   set(editingDevice, device);
@@ -105,6 +93,12 @@ async function deleteDevice(device: PremiumDevice): Promise<void> {
     });
   }
 }
+
+onMounted(async () => {
+  if (get(premium)) {
+    await fetchDevices();
+  }
+});
 </script>
 
 <template>
@@ -126,6 +120,7 @@ async function deleteDevice(device: PremiumDevice): Promise<void> {
         </div>
       </div>
     </template>
+
     <RuiDataTable
       :cols="cols"
       :rows="devices"

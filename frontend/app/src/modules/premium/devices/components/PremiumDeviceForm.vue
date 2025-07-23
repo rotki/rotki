@@ -1,44 +1,34 @@
 <script setup lang="ts">
+import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { PremiumDevice, PremiumDevicePayload } from '@/types/api/premium';
 import useVuelidate from '@vuelidate/core';
-import { helpers, required } from '@vuelidate/validators';
+import { helpers, not, required, sameAs } from '@vuelidate/validators';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { toMessages } from '@/utils/validation';
 
-interface Props {
-  device: PremiumDevice;
-}
-
-const modelValue = defineModel<PremiumDevicePayload>({ required: true });
+const modelValue = defineModel<string>({ required: true });
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false });
 
-const props = defineProps<Props>();
+const props = defineProps<{
+  device: PremiumDevice;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const states = computed<PremiumDevicePayload>(() => ({
-  deviceIdentifier: get(modelValue)?.deviceIdentifier ?? props.device.deviceIdentifier,
-  deviceName: get(modelValue)?.deviceName ?? props.device.deviceName,
-}));
-
 const rules = {
   deviceName: {
+    notEqual: helpers.withMessage(t('premium_devices.form.device_name.error.not_equal'), not(sameAs(props.device.deviceName))),
     required: helpers.withMessage(t('premium_devices.form.device_name.error.required'), required),
   },
 };
 
-const v$ = useVuelidate(rules, states, { $autoDirty: true, $externalResults: errors });
+const v$ = useVuelidate(rules, { deviceName: modelValue }, { $autoDirty: true, $externalResults: errors });
 
-watchImmediate(states, (value) => {
-  set(modelValue, value);
-});
-
-useFormStateWatcher(states, stateUpdated);
+useFormStateWatcher({ deviceName: modelValue }, stateUpdated);
 
 defineExpose({
   validate: async () => await get(v$).$validate(),
@@ -48,7 +38,7 @@ defineExpose({
 <template>
   <div class="mt-4">
     <RuiTextField
-      v-model="states.deviceName"
+      v-model="modelValue"
       variant="outlined"
       color="primary"
       :label="t('premium_devices.form.device_name.label')"
