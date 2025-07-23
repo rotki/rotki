@@ -42,7 +42,7 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
     )
     result = query.fetchall()
     # If setting is not set, it's the default
-    if len(result) == 0:
+    if not result:
         return default_value
 
     return int(result[0][0])
