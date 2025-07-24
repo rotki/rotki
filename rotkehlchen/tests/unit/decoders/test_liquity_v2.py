@@ -93,7 +93,7 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
     assert events == expected_events
 
 
-# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC71265fBEEdB11dfE583C1acE8A6be4de5ae2DB4']])
 def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accounts):
     """Test Liquity V2 staking withdraw transaction that also claims previous rewards"""

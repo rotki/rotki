@@ -1221,9 +1221,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Get trove information
             liquity_balances = liquity_module.get_positions(given_addresses=liquity_addresses)
             for address, deposits in liquity_balances['balances'].items():
-                collateral = deposits.collateral.balance
-                if collateral.amount > ZERO:
+                if (collateral := deposits.collateral.balance).amount > ZERO:
                     eth_balances[address].assets[A_ETH][CPT_LIQUITY] += collateral
+                if (debt := deposits.debt).balance.amount > ZERO:
+                    eth_balances[address].liabilities[debt.asset][CPT_LIQUITY] += debt.balance
 
             # Get staked amounts
             liquity_module.enrich_staking_balances(

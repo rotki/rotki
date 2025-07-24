@@ -12,6 +12,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
+from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
@@ -22,6 +23,7 @@ from rotkehlchen.constants.assets import (
     A_ETH,
     A_EUR,
     A_KSM,
+    A_LUSD,
     A_USD,
     A_USDC,
     A_USDT,
@@ -1127,3 +1129,29 @@ def test_query_balances_with_threshold(
         assert len(manual_result['balances']) != 0
         for balance in manual_result['balances']:
             assert FVal(balance['usd_value']) > threshold
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x136f6A2b398eaeED4a33a58B26E52FA7056FD4e7']])
+@pytest.mark.parametrize('ethereum_modules', [['liquity']])
+def test_query_liquity_balances(rotkehlchen_api_server: 'APIServer', ethereum_accounts: list[str]) -> None:  # noqa: E501
+    """Test querying Liquity balances works correctly.
+    Regression test to ensure Liquity liabilities are shown in dashboard balances.
+    """
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'named_blockchain_balances_resource',
+            blockchain=(eth_chain_key := SupportedBlockchain.ETHEREUM.serialize()),
+        ),
+        json={'async_query': True},
+    )
+    task_id = assert_ok_async_response(response)
+    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+
+    account_balances = result['per_account'][eth_chain_key][ethereum_accounts[0]]
+    assert account_balances['assets'] == {A_ETH: {
+        DEFAULT_BALANCE_LABEL: {'amount': '0.068955497233628915', 'usd_value': '0.1034332458504433725'},  # noqa: E501
+        CPT_LIQUITY: {'amount': '4.08915844880891399', 'usd_value': '6.133737673213370985'},
+    }}
+    assert account_balances['liabilities'] == {A_LUSD: {CPT_LIQUITY: {'amount': '2188.673572189031978055', 'usd_value': '3283.0103582835479670825'}}}  # noqa: E501
