@@ -28,7 +28,6 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 from .constants import (
     BEACONCHAIN_MAX_EPOCH,
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
-    FREE_VALIDATORS_LIMIT,
 )
 from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID, ValidatorType
 from .utils import calculate_query_chunks, epoch_to_timestamp
@@ -194,10 +193,6 @@ class BeaconInquirer:
         May Raise:
         - RemoteError
         """
-        if not has_premium and len(indices_or_pubkeys) > FREE_VALIDATORS_LIMIT:
-            # Limit number of validators queried for balances for non-premium users
-            indices_or_pubkeys = indices_or_pubkeys[:FREE_VALIDATORS_LIMIT]
-
         usd_price = Inquirer.find_usd_price(A_ETH)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         if self.node is not None:

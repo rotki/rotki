@@ -26,7 +26,14 @@ class PremiumApiError(Exception):
 
 
 class PremiumPermissionError(Exception):
-    pass
+    """Raised when a premium feature limit is exceeded
+
+    The extra_dict may optionally contain additional information about the limit that was exceeded
+    """
+    def __init__(self, error_message: str, extra_dict: dict[str, Any] | None = None) -> None:
+        super().__init__(error_message)
+        self.error_message = error_message
+        self.extra_dict = extra_dict if extra_dict is not None else {}
 
 
 class IncorrectApiKeyFormat(Exception):

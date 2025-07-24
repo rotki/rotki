@@ -3,7 +3,7 @@ import logging
 import re
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import gevent
 from gevent.lock import Semaphore
@@ -24,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, has_premium_check
+from rotkehlchen.premium.premium import Premium, UserLimitType, get_user_limit, has_premium_check
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -38,7 +38,6 @@ from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 from .constants import (
     CPT_ETH2,
-    FREE_VALIDATORS_LIMIT,
     MAX_EFFECTIVE_BALANCE,
     MIN_EFFECTIVE_BALANCE,
     UNKNOWN_VALIDATOR_INDEX,
@@ -46,6 +45,8 @@ from .constants import (
     VALIDATOR_STATS_QUERY_BACKOFF_TIME,
     VALIDATOR_STATS_QUERY_BACKOFF_TIME_RANGE,
 )
+
+ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
 from .structures import (
     PerformanceStatusFilter,
     ValidatorDailyStats,
@@ -92,6 +93,9 @@ class Eth2(EthereumModule):
         # This is a cache that is kept only for the last performance cache address, indices args
         self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], dict[str, dict]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
         self.performance_cache_args: tuple[list[ChecksumEvmAddress] | None, list[int] | None, PerformanceStatusFilter] = (None, None, PerformanceStatusFilter.ALL)  # noqa: E501
+        # Total staked cache variables
+        self._cached_total_staked: FVal
+        self._cached_staked_timestamp = Timestamp(0)
 
     def _get_closest_performance_cache_key(
             self,
@@ -104,6 +108,65 @@ class Eth2(EthereumModule):
                 return key_from_ts, key_to_ts
 
         return from_ts, to_ts
+
+    def _set_staked_cache(self, value: FVal, timestamp: Timestamp) -> None:
+        """Set or reset the cached total staked amount"""
+        self._cached_total_staked = value
+        self._cached_staked_timestamp = timestamp
+
+    def _get_total_eth_staked(self) -> FVal:
+        """Calculate total ETH staked by all tracked validators
+
+        Results are cached for a few hours to avoid expensive repeated calculations.
+        """
+        if (now := ts_now()) - self._cached_staked_timestamp <= ETH_STAKED_CACHE_TIME:
+            return self._cached_total_staked
+
+        dbeth2 = DBEth2(self.database)
+        with self.database.conn.read_ctx() as cursor:
+            pubkey_to_ownership = dbeth2.get_active_pubkeys_to_ownership(cursor)
+
+        if len(pubkey_to_ownership) == 0:
+            self._set_staked_cache(ZERO, now)
+            return ZERO
+
+        balance_mapping = self.beacon_inquirer.get_balances(
+            indices_or_pubkeys=list(pubkey_to_ownership.keys()),
+            has_premium=self.premium is not None,
+        )
+
+        total_staked = ZERO
+        for pubkey, balance in balance_mapping.items():
+            ownership = pubkey_to_ownership.get(pubkey, ONE)
+            total_staked += balance.amount * ownership
+
+        self._set_staked_cache(total_staked, now)
+        return total_staked
+
+    def _check_eth_staking_limit(self, validator_balance: FVal, ownership_proportion: FVal) -> None:  # noqa: E501
+        """Check if adding more stake would exceed ETH staking limit
+
+        May raise:
+        - PremiumPermissionError if the limit would be exceeded
+        - RemoteError if balances could not be queried
+        """
+        current_staked = self._get_total_eth_staked()
+        additional_stake = validator_balance * ownership_proportion
+        new_total = current_staked + additional_stake
+
+        limit, _ = get_user_limit(self.premium, UserLimitType.ETH_STAKED)
+
+        if new_total > limit:
+            raise PremiumPermissionError(
+                f'ETH staking limit exceeded. Current staked: {current_staked} ETH, '
+                f'limit: {limit} ETH, would be: {new_total} ETH',
+                extra_dict={
+                    'limit_info': {
+                        'current_staked': str(current_staked),
+                        'staking_limit': str(limit),
+                    },
+                },
+            )
 
     def get_balances(
             self,
@@ -187,7 +250,12 @@ class Eth2(EthereumModule):
         Optionally filtered by:
         - execution address/es (associated as either deposit or withdrawal address)
         - validator indices
+
+        May raise:
+        - PremiumPermissionError if ETH staking limit is exceeded for non-premium users
         """
+        # Check ETH staking limit for non-premium users
+        self._check_eth_staking_limit(ZERO, ZERO)
         cache_key = self._get_closest_performance_cache_key(from_ts, to_ts)
         with self.database.conn.read_ctx() as cursor:
             result = cursor.execute('SELECT COUNT(*) FROM eth2_validators').fetchone()
@@ -307,12 +375,12 @@ class Eth2(EthereumModule):
                 has_premium=has_premium_check(self.premium),
             )
             for pubkey, balance in balances.items():
+                if balance.amount == ZERO:
+                    continue
+
                 entry = pnls[v_index := pubkey_to_index[pubkey]]
                 if 'exits' in entry:
                     continue  # no outstanding balance for exits
-
-                if balance.amount == ZERO:
-                    continue
 
                 if v_index in accumulating_validators:
                     if balance.amount < MAX_EFFECTIVE_BALANCE:
@@ -525,7 +593,10 @@ class Eth2(EthereumModule):
 
         May raise:
         - RemoteError due to problems with beaconcha.in
+        - PremiumPermissionError if ETH staking limit is exceeded for non-premium users
         """
+        # Check ETH staking limit for non-premium users
+        self._check_eth_staking_limit(ZERO, ZERO)
         if only_cache is False:
             self._query_services_for_validator_daily_stats(to_ts=filter_query.to_ts)
 
@@ -575,6 +646,9 @@ class Eth2(EthereumModule):
                 validators=details,
             )
 
+        # Invalidate cache if any validators were added/updated
+        self._set_staked_cache(ZERO, Timestamp(0))
+
     def get_validators(
             self,
             ignore_cache: bool,
@@ -605,16 +679,9 @@ class Eth2(EthereumModule):
         May raise:
         - RemoteError if there is a problem with querying beaconcha.in or beacon node for more info
         - InputError if the validator is already in the DB
+        - PremiumPermissionError if adding this validator would exceed ETH staking limits
         """
         dbeth2 = DBEth2(self.database)
-        if self.premium is None:
-            with self.database.conn.read_ctx() as cursor:
-                tracked_validators = dbeth2.get_validators(cursor)
-            if len(tracked_validators) >= FREE_VALIDATORS_LIMIT:
-                raise PremiumPermissionError(
-                    f'Adding validator {validator_index} {public_key} would take you '
-                    f'over the free limit of {FREE_VALIDATORS_LIMIT} for tracked validators',
-                )
 
         query_key: int | Eth2PubKey
         field: Literal['validator_index', 'public_key']
@@ -639,10 +706,24 @@ class Eth2(EthereumModule):
         if result[0].validator_index is None:
             raise RemoteError(f'Validator {result[0].public_key} has no index assigned yet')
 
+        # Get the actual validator balance (to check the staking limit)
+        balance_mapping = self.beacon_inquirer.get_balances(
+            indices_or_pubkeys=[result[0].public_key],
+            has_premium=self.premium is not None,
+        )
+        if (validator_balance := balance_mapping.get(result[0].public_key)) is None:
+            raise RemoteError(f'No balance was returned for validator {result[0].public_key}')
+
+        # Check ETH staking limit with actual validator balance
+        self._check_eth_staking_limit(validator_balance.amount, ownership_proportion)
+
         result[0].ownership_proportion = ownership_proportion
         with self.database.user_write() as write_cursor:
             # by now we have a valid index and pubkey. Add to DB
             dbeth2.add_or_update_validators(write_cursor, [result[0]])
+
+        # Invalidate cache since we added a new validator
+        self._set_staked_cache(ZERO, Timestamp(0))
 
     def combine_block_with_tx_events(self) -> None:
         """Get all mev reward block production events and combine them with the

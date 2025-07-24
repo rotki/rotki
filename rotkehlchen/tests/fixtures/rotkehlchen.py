@@ -25,6 +25,7 @@ from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
 from rotkehlchen.tests.utils.constants import (
     TEST_PREMIUM_DB_SIZE_LIMIT,
     TEST_PREMIUM_DEVICE_LIMIT,
+    TEST_PREMIUM_ETH_STAKED_LIMIT,
     TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
     TEST_PREMIUM_PNL_EVENTS_LIMIT,
     TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
@@ -104,6 +105,7 @@ def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium
         'pnl_events_limit': TEST_PREMIUM_PNL_EVENTS_LIMIT,
         'history_events_limit': TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
         'reports_lookup_limit': TEST_PREMIUM_PNL_REPORTS_LOOKUP_LIMIT,
+        'eth_staked_limit': TEST_PREMIUM_ETH_STAKED_LIMIT,
     }
     return premium
 
