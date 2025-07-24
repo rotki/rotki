@@ -8045,6 +8045,7 @@ Getting eth2 staking performance
 
    :statuscode 200: Eth2 validator performance successfully returned.
    :statuscode 401: User is not logged in.
+   :statuscode 403: Eth staking limit reached. Response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: Error connecting to a remote to query data.
@@ -8120,7 +8121,7 @@ Getting Eth2 Staking daily stats
 
    :statuscode 200: Eth2 staking details successfully queried
    :statuscode 401: User is not logged in.
-   :statuscode 403: Logged in user does not have premium.
+   :statuscode 403: Logged in user does not have premium. Or eth staked limit reached. If the latter, response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
@@ -8162,7 +8163,7 @@ Adding an Eth2 validator
       }
 
    :statuscode 200: Eth2 validator successfully added.
-   :statuscode 401: Can't add the validator since user is not premium and would go over the limit.
+   :statuscode 403: Can't add the validator since adding it would go over their premium staking limit. Response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 401: User is not logged in.
    :statuscode 409: eth2 module is not activated.
    :statuscode 500: Internal rotki error.
@@ -8241,6 +8242,7 @@ Editing an Eth2 validator
 
    :statuscode 200: Eth2 validator successfully edited.
    :statuscode 401: User is not logged in.
+   :statuscode 403: editing the validator exceeded the eth staking limit. Response should contain the keys ``current_staked`` and ``staking_limit``.
    :statuscode 409: eth2 module is not activated or validator doesn't exist.
    :statuscode 500: Internal rotki error.
 

@@ -69,7 +69,6 @@ from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
@@ -2269,6 +2268,15 @@ class RestAPI:
                 validator_indices=validator_indices,
                 status=status,
             )
+        except PremiumPermissionError as e:
+            response_data = {
+                'result': None,
+                'message': str(e),
+                'status_code': HTTPStatus.FORBIDDEN,
+            }
+            if e.extra_dict:  # include any extra information for the error
+                response_data.update(e.extra_dict)
+            return response_data
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
@@ -2285,6 +2293,15 @@ class RestAPI:
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
+        except PremiumPermissionError as e:
+            response_data = {
+                'result': None,
+                'message': str(e),
+                'status_code': HTTPStatus.FORBIDDEN,
+            }
+            if e.extra_dict:  # include any extra information for the error
+                response_data.update(e.extra_dict)
+            return response_data
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except ModuleInactive as e:
@@ -2315,16 +2332,12 @@ class RestAPI:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        limit = -1
         entries_found = len(validators)
-        if self.rotkehlchen.premium is None:
-            limit = FREE_VALIDATORS_LIMIT
-            validators = validators[:4]
 
         return _wrap_in_ok_result(result={
             'entries': [x.serialize() for x in validators],
             'entries_found': entries_found,
-            'entries_limit': limit,
+            'entries_limit': -1,
         }, status_code=HTTPStatus.OK)
 
     @async_api_call()
@@ -2343,7 +2356,14 @@ class RestAPI:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
         except PremiumPermissionError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.UNAUTHORIZED}
+            response_data = {
+                'result': None,
+                'message': str(e),
+                'status_code': HTTPStatus.FORBIDDEN,
+            }
+            if e.extra_dict:  # include any extra information for the error
+                response_data.update(e.extra_dict)
+            return response_data
         except (InputError, ModuleInactive) as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
@@ -2355,6 +2375,11 @@ class RestAPI:
                 validator_index=validator_index,
                 ownership_proportion=ownership_proportion,
             )
+        except PremiumPermissionError as e:
+            response_data = wrap_in_fail_result(str(e))
+            if e.extra_dict:  # include any extra information for the error
+                response_data.update(e.extra_dict)
+            return api_response(response_data, status_code=HTTPStatus.FORBIDDEN)
         except (InputError, ModuleInactive) as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
         else:

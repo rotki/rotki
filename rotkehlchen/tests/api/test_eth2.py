@@ -9,7 +9,6 @@ import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
-from rotkehlchen.chain.ethereum.modules.eth2.eth2 import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDetailsWithStatus,
     ValidatorStatus,
@@ -420,7 +419,7 @@ def test_staking_performance_filtering_pagination(
 
             page += 10
 
-        assert get_balances.call_count == 1  # make sure cache works
+        assert get_balances.call_count == 2  # make sure cache works (2 is 1 for all for staking limit and 1 more for the new validator at addition)  # noqa: E501
 
     # now filter by validator state
     active_validators, exited_validators = 1, 401
@@ -554,9 +553,8 @@ def test_add_get_edit_delete_eth2_validators(
             'eth2validatorsresource',
         ),
     )
-    expected_limit = -1 if start_with_valid_premium else FREE_VALIDATORS_LIMIT
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [], 'entries_limit': expected_limit, 'entries_found': 0}
+    assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1606824023),
@@ -625,7 +623,7 @@ def test_add_get_edit_delete_eth2_validators(
         ), json={'ignore_cache': True},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': expected_limit, 'entries_found': 4}  # noqa: E501
+    assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': -1, 'entries_found': 4}  # noqa: E501
 
     if start_with_valid_premium is False:
         response = requests.put(
@@ -719,7 +717,7 @@ def test_add_get_edit_delete_eth2_validators(
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
+    assert result == {'entries': [validators[1].serialize()], 'entries_limit': -1, 'entries_found': 1}  # noqa: E501
 
     # Try to add validator with a custom ownership percentage
     custom_percentage_validators = [ValidatorDetailsWithStatus(
@@ -770,7 +768,7 @@ def test_add_get_edit_delete_eth2_validators(
         ),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
+    assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': -1, 'entries_found': 2}  # noqa: E501
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -1036,11 +1034,11 @@ def test_query_eth2_balances_without_premium(
         rotkehlchen_api_server: 'APIServer',
         eth2: 'Eth2',
 ) -> None:
-    """Check that without premium the number of validators queried for balances
-    is limited to FREE_VALIDATORS_LIMIT.
+    """Check that without premium validators can be queried but ETH staking
+    limit would be enforced when adding new validators.
     """
     dbeth2 = DBEth2(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    for i in range(FREE_VALIDATORS_LIMIT + 1):
+    for i in range(5):  # Add 5 validators to test ETH staking limit
         result = eth2.beacon_inquirer.get_validator_data(indices_or_pubkeys=[i])
         result[0].ownership_proportion = FVal(0.25)
         with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
@@ -1051,7 +1049,8 @@ def test_query_eth2_balances_without_premium(
         'blockchainbalancesresource',
     ))
     balances_result = assert_proper_sync_response_with_result(response)
-    assert len(balances_result['per_account']['eth2']) == FREE_VALIDATORS_LIMIT
+    # Should get all validators since balance queries should not limit
+    assert len(balances_result['per_account']['eth2']) == 5
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

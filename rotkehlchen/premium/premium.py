@@ -66,6 +66,8 @@ class UserLimits(TypedDict):
     history_events_limit: int
     # Maximum number of report lookups that can be performed
     reports_lookup_limit: int
+    # Maximum amount of ETH that can be staked (validator balance limit)
+    eth_staked_limit: int
 
 
 class UserLimitType(Enum):
@@ -73,6 +75,7 @@ class UserLimitType(Enum):
     HISTORY_EVENTS = 'history_events_limit'
     PNL_EVENTS = 'pnl_events_limit'
     PNL_REPORTS_LOOKUP = 'reports_lookup_limit'
+    ETH_STAKED = 'eth_staked_limit'
 
     def get_free_limit(self) -> int:
         """Get the free limit for a specific limit type
@@ -85,6 +88,8 @@ class UserLimitType(Enum):
             return FREE_PNL_EVENTS_LIMIT
         if self == UserLimitType.PNL_REPORTS_LOOKUP:
             return FREE_REPORTS_LOOKUP_LIMIT
+        if self == UserLimitType.ETH_STAKED:
+            return 128  # 128 ETH limit for free users (4 validators * 32 ETH each)
 
         raise NotImplementedError(f'Unknown limit type: {self}. This indicates a bug in the code.')
 

@@ -1317,10 +1317,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Edit a validator to modify its ownership proportion. May raise:
         - ModuleInactive if eth2 module is not active
         - InputError if no row was affected
+        - PremiumPermissionError if increasing ownership would exceed ETH staking limit
         """
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant edit eth2 validators since the eth2 module is not active')
+
+        # Check ETH staking limit for any ownership changes (simplified check)
+        eth2._check_eth_staking_limit(ZERO, ZERO)
+
         with self.database.user_write() as write_cursor:
             DBEth2(self.database).edit_validator_ownership(
                 write_cursor=write_cursor,
