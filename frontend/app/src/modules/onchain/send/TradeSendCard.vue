@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import type { GasFeeEstimation, GetAssetBalancePayload } from '@/modules/onchain/types';
+import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/provider-detection';
 import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
+import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialog.vue';
+import WalletConnectionButton from '@/components/wallets/WalletConnectionButton.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useWalletConnection } from '@/composables/wallets/use-wallet-connection';
 import TradeAmountInput from '@/modules/onchain/send/TradeAmountInput.vue';
 import TradeAssetSelector from '@/modules/onchain/send/TradeAssetSelector.vue';
 import TradeConnectedAddressBadge from '@/modules/onchain/send/TradeConnectedAddressBadge.vue';
@@ -12,6 +16,7 @@ import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
+import { useProviders } from '@/modules/onchain/wallet-providers/use-providers';
 import { logger } from '@/utils/logging';
 import { useTradeApi } from './use-trade-api';
 
@@ -54,13 +59,39 @@ const {
   waitingForWalletConfirmation,
   walletMode,
 } = storeToRefs(walletStore);
-const { getGasFeeForChain, open, sendTransaction, setWalletMode, switchNetwork } = walletStore;
-const { addressTracked, useQueryingBalances } = useBalanceQueries(connected, connectedAddress);
+const { disconnect: disconnectWallet, getGasFeeForChain, open: openWallet, sendTransaction, setWalletMode, switchNetwork } = walletStore;
+const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connected, connectedAddress);
 
 const { getAssetDetail } = useTradableAsset(connectedAddress);
 const { getAssetBalance, getIsInteractedBefore } = useTradeApi();
 const { isPackaged } = useInterop();
 const router = useRouter();
+
+// Provider selection for wallet connection
+const walletConnection = useWalletConnection();
+const { detectingProviders, providers: availableProviders, showProviderSelection } = useProviders();
+
+const isConnecting = logicOr(preparing, detectingProviders);
+
+async function handleProviderSelection(provider: EnhancedProviderDetail): Promise<void> {
+  try {
+    await walletConnection.selectProvider(provider);
+    await walletConnection.connect();
+  }
+  catch (error: any) {
+    const errorString = error.toString();
+    if (REJECTED_KEYWORDS.some(keyword => errorString.includes(keyword))) {
+      set(errorMessage, 'Wallet connection was rejected by user');
+    }
+    else if (errorString.includes('Request timeout')) {
+      set(errorMessage, 'Connection request timed out. Please try again.');
+    }
+    else {
+      set(errorMessage, `Failed to connect wallet: ${errorString}`);
+    }
+    logger.error('Provider selection failed:', error);
+  }
+}
 
 const isNativeAsset = computed(() => {
   const chain = get(assetChain);
@@ -227,6 +258,37 @@ async function refreshAssetBalance() {
   }
 }
 
+async function onConnectClicked() {
+  if (get(connected)) {
+    await disconnect();
+  }
+  else {
+    await connect();
+  }
+}
+
+async function connect() {
+  try {
+    set(errorMessage, '');
+    await openWallet();
+  }
+  catch (error: any) {
+    logger.error(error);
+    set(errorMessage, error.message);
+  }
+}
+
+async function disconnect() {
+  try {
+    set(errorMessage, '');
+    await disconnectWallet();
+  }
+  catch (error: any) {
+    logger.error(error);
+    set(errorMessage, error.message);
+  }
+}
+
 watch([assetChain, supportedChainsForConnectedAccount], ([currentChain, chainOptions]) => {
   if (!chainOptions.includes(currentChain)) {
     set(assetChain, chainOptions[0]);
@@ -319,7 +381,7 @@ watch([estimatedGasFee, assetBalance], () => {
   >
     <div class="p-6 flex flex-col gap-6 border-b border-default">
       <RuiAlert
-        v-if="connected && !addressTracked"
+        v-if="warnUntrackedAddress"
         type="warning"
       >
         {{ t('trade.warning.not_tracked') }}
@@ -350,7 +412,7 @@ watch([estimatedGasFee, assetBalance], () => {
               :model-value="walletMode"
               variant="outlined"
               color="primary"
-              required
+              :required="true"
               size="sm"
               @update:model-value="setWalletMode($event)"
             >
@@ -364,7 +426,11 @@ watch([estimatedGasFee, assetBalance], () => {
           </template>
         </div>
         <div class="flex gap-2">
-          <TradeConnectedAddressBadge :loading="preparing" />
+          <TradeConnectedAddressBadge
+            :loading="isConnecting"
+            @connect="connect()"
+            @disconnect="disconnect()"
+          />
           <TradeHistoryView />
         </div>
       </div>
@@ -377,14 +443,14 @@ watch([estimatedGasFee, assetBalance], () => {
         :max="max"
         :amount-exceeded="amountExceeded"
         :chain="assetChain"
-        :address="addressTracked ? connectedAddress : undefined"
+        :address="!warnUntrackedAddress ? connectedAddress : undefined"
         :asset="asset"
       />
       <TradeAssetSelector
         v-model="asset"
         v-model:chain="assetChain"
         :amount="assetBalance"
-        :address="addressTracked ? connectedAddress : undefined"
+        :address="!warnUntrackedAddress ? connectedAddress : undefined"
         @set-max="setMax()"
         @refresh="refreshAssetBalance()"
       />
@@ -395,18 +461,15 @@ watch([estimatedGasFee, assetBalance], () => {
       />
     </div>
     <div class="p-6 border-t border-default">
-      <RuiButton
+      <WalletConnectionButton
         v-if="!connected"
-        color="primary"
         size="lg"
-        class="!w-full"
-        :loading="preparing"
-        @click="open()"
-      >
-        {{ t('trade.actions.connect_wallet') }}
-      </RuiButton>
+        full-width
+        :loading="isConnecting"
+        @click="onConnectClicked()"
+      />
       <RuiButton
-        v-else-if="!addressTracked"
+        v-else-if="warnUntrackedAddress"
         color="primary"
         size="lg"
         class="!w-full"
@@ -458,4 +521,12 @@ watch([estimatedGasFee, assetBalance], () => {
         : t('trade.waiting_for_confirmation.not_wallet_connect')
     }}
   </RuiAlert>
+
+  <!-- Provider Selection Dialog -->
+  <ProviderSelectionDialog
+    v-model="showProviderSelection"
+    :providers="availableProviders"
+    :loading="detectingProviders"
+    @select-provider="handleProviderSelection($event)"
+  />
 </template>

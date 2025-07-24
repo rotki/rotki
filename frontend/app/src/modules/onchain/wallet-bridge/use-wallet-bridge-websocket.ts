@@ -1,23 +1,18 @@
-import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
+import type { EIP1193Provider, EIP1193ProviderEvents, EIP6963ProviderDetail } from '@/types';
+import { BRIDGE_NOTIFICATION_TYPES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
 import { get, set } from '@vueuse/core';
 import { computed, type ComputedRef, ref, type Ref } from 'vue';
+import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-bridge-message-handlers';
 import { logger } from '@/utils/logging';
 import {
-  type ConnectionStatus,
   isWalletBridgeNotification,
   isWalletBridgeRequest,
   validateWalletBridgeMessage,
-  type WalletBridgeEventName,
   type WalletBridgeNotification,
   type WalletBridgeRequest,
   type WalletBridgeResponse,
 } from './types';
-
-type MessageHandler = (message: WalletBridgeRequest) => void;
-
-type NotificationHandler = (notification: WalletBridgeNotification) => void;
-
-type ConnectionHandler = (status: ConnectionStatus) => void;
+import { useEIP6963Providers } from './use-eip6963-providers';
 
 export interface WalletBridgeWebSocketComposable {
   cleanup: () => void;
@@ -27,20 +22,20 @@ export interface WalletBridgeWebSocketComposable {
   isConnected: ComputedRef<boolean>;
   isConnecting: ComputedRef<boolean>;
   lastError: Ref<string | undefined>;
-  onRequest: (handler: MessageHandler) => void;
-  onNotification: (handler: NotificationHandler) => void;
-  onConnection: (handler: ConnectionHandler) => void;
-  removeRequestHandler: () => void;
-  removeNotificationHandler: () => void;
-  removeConnectionHandler: () => void;
-  sendResponse: (response: WalletBridgeResponse) => void;
   sendWalletEvent: (eventName: string, eventData: unknown) => void;
   setupWalletEventListeners: () => void;
   cleanupWalletEventListeners: () => void;
+  onTakeOver: (callback: () => void) => void;
+  // EIP-6963 Provider Detection
+  getAvailableProviders: (options?: any) => Promise<EIP6963ProviderDetail[]>;
+  getSelectedProvider: () => EIP1193Provider | undefined;
+  hasSelectedProvider: Ref<boolean>;
+  isDetectingProviders: Ref<boolean>;
+  selectProvider: (uuid: string) => boolean;
 }
 
 export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
-  const ws = ref<WebSocket | null>(null);
+  const ws = ref<WebSocket>();
   const isConnected = ref<boolean>(false);
   const isConnecting = ref<boolean>(false);
   const connectionAttempts = ref<number>(0);
@@ -49,11 +44,10 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
   const intentionalDisconnect = ref<boolean>(false);
   const lastError = ref<string>();
   const preventReconnect = ref<boolean>(false);
-
-  const messageHandlers = new Map<WalletBridgeEventName, (...args: any[]) => void>();
-
-  // Store references to provider event listeners for cleanup
   const providerEventListeners = new Map<string, (...args: any[]) => void>();
+  const onTakeOverCallback = ref<() => void>();
+
+  const { handleRequest } = useBridgeMessageHandlers();
 
   const sendResponse = (response: WalletBridgeResponse): void => {
     const wsInstance = get(ws);
@@ -65,53 +59,54 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     }
   };
 
+  function handleBridgeNotification(notification: WalletBridgeNotification): void {
+    // Special handling for notifications
+    if (notification.type === BRIDGE_NOTIFICATION_TYPES.CLOSE_TAB) {
+      logger.info('Received close_tab notification, attempting to close browser tab');
+      try {
+        window.close();
+      }
+      catch (error) {
+        logger.error('Failed to close tab:', error);
+      }
+    }
+    else if (notification.type === BRIDGE_NOTIFICATION_TYPES.RECONNECTED) {
+      logger.info('Received reconnected notification, preventing automatic reconnection');
+      set(preventReconnect, true);
+      if (isDefined(onTakeOverCallback)) {
+        get(onTakeOverCallback)();
+      }
+    }
+  }
+
+  function handleWalletBridgeRequest(message: WalletBridgeRequest): void {
+    handleRequest(message).then((response) => {
+      sendResponse(response);
+    }).catch((error) => {
+      sendResponse({
+        error: {
+          code: -32601,
+          message: error.message || 'Internal error',
+        },
+        id: message.id,
+        jsonrpc: '2.0',
+      });
+    });
+  }
+
   const handleMessage = (rawMessage: unknown): void => {
     try {
       const message = validateWalletBridgeMessage(rawMessage);
       logger.debug('Received WebSocket message:', message);
 
       if (isWalletBridgeNotification(message)) {
-        const notificationHandler = messageHandlers.get('notification') as NotificationHandler | undefined;
-        if (notificationHandler) {
-          notificationHandler(message);
-        }
-
-        // Special handling for notifications
-        if (message.type === 'close_tab') {
-          logger.info('Received close_tab notification, attempting to close browser tab');
-          try {
-            window.close();
-          }
-          catch (error) {
-            logger.error('Failed to close tab:', error);
-          }
-        }
-        else if (message.type === 'reconnected') {
-          logger.info('Received reconnected notification, preventing automatic reconnection');
-          set(preventReconnect, true);
-        }
+        handleBridgeNotification(message);
         return;
       }
 
       // Handle RPC requests
       if (isWalletBridgeRequest(message)) {
-        const requestHandler = messageHandlers.get('request') as MessageHandler | undefined;
-        if (requestHandler) {
-          requestHandler(message);
-        }
-        else {
-          logger.warn('No message handler registered for requests');
-
-          // Send error response
-          sendResponse({
-            error: {
-              code: -32601,
-              message: 'Method not found',
-            },
-            id: message.id,
-            jsonrpc: '2.0',
-          });
-        }
+        handleWalletBridgeRequest(message);
       }
     }
     catch (error) {
@@ -158,7 +153,7 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     if (ws.value) {
       set(intentionalDisconnect, true);
       ws.value.close();
-      set(ws, null);
+      set(ws, undefined);
       set(isConnected, false);
     }
   };
@@ -204,7 +199,7 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
       };
 
       websocket.onclose = (): void => {
-        set(ws, null);
+        set(ws, undefined);
         set(isConnected, false);
         logger.info('WebSocket disconnected');
 
@@ -223,7 +218,7 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
         const errorMessage = `WebSocket connection error (attempt ${retryCount + 1}/${maxRetries})`;
         logger.error(errorMessage, error);
         set(lastError, errorMessage);
-        set(ws, null);
+        set(ws, undefined);
         set(isConnected, false);
 
         // Attempt to reconnect after delay if not prevented
@@ -248,41 +243,27 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     }
   }
 
-  const onRequest = (handler: MessageHandler): void => {
-    messageHandlers.set('request', handler);
-  };
-
-  const onNotification = (handler: NotificationHandler): void => {
-    messageHandlers.set('notification', handler);
-  };
-
-  const onConnection = (handler: ConnectionHandler): void => {
-    messageHandlers.set('connection', handler);
-  };
-
-  const removeRequestHandler = (): void => {
-    messageHandlers.delete('request');
-  };
-
-  const removeNotificationHandler = (): void => {
-    messageHandlers.delete('notification');
-  };
-
-  const removeConnectionHandler = (): void => {
-    messageHandlers.delete('connection');
-  };
-
-  // Auto-connect when component is mounted
   const isReady = computed<boolean>(() => get(isConnected));
   const isConnectingComputed = computed<boolean>(() => get(isConnecting));
 
-  // Function to send wallet events via WebSocket notification
+  const {
+    getAvailableProviders,
+    getSelectedProvider,
+    hasSelectedProvider,
+    isDetecting: isDetectingProviders,
+    selectProvider,
+  } = useEIP6963Providers();
+
+  function onTakeOver(callback: () => void): void {
+    set(onTakeOverCallback, callback);
+  }
+
   const sendWalletEvent = (eventName: string, eventData: unknown): void => {
     if (get(isConnected)) {
       const message = {
         eventData,
         eventName,
-        type: 'wallet_event' as const,
+        type: BRIDGE_NOTIFICATION_TYPES.WALLET_EVENT,
       };
 
       const wsInstance = get(ws);
@@ -295,9 +276,13 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
 
   // Setup wallet provider event listeners
   const setupWalletEventListeners = (): void => {
-    const provider: EIP1193Provider | undefined = window.ethereum;
+    const provider = getSelectedProvider();
 
-    if (!provider || !provider.on) {
+    if (!provider) {
+      logger.warn('No wallet provider selected');
+    }
+
+    if (!provider?.on) {
       logger.warn('No wallet provider found or provider does not support event listeners');
       return;
     }
@@ -307,45 +292,43 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
       return;
     }
 
-    // Define event listeners
     const accountsChangedListener = (accounts: string[]): void => {
       logger.debug('Wallet accounts changed:', accounts);
-      sendWalletEvent('accountsChanged', accounts);
+      sendWalletEvent(WALLET_EVENT_TYPES.ACCOUNTS_CHANGED, accounts);
     };
 
     const chainChangedListener = (chainId: string): void => {
       logger.debug('Wallet chain changed:', chainId);
-      sendWalletEvent('chainChanged', chainId);
+      sendWalletEvent(WALLET_EVENT_TYPES.CHAIN_CHANGED, chainId);
     };
 
     const connectListener = (connectInfo: { chainId: string }): void => {
       logger.debug('Wallet connected:', connectInfo);
-      sendWalletEvent('connect', connectInfo);
+      sendWalletEvent(WALLET_EVENT_TYPES.CONNECT, connectInfo);
     };
 
     const disconnectListener = (error: { code: number; message: string }): void => {
       logger.debug('Wallet disconnected:', error);
-      sendWalletEvent('disconnect', error);
+      sendWalletEvent(WALLET_EVENT_TYPES.DISCONNECT, error);
     };
 
     // Add event listeners
-    provider.on('accountsChanged', accountsChangedListener);
-    provider.on('chainChanged', chainChangedListener);
-    provider.on('connect', connectListener);
-    provider.on('disconnect', disconnectListener);
+    provider.on(WALLET_EVENT_TYPES.ACCOUNTS_CHANGED, accountsChangedListener);
+    provider.on(WALLET_EVENT_TYPES.CHAIN_CHANGED, chainChangedListener);
+    provider.on(WALLET_EVENT_TYPES.CONNECT, connectListener);
+    provider.on(WALLET_EVENT_TYPES.DISCONNECT, disconnectListener);
 
     // Store listeners for cleanup
-    providerEventListeners.set('accountsChanged', accountsChangedListener);
-    providerEventListeners.set('chainChanged', chainChangedListener);
-    providerEventListeners.set('connect', connectListener);
-    providerEventListeners.set('disconnect', disconnectListener);
+    providerEventListeners.set(WALLET_EVENT_TYPES.ACCOUNTS_CHANGED, accountsChangedListener);
+    providerEventListeners.set(WALLET_EVENT_TYPES.CHAIN_CHANGED, chainChangedListener);
+    providerEventListeners.set(WALLET_EVENT_TYPES.CONNECT, connectListener);
+    providerEventListeners.set(WALLET_EVENT_TYPES.DISCONNECT, disconnectListener);
 
     logger.info('Wallet provider event listeners set up');
   };
 
-  // Cleanup wallet event listeners
   const cleanupWalletEventListeners = (): void => {
-    const provider: EIP1193Provider | undefined = window.ethereum;
+    const provider = getSelectedProvider();
 
     if (provider?.removeListener) {
       for (const [eventName, listener] of providerEventListeners) {
@@ -356,11 +339,10 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     }
   };
 
-  // Cleanup on unmount
   const cleanup = (): void => {
     cleanupWalletEventListeners();
     disconnect();
-    messageHandlers.clear();
+    set(onTakeOverCallback, undefined);
   };
 
   return {
@@ -369,16 +351,15 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     connect,
     connectionAttempts,
     disconnect,
+    getAvailableProviders,
+    getSelectedProvider,
+    hasSelectedProvider,
     isConnected: isReady,
     isConnecting: isConnectingComputed,
+    isDetectingProviders,
     lastError,
-    onConnection,
-    onNotification,
-    onRequest,
-    removeConnectionHandler,
-    removeNotificationHandler,
-    removeRequestHandler,
-    sendResponse,
+    onTakeOver,
+    selectProvider,
     sendWalletEvent,
     setupWalletEventListeners,
   };

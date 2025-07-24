@@ -4472,7 +4472,9 @@
       "electron_connection": "Rotki Bridge Connection",
       "electron_disconnected_message": "Connection to rotki is not available",
       "electron_ready_message": "Connection is established",
+      "no_provider_selected": "No provider selected",
       "no_wallet_connected": "No wallet connected",
+      "provider_not_connected": "{provider} - Not connected",
       "retry_connection": "Connect",
       "takeover": {
         "description": "Another bridge is now active. You can close this window.",
@@ -4964,6 +4966,14 @@
   },
   "validator_filter_input": {
     "label": "Select validator"
+  },
+  "wallet_provider_selection": {
+    "description": "Choose a wallet provider to connect with rotki",
+    "no_providers": {
+      "description": "Please ensure you have a wallet extension installed and enabled in your browser.",
+      "title": "No Wallet Providers Found"
+    },
+    "title": "Select Wallet Provider"
   },
   "welcome": {
     "update": {

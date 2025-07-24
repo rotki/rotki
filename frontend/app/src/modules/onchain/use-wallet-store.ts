@@ -9,6 +9,7 @@ import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { type BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useWalletConnection } from '@/composables/wallets/use-wallet-connection';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { logger } from '@/utils/logging';
@@ -35,6 +36,7 @@ export const useWalletStore = defineStore('wallet', () => {
   // Initialize composables for both wallet modes
   const walletConnect = useWalletConnect();
   const injectedWallet = useInjectedWallet();
+  const { disconnect: disconnectWallet, initiateConnection } = useWalletConnection();
 
   const { getAssetMappingHandler } = useAssetCacheStore();
   const { getChainFromChainId, updateStatePostTransaction } = useWalletHelper();
@@ -73,9 +75,16 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const open = async (): Promise<void> => {
     if (get(walletMode) === 'local-bridge') {
-      await injectedWallet.open((isLoading: boolean) => {
-        set(preparing, isLoading);
-      });
+      try {
+        // Use the wallet connection composable for better provider detection
+
+        await initiateConnection();
+      }
+      catch (error) {
+        logger.error('Failed to initiate wallet connection:', error);
+        // If no providers detected, throw to let the UI handle it
+        throw error;
+      }
     }
     else {
       await walletConnect.open();
@@ -90,7 +99,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const disconnect = async (): Promise<void> => {
     if (get(walletMode) === 'local-bridge') {
-      await injectedWallet.disconnect();
+      await disconnectWallet();
     }
     else {
       await walletConnect.disconnect();
@@ -282,7 +291,7 @@ export const useWalletStore = defineStore('wallet', () => {
     getGasFeeForChain,
     isWalletConnect,
     open,
-    preparing,
+    preparing: logicOr(preparing, injectedWallet.isConnecting),
     recentTransactions,
     resetWalletConnection,
     sendTransaction,

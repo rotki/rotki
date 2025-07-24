@@ -4,6 +4,7 @@ interface UseWalletBridgeReturn {
   walletBridgeConnect: () => Promise<boolean>;
   walletBridgeHttpListening: () => Promise<boolean>;
   walletBridgeWebSocketListening: () => Promise<boolean>;
+  walletBridgeClientReady: () => Promise<boolean>;
 }
 
 const electronApp = !!window.interop;
@@ -17,6 +18,12 @@ const walletBridge: UseWalletBridgeReturn = {
     if (electronApp) {
       await window.walletBridge?.openWalletBridge();
     }
+  },
+
+  walletBridgeClientReady: async (): Promise<boolean> => {
+    if (!electronApp || !window.walletBridge)
+      return false;
+    return (await window.walletBridge.walletBridgeClientReady()) ?? false;
   },
 
   walletBridgeConnect: async (): Promise<boolean> => {

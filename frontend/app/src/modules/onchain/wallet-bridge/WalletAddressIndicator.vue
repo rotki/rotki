@@ -5,10 +5,12 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useMainStore } from '@/store/main';
 import { logger } from '@/utils/logging';
+import { useEIP6963Providers } from './use-eip6963-providers';
 
 const { t } = useI18n({ useScope: 'global' });
 const { getChainFromChainId } = useWalletHelper();
 const { setConnected } = useMainStore();
+const { getSelectedProvider, hasSelectedProvider, selectedProviderMetadata } = useEIP6963Providers();
 
 const connectedAddress = ref<string>();
 const connectedChainId = ref<number>();
@@ -25,44 +27,14 @@ const isConnected = computed<boolean>(() => !!get(connectedAddress));
 const isConnecting = ref<boolean>(false);
 const connectionError = ref<string>();
 
-async function updateWalletInfo(): Promise<void> {
-  try {
-    const provider: EIP1193Provider | undefined = window.ethereum;
-
-    if (!provider) {
-      set(connectedAddress, undefined);
-      set(connectedChainId, undefined);
-      return;
-    }
-
-    // Get connected accounts
-    const accounts = await provider.request({ method: 'eth_accounts' }) as string[];
-    if (accounts.length > 0) {
-      set(connectedAddress, accounts[0]);
-    }
-    else {
-      set(connectedAddress, undefined);
-    }
-
-    // Get chain ID
-    const chainId = await provider.request({ method: 'eth_chainId' }) as string;
-    set(connectedChainId, parseInt(chainId, 16));
-  }
-  catch (error) {
-    logger.error('Error getting wallet info:', error);
-    set(connectedAddress, undefined);
-    set(connectedChainId, undefined);
-  }
-}
-
 async function connectWallet(): Promise<void> {
   try {
     set(isConnecting, true);
     set(connectionError, undefined);
-    const provider: EIP1193Provider | undefined = window.ethereum;
+    const provider: EIP1193Provider | undefined = getSelectedProvider();
 
     if (!provider) {
-      throw new Error('No wallet provider found. Please install a wallet extension like MetaMask.');
+      throw new Error('No wallet provider found. Please select a wallet provider first.');
     }
 
     // Request account access
@@ -80,8 +52,8 @@ async function connectWallet(): Promise<void> {
       throw new Error('No accounts returned from wallet.');
     }
   }
-  catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to connect wallet';
+  catch (error: any) {
+    const errorMessage = 'message' in error ? error.message : 'Failed to connect wallet';
     logger.error('Error connecting wallet:', error);
     set(connectionError, errorMessage);
     set(connectedAddress, undefined);
@@ -93,7 +65,7 @@ async function connectWallet(): Promise<void> {
 }
 
 async function disconnectProvider() {
-  const provider: EIP1193Provider | undefined = window.ethereum;
+  const provider: EIP1193Provider | undefined = getSelectedProvider();
 
   if (provider) {
     // Some wallets support disconnect method
@@ -146,36 +118,92 @@ function resetError(): void {
   set(connectionError, undefined);
 }
 
-// Update wallet info on mount
-onMounted(() => {
-  updateWalletInfo();
-  setConnected(true);
-  const provider: EIP1193Provider | undefined = window.ethereum;
+// Track current provider and its event listeners
+let currentProvider: EIP1193Provider | undefined;
+let accountsChangedListener: ((accounts: string[]) => void) | undefined;
+let chainChangedListener: ((chainId: string) => void) | undefined;
 
-  if (provider === undefined) {
+function handleAccountsChanged(accounts: string[]): void {
+  if (accounts.length > 0) {
+    set(connectedAddress, accounts[0]);
+  }
+  else {
+    set(connectedAddress, undefined);
+  }
+}
+
+function handleChainChanged(chainId: string): void {
+  set(connectedChainId, parseInt(chainId, 16));
+}
+
+function setupProviderListeners(provider: EIP1193Provider): void {
+  if (!provider.on) {
     return;
   }
 
-  const handleAccountsChanged = (accounts: string[]) => {
-    if (accounts.length > 0) {
-      set(connectedAddress, accounts[0]);
-    }
-    else {
-      set(connectedAddress, undefined);
-    }
-  };
+  // Store listener references for cleanup
+  accountsChangedListener = handleAccountsChanged;
+  chainChangedListener = handleChainChanged;
 
-  const handleChainChanged = (chainId: string) => {
-    set(connectedChainId, parseInt(chainId, 16));
-  };
+  provider.on('accountsChanged', accountsChangedListener);
+  provider.on('chainChanged', chainChangedListener);
+  logger.info('Set up event listeners for provider');
+}
 
-  provider.on?.('accountsChanged', handleAccountsChanged);
-  provider.on?.('chainChanged', handleChainChanged);
+function cleanupProviderListeners(): void {
+  if (currentProvider?.removeListener && accountsChangedListener && chainChangedListener) {
+    currentProvider.removeListener('accountsChanged', accountsChangedListener);
+    currentProvider.removeListener('chainChanged', chainChangedListener);
+    logger.info('Cleaned up event listeners for provider');
+  }
+  currentProvider = undefined;
+  accountsChangedListener = undefined;
+  chainChangedListener = undefined;
+}
 
-  onBeforeUnmount(() => {
-    provider.removeListener?.('accountsChanged', handleAccountsChanged);
-    provider.removeListener?.('chainChanged', handleChainChanged);
+// Use event system to watch for provider changes
+const { onProviderChanged } = useEIP6963Providers();
+const unsubscribeProviderChange = onProviderChanged((newProvider) => {
+  logger.info('Selected provider changed:', {
+    new: newProvider ? 'provider set' : 'no provider',
+    old: currentProvider ? 'provider set' : 'no provider',
   });
+
+  // Clean up old provider listeners
+  if (currentProvider && currentProvider !== newProvider) {
+    cleanupProviderListeners();
+  }
+
+  // Set up new provider
+  if (newProvider) {
+    currentProvider = newProvider;
+    setupProviderListeners(newProvider);
+    // Clear state - we'll only update from events
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+  }
+  else {
+    // Clear wallet info when no provider
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+  }
+});
+
+// Initialize with current provider
+const initialProvider = getSelectedProvider();
+if (initialProvider) {
+  currentProvider = initialProvider;
+  setupProviderListeners(initialProvider);
+}
+
+// Set connected state on mount (no RPC calls)
+onMounted(() => {
+  setConnected(true);
+});
+
+onBeforeUnmount(() => {
+  cleanupProviderListeners();
+  unsubscribeProviderChange();
 });
 </script>
 
@@ -192,6 +220,12 @@ onMounted(() => {
         <div class="p-0.5 rounded-full size-3 border border-rui-success-lighter/40">
           <div class="size-full rounded-full bg-rui-success-lighter" />
         </div>
+        <img
+          v-if="selectedProviderMetadata"
+          :src="selectedProviderMetadata.icon"
+          :alt="selectedProviderMetadata.name"
+          class="w-4 h-4"
+        />
         <ChainIcon
           v-if="chain"
           :chain="chain"
@@ -213,12 +247,18 @@ onMounted(() => {
           {{ t('trade.bridge.disconnect') }}
         </RuiButton>
       </template>
-      <template v-else>
-        <div class="p-0.5 rounded-full size-3 border border-rui-grey-400/40">
-          <div class="size-full rounded-full bg-rui-grey-400" />
+      <template v-else-if="hasSelectedProvider">
+        <div class="p-0.5 rounded-full size-3 border border-rui-warning/40">
+          <div class="size-full rounded-full bg-rui-warning" />
         </div>
+        <img
+          v-if="selectedProviderMetadata"
+          :src="selectedProviderMetadata.icon"
+          :alt="selectedProviderMetadata.name"
+          class="w-4 h-4"
+        />
         <span class="text-rui-text-secondary flex-1">
-          {{ t('trade.bridge.no_wallet_connected') }}
+          {{ t('trade.bridge.provider_not_connected', { provider: selectedProviderMetadata?.name }) }}
         </span>
         <RuiButton
           variant="outlined"
@@ -230,6 +270,14 @@ onMounted(() => {
           {{ t('trade.bridge.connect_wallet') }}
         </RuiButton>
       </template>
+      <template v-else>
+        <div class="p-0.5 rounded-full size-3 border border-rui-grey-400/40">
+          <div class="size-full rounded-full bg-rui-grey-400" />
+        </div>
+        <span class="text-rui-text-secondary flex-1">
+          {{ t('trade.bridge.no_provider_selected') }}
+        </span>
+      </template>
     </div>
 
     <!-- Connection Error Display -->
@@ -239,7 +287,7 @@ onMounted(() => {
     >
       <div class="flex items-start gap-2">
         <RuiIcon
-          name="alert-triangle-line"
+          name="lu-triangle-alert"
           class="text-rui-error mt-0.5"
           size="16"
         />
@@ -258,7 +306,7 @@ onMounted(() => {
           @click="resetError()"
         >
           <RuiIcon
-            name="close-line"
+            name="lu-x"
             size="14"
           />
         </RuiButton>

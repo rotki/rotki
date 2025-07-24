@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import type { EIP1193Provider } from '@/types';
 import ConnectionLogs from '@/modules/onchain/wallet-bridge/ConnectionLogs.vue';
 import ElectronConnectionStatus from '@/modules/onchain/wallet-bridge/ElectronConnectionStatus.vue';
+import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
 import { useWalletBridgeWebSocket } from '@/modules/onchain/wallet-bridge/use-wallet-bridge-websocket';
 import WalletAddressIndicator from '@/modules/onchain/wallet-bridge/WalletAddressIndicator.vue';
 import { useMainStore } from '@/store/main';
-import { logger } from '@/utils/logging';
-
-interface LogEntry {
-  message: string;
-  timestamp: string;
-  type: 'info' | 'success' | 'error';
-}
 
 definePage({
   meta: {
@@ -24,10 +17,12 @@ defineOptions({
   name: 'WalletBridge',
 });
 
-const logs = ref<LogEntry[]>([]);
 const showTakeoverMessage = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
+
+// Logging
+const { addLog, logs } = useBridgeLogging();
 
 // WebSocket integration
 const {
@@ -38,16 +33,9 @@ const {
   isConnected: isElectronConnected,
   isConnecting: isElectronConnecting,
   lastError,
-  onNotification,
-  onRequest,
-  sendResponse,
+  onTakeOver,
   setupWalletEventListeners,
 } = useWalletBridgeWebSocket();
-
-function addLog(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
-  const timestamp = new Date().toLocaleTimeString();
-  logs.value = [{ message, timestamp, type }, ...logs.value];
-}
 
 function handleRetryConnection(): void {
   addLog('Retrying connection to Electron app...', 'info');
@@ -58,52 +46,9 @@ function handleDisconnect(): void {
   disconnectFromElectron();
 }
 
-// Handle requests from Electron app
-onRequest(async (message) => {
-  try {
-    // Get the browser wallet provider (MetaMask, etc.) that has the request method
-    const provider: EIP1193Provider | undefined = window.ethereum;
-
-    if (!provider) {
-      throw new Error('No browser wallet provider found');
-    }
-
-    // Forward the request to the browser wallet
-    const result = await provider.request<unknown>({
-      method: message.method,
-      params: message.params || [],
-    });
-
-    // Send successful response back to Electron
-    sendResponse({
-      id: message.id,
-      jsonrpc: '2.0',
-      result,
-    });
-  }
-  catch (error: unknown) {
-    logger.debug('Error handling request', error);
-    const err = error as Error & { code?: number; data?: unknown };
-    // Send error response back to Electron
-    sendResponse({
-      error: {
-        code: err.code || -32603,
-        data: err.data,
-        message: err.message || 'Internal error',
-      },
-      id: message.id,
-      jsonrpc: '2.0',
-    });
-  }
-});
-
-// Handle notifications from WebSocket
-onNotification((notification) => {
-  if (notification.type === 'reconnected') {
-    // Show full-screen takeover message
-    set(showTakeoverMessage, true);
-    addLog('Another bridge is now active', 'error');
-  }
+onTakeOver(() => {
+  set(showTakeoverMessage, true);
+  addLog('Another bridge is now active', 'error');
 });
 
 // Cleanup on unmount

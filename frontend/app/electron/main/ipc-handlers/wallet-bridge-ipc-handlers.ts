@@ -1,7 +1,9 @@
 import type { LogService } from '@electron/main/log-service';
 import type { WalletBridgeWebSocketServer } from '@electron/main/ws';
+import type { EIP6963ProviderDetail } from '@/types';
 import { AppServer } from '@electron/main/app-server';
 import { selectPort } from '@electron/main/port-utils';
+import { ROTKI_RPC_METHODS } from '@shared/proxy/constants';
 import { shell } from 'electron';
 
 interface WalletBridgeIpcHandlersCallbacks {
@@ -12,14 +14,6 @@ export class WalletBridgeIpcHandlers {
   private callbacks: WalletBridgeIpcHandlersCallbacks | null = null;
   private walletConnectBridgePort: number | undefined = undefined;
   private readonly appServer: AppServer;
-
-  private get requireCallbacks(): WalletBridgeIpcHandlersCallbacks {
-    const callbacks = this.callbacks;
-    if (!callbacks) {
-      throw new Error('WalletBridgeIpcHandlers callbacks not initialized');
-    }
-    return callbacks;
-  }
 
   constructor(
     private readonly logger: LogService,
@@ -45,8 +39,9 @@ export class WalletBridgeIpcHandlers {
 
       if (this.walletConnectBridgePort && httpRunning && wsRunning) {
         if (wsConnected) {
-          // Everything is running and connected, open the page
-          this.logger.info(`Wallet Connect Bridge already running and connected at http://localhost:${this.walletConnectBridgePort}, opening page`);
+          // Everything is running and connected, reset selected provider and open the page
+          this.logger.info(`Wallet Connect Bridge already running and connected at http://localhost:${this.walletConnectBridgePort}, resetting provider selection and opening page`);
+          await this.resetSelectedProvider();
           await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
         }
         else {
@@ -80,6 +75,8 @@ export class WalletBridgeIpcHandlers {
   handleWalletBridgeHttpListening = async (): Promise<boolean> => this.appServer.isListening();
 
   handleWalletBridgeWsListening = async (): Promise<boolean> => this.walletBridgeWebSocketServer.isListening();
+
+  handleWalletBridgeClientReady = async (): Promise<boolean> => this.walletBridgeWebSocketServer.isClientReady();
 
   handleUserLogout = (): void => {
     this.logger.info('User logout event received, cleaning up wallet bridge connections');
@@ -128,4 +125,94 @@ export class WalletBridgeIpcHandlers {
     // Clear the stored port so it can be restarted fresh next time
     this.walletConnectBridgePort = undefined;
   }
+
+  // EIP-6963 Provider Detection handlers
+  getAvailableProviders = async (): Promise<any[]> => {
+    try {
+      this.logger.debug('Getting available EIP-6963 providers from bridge');
+
+      if (!this.walletBridgeWebSocketServer.isConnected()) {
+        this.logger.warn('Wallet bridge not connected for provider detection');
+        return [];
+      }
+
+      const result = await this.walletBridgeWebSocketServer.sendToWalletBridge({
+        method: ROTKI_RPC_METHODS.GET_AVAILABLE_PROVIDERS,
+        params: [],
+      });
+
+      return result || [];
+    }
+    catch (error: any) {
+      this.logger.error('Failed to get available providers:', error);
+      return [];
+    }
+  };
+
+  selectProvider = async (_event: Electron.IpcMainInvokeEvent, uuid: string): Promise<boolean> => {
+    try {
+      this.logger.debug(`Selecting EIP-6963 provider: ${uuid}`);
+
+      if (!this.walletBridgeWebSocketServer.isConnected()) {
+        this.logger.warn('Wallet bridge not connected for provider selection');
+        return false;
+      }
+
+      const result = await this.walletBridgeWebSocketServer.sendToWalletBridge({
+        method: ROTKI_RPC_METHODS.SELECT_PROVIDER,
+        params: [uuid],
+      });
+
+      return result === true;
+    }
+    catch (error: any) {
+      this.logger.error('Failed to select provider:', error);
+      return false;
+    }
+  };
+
+  getSelectedProvider = async (): Promise<EIP6963ProviderDetail | null> => {
+    try {
+      this.logger.debug('Getting selected provider from bridge');
+
+      if (!this.walletBridgeWebSocketServer.isConnected()) {
+        this.logger.warn('Wallet bridge not connected for getting selected provider');
+        return null;
+      }
+
+      const result = await this.walletBridgeWebSocketServer.sendToWalletBridge({
+        method: ROTKI_RPC_METHODS.GET_SELECTED_PROVIDER,
+        params: [],
+      });
+
+      return result || null;
+    }
+    catch (error: any) {
+      this.logger.error('Failed to get selected provider:', error);
+      return null;
+    }
+  };
+
+  private resetSelectedProvider = async (): Promise<void> => {
+    try {
+      this.logger.debug('Resetting selected provider in bridge');
+
+      if (!this.walletBridgeWebSocketServer.isConnected()) {
+        this.logger.warn('Wallet bridge not connected for resetting selected provider');
+        return;
+      }
+
+      // Clear the selected provider by selecting an empty string or null
+      await this.walletBridgeWebSocketServer.sendToWalletBridge({
+        method: ROTKI_RPC_METHODS.SELECT_PROVIDER,
+        params: [''],
+      });
+
+      this.logger.info('Successfully reset selected provider in bridge');
+    }
+    catch (error: any) {
+      this.logger.error('Failed to reset selected provider:', error);
+      // Don't throw error as this is not critical for opening the bridge
+    }
+  };
 }

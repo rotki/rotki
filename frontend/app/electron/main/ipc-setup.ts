@@ -147,12 +147,18 @@ export class IpcManager {
     ipcMain.handle(IpcCommands.OPEN_WALLET_CONNECT_BRIDGE, this.walletBridgeIpcHandlers.openWalletConnectBridge);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeHttpListening);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_WS_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeWsListening);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_CLIENT_READY, this.walletBridgeIpcHandlers.handleWalletBridgeClientReady);
     ipcMain.on(IpcCommands.USER_LOGOUT, this.walletBridgeIpcHandlers.handleUserLogout);
 
     // Wallet Bridge handlers (from existing handler class)
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_REQUEST, this.walletBridgeHandlers.handleWalletBridgeRequest);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_CONNECT, this.walletBridgeHandlers.handleWalletBridgeConnect);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_DISCONNECT, this.walletBridgeHandlers.handleWalletBridgeDisconnect);
+
+    // EIP-6963 Provider Detection handlers
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_PROVIDERS, this.walletBridgeIpcHandlers.getAvailableProviders);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_SELECT_PROVIDER, this.walletBridgeIpcHandlers.selectProvider);
+    ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_SELECTED_PROVIDER, this.walletBridgeIpcHandlers.getSelectedProvider);
   }
 
   cleanup(): void {
