@@ -673,7 +673,7 @@ def test_replace_asset(
         assert global_cursor.execute(
             'SELECT COUNT(*) FROM user_owned_assets WHERE asset_id=?', (user_asset1_id,),
         ).fetchone()[0] == 1
-        # check the user asset asset is in user db
+        # check the user asset is in user db
         assert cursor.execute(
             'SELECT COUNT(*) FROM assets WHERE identifier=?', (user_asset1_id,),
         ).fetchone()[0] == 1
