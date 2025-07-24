@@ -605,7 +605,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             # This can happen some times (for lefteris 5 times since start of kraken usage)
             # when the other part of a trade is so small it's 0. So it's either a
             # receive event with no counterpart or a spend event with no counterpart.
-            # This happens for really small amounts. So we add rate 0 trades
+            # This happens for really really really small amounts. So we add rate 0 trades
             if spend_part is not None:
                 spend_asset = spend_part.asset
                 spend_amount = spend_part.amount
