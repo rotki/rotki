@@ -1,27 +1,40 @@
 import type { LogService } from '@electron/main/log-service';
+import type { WalletBridgeNotification, WalletBridgeRequest } from '@electron/main/wallet-bridge-types';
 import type { RpcRequest } from '@/types';
 import { WalletBridgeNotConnectedError, WalletBridgeTimeoutError } from '@electron/main/wallet-bridge-errors';
-import { WalletBridgeMessageSchema, type WalletBridgeNotification, type WalletBridgeRequest, WalletBridgeResponseSchema } from '@electron/main/wallet-bridge-types';
-import { type WebSocket, WebSocketServer } from 'ws';
+import { ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES } from '@shared/proxy/constants';
+import { WebSocketServer } from 'ws';
+import { WalletBridgeConnectionManager } from './wallet-bridge-connection-manager';
+import { WalletBridgeMessageHandler } from './wallet-bridge-message-handler';
+import {
+  IDLE_TIMEOUT_MS,
+  type PendingRequest,
+  REQUEST_TIMEOUT_MS,
+  type WalletBridgeIpcCallbacks,
+  WEBSOCKET_PATH,
+} from './wallet-bridge-ws-types';
 
-interface WalletBridgeIpcCallbacks {
-  sendIpcMessage: (channel: string, ...args: any[]) => void;
-}
-
+/**
+ * WebSocket server for managing wallet bridge connections
+ */
 export class WalletBridgeWebSocketServer {
   private wsServer: WebSocketServer | undefined;
-  private activeBridgeConnection: WebSocket | undefined;
-  private readonly pendingRequests = new Map<string, { resolve: (value: any) => void; reject: (error: any) => void }>();
-  private onBridgeDisconnected?: () => void;
-  private onBridgeReconnected?: () => void;
+  private readonly pendingRequests = new Map<string, PendingRequest>();
   private idleTimer?: NodeJS.Timeout;
-  private readonly idleTimeout = 15 * 60 * 1000; // 15 minutes in milliseconds
-  private disconnectedState = false;
   private requestIdNonce = 0;
-  private ipcCallbacks?: WalletBridgeIpcCallbacks;
+  private connectionManager: WalletBridgeConnectionManager;
+  private messageHandler: WalletBridgeMessageHandler;
 
-  constructor(private readonly logger: LogService) {}
+  constructor(private readonly logger: LogService) {
+    this.connectionManager = new WalletBridgeConnectionManager(logger);
+    this.messageHandler = new WalletBridgeMessageHandler(
+      logger,
+      this.pendingRequests,
+      () => this.connectionManager.getActiveConnectionId(),
+    );
+  }
 
+  /** Start the WebSocket server on the specified port */
   public start(port: number): void {
     if (this.wsServer) {
       return; // Already started
@@ -29,84 +42,38 @@ export class WalletBridgeWebSocketServer {
 
     this.wsServer = new WebSocketServer({
       port,
-      path: '/wallet-bridge',
+      path: WEBSOCKET_PATH,
     });
 
     this.wsServer.on('connection', (ws) => {
-      const hadPreviousConnection = this.activeBridgeConnection !== undefined;
-      const wasDisconnected = this.disconnectedState === true;
+      const shouldNotifyReconnection = this.connectionManager.shouldNotifyReconnection();
 
-      // If there's already an active connection, notify it before taking over
-      if (this.activeBridgeConnection && this.activeBridgeConnection.readyState === this.activeBridgeConnection.OPEN) {
-        this.logger.info('New wallet bridge connection detected, taking over existing connection');
+      // Register the new connection
+      const currentConnectionId = this.connectionManager.registerConnection(ws);
 
-        // Send notification to existing connection before closing it
-        try {
-          const takeoverNotification = { type: 'reconnected' as const };
-          this.activeBridgeConnection.send(JSON.stringify(takeoverNotification));
-          this.logger.info('Sent reconnected notification to existing connection');
-        }
-        catch (error) {
-          this.logger.error('Failed to send reconnected notification:', error);
-        }
+      // Handle connection takeover if needed
+      this.connectionManager.handleConnectionTakeover(
+        currentConnectionId,
+        connectionId => this.cancelPendingRequestsForConnection(connectionId),
+      );
 
-        // Close the existing connection
-        this.activeBridgeConnection.close();
-      }
-
-      // Set new connection as active
-      this.activeBridgeConnection = ws;
-      this.disconnectedState = false;
-
-      if (hadPreviousConnection || wasDisconnected) {
-        this.logger.info(`Wallet bridge WebSocket reconnected on port ${port}`);
-        // Notify that the bridge has been reconnected
-        if (this.onBridgeReconnected) {
-          this.onBridgeReconnected();
-        }
-        // Fire IPC event for reconnection
-        if (this.ipcCallbacks) {
-          this.ipcCallbacks.sendIpcMessage('WALLET_BRIDGE_CONNECTION_STATUS', 'reconnected');
-        }
-      }
-      else {
-        this.logger.info(`Wallet bridge WebSocket connected on port ${port}`);
-        // Fire IPC event for initial connection
-        if (this.ipcCallbacks) {
-          this.ipcCallbacks.sendIpcMessage('WALLET_BRIDGE_CONNECTION_STATUS', 'connected');
-        }
-      }
+      // Notify about connection status
+      this.connectionManager.notifyConnectionStatus(port, shouldNotifyReconnection);
 
       // Start idle timer when connection is established
       this.resetIdleTimer();
 
       ws.on('message', (data) => {
-        this.handleWebSocketMessage(data.toString());
+        const messageString = typeof data === 'string' ? data : data.toString();
+        this.messageHandler.handleMessage(messageString, () => this.resetIdleTimer());
       });
 
       ws.on('close', () => {
-        // Only mark as disconnected if this was the active connection
-        // and no new connection has taken over
-        if (this.activeBridgeConnection === ws) {
-          this.activeBridgeConnection = undefined;
-          this.disconnectedState = true;
-          this.logger.info('Wallet bridge WebSocket disconnected');
-
-          // Clear idle timer on disconnect
-          this.clearIdleTimer();
-
-          // Notify that the bridge has been disconnected
-          if (this.onBridgeDisconnected) {
-            this.onBridgeDisconnected();
-          }
-          // Fire IPC event for disconnection
-          if (this.ipcCallbacks) {
-            this.ipcCallbacks.sendIpcMessage('WALLET_BRIDGE_CONNECTION_STATUS', 'disconnected');
-          }
-        }
-        else {
-          this.logger.info('Old wallet bridge connection closed (takeover completed)');
-        }
+        this.connectionManager.handleConnectionClose(
+          ws,
+          connectionId => this.cancelPendingRequestsForConnection(connectionId),
+        );
+        this.clearIdleTimer();
       });
 
       ws.on('error', (error) => {
@@ -118,61 +85,7 @@ export class WalletBridgeWebSocketServer {
       this.logger.error('WebSocket server error:', error);
     });
 
-    this.logger.info(`Wallet bridge WebSocket server started at ws://localhost:${port}/wallet-bridge`);
-  }
-
-  private handleWebSocketMessage(message: string): void {
-    try {
-      const rawData = JSON.parse(message);
-      const parseResult = WalletBridgeMessageSchema.safeParse(rawData);
-
-      if (!parseResult.success) {
-        this.logger.error('Invalid WebSocket message schema:', parseResult.error);
-        return;
-      }
-
-      const data = parseResult.data;
-
-      // Reset idle timer on any message
-      this.resetIdleTimer();
-
-      // Handle responses from wallet-bridge page
-      if ('id' in data && data.id && this.pendingRequests.has(data.id)) {
-        const responseResult = WalletBridgeResponseSchema.safeParse(data);
-
-        if (responseResult.success) {
-          const response = responseResult.data;
-          const { resolve, reject } = this.pendingRequests.get(data.id)!;
-          this.pendingRequests.delete(data.id);
-
-          // Check if the response contains an error
-          if (response.error) {
-            // Create an error object with the code property
-            const error = new Error(response.error.message);
-            (error as any).code = response.error.code;
-            reject(error);
-          }
-          else {
-            resolve(response.result);
-          }
-        }
-      }
-      // Handle wallet event notifications
-      else if ('type' in data && data.type === 'wallet_event' && 'eventName' in data) {
-        this.logger.debug(`Received wallet event: ${data.eventName}`, data.eventData);
-
-        // Forward wallet event via IPC using single channel
-        if (this.ipcCallbacks) {
-          this.ipcCallbacks.sendIpcMessage('WALLET_BRIDGE_EVENT', {
-            eventName: data.eventName,
-            eventData: data.eventData,
-          });
-        }
-      }
-    }
-    catch (error) {
-      this.logger.error('Invalid WebSocket message:', error);
-    }
+    this.logger.info(`Wallet bridge WebSocket server started at ws://localhost:${port}${WEBSOCKET_PATH}`);
   }
 
   private resetIdleTimer(): void {
@@ -183,7 +96,7 @@ export class WalletBridgeWebSocketServer {
     this.idleTimer = setTimeout(() => {
       this.logger.info('WebSocket connection idle timeout reached, closing connection');
       this.disconnect();
-    }, this.idleTimeout);
+    }, IDLE_TIMEOUT_MS);
   }
 
   private clearIdleTimer(): void {
@@ -197,9 +110,11 @@ export class WalletBridgeWebSocketServer {
     return `req_${++this.requestIdNonce}`;
   }
 
+  /** Send an RPC request to the wallet bridge */
   public async sendToWalletBridge(message: RpcRequest): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (!this.activeBridgeConnection || this.activeBridgeConnection.readyState !== this.activeBridgeConnection.OPEN) {
+      const activeConnection = this.connectionManager.getActiveConnection();
+      if (!activeConnection || activeConnection.readyState !== activeConnection.OPEN) {
         reject(new WalletBridgeNotConnectedError());
         return;
       }
@@ -212,14 +127,18 @@ export class WalletBridgeWebSocketServer {
         jsonrpc: '2.0',
       };
 
-      // Store the promise handlers
-      this.pendingRequests.set(id, { resolve, reject });
+      // Store the promise handlers with current connection ID
+      this.pendingRequests.set(id, {
+        resolve,
+        reject,
+        connectionId: this.connectionManager.getActiveConnectionId(),
+      });
 
       // Reset idle timer on outgoing messages
       this.resetIdleTimer();
 
       // Send message to wallet bridge
-      this.activeBridgeConnection.send(JSON.stringify(requestMessage));
+      activeConnection.send(JSON.stringify(requestMessage));
 
       // Set timeout for the request
       setTimeout(() => {
@@ -227,24 +146,49 @@ export class WalletBridgeWebSocketServer {
           this.pendingRequests.delete(id);
           reject(new WalletBridgeTimeoutError());
         }
-      }, 30000);
+      }, REQUEST_TIMEOUT_MS);
     });
   }
 
+  /** Check if the WebSocket connection is active */
   public isConnected(): boolean {
-    return this.activeBridgeConnection?.readyState === this.activeBridgeConnection?.OPEN;
+    const activeConnection = this.connectionManager.getActiveConnection();
+    return activeConnection ? activeConnection.readyState === activeConnection.OPEN : false;
   }
 
+  /** Verify the client can handle requests */
+  public async isClientReady(): Promise<boolean> {
+    if (!this.isConnected()) {
+      return false;
+    }
+
+    try {
+      // Send a ping to verify the client can handle requests
+      const pingResponse = await this.sendToWalletBridge({
+        method: ROTKI_RPC_METHODS.PING,
+        params: [],
+      });
+
+      return pingResponse === ROTKI_RPC_RESPONSES.PONG;
+    }
+    catch (error) {
+      // If the request fails due to timeout or connection issues, client is not ready
+      this.logger.debug('Client readiness check failed:', error);
+      return false;
+    }
+  }
+
+  /** Send a notification to the wallet bridge */
   public sendNotification(message: WalletBridgeNotification): void {
-    // Capture the connection reference immediately to avoid race conditions
-    const connection = this.activeBridgeConnection;
+    // Get the active connection
+    const connection = this.connectionManager.getActiveConnection();
 
     if (!connection) {
       this.logger.warn('Cannot send notification: No active bridge connection');
       return;
     }
 
-    // Check connection state at the moment we captured it
+    // Check connection state
     if (connection.readyState !== connection.OPEN) {
       this.logger.warn(`Cannot send notification: Connection state is ${connection.readyState} (not OPEN)`);
       return;
@@ -252,7 +196,7 @@ export class WalletBridgeWebSocketServer {
 
     try {
       connection.send(JSON.stringify(message));
-      this.logger.info(`Notification sent to wallet bridge: ${message.type}`);
+      this.logger.info(`Notification sent to wallet bridge connection ${this.connectionManager.getActiveConnectionId()}: ${message.type}`);
     }
     catch (error) {
       this.logger.error('Failed to send notification to wallet bridge:', error);
@@ -260,20 +204,24 @@ export class WalletBridgeWebSocketServer {
     }
   }
 
+  /** Check if the server is listening */
   public isListening(): boolean {
     return !!this.wsServer;
   }
 
+  /** Disconnect all connections and stop the server */
   public disconnect(): void {
     // Clear idle timer
     this.clearIdleTimer();
 
-    if (this.activeBridgeConnection) {
-      this.activeBridgeConnection.close();
-      this.activeBridgeConnection = undefined;
+    // Close active connection if it exists
+    const activeConnection = this.connectionManager.getActiveConnection();
+    if (activeConnection) {
+      activeConnection.close();
     }
 
-    this.disconnectedState = true;
+    // Clear all connection mappings
+    this.connectionManager.clearAll();
 
     if (this.wsServer) {
       this.wsServer.close();
@@ -287,19 +235,58 @@ export class WalletBridgeWebSocketServer {
     this.pendingRequests.clear();
   }
 
+  /** Stop the server (alias for disconnect) */
   public stop(): void {
     this.disconnect();
   }
 
   public setOnBridgeDisconnected(callback: () => void): void {
-    this.onBridgeDisconnected = callback;
+    this.connectionManager = new WalletBridgeConnectionManager(
+      this.logger,
+      callback,
+      undefined,
+    );
   }
 
   public setOnBridgeReconnected(callback: () => void): void {
-    this.onBridgeReconnected = callback;
+    this.connectionManager = new WalletBridgeConnectionManager(
+      this.logger,
+      undefined,
+      callback,
+    );
   }
 
   public setIpcCallbacks(callbacks: WalletBridgeIpcCallbacks): void {
-    this.ipcCallbacks = callbacks;
+    this.connectionManager = new WalletBridgeConnectionManager(
+      this.logger,
+      undefined,
+      undefined,
+      callbacks,
+    );
+    this.messageHandler = new WalletBridgeMessageHandler(
+      this.logger,
+      this.pendingRequests,
+      () => this.connectionManager.getActiveConnectionId(),
+      callbacks,
+    );
+  }
+
+  private cancelPendingRequestsForConnection(connectionId: number): void {
+    const requestsToCancel: string[] = [];
+
+    for (const [requestId, requestInfo] of this.pendingRequests) {
+      if (requestInfo.connectionId === connectionId) {
+        requestsToCancel.push(requestId);
+        requestInfo.reject(new Error(`Connection ${connectionId} was closed`));
+      }
+    }
+
+    for (const requestId of requestsToCancel) {
+      this.pendingRequests.delete(requestId);
+    }
+
+    if (requestsToCancel.length > 0) {
+      this.logger.info(`Cancelled ${requestsToCancel.length} pending requests for connection ${connectionId}`);
+    }
   }
 }

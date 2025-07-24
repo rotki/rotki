@@ -5,13 +5,15 @@ import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
 import { logger } from '@/utils/logging';
 import { supportedNetworks } from '../wallet-connect/use-wallet-connect';
+import { useProviders } from '../wallet-providers/use-providers';
 import { useBridgedWallet } from './use-bridged-wallet';
 
 interface UseInjectedWalletReturn {
   connected: Ref<boolean>;
   connectedAddress: Ref<string | undefined>;
   connectedChainId: Ref<number | undefined>;
-  open: (setPreparing?: (preparing: boolean) => void) => Promise<void>;
+  isConnecting: Ref<boolean>;
+  connectToSelectedProvider: () => Promise<void>;
   disconnect: () => Promise<void>;
   getBrowserProvider: () => BrowserProvider;
   switchNetwork: (chainId: bigint) => Promise<void>;
@@ -21,8 +23,12 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   const connected = ref<boolean>(false);
   const connectedAddress = ref<string>();
   const connectedChainId = ref<number>();
+  const isConnecting = ref<boolean>(false);
 
   let injectedProvider: EIP1193Provider | undefined;
+
+  // Provider store for enhanced provider detection and selection
+  const providerStore = useProviders();
 
   // Define event handlers as part of the composable scope (maintain same references)
   const handleAccountsChanged = (accounts: string[]): void => {
@@ -66,7 +72,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   };
 
   const { isPackaged } = useInterop();
-  const { disconnectBridge, setupBridge, startConnectionHealthCheck, stopConnectionHealthCheck } = useBridgedWallet();
+  const { disconnectBridge, startConnectionHealthCheck, stopConnectionHealthCheck } = useBridgedWallet();
 
   // Remove event listeners from the injected provider
   const removeProviderEventListeners = (provider: EIP1193Provider): void => {
@@ -89,6 +95,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       throw new Error('Injected provider not initialized');
     }
 
+    set(isConnecting, true);
+
     try {
       logger.debug('Requesting accounts from injected provider');
       const accounts = await injectedProvider.request<string[]>({ method: 'eth_requestAccounts' });
@@ -106,6 +114,9 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       logger.error('Failed to connect injected provider:', error);
       throw error;
     }
+    finally {
+      set(isConnecting, false);
+    }
   };
 
   // Add event listeners to the injected provider
@@ -119,107 +130,93 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     provider.on?.('error', handleError);
   };
 
-  // Get initial state from provider with retry logic
-  const getInitialProviderState = async (provider: EIP1193Provider, retries: number = 30): Promise<void> => {
-    try {
-      const accounts = await provider.request<string[]>({ method: 'eth_accounts' });
-      if (accounts.length > 0) {
-        set(connectedAddress, getAddress(accounts[0]));
-        set(connected, true);
+  // Connect to the selected provider (called after selection)
+  async function connectToSelectedProvider(): Promise<void> {
+    const selectedProvider = get(providerStore.selectedProvider);
+    if (!selectedProvider) {
+      throw new Error('No provider selected');
+    }
+
+    logger.debug('Connecting to selected provider:', selectedProvider.info.name);
+
+    // In Electron/packaged mode, always use window.ethereum (the bridge provider)
+    // In browser mode, use the selected provider directly
+    if (isPackaged) {
+      // Ensure window.ethereum exists (should be set up by bridge)
+      if (!window.ethereum) {
+        throw new Error('Bridge provider not available. Please ensure wallet bridge is connected.');
+      }
+      injectedProvider = window.ethereum;
+      logger.debug('Using bridge provider (window.ethereum) in packaged mode');
+    }
+    else {
+      // Browser mode: use the selected provider directly
+      const selectedEthereumProvider = selectedProvider.provider;
+
+      // Clean up previous provider if different
+      if (injectedProvider && injectedProvider !== selectedEthereumProvider) {
+        removeProviderEventListeners(injectedProvider);
       }
 
-      const chainId = await provider.request<string>({ method: 'eth_chainId' });
-      set(connectedChainId, parseInt(chainId, 16));
+      injectedProvider = selectedEthereumProvider;
+      logger.debug('Using selected provider directly in browser mode');
     }
-    catch (error) {
-      if (retries > 0) {
-        logger.debug(`Failed to get initial provider state, retrying... (${retries} attempts left)`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await getInitialProviderState(provider, retries - 1);
-      }
-      else {
-        logger.error('Failed to get initial provider state after retries:', error);
-        // Don't throw error, just continue without initial state
-      }
-    }
-  };
 
-  // Initialize injected provider (with optional bridge setup when packaged)
-  const initializeInjectedProvider = async (): Promise<void> => {
-    if (typeof window === 'undefined') {
+    // Always remove existing listeners first to prevent duplicates
+    removeProviderEventListeners(injectedProvider);
+
+    // Add event listeners
+    addProviderEventListeners(injectedProvider);
+
+    // Start health check if packaged
+    if (isPackaged) {
+      startConnectionHealthCheck(
+        () => injectedProvider !== undefined && get(connected),
+        () => {
+          set(connected, false);
+          set(connectedAddress, undefined);
+          set(connectedChainId, undefined);
+        },
+      );
+    }
+
+    // CRITICAL: NOW request accounts - only after provider selection
+    logger.debug('Provider setup complete, requesting accounts...');
+    await connectInjectedProvider();
+  }
+
+  async function sendDisconnectToWallet(): Promise<void> {
+    if (!injectedProvider) {
       return;
     }
 
     try {
-      // Only setup bridge when packaged, otherwise use direct injected provider
-      if (isPackaged) {
-        await setupBridge();
+      // Try to revoke permissions if supported
+      await injectedProvider.request({
+        method: 'wallet_revokePermissions',
+        params: [{ eth_accounts: {} }],
+      });
+    }
+    catch (error: any) {
+      // wallet_revokePermissions is not widely supported
+      logger.debug('wallet_revokePermissions not supported:', error.message);
+      try {
+        if ('disconnect' in injectedProvider && typeof injectedProvider.disconnect === 'function') {
+          await injectedProvider.disconnect();
+        }
       }
-
-      // Get the ethereum provider (either through bridge or directly injected)
-      const newProvider = window.ethereum;
-
-      if (!newProvider) {
-        throw new Error('No injected provider found');
-      }
-
-      // Clean up previous provider if it exists and is different
-      if (injectedProvider && injectedProvider !== newProvider) {
-        removeProviderEventListeners(injectedProvider);
-      }
-
-      injectedProvider = newProvider;
-
-      // Always remove existing listeners first to prevent duplicates
-      if (injectedProvider) {
-        removeProviderEventListeners(injectedProvider);
-      }
-
-      // Add event listeners
-      addProviderEventListeners(injectedProvider);
-
-      // Get initial state
-      await getInitialProviderState(injectedProvider);
-
-      // Start periodic connection health check only when packaged
-      if (isPackaged) {
-        startConnectionHealthCheck(
-          () => injectedProvider !== undefined && get(connected),
-          () => {
-            set(connected, false);
-            set(connectedAddress, undefined);
-            set(connectedChainId, undefined);
-          },
-        );
+      catch (error: any) {
+        logger.debug('disconnect failed:', error.message);
       }
     }
-    catch (error) {
-      logger.error('Failed to initialize injected provider:', error);
-      throw error;
-    }
-  };
-
-  const open = async (setPreparing?: (preparing: boolean) => void): Promise<void> => {
-    try {
-      // Set loading state when bridge setup starts
-      setPreparing?.(true);
-
-      // Initialize the injected provider
-      await initializeInjectedProvider();
-      // Request account connection
-      await connectInjectedProvider();
-    }
-    finally {
-      // Clear loading state regardless of success/failure
-      setPreparing?.(false);
-    }
-  };
+  }
 
   const disconnect = async (): Promise<void> => {
-    // Stop health check
     stopConnectionHealthCheck();
 
     if (injectedProvider) {
+      await sendDisconnectToWallet();
+
       try {
         // Remove event listeners to prevent memory leaks
         removeProviderEventListeners(injectedProvider);
@@ -287,9 +284,10 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     connected,
     connectedAddress,
     connectedChainId,
+    connectToSelectedProvider,
     disconnect,
     getBrowserProvider,
-    open,
+    isConnecting,
     switchNetwork,
   };
 }

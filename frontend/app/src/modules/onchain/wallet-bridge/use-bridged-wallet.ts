@@ -21,13 +21,15 @@ const BRIDGE_CONFIG = {
 
 interface UseBridgedWalletReturn {
   setupBridge: () => Promise<void>;
+  waitForBridgeConnection: (timeoutMs?: number, signal?: AbortSignal) => Promise<void>;
+  waitForBridgeClientReady: (timeoutMs?: number, signal?: AbortSignal) => Promise<void>;
   startConnectionHealthCheck: (isConnected: () => boolean, onDisconnect: () => void) => void;
   stopConnectionHealthCheck: () => void;
   disconnectBridge: () => Promise<void>;
 }
 
 export function useBridgedWallet(): UseBridgedWalletReturn {
-  const { openWalletBridge, walletBridgeConnect, walletBridgeHttpListening, walletBridgeWebSocketListening } = useWalletBridge();
+  const { openWalletBridge, walletBridgeClientReady, walletBridgeConnect, walletBridgeHttpListening, walletBridgeWebSocketListening } = useWalletBridge();
 
   // Track active resources for cleanup
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
@@ -77,6 +79,23 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
         initialDelay: BRIDGE_CONFIG.BRIDGE_PAGE_DELAY,
         interval: BRIDGE_CONFIG.RETRY_INTERVAL,
         name: 'bridge connection',
+        signal,
+        timeout: timeoutMs,
+      },
+    );
+  };
+
+  const waitForBridgeClientReady = async (
+    timeoutMs: number = BRIDGE_CONFIG.CONNECTION_TIMEOUT,
+    signal?: AbortSignal,
+  ): Promise<void> => {
+    await waitForConditionBridge(
+      async () => walletBridgeClientReady(),
+      ready => ready,
+      {
+        initialDelay: BRIDGE_CONFIG.BRIDGE_PAGE_DELAY,
+        interval: BRIDGE_CONFIG.RETRY_INTERVAL,
+        name: 'bridge client ready',
         signal,
         timeout: timeoutMs,
       },
@@ -180,6 +199,10 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
       // Step 3: Establish client connection
       await waitForBridgeConnection(BRIDGE_CONFIG.CONNECTION_TIMEOUT, signal);
       logger.debug('Bridge client connection established');
+
+      // Step 4: Wait for client to be ready for API calls
+      await waitForBridgeClientReady(BRIDGE_CONFIG.CONNECTION_TIMEOUT, signal);
+      logger.debug('Bridge client ready for API calls');
     }
     catch (error) {
       if (error instanceof BridgeTimeoutError) {
@@ -220,8 +243,12 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
       const isFullyConnected = bridgeState.httpListening && bridgeState.wsListening && bridgeState.clientConnected;
 
       if (isFullyConnected) {
-        logger.debug('Bridge is already fully operational, opening bridge page');
-        await openWalletBridge();
+        const isClientReady = await walletBridgeClientReady();
+        if (!isClientReady) {
+          logger.debug('Bridge is already fully operational, opening bridge page');
+          await openWalletBridge();
+        }
+
         return;
       }
 
@@ -303,5 +330,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     setupBridge,
     startConnectionHealthCheck,
     stopConnectionHealthCheck,
+    waitForBridgeClientReady,
+    waitForBridgeConnection,
   };
 }

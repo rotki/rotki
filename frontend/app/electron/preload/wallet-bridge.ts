@@ -148,6 +148,7 @@ export function initializeWalletBridge(): void {
     walletBridgeConnect: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_CONNECT),
     walletBridgeHttpListening: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING),
     walletBridgeWebSocketListening: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_WS_LISTENING),
+    walletBridgeClientReady: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_CLIENT_READY),
 
     // RPC requests
     request: async (request: WalletBridgeRequest) => {
@@ -183,5 +184,12 @@ export function initializeWalletBridge(): void {
     removeEventListener: (eventName: string) => {
       walletEventCallbacks.delete(eventName);
     },
+
+    // EIP-6963 Provider Detection
+    getAvailableProviders: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_GET_PROVIDERS),
+
+    selectProvider: async (uuid: string) => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_SELECT_PROVIDER, uuid),
+
+    getSelectedProvider: async () => ipcRenderer.invoke(IpcCommands.WALLET_BRIDGE_GET_SELECTED_PROVIDER),
   } satisfies WalletBridgeApi);
 }

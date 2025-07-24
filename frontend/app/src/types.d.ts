@@ -12,6 +12,7 @@ interface WalletBridgeApi {
   walletBridgeConnect: () => Promise<boolean>;
   walletBridgeHttpListening: () => Promise<boolean>;
   walletBridgeWebSocketListening: () => Promise<boolean>;
+  walletBridgeClientReady: () => Promise<boolean>;
 
   // RPC requests
   request: (request: RpcRequest) => Promise<any>;
@@ -19,6 +20,11 @@ interface WalletBridgeApi {
   // Event management
   addEventListener: (eventName: string, callback: (data: any) => void) => void;
   removeEventListener: (eventName: string) => void;
+
+  // EIP-6963 Provider Detection
+  getAvailableProviders: () => Promise<EIP6963ProviderDetail[]>;
+  selectProvider: (uuid: string) => Promise<boolean>;
+  getSelectedProvider: () => Promise<EIP6963ProviderDetail | null>;
 }
 
 interface Request {
