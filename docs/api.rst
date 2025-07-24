@@ -422,7 +422,8 @@ Querying premium devices
                       "device_identifier": "21312312"
                   }
               ],
-              "limit": 5
+              "limit": 5,
+              "current_device_id": "abcd1234efgh5678"
           },
           "message": ""
       }
@@ -433,6 +434,7 @@ Querying premium devices
    :resjson string user: User associated with the device
    :resjson string device_identifier: Unique identifier for the device
    :resjson int limit: Device limit for the premium account
+   :resjson string current_device_id: Identifier of the current device making the request
    :statuscode 200: Devices successfully queried
    :statuscode 401: User is not logged in
    :statuscode 403: Logged in user does not have premium.
