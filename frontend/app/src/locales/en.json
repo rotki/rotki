@@ -4363,6 +4363,12 @@
       "message_download_relogin": "After performing the pull, a manual re-login will be required.",
       "message_upload": "By force pushing, any previous synced data residing in the rotki server will be overwritten. There is no way to recover any overwritten data, or revert this action. Please be careful when performing this action as it may cause unintended data loss. By proceeding you acknowledge that you understand the dangers of using this action.",
       "title": "Force Push | Force Pull"
+    },
+    "upload_progress": {
+      "chunk": "Chunk {current} of {total}",
+      "compressing": "Compressing database...",
+      "encrypting": "Encrypting database...",
+      "uploading": "Uploading database..."
     }
   },
   "table_filter": {

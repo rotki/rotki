@@ -25,6 +25,7 @@ const {
   forceSync,
   showSyncConfirmation,
   syncAction,
+  uploadProgress,
   uploadStatus,
 } = useSync();
 const { href, onLinkClick } = useLinks();
@@ -55,6 +56,25 @@ const icon = computed(() => {
   return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
 });
 
+const uploadProgressIcon = computed<string>(() => {
+  const progress = get(uploadProgress);
+  if (!progress)
+    return 'lu-cloud-fill';
+
+  switch (progress.type) {
+    case 'compressing':
+      return 'lu-package-2';
+    case 'encrypting':
+      return 'lu-shield';
+    case 'uploading': {
+      const tick = get(counter) % 2 === 0;
+      return tick ? 'lu-cloud-upload-2-fill' : 'lu-cloud-upload-fill';
+    }
+    default:
+      return 'lu-cloud-fill';
+  }
+});
+
 const tooltip = computed<string>(() => {
   if (get(uploadStatus)) {
     const title = t('sync_indicator.db_upload_result.title');
@@ -64,6 +84,24 @@ const tooltip = computed<string>(() => {
     return `${title}: ${message}`;
   }
   return t('sync_indicator.menu_tooltip');
+});
+
+const currentProgressText = computed<string>(() => {
+  if (!isDefined(uploadProgress)) {
+    return '';
+  }
+
+  const type = get(uploadProgress).type;
+  switch (type) {
+    case 'compressing':
+      return t('sync_indicator.upload_progress.compressing');
+    case 'encrypting':
+      return t('sync_indicator.upload_progress.encrypting');
+    case 'uploading':
+      return t('sync_indicator.upload_progress.uploading');
+    default:
+      return '';
+  }
 });
 
 function showConfirmation(action: SyncAction) {
@@ -121,6 +159,11 @@ const syncSettingMenuOpen = ref<boolean>(false);
               color="warning"
             />
             <RuiIcon
+              v-else-if="uploadProgress"
+              :name="uploadProgressIcon"
+              color="primary"
+            />
+            <RuiIcon
               v-else-if="isSyncing"
               :name="icon"
               color="primary"
@@ -155,7 +198,36 @@ const syncSettingMenuOpen = ref<boolean>(false);
           <SyncSettings v-model="syncSettingMenuOpen" />
         </div>
         <RuiAlert
-          v-if="uploadStatus"
+          v-if="uploadProgress"
+          type="info"
+          outlined
+          class="border border-rui-info"
+        >
+          <div class="flex flex-col gap-2">
+            <div class="font-medium leading-5">
+              {{ currentProgressText }}
+            </div>
+            <RuiProgress
+              v-if="uploadProgress.type === 'uploading'"
+              color="primary"
+              :value="(uploadProgress.currentChunk / uploadProgress.totalChunks) * 100"
+              show-label
+            />
+            <div
+              v-if="uploadProgress.type === 'uploading'"
+              class="text-rui-text-secondary text-sm"
+            >
+              {{
+                t('sync_indicator.upload_progress.chunk', {
+                  current: uploadProgress.currentChunk,
+                  total: uploadProgress.totalChunks,
+                })
+              }}
+            </div>
+          </div>
+        </RuiAlert>
+        <RuiAlert
+          v-else-if="uploadStatus"
           type="warning"
           outlined
           class="border border-rui-warning"

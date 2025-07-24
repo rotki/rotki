@@ -12,7 +12,7 @@ import {
   RefreshBalancesData,
   SolanaTokensMigrationData,
 } from './notifications';
-import { DataMigrationStatusData, DbUpgradeStatusData, DbUploadResult, MigratedAddresses, PremiumStatusUpdateData } from './premium-db';
+import { DatabaseUploadProgress, DataMigrationStatusData, DbUpgradeStatusData, DbUploadResult, MigratedAddresses, PremiumStatusUpdateData } from './premium-db';
 import { ProgressUpdateResultData } from './progress-updates';
 import { UnifiedTransactionStatusData } from './transactions';
 
@@ -111,6 +111,11 @@ const SolanaTokensMigrationMessage = z.object({
   type: z.literal(SocketMessageType.SOLANA_TOKENS_MIGRATION),
 });
 
+const DatabaseUploadProgressMessage = z.object({
+  data: DatabaseUploadProgress,
+  type: z.literal(SocketMessageType.DATABASE_UPLOAD_PROGRESS),
+});
+
 export const WebsocketMessage = z.discriminatedUnion('type', [
   LegacyWebsocketMessage,
   BalancesSnapshotErrorMessage,
@@ -130,6 +135,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   ProgressUpdatesMessage,
   GnosisPaySessionKeyExpiredMessage,
   SolanaTokensMigrationMessage,
+  DatabaseUploadProgressMessage,
 ]).or(UnknownWebsocketMessage);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

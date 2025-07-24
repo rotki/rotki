@@ -24,6 +24,7 @@ export const SocketMessageType = {
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
   CALENDAR_REMINDER: 'calendar_reminder',
   DATA_MIGRATION_STATUS: 'data_migration_status',
+  DATABASE_UPLOAD_PROGRESS: 'database_upload_progress',
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DB_UPLOAD_RESULT: 'database_upload_result',
   EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',

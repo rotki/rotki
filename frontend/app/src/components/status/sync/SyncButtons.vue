@@ -7,7 +7,7 @@ import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/syn
 defineProps<{ pending: boolean }>();
 
 const emit = defineEmits<{
-  (event: 'action', action: SyncAction): void;
+  action: [action: SyncAction];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });

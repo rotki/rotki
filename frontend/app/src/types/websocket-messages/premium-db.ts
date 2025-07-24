@@ -29,6 +29,14 @@ export const DbUploadResult = z.object({
 
 export type DbUploadResult = z.infer<typeof DbUploadResult>;
 
+export const DatabaseUploadProgress = z.object({
+  currentChunk: z.number().nonnegative(),
+  totalChunks: z.number().nonnegative(),
+  type: z.enum(['compressing', 'encrypting', 'uploading']),
+});
+
+export type DatabaseUploadProgress = z.infer<typeof DatabaseUploadProgress>;
+
 export const DataMigrationStatusData = z.object({
   currentMigration: z.object({
     currentStep: z.number().nonnegative(),

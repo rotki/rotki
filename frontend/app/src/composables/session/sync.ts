@@ -1,5 +1,5 @@
 import type { TaskMeta } from '@/types/task';
-import type { DbUploadResult } from '@/types/websocket-messages';
+import type { DatabaseUploadProgress, DbUploadResult } from '@/types/websocket-messages';
 import { Severity } from '@rotki/common';
 import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';
@@ -21,6 +21,7 @@ export const useSync = createSharedComposable(() => {
     serializer,
   });
   const uploadStatusAlreadyHandled = useSessionStorage<boolean>('rotki.upload_status.handled', false);
+  const uploadProgress = ref<DatabaseUploadProgress>();
 
   const showSyncConfirmation = (action: SyncAction): void => {
     set(syncAction, action);
@@ -97,6 +98,7 @@ export const useSync = createSharedComposable(() => {
     forceSync,
     showSyncConfirmation,
     syncAction,
+    uploadProgress,
     uploadStatus,
     uploadStatusAlreadyHandled,
   };
