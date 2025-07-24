@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Liquity debts now appear as liabilities in dashboard balances where it was previously missing.
 * :bug:`-` Fix the issue where the prices for the asset group are not displayed and keep loading.
 * :bug:`-` Spark balances on proxy addresses will now be properly detected.
 * :bug:`-` Fix Spark protocol savings transactions decoding across all supported EVM chains.
