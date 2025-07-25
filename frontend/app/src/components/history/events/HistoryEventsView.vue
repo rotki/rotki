@@ -13,7 +13,6 @@ import type {
   AddTransactionHashPayload,
   PullEthBlockEventPayload,
   PullEvmTransactionPayload,
-  RepullingTransactionPayload,
 } from '@/types/history/events';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
@@ -124,7 +123,7 @@ const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
 
 const addTransactionModelValue = ref<AddTransactionHashPayload>();
-const repullingTransactionModelValue = ref<RepullingTransactionPayload>();
+const showRePullTransactionsDialog = ref<boolean>(false);
 
 const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
@@ -435,15 +434,6 @@ function addTxHash() {
   });
 }
 
-function repullingTransactions() {
-  set(repullingTransactionModelValue, {
-    address: '',
-    evmChain: '',
-    fromTimestamp: 0,
-    toTimestamp: 0,
-  });
-}
-
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -494,7 +484,7 @@ onMounted(async () => {
         @refresh="refresh(true, $event)"
         @show:form="showForm($event)"
         @show:add-transaction-form="addTxHash()"
-        @show:repulling-transactions-form="repullingTransactions()"
+        @show:repulling-transactions-form="showRePullTransactionsDialog = true"
       />
     </template>
 
@@ -594,9 +584,14 @@ onMounted(async () => {
         />
 
         <RepullingTransactionFormDialog
-          v-model="repullingTransactionModelValue"
+          v-model="showRePullTransactionsDialog"
           :loading="sectionLoading"
-          @refresh="fetchAndRedecodeEvents()"
+          @refresh="refreshTransactions({
+            chains: $event,
+            disableEvmEvents: false,
+            payload: undefined,
+            userInitiated: true,
+          });"
         />
 
         <MissingRulesDialog

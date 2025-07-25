@@ -1,5 +1,7 @@
 <script lang="ts" setup>
 import type { RepullingTransactionPayload } from '@/types/history/events';
+import { assert } from '@rotki/common';
+import dayjs from 'dayjs';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
@@ -9,21 +11,21 @@ import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
 
-const modelValue = defineModel<RepullingTransactionPayload | undefined>({ required: true });
+const modelValue = defineModel<boolean>({ required: true });
 
-withDefaults(
-  defineProps<{
-    loading?: boolean;
-  }>(),
-  {
-    loading: false,
-  },
-);
+withDefaults(defineProps<{
+  loading?: boolean;
+}>(), {
+  loading: false,
+});
 
 const emit = defineEmits<{
-  refresh: [];
+  refresh: [chains: string[]];
 }>();
+
+const formData = ref<RepullingTransactionPayload>(defaults());
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -34,21 +36,27 @@ const stateUpdated = ref(false);
 
 const { setMessage } = useMessageStore();
 const { repullingTransactions } = useHistoryTransactions();
-const { getEvmChainName } = useSupportedChains();
+const { getEvmChainName, matchChain, txEvmChains } = useSupportedChains();
 const { useIsTaskRunning } = useTaskStore();
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
-async function submit() {
-  if (!isDefined(modelValue))
-    return false;
+function defaults(): RepullingTransactionPayload {
+  return {
+    address: '',
+    evmChain: '',
+    fromTimestamp: dayjs().subtract(1, 'year').unix(),
+    toTimestamp: dayjs().unix(),
+  };
+}
 
+async function submit() {
   const formRef = get(form);
   const valid = await formRef?.validate();
   if (!valid)
     return false;
 
-  const data = get(modelValue);
+  const data = get(formData);
   const evmChainVal = data.evmChain;
 
   const evmChain = evmChainVal && evmChainVal !== 'evm' ? getEvmChainName(evmChainVal) : undefined;
@@ -60,9 +68,25 @@ async function submit() {
 
   try {
     set(submitting, true);
-    await repullingTransactions(payload, () => emit('refresh'));
+    set(modelValue, false);
+    const newTransactionsDetected = await repullingTransactions(payload);
+    if (newTransactionsDetected) {
+      let chains: string[];
+      if (evmChainVal === 'evm' || !evmChainVal) {
+        chains = get(txEvmChains).map(chain => chain.id);
+      }
+      else {
+        const chainId = matchChain(evmChainVal);
+        assert(chainId);
+        chains = [chainId];
+      }
+
+      emit('refresh', chains);
+      logger.debug(`New transactions detected ${chains.join(', ')}`);
+    }
+
     set(submitting, false);
-    set(modelValue, undefined);
+    set(formData, defaults());
   }
   catch (error: any) {
     let message = error.message;
@@ -87,19 +111,18 @@ async function submit() {
 
 <template>
   <BigDialog
-    :display="!!modelValue"
+    :display="modelValue"
     :title="t('transactions.repulling.title')"
     :primary-action="t('transactions.repulling.action')"
     :action-disabled="loading || taskRunning"
     :loading="submitting || taskRunning"
     :prompt-on-close="stateUpdated"
     @confirm="submit()"
-    @cancel="modelValue = undefined"
+    @cancel="modelValue = false"
   >
     <RepullingTransactionForm
-      v-if="modelValue"
       ref="form"
-      v-model="modelValue"
+      v-model="formData"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
     />
