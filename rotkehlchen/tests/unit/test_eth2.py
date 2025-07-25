@@ -686,6 +686,13 @@ def test_deposits_pubkey_re(eth2: 'Eth2', database):
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
+@pytest.mark.parametrize('eth2_mock_data', [{
+    'validator': [
+        {'data_can_be_anything_here': 'with length of list being 2 (validators)'},
+        {'thatswhy': 'wehavetwo. Normally these should have been validator data response'},
+    ],
+
+}])
 def test_eth_validators_performance(eth2, database, ethereum_accounts):
     """Test that the performance of all multiple validators is returned fine"""
     dbevents = DBHistoryEvents(database)
@@ -856,6 +863,7 @@ def test_eth_validators_performance(eth2, database, ethereum_accounts):
 
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_eth_accumulating_validators_performance(
         eth2: 'Eth2',
         database: 'DBHandler',
@@ -879,6 +887,7 @@ def test_eth_accumulating_validators_performance(
     - exit of validator 4
     - block reward of 0.05 ETH for validator 1
     """
+    eth2.premium._cached_limits = {'eth_staked_limit': 8096}  # type: ignore  # todo: Set those by fixture. ignore is since we only set the one relevant limit
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
     validators = [(validator1 := ValidatorDetails(
@@ -985,32 +994,32 @@ def test_eth_accumulating_validators_performance(
         dbeth2.add_or_update_validators(write_cursor, validators)
         dbevents.add_history_events(write_cursor, events)
 
-    assert eth2.get_performance(
-        from_ts=ts_ms_to_sec(timestamp),
-        to_ts=ts_ms_to_sec(TimestampMS(timestamp + (100 * hour_in_ms))),
-        limit=10,
-        offset=0,
-        ignore_cache=True,
-    ) == {
-        'validators': {
-            validator3.validator_index: {'withdrawals': skim_amount, 'sum': skim_amount, 'apr': FVal('0.0188793103448275862068965517241379310344827586206896551724137931034482758620690')},  # noqa: E501
-            validator4.validator_index: {'exits': exit_amount, 'sum': exit_amount, 'apr': FVal('0.0290643662906436629064366290643662906436629064366290643662906436629064366290644')},  # noqa: E501
-            validator1.validator_index: {'execution_blocks': block_reward, 'sum': block_reward, 'apr': FVal('0.0411654135338345864661654135338345864661654135338345864661654135338345864661654')},  # noqa: E501
-        },
-        'sums': {
-            'withdrawals': skim_amount,
-            'sum': skim_amount + exit_amount + block_reward,
-            'exits': exit_amount,
-            'execution_blocks': block_reward,
-            'apr': FVal('0.0297030300564352785264995314407796027147703595303844353349566167667297663190996'),  # noqa: E501
-        },
-        'entries_total': 4,
-        'entries_found': 3,
-    }
+    with patch.object(eth2.premium, 'is_active', return_value=True):  # needed to use the premium limit  # noqa: E501
+        assert eth2.get_performance(
+            from_ts=ts_ms_to_sec(timestamp),
+            to_ts=ts_ms_to_sec(TimestampMS(timestamp + (100 * hour_in_ms))),
+            limit=10,
+            offset=0,
+            ignore_cache=True,
+        ) == {
+            'validators': {
+                validator3.validator_index: {'withdrawals': skim_amount, 'sum': skim_amount, 'apr': FVal('0.0188793103448275862068965517241379310344827586206896551724137931034482758620690')},  # noqa: E501
+                validator4.validator_index: {'exits': exit_amount, 'sum': exit_amount, 'apr': FVal('0.0290643662906436629064366290643662906436629064366290643662906436629064366290644')},  # noqa: E501
+                validator1.validator_index: {'execution_blocks': block_reward, 'sum': block_reward, 'apr': FVal('0.0411654135338345864661654135338345864661654135338345864661654135338345864661654')},  # noqa: E501
+            },
+            'sums': {
+                'withdrawals': skim_amount,
+                'sum': skim_amount + exit_amount + block_reward,
+                'exits': exit_amount,
+                'execution_blocks': block_reward,
+                'apr': FVal('0.0297030300564352785264995314407796027147703595303844353349566167667297663190996'),  # noqa: E501
+            },
+            'entries_total': 4,
+            'entries_found': 3,
+        }
 
 
 @pytest.mark.vcr
-@pytest.mark.freeze_time('2024-02-02 13:34:45 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
 def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
@@ -1024,11 +1033,11 @@ def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, validators=[
             ValidatorDetails(
-                validator_index=647202,
+                validator_index=vindex1,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x8f1e2e85780c76baede1331c1b5050b7ef752014d24eac669542051ff066dff263753bc033030ccb3c6cfdcc73de0757'),
             ), ValidatorDetails(
-                validator_index=647205,
+                validator_index=vindex2,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x845fd413c7c5fc2073437d423167f41a51c7f13343c8beb71d5cad2092036ff8277570aec8ba9467aee7ca352dd19d87'),
             ),
@@ -1045,30 +1054,39 @@ def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
             ),
         ])
 
-    outstanding_pnl_v1 = FVal('0.055917371')
-    outstanding_pnl_v2 = FVal('0.013201266')
+    outstanding_pnl_v1 = FVal('0.000234828')
+    outstanding_pnl_v2 = FVal('0.000232698')
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=ts_now(), limit=10, offset=0, ignore_cache=False)  # noqa: E501
+
+    # Pop out APRs to compare separately
+    sums_apr = performance['sums'].pop('apr')
+    vindex1_apr = performance['validators'][vindex1].pop('apr')
+    vindex2_apr = performance['validators'][vindex2].pop('apr')
+
+    # Check the rest of the dict
     assert performance == {
         'entries_found': 2,
         'entries_total': 2,
         'sums': {
-            'apr': FVal('0.0000776903705156613784446944579849811839682064281831828001284342697410897538992595'),  # noqa: E501
             'execution_blocks': block_reward_1,
             'outstanding_consensus_pnl': outstanding_pnl_v1 + outstanding_pnl_v2,
             'sum': block_reward_1 + outstanding_pnl_v1 + outstanding_pnl_v2,
         }, 'validators': {
             vindex1: {
-                'apr': FVal('0.000147758740130539337547271202817412768671318268351221239436400390645888567672372'),  # noqa: E501
                 'execution_blocks': block_reward_1,
                 'outstanding_consensus_pnl': outstanding_pnl_v1,
                 'sum': block_reward_1 + outstanding_pnl_v1,
             }, vindex2: {
-                'apr': FVal('0.00000762200090078341934211771315254959926509458801514436082046814883629094012614712'),  # noqa: E501
                 'outstanding_consensus_pnl': outstanding_pnl_v2,
                 'sum': outstanding_pnl_v2,
             },
         },
     }
+
+    # Check APRs separately with is_close
+    assert sums_apr.is_close(FVal('0.0000563343374354938274757423808642722178406443566732779649187925545876083487124555'), max_diff=1e-8)  # noqa: E501
+    assert vindex1_apr.is_close(FVal('0.00011253789171708606449971303386732112296831511920433901600306536566456522874236'), max_diff=1e-8)  # noqa: E501
+    assert vindex2_apr.is_close(FVal('1.30783153901590451771727861223312712973594142216913834519743510651468682550518E-7'), max_diff=1e-8)  # noqa: E501
 
 
 def test_combine_block_with_tx_events(eth2, database):
@@ -1382,6 +1400,10 @@ def test_clean_cache_on_account_removal(
         ) is None
 
 
+@pytest.mark.parametrize('eth2_mock_data', [{
+    'validator': [{'data_can_be_anything_here': 'with length of list being 1 (validator)'}],
+
+}])
 def test_staking_performance_division_by_zero_protection(eth2) -> None:
     """Test that division by zero is prevented when time_weighted_avg is zero in APR calculation"""
     dbevents, dbeth2 = DBHistoryEvents(eth2.database), DBEth2(eth2.database)

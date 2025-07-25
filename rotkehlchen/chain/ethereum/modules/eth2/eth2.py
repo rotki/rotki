@@ -159,7 +159,7 @@ class Eth2(EthereumModule):
         if new_total > limit:
             raise PremiumPermissionError(
                 f'ETH staking limit exceeded. Current staked: {current_staked} ETH, '
-                f'limit: {limit} ETH, would be: {new_total} ETH',
+                f'limit: {limit} ETH. Would be: {new_total} ETH',
                 extra_dict={
                     'limit_info': {
                         'current_staked': str(current_staked),
