@@ -17,6 +17,7 @@ const devices = ref<PremiumDevice[]>([]);
 const devicesLimit = ref<number>(0);
 const loading = ref<boolean>(false);
 const editingDevice = ref<PremiumDevice>();
+const currentDeviceId = ref<string>();
 
 const { premium } = storeToRefs(usePremiumStore());
 
@@ -25,16 +26,20 @@ const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
 
 const cols = computed<DataTableColumn<PremiumDevice>[]>(() => [{
-  key: 'user',
-  label: t('premium_devices.table.headers.user'),
-  sortable: true,
-}, {
   key: 'deviceName',
   label: t('premium_devices.table.headers.device_name'),
   sortable: true,
 }, {
+  key: 'currentIndicator',
+  label: '',
+  sortable: false,
+}, {
   key: 'platform',
   label: t('premium_devices.table.headers.platform'),
+  sortable: true,
+}, {
+  key: 'user',
+  label: t('premium_devices.table.headers.user'),
   sortable: true,
 }, {
   key: 'lastSeenAt',
@@ -55,6 +60,7 @@ async function fetchDevices(): Promise<void> {
     const response = await fetchPremiumDevices();
     set(devices, response.devices);
     set(devicesLimit, response.limit);
+    set(currentDeviceId, response.currentDeviceId);
   }
   catch (error: any) {
     setMessage({
@@ -128,6 +134,15 @@ onMounted(async () => {
       row-attr="deviceIdentifier"
       outlined
     >
+      <template #item.currentIndicator="{ row }">
+        <RuiChip
+          v-if="row.deviceIdentifier === currentDeviceId"
+          size="sm"
+          color="success"
+        >
+          {{ t('premium_devices.table.current_device') }}
+        </RuiChip>
+      </template>
       <template #item.lastSeenAt="{ row }">
         <DateDisplay :timestamp="row.lastSeenAt" />
       </template>
@@ -136,6 +151,7 @@ onMounted(async () => {
           :disabled="loading"
           :delete-tooltip="t('premium_devices.table.actions.delete_tooltip')"
           :edit-tooltip="t('premium_devices.table.actions.edit_tooltip')"
+          :delete-disabled="row.deviceIdentifier === currentDeviceId"
           @delete-click="showDeleteConfirmation(row)"
           @edit-click="edit(row)"
         />

@@ -3921,6 +3921,7 @@
         "delete_tooltip": "Delete device",
         "edit_tooltip": "Edit device"
       },
+      "current_device": "This Device",
       "headers": {
         "device_name": "Device Name",
         "last_seen": "Last Seen",
