@@ -5,7 +5,7 @@ but heavily modified"""
 import random
 import sqlite3
 from collections.abc import Generator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
@@ -93,6 +93,8 @@ class DBCursor:
         except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
             logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
+            with suppress(Exception):  # Try to clear any partial results
+                self._cursor.fetchall()
             self._cursor.execute(statement, *bindings)
 
         if __debug__:
