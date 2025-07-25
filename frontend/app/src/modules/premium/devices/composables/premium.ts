@@ -11,6 +11,7 @@ export const PremiumDevice = z.object({
 export type PremiumDevice = z.infer<typeof PremiumDevice>;
 
 export const PremiumDevicesResponse = z.object({
+  currentDeviceId: z.string(),
   devices: z.array(PremiumDevice),
   limit: z.number(),
 });
