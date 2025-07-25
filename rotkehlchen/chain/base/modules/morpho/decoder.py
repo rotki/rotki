@@ -23,6 +23,7 @@ class MorphoDecoder(MorphoCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             bundlers={
+                string_to_evm_address('0x6BFd8137e702540E7A42B74178A4a49Ba43920C4'),  # ChainAgnosticBundlerV3  # noqa: E501
                 string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),  # ChainAgnosticBundlerV2  # noqa: E501
                 string_to_evm_address('0x123f3167a416cA19365dE03a65e0AF3532af7223'),  # CompoundV2MigrationBundlerV2  # noqa: E501
                 string_to_evm_address('0x1f8076e2EB6f10b12e6886f30D4909A91969F7dA'),  # CompoundV3MigrationBundlerV2  # noqa: E501
