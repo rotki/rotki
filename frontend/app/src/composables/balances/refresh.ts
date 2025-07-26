@@ -12,7 +12,7 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 
 export const useRefresh = createSharedComposable(() => {
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
-  const { fetchConnectedExchangeBalances } = useExchanges();
+  const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { txEvmChains } = useSupportedChains();
@@ -63,10 +63,15 @@ export const useRefresh = createSharedComposable(() => {
       await fetchConnectedExchangeBalances(true);
   };
 
+  const refreshExchangeBalance = async (exchangeLocation: string): Promise<void> => {
+    await fetchSelectedExchangeBalances(exchangeLocation);
+  };
+
   return {
     handleBlockchainRefresh,
     massDetectTokens,
     refreshBalance,
     refreshBlockchainBalances,
+    refreshExchangeBalance,
   };
 });

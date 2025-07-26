@@ -19,6 +19,7 @@ import { isTaskCancelled } from '@/utils';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;
+  fetchSelectedExchangeBalances: (exchangeLocation: string) => Promise<void>;
   fetchExchangeBalances: (payload: ExchangeBalancePayload) => Promise<void>;
   addExchange: (exchange: Exchange) => void;
   editExchange: (payload: EditExchange) => void;
@@ -102,6 +103,12 @@ export function useExchanges(): UseExchangesReturn {
     }
   };
 
+  const fetchSelectedExchangeBalances = async (exchangeLocation: string): Promise<void> => {
+    await fetchExchangeBalances({
+      ignoreCache: true,
+      location: exchangeLocation,
+    });
+  };
   const addExchange = (exchange: Exchange): void => {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
@@ -214,6 +221,7 @@ export function useExchanges(): UseExchangesReturn {
     editExchange,
     fetchConnectedExchangeBalances,
     fetchExchangeBalances,
+    fetchSelectedExchangeBalances,
     removeExchange,
     setupExchange,
   };
