@@ -69,12 +69,11 @@ from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalan
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_BCH, A_BTC, A_DAI, A_DOT, A_ETH, A_ETH2, A_KSM
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
-from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
@@ -107,7 +106,6 @@ from rotkehlchen.types import (
     ModuleName,
     Price,
     SupportedBlockchain,
-    Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
@@ -126,7 +124,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
-        ValidatorDailyStats,
         ValidatorDetailsWithStatus,
     )
     from rotkehlchen.chain.ethereum.modules.l2.loopring import Loopring
@@ -1232,69 +1229,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 queried_addresses=liquity_addresses,
             )
 
-    def get_eth2_daily_stats(
-            self,
-            filter_query: Eth2DailyStatsFilterQuery,
-            only_cache: bool,
-    ) -> tuple[list['ValidatorDailyStats'], int, FVal]:
-        """May raise:
-
-        - ModuleInactive if eth2 module is not activated.
-        - RemoteError if it's fetching data and sources can't be queried.
-        """
-        eth2 = self.get_module('eth2')
-        if eth2 is None:
-            raise ModuleInactive('Cant query eth2 daily stats details since eth2 module is not active')  # noqa: E501
-        with self.database.conn.read_ctx() as cursor:
-            daily_stats, total_found, sum_pnl = eth2.get_validator_daily_stats(
-                cursor=cursor,
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-            return daily_stats, total_found, sum_pnl
-
-    @protect_with_lock()
-    @cache_response_timewise()
-    def refresh_eth2_get_daily_stats(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> list['ValidatorDailyStats']:
-        """Refresh eth2 validator data and get and return the daily stats.
-
-        May raise:
-        - ModuleInactive if eth2 module is not activated
-        - RemoteError if a remote query to beacon chain fails and is not caught in the method
-        """
-        eth2 = self.get_module('eth2')
-        if eth2 is None:
-            raise ModuleInactive('Cant query eth2 history events since eth2 module is not active')
-
-        if to_timestamp < 1607212800:  # Dec 1st 2020 UTC
-            return []  # no need to bother querying before beacon chain launch
-
-        eth2.detect_and_refresh_validators(addresses=self.queried_addresses_for_module('eth2'))
-        # And now get all daily stats and create defi events for them
-        with self.database.conn.read_ctx() as cursor:
-            stats, _, _ = eth2.get_validator_daily_stats(
-                cursor=cursor,
-                filter_query=Eth2DailyStatsFilterQuery.make(from_ts=from_timestamp, to_ts=to_timestamp),  # noqa: E501
-                only_cache=False,
-            )
-            index_to_ownership = DBEth2(self.database).get_index_to_ownership(cursor)
-
-        for stats_entry in stats:
-            if stats_entry.pnl == ZERO:
-                continue
-
-            # Take into account the validator ownership proportion if is not 100%
-            validator_ownership = index_to_ownership.get(stats_entry.validator_index, ONE)
-            if validator_ownership != ONE:
-                stats_entry.pnl *= validator_ownership
-                stats_entry.ownership_percentage = validator_ownership
-
-        return stats
-
     def get_eth2_validators(
             self,
             ignore_cache: bool,
@@ -1332,7 +1266,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 validator_index=validator_index,
                 ownership_proportion=ownership_proportion,
             )
-        self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
@@ -1726,8 +1659,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """Flush cache for logic related to validators. We do this after modifying the list of
         validators since it affects the balances and stats"""
         self.flush_cache('get_eth2_staking_details')
-        self.flush_cache('refresh_eth2_get_daily_stats')
-        self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_eth2_balances')
         self.flush_cache('query_balances')
         self.flush_cache('query_balances', blockchain=None, ignore_cache=False)

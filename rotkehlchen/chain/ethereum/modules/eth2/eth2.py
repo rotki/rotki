@@ -49,7 +49,6 @@ from .constants import (
 ETH_STAKED_CACHE_TIME: Final = 7200  # 2 hours in seconds
 from .structures import (
     PerformanceStatusFilter,
-    ValidatorDailyStats,
     ValidatorDetailsWithStatus,
     ValidatorID,
 )
@@ -58,8 +57,6 @@ from .utils import create_profit_filter_queries
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
-    from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -485,28 +482,6 @@ class Eth2(EthereumModule):
             self.validator_stats_queried = 0
             gevent.sleep(VALIDATOR_STATS_QUERY_BACKOFF_TIME)
 
-    def _query_services_for_validator_daily_stats(
-            self,
-            to_ts: Timestamp,
-    ) -> None:
-        """Goes through all saved validators and sees which need to have their stats requeried"""
-        now = ts_now()
-        dbeth2 = DBEth2(self.database)
-        result = dbeth2.get_validators_to_query_for_stats(up_to_ts=to_ts)
-
-        for validator_index, last_ts, exit_ts in result:
-            self._maybe_backoff_beaconchain(now=now)
-            new_stats = self.beacon_inquirer.query_validator_daily_stats(
-                validator_index=validator_index,
-                last_known_timestamp=last_ts,
-                exit_ts=exit_ts,
-            )
-            self.validator_stats_queried += 1
-            self.last_stats_query_ts = now
-
-            if len(new_stats) != 0:
-                dbeth2.add_validator_daily_stats(stats=new_stats)
-
     def query_services_for_validator_withdrawals(
             self,
             addresses: Sequence[ChecksumEvmAddress],
@@ -578,30 +553,6 @@ class Eth2(EthereumModule):
                 value=to_ts,
                 address=address,
             )
-
-    def get_validator_daily_stats(
-            self,
-            cursor: 'DBCursor',
-            filter_query: 'Eth2DailyStatsFilterQuery',
-            only_cache: bool,
-    ) -> tuple[list[ValidatorDailyStats], int, FVal]:
-        """Gets the daily stats eth2 validators depending on the given filter.
-
-        This won't detect new validators
-
-        Will query for new validator daily stats if only_cache is False.
-
-        May raise:
-        - RemoteError due to problems with beaconcha.in
-        - PremiumPermissionError if ETH staking limit is exceeded for non-premium users
-        """
-        # Check ETH staking limit for non-premium users
-        self._check_eth_staking_limit(ZERO, ZERO)
-        if only_cache is False:
-            self._query_services_for_validator_daily_stats(to_ts=filter_query.to_ts)
-
-        dbeth2 = DBEth2(self.database)
-        return dbeth2.get_validator_daily_stats_and_limit_info(cursor, filter_query=filter_query)
 
     def detect_and_refresh_validators(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         """Go through the list of eth1 addresses and find all eth2 validators associated
@@ -896,5 +847,4 @@ class Eth2(EthereumModule):
             )
 
     def deactivate(self) -> None:
-        with self.database.user_write() as write_cursor:
-            self.database.delete_eth2_daily_stats(write_cursor)
+        pass

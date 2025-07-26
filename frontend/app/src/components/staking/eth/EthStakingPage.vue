@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { type BigNumber, Blockchain, type Eth2ValidatorEntry, type Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import dayjs from 'dayjs';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
@@ -8,20 +7,17 @@ import ActiveModules from '@/components/defi/ActiveModules.vue';
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import EthStakingPagePlaceholder from '@/components/staking/eth/EthStakingPagePlaceholder.vue';
-import EthStakingPageSettingMenu from '@/components/staking/eth/EthStakingPageSettingMenu.vue';
 import EthValidatorFilter from '@/components/staking/eth/EthValidatorFilter.vue';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { usePremium } from '@/composables/premium';
 import { useModules } from '@/composables/session/modules';
-import { useEth2DailyStats } from '@/composables/staking/eth2/daily-stats';
 import { useEth2Staking } from '@/composables/staking/eth2/eth2';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { EthStaking } from '@/premium/premium';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
@@ -33,7 +29,6 @@ import { logger } from '@/utils/logging';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
-const statsSection = Section.STAKING_ETH2_STATS;
 
 const filter = ref<EthStakingCombinedFilter>();
 const selection = ref<EthStakingFilter>({
@@ -49,14 +44,12 @@ function createLastRefreshStorage(username: string): Ref<number> {
 }
 
 const lastRefresh = createLastRefreshStorage(get(username));
-const { shouldRefreshValidatorDailyStats } = storeToRefs(useFrontendSettingsStore());
 
 const { pagination: performancePagination, performance, performanceLoading, refreshPerformance } = useEth2Staking();
 
 const { isModuleEnabled } = useModules();
 
 const enabled = isModuleEnabled(module);
-const { dailyStats, dailyStatsLoading, pagination, refresh: reloadStats, refreshStats } = useEth2DailyStats();
 
 const { isLoading } = useStatusStore();
 const { useIsTaskRunning } = useTaskStore();
@@ -64,7 +57,6 @@ const { useIsTaskRunning } = useTaskStore();
 const { isFirstLoad } = useStatusUpdater(performanceSection);
 
 const performanceRefreshing = isLoading(performanceSection);
-const statsRefreshing = isLoading(statsSection);
 const blockProductionLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
   queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
 });
@@ -82,14 +74,6 @@ const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const premium = usePremium();
 const { t } = useI18n({ useScope: 'global' });
-
-function shouldRefreshDailyStats() {
-  if (!get(shouldRefreshValidatorDailyStats))
-    return false;
-
-  const threshold = dayjs().subtract(1, 'hour').unix();
-  return get(lastRefresh) < threshold;
-}
 
 async function refresh(userInitiated = false): Promise<void> {
   const refreshValidators = async (userInitiated: boolean) => {
@@ -115,9 +99,7 @@ async function refresh(userInitiated = false): Promise<void> {
   await refreshValidators(userInitiated);
   setTotal();
 
-  const statsRefresh: Promise<void>[]
-    = !get(statsRefreshing) && shouldRefreshDailyStats() ? [refreshStats(userInitiated)] : [reloadStats()];
-  await Promise.allSettled([updatePerformance(userInitiated), ...statsRefresh]);
+  await updatePerformance(userInitiated);
   set(lastRefresh, dayjs().unix());
 }
 
@@ -156,11 +138,6 @@ onBeforeMount(async () => {
 
   await fetchValidatorsWithFilter();
 });
-
-function forceRefreshStats() {
-  startPromise(refreshStats(true));
-  set(lastRefresh, dayjs().unix());
-}
 </script>
 
 <template>
@@ -196,23 +173,17 @@ function forceRefreshStats() {
             </template>
             {{ t('premium_components.staking.refresh') }}
           </RuiTooltip>
-          <EthStakingPageSettingMenu />
         </div>
       </template>
 
       <EthStaking
         v-model:performance-pagination="performancePagination"
-        v-model:stats-pagination="pagination"
         v-model:filter="filter"
         :refreshing="refreshing"
         :total="total"
         :accounts="selection"
         :performance="performance"
         :performance-loading="performanceLoading"
-        :stats="dailyStats"
-        :stats-refreshing="statsRefreshing"
-        :stats-loading="dailyStatsLoading"
-        @refresh-stats="forceRefreshStats()"
       >
         <template #selection>
           <EthValidatorFilter

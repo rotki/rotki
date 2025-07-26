@@ -452,16 +452,6 @@
         "title": "Modification du validateur de staking ETH"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "La requête a échoué avec l'erreur suivante : {message}",
-        "title": "Interrogation des statistiques quotidiennes de staking ETH"
-      },
-      "task": {
-        "description": "Interrogation de vos statistiques quotidiennes de staking ETH",
-        "title": "Statistiques quotidiennes de staking ETH"
-      }
-    },
     "get_accounts": {
       "error": {
         "description": "Échec de la requête des comptes pour {blockchain} : {message}",

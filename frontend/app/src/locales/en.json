@@ -532,16 +532,6 @@
         "title": "Decoding ETH block events"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "Query failed with the following error: {message}",
-        "title": "Querying ETH staking daily stats"
-      },
-      "task": {
-        "description": "Querying your ETH staking daily stats",
-        "title": "ETH staking daily stats"
-      }
-    },
     "exchange_events": {
       "error": {
         "description": "Failed to query exchange events for {location} with name '{name}': {error}",
@@ -2165,12 +2155,7 @@
   },
   "eth2_page": {
     "no_premium": "The ETH staking statistic page is not included in the FREE version",
-    "setting": {
-      "refresh_validator_daily_stats_on_load": {
-        "hint": "Disable this setting to avoid getting rate limited. rotki will only show cached data.",
-        "title": "Sync daily stats data from beaconcha.in by default."
-      }
-    },
+    "setting": {},
     "toggle": {
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
       "key": "Validator",

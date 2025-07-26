@@ -6,7 +6,6 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.types import MissingPrice
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_COMP, A_ETH, A_EUR, A_USD, A_USDC, A_WBTC
@@ -478,10 +477,6 @@ def test_non_history_event_in_history_iterator(accountant):
         notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
         counterparty=CPT_COWSWAP,
         address=contract_address,
-    ), ValidatorDailyStats(
-        validator_index=1,
-        timestamp=Timestamp(1635314397 - DAY_IN_SECONDS + 1),
-        pnl=FVal('0.1'),
     )]
     accounting_history_process(accountant, Timestamp(0), Timestamp(1635314397), history)
     no_message_errors(accountant.msg_aggregator)

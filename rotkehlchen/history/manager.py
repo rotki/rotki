@@ -71,8 +71,6 @@ class HistoryQueryingManager:
             db_settings = self.db.get_settings(cursor)
         self.dateformat = db_settings.date_display_format
         self.datelocaltime = db_settings.display_date_in_localtime
-        # query daily eth2 daily stats for PnL only if they want to count PnL before withdrawals
-        self.should_query_eth2_daily_stats = db_settings.eth_staking_taxable_after_withdrawal_enabled is False  # noqa: E501
 
     def _increase_progress(self, step: int, total_steps: int, step_by: int = 1) -> int:
         """Counts the progress for querying history. When transmitted to the frontend
@@ -217,17 +215,6 @@ class HistoryQueryingManager:
         eth2 = self.chains_aggregator.get_module('eth2')
         if eth2 is not None and has_premium:
             self.processing_state_name = 'Querying ETH2 staking history'
-            if self.should_query_eth2_daily_stats:
-                try:
-                    eth2_events = self.chains_aggregator.refresh_eth2_get_daily_stats(
-                        from_timestamp=Timestamp(0),
-                        to_timestamp=end_ts,
-                    )
-                    history.extend(eth2_events)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Eth2 daily stats are not included in the PnL report due to {e!s}',
-                    )
             # make sure that eth2 events and history events are combined
             eth2.combine_block_with_tx_events()
 

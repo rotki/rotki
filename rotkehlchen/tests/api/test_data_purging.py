@@ -304,11 +304,6 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
                 (42, '0xfoo', 1, '1.0'),
             )
             write_cursor.execute(
-                'INSERT INTO eth2_daily_staking_details(validator_index, timestamp, pnl) '
-                'VALUES(?, ?, ?)',
-                (42, 1727172416, '42'),
-            )
-            write_cursor.execute(
                 'INSERT INTO cowswap_orders(identifier, order_type, raw_fee_amount) '
                 'VALUES(?, ?, ?)',
                 ('foo', 'valid_type', '42'),
@@ -329,8 +324,6 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
         with rotki.data.db.conn.read_ctx() as cursor:
             if not name or name == 'loopring':
                 assert cursor.execute('SELECT COUNT(*) FROM multisettings').fetchone()[0] == (221 if before else 220)  # noqa: E501
-            if not name or name == 'eth2':
-                assert cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details').fetchone()[0] == (1 if before else 0)  # noqa: E501
             if not name or name == 'cowswap':
                 assert cursor.execute('SELECT COUNT(*) FROM cowswap_orders').fetchone()[0] == (1 if before else 0)  # noqa: E501
             if not name or name == 'gnosis_pay':

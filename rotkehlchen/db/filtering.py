@@ -536,18 +536,6 @@ class DBIgnoreValuesFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBEth2ValidatorIndicesFilter(DBFilter):
-    """A filter for Eth2 validator indices"""
-    validators: set[int] | None
-
-    def prepare(self) -> tuple[list[str], list[Any]]:
-        if self.validators is None:
-            return [], []
-        questionmarks = '?' * len(self.validators)
-        return [f'validator_index IN ({",".join(questionmarks)})'], list(self.validators)
-
-
-@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBNotEqualFilter(DBFilter):
     """Filter a column by comparing its column to its value for inequality"""
     column: str
@@ -630,42 +618,6 @@ class DBOptionalChainAddressesFilter(DBFilter):
                     bindings.append(optional_chain_address.blockchain.value)
                 query_filters.append(query_part)
         return query_filters, bindings
-
-
-class Eth2DailyStatsFilterQuery(DBFilterQuery, FilterWithTimestamp):
-
-    @classmethod
-    def make(
-            cls: type['Eth2DailyStatsFilterQuery'],
-            and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
-            limit: int | None = None,
-            offset: int | None = None,
-            from_ts: Timestamp | None = None,
-            to_ts: Timestamp | None = None,
-            validator_indices: set[int] | None = None,
-    ) -> 'Eth2DailyStatsFilterQuery':
-        if order_by_rules is None:
-            order_by_rules = [('timestamp', True)]
-
-        filter_query = cls.create(
-            and_op=and_op,
-            limit=limit,
-            offset=offset,
-            order_by_rules=order_by_rules,
-        )
-        filters: list[DBFilter] = []
-
-        filter_query.timestamp_filter = DBTimestampFilter(
-            and_op=True,
-            from_ts=from_ts,
-            to_ts=to_ts,
-        )
-        filters.extend((
-            filter_query.timestamp_filter,
-            DBEth2ValidatorIndicesFilter(and_op=True, validators=validator_indices)))
-        filter_query.filters = filters
-        return filter_query
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

@@ -1083,10 +1083,6 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical ETH2 eth2_daily_staking_details data"""
-        write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
-
     def delete_cowswap_trade_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all cowswap trade/orders data from the DB"""
         write_cursor.execute('DELETE FROM cowswap_orders;')
@@ -1103,15 +1099,12 @@ class DBHandler:
         with self.user_write() as cursor:
             if module_name is None:
                 self.delete_loopring_data(cursor)
-                self.delete_eth2_daily_stats(cursor)
                 self.delete_cowswap_trade_data(cursor)
                 self.delete_gnosispay_data(cursor)
                 log.debug('Purged all module data from the DB')
                 return
             elif module_name == 'loopring':
                 self.delete_loopring_data(cursor)
-            elif module_name == 'eth2':
-                self.delete_eth2_daily_stats(cursor)
             elif module_name == 'cowswap':
                 self.delete_cowswap_trade_data(cursor)
             elif module_name == 'gnosis_pay':
@@ -2168,7 +2161,6 @@ class DBHandler:
             entries_table: Literal[
                 'address_book',
                 'evm_transactions',
-                'eth2_daily_staking_details',
                 'entries_notes',
                 'user_notes',
                 'assets',
