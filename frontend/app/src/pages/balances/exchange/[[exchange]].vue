@@ -38,12 +38,18 @@ const { useExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
-const { refreshBalance } = useRefresh();
+const { refreshBalance, refreshExchangeBalance } = useRefresh();
 
 async function refreshExchangeBalances() {
   await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);
 }
 
+async function refreshSelectedExchangeBalances(exchangeLocation: string) {
+  if (isBinance(exchangeLocation))
+    await Promise.all([refreshExchangeBalance(exchangeLocation), refreshExchangeSavings(true)]);
+  else
+    await refreshExchangeBalance(exchangeLocation);
+}
 const selectedExchange = ref<string>('');
 const usedExchanges = computed<string[]>(() =>
   get(connectedExchanges)
@@ -214,15 +220,31 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         </div>
         <div class="flex-1">
           <div v-if="exchange">
-            <RuiTabs
-              v-model="exchangeDetailTabs"
-              color="primary"
-            >
-              <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
-              <RuiTab v-if="isBinance(exchange)">
-                {{ t('exchange_balances.tabs.savings_interest_history') }}
-              </RuiTab>
-            </RuiTabs>
+            <div class="flex items-center justify-between gap-4 mb-2">
+              <RuiTabs
+                v-model="exchangeDetailTabs"
+                color="primary"
+              >
+                <RuiTab>{{ t('exchange_balances.tabs.balances') }}</RuiTab>
+                <RuiTab v-if="isBinance(exchange)">
+                  {{ t('exchange_balances.tabs.savings_interest_history') }}
+                </RuiTab>
+              </RuiTabs>
+
+              <RuiButton
+                color="primary"
+                variant="outlined"
+                class="exchange-balances__refresh shrink-0"
+                :disabled="exchangeDetailTabs !== 0"
+                :loading="isExchangeLoading"
+                @click="refreshSelectedExchangeBalances(exchange)"
+              >
+                <template #prepend>
+                  <RuiIcon name="lu-refresh-ccw" />
+                </template>
+                {{ t('common.refresh') }}
+              </RuiButton>
+            </div>
 
             <RuiDivider />
 
