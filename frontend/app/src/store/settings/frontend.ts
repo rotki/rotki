@@ -50,7 +50,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const versionUpdateCheckFrequency = useComputedRef(settings, 'versionUpdateCheckFrequency');
   const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
   const blockchainRefreshButtonBehaviour = useComputedRef(settings, 'blockchainRefreshButtonBehaviour');
-  const shouldRefreshValidatorDailyStats = useComputedRef(settings, 'shouldRefreshValidatorDailyStats');
   const savedFilters = useComputedRef(settings, 'savedFilters');
   const balanceUsdValueThreshold = useComputedRef(settings, 'balanceUsdValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
@@ -143,7 +142,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     savedFilters,
     selectedTheme,
     settings,
-    shouldRefreshValidatorDailyStats,
     showEvmQueryIndicator,
     showGraphRangeSelector,
     subscriptDecimals,

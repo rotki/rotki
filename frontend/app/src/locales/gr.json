@@ -348,16 +348,6 @@
         "title": "Editing ETH staking validator"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "Query failed with the following error: {message}",
-        "title": "Querying ETH staking daily stats"
-      },
-      "task": {
-        "description": "Querying your ETH staking daily stats",
-        "title": "ETH staking daily stats"
-      }
-    },
     "get_accounts": {
       "error": {
         "description": "Failed to query accounts for {blockchain}: {message}",

@@ -145,7 +145,6 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
-    Eth2DailyStatsFilterQuery,
     EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
@@ -2281,40 +2280,6 @@ class RestAPI:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         return {'result': process_result(result), 'message': ''}
-
-    @async_api_call()
-    def get_eth2_daily_stats(
-            self,
-            filter_query: Eth2DailyStatsFilterQuery,
-            only_cache: bool,
-    ) -> dict[str, Any]:
-        try:
-            stats, filter_total_found, sum_pnl = self.rotkehlchen.chains_aggregator.get_eth2_daily_stats(  # noqa: E501
-                filter_query=filter_query,
-                only_cache=only_cache,
-            )
-        except PremiumPermissionError as e:
-            response_data = {
-                'result': None,
-                'message': str(e),
-                'status_code': HTTPStatus.FORBIDDEN,
-            }
-            if e.extra_dict:  # include any extra information for the error
-                response_data.update(e.extra_dict)
-            return response_data
-        except RemoteError as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
-        except ModuleInactive as e:
-            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
-
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            result = {
-                'entries': [x.serialize() for x in stats],
-                'sum_pnl': str(sum_pnl),
-                'entries_found': filter_total_found,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(cursor, 'eth2_daily_staking_details'),  # noqa: E501
-            }
-        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     @async_api_call()
     def get_eth2_validators(

@@ -7,7 +7,6 @@ from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, WITHDRAWAL_REQUEST_CONTRACT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import (
-    ValidatorDailyStats,
     ValidatorDetails,
     ValidatorType,
 )
@@ -93,45 +92,6 @@ def test_kraken_staking_events(accountant, google_service, event_start_timestamp
     for idx, event in enumerate(events):
         assert event.pnl.taxable == expected_pnls[idx]
         assert event.event_type == AccountingEventType.STAKING
-
-
-@pytest.mark.parametrize('mocked_price_queries', [prices])
-@pytest.mark.parametrize('db_settings', [{
-    'eth_staking_taxable_after_withdrawal_enabled': False,
-}])
-def test_eth_staking_daily_stats(accountant, google_service):
-    """Test ethereum staking daily stats are accounted for if the setting to count them is on"""
-    history = [
-        ValidatorDailyStats(
-            validator_index=1,
-            timestamp=1607727600,  # ETH price: 449.68 ETH/EUR
-            pnl=FVal('0.05'),  # 0.05 * 449.68 = 22.484
-        ), ValidatorDailyStats(
-            validator_index=1,
-            timestamp=1607814000,  # ETH price: 469.82 ETH/EUR
-            pnl=FVal('-0.005'),  # -0.005 * 469.82 + 0.005 * 469.82 - 0.005*449.68 = -2.2484
-        ), ValidatorDailyStats(
-            validator_index=1,
-            timestamp=1607900400,  # ETH price: 486.57 ETH/EUR
-            pnl=FVal('0.04'),  # 0.04 * 486.57 = 19.4628
-        ), ValidatorDailyStats(
-            validator_index=2,
-            timestamp=1607900400,
-            pnl=FVal('0.045'),  # 0.045 * 486.57 = 21.89565
-        ),
-    ]
-
-    accounting_history_process(
-        accountant,
-        start_ts=1606727600,
-        end_ts=1640493376,
-        history_list=history,
-    )
-    no_message_errors(accountant.msg_aggregator)
-    expected_pnls = PnlTotals({  # 22.484 - 2.2484 + 19.4628 + 21.89565
-        AccountingEventType.STAKING: PNL(taxable=FVal('61.59405'), free=ZERO),
-    })
-    check_pnls_and_csv(accountant, expected_pnls, google_service)
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xb8Cbbf78c7Ad1cDF4cA0e111B35491f3bFE027AC']])

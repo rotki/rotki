@@ -61,7 +61,6 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
-    Eth2DailyStatsFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
     HistoryEventFilterQuery,
@@ -2980,70 +2979,6 @@ class Eth2ValidatorsGetSchema(EthStakingCommonFilterSchema, AsyncIgnoreCacheQuer
             'async_query': data['async_query'],
             'ignore_cache': data['ignore_cache'],
             'validator_indices': validator_indices,
-        }
-
-
-class Eth2DailyStatsSchema(
-        AsyncQueryArgumentSchema,
-        TimestampRangeSchema,
-        OnlyCacheQuerySchema,
-        DBPaginationSchema,
-        DBOrderBySchema,
-        EthStakingCommonFilterSchema,
-):
-
-    @validates_schema
-    def validate_eth2_daily_stats_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        valid_ordering_attr = {
-            None,
-            'timestamp',
-            'validator_index',
-            'pnl',
-        }
-        if (
-            data['order_by_attributes'] is not None and
-            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
-        ):
-            error_msg = (
-                f'order_by_attributes for eth2 daily stats can not be '
-                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
-            )
-            raise ValidationError(
-                message=error_msg,
-                field_name='order_by_attributes',
-            )
-
-    @post_load
-    def make_eth2_daily_stats_query(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> dict[str, Any]:
-        validator_indices = self.get_filtered_indices(
-            addresses=data['addresses'],
-            given_indices=data['validator_indices'],
-            status=data['status'],
-        )
-        filter_query = Eth2DailyStatsFilterQuery.make(
-            order_by_rules=create_order_by_rules_list(
-                data=data,
-                default_order_by_fields=['timestamp'],
-                default_ascending=[False],
-            ),
-            limit=data['limit'],
-            offset=data['offset'],
-            from_ts=data['from_timestamp'],
-            to_ts=data['to_timestamp'],
-            validator_indices=validator_indices,
-        )
-        return {
-            'async_query': data['async_query'],
-            'only_cache': data['only_cache'],
-            'filter_query': filter_query,
         }
 
 

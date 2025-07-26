@@ -31,69 +31,6 @@
       "counterparty": "gas"
     },
     {
-      "validator_index": 207580,
-      "timestamp": 1630281600,
-      "pnl": {
-        "amount": "0.00496",
-        "usd_value": "16.52580240"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1630368000,
-      "pnl": {
-        "amount": "0.00505",
-        "usd_value": "18.34248375"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1630454400,
-      "pnl": {
-        "amount": "0.00499",
-        "usd_value": "19.0041156"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1630540800,
-      "pnl": {
-        "amount": "0.00498",
-        "usd_value": "19.24145010"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1630627200,
-      "pnl": {
-        "amount": "0.00504",
-        "usd_value": "19.7235360"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1630713600,
-      "pnl": {
-        "amount": "0.00501",
-        "usd_value": "19.6375467"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1630800000,
-      "pnl": {
-        "amount": "0.00492",
-        "usd_value": "19.38659580"
-      },
-      "accounting_event_type": "staking"
-    },
-    {
       "timestamp": 1643182009000,
       "event_type": "trade",
       "event_subtype": "spend",
@@ -192,15 +129,6 @@
       "fee_currency": "EUR",
       "link": "",
       "notes": ""
-    },
-    {
-      "validator_index": 207580,
-      "timestamp": 1628726400,
-      "pnl": {
-        "amount": "0.00332",
-        "usd_value": "10.57677300"
-      },
-      "accounting_event_type": "staking"
     }
   ],
   "settings": {

@@ -21,6 +21,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     - Fix zksynclite_swaps table schema: change TEXT_NOT NULL to TEXT NOT NULL for to_amount column
     - Migrate solana assets to CAIPS format
+    - Remove deprecated eth2_daily_staking_details table
     """
     @progress_step(description='Fixing zksynclite_swaps table schema.')
     def _fix_zksynclite_swaps_schema(write_cursor: 'DBCursor') -> None:
@@ -70,5 +71,10 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
         # Delete the known duplicates
         write_cursor.execute('DELETE FROM assets WHERE identifier IN (?, ?)', ('TRISIG', 'HODLSOL'))  # noqa: E501
+
+    @progress_step(description='Removing deprecated eth2_daily_staking_details table.')
+    def _remove_eth2_daily_staking_details_table(write_cursor: 'DBCursor') -> None:
+        """Remove the deprecated eth2_daily_staking_details table and its data"""
+        write_cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=False)

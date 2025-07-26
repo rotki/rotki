@@ -345,16 +345,6 @@
         "title": "編輯 ETH 質押驗證器"
       }
     },
-    "eth2_staking_stats": {
-      "error": {
-        "message": "查询失败，出现以下错误：{message}",
-        "title": "查詢 ETH 質押每日統計數據"
-      },
-      "task": {
-        "description": "查詢您的 ETH 質押每日統計數據",
-        "title": "ETH 質押每日統計數據"
-      }
-    },
     "get_accounts": {
       "error": {
         "description": "查询{blockchain}账户失败：{message}",

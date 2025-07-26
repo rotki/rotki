@@ -1,29 +1,26 @@
 import logging
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
 import gevent
 import requests
 from gevent.lock import Semaphore
 
-from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDailyStats, ValidatorID
+from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
-from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
     deserialize_fval,
-    deserialize_int,
 )
 from rotkehlchen.types import (
     ChecksumEvmAddress,
@@ -34,8 +31,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import (
-    create_timestamp,
-    from_gwei,
     from_wei,
     set_user_agent,
     timestamp_to_iso8601,
@@ -454,82 +449,3 @@ class BeaconChain(ExternalServiceWithApiKey):
                 f'Beaconcha.in eth1 response processing error. Missing key entry {e!s}',
             ) from e
         return validators
-
-    def query_validator_daily_stats(
-            self,
-            validator_index: int,
-            last_known_timestamp: Timestamp,
-            exit_ts: Timestamp | None,
-    ) -> list[ValidatorDailyStats]:
-        """
-        May raise:
-        - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
-        """
-        if exit_ts is not None and last_known_timestamp > exit_ts:
-            return []  # nothing new to add
-
-        data = cast('list[dict[str, Any]]', self._query(
-            method='GET',
-            module='validator',
-            endpoint='stats',
-            encoded_args=str(validator_index),
-        ))
-
-        timestamp = Timestamp(0)
-        stats: list[ValidatorDailyStats] = []
-        for day_data in data:
-            try:
-                start_effective_balance = day_data['start_effective_balance']
-                if start_effective_balance is None:
-                    start_effective_balance = ZERO
-                elif deserialize_int(start_effective_balance) == ZERO:
-                    continue  # validator exited
-
-                end_effective_balance = None
-                if day_data['end_effective_balance'] is not None:
-                    end_effective_balance = deserialize_int(day_data['end_effective_balance'])
-                withdrawals_amount = deserialize_int(day_data['withdrawals_amount'])
-
-                try:
-                    timestamp = create_timestamp(
-                        datestr=f"{day_data['day_start']}",
-                        formatstr='%Y-%m-%dT%I:%M:%S%z',
-                    )
-                except ValueError as e:
-                    raise RemoteError(
-                        f'Failed to parse {day_data["day_start"]} to timestamp',
-                    ) from e
-
-                if timestamp <= last_known_timestamp:
-                    return stats  # we are done
-
-                end_balance = start_balance = 0
-                if (raw_end_balance := day_data['end_balance']) is not None:
-                    end_balance = deserialize_int(raw_end_balance)
-
-                if (raw_start_balance := day_data['start_balance']) is not None:
-                    start_balance = deserialize_int(raw_start_balance)
-
-            except KeyError as e:
-                log.error(f'Missing key {e} in daily stats for {validator_index=}. Skipping day')
-                continue
-
-            except DeserializationError as e:
-                log.error(f'Failed to deserialize daily stats for {validator_index=} due to {e}. Skipping day')  # noqa: E501
-                continue
-
-            # end balance in the api is the actual balance of the validator at the end of the day,
-            # start balance is the actual balance of the validator at the start of the day,
-            # end_effective_balance and start_effective_balance are the effective balance
-            # of the validator at the end and start of the day. To calculate the PnL for the day
-            # we subtract end_balance - start_balance. If the validator exists its
-            # end_effective_balance becomes 0 and so does its end_balance. We obtain the PnL
-            # as withdrawals_amount - start_balance
-            pnl_as_int = end_balance - start_balance if end_effective_balance != 0 else withdrawals_amount - start_balance  # noqa: E501
-            stats.append(ValidatorDailyStats(
-                validator_index=validator_index,
-                timestamp=timestamp,
-                pnl=from_gwei(pnl_as_int),
-            ))
-
-        return stats
