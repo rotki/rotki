@@ -356,6 +356,43 @@ python package.py
 - Backend gevent errors: Always use `pytestgeventwrapper.py`, never direct pytest
 - WebSocket connection issues: Check ports 4242 (API) and 4333 (WS) are free
 
+## Code Review Guidelines
+
+When reviewing rotki code, follow these principles to avoid false positives:
+
+### 1. No Assumptions Policy
+- Do NOT assume error handling is missing without tracing function implementations
+- Do NOT assume validation is missing without checking type definitions
+- Do NOT assume patterns are incorrect without understanding project conventions
+- ALWAYS trace function calls to their actual implementations
+
+### 2. Known Safe Functions (with internal error handling)
+- `request_get()` - HTTP wrapper that handles all errors internally
+- `globaldb_get_*()` - Database functions with built-in error handling
+- `get_or_create_evm_asset()` - Asset creation with validation
+- Functions from `rotkehlchen.utils.network` generally handle errors
+
+### 3. Pre-validated Types (no runtime validation needed)
+- `ChainID` - Enum type with compile-time validation
+- `ChecksumEvmAddress` - Validated on construction
+- `Asset` - Type-safe asset representation
+- `TimestampMS` - Type-safe timestamp
+- Any `Final` typed constants are immutable
+
+### 4. Evidence-Based Review Requirements
+For each issue identified:
+- Provide exact code line showing the problem
+- Trace the full code path to verify issue exists
+- Check if utility functions handle the concern
+- Verify type system doesn't provide guarantees
+- Explain why existing code doesn't mitigate it
+
+### 5. Common False Positive Patterns to Avoid
+- Flagging missing try-catch around `request_get()`
+- Suggesting ChainID validation when it's an enum
+- Assuming KeyError isn't caught without checking try-except blocks
+- Recommending error handling that exists in called functions
+
 ## Memories
 - EVM addresses MUST be checksummed:
   ✅ CORRECT: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
