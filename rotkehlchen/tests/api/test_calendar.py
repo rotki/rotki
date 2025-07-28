@@ -171,10 +171,10 @@ def test_basic_calendar_operations(
         'entries_limit': -1,
     }
 
-    # query with name substring
+    # query with exact name match
     response = requests.post(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
-        json={'name': 'renewal'} | future_ts,
+        json={'name': 'ENS renewal'} | future_ts,
     )
     assert assert_proper_sync_response_with_result(response) == {
         'entries': [ens_json_event],
@@ -183,10 +183,10 @@ def test_basic_calendar_operations(
         'entries_limit': -1,
     }
 
-    # query with description substring
+    # query with exact name match (should find CRV unlock)
     response = requests.post(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
-        json={'name': 'Unlock'} | future_ts,
+        json={'name': 'CRV unlock'} | future_ts,
     )
     assert assert_proper_sync_response_with_result(response) == {
         'entries': [curve_json_event],
