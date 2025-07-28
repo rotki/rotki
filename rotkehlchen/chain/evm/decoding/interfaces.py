@@ -141,6 +141,17 @@ class DecoderInterface(ABC):
         """
         return {}
 
+    def post_processing_rules(self) -> dict[str, tuple[Callable]]:
+        """
+        Subclasses may implement this to add post processing of the decoded events that runs
+        once after the entire batch of transactions is decoded. Useful for querying more remote
+        data with which to enrich the decoded events.
+
+        This function should return a dict where values are tuples with the functions to run.
+        The keys of the dictionary are counterparties.
+        """
+        return {}
+
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         """
         Map addresses to counterparties so they can be filtered in the post

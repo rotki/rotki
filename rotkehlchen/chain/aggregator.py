@@ -94,6 +94,7 @@ from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
+    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -376,11 +377,23 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if hasattr(module, 'premium') is True:
                 module.premium = premium  # type: ignore
 
+        # Also update premium in all chain transaction decoders
+        for supported_blockchain in SUPPORTED_EVM_CHAINS:
+            chain_manager = self.get_evm_manager(supported_blockchain.to_chain_id())
+            if hasattr(chain_manager, 'transactions_decoder'):  # avalanche doesn't have it
+                chain_manager.transactions_decoder.premium = premium
+
     def deactivate_premium_status(self) -> None:
         self.premium = None
         for _, module in self.iterate_modules():
             if hasattr(module, 'premium') is True and module.premium is not None:  # type: ignore
                 module.premium = None  # type: ignore
+
+        # Also update premium in all chain transaction decoders
+        for supported_blockchain in SUPPORTED_EVM_CHAINS:
+            chain_manager = self.get_evm_manager(supported_blockchain.to_chain_id())
+            if hasattr(chain_manager, 'transactions_decoder'):  # avalanche doesn't have it
+                chain_manager.transactions_decoder.premium = None
 
         # Also flush the cache of anything that is touched by eth2 validators since
         # without premium we have a limit

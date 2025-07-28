@@ -90,7 +90,6 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
 )
-from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
 )
@@ -105,7 +104,6 @@ from rotkehlchen.chain.evm.types import (
     RemoteDataQueryStatus,
     WeightedNode,
 )
-from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.limits import (
@@ -145,7 +143,6 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
-    EvmEventFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
@@ -306,7 +303,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 
 logger = logging.getLogger(__name__)
@@ -2850,72 +2846,6 @@ class RestAPI:
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
-    def _update_monerium_and_gnosis_pay_events(
-            self,
-            events: list['EvmEvent'] | None = None,
-            tx_hashes: list[EVMTxHash] | None = None,
-    ) -> None:
-        """Update monerium and gnosis pay events in the DB.
-        Since these are premium features, do nothing if premium is not active.
-
-        Handles three different cases:
-        * Redecoding all events - `events` and `tx_hashes` are None - APIs are queried for all
-           available data.
-        * Redecoding specific events - `events` is set, `tx_hashes` is None - APIs are queried for
-           the specific tx hashes / timestamp ranges of the events.
-        * Decoding new tx hashes - `events` is None, `tx_hashes` is set - GnosisPay is queried for
-           all new data from the earliest provided tx hash to present. Monerium is simply queried
-           for the individual tx_hashes since its API does not support querying a range.
-           Note that monerium will fall back to querying all data if there are too many tx_hashes.
-
-        May raise RemoteError, DeserializationError.
-        """
-        limit, has_premium = get_user_limit(
-            premium=self.rotkehlchen.premium,
-            limit_type=UserLimitType.HISTORY_EVENTS,
-        )
-        if has_premium is False:
-            return
-
-        decoding_given_events = True
-        if events is None:
-            decoding_given_events = False
-            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                events = DBHistoryEvents(self.rotkehlchen.data.db).get_history_events(
-                    cursor=cursor,
-                    filter_query=EvmEventFilterQuery.make(
-                        counterparties=[CPT_MONERIUM, CPT_GNOSIS_PAY],
-                        tx_hashes=tx_hashes,
-                    ),
-                    entries_limit=limit,
-                )
-
-            if len(events) == 0:
-                return
-
-        monerium_events, gnosispay_tx_timestamps = [], {}
-        for event in events:
-            if event.counterparty == CPT_MONERIUM:
-                monerium_events.append(event)
-            elif event.counterparty == CPT_GNOSIS_PAY:
-                gnosispay_tx_timestamps[event.tx_hash] = ts_ms_to_sec(event.timestamp)
-
-        if len(monerium_events) != 0 and (monerium := init_monerium(self.rotkehlchen.data.db)) is not None:  # noqa: E501
-            if decoding_given_events or tx_hashes is not None:  # redecoding specific events or decoding new txs case  # noqa: E501
-                monerium.update_events(events=monerium_events)
-            else:  # redecoding all events - get and process all.
-                monerium.get_and_process_orders()
-
-        if len(gnosispay_tx_timestamps) != 0 and (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is not None:  # noqa: E501
-            if decoding_given_events:  # redecoding specific events case
-                gnosis_pay.update_events(tx_timestamps=gnosispay_tx_timestamps)
-            elif tx_hashes is not None:  # decoding new txs case - query all new txs
-                gnosis_pay.get_and_process_transactions(
-                    after_ts=Timestamp(min(gnosispay_tx_timestamps.values()) - 1),
-                )
-            else:  # redecoding all events - get and process all.
-                gnosis_pay.get_and_process_transactions(after_ts=Timestamp(0))
-
     @async_api_call()
     def decode_given_evm_transactions(
             self,
@@ -2969,15 +2899,6 @@ class RestAPI:
                     'message': f'Failed to request evm transaction decoding due to {e!s}',
                     'status_code': HTTPStatus.CONFLICT,
                 }
-
-        try:
-            self._update_monerium_and_gnosis_pay_events(events=events)
-        except (RemoteError, DeserializationError) as e:
-            return {
-                'result': False,
-                'message': f'Failed at evm transaction decoding post-decoding due to {e!s}',
-                'status_code': HTTPStatus.BAD_GATEWAY,
-            }
 
         return {'result': success, 'message': message, 'status_code': status_code}
 
@@ -3065,13 +2986,6 @@ class RestAPI:
                     send_ws_notifications=True,
                 ))
                 result[evm_chain.to_name()] = amount_of_tx_to_decode
-
-        try:
-            self._update_monerium_and_gnosis_pay_events(
-                tx_hashes=None if force_redecode else hashes,  # avoid querying individual hashes when redecoding all  # noqa: E501
-            )
-        except (RemoteError, DeserializationError) as e:
-            log.error(f'Failed to update monerium and gnosis pay events due to {e!s}')
 
         return {
             'result': {'decoded_tx_number': result},

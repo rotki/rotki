@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
     from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,6 +31,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
             database: 'DBHandler',
             arbitrum_inquirer: 'ArbitrumOneInquirer',
             transactions: 'ArbitrumOneTransactions',
+            premium: 'Premium | None' = None,
     ):
         self.transaction_type_mappings: dict[int, list[tuple[int, Callable]]] = defaultdict(list)
         super().__init__(
@@ -45,6 +47,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            premium=premium,
             dbevmtx_class=DBArbitrumOneTx,
         )
 

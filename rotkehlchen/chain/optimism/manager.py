@@ -9,6 +9,7 @@ from .tokens import OptimismTokens
 from .transactions import OptimismTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import OptimismInquirer
 
@@ -18,6 +19,7 @@ class OptimismManager(EvmManager, CurveManagerMixin):
     def __init__(
             self,
             node_inquirer: 'OptimismInquirer',
+            premium: 'Premium | None' = None,
     ) -> None:
         transactions = OptimismTransactions(
             optimism_inquirer=node_inquirer,
@@ -38,6 +40,7 @@ class OptimismManager(EvmManager, CurveManagerMixin):
                 database=node_inquirer.database,
                 optimism_inquirer=node_inquirer,
                 transactions=transactions,
+                premium=premium,
             ),
             accounting_aggregator=OptimismAccountingAggregator(
                 node_inquirer=node_inquirer,

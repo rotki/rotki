@@ -42,13 +42,11 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, has_premium_check, premium_create_and_verify
+from rotkehlchen.premium.premium import Premium, premium_create_and_verify
 from rotkehlchen.tasks.assets import (
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
@@ -185,7 +183,6 @@ class TaskManager:
             self._maybe_run_events_processing,
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
-            self._maybe_query_monerium,
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
             self._maybe_update_spark_underlying_assets,
@@ -194,7 +191,6 @@ class TaskManager:
             self._maybe_delete_past_calendar_events,
             self._maybe_sync_google_calendar,
             self._maybe_query_graph_delegated_tokens,
-            self._maybe_query_gnosispay,
             self._maybe_update_pendle_cache,
         ]
         if self.premium_sync_manager is not None:
@@ -866,41 +862,6 @@ class TaskManager:
             exception_is_error=True,
             method=update_spark_underlying_assets,
             chains_aggregator=self.chains_aggregator,
-        )]
-
-    def _maybe_query_monerium(self) -> Optional[list[gevent.Greenlet]]:
-        if not has_premium_check(self.chains_aggregator.premium):
-            return None  # should not run in free mode
-
-        if (monerium := init_monerium(self.database)) is None:
-            return None
-
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_MONERIUM_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
-            return None
-
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Query monerium',
-            exception_is_error=False,  # don't spam user messages if errors happen
-            method=monerium.get_and_process_orders,
-        )]
-
-    def _maybe_query_gnosispay(self) -> Optional[list[gevent.Greenlet]]:
-        if not has_premium_check(self.chains_aggregator.premium):
-            return None  # should not run in free mode
-
-        if (gnosispay := init_gnosis_pay(self.database)) is None:
-            return None
-
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_GNOSISPAY_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
-            return None
-
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Query Gnosis Pay transactions',
-            exception_is_error=False,  # don't spam user messages if errors happen
-            method=gnosispay.get_and_process_transactions,
-            after_ts=Timestamp(0),
         )]
 
     def _maybe_create_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:

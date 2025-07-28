@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.binance_sc.transactions import BinanceSCTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 
 class BinanceSCTransactionDecoder(EVMTransactionDecoder):
@@ -18,6 +19,7 @@ class BinanceSCTransactionDecoder(EVMTransactionDecoder):
             database: 'DBHandler',
             binance_sc_inquirer: 'BinanceSCInquirer',
             transactions: 'BinanceSCTransactions',
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -32,6 +34,7 @@ class BinanceSCTransactionDecoder(EVMTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            premium=premium,
         )
 
     # -- methods that need to be implemented by child classes --

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.base.transactions import BaseTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -24,6 +25,7 @@ class BaseTransactionDecoder(L2WithL1FeesTransactionDecoder):
             database: 'DBHandler',
             base_inquirer: 'BaseInquirer',
             transactions: 'BaseTransactions',
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -38,6 +40,7 @@ class BaseTransactionDecoder(L2WithL1FeesTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
+            premium=premium,
             dbevmtx_class=DBL2WithL1FeesTx,
         )
         self.evm_inquirer: BaseInquirer  # re-affirm type
