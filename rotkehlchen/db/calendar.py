@@ -9,7 +9,6 @@ from rotkehlchen.db.filtering import (
     DBFilterQuery,
     DBMultiIntegerFilter,
     DBOptionalChainAddressesFilter,
-    DBSubStringFilter,
     DBTimestampFilter,
     FilterWithTimestamp,
 )
@@ -200,22 +199,22 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 optional_chain_addresses=addresses,
             ))
         if name is not None:
-            filters.append(DBSubStringFilter(
+            filters.append(DBEqualsFilter(
                 and_op=True,
-                field='name',
-                search_string=name,
+                column='name',
+                value=name,
             ))
         if description is not None:
-            filters.append(DBSubStringFilter(
+            filters.append(DBEqualsFilter(
                 and_op=True,
-                field='description',
-                search_string=description,
+                column='description',
+                value=description,
             ))
         if counterparty is not None:
-            filters.append(DBSubStringFilter(
+            filters.append(DBEqualsFilter(
                 and_op=True,
-                field='counterparty',
-                search_string=counterparty,
+                column='counterparty',
+                value=counterparty,
             ))
         if identifiers is not None:
             filters.append(DBMultiIntegerFilter(
