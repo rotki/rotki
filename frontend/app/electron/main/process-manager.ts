@@ -168,7 +168,7 @@ export class ProcessManager {
 
     for (const pid of pids) args.push('/PID', pid.toString());
 
-    this.log(`Preparing to call "taskill ${args.join(' ')}" on the rotki-core processes`);
+    this.log(`Preparing to call "taskkill ${args.join(' ')}" on the rotki-core processes`);
 
     try {
       spawnSync('taskkill', args);
