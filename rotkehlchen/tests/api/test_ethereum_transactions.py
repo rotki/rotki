@@ -3,7 +3,7 @@ import random
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
-from unittest.mock import _Call, _patch, call, patch
+from unittest.mock import MagicMock, _patch, patch
 
 import gevent
 import pytest
@@ -80,7 +80,6 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -1562,6 +1561,7 @@ def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') ->
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_monerium_gnosis_pay_events_update(
         rotkehlchen_api_server: 'APIServer',
         monerium_credentials: None,
@@ -1572,6 +1572,10 @@ def test_monerium_gnosis_pay_events_update(
     Also check that this functionality is only available for valid premium users.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    if start_with_valid_premium:
+        assert rotki.premium is not None
+        rotki.chains_aggregator.activate_premium_status(rotki.premium)
+
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.execute(
             'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '
@@ -1631,31 +1635,24 @@ def test_monerium_gnosis_pay_events_update(
             )],
         )
 
-    def assert_calls(monerium_call: _Call, gnosis_pay_call: _Call) -> None:
-        """Test that the calls are properly made depending on whether premium is active."""
-        if start_with_valid_premium:
-            assert mock_monerium.call_count == 1
-            assert mock_monerium.call_args_list == [monerium_call]
-            assert mock_gnosis_pay.call_count == 1
-            assert mock_gnosis_pay.call_args_list == [gnosis_pay_call]
-        else:
-            assert mock_monerium.call_count == mock_gnosis_pay.call_count == 0
-
-    # Check that redecoding specific transactions works correctly
+    monerium_instance_mock = MagicMock()
+    gnosis_pay_instance_mock = MagicMock()
     with (
-        patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
-        patch('rotkehlchen.externalapis.gnosispay.GnosisPay.query_remote_for_tx_and_update_events') as mock_gnosis_pay,  # noqa: E501
-        patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_query_transaction_receipt'),  # noqa: E501
-        patch.object(rotki.chains_aggregator.arbitrum_one.transactions, 'get_or_query_transaction_receipt'),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.monerium.decoder.init_monerium', return_value=monerium_instance_mock),  # noqa: E501
+        patch('rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder.init_gnosis_pay', return_value=gnosis_pay_instance_mock),  # noqa: E501
+        patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_query_transaction_receipt', lambda **kwargs: None),  # noqa: E501
+        patch.object(rotki.chains_aggregator.arbitrum_one.transactions, 'get_or_query_transaction_receipt', lambda **kwargs: None),  # noqa: E501
+        patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_create_transaction', lambda **kwargs: (None, None)),  # noqa: E501
+        patch.object(rotki.chains_aggregator.arbitrum_one.transactions, 'get_or_create_transaction', lambda **kwargs: (None, None)),  # noqa: E501
         patch.object(
             rotki.chains_aggregator.gnosis.transactions_decoder,
-            'decode_and_get_transaction_hashes',
-            side_effect=lambda **kwargs: [gnosispay_event1, gnosispay_event2],
+            '_get_or_decode_transaction_events',
+            side_effect=lambda **kwargs: ([gnosispay_event1, gnosispay_event2], False, None),
         ),
         patch.object(
             rotki.chains_aggregator.arbitrum_one.transactions_decoder,
-            'decode_and_get_transaction_hashes',
-            side_effect=lambda **kwargs: [monerium_event],
+            '_get_or_decode_transaction_events',
+            side_effect=lambda **kwargs: ([monerium_event], False, None),
         ),
     ):
         response = requests.put(
@@ -1670,71 +1667,9 @@ def test_monerium_gnosis_pay_events_update(
         )
         assert_proper_response(response)
 
-    assert_calls(
-        monerium_call=call(tx_hash=monerium_event.tx_hash),
-        gnosis_pay_call=call(tx_timestamp=ts_ms_to_sec(gnosispay_event2.timestamp)),
-    )  # only the ts of the second event is queried since there's already gnosis pay data in the db for the first event.  # noqa: E501
-
-    # Check that when redecoding all events, the APIs are simply queried once for all data.
-    with (
-        patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
-        patch('rotkehlchen.externalapis.gnosispay.GnosisPay.get_and_process_transactions') as mock_gnosis_pay,  # noqa: E501
-    ):
-        response = requests.post(
-            api_url_for(rotkehlchen_api_server, 'evmpendingtransactionsdecodingresource'),
-            json={'async_query': False, 'ignore_cache': True, 'chains': ['gnosis']},
-        )
-        assert_proper_response(response)
-
-    assert_calls(
-        monerium_call=call(),  # no tx_hash specified, querying all data.
-        gnosis_pay_call=call(after_ts=Timestamp(0)),  # ts of zero, querying all data.
-    )
-
-    # Check that when only decoding new transactions, only the data for the new events is queried.
-    with rotki.data.db.user_write() as write_cursor:
-        DBHistoryEvents(rotki.data.db).add_history_events(
-            write_cursor=write_cursor,
-            history=[EvmEvent(
-                tx_hash=(new_gnosispay_tx_hash := make_evm_tx_hash()),
-                sequence_index=0,
-                timestamp=(new_gnosispay_ts := TimestampMS(1640000000)),
-                location=Location.GNOSIS,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.NONE,
-                asset=A_EUR,
-                amount=ONE,
-                counterparty=CPT_GNOSIS_PAY,
-            ), EvmEvent(
-                tx_hash=(new_monerium_tx_hash := make_evm_tx_hash()),
-                sequence_index=0,
-                timestamp=TimestampMS(1650000000),
-                location=Location.ARBITRUM_ONE,
-                event_type=HistoryEventType.SPEND,
-                event_subtype=HistoryEventSubType.NONE,
-                asset=A_ETH,
-                amount=ONE,
-                counterparty=CPT_MONERIUM,
-            )],
-        )
-
-    with (
-        patch('rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders') as mock_monerium,  # noqa: E501
-        patch('rotkehlchen.externalapis.gnosispay.GnosisPay.get_and_process_transactions') as mock_gnosis_pay,  # noqa: E501
-        patch('rotkehlchen.db.evmtx.DBEvmTx.count_hashes_not_decoded', side_effect=lambda **kwargs: 2),  # noqa: E501
-        patch.object(
-            rotki.chains_aggregator.gnosis.transactions_decoder,
-            'get_and_decode_undecoded_transactions',
-            side_effect=lambda **kwargs: [new_gnosispay_tx_hash, new_monerium_tx_hash],
-        ),
-    ):
-        response = requests.post(
-            api_url_for(rotkehlchen_api_server, 'evmpendingtransactionsdecodingresource'),
-            json={'async_query': False, 'chains': ['gnosis']},
-        )
-        assert_proper_response(response)
-
-    assert_calls(
-        monerium_call=call(tx_hash=new_monerium_tx_hash),
-        gnosis_pay_call=call(after_ts=Timestamp(ts_ms_to_sec(new_gnosispay_ts) - 1)),
-    )
+        if start_with_valid_premium:
+            assert monerium_instance_mock.update_events.call_count == 1
+            assert gnosis_pay_instance_mock.update_events.call_count == 2  # because we individually trigger the decoding for two transactions  # noqa: E501
+        else:
+            assert monerium_instance_mock.update_events.call_count == 0
+            assert gnosis_pay_instance_mock.update_events.call_count == 0

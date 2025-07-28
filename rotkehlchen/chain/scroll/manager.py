@@ -9,12 +9,14 @@ from .tokens import ScrollTokens
 from .transactions import ScrollTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.premium.premium import Premium
+
     from .node_inquirer import ScrollInquirer
 
 
 class ScrollManager(EvmManager):
 
-    def __init__(self, node_inquirer: 'ScrollInquirer') -> None:
+    def __init__(self, node_inquirer: 'ScrollInquirer', premium: 'Premium | None' = None) -> None:
         transactions = ScrollTransactions(
             scroll_inquirer=node_inquirer,
             database=node_inquirer.database,
@@ -34,6 +36,7 @@ class ScrollManager(EvmManager):
                 database=node_inquirer.database,
                 scroll_inquirer=node_inquirer,
                 transactions=transactions,
+                premium=premium,
             ),
             accounting_aggregator=ScrollAccountingAggregator(
                 node_inquirer=node_inquirer,

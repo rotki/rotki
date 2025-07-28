@@ -187,7 +187,7 @@ class Monerium:
                 log.error(f'Could not find monerium event corresponding to {location!s} {tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
                 continue
 
-            if self.is_monerium_event_edited(event=(event := events[0])):
+            if self.is_monerium_event_edited(event_notes=(event := events[0]).notes):
                 continue  # skip if the event is already edited
 
             querystr = 'UPDATE history_events SET notes=? '
@@ -207,7 +207,7 @@ class Monerium:
         """
         tx_hashes = set()
         for event in events:
-            if not self.is_monerium_event_edited(event=event):
+            if not self.is_monerium_event_edited(event_notes=event.notes):
                 tx_hashes.add(event.tx_hash)
 
         if len(tx_hashes) <= MAX_INDIVIDUAL_TX_QUERIES:
@@ -217,13 +217,13 @@ class Monerium:
             self.get_and_process_orders()
 
     @staticmethod
-    def is_monerium_event_edited(event: 'EvmEvent') -> bool:
+    def is_monerium_event_edited(event_notes: str | None) -> bool:
         """Check if an event has already been edited.
         Simply checks whether the notes have been edited to no longer start with Burn or Mint.
         While this is a bit hacky, it avoids needing to save any special state in the DB when
         editing these events.
         """
-        return event.notes is not None and not event.notes.startswith(('Burn', 'Mint'))
+        return event_notes is not None and not event_notes.startswith(('Burn', 'Mint'))
 
 
 def init_monerium(database: 'DBHandler') -> Monerium | None:

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.chain.polygon_pos.transactions import PolygonPOSTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -27,6 +28,7 @@ class PolygonPOSTransactionDecoder(EVMTransactionDecoder):
             database: 'DBHandler',
             polygon_pos_inquirer: 'PolygonPOSInquirer',
             transactions: 'PolygonPOSTransactions',
+            premium: 'Premium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -42,6 +44,7 @@ class PolygonPOSTransactionDecoder(EVMTransactionDecoder):
                 address_is_exchange_fn=self._address_is_exchange,
                 exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
             ),
+            premium=premium,
             addresses_exceptions=dict.fromkeys(POLYGON_MONERIUM_LEGACY_ADDRESSES, MONERIUM_V2_CONTRACTS_BLOCK),  # noqa: E501
         )
 

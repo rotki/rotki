@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
     from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -35,6 +36,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderTools,
+            premium: 'Premium | None' = None,
             dbevmtx_class: type[DBL2WithL1FeesTx] = DBL2WithL1FeesTx,
     ):
         super().__init__(
@@ -45,6 +47,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             event_rules=event_rules,
             misc_counterparties=misc_counterparties,
             base_tools=base_tools,
+            premium=premium,
             dbevmtx_class=dbevmtx_class,
         )
 

@@ -341,14 +341,25 @@ class GnosisPay:
 
         return self.create_notes_for_transaction(result_tx, is_refund=False) if result_tx else None
 
-    def query_remote_for_tx_and_update_events(self, tx_timestamp: Timestamp) -> None:
-        """Query the API for a single transaction and update the events if found"""
+    def query_remote_for_tx_and_update_events(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        """Query the API for transactions in a range of time.
+
+        If before_ts and after_ts are equal and match the timestamp of a transaction it
+        will return the information relevant to that transaction only.
+
+        After querying the transaction information it is saved in the database
+        and the history event entry for that transaction is updated.
+        """
         try:
             data = self._query(
                 endpoint='transactions',
                 params={
-                    'after': timestamp_to_iso8601(Timestamp(tx_timestamp - GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
-                    'before': timestamp_to_iso8601(Timestamp(tx_timestamp + GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
+                    'after': timestamp_to_iso8601(Timestamp(start_ts - GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
+                    'before': timestamp_to_iso8601(Timestamp(end_ts + GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
                 },
             )
         except RemoteError as e:
@@ -369,7 +380,7 @@ class GnosisPay:
         """Update the events for the given transactions.
         Queries the API only for transactions missing from the db.
         """
-        existing_txs = set()
+        existing_tx_hashes = set()
         with self.database.conn.read_ctx() as cursor:
             for bindings, placeholders in get_query_chunks(data=list(tx_timestamps.keys())):
                 for row in cursor.execute(
@@ -382,19 +393,23 @@ class GnosisPay:
                     self.maybe_update_event_with_api_data(
                         transaction=(tx := self._deserialize_transaction_from_db(row)),
                     )
-                    existing_txs.add(tx.tx_hash)
+                    existing_tx_hashes.add(tx.tx_hash)
 
-        missing_txs = sorted(
-            set(tx_timestamps.keys()) - existing_txs,
+        missing_tx_hashes = sorted(  # missing tx hashes in ascending order of ts
+            set(tx_timestamps.keys()) - existing_tx_hashes,
             key=lambda tx_hash: tx_timestamps[tx_hash],
         )
-        last_queried_ts = Timestamp(0)
-        for tx_hash in missing_txs:
-            if (tx_timestamp := tx_timestamps[tx_hash]) - last_queried_ts <= GNOSIS_PAY_TX_TIMESTAMP_RANGE:  # noqa: E501
-                continue  # skip if already included in last query
 
-            self.query_remote_for_tx_and_update_events(tx_timestamp=tx_timestamp)
-            last_queried_ts = tx_timestamp
+        if len(missing_tx_hashes) == 0:
+            log.debug('No gnosis transaction is missing metadata information from this batch.')
+            return
+
+        # else
+        log.debug(f'{missing_tx_hashes} transactions are missing gnosis pay information locally. Will query it')  # noqa: E501
+        self.query_remote_for_tx_and_update_events(
+            start_ts=tx_timestamps[missing_tx_hashes[0]],
+            end_ts=tx_timestamps[missing_tx_hashes[-1]],
+        )
 
     def create_notes_for_transaction(
             self,
