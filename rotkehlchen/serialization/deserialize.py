@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2ChainIdsWithL1FeesType,
     L2WithL1FeesTransaction,
 )
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -450,6 +451,29 @@ def deserialize_optional(input_val: X | None, fn: Callable[[X], Y]) -> Y | None:
     return fn(input_val)
 
 
+def _get_transaction_receipt(
+        tx_hash: EVMTxHash,
+        chain_id: ChainID,
+        timestamp: Timestamp,
+        evm_inquirer: 'EvmNodeInquirer',
+) -> dict[str, Any]:
+    """Get the transaction receipt for a tx during deserialization.
+    Handles a special case for Optimism transactions before the bedrock upgrade where some nodes
+    return null L1 fee values so we need to try the official mainnet node first regardless of the
+    default call order.
+    """
+    call_order = evm_inquirer.default_call_order()
+    if chain_id == ChainID.OPTIMISM and timestamp < OP_BEDROCK_UPGRADE:
+        call_order.sort(
+            key=lambda x: not x.node_info.endpoint.startswith('https://mainnet.optimism.io'),
+        )
+
+    return evm_inquirer.get_transaction_receipt(
+        tx_hash=tx_hash,
+        call_order=call_order,
+    )
+
+
 @overload
 def deserialize_evm_transaction(
         data: dict[str, Any],
@@ -535,6 +559,7 @@ def deserialize_evm_transaction(
         to_address = deserialize_evm_address(data['to']) if is_empty_to_address else None
         value = read_integer(data, 'value', source)
 
+        authorization_list: list[EvmTransactionAuthorization] | None
         if (raw_authorization_list := data.get('authorizationList')) is not None:
             authorization_list = []
             for entry in raw_authorization_list:
@@ -567,7 +592,12 @@ def deserialize_evm_transaction(
         if 'gasUsed' not in data:  # some etherscan APIs may have this
             if evm_inquirer is None:
                 raise DeserializationError('Got in deserialize evm transaction without gasUsed and without evm inquirer')  # noqa: E501
-            raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
+            raw_receipt_data = _get_transaction_receipt(
+                tx_hash=tx_hash,
+                chain_id=chain_id,
+                timestamp=timestamp,
+                evm_inquirer=evm_inquirer,
+            )
             gas_used = read_integer(raw_receipt_data, 'gasUsed', source)
             if chain_id == ChainID.ARBITRUM_ONE:
                 # In Arbitrum One the gas price included in the data is the "Gas Price Bid" and not
@@ -578,10 +608,38 @@ def deserialize_evm_transaction(
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
 
-        if chain_id in L2_CHAINIDS_WITH_L1_FEES and evm_inquirer is not None:
-            if not raw_receipt_data:
-                raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
-            l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)
+        if chain_id in L2_CHAINIDS_WITH_L1_FEES:
+            try:  # if data is from etherscan's txlist it will already include the L1 fee
+                l1_fee = int(data['L1FeesPaid'])
+            except (KeyError, ValueError):  # data is not from txlist or malformed data from txlist
+                if evm_inquirer is None:
+                    l1_fee = None
+                else:
+                    if raw_receipt_data is None:
+                        raw_receipt_data = _get_transaction_receipt(
+                            tx_hash=tx_hash,
+                            chain_id=chain_id,
+                            timestamp=timestamp,
+                            evm_inquirer=evm_inquirer,
+                        )
+                    try:
+                        l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)
+                    except DeserializationError as e:  # Fall back to etherscan (via txlist)
+                        log.warning(f'Failed to get L1 fee from receipt due to {e!s}. Falling back to etherscan.')  # noqa: E501
+                        l1_fee = evm_inquirer.etherscan.maybe_get_l1_fees(
+                            chain_id=chain_id,  # type: ignore[arg-type]  # mypy doesn't understand that the if check above limits chain_id
+                            account=from_address,
+                            tx_hash=tx_hash,
+                            block_number=block_number,
+                        )
+
+            if l1_fee is None:
+                log.error(
+                    f'Failed to retrieve L1 fee while deserializing {chain_id.to_name()} '
+                    f'transaction {tx_hash.hex()}. Using 0 L1 fee.',
+                )
+                l1_fee = 0
+
             return L2WithL1FeesTransaction(
                 timestamp=timestamp,
                 chain_id=chain_id,

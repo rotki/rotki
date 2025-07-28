@@ -1,8 +1,18 @@
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, cast
+from unittest.mock import patch
+
 import pytest
 
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
+from rotkehlchen.fval import FVal
+from rotkehlchen.types import ChainID, SupportedBlockchain, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
+    from rotkehlchen.chain.optimism.transactions import OptimismTransactions
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -10,6 +20,8 @@ from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
     """Test to query an optimism transaction with and without l1_fee existing in the DB.
     Make sure that if l1_fee is missing in the DB nothing breaks, but it's just seen as 0.
+    Note that the transaction used here is from after the bedrock upgrade and tests the case where
+    the l1_fee is present in the data from onchain.
     """
     address = optimism_accounts[0]
     dbevmtx = optimism_transactions.dbevmtx
@@ -58,3 +70,56 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
     with optimism_transactions.database.conn.read_ctx() as cursor:
         tx, _ = optimism_transactions.get_or_create_transaction(cursor, tx_hash, string_to_evm_address(to_address))  # noqa: E501
         assert_tx_okay([tx], should_have_l1=True)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(
+    WeightedNode(node_info=NodeName(name='drpc', endpoint='https://optimism.drpc.org', owned=False, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=FVal('0.5')),  # noqa: E501
+    WeightedNode(node_info=NodeName(name='mainnet', endpoint='https://mainnet.optimism.io', owned=False, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=FVal('0.5')),  # noqa: E501
+)])
+def test_l1_fee_queried_when_missing(
+        optimism_transactions: 'OptimismTransactions',
+        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_manager_connect_at_start: Sequence[WeightedNode],
+):
+    """Test that if the L1 fee is initially missing it gets queried from either
+    the mainnet node or from etherscan.
+    """
+    original_get_transaction_receipt = optimism_transactions.evm_inquirer.get_transaction_receipt
+    for fallback_to_etherscan in (False, True):
+
+        def mock_get_transaction_receipt(fallback=fallback_to_etherscan, **kwargs: Any) -> dict[str, Any]:  # noqa: E501
+            """Simulate a missing l1Fee from the mainnet node in the fallback_to_etherscan case."""
+            nonlocal fallback_to_etherscan
+            tx_receipt = original_get_transaction_receipt(**kwargs)
+            if fallback:
+                tx_receipt['l1Fee'] = None
+
+            return tx_receipt
+
+        with (
+            patch.object(
+                optimism_transactions.evm_inquirer,
+                'get_transaction_receipt',
+                side_effect=mock_get_transaction_receipt,
+            ) as get_tx_receipt_mock,
+            patch.object(
+                optimism_transactions.evm_inquirer.etherscan,
+                'maybe_get_l1_fees',
+                wraps=optimism_transactions.evm_inquirer.etherscan.maybe_get_l1_fees,
+            ) as get_l1_fees_mock,
+            patch.object(
+                optimism_transactions.evm_inquirer,
+                'default_call_order',
+                new=lambda: list(optimism_manager_connect_at_start),
+            ),  # patch default call order to keep it deterministic for the vcr
+        ):
+            tx, _ = optimism_transactions.evm_inquirer.get_transaction_by_hash(
+                tx_hash=deserialize_evm_tx_hash('0x92ae5e1c4b4a2d5e2af9c4abc415a9dc0b826ba1fa158c57219fc1b6e852a061'),
+            )
+
+        assert cast('L2WithL1FeesTransaction', tx).l1_fee == 97960903705252
+        assert get_tx_receipt_mock.call_count == 1
+        assert get_tx_receipt_mock.call_args_list[0].kwargs['call_order'][0].node_info.name == 'mainnet'  # noqa: E501
+        assert get_l1_fees_mock.call_count == (1 if fallback_to_etherscan else 0)

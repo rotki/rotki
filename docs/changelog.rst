@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Optimism L1 gas fees will now be properly counted on all transactions.
 * :feature:`-` All CSV imports will now show warnings when duplicate entries are found.
 * :feature:`-` rotki will now decode reward claims via Merkl, including Morpho rewards distributed through Merkl.
 * :feature:`-` The eth2 daily stats functionality has been removed as it was deprecated for over a year and there was no reliable source of query for them.
