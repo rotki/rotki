@@ -1,12 +1,20 @@
 import logging
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal
+
+from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.ethereum.constants import (
+    ETHEREUM_ETHERSCAN_NODE,
+)
+from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -66,3 +74,35 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             ARCHIVE_NODE_CHECK_BLOCK,
             ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
         )
+
+    def multicall(
+            self,
+            calls: list[tuple[ChecksumEvmAddress, str]],
+            require_success: bool = True,
+            call_order: Sequence['WeightedNode'] | None = None,
+            block_identifier: BlockIdentifier = 'latest',
+            calls_chunk_size: int = MULTICALL_CHUNKS,
+    ) -> Any:
+        """Overrides multicall to handle etherscan's gas limit constraints on Arbitrum.
+
+        Etherscan on Arbitrum has reduced gas limits which limits the number of multicall
+        calls that can be batched together. This implementation tries regular nodes first
+        with normal chunk sizes, then falls back to etherscan with smaller chunks (3).
+        """
+        call_order = self.default_call_order() if call_order is None else call_order
+        try:
+            return super().multicall(
+                calls=calls,
+                require_success=require_success,
+                call_order=[node for node in call_order if node != ETHEREUM_ETHERSCAN_NODE],
+                block_identifier=block_identifier,
+                calls_chunk_size=calls_chunk_size,
+            )
+        except (RemoteError, BlockchainQueryError):
+            return super().multicall(
+                calls=calls,
+                require_success=require_success,
+                call_order=[ETHEREUM_ETHERSCAN_NODE],
+                block_identifier=block_identifier,
+                calls_chunk_size=3,
+            )
