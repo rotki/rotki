@@ -160,6 +160,6 @@ def test_connect_to_own_node(polkadot_manager: 'SubstrateManager'):
     polkadot_manager.own_rpc_endpoint = 'http://localhost:1234'
     polkadot_manager.attempt_connections()
     assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == [
-        'polkadot manager connection to own node node',
+        'polkadot manager connection to own node',
         'polkadot manager connection to parity node',
     ]
