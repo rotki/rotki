@@ -14,10 +14,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
-    L2_CHAINIDS_WITH_L1_FEES,
-    L2WithL1FeesTransaction,
-)
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import EVMTX_DECODED
@@ -447,7 +444,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                             evm_inquirer=None,
                             parent_tx_hash=parent_tx_hash,
                         )
-                        tx = self._additional_transaction_processing(tx)
                     else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'
                         dbtx = DBEvmTx(self.db)
@@ -804,48 +800,6 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         except json.JSONDecodeError:
             return None
 
-    def _additional_transaction_processing(
-            self,
-            tx: EvmTransaction | EvmInternalTransaction | L2WithL1FeesTransaction,
-    ) -> EvmTransaction | EvmInternalTransaction:
-        """Performs additional processing on chain-specific tx attributes"""
-        if tx.chain_id in L2_CHAINIDS_WITH_L1_FEES and isinstance(tx, EvmTransaction):
-            # TODO: write this tx_receipt to DB so it doesn't need to be queried again
-            # https://github.com/rotki/rotki/pull/6359#discussion_r1252850465
-            tx_receipt = self.get_transaction_receipt(tx.chain_id, tx.tx_hash)  # type: ignore
-            l1_fee = 0
-            if tx_receipt is not None:
-                if (raw_l1_fee := tx_receipt.get('l1Fee')) is not None:
-                    # system tx like deposits don't have the l1fee attribute
-                    # https://github.com/ethereum-optimism/optimism/blob/84ead32601fb825a060cde5a6635be2e8aea1a95/specs/deposits.md  # noqa: E501
-                    try:
-                        l1_fee = int(tx_receipt['l1Fee'], 16)
-                    except TypeError:
-                        log.error(
-                            f'Could not convert l1 Fee "{raw_l1_fee}" of {tx.tx_hash.hex()} '
-                            f'in {tx.chain_id.to_name()} to a valid integer. Using 0 as L1 fee',
-                        )
-            else:
-                log.error(f'Could not query receipt for {tx.chain_id.to_name()} transaction {tx.tx_hash.hex()}. Using 0 l1 fee')  # noqa: E501
-
-            return L2WithL1FeesTransaction(
-                tx_hash=tx.tx_hash,
-                chain_id=tx.chain_id,
-                timestamp=tx.timestamp,
-                block_number=tx.block_number,
-                from_address=tx.from_address,
-                to_address=tx.to_address,
-                value=tx.value,
-                gas=tx.gas,
-                gas_price=tx.gas_price,
-                gas_used=tx.gas_used,
-                input_data=tx.input_data,
-                nonce=tx.nonce,
-                l1_fee=l1_fee,
-            )
-
-        return tx
-
     def get_withdrawals(
             self,
             address: ChecksumEvmAddress,
@@ -940,3 +894,41 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                 )
 
         return touched_indices - tracked_indices
+
+    def maybe_get_l1_fees(
+            self,
+            chain_id: L2ChainIdsWithL1FeesType,
+            account: ChecksumEvmAddress,
+            tx_hash: EVMTxHash,
+            block_number: int,
+    ) -> int | None:
+        """Attempt to retrieve L1 fees from etherscan for the given tx via the txlist endpoint."""
+        tx_hash_str = tx_hash.hex()
+        for raw_tx in self._query(
+            chain_id=chain_id,
+            module='account',
+            action='txlist',
+            options=self._process_timestamp_or_blockrange(
+                chain_id=chain_id,
+                period=TimestampOrBlockRange(
+                    range_type='blocks',
+                    from_value=block_number,
+                    to_value=block_number,
+                ),
+                options={'address': str(account)},
+            ),
+        ):
+            if raw_tx.get('hash') != tx_hash_str:
+                continue  # skip unrelated txs for this account in the same block
+
+            try:
+                return int(raw_tx['L1FeesPaid'])
+            except (KeyError, ValueError) as e:
+                msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                log.error(
+                    'Failed to retrieve L1 fees from etherscan txlist for '
+                    f'{chain_id.to_name()} tx {tx_hash_str} due to {msg}',
+                )
+                break
+
+        return None
