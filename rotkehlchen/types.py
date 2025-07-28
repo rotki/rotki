@@ -1259,6 +1259,7 @@ class ProtocolsWithCache(SerializableEnumNameMixin):
     SPARK = auto()
     BALANCER_V1 = auto()
     BALANCER_V2 = auto()
+    MERKL = auto()
     # TODO: ETH_WITHDRAWALS and ETH_BLOCKS should be removed
     #  once https://github.com/rotki/rotki/issues/9302 is implemented
     ETH_WITHDRAWALS = auto()
