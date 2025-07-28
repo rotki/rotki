@@ -534,6 +534,10 @@ def test_data_import_rotki_generic_trades(
     assert assert_proper_sync_response_with_result(response) is True
     assert_rotki_generic_trades_import_results(rotki, websocket_connection)
 
+    # purge the existing entries to avoid duplicates
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM history_events')
+
     # check that passing `timestamp_format` does not break anything
     json_data = {
         'source': 'rotki_trades',

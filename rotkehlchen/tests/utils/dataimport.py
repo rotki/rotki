@@ -855,9 +855,12 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Nexo',
-            'total': 38,
-            'processed': 36,
-            'messages': [{'msg': 'Ignoring rejected entry.', 'rows': [2, 8]}],
+            'total': 39,
+            'processed': 37,
+            'messages': [
+                {'msg': 'Ignoring rejected entry.', 'rows': [2, 8]},
+                {'msg': 'Skipped duplicate asset movement event: withdrawal/remove asset of 0.0017316 BTC at 2022/04/17 10:43:00', 'rows': [-1]},  # noqa: E501
+            ],
         },
     }
     assert websocket_connection.messages_num() == 0
@@ -2634,6 +2637,7 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
                 {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},
                 {'msg': 'Could not process row in multi-line entry. Expected a valid combination of operations but got "Small assets exchange BNB, Small assets exchange BNB, Small assets exchange BNB" instead', 'rows': [31, 32, 33], 'is_error': True},  # noqa: E501
                 {'msg': 'Could not process row in multi-line entry. Expected a valid combination of operations but got "ABC" instead', 'rows': [41], 'is_error': True},  # noqa: E501
+                {'msg': 'Skipped duplicate history event: staking/reward of 0.00001605 MATIC at 2023/01/13 05:29:00', 'rows': [-1]},  # noqa: E501
             ],
         },
     }
@@ -2647,9 +2651,13 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_con
         'data': {
             'subtype': 'csv_import_result',
             'source_name': 'Rotki generic trades',
-            'total': 5,
-            'processed': 5,
-            'messages': [],
+            'total': 6,
+            'processed': 6,
+            'messages': [
+                {'msg': 'Skipped duplicate swap event: trade/spend of 4576.6400 ADA at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
+                {'msg': 'Skipped duplicate swap event: trade/receive of 16.3444 BCH at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
+                {'msg': 'Skipped duplicate swap event: trade/fee of 5.1345 USD at 2022/08/01 09:08:20', 'rows': [-1]},  # noqa: E501
+            ],
         },
     }
     assert websocket_connection.messages_num() == 0
