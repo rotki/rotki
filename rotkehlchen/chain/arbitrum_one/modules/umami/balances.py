@@ -13,7 +13,6 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.utils import get_umami_vault_t
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import RemoteError
@@ -78,7 +77,6 @@ class UmamiBalances(ProtocolWithBalance):
             string_to_evm_address('0xcd8011AaB161A75058eAb24e0965BAb0b918aF29'),
             string_to_evm_address('0x5f851F67D24419982EcD7b7765deFD64fBb50a97'),
         ]
-        _, call_order = get_chunk_size_call_order(self.evm_inquirer)
         for user_address in addresses_with_deposits:  # get staked balances.
             try:
                 results = self.evm_inquirer.multicall(
@@ -91,8 +89,6 @@ class UmamiBalances(ProtocolWithBalance):
                            ),
                         ) for idx in range(4)
                     ],
-                    call_order=call_order,
-                    calls_chunk_size=3,  # etherscan throws an error for >3 chunk size.
                 )
                 if not results:
                     log.error(f'Failed to query umami vault balances for address {user_address}')
