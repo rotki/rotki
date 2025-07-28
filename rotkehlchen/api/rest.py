@@ -4854,6 +4854,12 @@ class RestAPI:
                         write_cursor=write_cursor,
                         key_parts=[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]],
                     )
+            case ProtocolsWithCache.MERKL:
+                with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                    write_cursor.execute(
+                        'DELETE FROM unique_cache WHERE key LIKE ?',
+                        (f'{CacheType.MERKL_REWARD_PROTOCOLS.serialize()}%',),
+                    )
 
         failed_to_update = []
         for (cache, cache_type, query_method, chain_id, inquirer) in cache_rules:
