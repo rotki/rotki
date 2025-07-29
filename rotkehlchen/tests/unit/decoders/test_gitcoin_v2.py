@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import PROFILE_REGISTRY
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ARB, A_DAI, A_ETH, A_POLYGON_POS_MATIC
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
@@ -746,5 +747,61 @@ def test_registered_retro_strategy(arbitrum_one_inquirer, arbitrum_one_accounts)
         notes=f'Register for a gitcoin round with recipient id {recipient_id}',
         counterparty=CPT_GITCOIN,
         extra_data={'recipient_id': recipient_id},
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_arbitrum_direct_allocation_erc20_token_donation(arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x41a394d9a2d835e3ce27842412609f414d8911350e397a805f40ef057df72fbf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=7,
+        timestamp=TimestampMS(1744891022000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal(amount := '2'),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Receive a gitcoin donation of {amount} USDC from 0xCf2b7c6Bc98bfE0D6138A25a3b6162B51F75e05d',  # noqa: E501
+        counterparty=CPT_GITCOIN,
+        address=string_to_evm_address('0xCf2b7c6Bc98bfE0D6138A25a3b6162B51F75e05d'),
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x1c0AcCc24e1549125b5b3c14D999D3a496Afbdb1']])
+def test_arbitrum_direct_allocation_native_token_donation(arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x21b795aa95b1cf4f1b6f7a221e8ff90a72f1cdaece9b71272b72225f1a633163')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1744482578000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000114785'),
+        counterparty=CPT_GAS,
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=FVal(amount := '0.001'),
+        location_label=user_address,
+        counterparty=CPT_GITCOIN,
+        notes=f'Make a gitcoin donation of {amount} ETH to 0x9531C059098e3d194fF87FebB587aB07B30B1306',  # noqa: E501
+        address=string_to_evm_address('0x1133eA7Af70876e64665ecD07C0A0476d09465a1'),
     )]
     assert events == expected_events

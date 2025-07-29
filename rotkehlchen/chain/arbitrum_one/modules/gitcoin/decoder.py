@@ -58,6 +58,7 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
                 string_to_evm_address('0x3E93205B786796Cf7Ea70404E89c7dda3b84D07a'),
             ],
             retro_funding_strategy_addresses=[string_to_evm_address('0x2Caa214E2de4b05A9E0E1a1cCfDb3c673a28acCf')],
+            direct_allocation_strategy_addresses=[string_to_evm_address('0x91AD709FE04E214eF53218572D8d8690a8b4FdD0')],
         )
 
     def _decode_donation_impact_minting(self, context: 'DecoderContext') -> DecodingOutput:
