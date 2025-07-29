@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.gitcoinv2.constants import (
     ALLOCATED,
+    DIRECT_ALLOCATED,
     FUNDS_DISTRIBUTED,
     GET_RECIPIENT_ABI,
     METADATA_UPDATED,
@@ -82,6 +83,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             payout_strategy_addresses: list['ChecksumEvmAddress'],
             voting_merkle_distributor_addresses: list['ChecksumEvmAddress'] | None = None,
             retro_funding_strategy_addresses: list['ChecksumEvmAddress'] | None = None,
+            direct_allocation_strategy_addresses: list['ChecksumEvmAddress'] | None = None,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -95,6 +97,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         self.voting_impl_addresses = voting_impl_addresses
         self.voting_merkle_distributor_addresses = voting_merkle_distributor_addresses
         self.retro_funding_strategy_addresses = retro_funding_strategy_addresses
+        self.direct_allocation_strategy_addresses = direct_allocation_strategy_addresses
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.recipient_id_to_addr: LRUCacheWithRemove[ChecksumEvmAddress, ChecksumEvmAddress] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
 
@@ -129,6 +132,50 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         return recipient_address
 
+    @staticmethod
+    def _get_donation_event_params(
+            context: DecoderContext,
+            sender_address: 'ChecksumEvmAddress',
+            recipient_address: 'ChecksumEvmAddress',
+            sender_tracked: bool,
+            recipient_tracked: bool,
+            asset: 'CryptoAsset',
+            amount: FVal,
+            payer_address: 'ChecksumEvmAddress',
+    ) -> tuple[HistoryEventType, HistoryEventType, 'ChecksumEvmAddress', 'ChecksumEvmAddress', str]:  # noqa: E501
+        """Get event parameters for donation events
+
+        Returns:
+            tuple of (new_type, expected_type, expected_address, expected_location_label, notes)
+        """
+        if sender_tracked and recipient_tracked:
+            new_type = HistoryEventType.TRANSFER
+            expected_type = HistoryEventType.RECEIVE
+            expected_address = context.tx_log.address
+            expected_location_label = recipient_address
+            verb = 'Transfer'
+            preposition = 'to'
+            other_address = recipient_address
+        elif sender_tracked:
+            new_type = HistoryEventType.SPEND
+            expected_type = HistoryEventType.SPEND
+            expected_address = payer_address
+            expected_location_label = sender_address
+            verb = 'Make'
+            preposition = 'to'
+            other_address = recipient_address
+        else:  # only recipient tracked
+            new_type = HistoryEventType.RECEIVE
+            expected_type = HistoryEventType.RECEIVE
+            expected_address = sender_address
+            expected_location_label = recipient_address
+            verb = 'Receive'
+            preposition = 'from'
+            other_address = sender_address
+
+        notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} {preposition} {other_address}'  # noqa: E501
+        return new_type, expected_type, expected_address, expected_location_label, notes
+
     def _common_donator_logic(
             self,
             context: DecoderContext,
@@ -145,20 +192,16 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         recipient_address: The final address of the recipient
         payer_address: The in-between contract that splits the payment
         """
-        if recipient_tracked:
-            new_type = HistoryEventType.TRANSFER
-            expected_type = HistoryEventType.RECEIVE
-            expected_address = context.tx_log.address
-            expected_location_label = recipient_address
-            verb = 'Transfer'
-        else:
-            new_type = HistoryEventType.SPEND
-            expected_type = HistoryEventType.SPEND
-            expected_address = payer_address
-            expected_location_label = sender_address
-            verb = 'Make'
-
-        notes = f'{verb} a gitcoin donation of {amount} {asset.symbol} to {recipient_address}'
+        new_type, expected_type, expected_address, expected_location_label, notes = self._get_donation_event_params(  # noqa: E501
+            context=context,
+            sender_address=sender_address,
+            recipient_address=recipient_address,
+            sender_tracked=True,  # _common_donator_logic is only called when sender is tracked
+            recipient_tracked=recipient_tracked,
+            asset=asset,
+            amount=amount,
+            payer_address=payer_address,
+        )
         for event in context.decoded_events:
             if event.event_type == expected_type and event.event_subtype == HistoryEventSubType.NONE and event.asset == asset and event.location_label == expected_location_label and event.address == expected_address:  # noqa: E501
                 # this is either the internal transfer to the contract that
@@ -519,6 +562,56 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
         return self._decode_funds_distributed(context)
 
+    def _decode_direct_allocated(self, context: DecoderContext) -> DecodingOutput:
+        """Decode direct allocation strategy donations from gitcoin v2."""
+        if context.tx_log.topics[0] != DIRECT_ALLOCATED:
+            return DEFAULT_DECODING_OUTPUT
+
+        recipient = bytes_to_address(context.tx_log.data[:32])
+        amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[32:64]),
+            asset=(token := self.base.get_token_or_native(bytes_to_address(context.tx_log.data[64:96]))),  # noqa: E501
+        )
+        new_type, expected_type, _, expected_location_label, notes = self._get_donation_event_params(  # noqa: E501
+            context=context,
+            sender_address=(sender := bytes_to_address(context.tx_log.data[96:128])),
+            recipient_address=recipient,
+            sender_tracked=self.base.is_tracked(sender),
+            recipient_tracked=self.base.is_tracked(recipient),
+            asset=token,
+            amount=amount,
+            payer_address=sender,
+        )
+
+        # first, try to find existing event (for ERC20 tokens)
+        for event in context.decoded_events:
+            if (
+                event.event_type == expected_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == token and
+                event.amount == amount and
+                event.location_label == expected_location_label
+            ):
+                event.notes = notes
+                event.event_type = new_type
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = CPT_GITCOIN
+                return DEFAULT_DECODING_OUTPUT
+
+        # if no event found, create action item (for native tokens sent as internal transactions)
+        action_item = ActionItem(
+            action='transform',
+            from_event_type=expected_type,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=token,
+            amount=amount,
+            to_event_type=new_type,
+            to_event_subtype=HistoryEventSubType.DONATE,
+            to_notes=notes,
+            to_counterparty=CPT_GITCOIN,
+        )
+        return DecodingOutput(action_items=[action_item])
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
@@ -532,6 +625,8 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             mappings |= dict.fromkeys(self.retro_funding_strategy_addresses, (self._decode_retro_funding_strategy,))  # noqa: E501
         if self.project_registry:
             mappings[self.project_registry] = (self._decode_project_action,)
+        if self.direct_allocation_strategy_addresses:
+            mappings |= dict.fromkeys(self.direct_allocation_strategy_addresses, (self._decode_direct_allocated,))  # noqa: E501
 
         return mappings
 
