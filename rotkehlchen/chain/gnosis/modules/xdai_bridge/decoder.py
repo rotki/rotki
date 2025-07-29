@@ -28,7 +28,7 @@ class XdaiBridgeDecoder(XdaiBridgeCommonDecoder):
             evm_inquirer=gnosis_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            deposit_topic=BRIDGE_XDAI,
+            deposit_topics=(BRIDGE_XDAI,),
             withdrawal_topic=AFFIRMATION_COMPLETED,
             bridge_address=BRIDGE_ADDRESS,  # TODO: There may be more bridge addresses judging by the way the logs and contract are made  # noqa: E501
             bridged_asset=A_XDAI,
