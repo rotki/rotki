@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
-from rotkehlchen.chain.ethereum.modules.xdai_bridge.decoder import BRIDGE_ADDRESS
+from rotkehlchen.chain.ethereum.modules.xdai_bridge.decoder import (
+    BRIDGE_ADDRESS,
+    XDAI_BRIDGE_PERIPHERAL_PRE_USDS,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.gnosis.modules.xdai_bridge.decoder import (
     BRIDGE_ADDRESS as GNOSIS_BRIDGE_ADDRESS,
@@ -12,6 +17,10 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 @pytest.mark.vcr
@@ -50,6 +59,42 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
             address=BRIDGE_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_bridge_dai_from_ethereum_pre_usds_upgrade(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x220b7397ce4b2f03b6871eb57762396aa0140d57dac4623d241e5eb02a0bc349')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1750340699000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000401361155268309'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        tx_hash=tx_hash,
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        sequence_index=446,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_DAI,
+        amount=FVal(bridge_amount := '569.981290146184006921'),
+        location_label=user_address,
+        notes=f'Bridge {bridge_amount} DAI from Ethereum to Gnosis via Gnosis Chain bridge',
+        tx_hash=tx_hash,
+        counterparty=CPT_GNOSIS_CHAIN,
+        address=XDAI_BRIDGE_PERIPHERAL_PRE_USDS,
+    )]
 
 
 @pytest.mark.vcr
