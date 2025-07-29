@@ -19,7 +19,7 @@ export enum SolanaTokenKind {
 
 const SolanaTokenKindEnum = z.enum(SolanaTokenKind);
 
-export const TokenKind = z.union([EvmTokenKindEnum, SolanaTokenKindEnum]);
+const TokenKind = z.union([EvmTokenKindEnum, SolanaTokenKindEnum]);
 
 const UnderlyingToken = z.object({
   address: z.string(),
