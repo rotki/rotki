@@ -6,7 +6,6 @@ import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialo
 import WalletConnectionButton from '@/components/wallets/WalletConnectionButton.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useWalletConnection } from '@/composables/wallets/use-wallet-connection';
 import TradeAmountInput from '@/modules/onchain/send/TradeAmountInput.vue';
 import TradeAssetSelector from '@/modules/onchain/send/TradeAssetSelector.vue';
 import TradeConnectedAddressBadge from '@/modules/onchain/send/TradeConnectedAddressBadge.vue';
@@ -16,6 +15,7 @@ import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
+import { useInjectedWallet } from '@/modules/onchain/wallet-bridge/use-injected-wallet';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
 import { logger } from '@/utils/logging';
 import { useTradeApi } from './use-trade-api';
@@ -68,15 +68,16 @@ const { isPackaged } = useInterop();
 const router = useRouter();
 
 // Provider selection for wallet connection
-const walletConnection = useWalletConnection();
-const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = useUnifiedProviders();
+const injectedWallet = useInjectedWallet();
+const unifiedProviders = useUnifiedProviders();
+const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = unifiedProviders;
 
 const isConnecting = logicOr(preparing, detectingProviders);
 
 async function handleProviderSelection(provider: EnhancedProviderDetail): Promise<void> {
   try {
-    await walletConnection.selectProvider(provider);
-    await walletConnection.connect();
+    await unifiedProviders.selectProvider(provider.info.uuid);
+    await injectedWallet.connectToSelectedProvider();
   }
   catch (error: any) {
     const errorString = error.toString();

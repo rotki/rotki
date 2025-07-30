@@ -10,7 +10,7 @@ import {
 } from './bridge-errors';
 import { createResourceManager } from './resource-management';
 
-const BRIDGE_CONFIG = {
+const PROXY_CONFIG = {
   BRIDGE_PAGE_DELAY: 250,
   CONNECTION_TIMEOUT: 30000,
   HEALTH_CHECK_INTERVAL: 5000,
@@ -18,26 +18,26 @@ const BRIDGE_CONFIG = {
   SERVER_TIMEOUT: 30000,
 } as const;
 
-interface UseBridgedWalletReturn {
-  setupBridge: () => Promise<void>;
-  waitForBridgeConnection: (timeoutMs?: number, signal?: AbortSignal) => Promise<void>;
-  waitForBridgeClientReady: (timeoutMs?: number, signal?: AbortSignal) => Promise<void>;
+interface UseWalletProxyReturn {
+  setupProxy: () => Promise<void>;
+  waitForProxyConnection: (timeoutMs?: number, signal?: AbortSignal) => Promise<void>;
+  waitForProxyClientReady: (timeoutMs?: number, signal?: AbortSignal) => Promise<void>;
   startConnectionHealthCheck: (isConnected: () => boolean, onDisconnect: () => void) => void;
   stopConnectionHealthCheck: () => void;
-  disconnectBridge: () => Promise<void>;
+  disconnectProxy: () => Promise<void>;
 }
 
-export function useBridgedWallet(): UseBridgedWalletReturn {
-  const { openWalletBridge, walletBridgeClientReady, walletBridgeConnect, walletBridgeHttpListening, walletBridgeWebSocketListening } = useWalletBridge();
+export function useWalletProxy(): UseWalletProxyReturn {
+  const { openWalletBridge, proxyClientReady, proxyConnect, proxyHttpListening, proxyWebSocketListening } = useWalletBridge();
 
   // Track active resources for cleanup
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
 
   // Create health check composable
   const healthCheck = useHealthCheck(
-    async () => walletBridgeConnect(),
+    async () => proxyConnect(),
     {
-      interval: BRIDGE_CONFIG.HEALTH_CHECK_INTERVAL,
+      interval: PROXY_CONFIG.HEALTH_CHECK_INTERVAL,
       onError: (error: Error) => {
         logger.error('Bridge health check error:', error);
       },
@@ -45,16 +45,16 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
   );
 
   // Check current bridge state
-  const checkBridgeState = async (): Promise<{
+  const checkProxyState = async (): Promise<{
     httpListening: boolean;
     wsListening: boolean;
     clientConnected: boolean;
   }> => {
     // Check servers and connection in parallel for faster state assessment
     const [httpListening, wsListening, clientConnected] = await Promise.all([
-      walletBridgeHttpListening(),
-      walletBridgeWebSocketListening(),
-      walletBridgeConnect(),
+      proxyHttpListening(),
+      proxyWebSocketListening(),
+      proxyConnect(),
     ]);
 
     const state = { clientConnected, httpListening, wsListening };
@@ -67,16 +67,16 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     return state;
   };
 
-  const waitForBridgeConnection = async (
-    timeoutMs: number = BRIDGE_CONFIG.CONNECTION_TIMEOUT,
+  const waitForProxyConnection = async (
+    timeoutMs: number = PROXY_CONFIG.CONNECTION_TIMEOUT,
     signal?: AbortSignal,
   ): Promise<void> => {
-    await waitForConditionBridge(
-      async () => walletBridgeConnect(),
+    await waitForProxyCondition(
+      async () => proxyConnect(),
       connected => connected,
       {
-        initialDelay: BRIDGE_CONFIG.BRIDGE_PAGE_DELAY,
-        interval: BRIDGE_CONFIG.RETRY_INTERVAL,
+        initialDelay: PROXY_CONFIG.BRIDGE_PAGE_DELAY,
+        interval: PROXY_CONFIG.RETRY_INTERVAL,
         name: 'bridge connection',
         signal,
         timeout: timeoutMs,
@@ -84,16 +84,16 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     );
   };
 
-  const waitForBridgeClientReady = async (
-    timeoutMs: number = BRIDGE_CONFIG.CONNECTION_TIMEOUT,
+  const waitForProxyClientReady = async (
+    timeoutMs: number = PROXY_CONFIG.CONNECTION_TIMEOUT,
     signal?: AbortSignal,
   ): Promise<void> => {
-    await waitForConditionBridge(
-      async () => walletBridgeClientReady(),
+    await waitForProxyCondition(
+      async () => proxyClientReady(),
       ready => ready,
       {
-        initialDelay: BRIDGE_CONFIG.BRIDGE_PAGE_DELAY,
-        interval: BRIDGE_CONFIG.RETRY_INTERVAL,
+        initialDelay: PROXY_CONFIG.BRIDGE_PAGE_DELAY,
+        interval: PROXY_CONFIG.RETRY_INTERVAL,
         name: 'bridge client ready',
         signal,
         timeout: timeoutMs,
@@ -114,7 +114,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     }
   }
 
-  async function waitForConditionBridge<T>(checkFn: () => Promise<T>, condition: (result: T) => boolean, options: {
+  async function waitForProxyCondition<T>(checkFn: () => Promise<T>, condition: (result: T) => boolean, options: {
     timeout?: number;
     interval?: number;
     initialDelay?: number;
@@ -139,20 +139,20 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
 
   // Wait for servers to be listening before opening webpage
   const waitForServersListening = async (
-    timeoutMs: number = BRIDGE_CONFIG.SERVER_TIMEOUT,
+    timeoutMs: number = PROXY_CONFIG.SERVER_TIMEOUT,
     signal?: AbortSignal,
   ): Promise<void> => {
-    await waitForConditionBridge(
+    await waitForProxyCondition(
       async () => {
         const [httpListening, wsListening] = await Promise.all([
-          walletBridgeHttpListening(),
-          walletBridgeWebSocketListening(),
+          proxyHttpListening(),
+          proxyWebSocketListening(),
         ]);
         return { httpListening, wsListening };
       },
       result => result.httpListening && result.wsListening,
       {
-        interval: BRIDGE_CONFIG.RETRY_INTERVAL,
+        interval: PROXY_CONFIG.RETRY_INTERVAL,
         name: 'servers to start listening',
         signal,
         timeout: timeoutMs,
@@ -161,7 +161,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
   };
 
   // Initialize wallet bridge
-  async function initializeWalletBridge(): Promise<void> {
+  async function initializeProxy(): Promise<void> {
     const walletBridge = (window as any).walletBridge;
     if (!walletBridge) {
       throw new BridgeInitializationError('Wallet bridge not available in window object');
@@ -183,7 +183,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
   }
 
   // Start bridge servers and establish connection
-  const startBridgeServers = async (signal?: AbortSignal): Promise<void> => {
+  const startProxyServers = async (signal?: AbortSignal): Promise<void> => {
     logger.debug('Starting bridge servers...');
 
     try {
@@ -192,15 +192,15 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
       logger.debug('Bridge servers startup initiated');
 
       // Step 2: Wait for both servers to be ready (parallel check)
-      await waitForServersListening(BRIDGE_CONFIG.SERVER_TIMEOUT, signal);
+      await waitForServersListening(PROXY_CONFIG.SERVER_TIMEOUT, signal);
       logger.debug('Bridge servers are now listening');
 
       // Step 3: Establish client connection
-      await waitForBridgeConnection(BRIDGE_CONFIG.CONNECTION_TIMEOUT, signal);
+      await waitForProxyConnection(PROXY_CONFIG.CONNECTION_TIMEOUT, signal);
       logger.debug('Bridge client connection established');
 
       // Step 4: Wait for client to be ready for API calls
-      await waitForBridgeClientReady(BRIDGE_CONFIG.CONNECTION_TIMEOUT, signal);
+      await waitForProxyClientReady(PROXY_CONFIG.CONNECTION_TIMEOUT, signal);
       logger.debug('Bridge client ready for API calls');
     }
     catch (error) {
@@ -210,7 +210,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
       }
       if (error instanceof BridgeError && error.code === 'ABORTED') {
         logger.debug('Bridge setup was cancelled');
-        throw new BridgeTimeoutError('bridge setup process', BRIDGE_CONFIG.SERVER_TIMEOUT + BRIDGE_CONFIG.CONNECTION_TIMEOUT, error);
+        throw new BridgeTimeoutError('bridge setup process', PROXY_CONFIG.SERVER_TIMEOUT + PROXY_CONFIG.CONNECTION_TIMEOUT, error);
       }
       logger.error('Bridge setup failed:', error);
       throw new BridgeConnectionError('bridge setup', error as Error);
@@ -218,7 +218,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
   };
 
   // Main setup function with improved flow control and lifecycle management
-  const setupBridge = async (): Promise<void> => {
+  const setupProxy = async (): Promise<void> => {
     // Prevent concurrent setup operations
     if (activeResources.isSetupInProgress) {
       logger.debug('Bridge setup already in progress, skipping...');
@@ -230,16 +230,16 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
 
     try {
       // Step 1: Initialize the wallet bridge
-      await initializeWalletBridge();
+      await initializeProxy();
 
       // Step 2: Check current state
-      const bridgeState = await checkBridgeState();
+      const bridgeState = await checkProxyState();
 
       // Step 3: Determine if setup is needed
       const isFullyConnected = bridgeState.httpListening && bridgeState.wsListening && bridgeState.clientConnected;
 
       if (isFullyConnected) {
-        const isClientReady = await walletBridgeClientReady();
+        const isClientReady = await proxyClientReady();
         if (!isClientReady) {
           logger.debug('Bridge is already fully operational, opening bridge page');
           await openWalletBridge();
@@ -261,14 +261,14 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
 
       // Step 5: Set up cancellation for the entire process with resource tracking
       activeResources.setupAbortController = new AbortController();
-      const totalTimeout = BRIDGE_CONFIG.SERVER_TIMEOUT + BRIDGE_CONFIG.CONNECTION_TIMEOUT;
+      const totalTimeout = PROXY_CONFIG.SERVER_TIMEOUT + PROXY_CONFIG.CONNECTION_TIMEOUT;
       activeResources.setupTimeout = setTimeout(() => {
         logger.debug('Bridge setup timeout reached, aborting...');
         activeResources.setupAbortController?.abort();
       }, totalTimeout);
 
       try {
-        await startBridgeServers(activeResources.setupAbortController.signal);
+        await startProxyServers(activeResources.setupAbortController.signal);
         logger.debug('Bridge setup completed successfully');
       }
       finally {
@@ -295,7 +295,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     healthCheck.stop();
   };
 
-  const disconnectBridge = async (): Promise<void> => {
+  const disconnectProxy = async (): Promise<void> => {
     logger.debug('Disconnecting bridge...');
 
     cleanupResources();
@@ -322,11 +322,11 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
   });
 
   return {
-    disconnectBridge,
-    setupBridge,
+    disconnectProxy,
+    setupProxy,
     startConnectionHealthCheck,
     stopConnectionHealthCheck,
-    waitForBridgeClientReady,
-    waitForBridgeConnection,
+    waitForProxyClientReady,
+    waitForProxyConnection,
   };
 }

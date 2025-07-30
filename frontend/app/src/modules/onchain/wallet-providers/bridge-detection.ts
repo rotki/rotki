@@ -1,11 +1,11 @@
 import type { EIP6963ProviderDetail } from '@/types';
 import { logger } from '@/utils/logging';
-import { useProxyProvider } from '../wallet-bridge/use-wallet-bridge-provider';
+import { useProxyProvider } from '../wallet-bridge/use-proxy-provider';
 
 /**
  * Detects providers available through the wallet bridge
  */
-export async function detectBridgeProviders(): Promise<EIP6963ProviderDetail[]> {
+export async function detectProxyProviders(): Promise<EIP6963ProviderDetail[]> {
   const walletBridge = window.walletBridge;
   if (!walletBridge) {
     return [];

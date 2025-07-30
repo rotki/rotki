@@ -14,7 +14,7 @@ import {
   type WalletBridgeResponse,
 } from './types';
 
-export interface WalletBridgeWebSocketComposable {
+export interface WalletProxyClientComposable {
   cleanup: () => void;
   connect: () => Promise<void>;
   connectionAttempts: Ref<number>;
@@ -34,7 +34,7 @@ export interface WalletBridgeWebSocketComposable {
   selectProvider: (uuid: string) => Promise<boolean>;
 }
 
-export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
+export function useWalletProxyClient(): WalletProxyClientComposable {
   const ws = ref<WebSocket>();
   const isConnected = ref<boolean>(false);
   const isConnecting = ref<boolean>(false);

@@ -1,7 +1,7 @@
 import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail, Permission } from '@/types';
 import { assert } from '@rotki/common';
 import { uniqueObjects } from '@/utils/data';
-import { detectBridgeProviders } from './bridge-detection';
+import { detectProxyProviders } from './bridge-detection';
 
 export interface ProviderDetectionOptions {
   includeLegacy?: boolean;
@@ -100,7 +100,7 @@ export async function getAllWalletProviders(
   try {
     // Add bridge providers if in Electron environment
     if (isElectron) {
-      const bridgeProviders = await detectBridgeProviders();
+      const bridgeProviders = await detectProxyProviders();
       bridgeProviders.forEach((bridgeProvider) => {
         providers.push({
           ...bridgeProvider,
