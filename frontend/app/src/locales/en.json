@@ -4473,6 +4473,8 @@
       "electron_connection": "Rotki Bridge Connection",
       "electron_disconnected_message": "Connection to rotki is not available",
       "electron_ready_message": "Connection is established",
+      "multiple_providers_detected": "Multiple Wallet Providers Detected",
+      "multiple_providers_message": "{count} wallet providers are available. Please select one in the main application.",
       "no_provider_selected": "No provider selected",
       "no_wallet_connected": "No wallet connected",
       "provider_not_connected": "{provider} - Not connected",
