@@ -4,8 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.bitcoin.bch.constants import (
     BCH_EVENT_IDENTIFIER_PREFIX,
+    BLOCKCHAIN_INFO_HASKOIN_BASE_URL,
     HASKOIN_BASE_URL,
     HASKOIN_BATCH_SIZE,
+    MELROY_BASE_URL,
 )
 from rotkehlchen.chain.bitcoin.bch.utils import (
     CASHADDR_PREFIX,
@@ -15,8 +17,13 @@ from rotkehlchen.chain.bitcoin.bch.utils import (
 )
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
+from rotkehlchen.chain.bitcoin.utils import (
+    query_blockstream_like_balances,
+    query_blockstream_like_has_transactions,
+)
+from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -25,7 +32,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.tests.utils.constants import A_BCH
-from rotkehlchen.types import BTCAddress, SupportedBlockchain
+from rotkehlchen.types import BTCAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc, ts_now
 from rotkehlchen.utils.network import request_get, request_get_dict
 
@@ -47,12 +54,26 @@ class BitcoinCashManager(BitcoinCommonManager):
             cache_key=DBCacheDynamic.LAST_BCH_TX_BLOCK,
             api_callbacks=[BtcApiCallback(
                 name='haskoin',
-                balances_fn=self._query_haskoin_balances,
-                has_transactions_fn=self._query_haskoin_has_transactions,
-                transactions_fn=self._query_haskoin_transactions,
-            )],  # TODO: add other APIs for fallbacks if haskoin goes down
+                balances_fn=lambda accounts: self._query_haskoin_balances(base_url=HASKOIN_BASE_URL, accounts=accounts),  # noqa: E501
+                has_transactions_fn=lambda accounts: self._query_haskoin_has_transactions(base_url=HASKOIN_BASE_URL, accounts=accounts),  # noqa: E501
+                transactions_fn=lambda accounts, options: self._query_haskoin_transactions(base_url=HASKOIN_BASE_URL, accounts=accounts, options=options),  # noqa: E501
+            ), BtcApiCallback(
+                name='blockchain.info haskoin-store',
+                balances_fn=lambda accounts: self._query_haskoin_balances(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts),  # noqa: E501
+                has_transactions_fn=lambda accounts: self._query_haskoin_has_transactions(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts),  # noqa: E501
+                transactions_fn=lambda accounts, options: self._query_haskoin_transactions(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts, options=options),  # noqa: E501
+            ), BtcApiCallback(
+                name='melroy',
+                balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MELROY_BASE_URL, accounts=accounts),  # noqa: E501
+                has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MELROY_BASE_URL, accounts=accounts),  # noqa: E501
+                transactions_fn=None,  # TODO: add transactions from melroy
+            )],
         )
         self.converted_addresses: dict[BTCAddress, BTCAddress] = {}
+        # Mapping of API base urls to tuples containing a healthy/unhealthy boolean flag and
+        # the timestamp of the last time the health endpoint was actually queried.
+        # Used to avoid repeated health queries when either of the haskoin APIs are queried often.
+        self.last_haskoin_health: dict[str, tuple[bool, Timestamp]] = {}
 
     def refresh_tracked_accounts(self) -> None:
         """Refresh the tracked accounts and ensure the CashAddr format of each address is used
@@ -100,18 +121,40 @@ class BitcoinCashManager(BitcoinCommonManager):
 
         return None
 
+    def _check_haskoin_health(self, base_url: str) -> None:
+        """Check the health of a haskoin-store API.
+        Raises RemoteError if the health check fails. This is done instead of a boolean return
+        since it's used exclusively in functions that may already raise RemoteError.
+        """
+        healthy, last_check_ts = self.last_haskoin_health.get(base_url, (True, Timestamp(0)))
+        if (now_ts := ts_now()) - last_check_ts > HOUR_IN_SECONDS:
+            try:
+                healthy = request_get_dict(url=f'{base_url}/bch/health')['ok'] is True
+            except (RemoteError, UnableToDecryptRemoteData, KeyError) as e:
+                log.error(f'Haskoin-store API {base_url} health check failed with error: {e!s}')
+                healthy = False
+
+            self.last_haskoin_health[base_url] = (healthy, now_ts)
+
+        if healthy:
+            return
+
+        raise RemoteError(f'Haskoin-store API {base_url} health check failed.')
+
     def _query_haskoin_balances(
             self,
+            base_url: str,
             accounts: Sequence[BTCAddress],
     ) -> dict[BTCAddress, FVal]:
-        """Query a mapping of addresses to balances from haskoin.
+        """Query a mapping of addresses to balances from a haskoin-store API.
         May raise DeserializationError, RemoteError, UnableToDecryptRemoteData, and KeyError.
         Exceptions are handled in BitcoinCommonManager._query
         """
+        self._check_haskoin_health(base_url=base_url)
         balances: dict[BTCAddress, FVal] = {}
         for accounts_chunk in get_chunks(accounts, HASKOIN_BATCH_SIZE):
             params = ','.join(accounts_chunk)
-            bch_resp = request_get(url=f'{HASKOIN_BASE_URL}/bch/address/balances?addresses={params}')  # noqa: E501
+            bch_resp = request_get(url=f'{base_url}/bch/address/balances?addresses={params}')
             for entry in bch_resp:
                 if (address := self._get_haskoin_address(
                         address_from_api=entry['address'],
@@ -127,6 +170,7 @@ class BitcoinCashManager(BitcoinCommonManager):
 
     def _query_haskoin_has_transactions(
             self,
+            base_url: str,
             accounts: Sequence[BTCAddress],
     ) -> dict[BTCAddress, tuple[bool, FVal]]:
         """Query a mapping of which addresses have had transactions
@@ -134,10 +178,11 @@ class BitcoinCashManager(BitcoinCommonManager):
         May raise DeserializationError, RemoteError, UnableToDecryptRemoteData, and KeyError.
         Exceptions are handled in BitcoinCommonManager._query
         """
+        self._check_haskoin_health(base_url=base_url)
         have_transactions = {}
         for accounts_chunk in get_chunks(accounts, HASKOIN_BATCH_SIZE):
             params = '|'.join(accounts_chunk)
-            bch_resp = request_get_dict(url=f'{HASKOIN_BASE_URL}/bch/blockchain/multiaddr?active={params}')  # noqa: E501
+            bch_resp = request_get_dict(url=f'{base_url}/bch/blockchain/multiaddr?active={params}')
             for entry in bch_resp['addresses']:
                 if (address := self._get_haskoin_address(
                         address_from_api=entry['address'],
@@ -154,6 +199,7 @@ class BitcoinCashManager(BitcoinCommonManager):
 
     def _query_haskoin_transactions(
             self,
+            base_url: str,
             accounts: Sequence[BTCAddress],
             options: dict[str, Any],
     ) -> tuple[int, list[BitcoinTx]]:
@@ -161,6 +207,7 @@ class BitcoinCashManager(BitcoinCommonManager):
         Returns a tuple containing the latest queried block height and the list of txs.
         May raise RemoteError, UnableToDecryptRemoteData.
         """
+        self._check_haskoin_health(base_url=base_url)
         if (to_timestamp := options.get('to_timestamp')) is None:
             options['to_timestamp'] = to_timestamp = ts_now()
 
@@ -168,7 +215,7 @@ class BitcoinCashManager(BitcoinCommonManager):
         for accounts_chunk in get_chunks(accounts, HASKOIN_BATCH_SIZE):
             params = ','.join(accounts_chunk)
             if not isinstance(response := request_get(
-                url=f'{HASKOIN_BASE_URL}/bch/address/transactions/full?addresses={params}&height={to_timestamp}',
+                url=f'{base_url}/bch/address/transactions/full?addresses={params}&height={to_timestamp}',
             ), list):
                 raise RemoteError(
                     'Unexpected data from haskoin while querying transactions. '
