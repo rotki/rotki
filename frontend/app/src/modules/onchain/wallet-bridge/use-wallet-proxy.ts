@@ -1,7 +1,10 @@
+import { startPromise } from '@shared/utils';
+import { get } from '@vueuse/core';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useWalletBridge } from '@/composables/wallet-bridge';
-import { useHealthCheck } from '@/modules/onchain/wallet-bridge/use-health-check';
 import { AsyncUtilityError, TimeoutError, waitForCondition } from '@/utils/async-utilities';
 import { logger } from '@/utils/logging';
+import { PROXY_CONFIG } from './bridge-config';
 import {
   BridgeConnectionError,
   BridgeError,
@@ -10,13 +13,11 @@ import {
 } from './bridge-errors';
 import { createResourceManager } from './resource-management';
 
-const PROXY_CONFIG = {
-  BRIDGE_PAGE_DELAY: 250,
-  CONNECTION_TIMEOUT: 30000,
-  HEALTH_CHECK_INTERVAL: 5000,
-  RETRY_INTERVAL: 500,
-  SERVER_TIMEOUT: 30000,
-} as const;
+interface ProxyState {
+  httpListening: boolean;
+  wsListening: boolean;
+  clientConnected: boolean;
+}
 
 interface UseWalletProxyReturn {
   setupProxy: () => Promise<void>;
@@ -28,29 +29,13 @@ interface UseWalletProxyReturn {
 }
 
 export function useWalletProxy(): UseWalletProxyReturn {
-  const { openWalletBridge, proxyClientReady, proxyConnect, proxyHttpListening, proxyWebSocketListening } = useWalletBridge();
-
-  // Track active resources for cleanup
+  const { openProxyPageInDefaultBrowser, proxyClientReady, proxyConnect, proxyHttpListening, proxyWebSocketListening } = useWalletBridge();
   const { cleanupResources: cleanupActiveResources, resources: activeResources } = createResourceManager();
 
-  // Create health check composable
-  const healthCheck = useHealthCheck(
-    async () => proxyConnect(),
-    {
-      interval: PROXY_CONFIG.HEALTH_CHECK_INTERVAL,
-      onError: (error: Error) => {
-        logger.error('Bridge health check error:', error);
-      },
-    },
-  );
+  const healthCheckInterval = ref<NodeJS.Timeout>();
+  const isHealthCheckActive = computed<boolean>(() => isDefined(healthCheckInterval));
 
-  // Check current bridge state
-  const checkProxyState = async (): Promise<{
-    httpListening: boolean;
-    wsListening: boolean;
-    clientConnected: boolean;
-  }> => {
-    // Check servers and connection in parallel for faster state assessment
+  const checkProxyState = async (): Promise<ProxyState> => {
     const [httpListening, wsListening, clientConnected] = await Promise.all([
       proxyHttpListening(),
       proxyWebSocketListening(),
@@ -101,9 +86,56 @@ export function useWalletProxy(): UseWalletProxyReturn {
     );
   };
 
+  /**
+   * Start connection health monitoring
+   */
+  const startConnectionHealthCheck = (
+    isConnected: () => boolean,
+    onDisconnect: () => void,
+  ): void => {
+    // Clear any existing interval
+    stopConnectionHealthCheck();
+
+    set(healthCheckInterval, setInterval(() => {
+      startPromise(performHealthCheck(isConnected, onDisconnect));
+    }, PROXY_CONFIG.HEALTH_CHECK_INTERVAL));
+  };
+
+  /**
+   * Stop connection health monitoring
+   */
+  function stopConnectionHealthCheck(): void {
+    if (!isDefined(healthCheckInterval)) {
+      return;
+    }
+    clearInterval(get(healthCheckInterval));
+    set(healthCheckInterval, undefined);
+  }
+
+  /**
+   * Integrated health check logic
+   */
+  async function performHealthCheck(isConnected: () => boolean, onDisconnect: () => void): Promise<void> {
+    if (get(isHealthCheckActive) && isConnected()) {
+      try {
+        const connected = await proxyConnect();
+        if (!connected) {
+          logger.debug('Health check detected disconnection');
+          onDisconnect();
+          stopConnectionHealthCheck();
+        }
+      }
+      catch (error) {
+        logger.error('Bridge health check error:', error);
+        onDisconnect();
+        stopConnectionHealthCheck();
+      }
+    }
+  }
+
   function cleanupResources(): void {
     logger.debug('Cleaning up bridge resources...');
-    healthCheck.stop();
+    stopConnectionHealthCheck();
     // Only cleanup setup resources if setup is not currently in progress
     // to avoid aborting an ongoing setup process
     if (!activeResources.isSetupInProgress) {
@@ -187,19 +219,12 @@ export function useWalletProxy(): UseWalletProxyReturn {
     logger.debug('Starting bridge servers...');
 
     try {
-      // Step 1: Start the bridge servers
-      await openWalletBridge();
+      await openProxyPageInDefaultBrowser();
       logger.debug('Bridge servers startup initiated');
-
-      // Step 2: Wait for both servers to be ready (parallel check)
       await waitForServersListening(PROXY_CONFIG.SERVER_TIMEOUT, signal);
       logger.debug('Bridge servers are now listening');
-
-      // Step 3: Establish client connection
       await waitForProxyConnection(PROXY_CONFIG.CONNECTION_TIMEOUT, signal);
       logger.debug('Bridge client connection established');
-
-      // Step 4: Wait for client to be ready for API calls
       await waitForProxyClientReady(PROXY_CONFIG.CONNECTION_TIMEOUT, signal);
       logger.debug('Bridge client ready for API calls');
     }
@@ -229,20 +254,16 @@ export function useWalletProxy(): UseWalletProxyReturn {
     activeResources.isSetupInProgress = true;
 
     try {
-      // Step 1: Initialize the wallet bridge
       await initializeProxy();
-
-      // Step 2: Check current state
       const bridgeState = await checkProxyState();
 
-      // Step 3: Determine if setup is needed
       const isFullyConnected = bridgeState.httpListening && bridgeState.wsListening && bridgeState.clientConnected;
 
       if (isFullyConnected) {
         const isClientReady = await proxyClientReady();
         if (!isClientReady) {
           logger.debug('Bridge is already fully operational, opening bridge page');
-          await openWalletBridge();
+          await openProxyPageInDefaultBrowser();
         }
 
         return;
@@ -284,17 +305,6 @@ export function useWalletProxy(): UseWalletProxyReturn {
     }
   };
 
-  const startConnectionHealthCheck = (
-    isConnected: () => boolean,
-    onDisconnect: () => void,
-  ): void => {
-    healthCheck.start(isConnected, onDisconnect);
-  };
-
-  const stopConnectionHealthCheck = (): void => {
-    healthCheck.stop();
-  };
-
   const disconnectProxy = async (): Promise<void> => {
     logger.debug('Disconnecting bridge...');
 
@@ -316,6 +326,7 @@ export function useWalletProxy(): UseWalletProxyReturn {
     }
   };
 
+  // Cleanup on component unmount
   onBeforeUnmount(() => {
     logger.debug('Component unmounting, cleaning up bridge resources...');
     cleanupResources();
