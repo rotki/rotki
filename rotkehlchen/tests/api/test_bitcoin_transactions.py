@@ -162,14 +162,23 @@ def test_query_btc_transactions(
     'qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z',
 ]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('bch_api', ['haskoin', 'blockchain.info haskoin-store'])
 def test_query_bch_transactions(
         rotkehlchen_api_server: 'APIServer',
         bch_accounts: list['BTCAddress'],
         websocket_connection: WebsocketReader,
+        bch_api: str,
 ) -> None:
-    """Test that bitcoin cash transactions are properly queried via the api.
+    """Test that bitcoin cash transactions are properly queried via each api.
     Since there are quite a number of transactions, only check decoding of first and last txs.
     """
+    bch_manager = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.bitcoin_cash
+    for idx, callback in enumerate(bch_manager.api_callbacks):
+        if callback.name != bch_api:  # ensure only the api we want to test is used
+            bch_manager.api_callbacks[idx] = bch_manager.api_callbacks[idx]._replace(
+                transactions_fn=None,
+            )
+
     async_query = random.choice([False, True])
     for json, expected_len in (
         ({'async_query': async_query, 'to_timestamp': 1700000000}, 79),  # query partial range first  # noqa: E501

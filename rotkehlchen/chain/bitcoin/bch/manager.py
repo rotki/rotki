@@ -63,10 +63,13 @@ class BitcoinCashManager(BitcoinCommonManager):
                 has_transactions_fn=lambda accounts: self._query_haskoin_has_transactions(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts),  # noqa: E501
                 transactions_fn=lambda accounts, options: self._query_haskoin_transactions(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts, options=options),  # noqa: E501
             ), BtcApiCallback(
-                name='melroy',
+                name='melroy',  # This API doesn't support batched addresses and will be slower, so keep it as the last resort.  # noqa: E501
                 balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MELROY_BASE_URL, accounts=accounts),  # noqa: E501
                 has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MELROY_BASE_URL, accounts=accounts),  # noqa: E501
-                transactions_fn=None,  # TODO: add transactions from melroy
+                # We tried adding txs from this API (https://github.com/rotki/rotki/pull/10345),
+                # but some tx timestamps were off and several things differed from what the docs
+                # described, so only using it as a fallback for balances & has_txs.
+                transactions_fn=None,
             )],
         )
         self.converted_addresses: dict[BTCAddress, BTCAddress] = {}
@@ -231,6 +234,9 @@ class BitcoinCashManager(BitcoinCommonManager):
         )
 
     def deserialize_tx_from_haskoin(self, data: dict[str, Any]) -> 'BitcoinTx':
+        """Deserialize a transaction from a haskoin API.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BitcoinTx(
             tx_id=data['txid'],
             timestamp=deserialize_timestamp(data['time']),
@@ -253,6 +259,9 @@ class BitcoinCashManager(BitcoinCommonManager):
             data: dict[str, Any],
             direction: BtcTxIODirection,
     ) -> 'BtcTxIO':
+        """Deserialize a TxIO from a haskoin API.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BtcTxIO(
             value=satoshis_to_btc(deserialize_int(data['value'])),
             script=bytes.fromhex(data['pkscript']),

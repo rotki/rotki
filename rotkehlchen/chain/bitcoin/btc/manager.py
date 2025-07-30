@@ -216,6 +216,9 @@ class BitcoinManager(BitcoinCommonManager):
         )
 
     def deserialize_tx_from_blockcypher(self, data: dict[str, Any]) -> 'BitcoinTx':
+        """Deserialize a transaction from a blockcypher.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BitcoinTx(
             tx_id=data['hash'],
             timestamp=deserialize_timestamp_from_date(
@@ -224,7 +227,7 @@ class BitcoinManager(BitcoinCommonManager):
                 location='blockcypher bitcoin tx',
             ),
             block_height=deserialize_int(data['block_height']),
-            fee=satoshis_to_btc(data['fees']),
+            fee=satoshis_to_btc(deserialize_int(data['fees'])),
             inputs=BtcTxIO.deserialize_list(
                 data_list=data['inputs'],
                 direction=BtcTxIODirection.INPUT,
@@ -238,6 +241,9 @@ class BitcoinManager(BitcoinCommonManager):
         )
 
     def deserialize_tx_from_blockchain_info(self, data: dict[str, Any]) -> 'BitcoinTx':
+        """Deserialize a transaction from a blockchain.info.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         inputs = [vin['prev_out'] for vin in data['inputs']]
         outputs = data['out']
         multi_io = False
@@ -254,7 +260,7 @@ class BitcoinManager(BitcoinCommonManager):
             tx_id=data['hash'],
             timestamp=deserialize_timestamp(data['time']),
             block_height=deserialize_int(data['block_height']),
-            fee=satoshis_to_btc(data['fee']),
+            fee=satoshis_to_btc(deserialize_int(data['fee'])),
             inputs=BtcTxIO.deserialize_list(
                 data_list=inputs,
                 direction=BtcTxIODirection.INPUT,
@@ -273,11 +279,14 @@ class BitcoinManager(BitcoinCommonManager):
             data: dict[str, Any],
             direction: BtcTxIODirection,
     ) -> 'BtcTxIO':
+        """Deserialize a TxIO from blockcypher.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BtcTxIO(
-            value=satoshis_to_btc(
+            value=satoshis_to_btc(deserialize_int(
                 data.get('value', 0) if direction == BtcTxIODirection.OUTPUT
                 else data.get('output_value', 0),
-            ),
+            )),
             script=bytes.fromhex(script) if (script := data.get('script')) is not None else None,
             address=addresses[0] if (addresses := data['addresses']) is not None else None,
             direction=direction,
@@ -288,8 +297,11 @@ class BitcoinManager(BitcoinCommonManager):
             data: dict[str, Any],
             direction: BtcTxIODirection,
     ) -> 'BtcTxIO':
+        """Deserialize a TxIO from blockchain.info.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BtcTxIO(
-            value=satoshis_to_btc(data['value']),
+            value=satoshis_to_btc(deserialize_int(data['value'])),
             script=bytes.fromhex(data['script']),
             address=data.get('addr'),
             direction=direction,
