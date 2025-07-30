@@ -5,12 +5,14 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useMainStore } from '@/store/main';
 import { logger } from '@/utils/logging';
-import { useEIP6963Providers } from './use-eip6963-providers';
+import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 
 const { t } = useI18n({ useScope: 'global' });
 const { getChainFromChainId } = useWalletHelper();
 const { setConnected } = useMainStore();
-const { getSelectedProvider, hasSelectedProvider, selectedProviderMetadata } = useEIP6963Providers();
+const { activeProvider, hasSelectedProvider, selectedProviderMetadata } = useUnifiedProviders();
+
+const getSelectedProvider = (): EIP1193Provider | undefined => get(activeProvider);
 
 const connectedAddress = ref<string>();
 const connectedChainId = ref<number>();
@@ -162,7 +164,7 @@ function cleanupProviderListeners(): void {
 }
 
 // Use event system to watch for provider changes
-const { onProviderChanged } = useEIP6963Providers();
+const { onProviderChanged } = useUnifiedProviders();
 const unsubscribeProviderChange = onProviderChanged((newProvider) => {
   logger.info('Selected provider changed:', {
     new: newProvider ? 'provider set' : 'no provider',

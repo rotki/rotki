@@ -5,7 +5,7 @@ import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
 import { logger } from '@/utils/logging';
 import { supportedNetworks } from '../wallet-connect/use-wallet-connect';
-import { useProviders } from '../wallet-providers/use-providers';
+import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 import { useBridgedWallet } from './use-bridged-wallet';
 
 interface UseInjectedWalletReturn {
@@ -28,7 +28,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   let injectedProvider: EIP1193Provider | undefined;
 
   // Provider store for enhanced provider detection and selection
-  const providerStore = useProviders();
+  const providerStore = useUnifiedProviders();
 
   // Define event handlers as part of the composable scope (maintain same references)
   const handleAccountsChanged = (accounts: string[]): void => {
@@ -139,28 +139,16 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
     logger.debug('Connecting to selected provider:', selectedProvider.info.name);
 
-    // In Electron/packaged mode, always use window.ethereum (the bridge provider)
-    // In browser mode, use the selected provider directly
-    if (isPackaged) {
-      // Ensure window.ethereum exists (should be set up by bridge)
-      if (!window.ethereum) {
-        throw new Error('Bridge provider not available. Please ensure wallet bridge is connected.');
-      }
-      injectedProvider = window.ethereum;
-      logger.debug('Using bridge provider (window.ethereum) in packaged mode');
-    }
-    else {
-      // Browser mode: use the selected provider directly
-      const selectedEthereumProvider = selectedProvider.provider;
+    // Always use the provider from the unified provider store
+    const selectedEthereumProvider = selectedProvider.provider;
 
-      // Clean up previous provider if different
-      if (injectedProvider && injectedProvider !== selectedEthereumProvider) {
-        removeProviderEventListeners(injectedProvider);
-      }
-
-      injectedProvider = selectedEthereumProvider;
-      logger.debug('Using selected provider directly in browser mode');
+    // Clean up previous provider if different
+    if (injectedProvider && injectedProvider !== selectedEthereumProvider) {
+      removeProviderEventListeners(injectedProvider);
     }
+
+    injectedProvider = selectedEthereumProvider;
+    logger.debug(`Using provider from unified store: ${selectedProvider.info.name} (source: ${selectedProvider.source})`);
 
     // Always remove existing listeners first to prevent duplicates
     removeProviderEventListeners(injectedProvider);

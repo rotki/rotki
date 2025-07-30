@@ -2,23 +2,23 @@ import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents, RpcReque
 import { logger } from '@/utils/logging';
 
 /**
- * Sets up window.ethereum provider using the walletBridge API from preload
+ * Creates a proxy provider using the walletBridge API from preload
  * This solves the context bridge function reference issue by managing event listeners in renderer context
  */
-export function setupWalletBridgeProvider(): void {
-  // Only set up if walletBridge is available and window.ethereum is not already our provider
+export function useProxyProvider(): EIP1193Provider | undefined {
+  // Only set up if walletBridge is available
   const walletBridge = window.walletBridge;
-  if (!walletBridge || window.ethereum?.isRotkiBridge) {
-    return;
+  if (!walletBridge) {
+    return undefined;
   }
 
-  logger.debug('Setting up wallet bridge provider in renderer context');
+  logger.debug('Creating proxy provider from wallet bridge');
 
   // Event listeners managed purely in renderer context - no context bridge issues
   const eventListeners = new Map<EIP1193EventName, ((...args: any[]) => void)[]>();
 
   // Create EIP1193Provider implementation
-  const walletBridgeProvider: EIP1193Provider = {
+  const proxyProvider: EIP1193Provider = {
     get connected(): boolean {
       return walletBridge?.isEnabled() && walletBridge?.isConnected();
     },
@@ -34,7 +34,7 @@ export function setupWalletBridgeProvider(): void {
       callback: (...args: EIP1193ProviderEvents[K]) => void,
     ) => {
       // Alias for removeListener
-      walletBridgeProvider.removeListener!(event, callback);
+      proxyProvider.removeListener!(event, callback);
     },
 
     on: <K extends EIP1193EventName>(
@@ -87,10 +87,9 @@ export function setupWalletBridgeProvider(): void {
       }
     },
 
-    request: async <T = unknown>(request: RpcRequest): Promise<T> => walletBridge.request(request) as Promise<T>,
+    request: async <T = unknown>(request: RpcRequest): Promise<T> => await walletBridge.request(request) as Promise<T>,
   };
 
-  // Inject the provider
-  window.ethereum = walletBridgeProvider;
-  logger.debug('Wallet bridge provider installed as window.ethereum');
+  logger.debug('Proxy provider created successfully');
+  return proxyProvider;
 }

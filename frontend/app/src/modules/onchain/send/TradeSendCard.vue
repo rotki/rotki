@@ -16,7 +16,7 @@ import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { useProviders } from '@/modules/onchain/wallet-providers/use-providers';
+import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
 import { logger } from '@/utils/logging';
 import { useTradeApi } from './use-trade-api';
 
@@ -69,7 +69,7 @@ const router = useRouter();
 
 // Provider selection for wallet connection
 const walletConnection = useWalletConnection();
-const { detectingProviders, providers: availableProviders, showProviderSelection } = useProviders();
+const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = useUnifiedProviders();
 
 const isConnecting = logicOr(preparing, detectingProviders);
 

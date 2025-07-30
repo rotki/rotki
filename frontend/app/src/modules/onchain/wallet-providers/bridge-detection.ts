@@ -1,5 +1,6 @@
 import type { EIP6963ProviderDetail } from '@/types';
 import { logger } from '@/utils/logging';
+import { useProxyProvider } from '../wallet-bridge/use-wallet-bridge-provider';
 
 /**
  * Detects providers available through the wallet bridge
@@ -11,8 +12,24 @@ export async function detectBridgeProviders(): Promise<EIP6963ProviderDetail[]> 
   }
 
   try {
-    // Single method that detects and returns providers
-    return await walletBridge.getAvailableProviders();
+    // Get available providers from the bridge
+    const bridgeProviders = await walletBridge.getAvailableProviders();
+
+    // Create a proxy provider to be used with bridge providers
+    const proxyProvider = useProxyProvider();
+
+    if (!proxyProvider) {
+      logger.warn('Failed to create proxy provider for bridge providers');
+      return bridgeProviders;
+    }
+
+    // Enhance bridge providers with the proxy provider
+    // Since bridge providers come serialized without the provider object,
+    // we use the proxy provider for all of them
+    return bridgeProviders.map(providerDetail => ({
+      ...providerDetail,
+      provider: proxyProvider,
+    }));
   }
   catch (error) {
     logger.error('Failed to detect bridge providers:', error);
