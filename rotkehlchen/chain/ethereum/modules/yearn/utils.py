@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
@@ -181,6 +182,8 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         )
 
     assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
+    tokens_to_update_by_protocol = defaultdict(list)
+
     for vault in data:
         if (version := vault.get('version')) is None:
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
@@ -251,11 +254,14 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         # if it existed but the protocol is not correct edit it. Can happen if it was auto added
         # before this logic existed or executed.
         if vault_token.protocol != vault_type:
-            log.debug(f'Editing yearn asset {vault_token}')
-            GlobalDBHandler.set_token_protocol_if_missing(
-                token=vault_token,
-                new_protocol=vault_type,
-            )
+            tokens_to_update_by_protocol[vault_type].append(vault_token)
+
+    for protocol, tokens in tokens_to_update_by_protocol.items():
+        log.debug(f'Updating protocol for {len(tokens)} ethereum {protocol} assets')
+        GlobalDBHandler.set_tokens_protocol_if_missing(
+            tokens=tokens,
+            new_protocol=protocol,
+        )
 
     # Store in the globaldb cache the number of vaults processed from this call to the API
     with GlobalDBHandler().conn.write_ctx() as write_cursor:

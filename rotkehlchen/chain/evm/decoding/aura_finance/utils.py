@@ -74,8 +74,8 @@ def _process_aura_pool(database: 'DBHandler', vault: dict[str, Any]) -> None:
             f'Updating protocol for {chain_name} aura finance '
             f'asset {aura_pool_token}',
         )
-        GlobalDBHandler.set_token_protocol_if_missing(
-            token=aura_pool_token,
+        GlobalDBHandler.set_tokens_protocol_if_missing(
+            tokens=[aura_pool_token],
             new_protocol=CPT_AURA_FINANCE,
         )
 

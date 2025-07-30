@@ -114,8 +114,8 @@ class HopCommonDecoder(DecoderInterface):
 
     def _process_hop_lp_token(self, lp_token: EvmToken, pool_address: ChecksumEvmAddress) -> None:
         """Save the protocol value of the LP token and cache its pool address."""
-        GlobalDBHandler.set_token_protocol_if_missing(
-            token=lp_token,
+        GlobalDBHandler.set_tokens_protocol_if_missing(
+            tokens=[lp_token],
             new_protocol=CPT_HOP,
         )
         # Cache the pool address if needed
