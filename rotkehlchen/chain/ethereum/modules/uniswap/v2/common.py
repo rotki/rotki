@@ -333,8 +333,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             event.notes = f'Receive {event.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
-            GlobalDBHandler.set_token_protocol_if_missing(
-                token=event.asset.resolve_to_evm_token(),
+            GlobalDBHandler.set_tokens_protocol_if_missing(
+                tokens=[event.asset.resolve_to_evm_token()],
                 new_protocol=CPT_UNISWAP_V2 if resolved_asset.symbol.startswith('UNI-V2') else CPT_SUSHISWAP_V2,  # noqa: E501
             )
         elif (

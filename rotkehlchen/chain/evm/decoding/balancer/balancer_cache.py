@@ -80,6 +80,7 @@ def query_balancer_data(
             return existing_pools, existing_gauges
 
     pools, gauges = set(), set()
+    pool_tokens_to_update = []
     token_encounter_info = TokenEncounterInfo(
         description=f'Querying {inquirer.chain_name} {protocol} balances',
         should_notify=False,
@@ -114,6 +115,9 @@ def query_balancer_data(
             pools.add(pool_token.evm_address)
             if (gauge_address := ((pool.get('staking') or {}).get('gauge') or {}).get('gaugeAddress')) is not None:  # noqa: E501
                 gauges.add(deserialize_evm_address(gauge_address))
+
+            if pool_token.protocol != CPT_BALANCER_V1:
+                pool_tokens_to_update.append(pool_token)
         except (KeyError, ValueError, TypeError, DeserializationError) as e:
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
             log.error(
@@ -122,12 +126,12 @@ def query_balancer_data(
             )
             continue
 
-        if pool_token.protocol != CPT_BALANCER_V1:
-            log.debug(f'Updating protocol for {inquirer.chain_name} {protocol} asset {pool_token}')
-            globaldb.set_token_protocol_if_missing(
-                token=pool_token,
-                new_protocol=CPT_BALANCER_V1,
-            )
+    if pool_tokens_to_update:
+        log.debug(f'Updating protocol for {len(pool_tokens_to_update)} {inquirer.chain_name} {protocol} assets')  # noqa: E501
+        globaldb.set_tokens_protocol_if_missing(
+            tokens=pool_tokens_to_update,
+            new_protocol=CPT_BALANCER_V1,
+        )
 
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(

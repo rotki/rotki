@@ -33,6 +33,7 @@ from rotkehlchen.constants.misc import (
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -1292,18 +1293,21 @@ class GlobalDBHandler:
         return entry.identifier
 
     @staticmethod
-    def set_token_protocol_if_missing(token: EvmToken, new_protocol: str) -> None:
-        """Update the protocol of the evm token and clean the resolver cache"""
-        if token.protocol == new_protocol:
+    def set_tokens_protocol_if_missing(tokens: list[EvmToken], new_protocol: str) -> None:
+        """Update the protocol of the evm tokens and clean the resolver cache"""
+        identifiers = [token.identifier for token in tokens if token.protocol != new_protocol]
+        if len(identifiers) == 0:
             return
 
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            write_cursor.execute(
-                'UPDATE evm_tokens SET protocol = ? WHERE identifier = ?;',
-                (new_protocol, token.identifier),
-            )
+            for chunk, placeholders in get_query_chunks(data=identifiers):
+                write_cursor.execute(
+                    f'UPDATE evm_tokens SET protocol = ? WHERE identifier IN ({placeholders})',
+                    (new_protocol, *chunk),
+                )
 
-        AssetResolver.clean_memory_cache(token.identifier)
+        for identifier in identifiers:
+            AssetResolver.clean_memory_cache(identifier)
 
     @staticmethod
     def edit_user_asset(asset: AssetWithOracles) -> None:

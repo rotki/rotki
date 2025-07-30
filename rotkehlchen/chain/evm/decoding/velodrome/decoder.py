@@ -138,8 +138,8 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.amount} {crypto_asset.symbol} after depositing in {self.counterparty} pool {tx_log.address}'  # noqa: E501
                 event.product = EvmProduct.POOL
-                GlobalDBHandler.set_token_protocol_if_missing(
-                    token=event.asset.resolve_to_evm_token(),
+                GlobalDBHandler.set_tokens_protocol_if_missing(
+                    tokens=[event.asset.resolve_to_evm_token()],
                     new_protocol=self.counterparty,
                 )
 
@@ -261,8 +261,8 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
-                    GlobalDBHandler.set_token_protocol_if_missing(
-                        token=event.asset.resolve_to_evm_token(),
+                    GlobalDBHandler.set_tokens_protocol_if_missing(
+                        tokens=[event.asset.resolve_to_evm_token()],
                         new_protocol=self.counterparty,
                     )
                 elif context.tx_log.topics[0] == GAUGE_WITHDRAW_V2:
