@@ -8,8 +8,8 @@ import type {
 import { assert, bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { type BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
+import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useWalletConnection } from '@/composables/wallets/use-wallet-connection';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { logger } from '@/utils/logging';
@@ -20,7 +20,9 @@ import {
   validateTransactionRequirements,
 } from './transaction-helpers';
 import { useInjectedWallet } from './wallet-bridge/use-injected-wallet';
+import { useWalletProxy } from './wallet-bridge/use-wallet-proxy';
 import { useWalletConnect } from './wallet-connect/use-wallet-connect';
+import { useUnifiedProviders } from './wallet-providers/use-unified-providers';
 
 const DEFAULT_GAS_LIMIT = 21000n; // for native transfers
 
@@ -36,7 +38,9 @@ export const useWalletStore = defineStore('wallet', () => {
   // Initialize composables for both wallet modes
   const walletConnect = useWalletConnect();
   const injectedWallet = useInjectedWallet();
-  const { disconnect: disconnectWallet, initiateConnection } = useWalletConnection();
+  const walletProxy = useWalletProxy();
+  const unifiedProviders = useUnifiedProviders();
+  const { isPackaged } = useInterop();
 
   const { getAssetMappingHandler } = useAssetCacheStore();
   const { getChainFromChainId, updateStatePostTransaction } = useWalletHelper();
@@ -73,16 +77,63 @@ export const useWalletStore = defineStore('wallet', () => {
     return walletConnect.getBrowserProvider();
   };
 
+  // Check if bridge has a selected provider
+  const checkBridgeSelectedProvider = async (): Promise<boolean> => {
+    try {
+      if (!get(isPackaged) || !window.walletBridge) {
+        return false;
+      }
+
+      const selectedProvider = await window.walletBridge.getSelectedProvider();
+      return selectedProvider !== null;
+    }
+    catch (error) {
+      logger.debug('Failed to check bridge selected provider:', error);
+      return false;
+    }
+  };
+
+  const hasSelectedProvider = async (): Promise<boolean> => {
+    if (isPackaged) {
+      return checkBridgeSelectedProvider();
+    }
+    else {
+      return get(unifiedProviders.hasSelectedProvider);
+    }
+  };
+
   const open = async (): Promise<void> => {
     if (get(walletMode) === 'local-bridge') {
       try {
-        // Use the wallet connection composable for better provider detection
+        // Setup bridge if in packaged mode
+        if (get(isPackaged)) {
+          await walletProxy.setupProxy();
+        }
 
-        await initiateConnection();
+        const providerSelected = await hasSelectedProvider();
+
+        if (!providerSelected) {
+          await unifiedProviders.detectProviders();
+          const providers = get(unifiedProviders.availableProviders);
+
+          if (providers.length === 0) {
+            throw new Error('No wallet providers detected');
+          }
+          else if (providers.length === 1) {
+            const provider = providers[0];
+            await unifiedProviders.selectProvider(provider.info.uuid);
+            await injectedWallet.connectToSelectedProvider();
+          }
+          else {
+            set(unifiedProviders.showProviderSelection, true);
+          }
+        }
+        else {
+          await injectedWallet.connectToSelectedProvider();
+        }
       }
       catch (error) {
         logger.error('Failed to initiate wallet connection:', error);
-        // If no providers detected, throw to let the UI handle it
         throw error;
       }
     }
@@ -99,7 +150,8 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const disconnect = async (): Promise<void> => {
     if (get(walletMode) === 'local-bridge') {
-      await disconnectWallet();
+      await injectedWallet.disconnect();
+      unifiedProviders.clearProvider();
     }
     else {
       await walletConnect.disconnect();

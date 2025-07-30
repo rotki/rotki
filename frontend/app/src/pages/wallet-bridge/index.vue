@@ -2,7 +2,7 @@
 import ConnectionLogs from '@/modules/onchain/wallet-bridge/ConnectionLogs.vue';
 import ElectronConnectionStatus from '@/modules/onchain/wallet-bridge/ElectronConnectionStatus.vue';
 import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
-import { useWalletBridgeWebSocket } from '@/modules/onchain/wallet-bridge/use-wallet-bridge-websocket';
+import { useWalletProxyClient } from '@/modules/onchain/wallet-bridge/use-wallet-proxy-client';
 import WalletAddressIndicator from '@/modules/onchain/wallet-bridge/WalletAddressIndicator.vue';
 import { useMainStore } from '@/store/main';
 
@@ -35,7 +35,7 @@ const {
   lastError,
   onTakeOver,
   setupWalletEventListeners,
-} = useWalletBridgeWebSocket();
+} = useWalletProxyClient();
 
 function handleRetryConnection(): void {
   addLog('Retrying connection to Electron app...', 'info');

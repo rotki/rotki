@@ -6,7 +6,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { logger } from '@/utils/logging';
 import { supportedNetworks } from '../wallet-connect/use-wallet-connect';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
-import { useBridgedWallet } from './use-bridged-wallet';
+import { useWalletProxy } from './use-wallet-proxy';
 
 interface UseInjectedWalletReturn {
   connected: Ref<boolean>;
@@ -72,7 +72,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
   };
 
   const { isPackaged } = useInterop();
-  const { disconnectBridge, startConnectionHealthCheck, stopConnectionHealthCheck } = useBridgedWallet();
+  const { disconnectProxy, startConnectionHealthCheck, stopConnectionHealthCheck } = useWalletProxy();
 
   // Remove event listeners from the injected provider
   const removeProviderEventListeners = (provider: EIP1193Provider): void => {
@@ -211,7 +211,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
         // Only disable wallet bridge if packaged
         if (isPackaged) {
-          await disconnectBridge();
+          await disconnectProxy();
         }
         injectedProvider = undefined;
       }
