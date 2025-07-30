@@ -8,6 +8,7 @@ from rotkehlchen.chain.bitcoin.bch.constants import (
     HASKOIN_BASE_URL,
     HASKOIN_BATCH_SIZE,
     MELROY_BASE_URL,
+    MELROY_TX_PAGE_SIZE,
 )
 from rotkehlchen.chain.bitcoin.bch.utils import (
     CASHADDR_PREFIX,
@@ -63,10 +64,10 @@ class BitcoinCashManager(BitcoinCommonManager):
                 has_transactions_fn=lambda accounts: self._query_haskoin_has_transactions(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts),  # noqa: E501
                 transactions_fn=lambda accounts, options: self._query_haskoin_transactions(base_url=BLOCKCHAIN_INFO_HASKOIN_BASE_URL, accounts=accounts, options=options),  # noqa: E501
             ), BtcApiCallback(
-                name='melroy',
+                name='melroy',  # This API doesn't support batched addresses and will be slower, so keep it as the last fallback.  # noqa: E501
                 balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MELROY_BASE_URL, accounts=accounts),  # noqa: E501
                 has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MELROY_BASE_URL, accounts=accounts),  # noqa: E501
-                transactions_fn=None,  # TODO: add transactions from melroy
+                transactions_fn=self._query_melroy_transactions,
             )],
         )
         self.converted_addresses: dict[BTCAddress, BTCAddress] = {}
@@ -230,7 +231,47 @@ class BitcoinCashManager(BitcoinCommonManager):
             processing_fn=self.deserialize_tx_from_haskoin,
         )
 
+    def _query_melroy_transactions(
+            self,
+            accounts: Sequence[BTCAddress],
+            options: dict[str, Any],
+    ) -> tuple[int, list[BitcoinTx]]:
+        """Query the melroy API for transactions.
+        Transactions are sorted with newest first from the API. Note that timestamps from this
+        API sometimes don't match the timestamps from the haskoin APIs. While this is not ideal,
+        since we query by last queried block height rather than by timestamp, it should be fine.
+        Returns a tuple containing the latest queried block height and the list of txs.
+        May raise RemoteError, UnableToDecryptRemoteData.
+        """
+        last_queried_block = options.get('last_queried_block', 0)
+        raw_txs: list[list[dict[str, Any]]] = []
+        for account in accounts:
+            account_tx_list: list[dict[str, Any]] = []
+            last_tx_id = '_'  # The api seems to need a placeholder value here on the initial query (simply querying `.../txs/chain` fails).  # noqa: E501
+            while True:
+                account_tx_list.extend(raw_tx_list := request_get(f'{MELROY_BASE_URL}/address/{account}/txs/chain/{last_tx_id}'))  # noqa: E501
+                if (
+                    len(raw_tx_list) < MELROY_TX_PAGE_SIZE or
+                    (last_entry := raw_tx_list[-1]).get('status', {}).get('block_height', 0) <= last_queried_block  # noqa: E501
+                ):
+                    break
+
+                if (last_tx_id := last_entry.get('txid')) is None:
+                    log.error(f'Could not find txid in melroy response: {last_entry}')
+                    break
+
+            raw_txs.append(account_tx_list)
+
+        return self._process_raw_tx_lists(
+            raw_tx_lists=raw_txs,
+            options=options,
+            processing_fn=self.deserialize_tx_from_melroy,
+        )
+
     def deserialize_tx_from_haskoin(self, data: dict[str, Any]) -> 'BitcoinTx':
+        """Deserialize a transaction from a haskoin API.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BitcoinTx(
             tx_id=data['txid'],
             timestamp=deserialize_timestamp(data['time']),
@@ -253,9 +294,48 @@ class BitcoinCashManager(BitcoinCommonManager):
             data: dict[str, Any],
             direction: BtcTxIODirection,
     ) -> 'BtcTxIO':
+        """Deserialize a TxIO from a haskoin API.
+        May raise DeserializationError, KeyError, ValueError.
+        """
         return BtcTxIO(
             value=satoshis_to_btc(deserialize_int(data['value'])),
             script=bytes.fromhex(data['pkscript']),
             address=data.get('address'),
+            direction=direction,
+        )
+
+    def deserialize_tx_from_melroy(self, data: dict[str, Any]) -> 'BitcoinTx':
+        """Deserialize a transaction from the Melroy API.
+        May raise DeserializationError, KeyError, ValueError.
+        """
+        return BitcoinTx(
+            tx_id=data['txid'],
+            timestamp=deserialize_timestamp(data['status']['block_time']),
+            block_height=deserialize_int(data['status']['block_height']),
+            fee=satoshis_to_btc(deserialize_int(data['fee'])),
+            inputs=BtcTxIO.deserialize_list(
+                data_list=[vin['prevout'] for vin in data['vin']],
+                direction=BtcTxIODirection.INPUT,
+                deserialize_fn=self.deserialize_tx_io_from_melroy,
+            ),
+            outputs=BtcTxIO.deserialize_list(
+                data_list=data['vout'],
+                direction=BtcTxIODirection.OUTPUT,
+                deserialize_fn=self.deserialize_tx_io_from_melroy,
+            ),
+        )
+
+    @staticmethod
+    def deserialize_tx_io_from_melroy(
+            data: dict[str, Any],
+            direction: BtcTxIODirection,
+    ) -> 'BtcTxIO':
+        """Deserialize a TxIO from the Melroy API.
+        May raise DeserializationError, KeyError, ValueError.
+        """
+        return BtcTxIO(
+            value=satoshis_to_btc(data['value']),
+            script=bytes.fromhex(data['scriptpubkey']),
+            address=data.get('scriptpubkey_address'),
             direction=direction,
         )

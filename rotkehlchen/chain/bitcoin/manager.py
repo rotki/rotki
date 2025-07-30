@@ -278,6 +278,7 @@ class BitcoinCommonManager:
                 except (
                     DeserializationError,
                     KeyError,
+                    ValueError,
                     RemoteError,
                     UnableToDecryptRemoteData,
                 ) as e:

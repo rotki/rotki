@@ -5,8 +5,6 @@ BLOCKCYPHER_BASE_URL: Final = 'https://api.blockcypher.com/v1/btc/main'
 BLOCKSTREAM_BASE_URL: Final = 'https://blockstream.info/api'
 MEMPOOL_SPACE_BASE_URL: Final = 'https://mempool.space/api'
 
-BLOCKSTREAM_MEMPOOL_TX_PAGE_LENGTH: Final = 25
-
 BLOCKCYPHER_TX_IO_LIMIT: Final = 200
 BLOCKCYPHER_TX_LIMIT: Final = 50
 

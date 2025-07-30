@@ -162,14 +162,23 @@ def test_query_btc_transactions(
     'qrfec2pytp47p5drvfsdexqd0ue4r3hrhv9tq7vj5z',
 ]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('bch_api', ['haskoin', 'blockchain.info haskoin-store', 'melroy'])
 def test_query_bch_transactions(
         rotkehlchen_api_server: 'APIServer',
         bch_accounts: list['BTCAddress'],
         websocket_connection: WebsocketReader,
+        bch_api: str,
 ) -> None:
-    """Test that bitcoin cash transactions are properly queried via the api.
+    """Test that bitcoin cash transactions are properly queried via each api.
     Since there are quite a number of transactions, only check decoding of first and last txs.
     """
+    bch_manager = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.bitcoin_cash
+    for idx, callback in enumerate(bch_manager.api_callbacks):
+        if callback.name != bch_api:  # ensure only the api we want to test is used
+            bch_manager.api_callbacks[idx] = bch_manager.api_callbacks[idx]._replace(
+                transactions_fn=None,
+            )
+
     async_query = random.choice([False, True])
     for json, expected_len in (
         ({'async_query': async_query, 'to_timestamp': 1700000000}, 79),  # query partial range first  # noqa: E501
@@ -185,11 +194,24 @@ def test_query_bch_transactions(
             chain=SupportedBlockchain.BITCOIN_CASH,
         )
 
+    if bch_api == 'melroy':
+        # Since the melroy api doesn't support address batching, txs from different addresses
+        # get processed as separate lists, which results in some differing identifiers.
+        id_1, id_2 = 84, 75
+        # The melroy api returns slightly different timestamps for many of the events. Timestamp
+        # is not part of the unique constraint on history events though so this should be fine.
+        # Also note that we query to the last queried block height, so this should never result
+        # in missing transactions either.
+        timestamp_1, timestamp_2, timestamp_3 = TimestampMS(1703868987000), TimestampMS(1732270699000), TimestampMS(1749190517000)  # noqa: E501
+    else:
+        id_1, id_2 = 83, 79
+        timestamp_1, timestamp_2, timestamp_3 = TimestampMS(1703868928000), TimestampMS(1732270516000), TimestampMS(1749190001000)  # noqa: E501
+
     assert events[100:] == [HistoryEvent(
-        identifier=83,
+        identifier=id_1,
         event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}cc39c599f9684909efbec9a86a37bbe583fd9865f61e90c684b290b092b818f2',
         sequence_index=0,
-        timestamp=TimestampMS(1703868928000),
+        timestamp=timestamp_1,
         location=Location.BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
@@ -211,7 +233,7 @@ def test_query_bch_transactions(
         identifier=82,
         event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}dcc1e78d9a48643553f4cd9b71564fb8032f6fd48ede977f8806be15ac29b917',
         sequence_index=0,
-        timestamp=TimestampMS(1732270516000),
+        timestamp=timestamp_2,
         location=Location.BITCOIN_CASH,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.NONE,
@@ -223,7 +245,7 @@ def test_query_bch_transactions(
         identifier=80,
         event_identifier=(event_identifier := f'{BCH_EVENT_IDENTIFIER_PREFIX}3944ec023a1a4004d26c476051160ab97c1004a5a34799fc197c885acc745ead'),  # noqa: E501
         sequence_index=0,
-        timestamp=(timestamp := TimestampMS(1749190001000)),
+        timestamp=timestamp_3,
         location=Location.BITCOIN_CASH,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -235,7 +257,7 @@ def test_query_bch_transactions(
         identifier=81,
         event_identifier=event_identifier,
         sequence_index=1,
-        timestamp=timestamp,
+        timestamp=timestamp_3,
         location=Location.BITCOIN_CASH,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.NONE,
@@ -245,7 +267,7 @@ def test_query_bch_transactions(
         notes=f'Send {spend_amount} BCH to bitcoincash:qr40efj25rw7lmr4qr90636xne2gsmq39ugdsw5k3g',
     )]
     assert events[0] == HistoryEvent(
-        identifier=79,
+        identifier=id_2,
         event_identifier=f'{BCH_EVENT_IDENTIFIER_PREFIX}7eb2146b27dbf6e4ea0d61c2e85a6aeae2415392043fa44904b0a88f1341a662',
         sequence_index=0,
         timestamp=TimestampMS(1545323818000),
