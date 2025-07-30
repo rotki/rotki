@@ -23,10 +23,17 @@ export class TimeoutError extends AsyncUtilityError {
   }
 }
 
+export class AbortedError extends AsyncUtilityError {
+  constructor(operation: string, cause?: Error) {
+    super(`Operation ${operation} was aborted`, 'ABORTED', cause);
+    this.name = 'AbortedError';
+  }
+}
+
 export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new AsyncUtilityError('Delay was aborted', 'ABORTED'));
+      reject(new AbortedError('delay'));
       return;
     }
 
@@ -34,7 +41,7 @@ export async function delay(ms: number, signal?: AbortSignal): Promise<void> {
 
     const onAbort = (): void => {
       clearTimeout(timeoutId);
-      reject(new AsyncUtilityError('Delay was aborted', 'ABORTED'));
+      reject(new AbortedError('delay'));
     };
 
     signal?.addEventListener('abort', onAbort, { once: true });
@@ -51,7 +58,7 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
   } = options;
 
   if (signal?.aborted) {
-    throw new AsyncUtilityError(`Operation ${name} was aborted before starting`, 'ABORTED');
+    throw new AbortedError(name);
   }
 
   const abortController = new AbortController();
@@ -76,7 +83,7 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
       if (isCompleted)
         return; // Don't reject if we're completing successfully
       cleanup();
-      reject(new AsyncUtilityError(`Operation ${name} was aborted`, 'ABORTED'));
+      reject(new AbortedError(name));
     }
 
     combinedSignal.addEventListener('abort', onAbort, { once: true });

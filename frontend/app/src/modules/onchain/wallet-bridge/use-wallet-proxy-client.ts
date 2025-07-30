@@ -1,10 +1,4 @@
 import { BRIDGE_NOTIFICATION_TYPES } from '@shared/proxy/constants';
-import { get, isDefined, set } from '@vueuse/core';
-import { ref, type Ref } from 'vue';
-import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-bridge-message-handlers';
-import { logger } from '@/utils/logging';
-import { CLIENT_CONFIG } from './bridge-config';
-
 import {
   isWalletBridgeNotification,
   isWalletBridgeRequest,
@@ -12,7 +6,12 @@ import {
   type WalletBridgeNotification,
   type WalletBridgeRequest,
   type WalletBridgeResponse,
-} from './types';
+} from '@shared/wallet-bridge-types';
+import { get, isDefined, set } from '@vueuse/core';
+import { ref, type Ref } from 'vue';
+import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-bridge-message-handlers';
+import { logger } from '@/utils/logging';
+import { CLIENT_CONFIG } from './bridge-config';
 
 export interface WalletProxyClientComposable {
   cleanup: () => void;

@@ -1,5 +1,5 @@
 import type { LogService } from '@electron/main/log-service';
-import type { WalletBridgeNotification, WalletBridgeRequest } from '@electron/main/wallet-bridge-types';
+import type { WalletBridgeNotification, WalletBridgeRequest } from '@shared/wallet-bridge-types';
 import type { RpcRequest } from '@/types';
 import { WalletBridgeNotConnectedError, WalletBridgeTimeoutError } from '@electron/main/wallet-bridge-errors';
 import { ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES } from '@shared/proxy/constants';

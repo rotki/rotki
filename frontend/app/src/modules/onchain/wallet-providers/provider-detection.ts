@@ -1,7 +1,8 @@
-import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail, Permission } from '@/types';
+import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from '@/types';
 import { assert } from '@rotki/common';
 import { uniqueObjects } from '@/utils/data';
-import { detectProxyProviders } from './bridge-detection';
+import { logger } from '@/utils/logging';
+import { useProxyProvider } from '../wallet-bridge/use-proxy-provider';
 
 export interface ProviderDetectionOptions {
   includeLegacy?: boolean;
@@ -84,6 +85,41 @@ function detectEnvironment(): 'browser' | 'electron' {
 }
 
 /**
+ * Detects providers available through the wallet bridge
+ */
+async function detectProxyProviders(): Promise<EIP6963ProviderDetail[]> {
+  const walletBridge = window.walletBridge;
+  if (!walletBridge) {
+    return [];
+  }
+
+  try {
+    // Get available providers from the bridge
+    const bridgeProviders = await walletBridge.getAvailableProviders();
+
+    // Create a proxy provider to be used with bridge providers
+    const proxyProvider = useProxyProvider();
+
+    if (!proxyProvider) {
+      logger.warn('Failed to create proxy provider for bridge providers');
+      return bridgeProviders;
+    }
+
+    // Enhance bridge providers with the proxy provider
+    // Since bridge providers come serialized without the provider object,
+    // we use the proxy provider for all of them
+    return bridgeProviders.map(providerDetail => ({
+      ...providerDetail,
+      provider: proxyProvider,
+    }));
+  }
+  catch (error) {
+    logger.error('Failed to detect bridge providers:', error);
+    return [];
+  }
+}
+
+/**
  * Enhanced wallet provider detection - auto-detects environment
  */
 export async function getAllWalletProviders(
@@ -131,42 +167,26 @@ export async function getAllWalletProviders(
 
 /**
  * @deprecated Use getAllWalletProviders instead
- * Maintained for backward compatibility
+ * Legacy function for backward compatibility with WalletImportSelection
  */
 export async function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDetail[]> {
-  const providers = await getAllWalletProviders({
-    includeLegacy: true,
-    timeout: 1000,
-  });
-
-  // Convert EnhancedProviderDetail back to EIP6963ProviderDetail for compatibility
-  return providers.map(({ isConnected, lastSeen, source, ...provider }) => provider);
+  return getAllWalletProviders({ includeLegacy: true });
 }
 
+/**
+ * Get addresses from a wallet provider
+ */
 export async function getAddressesFromWallet(provider: EIP1193Provider): Promise<string[]> {
-  const permissions = await provider.request<Permission[]>({
-    method: 'wallet_requestPermissions',
-    params: [
-      {
-        eth_accounts: {},
-      },
-    ],
-  });
+  try {
+    assert(provider, 'Provider is required');
 
-  const accountPermission = permissions.find(permission => permission.parentCapability === 'eth_accounts');
-
-  assert(accountPermission);
-
-  const requestedAddresses = await provider.request<string[]>({
-    method: 'eth_requestAccounts',
-    params: [],
-  });
-
-  const addresses: string[] = [];
-  requestedAddresses.forEach((item) => {
-    addresses.push(item);
-  });
-
-  assert(addresses);
-  return addresses;
+    // Request account access
+    return await provider.request<string[]>({
+      method: 'eth_requestAccounts',
+    });
+  }
+  catch (error) {
+    logger.error('Failed to get addresses from wallet:', error);
+    throw new Error(`Failed to connect to wallet: ${String(error)}`);
+  }
 }
