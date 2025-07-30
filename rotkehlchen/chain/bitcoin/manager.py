@@ -276,10 +276,11 @@ class BitcoinCommonManager:
                 try:
                     tx = processing_fn(entry)
                 except (
-                    DeserializationError,
-                    KeyError,
-                    RemoteError,
-                    UnableToDecryptRemoteData,
+                    DeserializationError,  # malformed data encountered when deserializing entry
+                    KeyError,  # missing required key when deserializing entry
+                    ValueError,  # bad value in bytes.fromhex() when deserializing TxIO scripts
+                    RemoteError,  # failure to query remote (_process_raw_tx_from_blockcypher queries more TxIOs if the initial data is incomplete)  # noqa: E501
+                    UnableToDecryptRemoteData,  # malformed data from remote
                 ) as e:
                     msg = f'Missing key {e!s}' if isinstance(e, KeyError) else str(e)
                     log.error(f'Failed to process bitcoin transaction {entry} due to {msg}')
