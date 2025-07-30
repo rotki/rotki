@@ -1069,7 +1069,7 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
         assert table_exists(cursor=cursor, name='solana_tokens') is False
         assert index_exists(cursor=cursor, name='idx_solana_tokens_identifier') is False
         assert cursor.execute("SELECT COUNT(*) FROM token_kinds WHERE token_kind IN ('D', 'E')").fetchone()[0] == 0  # noqa: E501
-        assert (solana_tokens_count := cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y'").fetchone()[0]) == 431  # noqa: E501
+        assert (solana_tokens_count := cursor.execute("SELECT COUNT(*) FROM assets WHERE type='Y'").fetchone()[0]) == 432  # noqa: E501
         assert cursor.execute("SELECT identifier, name FROM assets WHERE type='Y' LIMIT 10").fetchall() == [  # noqa: E501
             ('COPE', 'Cope'),
             ('FIDA', 'Bonfida'),
@@ -1082,7 +1082,7 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
             ('MER-2', 'Mercurial'),
             ('ATLAS', 'Star Atlas'),
         ]
-        assert (tokens_before := cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]) == 12164  # noqa: E501
+        assert (tokens_before := cursor.execute('SELECT COUNT(*) FROM assets').fetchone()[0]) == 12165  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM common_asset_details').fetchone()[0] == tokens_before  # noqa: E501
         assert cursor.execute('SELECT main_asset FROM asset_collections WHERE id IN (500, 501, 502) ORDER BY id').fetchall() == [  # noqa: E501
             ('COPE',),
