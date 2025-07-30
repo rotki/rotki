@@ -15,6 +15,10 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
 )
 from rotkehlchen.chain.bitcoin.manager import BitcoinCommonManager
 from rotkehlchen.chain.bitcoin.types import BitcoinTx, BtcApiCallback, BtcTxIO, BtcTxIODirection
+from rotkehlchen.chain.bitcoin.utils import (
+    query_blockstream_like_balances,
+    query_blockstream_like_has_transactions,
+)
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.fval import FVal
@@ -52,13 +56,13 @@ class BitcoinManager(BitcoinCommonManager):
                 transactions_fn=self._query_blockchain_info_transactions,
             ), BtcApiCallback(
                 name='blockstream.info',
-                balances_fn=lambda accounts: self._query_blockstream_or_mempool_balances(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
-                has_transactions_fn=lambda accounts: self._query_blockstream_or_mempool_has_transactions(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
+                balances_fn=lambda accounts: query_blockstream_like_balances(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
+                has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=BLOCKSTREAM_BASE_URL, accounts=accounts),  # noqa: E501
                 transactions_fn=None,  # this API doesn't handle p2pk txs properly
             ), BtcApiCallback(
                 name='mempool.space',
-                balances_fn=lambda accounts: self._query_blockstream_or_mempool_balances(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
-                has_transactions_fn=lambda accounts: self._query_blockstream_or_mempool_has_transactions(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
+                balances_fn=lambda accounts: query_blockstream_like_balances(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
+                has_transactions_fn=lambda accounts: query_blockstream_like_has_transactions(base_url=MEMPOOL_SPACE_BASE_URL, accounts=accounts),  # noqa: E501
                 transactions_fn=None,  # this API doesn't handle p2pk txs properly
             ), BtcApiCallback(
                 name='blockcypher.com',
@@ -67,59 +71,6 @@ class BitcoinManager(BitcoinCommonManager):
                 transactions_fn=self._query_blockcypher_transactions,
             )],
         )
-
-    @staticmethod
-    def _query_blockstream_or_mempool_account_info(
-            base_url: str,
-            account: BTCAddress,
-    ) -> tuple[FVal, int]:
-        """Query account info from blockstream.info or mempool.space (APIs are nearly identical)
-        Returns the account balance and tx count in a tuple.
-        May raise:
-        - RemoteError if got problems with querying the API
-        - UnableToDecryptRemoteData if unable to load json in request_get
-        - KeyError if got unexpected json structure
-        - DeserializationError if got unexpected json values
-        """
-        response_data = request_get_dict(
-            url=f'{base_url}/address/{account}',
-            handle_429=True,
-            backoff_in_seconds=4,
-        )
-        stats = response_data['chain_stats']
-        funded_txo_sum = satoshis_to_btc(ensure_type(
-            symbol=stats['funded_txo_sum'],
-            expected_type=int,
-            location='blockstream funded_txo_sum',
-        ))
-        spent_txo_sum = satoshis_to_btc(ensure_type(
-            symbol=stats['spent_txo_sum'],
-            expected_type=int,
-            location='blockstream spent_txo_sum',
-        ))
-        return funded_txo_sum - spent_txo_sum, stats['tx_count']
-
-    def _query_blockstream_or_mempool_balances(
-            self,
-            base_url: str,
-            accounts: Sequence[BTCAddress],
-    ) -> dict[BTCAddress, FVal]:
-        balances = {}
-        for account in accounts:
-            balance, _ = self._query_blockstream_or_mempool_account_info(base_url, account)
-            balances[account] = balance
-        return balances
-
-    def _query_blockstream_or_mempool_has_transactions(
-            self,
-            base_url: str,
-            accounts: Sequence[BTCAddress],
-    ) -> dict[BTCAddress, tuple[bool, FVal]]:
-        have_transactions = {}
-        for account in accounts:
-            balance, tx_count = self._query_blockstream_or_mempool_account_info(base_url, account)
-            have_transactions[account] = ((tx_count != 0), balance)
-        return have_transactions
 
     @staticmethod
     def _query_blockchain_info(
