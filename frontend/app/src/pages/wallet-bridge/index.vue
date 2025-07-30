@@ -27,14 +27,12 @@ const { addLog, logs } = useBridgeLogging();
 // WebSocket integration
 const {
   cleanup,
-  cleanupWalletEventListeners,
   connect: connectToElectron,
   disconnect: disconnectFromElectron,
   isConnected: isElectronConnected,
   isConnecting: isElectronConnecting,
   lastError,
   onTakeOver,
-  setupWalletEventListeners,
 } = useWalletProxyClient();
 
 function handleRetryConnection(): void {
@@ -68,13 +66,9 @@ watch(isElectronConnecting, (newValue, oldValue) => {
 watch(isElectronConnected, (newValue, oldValue) => {
   if (newValue && !oldValue) {
     addLog('Successfully connected to Electron app!', 'success');
-    // Setup wallet event listeners when connected
-    setupWalletEventListeners();
   }
   else if (!newValue && oldValue) {
     addLog('WebSocket connection to Electron app lost', 'error');
-    // Cleanup wallet event listeners when disconnected
-    cleanupWalletEventListeners();
   }
 });
 
