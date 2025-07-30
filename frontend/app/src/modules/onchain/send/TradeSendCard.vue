@@ -59,7 +59,7 @@ const {
   waitingForWalletConfirmation,
   walletMode,
 } = storeToRefs(walletStore);
-const { disconnect: disconnectWallet, getGasFeeForChain, open: openWallet, sendTransaction, setWalletMode, switchNetwork } = walletStore;
+const { connect: connectWallet, disconnect: disconnectWallet, getGasFeeForChain, sendTransaction, switchNetwork } = walletStore;
 const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connected, connectedAddress);
 
 const { getAssetDetail } = useTradableAsset(connectedAddress);
@@ -271,7 +271,7 @@ async function onConnectClicked() {
 async function connect() {
   try {
     set(errorMessage, '');
-    await openWallet();
+    await connectWallet();
   }
   catch (error: any) {
     logger.error(error);
@@ -410,12 +410,11 @@ watch([estimatedGasFee, assetBalance], () => {
               {{ t('trade.wallet_mode.label') }}
             </div>
             <RuiButtonGroup
-              :model-value="walletMode"
+              v-model="walletMode"
               variant="outlined"
               color="primary"
               :required="true"
               size="sm"
-              @update:model-value="setWalletMode($event)"
             >
               <RuiButton model-value="walletconnect">
                 {{ t('trade.wallet_mode.wallet_connect') }}

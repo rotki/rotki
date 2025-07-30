@@ -51,7 +51,7 @@ interface UseWalletConnectReturn {
   supportedChainIds: Ref<string[]>;
   isWalletConnect: Ref<boolean>;
   preparing: Ref<boolean>;
-  open: () => Promise<void>;
+  connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   getBrowserProvider: () => import('ethers').BrowserProvider;
   switchNetwork: (chainId: bigint) => Promise<void>;
@@ -117,7 +117,7 @@ export function useWalletConnect(): UseWalletConnectReturn {
     });
   }
 
-  const open = async (): Promise<void> => {
+  const connect = async (): Promise<void> => {
     const appKitInstance = getAppKit();
     await appKitInstance.open();
   };
@@ -180,13 +180,13 @@ export function useWalletConnect(): UseWalletConnectReturn {
 
   return {
     checkWalletConnection,
+    connect,
     connected,
     connectedAddress,
     connectedChainId,
     disconnect,
     getBrowserProvider,
     isWalletConnect,
-    open,
     preparing,
     supportedChainIds,
     switchNetwork,

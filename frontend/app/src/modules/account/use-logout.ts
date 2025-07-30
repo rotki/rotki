@@ -19,13 +19,13 @@ export function useLogout(): UseLogoutReturn {
   const { setMessage } = useMessageStore();
   const { notifyUserLogout, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
-  const { resetWalletConnection } = useWalletStore();
+  const { disconnect: disconnectWallet } = useWalletStore();
 
   const logout = async (navigate: boolean = true): Promise<void> => {
     // Notify electron to cleanup wallet bridge connections BEFORE disconnecting
     notifyUserLogout();
 
-    await resetWalletConnection();
+    await disconnectWallet();
     set(logged, false);
     const user = get(username); // save the username, after the await below, it is reset
     // allow some time for the components to leave the dom completely and show loading overlay
@@ -49,7 +49,7 @@ export function useLogout(): UseLogoutReturn {
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
     try {
-      await resetWalletConnection();
+      await disconnectWallet();
       const loggedUsers = await getLoggedUsers();
       for (const user of loggedUsers)
         await callLogout(user);

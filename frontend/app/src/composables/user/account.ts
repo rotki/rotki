@@ -36,7 +36,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
-  const { resetWalletConnection } = useWalletStore();
+  const { disconnect: disconnectWallet } = useWalletStore();
   const { fetchEvmTransactionStatus } = useHistoryStore();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
@@ -93,7 +93,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
       showGetPremiumButton();
       set(checkForAssetUpdate, true);
       await fetchEvmTransactionStatus();
-      await resetWalletConnection();
+      await disconnectWallet();
     }
   };
 

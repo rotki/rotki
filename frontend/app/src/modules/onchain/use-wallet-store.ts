@@ -1,17 +1,13 @@
+import type { BrowserProvider, TransactionResponse } from 'ethers';
 import type {
   GasFeeEstimation,
   PrepareERC20TransferResponse,
   PrepareNativeTransferResponse,
-  RecentTransaction,
   TransactionParams,
 } from '@/modules/onchain/types';
-import { assert, bigNumberify } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { type BrowserProvider, formatUnits, type TransactionResponse } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { logger } from '@/utils/logging';
 import { useTradeApi } from './send/use-trade-api';
 import {
@@ -19,21 +15,26 @@ import {
   prepareTransactionPayload,
   validateTransactionRequirements,
 } from './transaction-helpers';
+import { useTransactionManager } from './use-transaction-manager';
 import { useInjectedWallet } from './wallet-bridge/use-injected-wallet';
 import { useWalletProxy } from './wallet-bridge/use-wallet-proxy';
-import { useWalletConnect } from './wallet-connect/use-wallet-connect';
+import { supportedNetworks, useWalletConnect } from './wallet-connect/use-wallet-connect';
+import { calculateGasFee, WALLET_ERRORS, WALLET_MODES, type WalletMode } from './wallet-constants';
 import { useUnifiedProviders } from './wallet-providers/use-unified-providers';
 
-const DEFAULT_GAS_LIMIT = 21000n; // for native transfers
-
-export type WalletMode = 'walletconnect' | 'local-bridge';
+export { type WalletMode } from './wallet-constants';
 
 export const useWalletStore = defineStore('wallet', () => {
-  // Shared state - only the essential state that needs to be centralized
-  const recentTransactions = ref<RecentTransaction[]>([]);
+  // Core wallet state - centralized instead of delegated
   const preparing = ref<boolean>(false);
   const waitingForWalletConfirmation = ref<boolean>(false);
-  const walletMode = ref<WalletMode>('local-bridge');
+  const walletMode = ref<WalletMode>(WALLET_MODES.LOCAL_BRIDGE);
+
+  // Consolidated connection state (no more delegation)
+  const connected = ref<boolean>(false);
+  const connectedAddress = ref<string>();
+  const connectedChainId = ref<number>();
+  const supportedChainIds = ref<string[]>([]);
 
   // Initialize composables for both wallet modes
   const walletConnect = useWalletConnect();
@@ -42,82 +43,69 @@ export const useWalletStore = defineStore('wallet', () => {
   const unifiedProviders = useUnifiedProviders();
   const { isPackaged } = useInterop();
 
-  const { getAssetMappingHandler } = useAssetCacheStore();
-  const { getChainFromChainId, updateStatePostTransaction } = useWalletHelper();
+  // Transaction management
+  const transactionManager = useTransactionManager();
+  const { recentTransactions, updateTransactionStatus } = transactionManager;
+
+  const { getChainFromChainId, getChainIdFromNamespace } = useWalletHelper();
   const { prepareERC20Transfer, prepareNativeTransfer } = useTradeApi();
   const { getEvmChainName } = useSupportedChains();
 
-  // Computed properties that delegate to the appropriate composable
-  const connected = computed<boolean>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.connected) : get(injectedWallet.connected));
+  // Computed properties
+  const isWalletConnect = computed<boolean>(() => get(walletMode) === WALLET_MODES.WALLET_CONNECT);
 
-  const connectedAddress = computed<string | undefined>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.connectedAddress) : get(injectedWallet.connectedAddress));
-
-  const connectedChainId = computed<number | undefined>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.connectedChainId) : get(injectedWallet.connectedChainId));
-
-  const supportedChainIds = computed<string[]>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.supportedChainIds) : []);
-
-  const isWalletConnect = computed<boolean>(() => get(walletMode) === 'walletconnect' ? get(walletConnect.isWalletConnect) : false);
+  // Sync centralized state with active wallet composable
+  const syncWalletState = (): void => {
+    if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
+      // Sync from WalletConnect
+      set(connected, get(walletConnect.connected));
+      set(connectedAddress, get(walletConnect.connectedAddress));
+      set(connectedChainId, get(walletConnect.connectedChainId));
+      set(supportedChainIds, get(walletConnect.supportedChainIds));
+    }
+    else {
+      // Sync from Local Bridge
+      set(connected, get(injectedWallet.connected));
+      set(connectedAddress, get(injectedWallet.connectedAddress));
+      set(connectedChainId, get(injectedWallet.connectedChainId));
+      set(supportedChainIds, []); // Local bridge doesn't have supported chain IDs
+    }
+  };
 
   const supportedChainsIdForConnectedAccount = computed<number[]>(() => {
-    const supportedChainIdsVal = get(supportedChainIds);
-    if (supportedChainIdsVal.length === 0 || get(walletMode) === 'local-bridge') {
+    const chainIds = get(supportedChainIds);
+    if (chainIds.length === 0 || get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       // For local bridge or when no supported chains, return all supported networks
-      return [1, 8453, 42161, 10, 56, 100, 137, 534352]; // mainnet, base, arbitrum, optimism, bsc, gnosis, polygon, scroll
+      return supportedNetworks.map(network => Number(network.id));
     }
-    const { getChainIdFromNamespace } = useWalletHelper();
-    return supportedChainIdsVal.map(item => getChainIdFromNamespace(item));
+    return chainIds.map(item => getChainIdFromNamespace(item));
   });
 
   const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
 
   const getBrowserProvider = (): BrowserProvider => {
-    if (get(walletMode) === 'local-bridge') {
+    if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       return injectedWallet.getBrowserProvider();
     }
     return walletConnect.getBrowserProvider();
   };
 
-  // Check if bridge has a selected provider
-  const checkBridgeSelectedProvider = async (): Promise<boolean> => {
-    try {
-      if (!get(isPackaged) || !window.walletBridge) {
-        return false;
-      }
-
-      const selectedProvider = await window.walletBridge.getSelectedProvider();
-      return selectedProvider !== null;
-    }
-    catch (error) {
-      logger.debug('Failed to check bridge selected provider:', error);
-      return false;
-    }
-  };
-
-  const hasSelectedProvider = async (): Promise<boolean> => {
-    if (isPackaged) {
-      return checkBridgeSelectedProvider();
-    }
-    else {
-      return get(unifiedProviders.hasSelectedProvider);
-    }
-  };
-
-  const open = async (): Promise<void> => {
-    if (get(walletMode) === 'local-bridge') {
+  const connect = async (): Promise<void> => {
+    if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       try {
         // Setup bridge if in packaged mode
         if (get(isPackaged)) {
           await walletProxy.setupProxy();
         }
 
-        const providerSelected = await hasSelectedProvider();
+        const providerSelected = await unifiedProviders.checkIfSelectedProvider();
 
         if (!providerSelected) {
           await unifiedProviders.detectProviders();
           const providers = get(unifiedProviders.availableProviders);
 
           if (providers.length === 0) {
-            throw new Error('No wallet providers detected');
+            throw new Error(WALLET_ERRORS.NO_PROVIDERS);
           }
           else if (providers.length === 1) {
             const provider = providers[0];
@@ -133,12 +121,12 @@ export const useWalletStore = defineStore('wallet', () => {
         }
       }
       catch (error) {
-        logger.error('Failed to initiate wallet connection:', error);
+        logger.error(WALLET_ERRORS.CONNECTION_FAILED, error);
         throw error;
       }
     }
     else {
-      await walletConnect.open();
+      await walletConnect.connect();
     }
   };
 
@@ -146,10 +134,15 @@ export const useWalletStore = defineStore('wallet', () => {
     logger.debug('Resetting wallet state');
     set(preparing, false);
     set(waitingForWalletConfirmation, false);
+    // Clear centralized connection state
+    set(connected, false);
+    set(connectedAddress, undefined);
+    set(connectedChainId, undefined);
+    set(supportedChainIds, []);
   };
 
   const disconnect = async (): Promise<void> => {
-    if (get(walletMode) === 'local-bridge') {
+    if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       await injectedWallet.disconnect();
       unifiedProviders.clearProvider();
     }
@@ -159,27 +152,8 @@ export const useWalletStore = defineStore('wallet', () => {
     resetState();
   };
 
-  const setWalletMode = async (mode: WalletMode | WalletMode[] | undefined): Promise<void> => {
-    assert(mode !== undefined && !Array.isArray(mode), 'Mode must be a single value');
-    if (get(walletMode) === mode)
-      return;
-
-    // Disconnect current mode
-    await disconnect();
-
-    // Reset state
-    resetState();
-
-    // Set new mode
-    set(walletMode, mode);
-  };
-
-  const resetWalletConnection = async (): Promise<void> => {
-    await disconnect();
-  };
-
   const switchNetwork = async (chainId: bigint): Promise<void> => {
-    if (get(walletMode) === 'local-bridge') {
+    if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       await injectedWallet.switchNetwork(chainId);
     }
     else {
@@ -190,88 +164,29 @@ export const useWalletStore = defineStore('wallet', () => {
   const getGasFeeForChain = async (): Promise<GasFeeEstimation> => {
     try {
       const provider = getBrowserProvider();
-
-      const feeData = await provider.getFeeData();
-      const gasPrice = feeData.gasPrice ?? feeData.maxFeePerGas ?? 0n;
-
-      let maxAmount = '0';
-      let gasFee = '0';
       const address = get(connectedAddress);
-      if (address) {
-        const balance = await provider.getBalance(address);
-        const gasCost = gasPrice * DEFAULT_GAS_LIMIT;
 
-        if (balance > gasCost) {
-          // Add 10% buffer for gas price fluctuations
-          const buffer = gasCost * 10n / 100n;
-          const diff = gasCost + buffer;
-
-          const maxSendable = balance - diff;
-          gasFee = formatUnits(diff);
-          maxAmount = formatUnits(maxSendable, 18);
-        }
+      if (!address) {
+        return {
+          gasFee: '0',
+          maxAmount: '0',
+        };
       }
 
-      return {
-        gasFee,
-        maxAmount,
-      };
+      const [feeData, balance] = await Promise.all([
+        provider.getFeeData(),
+        provider.getBalance(address),
+      ]);
+
+      const gasPrice = feeData.gasPrice ?? feeData.maxFeePerGas ?? 0n;
+
+      return calculateGasFee(gasPrice, balance);
     }
     catch (error) {
-      console.error(`Error getting gas fee:`, error);
+      logger.error(WALLET_ERRORS.GAS_ESTIMATION_FAILED, error);
       throw error;
     }
   };
-
-  const generateTransactionContext = async (params: TransactionParams): Promise<string> => {
-    const fromAddress = get(connectedAddress) ?? 'unknown';
-    const amount = params.amount;
-    const id = params.assetIdentifier;
-    const asset = params.native || !id
-      ? id
-      : await (async (): Promise<string | undefined> => {
-          const mapping = await getAssetMappingHandler([id]);
-          const assetMapping = mapping?.assets;
-          if (!assetMapping) {
-            return id;
-          }
-          return assetMapping[id]?.symbol ?? id;
-        })();
-
-    return `Send ${amount} ${asset ?? params.assetIdentifier} from ${fromAddress} to ${params.to}`;
-  };
-
-  const addRecentTransaction = async (hash: string, chain: string, params: TransactionParams): Promise<void> => {
-    const context = await generateTransactionContext(params);
-    set(recentTransactions, [
-      {
-        chain,
-        context,
-        hash,
-        initiatorAddress: get(connectedAddress),
-        metadata: {
-          amount: bigNumberify(params.amount),
-          asset: params.assetIdentifier,
-        },
-        status: 'pending',
-        timestamp: Date.now(),
-      },
-      ...get(recentTransactions),
-    ]);
-  };
-
-  const updateTransactionStatus = (hash: string, status: 'completed' | 'failed'): void => {
-    set(
-      recentTransactions,
-      get(recentTransactions).map(tx =>
-        tx.hash === hash
-          ? { ...tx, status }
-          : tx,
-      ),
-    );
-  };
-
-  const getRecentTransactionByTxHash = (hash: string): RecentTransaction | undefined => get(recentTransactions).find(item => item.hash === hash);
 
   const executeTransaction = async (backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse): Promise<TransactionResponse> => {
     set(waitingForWalletConfirmation, true);
@@ -285,16 +200,9 @@ export const useWalletStore = defineStore('wallet', () => {
     return tx;
   };
 
-  const handleTransactionSuccess = async (tx: TransactionResponse, chainId: number, params: TransactionParams): Promise<void> => {
-    startPromise(addRecentTransaction(tx.hash, getChainFromChainId(chainId), params));
-    await tx.wait();
-    updateTransactionStatus(tx.hash, 'completed');
-    startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
-  };
-
   const sendTransaction = async (params: TransactionParams): Promise<TransactionResponse> => {
     // Check WalletConnect connection if in WalletConnect mode
-    if (get(walletMode) === 'walletconnect') {
+    if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
       // Check connection (universal provider is handled internally)
       await walletConnect.checkWalletConnection();
     }
@@ -320,7 +228,13 @@ export const useWalletStore = defineStore('wallet', () => {
       set(preparing, false);
 
       const tx = await executeTransaction(backendPayload);
-      await handleTransactionSuccess(tx, chainId, params);
+      await transactionManager.handleTransactionSuccess(
+        tx,
+        chainId,
+        params,
+        get(connectedAddress),
+        getChainFromChainId,
+      );
 
       return tx;
     }
@@ -334,23 +248,41 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   };
 
+  // Watch for changes in wallet mode and active wallet state
+  watch(walletMode, async (walletMode, previousWalletMode) => {
+    if (walletMode !== previousWalletMode) {
+      await disconnect();
+      resetState();
+    }
+    syncWalletState();
+  }, { immediate: true });
+
+  // Watch WalletConnect state changes
+  watch([walletConnect.connected, walletConnect.connectedAddress, walletConnect.connectedChainId, walletConnect.supportedChainIds], () => {
+    if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
+      syncWalletState();
+    }
+  });
+
+  // Watch Local Bridge state changes
+  watch([injectedWallet.connected, injectedWallet.connectedAddress, injectedWallet.connectedChainId], () => {
+    if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
+      syncWalletState();
+    }
+  });
+
   return {
+    connect,
     connected,
     connectedAddress,
     connectedChainId,
     disconnect,
-    getBrowserProvider,
     getGasFeeForChain,
     isWalletConnect,
-    open,
     preparing: logicOr(preparing, injectedWallet.isConnecting),
     recentTransactions,
-    resetWalletConnection,
     sendTransaction,
-    setWalletMode,
-    supportedChainIds,
     supportedChainsForConnectedAccount,
-    supportedChainsIdForConnectedAccount,
     switchNetwork,
     waitingForWalletConfirmation,
     walletMode,
