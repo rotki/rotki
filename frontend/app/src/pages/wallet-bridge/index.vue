@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ConnectionLogs from '@/modules/onchain/wallet-bridge/ConnectionLogs.vue';
 import ElectronConnectionStatus from '@/modules/onchain/wallet-bridge/ElectronConnectionStatus.vue';
+import ProviderSelectionNotification from '@/modules/onchain/wallet-bridge/ProviderSelectionNotification.vue';
 import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
 import { useWalletProxyClient } from '@/modules/onchain/wallet-bridge/use-wallet-proxy-client';
 import WalletAddressIndicator from '@/modules/onchain/wallet-bridge/WalletAddressIndicator.vue';
@@ -99,6 +100,8 @@ onBeforeMount(() => {
         </p>
       </div>
     </div>
+
+    <ProviderSelectionNotification />
 
     <!-- Main content -->
     <div class="container !max-w-lg py-6 min-h-screen">
