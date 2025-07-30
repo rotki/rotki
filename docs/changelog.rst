@@ -33,6 +33,7 @@ Changelog
 * :bug:`10150` The history events page will be refreshed automatically when an asset is ignored or marked as spam.
 * :bug:`10199` Independentreserve trades, deposits and withdrawals now use the execution timestamp and not the creation one.
 * :bug:`-` Re-pulling transactions should now automatically refresh and decode the newly detected transactions.
+* :feature:`1525` Users will now be able to refresh a single exchange in the exchange balances.
 
 * :release:`1.39.1 <2025-06-13>`
 * :bug:`-` Users will now be able to perform on-chain send transactions using older wallets such as Trust Wallet.
