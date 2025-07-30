@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useBridgedWallet } from '@/modules/onchain/wallet-bridge/use-bridged-wallet';
 import { useInjectedWallet } from '@/modules/onchain/wallet-bridge/use-injected-wallet';
-import { useProviders } from '@/modules/onchain/wallet-providers/use-providers';
+import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
 import { logger } from '@/utils/logging';
 
 export interface WalletConnectionComposable {
@@ -15,13 +15,13 @@ export interface WalletConnectionComposable {
 }
 
 export function useWalletConnection(): WalletConnectionComposable {
-  const walletProviders = useProviders();
+  const walletProviders = useUnifiedProviders();
   const { isPackaged } = useInterop();
   const { setupBridge } = useBridgedWallet();
   const injectedWallet = useInjectedWallet();
 
   // Provider store state
-  const availableProviders = computed<EnhancedProviderDetail[]>(() => get(walletProviders.providers));
+  const availableProviders = computed<EnhancedProviderDetail[]>(() => get(walletProviders.availableProviders));
 
   // Check if bridge has a selected provider
   const checkBridgeSelectedProvider = async (): Promise<boolean> => {
@@ -44,13 +44,13 @@ export function useWalletConnection(): WalletConnectionComposable {
       return checkBridgeSelectedProvider();
     }
     else {
-      return get(walletProviders.selectedProvider) !== undefined;
+      return get(walletProviders.hasSelectedProvider);
     }
   };
 
   const initiateConnection = async (): Promise<void> => {
     try {
-      set(walletProviders.detectingProviders, true);
+      // Note: isDetecting is readonly in unified providers
 
       if (get(isPackaged)) {
         await setupBridge();
@@ -83,7 +83,7 @@ export function useWalletConnection(): WalletConnectionComposable {
       throw error;
     }
     finally {
-      set(walletProviders.detectingProviders, false);
+      // Note: isDetecting is readonly in unified providers
     }
   };
 

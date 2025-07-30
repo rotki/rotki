@@ -9,7 +9,6 @@ import {
   BridgeTimeoutError,
 } from './bridge-errors';
 import { createResourceManager } from './resource-management';
-import { setupWalletBridgeProvider } from './use-wallet-bridge-provider';
 
 const BRIDGE_CONFIG = {
   BRIDGE_PAGE_DELAY: 250,
@@ -230,10 +229,7 @@ export function useBridgedWallet(): UseBridgedWalletReturn {
     activeResources.isSetupInProgress = true;
 
     try {
-      // Step 1: Set up the wallet bridge provider in renderer context
-      setupWalletBridgeProvider();
-
-      // Step 2: Initialize the wallet bridge
+      // Step 1: Initialize the wallet bridge
       await initializeWalletBridge();
 
       // Step 2: Check current state

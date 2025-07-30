@@ -1,9 +1,10 @@
 import type { WalletBridgeRequest, WalletBridgeResponse } from './types';
+import type { EIP1193Provider } from '@/types';
 import { BRIDGE_ERROR_CODES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES } from '@shared/proxy/constants';
 import { get, promiseTimeout } from '@vueuse/core';
 import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
 import { logger } from '@/utils/logging';
-import { useEIP6963Providers } from './use-eip6963-providers';
+import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 
 export interface BridgeMessageHandlersComposable {
   handleRequest: (message: WalletBridgeRequest) => Promise<WalletBridgeResponse>;
@@ -11,13 +12,15 @@ export interface BridgeMessageHandlersComposable {
 
 export function useBridgeMessageHandlers(): BridgeMessageHandlersComposable {
   const {
-    getAvailableProviders,
-    getSelectedProvider,
+    activeProvider,
+    detectProviders: getAvailableProviders,
     onProviderChanged,
     selectedProviderMetadata,
     selectedProviderUuid,
     selectProvider,
-  } = useEIP6963Providers();
+  } = useUnifiedProviders();
+
+  const getSelectedProvider = (): EIP1193Provider | undefined => get(activeProvider);
 
   const { addLog } = useBridgeLogging();
 
@@ -45,11 +48,18 @@ export function useBridgeMessageHandlers(): BridgeMessageHandlersComposable {
       case ROTKI_RPC_METHODS.GET_AVAILABLE_PROVIDERS: {
         // Single async method that detects if needed and returns providers
         const providers = await getAvailableProviders();
+        // Serialize providers for bridge - remove circular references from provider objects
+        const serializedProviders = providers.map(provider => ({
+          info: provider.info,
+          isConnected: provider.isConnected,
+          lastSeen: provider.lastSeen,
+          source: provider.source,
+        }));
         addLog(`The app asked for the available providers: ${providers.length}`, 'info');
         return {
           id: message.id,
           jsonrpc: '2.0',
-          result: providers,
+          result: serializedProviders,
         };
       }
 
@@ -93,7 +103,7 @@ export function useBridgeMessageHandlers(): BridgeMessageHandlersComposable {
           };
         }
 
-        const success = selectProvider(uuid);
+        const success = await selectProvider(uuid);
         return {
           id: message.id,
           jsonrpc: '2.0',

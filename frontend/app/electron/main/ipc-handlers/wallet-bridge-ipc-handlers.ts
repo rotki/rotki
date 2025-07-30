@@ -141,6 +141,8 @@ export class WalletBridgeIpcHandlers {
         params: [],
       });
 
+      this.logger.debug('Received available EIP-6963 providers from bridge:', result);
+
       return result || [];
     }
     catch (error: any) {

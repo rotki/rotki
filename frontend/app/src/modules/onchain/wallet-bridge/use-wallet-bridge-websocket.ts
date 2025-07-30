@@ -4,6 +4,7 @@ import { get, set } from '@vueuse/core';
 import { computed, type ComputedRef, ref, type Ref } from 'vue';
 import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-bridge-message-handlers';
 import { logger } from '@/utils/logging';
+import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 import {
   isWalletBridgeNotification,
   isWalletBridgeRequest,
@@ -12,7 +13,6 @@ import {
   type WalletBridgeRequest,
   type WalletBridgeResponse,
 } from './types';
-import { useEIP6963Providers } from './use-eip6963-providers';
 
 export interface WalletBridgeWebSocketComposable {
   cleanup: () => void;
@@ -31,7 +31,7 @@ export interface WalletBridgeWebSocketComposable {
   getSelectedProvider: () => EIP1193Provider | undefined;
   hasSelectedProvider: Ref<boolean>;
   isDetectingProviders: Ref<boolean>;
-  selectProvider: (uuid: string) => boolean;
+  selectProvider: (uuid: string) => Promise<boolean>;
 }
 
 export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
@@ -247,12 +247,14 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
   const isConnectingComputed = computed<boolean>(() => get(isConnecting));
 
   const {
-    getAvailableProviders,
-    getSelectedProvider,
+    activeProvider,
+    detectProviders: getAvailableProviders,
     hasSelectedProvider,
     isDetecting: isDetectingProviders,
     selectProvider,
-  } = useEIP6963Providers();
+  } = useUnifiedProviders();
+
+  const getSelectedProvider = (): EIP1193Provider | undefined => get(activeProvider);
 
   function onTakeOver(callback: () => void): void {
     set(onTakeOverCallback, callback);
@@ -359,7 +361,7 @@ export function useWalletBridgeWebSocket(): WalletBridgeWebSocketComposable {
     isDetectingProviders,
     lastError,
     onTakeOver,
-    selectProvider,
+    selectProvider: async (uuid: string) => selectProvider(uuid),
     sendWalletEvent,
     setupWalletEventListeners,
   };
